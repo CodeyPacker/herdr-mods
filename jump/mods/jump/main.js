@@ -77,7 +77,8 @@ export default class Jump extends View {
     if (it.kind === "tab") run("tab.select", { id: it.tab.id });
     else if (it.kind === "space") run("space.select", { id: it.s.id });
     else if (it.kind === "new-tab") run("tab.new");
-    else if (it.kind === "new-space") run("space.new");
+    // Start in the home folder, not the current space's folder, so a new space shares nothing.
+    else if (it.kind === "new-space") run("space.new", { folder: home() });
   }
 
   /** Opens the name box for a tab or space. @param {SpaceItem | TabItem} it @param {Context} cx */
