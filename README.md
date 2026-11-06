@@ -41,7 +41,7 @@ A tmux-style prefix key. Press `ctrl-a`, then one more key.
 Mappings live in `~/.config/herdr-app/leader.json`. Copy `leader/leader.example.json` there to start:
 
 ```json
-{ "w": "mod.open:jump", "p": "mod.open:run", "c": "tab.new" }
+{ "j": "mod.open:jump", "r": "mod.open:run", "c": "tab.new" }
 ```
 
 Don't want the little box? `{ "show": false, "keys": { ... } }`.
