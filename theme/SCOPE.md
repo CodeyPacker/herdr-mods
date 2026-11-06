@@ -142,16 +142,21 @@ One repo can hold mods and layouts side by side (herdr-layout-examples does).
   name `layouts/` and `mods/` only. If not, the RECIPE's install section has to say
   it, and the fallback is inlining the dark palette as `colors` in the layout
   (single appearance). Test with a fresh `HERDR_APP_HOME`.
+  **Answer:** No. A literal read of the steps copies `layouts/` and `mods/` only, so the RECIPE and the README prompt both say to copy `themes/`. No inlining needed: see Q5, Herdr tells you what is missing.
 - Q2. Do the shipped mods look right as-is? Tabs mod is 42px with 7px pills, status
   bar 28px. If they fight the look, clone `tabs` and `pane` and point the layout at
   the clones. Decide from the first screenshot, not up front.
+  **Answer:** Yes, as shipped. The 42px tab bar and 28px status bar sit flat on the canvas between the cards and read fine in both appearances. No mod clones, no `mods/` folder.
 - Q3. The canvas gradient is one value for both appearances. Either two layout
   files (`cupertino-light`, `cupertino-dark`), or a flat `"background": "canvas"`
   and give up the wash. Lean flat unless the gradient is what sells it.
+  **Answer:** Flat `"background": "canvas"`. The light gradient showed up as a lavender strip around the dark cards in dark mode. One layout file, no wash.
 - Q4. Pane frame `shadow`: documented on nodes, not on `pane`. Try it. If it
   doesn't take, drop shadows entirely.
+  **Answer:** It doesn't take. `sm`, `md` and `lg` on the pane frame all render pixel-identical to no shadow in 0.1.13. Dropped.
 - Q5. Does Herdr fall back cleanly when `theme` names a `themes/` file that is
   missing (someone skipped step 2)? Check what `layout.error` says.
+  **Answer:** Cleanly. `layout.switch` answers ok, the cards show up in Herdr's default graphite/paper colors, and `layout.error` / `herdr-app status` say `layouts/cupertino.json was not applied: theme "cupertino-light" is not one of graphite, ink, moss, paper and there is no themes/cupertino-light.json`. Adding the files afterwards needs another `layout.switch`.
 
 ## Build plan
 
