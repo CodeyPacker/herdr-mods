@@ -26,7 +26,7 @@ file it shows the parse error in the blocked color.
 - The next key runs its mapping and closes the popup. Esc, the leader key
   again, or any unmapped key closes it. Bare modifier presses are ignored.
 - Mappings in `~/.config/herdr-app/leader.json`, written like `keys.json`
-  actions: `"tab.new"`, `"space.select:1"`, `"mod.open:procs"`, or
+  actions: `"tab.new"`, `"space.select:1"`, `"mod.open:run"`, or
   `{ "command": "pane.split", "args": { "direction": "right" } }`.
 - The key names are `keystroke` spellings (`"j"`, `"shift-x"`, `"%"`).
 - `{ "show": false, "keys": { ... } }` keeps the prefix but draws nothing while

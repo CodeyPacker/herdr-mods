@@ -1,10 +1,10 @@
-# Procs
+# Run
 
 A popup that runs the processes a repo declares (dev server, API, workers) as
 background herdr-core terminals and lets you start, stop, restart and peek at
 them with single keys. The mprocs idea, with letter hints instead of a list.
 
-![Procs](preview.png)
+![Run](preview.png)
 
 ## What you see
 
@@ -48,7 +48,7 @@ Bottom line: the key hints in accent/dim pairs.
 
 ## Built from
 
-- `mods/procs/main.js` (the view) and `mods/procs/tiles.js` (hints, rows,
+- `mods/run/main.js` (the view) and `mods/run/tiles.js` (hints, rows,
   header, navigation, the help box; the same file the Jump mod carries).
 - `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 760, "height": 0.75 } }`.
 - Config, `herdr.procs.json` at the repo root, found by walking up from the
@@ -59,7 +59,7 @@ Bottom line: the key hints in accent/dim pairs.
 - Space hint letters: `~/.config/herdr-app/hints.json`,
   `{ "spaces": { "Logos": "l" } }`.
 - Starts a process with `hc run --bg --no-parent --outlive-parent --label
-  procs.space=<space id> --label procs.name=<name> --cwd <dir> --json -- <shell>
+  run.space=<space id> --label run.name=<name> --cwd <dir> --json -- <shell>
   <cmd>`; `--on <machine>` for a remote space. The shell is `pwsh -NoLogo
   -Command` when PowerShell 7 answers, else `powershell.exe`, and `$SHELL -c`
   (else `sh -c`) elsewhere. `env` becomes `$env:K='v';` or `export K='v';`
@@ -71,15 +71,15 @@ Bottom line: the key hints in accent/dim pairs.
 - Stop: `hc kill <address>`, then `hc get` every 250 ms until not live (10 s
   limit, then the row says "won't stop"). Start removes an exited terminal
   with `hc rm` first.
-- Enter opens a dialog overlay of this mod's own: a layout with a 32 px `procs`
+- Enter opens a dialog overlay of this mod's own: a layout with a 32 px `run`
   block (props `{ peek: { address, name, space, spaceName } }`) over a terminal
   block. The bar takes the keyboard: Esc or `q` close, `o` keeps the terminal as a
   tab, `b` goes back to the list; clicking the output types into it, clicking the
   bar gets the keys back. `terminal.keep {terminal, place:
   "tab"}` for `o` (after `space.select` when the space isn't active).
 - `shift-x` opens the shipped `confirm` mod with `command: { name:
-  "procs.stopall" }`; the mod handles "stopall" and "up" from `nextCommand()`.
-- `notify({ level: "error", action: { name: "mod.open", args: { name: "procs" } } })` for the exit toast.
+  "run.stopall" }`; the mod handles "stopall" and "up" from `nextCommand()`.
+- `notify({ level: "error", action: { name: "mod.open", args: { name: "run" } } })` for the exit toast.
 - Theme colors only: `popover`, `raised`, `border`, `selected`, `hover`,
   `foreground`, `muted`, `dim`, `accent`, `ansi1`, `ansi2`, `working`.
 
@@ -108,11 +108,11 @@ Bottom line: the key hints in accent/dim pairs.
 
 ## Done when
 
-- `herdr-app check ~/.config/herdr-app/mods/procs` passes.
+- `herdr-app check ~/.config/herdr-app/mods/run` passes.
 - A space on a repo with `herdr.procs.json` shows one row per entry, "not
   started"; `u` starts the autostart ones and the rows turn green with pids.
-- `hc ls --json` shows those terminals with labels `procs.space` and
-  `procs.name` and the `cwd` from the entry.
+- `hc ls --json` shows those terminals with labels `run.space` and
+  `run.name` and the `cwd` from the entry.
 - `x` on a running row turns it red with "exited 1 (stopped)"; `s` on it
   starts a fresh terminal and the old address is gone from `hc ls --all`.
 - A process that exits with code 2 on its own turns red with "exited 2" and

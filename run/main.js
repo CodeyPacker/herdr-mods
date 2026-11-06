@@ -1,4 +1,4 @@
-// procs: mprocs, but as a herdr popup. Put a herdr.procs.json in your repo root
+// run: mprocs, but as a herdr popup. Put a herdr.procs.json in your repo root
 // and this runs each entry as a headless herdr-core terminal you can start,
 // stop, restart and peek at without leaving the keyboard.
 //
@@ -49,8 +49,8 @@ const GUIDE = {
 };
 
 const FILE = "herdr.procs.json";
-const LABEL_SPACE = "procs.space";
-const LABEL_NAME = "procs.name";
+const LABEL_SPACE = "run.space";
+const LABEL_NAME = "run.name";
 // These do things, so they can't be hints.
 const RESERVED = "sxruoaqjk";
 const STOP_WAIT_MS = 10000;
@@ -266,7 +266,7 @@ export default class Procs extends View {
           const f = next[a];
           if (!f || f.state === "live" || f.reason === "killed" || !byAddress[a]) continue;
           const name = byAddress[a].split("/").slice(1).join("/");
-          notify({ title: `${name} exited ${f.exit_code ?? "?"}`, body: "Open Processes to see its output or restart it.", level: "error", action: { name: "mod.open", args: { name: "procs" } } });
+          notify({ title: `${name} exited ${f.exit_code ?? "?"}`, body: "Open Run to see its output or restart it.", level: "error", action: { name: "mod.open", args: { name: "run" } } });
         }
         this.wasLive = new Set(Object.entries(next).filter(([a, f]) => f.state === "live" && byAddress[a]).map(([a]) => a));
       } catch {}
@@ -433,7 +433,7 @@ export default class Procs extends View {
     openOverlay({
       kind: "dialog", width: 0.85, height: 0.8,
       layout: { type: "column", children: [
-        { type: "block", size: { px: 32 }, content: { mod: "procs", props: { peek } } },
+        { type: "block", size: { px: 32 }, content: { mod: "run", props: { peek } } },
         { type: "block", content: { terminal: it.t.address } },
       ] },
     });
@@ -451,7 +451,7 @@ export default class Procs extends View {
       run("terminal.keep", { terminal: p.address, place: "tab" });
     } else if (k === "b") {
       closeOverlay(props().overlay);
-      run("mod.open", { name: "procs" });
+      run("mod.open", { name: "run" });
     } else return;
     cx.stop_propagation();
   }
@@ -462,7 +462,7 @@ export default class Procs extends View {
     const live = /** @type {Term[]} */ (terminals()).find((x) => x.address === p.address);
     const state = live?.state === "live" ? `running · pid ${live.pid ?? "?"}` : "ended";
     return h_flex()
-      .id("procs-bar")
+      .id("run-bar")
       .track_focus(this.handle)
       .on_key_down((e, cx) => this.barKey(e, cx))
       .on_click(() => this.handle.focus())
@@ -525,7 +525,7 @@ export default class Procs extends View {
     else if (k === "shift-x") {
       const s = it?.s;
       const n = items.filter((x) => x.kind === "proc" && x.s === s && x.state === "running").length;
-      if (s && n) openOverlay({ mod: "confirm", kind: "dialog", width: 380, props: { title: `Stop ${n} process${n > 1 ? "es" : ""} in ${s.name}?`, detail: "Each one is killed. Their output stays until started again.", command: { name: "procs.stopall", args: {} } } });
+      if (s && n) openOverlay({ mod: "confirm", kind: "dialog", width: 380, props: { title: `Stop ${n} process${n > 1 ? "es" : ""} in ${s.name}?`, detail: "Each one is killed. Their output stays until started again.", command: { name: "run.stopall", args: {} } } });
     }
     else if (!proc) return;
     // Ignore s/x/r while something's already happening to that row.
@@ -587,7 +587,7 @@ export default class Procs extends View {
     const listH = Math.min(520, est);
 
     return v_flex()
-      .id("procs")
+      .id("run")
       .track_focus(this.handle)
       .on_key_down((e, cx) => this.key(e, cx))
       .w_full()
@@ -598,11 +598,11 @@ export default class Procs extends View {
       .text_size(13)
       .child(
         h_flex().items_center().gap(10)
-          .child(div().flex_1().text_size(15).font_semibold().text_color(t.foreground).child(this.all ? "Processes · every space" : "Processes"))
+          .child(div().flex_1().text_size(15).font_semibold().text_color(t.foreground).child(this.all ? "Run · every space" : "Run"))
           .child(div().text_size(11).text_color(t.dim).child("? help   Esc")),
       )
       .when(this.showGuide, (el) => el.child(guide(t, GUIDE)))
-      .child(v_flex().id("procs-list").h(listH).flex_none().overflow_y_scrollbar().gap(8).children(sections))
+      .child(v_flex().id("run-list").h(listH).flex_none().overflow_y_scrollbar().gap(8).children(sections))
       .when(!!this.note, (el) => el.child(div().text_size(11).text_color(t.blocked).child(this.note)))
       .child(hintLine(t, [["j/k ctrl-n/p", "move"], ["s", "start"], ["x", "stop"], ["r", "restart"], ["u", "up all"], ["shift-x", "stop all"], ["enter", "peek"], ["o", "keep as tab"], ["a", this.all ? "this space" : "all spaces"]]));
   }

@@ -2,7 +2,7 @@
 // (ctrl-a if you're a tmux person), press it, then press one more key and it
 // runs whatever ~/.config/herdr-app/leader.json says:
 //
-//   { "j": "mod.open:jump", "p": "mod.open:procs", "c": "tab.new", "x": { "command": "pane.close", "args": {} } }
+//   { "j": "mod.open:jump", "p": "mod.open:run", "c": "tab.new", "x": { "command": "pane.close", "args": {} } }
 //
 // Values look like keys.json actions: "name", "name:value", or { "command", "args" }.
 // A little box lists the mappings while it waits. Esc, an unmapped key, or the

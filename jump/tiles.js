@@ -1,6 +1,6 @@
 // Bits shared by jump and procs: hint letters, rows, space headers, the guide card.
 // A mod can only import from its own folder, so each one carries a copy of this file.
-// Edit the one in procs/ and copy it over.
+// Edit the one in run/ and copy it over.
 
 import { div, svg } from "gpui-kit";
 import { h_flex } from "gpui-base";

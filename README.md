@@ -15,7 +15,7 @@ Want fixed letters for your spaces? Put them in `~/.config/herdr-app/hints.json`
 { "spaces": { "Logos": "l", "Component Library": "c" } }
 ```
 
-## procs
+## run
 
 mprocs, but inside Herdr. Drop a `herdr.procs.json` in your repo:
 
@@ -30,7 +30,7 @@ mprocs, but inside Herdr. Drop a `herdr.procs.json` in your repo:
 
 Open the popup, hit `u`, everything starts in the background. Each row has a letter.
 
-![procs](procs/preview.png)
+![run](run/preview.png)
 
 `s` start, `x` stop, `r` restart, `enter` to watch the output, `o` to turn it into a tab, `a` to see every space. Things that crash go red and you get a toast.
 
@@ -41,7 +41,7 @@ A tmux-style prefix key. Press `ctrl-a`, then one more key.
 Mappings live in `~/.config/herdr-app/leader.json`. Copy `leader/leader.example.json` there to start:
 
 ```json
-{ "w": "mod.open:jump", "p": "mod.open:procs", "c": "tab.new" }
+{ "w": "mod.open:jump", "p": "mod.open:run", "c": "tab.new" }
 ```
 
 Don't want the little box? `{ "show": false, "keys": { ... } }`.
@@ -59,6 +59,6 @@ Each folder has a `RECIPE.md` with the full details, including what it runs on y
 
 ## Hacking
 
-Mods hot reload on save. `jump/tiles.js` and `procs/tiles.js` are the same file;
-edit the one in `procs/` and copy it over. Type-check with
-`npx -p typescript tsc -p procs/jsconfig.json`.
+Mods hot reload on save. `jump/tiles.js` and `run/tiles.js` are the same file;
+edit the one in `run/` and copy it over. Type-check with
+`npx -p typescript tsc -p run/jsconfig.json`.

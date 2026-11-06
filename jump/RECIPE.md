@@ -38,7 +38,7 @@ Bottom line: the key hints in accent/dim pairs.
 ## Built from
 
 - `mods/jump/main.js` and `mods/jump/tiles.js` (the same tiles file as the
-  Procs mod: hints, rows, headers, navigation, help box).
+  Run mod: hints, rows, headers, navigation, help box).
 - `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 760, "height": 0.75 } }`.
 - Data: `spaces()` for spaces and tabs, `panes()` for what each tab runs
   (`program.name`, or `mod`), `agents()` for status, `shared("space.colors")`
