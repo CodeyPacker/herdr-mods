@@ -40,7 +40,7 @@ Herdr, but every panel is its own rounded card on a lavender-grey canvas, purple
 
 ![cupertino](cupertino/preview.png)
 
-A layout plus two theme files, no mods. It follows your system appearance. `ctrl-shift-l` cycles back to your old layout.
+A layout, two theme files and three one-line mod clones that round off the sidebar lists and pane header. It follows your system appearance. `ctrl-shift-l` cycles back to your old layout.
 
 ## Install
 
@@ -65,7 +65,7 @@ cupertino:
 ```text
 Read ~/.config/herdr-app/AGENTS.md, then add this layout:
 https://github.com/CodeyPacker/herdr-mods/tree/main/cupertino
-Copy its themes/ folder into ~/.config/herdr-app/themes/ too, then switch to it.
+Copy its themes/ folder into ~/.config/herdr-app/themes/ and its mods/ into ~/.config/herdr-app/mods/, then switch to it.
 ```
 
 ### By hand
@@ -79,7 +79,7 @@ herdr-app check ~/.config/herdr-app/mods/jump
 Then add the key from that mod's `keys.json` to your `~/.config/herdr-app/keys.json`.
 Each folder has a `RECIPE.md` with the full details, including what it runs on your machine.
 
-For cupertino, copy `cupertino/layouts/cupertino.json` and `cupertino/layouts/cupertino.svg` into `~/.config/herdr-app/layouts/`, both files from `cupertino/themes/` into `~/.config/herdr-app/themes/`, then:
+For cupertino, copy `cupertino/layouts/cupertino.json` and `cupertino/layouts/cupertino.svg` into `~/.config/herdr-app/layouts/`, both files from `cupertino/themes/` into `~/.config/herdr-app/themes/`, the three folders from `cupertino/mods/` into `~/.config/herdr-app/mods/`, then:
 
 ```sh
 herdr-app do layout.switch '{"name":"cupertino"}'
