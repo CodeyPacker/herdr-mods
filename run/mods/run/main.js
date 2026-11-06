@@ -187,8 +187,9 @@ export default class Procs extends View {
     /** @type {string[] | null} */
     this.shell = null;
     cx.spawn(async (cx) => { this.shell = await findShell(); cx.notify(); });
-    // Show the guide on first open. ? toggles it after that.
+    // Show the guide on the first run only. ? or the help button brings it back.
     this.showGuide = localStorage.getItem("seen") !== "1";
+    localStorage.setItem("seen", "1");
     /** @type {Set<string>} addresses seen live at the last refresh, for the exit toast */
     this.wasLive = new Set();
     this.handle.focus();
@@ -503,7 +504,6 @@ export default class Procs extends View {
     if (r === "close") { this.close(); cx.stop_propagation(); return; }
     if (isHelpKey(e)) {
       this.showGuide = !this.showGuide;
-      localStorage.setItem("seen", "1");
       cx.stop_propagation();
       cx.notify();
       return;
@@ -599,11 +599,20 @@ export default class Procs extends View {
       .child(
         h_flex().items_center().gap(10)
           .child(div().flex_1().text_size(15).font_semibold().text_color(t.foreground).child(this.all ? "Run · every space" : "Run"))
-          .child(div().text_size(11).text_color(t.dim).child("? help   Esc")),
+          .child(div().text_size(11).text_color(t.dim).child("Esc")),
       )
       .when(this.showGuide, (el) => el.child(guide(t, GUIDE)))
       .child(v_flex().id("run-list").h(listH).flex_none().overflow_y_scrollbar().gap(8).children(sections))
       .when(!!this.note, (el) => el.child(div().text_size(11).text_color(t.blocked).child(this.note)))
-      .child(hintLine(t, [["j/k ctrl-n/p", "move"], ["s", "start"], ["x", "stop"], ["r", "restart"], ["u", "up all"], ["shift-x", "stop all"], ["enter", "peek"], ["o", "keep as tab"], ["a", this.all ? "this space" : "all spaces"]]));
+      .child(
+        h_flex().items_end().gap(12)
+          .child(div().flex_1().child(hintLine(t, [["j/k ctrl-n/p", "move"], ["s", "start"], ["x", "stop"], ["r", "restart"], ["u", "up all"], ["shift-x", "stop all"], ["enter", "peek"], ["o", "keep as tab"], ["a", this.all ? "this space" : "all spaces"]])))
+          .child(
+            h_flex().id("run-help").flex_none().items_center().gap(4).cursor_pointer().text_size(11)
+              .on_click((_e, cx) => { this.showGuide = !this.showGuide; cx.notify(); })
+              .child(div().text_color(t.accent).font_semibold().child("?"))
+              .child(div().text_color(t.dim).child("help")),
+          ),
+      );
   }
 }

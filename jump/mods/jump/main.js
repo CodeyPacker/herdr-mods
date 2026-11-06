@@ -45,8 +45,9 @@ export default class Jump extends View {
     /** @type {HintConfig} */
     this.hintConfig = { spaces: {}, tabs: {} };
     cx.spawn(async (cx) => { this.hintConfig = await readHintConfig(readTextFile, appHome); cx.notify(); });
-    // Show the guide on first open. ? toggles it after that.
+    // Show the guide on the first run only. ? or the help button brings it back.
     this.showGuide = localStorage.getItem("seen") !== "1";
+    localStorage.setItem("seen", "1");
     /** @type {FocusHandle} */
     this.handle = cx.focus_handle();
     this.handle.focus();
@@ -101,7 +102,6 @@ export default class Jump extends View {
     if (r === "close") { this.close(); cx.stop_propagation(); return; }
     if (isHelpKey(e)) {
       this.showGuide = !this.showGuide;
-      localStorage.setItem("seen", "1");
       cx.stop_propagation();
       cx.notify();
       return;
@@ -171,10 +171,19 @@ export default class Jump extends View {
       .child(
         h_flex().items_center().gap(10)
           .child(div().flex_1().text_size(15).font_semibold().text_color(t.foreground).child("Go to…"))
-          .child(div().text_size(11).text_color(t.dim).child("? help   Esc")),
+          .child(div().text_size(11).text_color(t.dim).child("Esc")),
       )
       .when(this.showGuide, (el) => el.child(guide(t, GUIDE)))
       .child(v_flex().id("jump-list").h(listH).flex_none().overflow_y_scrollbar().gap(8).children(sections))
-      .child(hintLine(t, [["letter", "go"], ["j/k ctrl-n/p", "move"], ["enter", "go"], ["t", "new tab"], ["n", "new space"], ["x", "close tab"]]));
+      .child(
+        h_flex().items_end().gap(12)
+          .child(div().flex_1().child(hintLine(t, [["letter", "go"], ["j/k ctrl-n/p", "move"], ["enter", "go"], ["t", "new tab"], ["n", "new space"], ["x", "close tab"]])))
+          .child(
+            h_flex().id("jump-help").flex_none().items_center().gap(4).cursor_pointer().text_size(11)
+              .on_click((_e, cx) => { this.showGuide = !this.showGuide; cx.notify(); })
+              .child(div().text_color(t.accent).font_semibold().child("?"))
+              .child(div().text_color(t.dim).child("help")),
+          ),
+      );
   }
 }

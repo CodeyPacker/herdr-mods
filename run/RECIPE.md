@@ -10,10 +10,10 @@ them with single keys. The mprocs idea, with letter hints instead of a list.
 
 A 760 px popup at the top of the window, popover background, 18 px padding.
 Top line: "Processes" (15 px semibold), or "Processes · every space" when
-showing all; at the right "? help   Esc" in the dim color.
+showing all; at the right "Esc" in the dim color.
 
-On first open, a help box (raised background, 1 px border, 12 px text) with
-five lines explaining the keys. `?` hides and shows it again.
+On the first run only, a help box (raised background, 1 px border, 12 px text) with
+five lines explaining the keys. `?` or the help button hides and shows it again.
 
 Then one section per space: a header row with the space's colored avatar
 (18 px square, the first letter), its name in the muted color, and its hint
@@ -23,7 +23,8 @@ badge at the right edge. The selected row has the theme's `selected`
 background. A space with no `herdr.procs.json` says so under its header;
 one with nothing running says "nothing running · u starts N".
 
-Bottom line: the key hints in accent/dim pairs.
+Bottom line: the key hints in accent/dim pairs, and "? help" at the right, which
+clicks to show or hide the help box.
 
 ## How it behaves
 

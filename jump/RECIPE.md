@@ -8,9 +8,9 @@ its letter. tmux's prefix+w with vimium's hints, in place of the built-in picker
 ## What you see
 
 A 760 px popup at the top of the window, popover background, 18 px padding.
-Top line: "Go to…" (15 px semibold) and "? help   Esc" at the right in the
-dim color. On first open a help box (raised background, 1 px border, 12 px
-text) with four lines; `?` hides and shows it again.
+Top line: "Go to…" (15 px semibold) and "Esc" at the right in the
+dim color. On the first run only, a help box (raised background, 1 px border, 12 px
+text) with four lines; `?` or the help button hides and shows it again.
 
 One section per space: a header row with the space's colored avatar (18 px
 square, its first letter), its name in the muted color, and its hint badge
@@ -20,7 +20,8 @@ name, what runs in it in 11 px dim text (program names joined by " · ", or
 background. After a 1 px top border, two more rows: "new tab · in this
 space" with the letter `t`, and "new space · on this computer" with `n`.
 
-Bottom line: the key hints in accent/dim pairs.
+Bottom line: the key hints in accent/dim pairs, and "? help" at the right, which
+clicks to show or hide the help box.
 
 ## How it behaves
 
