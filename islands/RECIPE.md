@@ -3,7 +3,7 @@
 Herdr's default window, but every panel is its own rounded card floating on
 the canvas with 12 px of air around it, like IntelliJ's Islands look. No
 colors of its own: it takes whatever theme you pick, so it works with
-graphite, paper, or a theme pack like [cupertino](../cupertino). Six small
+graphite, paper, or any `themes/*.json` you have. Six small
 mod clones round off the shipped bars and lists so nothing pokes out of a
 card, and turn the tab bar's controls into pills.
 
@@ -63,8 +63,8 @@ terminals. Nothing is set, so settings.json still wins there.
 
 - It has no `theme`, so it shows settings.json's theme, else graphite in
   dark mode and paper in light. The theme picker (Settings > Look, or
-  `app.theme {name}`) sticks to this layout, so pick `cupertino-light` and
-  `cupertino-dark` once and it stays that way.
+  `app.theme {name}`) sticks to this layout, so pick a theme once and it
+  stays that way.
 - Agent status comes from the shipped mods' code, in the theme's colors: a
   spinner for working, a `blocked` badge when one needs you, a `done` dot
   until you look, `dim` when idle. Space and tab rows carry the dot, the

@@ -42,14 +42,6 @@ Herdr, but every panel is its own rounded card on the canvas. IntelliJ Islands, 
 
 A layout plus six small mod clones that round off the shipped bars and lists and turn the tab bar controls into pills.
 
-## cupertino
-
-Apple-ish colors: lavender-grey canvas, white panels, purple accent, light and dark.
-
-![cupertino](cupertino/preview.png)
-
-Two theme files and a copy of the stock layout that preselects them. Pick the themes on islands and you have both.
-
 ## Install
 
 ### Tell your agent
@@ -75,14 +67,6 @@ Read ~/.config/herdr-app/AGENTS.md, then add this layout:
 https://github.com/CodeyPacker/herdr-mods/tree/main/islands
 ```
 
-cupertino:
-
-```text
-Read ~/.config/herdr-app/AGENTS.md, then add this layout:
-https://github.com/CodeyPacker/herdr-mods/tree/main/cupertino
-Copy its themes/ folder into ~/.config/herdr-app/themes/ too, then switch to it.
-```
-
 ### By hand
 
 Copy a mod's `mods/<name>` folder (or symlink it) into `~/.config/herdr-app/mods/` and check it loads:
@@ -94,13 +78,12 @@ herdr-app check ~/.config/herdr-app/mods/jump
 Then add the key from that mod's `keys.json` to your `~/.config/herdr-app/keys.json`.
 Each folder has a `RECIPE.md` with the full details, including what it runs on your machine.
 
-For islands, copy `islands/layouts/*` into `~/.config/herdr-app/layouts/` and every folder from `islands/mods/` into `~/.config/herdr-app/mods/`. For cupertino, copy `cupertino/layouts/*` into `layouts/` and both files from `cupertino/themes/` into `~/.config/herdr-app/themes/`. Then:
+For islands, copy `islands/layouts/*` into `~/.config/herdr-app/layouts/` and every folder from `islands/mods/` into `~/.config/herdr-app/mods/`. Then:
 
 ```sh
 herdr-app do layout.switch '{"name":"islands"}'
 ```
 
-Both at once: switch to islands, then `herdr-app do app.theme '{"name":"cupertino-dark"}'` and again with `cupertino-light`. The pick sticks to that layout.
 
 Want a different accent on the active tab? That is the theme's accent, so `"colors": { "accent": "#20a68e" }` in `~/.config/herdr-app/settings.json` changes it on any theme.
 
