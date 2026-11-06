@@ -51,12 +51,9 @@ Right of that, the work column, 12 px between its three pieces:
   `accent`, and the agents dot `done` while agents run, `blocked` when one
   needs you, `dim` with none.
 
-The popups the layout can reach match the cards: the search picker (the
-sidebar's magnifier), the `+` menu and the right-click menu on a tab, a
-space or a terminal all draw a `popover` card with 14 px corners and a 1 px
-`border`, no shadow. Herdr's own dialogs (the command palette,
-settings, welcome, confirm, prompt, toasts, the help sheet) keep Herdr's
-frame: a layout can't reach them.
+Popups and dialogs (search, the `+` menu, right-click menus, the command
+palette, settings, confirm, prompt, toasts, any mod's popup) keep Herdr's
+own frame: 4 px corners, 1 px border, shadow. See Watch out for why.
 
 Type is Herdr's own: Geist for the panels, JetBrains Mono 14 px for
 terminals. Nothing is set, so settings.json still wins there.
