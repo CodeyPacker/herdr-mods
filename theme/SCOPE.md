@@ -146,7 +146,7 @@ One repo can hold mods and layouts side by side (herdr-layout-examples does).
 - Q2. Do the shipped mods look right as-is? Tabs mod is 42px with 7px pills, status
   bar 28px. If they fight the look, clone `tabs` and `pane` and point the layout at
   the clones. Decide from the first screenshot, not up front.
-  **Answer:** Yes, as shipped. The 42px tab bar and 28px status bar sit flat on the canvas between the cards and read fine in both appearances. No mod clones, no `mods/` folder.
+  **Answer:** Sizes yes, corners no. The 42px tab bar and 28px status bar sit flat on the canvas and read fine. But Herdr doesn't clip a mod to its node's radius, so `spaces`, `agents` and the `pane` header painted square corners over the cards. Cloned all three as `cupertino-*` with one `.rounded(13).overflow_hidden()` (header: `.rounded_t(13)`) on the root. `files` and `changes` already round themselves.
 - Q3. The canvas gradient is one value for both appearances. Either two layout
   files (`cupertino-light`, `cupertino-dark`), or a flat `"background": "canvas"`
   and give up the wash. Lean flat unless the gradient is what sells it.
