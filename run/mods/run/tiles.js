@@ -66,13 +66,14 @@ export const SPIN = "mods/workspace-chrome/spinner.svg";
  * @param {string | null} status working | blocked | done | idle | running | exited | null
  */
 export function glyph(t, status) {
-  if (status === "working") return svg(SPIN).size(12).flex_none().text_color(t.working).spin(900);
+  // Skips a space's avatar and gap, so the glyph lines up with space names and the row reads as indented.
+  if (status === "working") return h_flex().w(32).pl(26).flex_none().child(svg(SPIN).size(12).flex_none().text_color(t.working).spin(900));
   // Running green, dead red. Agent statuses use whatever the theme says.
   /** @type {Record<string, Color>} */
   const tone = { blocked: t.blocked, done: t.done, idle: t.idle, running: t.ansi2, exited: t.ansi1 };
   const color = tone[status ?? ""] ?? t.dim;
   const ch = status === "idle" ? "○" : status ? "●" : "·";
-  return div().w(12).flex_none().text_color(color).child(ch);
+  return h_flex().w(32).pl(26).flex_none().text_color(color).child(ch);
 }
 
 /**
@@ -105,9 +106,9 @@ export const ROW_H = 30;
 /**
  * A row: glyph, title, detail, and the hint at the end. `on` is the active one.
  * @param {Theme} t
- * @param {{ id: string, hint: string, typed: string, pinned?: boolean, on: boolean, status: string | null, title: string, detail?: string, onClick: Click }} r
+ * @param {{ id: string, hint: string, typed: string, pinned?: boolean, on: boolean, status: string | null, flat?: boolean, title: string, detail?: string, onClick: Click }} r
  */
-export function tile(t, { id, hint, typed, pinned, on, status, title, detail, onClick }) {
+export function tile(t, { id, hint, typed, pinned, on, status, flat = false, title, detail, onClick }) {
   return h_flex()
     .id(id)
     .w_full()
@@ -121,7 +122,7 @@ export function tile(t, { id, hint, typed, pinned, on, status, title, detail, on
     .cursor_pointer()
     .hover((s) => s.bg(on ? t.selected : t.hover))
     .on_click(onClick)
-    .child(glyph(t, status))
+    .when(!flat, (el) => el.child(glyph(t, status)))
     .child(div().flex_none().max_w(260).truncate().text_color(t.foreground).when(on, (d) => d.font_semibold()).child(title))
     .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(detail ?? ""))
     .child(badge(t, hint, typed, pinned));
@@ -130,20 +131,22 @@ export function tile(t, { id, hint, typed, pinned, on, status, title, detail, on
 /**
  * A space header: avatar letter, name, and its hint.
  * @param {Theme} t
- * @param {{ id: string, hint: string, typed: string, pinned?: boolean, name: string, color: Color, onClick: Click }} h
+ * @param {{ id: string, hint: string, typed: string, pinned?: boolean, on?: boolean, name: string, color: Color, onClick: Click }} h
  */
-export function header(t, { id, hint, typed, pinned, name, color, onClick }) {
+export function header(t, { id, hint, typed, pinned, on = false, name, color, onClick }) {
   return h_flex()
     .id(id)
     .w_full()
+    .h(ROW_H)
+    .flex_none()
     .px(10)
-    .pt(8)
-    .pb(2)
     .gap(8)
     .items_center()
     .text_size(11)
     .font_semibold()
     .text_color(t.dim)
+    .rounded(7)
+    .when(on, (el) => el.bg(t.selected))
     .cursor_pointer()
     .on_click(onClick)
     .child(h_flex().size(18).rounded(5).bg(color).items_center().justify_center().text_size(10.5).font_bold().text_color("#ffffff").child([...name][0]?.toUpperCase() ?? "?"))

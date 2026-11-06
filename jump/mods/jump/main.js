@@ -5,7 +5,7 @@
 // ~/.config/herdr-app/hints.json (see tiles.js).
 
 import { View, div } from "gpui-kit";
-import { v_flex, h_flex } from "gpui-base";
+import { v_flex, h_flex, InputState, Input } from "gpui-base";
 import { spaces, panes, agents, run, props, closeOverlay, shared, readTextFile, appHome } from "herdr";
 import { colors, hints, tile, header, navigate, spaceColor, hintLine, guide, isHelpKey, readHintConfig, ROW_H } from "./tiles.js";
 
@@ -27,13 +27,14 @@ const GUIDE = {
     ["letter", "go there. A space's letter opens its active tab."],
     ["j  k", "move, then enter to go"],
     ["x", "close the selected tab"],
+    ["r", "rename the selected tab or space"],
     ["t  n", "new tab here, new space"],
     ["", "Pick your own letters in ~/.config/herdr-app/hints.json. They show in color."],
   ],
 };
 
 // These do things, so they can't be hints.
-const RESERVED = "tnqjkx";
+const RESERVED = "tnqjkxr";
 
 export default class Jump extends View {
   /** @param {unknown} _props @param {Context} cx */
@@ -42,6 +43,8 @@ export default class Jump extends View {
     this.at = null;
     /** @type {string} */
     this.typed = "";
+    /** @type {{ it: SpaceItem | TabItem, input: ReturnType<typeof InputState.new> } | null} */
+    this.renaming = null;
     /** @type {HintConfig} */
     this.hintConfig = { spaces: {}, tabs: {} };
     cx.spawn(async (cx) => { this.hintConfig = await readHintConfig(readTextFile, appHome); cx.notify(); });
@@ -91,8 +94,37 @@ export default class Jump extends View {
     else if (it.kind === "new-space") run("space.new");
   }
 
+  /** Opens the name box for a tab or space. @param {SpaceItem | TabItem} it @param {Context} cx */
+  startRename(it, cx) {
+    const name = it.kind === "tab" ? it.tab.name : it.s.name;
+    const input = InputState.new({ value: name });
+    input.set_selected_range({ start: 0, end: name.length });
+    input.on("submit", (_e, cx) => this.finishRename(true, cx));
+    input.focus();
+    this.renaming = { it, input };
+    cx.notify();
+  }
+
+  /** Closes the name box, saving when asked. The popup stays open. @param {boolean} save @param {Context} cx */
+  finishRename(save, cx) {
+    if (!this.renaming) return;
+    const { it, input } = this.renaming;
+    this.renaming = null;
+    if (save) {
+      if (it.kind === "tab") run("tab.rename", { id: it.tab.id, name: input.value() });
+      else run("space.rename", { id: it.s.id, name: input.value() });
+    }
+    this.handle.focus();
+    cx.notify();
+  }
+
   /** @param {KeyEvent} e @param {Context} cx */
   key(e, cx) {
+    // While the name box is open, every key but Esc belongs to it.
+    if (this.renaming) {
+      if (e.key === "escape") { this.finishRename(false, cx); cx.stop_propagation(); }
+      return;
+    }
     const items = this.items();
     /** @type {import("./tiles.js").NavState} */
     const state = { at: this.at ?? 0, typed: this.typed };
@@ -110,9 +142,11 @@ export default class Jump extends View {
     if (r) { cx.stop_propagation(); cx.notify(); return; }
     const it = items[this.at];
     if (e.keystroke === "x" && it?.kind === "tab") {
-      this.close();
-      run("tab.close", { id: it.tab.id });
-    } else if (e.keystroke === "q") this.close();
+      // Stay open: the row drops out when the live data changes. Closing the active tab can move focus, so take it back.
+      run("tab.close", { id: it.tab.id, confirmed: true });
+      cx.timer.after(150, () => this.handle.focus());
+    } else if (e.keystroke === "r" && (it?.kind === "tab" || it?.kind === "space")) this.startRename(it, cx);
+    else if (e.keystroke === "q") this.close();
     else return;
     cx.stop_propagation();
   }
@@ -127,13 +161,13 @@ export default class Jump extends View {
     const at = this.at;
     const space = /** @type {Record<string, string> | undefined} */ (shared("space.colors"));
     // gpui elements are single-use, so collect each space's rows first and build the group after.
-    /** @type {{ it: SpaceItem, tiles: ReturnType<typeof tile>[] }[]} */
+    /** @type {{ it: SpaceItem, on: boolean, tiles: ReturnType<typeof tile>[] }[]} */
     const groups = [];
     /** @type {ReturnType<typeof tile>[]} */
     const extras = [];
     items.forEach((it, i) => {
       const on = i === at;
-      if (it.kind === "space") { groups.push({ it, tiles: [] }); return; }
+      if (it.kind === "space") { groups.push({ it, on, tiles: [] }); return; }
       if (it.kind === "tab") {
         groups[groups.length - 1].tiles.push(tile(t, {
           id: `j-${it.tab.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, status: it.status,
@@ -143,14 +177,14 @@ export default class Jump extends View {
         return;
       }
       extras.push(tile(t, {
-        id: `j-${it.kind}`, hint: it.hint, typed: this.typed, on, status: null,
+        id: `j-${it.kind}`, hint: it.hint, typed: this.typed, on, status: null, flat: true,
         title: it.kind === "new-tab" ? "new tab" : "new space", detail: it.kind === "new-tab" ? "in this space" : "on this computer",
         onClick: () => this.go(it),
       }));
     });
-    const sections = groups.map(({ it, tiles }) =>
+    const sections = groups.map(({ it, on, tiles }) =>
       v_flex().gap(2)
-        .child(header(t, { id: `jh-${it.s.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, name: it.s.name, color: spaceColor(t, it.s, space), onClick: () => this.go(it) }))
+        .child(header(t, { id: `jh-${it.s.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, name: it.s.name, color: spaceColor(t, it.s, space), onClick: () => this.go(it) }))
         .children(tiles),
     );
     sections.push(v_flex().gap(2).pt(8).border_t(1).border_color(t.border).children(extras));
@@ -171,13 +205,18 @@ export default class Jump extends View {
       .child(
         h_flex().items_center().gap(10)
           .child(div().flex_1().text_size(15).font_semibold().text_color(t.foreground).child("Jump to…"))
-          .child(div().text_size(11).text_color(t.dim).child("Esc")),
+          .child(div().pr(10).text_size(11).text_color(t.dim).child("Esc")),
       )
       .when(this.showGuide, (el) => el.child(guide(t, GUIDE)))
+      .when(!!this.renaming, (el) => el.child(
+        h_flex().items_center().gap(10)
+          .child(div().flex_none().text_size(11).text_color(t.dim).child(this.renaming?.it.kind === "space" ? "Rename space" : "Rename tab"))
+          .child(Input.new(this.renaming?.input).flex_1().h(30).px(8).rounded(6).border_1().border_color(t.accent).bg(t.background).text_size(12.5).text_color(t.foreground)),
+      ))
       .child(v_flex().id("jump-list").h(listH).flex_none().overflow_y_scrollbar().gap(8).children(sections))
       .child(
         h_flex().items_end().gap(12)
-          .child(div().flex_1().child(hintLine(t, [["letter", "go"], ["j/k ctrl-n/p", "move"], ["enter", "go"], ["t", "new tab"], ["n", "new space"], ["x", "close tab"]])))
+          .child(div().flex_1().child(hintLine(t, [["letter", "go"], ["j/k ctrl-n/p", "move"], ["enter", "go"], ["t", "new tab"], ["n", "new space"], ["x", "close tab"], ["r", "rename"]])))
           .child(
             h_flex().id("jump-help").flex_none().items_center().gap(4).cursor_pointer().text_size(11)
               .on_click((_e, cx) => { this.showGuide = !this.showGuide; cx.notify(); })

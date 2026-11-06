@@ -8,7 +8,7 @@ tmux's `prefix+w`, with vimium-style letters. Press `ctrl-shift-k`, type a lette
 
 ![jump](jump/preview.png)
 
-`j`/`k` move, `enter` goes, `x` closes the selected tab, `t` new tab, `n` new space.
+`j`/`k` move, `enter` goes, `x` closes the selected tab, `r` renames the selected tab or space, `t` new tab, `n` new space.
 Want fixed letters for your spaces? Put them in `~/.config/herdr-app/hints.json`:
 
 ```json
