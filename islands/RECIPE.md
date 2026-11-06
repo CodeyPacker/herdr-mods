@@ -51,6 +51,13 @@ Right of that, the work column, 12 px between its three pieces:
   `accent`, and the agents dot `done` while agents run, `blocked` when one
   needs you, `dim` with none.
 
+The popups the layout can reach match the cards: the search picker (the
+sidebar's magnifier), the `+` menu and the right-click menu on a tab, a
+space or a terminal all draw a `popover` card with 14 px corners, a 1 px
+`border` and a large shadow. Herdr's own dialogs (the command palette,
+settings, welcome, confirm, prompt, toasts, the help sheet) keep Herdr's
+frame: a layout can't reach them.
+
 Type is Herdr's own: Geist for the panels, JetBrains Mono 14 px for
 terminals. Nothing is set, so settings.json still wins there.
 
@@ -92,6 +99,19 @@ terminals. Nothing is set, so settings.json still wins there.
   - `workspace-status`: its `label(icon, text)` helper takes a third `color`
     for the icon (`t.working` for the machine, `t.accent` for the branch), and
     the agents dot is `needs > 0 ? t.blocked : list.length > 0 ? t.done : t.dim`.
+- `mods/islands-picker`, `mods/islands-new-menu`, `mods/islands-menu`:
+  `mod.clone` of the shipped `picker`, `new-menu` and `menu`. Each root
+  gets `.rounded(14).overflow_hidden().border_1().border_color(t.border).shadow_lg()`
+  right after its `.bg(t.popover)`, and opens with `frame: "none"` so Herdr
+  draws no frame of its own: `islands-picker/mod.json` and
+  `islands-menu/mod.json` carry `"frame": "none"` in their `overlay` block
+  (the menu's is `{ "width": 220, "height": 260, "frame": "none" }`),
+  `islands-new-menu/mod.json` carries the same spec the `+` button passes
+  (`{ "kind": "popup", "width": 250, "height": 512, "frame": "none" }`).
+  The openers point at them: `islands-workspace-chrome`'s search button
+  runs `mod.open` with `islands-picker`; `islands-tabs` and `islands-spaces`
+  call `openOverlay` with `islands-new-menu` / `islands-menu` and
+  `frame: "none"`; the layout root has `"terminal_menu": "islands-menu"`.
 - `layouts/islands.svg`: the 160x100 picture the settings screen shows.
 
 The layout root (`row`, `titlebar: "none"`, `traffic_lights: [12, 16]`):
@@ -99,7 +119,7 @@ The layout root (`row`, `titlebar: "none"`, `traffic_lights: [12, 16]`):
 ```json
 "background": "canvas", "padding": 12, "gap": 12,
 "terminal_padding": [16, 14], "terminal_opacity": 0,
-"preview": "layouts/islands.svg"
+"terminal_menu": "islands-menu", "preview": "layouts/islands.svg"
 ```
 
 No `divider` on the root or the sidebar: the gaps do that job.
@@ -129,8 +149,8 @@ Card paint, used on six blocks: `"background": "surface", "radius": 14,
                       "position": "top", "reveal": "always" } }
 ```
 
-Shipped mods used as-is: `files`, `changes`, and everything the clones open
-(`new-menu`, `menu`, `picker`, `machine-add`). The clones run the same code
+Shipped mods used as-is: `files`, `changes`, `machine-add`, `worktree`,
+`peek`. The clones run the same code
 as their originals: nothing reaches the network or runs programs beyond what
 those already do (`git` for branch and worktree info).
 
@@ -155,6 +175,12 @@ those already do (`git` for branch and worktree info).
 - The tab bar block is 30 px with a 12 px column gap under it, which adds up
   to the stock 42 px. Making the block taller leaves the pills floating in
   empty canvas.
+- A key bound to `mod.open:picker` in keys.json still opens the shipped
+  picker with Herdr's frame. Rebind it to `mod.open:islands-picker` under a
+  `layout:islands` section if you want the rounded one from the keyboard.
+- Opening a popup by name (`mod.open`) uses its mod.json `overlay` block;
+  opening it from code uses the `openOverlay` spec. Both need
+  `frame: "none"`, or Herdr's square-ish frame comes back on that path.
 - `layout.clone` copies `main`'s click state (panel width, active panel,
   theme pick) into `layouts/.state/islands.json`. Harmless, but a theme pick
   there is what decides the colors, so that's where to look if the layout
@@ -178,4 +204,6 @@ those already do (`git` for branch and worktree info).
 - `herdr-app do app.theme '{"name":"paper"}'` recolors every card without
   touching the shape. Switching back to `main` and returning keeps the pick.
 - Clicking Files or Changes opens a third card on the right.
+- The sidebar's magnifier, the `+` button and a right-click on a tab open
+  popups with the same 14 px corners as the cards.
 - Settings > Look shows Islands with the picture from `islands.svg`.
