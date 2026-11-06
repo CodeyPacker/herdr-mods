@@ -136,6 +136,20 @@ Publish: the repo already has the `herdr-mod` topic. Add `herdr-layout` too
 (`gh repo edit --add-topic herdr-layout`). herdr.dev picks it up within the hour.
 One repo can hold mods and layouts side by side (herdr-layout-examples does).
 
+## Split (2026-11-06)
+
+The look turned out to be two things, so it ships as two folders:
+
+- `islands/`: the card layout (IntelliJ Islands style) plus six mod clones. No
+  `theme` of its own, so it takes whatever the picker says.
+- `cupertino/`: the two theme files plus a copy of the stock `main` layout
+  with them preselected. No mods.
+
+Only one layout shows at a time, but a theme pick sticks per layout, so
+islands + cupertino is `layout.switch islands` then `app.theme cupertino-dark`
+and `cupertino-light`. The `cupertino/` folder is what this scope was for; the
+card structure grew out of the Q2 answer.
+
 ## Open questions
 
 - Q1. Does an agent following AGENTS.md's install steps copy `themes/`? The steps

@@ -34,13 +34,21 @@ Press `ctrl-shift-r`, hit `u`, everything starts in the background. Each row has
 
 `s` start, `x` stop, `r` restart, `enter` to watch the output, `o` to turn it into a tab, `a` to see every space. Things that crash go red and you get a toast.
 
+## islands
+
+Herdr, but every panel is its own rounded card on the canvas. IntelliJ Islands, basically. Takes whatever theme you pick.
+
+![islands](islands/preview.png)
+
+A layout plus six small mod clones that round off the shipped bars and lists and turn the tab bar controls into pills. The screenshot has cupertino picked.
+
 ## cupertino
 
-Herdr, but every panel is its own rounded card on a lavender-grey canvas, purple accent, light and dark. Islands, basically.
+Apple-ish colors: lavender-grey canvas, white panels, purple accent, light and dark.
 
 ![cupertino](cupertino/preview.png)
 
-A layout, two theme files and six small mod clones that round off the shipped bars and lists and turn the tab bar controls into pills. It follows your system appearance. `ctrl-shift-l` cycles back to your old layout.
+Two theme files and a copy of the stock layout that preselects them. Pick the themes on islands and you have both.
 
 ## Install
 
@@ -60,12 +68,19 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod:
 https://github.com/CodeyPacker/herdr-mods/tree/main/run
 ```
 
+islands:
+
+```text
+Read ~/.config/herdr-app/AGENTS.md, then add this layout:
+https://github.com/CodeyPacker/herdr-mods/tree/main/islands
+```
+
 cupertino:
 
 ```text
 Read ~/.config/herdr-app/AGENTS.md, then add this layout:
 https://github.com/CodeyPacker/herdr-mods/tree/main/cupertino
-Copy its themes/ folder into ~/.config/herdr-app/themes/ and its mods/ into ~/.config/herdr-app/mods/, then switch to it.
+Copy its themes/ folder into ~/.config/herdr-app/themes/ too, then switch to it.
 ```
 
 ### By hand
@@ -79,11 +94,13 @@ herdr-app check ~/.config/herdr-app/mods/jump
 Then add the key from that mod's `keys.json` to your `~/.config/herdr-app/keys.json`.
 Each folder has a `RECIPE.md` with the full details, including what it runs on your machine.
 
-For cupertino, copy `cupertino/layouts/cupertino.json` and `cupertino/layouts/cupertino.svg` into `~/.config/herdr-app/layouts/`, both files from `cupertino/themes/` into `~/.config/herdr-app/themes/`, every folder from `cupertino/mods/` into `~/.config/herdr-app/mods/`, then:
+For islands, copy `islands/layouts/*` into `~/.config/herdr-app/layouts/` and every folder from `islands/mods/` into `~/.config/herdr-app/mods/`. For cupertino, copy `cupertino/layouts/*` into `layouts/` and both files from `cupertino/themes/` into `~/.config/herdr-app/themes/`. Then:
 
 ```sh
-herdr-app do layout.switch '{"name":"cupertino"}'
+herdr-app do layout.switch '{"name":"islands"}'
 ```
+
+Both at once: switch to islands, then `herdr-app do app.theme '{"name":"cupertino-dark"}'` and again with `cupertino-light`. The pick sticks to that layout.
 
 ## Hacking
 
