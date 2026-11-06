@@ -14,7 +14,8 @@ card, and turn the tab bar's controls into pills.
 Everything sits 12 px in from the window edge on a flat `canvas` background,
 with 12 px between cards. Every card has 14 px corners and a 1 px `border`.
 Color names below are Herdr theme names: the picked theme decides the values.
-(The screenshot has the cupertino-light theme picked.)
+(The preview is a mock-up; see `preview.png` for the shape, the running
+layout for the real pixels.)
 
 Left column, 268 px wide, four `chrome` cards stacked with 12 px gaps:
 

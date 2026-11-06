@@ -40,7 +40,7 @@ Herdr, but every panel is its own rounded card on the canvas. IntelliJ Islands, 
 
 ![islands](islands/preview.png)
 
-A layout plus six small mod clones that round off the shipped bars and lists and turn the tab bar controls into pills. The screenshot has cupertino picked.
+A layout plus six small mod clones that round off the shipped bars and lists and turn the tab bar controls into pills.
 
 ## cupertino
 
