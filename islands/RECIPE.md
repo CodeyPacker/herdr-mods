@@ -99,19 +99,6 @@ terminals. Nothing is set, so settings.json still wins there.
   - `workspace-status`: its `label(icon, text)` helper takes a third `color`
     for the icon (`t.working` for the machine, `t.accent` for the branch), and
     the agents dot is `needs > 0 ? t.blocked : list.length > 0 ? t.done : t.dim`.
-- `mods/islands-picker`, `mods/islands-new-menu`, `mods/islands-menu`:
-  `mod.clone` of the shipped `picker`, `new-menu` and `menu`. Each root
-  gets `.rounded(14).overflow_hidden().border_1().border_color(t.border)`
-  right after its `.bg(t.popover)`, and opens with `frame: "none"` so Herdr
-  draws no frame of its own: `islands-picker/mod.json` and
-  `islands-menu/mod.json` carry `"frame": "none"` in their `overlay` block
-  (the menu's is `{ "width": 220, "height": 260, "frame": "none" }`),
-  `islands-new-menu/mod.json` carries the same spec the `+` button passes
-  (`{ "kind": "popup", "width": 250, "height": 512, "frame": "none" }`).
-  The openers point at them: `islands-workspace-chrome`'s search button
-  runs `mod.open` with `islands-picker`; `islands-tabs` and `islands-spaces`
-  call `openOverlay` with `islands-new-menu` / `islands-menu` and
-  `frame: "none"`; the layout root has `"terminal_menu": "islands-menu"`.
 - `layouts/islands.svg`: the 160x100 picture the settings screen shows.
 
 The layout root (`row`, `titlebar: "none"`, `traffic_lights: [12, 16]`):
@@ -119,7 +106,7 @@ The layout root (`row`, `titlebar: "none"`, `traffic_lights: [12, 16]`):
 ```json
 "background": "canvas", "padding": 12, "gap": 12,
 "terminal_padding": [16, 14], "terminal_opacity": 0,
-"terminal_menu": "islands-menu", "preview": "layouts/islands.svg"
+"preview": "layouts/islands.svg"
 ```
 
 No `divider` on the root or the sidebar: the gaps do that job.
@@ -149,8 +136,8 @@ Card paint, used on six blocks: `"background": "surface", "radius": 14,
                       "position": "top", "reveal": "always" } }
 ```
 
-Shipped mods used as-is: `files`, `changes`, `machine-add`, `worktree`,
-`peek`. The clones run the same code
+Shipped mods used as-is: `files`, `changes`, and everything the clones open
+(`picker`, `new-menu`, `menu`, `machine-add`, `worktree`). The clones run the same code
 as their originals: nothing reaches the network or runs programs beyond what
 those already do (`git` for branch and worktree info).
 
@@ -175,15 +162,22 @@ those already do (`git` for branch and worktree info).
 - The tab bar block is 30 px with a 12 px column gap under it, which adds up
   to the stock 42 px. Making the block taller leaves the pills floating in
   empty canvas.
-- A key bound to `mod.open:picker` in keys.json still opens the shipped
-  picker with Herdr's frame. Rebind it to `mod.open:islands-picker` under a
-  `layout:islands` section if you want the rounded one from the keyboard.
-- Don't put a `shadow_*` on a frame-less popup's root. Herdr clips the mod
-  to the popup's bounds, so the shadow shows on whichever sides have spare
-  room (the picker's bottom, nothing else) and reads like a broken border.
-- Opening a popup by name (`mod.open`) uses its mod.json `overlay` block;
-  opening it from code uses the `openOverlay` spec. Both need
-  `frame: "none"`, or Herdr's square-ish frame comes back on that path.
+- Popups and dialogs don't get the 14 px corners. Herdr draws every
+  overlay frame itself and 0.1.13 has no layout or settings field that
+  reaches it; the pane frame's `radius` doesn't propagate either. The only
+  per-overlay hook is `frame: "none"`, which means cloning each mod that
+  opens a popup and painting its own frame. That was tried for the picker,
+  the `+` menu and the right-click menu and dropped: it only covers the
+  popups this layout opens itself, never Jump, Run or anyone else's mod, so
+  it isn't a theme, it's three one-offs. If Herdr grows a root field for the
+  overlay frame (radius, border, shadow), set it to 14 / `border` / none and
+  every dialog follows. Until then, leave them.
+- If you do go the `frame: "none"` route for a mod of your own: round the
+  root with `.rounded(14).overflow_hidden().border_1().border_color(t.border)`,
+  put `"frame": "none"` in both the mod.json `overlay` block and every
+  `openOverlay` call (each path has its own spec), and skip `shadow_*`:
+  Herdr clips the mod to the popup's bounds, so a shadow shows on whichever
+  sides have spare room and reads like a broken border.
 - `layout.clone` copies `main`'s click state (panel width, active panel,
   theme pick) into `layouts/.state/islands.json`. Harmless, but a theme pick
   there is what decides the colors, so that's where to look if the layout
@@ -207,6 +201,4 @@ those already do (`git` for branch and worktree info).
 - `herdr-app do app.theme '{"name":"paper"}'` recolors every card without
   touching the shape. Switching back to `main` and returning keeps the pick.
 - Clicking Files or Changes opens a third card on the right.
-- The sidebar's magnifier, the `+` button and a right-click on a tab open
-  popups with the same 14 px corners as the cards.
 - Settings > Look shows Islands with the picture from `islands.svg`.

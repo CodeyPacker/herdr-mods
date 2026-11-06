@@ -211,6 +211,5 @@
   "preview": "layouts/islands.svg",
   "padding": 12,
   "gap": 12,
-  "terminal_opacity": 0,
-  "terminal_menu": "islands-menu"
+  "terminal_opacity": 0
 }
