@@ -194,6 +194,7 @@ export default class Jump extends View {
       .p(18)
       .gap(10)
       .bg(t.popover)
+      .rounded(14).overflow_hidden().border_1().border_color(t.border) // our own frame (mod.json says frame: none); no shadow, Herdr clips it
       .text_size(13)
       .child(
         h_flex().items_center().gap(10)

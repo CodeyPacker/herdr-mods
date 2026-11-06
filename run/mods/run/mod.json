@@ -1,5 +1,5 @@
 {
   "place": "none",
   "title": "Run",
-  "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 560, "height": 0.75 }
+  "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 560, "height": 0.75, "frame": "none" }
 }
