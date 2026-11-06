@@ -42,6 +42,8 @@ Herdr, but every panel is its own rounded card on the canvas. IntelliJ Islands, 
 
 A layout plus six small mod clones that round off the shipped bars and lists and turn the tab bar controls into pills.
 
+Want a wallpaper behind the cards? Drop an image in `~/.config/herdr-app/backgrounds/` and change the layout root to `"background": { "image": "backgrounds/your.png", "fit": "cover" }`.
+
 ## Install
 
 ### Tell your agent

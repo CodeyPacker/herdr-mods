@@ -12,7 +12,8 @@ card, and turn the tab bar's controls into pills.
 ## What you see
 
 Everything sits 12 px in from the window edge on a flat `canvas` background,
-with 12 px between cards. Every card has 14 px corners and a 1 px `border`.
+with 12 px between cards. Swap the canvas for a wallpaper and it shows
+through every gap while the cards stay opaque (see How it behaves). Every card has 14 px corners and a 1 px `border`.
 Color names below are Herdr theme names: the picked theme decides the values.
 (The preview is a mock-up; see `preview.png` for the shape, the running
 layout for the real pixels.)
@@ -65,6 +66,12 @@ terminals. Nothing is set, so settings.json still wins there.
   dark mode and paper in light. The theme picker (Settings > Look, or
   `app.theme {name}`) sticks to this layout, so pick a theme once and it
   stays that way.
+- Wallpaper: put an image under `~/.config/herdr-app/` (say
+  `backgrounds/islands.png`) and change the root's `"background": "canvas"`
+  to `"background": { "image": "backgrounds/islands.png", "fit": "cover" }`.
+  It applies live. `cover` fills the window and crops, `contain` letterboxes.
+  Only the 12 px gaps, the tab bar and the margin show it; cards, pills and
+  popups keep their fills, so text stays readable on any picture.
 - Agent status comes from the shipped mods' code, in the theme's colors: a
   spinner for working, a `blocked` badge when one needs you, a `done` dot
   until you look, `dim` when idle. Space and tab rows carry the dot, the
@@ -155,8 +162,11 @@ those already do (`git` for branch and worktree info).
   its shipped original and re-apply the few lines above.
 - `shadow` on the pane frame does nothing in 0.1.13 (`sm`, `md`, `lg` all
   render the same as none). Leave it out.
-- A root `background` gradient is one value for both appearances, so a light
-  wash shows up around dark cards at night. That's why the canvas is flat.
+- A root `background` gradient or image is one value for both appearances,
+  so a light wash or a bright wallpaper shows up around dark cards at night.
+  That's why the shipped canvas is flat; a wallpaper is the person's call.
+- The layout ships no image. The path is relative to the Herdr home, so a
+  wallpaper outside it (Pictures, OneDrive) has to be copied in first.
 - The tab bar block is 30 px with a 12 px column gap under it, which adds up
   to the stock 42 px. Making the block taller leaves the pills floating in
   empty canvas.
@@ -198,5 +208,7 @@ those already do (`git` for branch and worktree info).
   pane's bottom corners included.
 - `herdr-app do app.theme '{"name":"paper"}'` recolors every card without
   touching the shape. Switching back to `main` and returning keeps the pick.
+- With the root `background` set to an image, the picture shows in the
+  margins and gaps within a second and every card is still opaque.
 - Clicking Files or Changes opens a third card on the right.
 - Settings > Look shows Islands with the picture from `islands.svg`.
