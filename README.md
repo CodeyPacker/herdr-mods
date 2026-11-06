@@ -38,8 +38,6 @@ Open the popup, hit `u`, everything starts in the background. Each row has a let
 
 A tmux-style prefix key. Press `ctrl-a`, then one more key.
 
-![leader](leader/preview.png)
-
 Mappings live in `~/.config/herdr-app/leader.json`. Copy `leader/leader.example.json` there to start:
 
 ```json

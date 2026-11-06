@@ -203,6 +203,7 @@ export default class Procs extends View {
         if (c === "stopall") await this.stopAll(cx);
         else if (c === "up") await this.up(cx);
         else if (c === "peek") this.peek(this.items()[this.at ?? 0]);
+        else if (c === "all") { this.all = !this.all; localStorage.setItem("all", this.all ? "1" : "0"); this.at = null; this.reload(cx); }
         else if (c === "focus") this.handle.focus();
         cx.notify();
       }
