@@ -40,7 +40,7 @@ Herdr, but every panel is its own rounded card on a lavender-grey canvas, purple
 
 ![cupertino](cupertino/preview.png)
 
-A layout, two theme files and three one-line mod clones that round off the sidebar lists and pane header. It follows your system appearance. `ctrl-shift-l` cycles back to your old layout.
+A layout, two theme files and six small mod clones that round off the shipped bars and lists and turn the tab bar controls into pills. It follows your system appearance. `ctrl-shift-l` cycles back to your old layout.
 
 ## Install
 
@@ -79,7 +79,7 @@ herdr-app check ~/.config/herdr-app/mods/jump
 Then add the key from that mod's `keys.json` to your `~/.config/herdr-app/keys.json`.
 Each folder has a `RECIPE.md` with the full details, including what it runs on your machine.
 
-For cupertino, copy `cupertino/layouts/cupertino.json` and `cupertino/layouts/cupertino.svg` into `~/.config/herdr-app/layouts/`, both files from `cupertino/themes/` into `~/.config/herdr-app/themes/`, the three folders from `cupertino/mods/` into `~/.config/herdr-app/mods/`, then:
+For cupertino, copy `cupertino/layouts/cupertino.json` and `cupertino/layouts/cupertino.svg` into `~/.config/herdr-app/layouts/`, both files from `cupertino/themes/` into `~/.config/herdr-app/themes/`, every folder from `cupertino/mods/` into `~/.config/herdr-app/mods/`, then:
 
 ```sh
 herdr-app do layout.switch '{"name":"cupertino"}'
