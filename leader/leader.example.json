@@ -1,0 +1,12 @@
+{
+  "c": "tab.new",
+  "n": "space.new",
+  "x": "pane.close",
+  "z": "pane.zoom",
+  "%": "pane.split:right",
+  "\"": "pane.split:down",
+  "r": "tab.rename",
+  "1": "space.select:1",
+  "2": "space.select:2",
+  "3": "space.select:3"
+}
