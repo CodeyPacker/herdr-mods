@@ -4,7 +4,7 @@ A few mods for the [Herdr](https://herdr.dev) desktop app. Grab the ones you wan
 
 ## jump
 
-tmux's `prefix+w`, with vimium-style letters. Open it, type a letter, you're on that tab.
+tmux's `prefix+w`, with vimium-style letters. Press `ctrl-shift-k`, type a letter, you're on that tab.
 
 ![jump](jump/preview.png)
 
@@ -28,23 +28,11 @@ mprocs, but inside Herdr. Drop a `herdr.procs.json` in your repo:
 }
 ```
 
-Open the popup, hit `u`, everything starts in the background. Each row has a letter.
+Press `ctrl-shift-r`, hit `u`, everything starts in the background. Each row has a letter.
 
 ![run](run/preview.png)
 
 `s` start, `x` stop, `r` restart, `enter` to watch the output, `o` to turn it into a tab, `a` to see every space. Things that crash go red and you get a toast.
-
-## leader
-
-A tmux-style prefix key. Press `ctrl-a`, then one more key.
-
-Mappings live in `~/.config/herdr-app/leader.json`. Copy `leader/mods/leader/leader.example.json` there to start:
-
-```json
-{ "j": "mod.open:jump", "r": "mod.open:run", "c": "tab.new" }
-```
-
-Don't want the little box? `{ "show": false, "keys": { ... } }`.
 
 ## Install
 

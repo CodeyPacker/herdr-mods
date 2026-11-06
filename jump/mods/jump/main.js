@@ -170,7 +170,7 @@ export default class Jump extends View {
       .text_size(13)
       .child(
         h_flex().items_center().gap(10)
-          .child(div().flex_1().text_size(15).font_semibold().text_color(t.foreground).child("Go to…"))
+          .child(div().flex_1().text_size(15).font_semibold().text_color(t.foreground).child("Jump to…"))
           .child(div().text_size(11).text_color(t.dim).child("Esc")),
       )
       .when(this.showGuide, (el) => el.child(guide(t, GUIDE)))

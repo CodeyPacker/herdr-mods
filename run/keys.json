@@ -1,5 +1,6 @@
 {
   "global": {
+    "ctrl-shift-r": "mod.open:run",
     "ctrl-shift-q": "overlay.close"
   }
 }

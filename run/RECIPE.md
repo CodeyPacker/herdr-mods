@@ -52,6 +52,7 @@ clicks to show or hide the help box.
 - `mods/run/main.js` (the view) and `mods/run/tiles.js` (hints, rows,
   header, navigation, the help box; the same file the Jump mod carries).
 - `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 760, "height": 0.75 } }`.
+- `keys.json` opens it: `"ctrl-shift-r": "mod.open:run"`.
 - Config, `herdr.procs.json` at the repo root, found by walking up from the
   space's first pane's folder:
   `{ "procs": [ { "name", "cmd", "cwd"?, "autostart"?, "key"?, "env"? } ] }`.

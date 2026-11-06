@@ -86,8 +86,11 @@ export function badge(t, hint, typed, pinned = false) {
   const lit = typed && hint.startsWith(typed) ? typed.length : 0;
   return h_flex()
     .flex_none()
+    .min_w(22)
     .h(18)
     .px(5)
+    .items_center()
+    .justify_center()
     .rounded(4)
     .bg(t.raised)
     .border_1()

@@ -8,7 +8,7 @@ its letter. tmux's prefix+w with vimium's hints, in place of the built-in picker
 ## What you see
 
 A 760 px popup at the top of the window, popover background, 18 px padding.
-Top line: "Go to…" (15 px semibold) and "Esc" at the right in the
+Top line: "Jump to…" (15 px semibold) and "Esc" at the right in the
 dim color. On the first run only, a help box (raised background, 1 px border, 12 px
 text) with four lines; `?` or the help button hides and shows it again.
 
@@ -41,6 +41,7 @@ clicks to show or hide the help box.
 - `mods/jump/main.js` and `mods/jump/tiles.js` (the same tiles file as the
   Run mod: hints, rows, headers, navigation, help box).
 - `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 760, "height": 0.75 } }`.
+- `keys.json` opens it: `"ctrl-shift-k": "mod.open:jump"`.
 - Data: `spaces()` for spaces and tabs, `panes()` for what each tab runs
   (`program.name`, or `mod`), `agents()` for status, `shared("space.colors")`
   for the avatar colors the shipped mods assign.
@@ -60,9 +61,7 @@ clicks to show or hide the help box.
 - A popup is sized by content; the list gets an estimated height, capped
   at 560 px with a scrollbar.
 - Reserved letters, never hints: `t n q j k x`.
-- The built-in picker stays installed; this mod only takes its key when
-  `keys.json` says so (`"ctrl-shift-k": "mod.open:jump"`), or it opens from
-  a leader popup.
+- The built-in picker stays installed; this mod has its own key instead.
 
 ## Done when
 
