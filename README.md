@@ -34,6 +34,14 @@ Press `ctrl-shift-r`, hit `u`, everything starts in the background. Each row has
 
 `s` start, `x` stop, `r` restart, `enter` to watch the output, `o` to turn it into a tab, `a` to see every space. Things that crash go red and you get a toast.
 
+## cupertino
+
+Herdr, but every panel is its own rounded card on a lavender-grey canvas, purple accent, light and dark. Islands, basically.
+
+![cupertino](cupertino/preview.png)
+
+A layout plus two theme files, no mods. It follows your system appearance. `ctrl-shift-l` cycles back to your old layout.
+
 ## Install
 
 ### Tell your agent
@@ -52,6 +60,14 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod:
 https://github.com/CodeyPacker/herdr-mods/tree/main/run
 ```
 
+cupertino:
+
+```text
+Read ~/.config/herdr-app/AGENTS.md, then add this layout:
+https://github.com/CodeyPacker/herdr-mods/tree/main/cupertino
+Copy its themes/ folder into ~/.config/herdr-app/themes/ too, then switch to it.
+```
+
 ### By hand
 
 Copy a mod's `mods/<name>` folder (or symlink it) into `~/.config/herdr-app/mods/` and check it loads:
@@ -62,6 +78,12 @@ herdr-app check ~/.config/herdr-app/mods/jump
 
 Then add the key from that mod's `keys.json` to your `~/.config/herdr-app/keys.json`.
 Each folder has a `RECIPE.md` with the full details, including what it runs on your machine.
+
+For cupertino, copy `cupertino/layouts/cupertino.json` and `cupertino/layouts/cupertino.svg` into `~/.config/herdr-app/layouts/`, both files from `cupertino/themes/` into `~/.config/herdr-app/themes/`, then:
+
+```sh
+herdr-app do layout.switch '{"name":"cupertino"}'
+```
 
 ## Hacking
 
