@@ -10,12 +10,18 @@
           "id": "brand",
           "type": "block",
           "content": {
-            "mod": "workspace-chrome"
+            "mod": "cupertino-workspace-chrome"
           },
           "size": {
             "px": 46
           },
-          "window_drag": true
+          "window_drag": true,
+          "background": "surface",
+          "radius": 14,
+          "border": {
+            "width": 1,
+            "color": "border"
+          }
         },
         {
           "id": "sidebar-lists",
@@ -62,13 +68,19 @@
           "id": "sidebar-footer",
           "type": "block",
           "content": {
-            "mod": "workspace-chrome",
+            "mod": "cupertino-workspace-chrome",
             "props": {
               "footer": true
             }
           },
           "size": {
-            "px": 69
+            "px": 72
+          },
+          "background": "surface",
+          "radius": 14,
+          "border": {
+            "width": 1,
+            "color": "border"
           }
         }
       ],
@@ -88,10 +100,10 @@
           "id": "tabs",
           "type": "block",
           "content": {
-            "mod": "tabs"
+            "mod": "cupertino-tabs"
           },
           "size": {
-            "px": 42
+            "px": 30
           },
           "window_drag": true
         },
@@ -169,14 +181,21 @@
           "id": "status",
           "type": "block",
           "content": {
-            "mod": "workspace-status"
+            "mod": "cupertino-workspace-status"
           },
           "size": {
-            "px": 28
+            "px": 32
+          },
+          "background": "surface",
+          "radius": 14,
+          "border": {
+            "width": 1,
+            "color": "border"
           }
         }
       ],
-      "resizable": false
+      "resizable": false,
+      "gap": 12
     }
   ],
   "background": "canvas",
@@ -195,5 +214,6 @@
   },
   "preview": "layouts/cupertino.svg",
   "padding": 12,
-  "gap": 12
+  "gap": 12,
+  "terminal_opacity": 0
 }
