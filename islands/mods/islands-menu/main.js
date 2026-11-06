@@ -118,7 +118,7 @@ export default class Menu extends View {
       .w_full()
       .min_h(0)
       .p(5)
-      .bg(t.popover).rounded(14).overflow_hidden().border_1().border_color(t.border).shadow_lg() // draws its own card frame
+      .bg(t.popover).rounded(14).overflow_hidden().border_1().border_color(t.border) // draws its own card frame; no shadow, Herdr clips it to the popup bounds
       .text_size(12.8)
       .on_key_down((e, cx) => {
         if (e.key === "down") this.at = (this.at + 1) % list.length;

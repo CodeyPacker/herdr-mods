@@ -222,7 +222,7 @@ export default class Picker extends View {
       .min_h(0)
       .p(18)
       .gap(10)
-      .bg(t.popover).rounded(14).overflow_hidden().border_1().border_color(t.border).shadow_lg() // draws its own card frame
+      .bg(t.popover).rounded(14).overflow_hidden().border_1().border_color(t.border) // draws its own card frame; no shadow, Herdr clips it to the popup bounds
       .text_size(13)
       .on_key_down((e, cx) => {
         const k = e.key;

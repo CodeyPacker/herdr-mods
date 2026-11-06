@@ -53,8 +53,8 @@ Right of that, the work column, 12 px between its three pieces:
 
 The popups the layout can reach match the cards: the search picker (the
 sidebar's magnifier), the `+` menu and the right-click menu on a tab, a
-space or a terminal all draw a `popover` card with 14 px corners, a 1 px
-`border` and a large shadow. Herdr's own dialogs (the command palette,
+space or a terminal all draw a `popover` card with 14 px corners and a 1 px
+`border`, no shadow. Herdr's own dialogs (the command palette,
 settings, welcome, confirm, prompt, toasts, the help sheet) keep Herdr's
 frame: a layout can't reach them.
 
@@ -101,7 +101,7 @@ terminals. Nothing is set, so settings.json still wins there.
     the agents dot is `needs > 0 ? t.blocked : list.length > 0 ? t.done : t.dim`.
 - `mods/islands-picker`, `mods/islands-new-menu`, `mods/islands-menu`:
   `mod.clone` of the shipped `picker`, `new-menu` and `menu`. Each root
-  gets `.rounded(14).overflow_hidden().border_1().border_color(t.border).shadow_lg()`
+  gets `.rounded(14).overflow_hidden().border_1().border_color(t.border)`
   right after its `.bg(t.popover)`, and opens with `frame: "none"` so Herdr
   draws no frame of its own: `islands-picker/mod.json` and
   `islands-menu/mod.json` carry `"frame": "none"` in their `overlay` block
@@ -178,6 +178,9 @@ those already do (`git` for branch and worktree info).
 - A key bound to `mod.open:picker` in keys.json still opens the shipped
   picker with Herdr's frame. Rebind it to `mod.open:islands-picker` under a
   `layout:islands` section if you want the rounded one from the keyboard.
+- Don't put a `shadow_*` on a frame-less popup's root. Herdr clips the mod
+  to the popup's bounds, so the shadow shows on whichever sides have spare
+  room (the picker's bottom, nothing else) and reads like a broken border.
 - Opening a popup by name (`mod.open`) uses its mod.json `overlay` block;
   opening it from code uses the `openOverlay` spec. Both need
   `frame: "none"`, or Herdr's square-ish frame comes back on that path.
