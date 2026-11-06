@@ -52,8 +52,8 @@ The values come from PReview's `tokens.css` (the same tokens Pensieve uses):
 `surface-sunken`, `ink`, `ink-secondary`, `ink-tertiary`, `accent`,
 `accent-soft`, `focus-ring`, and the info/warning/success fills. `selected`
 takes `accent-soft-hover` rather than `surface-selected`: it's what the
-active tab and the selected row fill with, and the brighter tint reads
-better on a card. `ring` takes `warning-fill` (the yellow) rather than
+selected sidebar row fills with, and the brighter tint reads better on a
+card. `ring` takes `warning-fill` (the yellow) rather than
 `focus-ring`: no shipped mod draws it, and the islands layout uses it for
 the active tab's border, text and icon, so it's the one standout color.
 The translucent ones (`surface`, `border`) are flattened onto the canvas,

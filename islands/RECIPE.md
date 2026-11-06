@@ -30,9 +30,9 @@ Right of that, the work column, 12 px between its three pieces:
 - The tab bar (30 px) has no fill: the canvas shows through. Every control
   on it is a pill with `surface` fill and a 1 px `border`: each tab (29 px,
   7 px corners), `+` (26 px square, 6 px corners), Files and Changes (26 px,
-  6 px corners). The active tab and the open panel button go `selected` fill
-  with `ring` for the border, the text and the icon tint: the theme's focus
-  color, so a theme can make the active tab stand out without touching
+  6 px corners). The active tab and the open panel button keep the same
+  fill and switch their border, text and icon tint to `ring`: the theme's
+  focus color, so a theme can make the active tab stand out without touching
   `accent` (cupertino uses its yellow). Hover is `hover` on all of them. The
   window buttons on Windows and Linux stay plain glyphs.
 - The focused tab's panes are `background` cards, 12 px apart. The focused
@@ -85,8 +85,8 @@ terminals. Nothing is set, so settings.json still wins there.
   - `tabs`: the root loses `.bg(t.chrome).border_b(1)`. The `button` helper
     takes a `pill` flag that adds `.bg(t.surface).border(1).border_color(t.border)`,
     used for `+` only. Tab items get `.border_color(c.active ? t.ring : t.border)`,
-    `.bg(c.active ? t.selected : t.surface)` and `.text_color(c.active ? t.ring : t.muted)`,
-    and a tinted program icon gets `.text_color(c.active ? t.ring : t.muted)`.
+    `.bg(t.surface)` and `.text_color(c.active ? t.ring : t.muted)`, and a
+    tinted program icon gets `.text_color(c.active ? t.ring : t.muted)`.
     Panel buttons get the same three with `on` in place of `c.active`, plus `.border(1)`.
   - `workspace-status`: its `label(icon, text)` helper takes a third `color`
     for the icon (`t.working` for the machine, `t.accent` for the branch), and
