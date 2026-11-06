@@ -25,7 +25,7 @@ Colors, light / dark:
 | background, surface (terminals, cards) | `#ffffff` | `#1b1a24` |
 | raised, popover | `#ffffff` | `#262433` |
 | hover | `#efedf6` | `#2a2837` |
-| selected | `#f0ecff` | `#29234a` |
+| selected | `#e3dcff` | `#352c66` |
 | border | `#e2e0eb` | `#212027` |
 | input | `#f5f4f9` | `#14131b` |
 | foreground | `#16141f` | `#f4f3f9` |
@@ -49,8 +49,11 @@ Terminal ANSI, light 0-15: `#16141f #c2252c #0a7a51 #a35406 #1f5fd6 #5235d6
 
 The values come from PReview's `tokens.css` (the same tokens Pensieve uses):
 `canvas`, `surface-solid`, `surface-raised`, `surface-hover`,
-`surface-selected`, `surface-sunken`, `ink`, `ink-secondary`, `ink-tertiary`,
-`accent`, `accent-soft`, `focus-ring`, and the info/warning/success fills.
+`surface-sunken`, `ink`, `ink-secondary`, `ink-tertiary`, `accent`,
+`accent-soft`, `focus-ring`, and the info/warning/success fills. `selected`
+takes `accent-soft-hover` rather than `surface-selected`: it's what the
+active tab and the selected row fill with, and the brighter tint reads
+better on a card.
 The translucent ones (`surface`, `border`) are flattened onto the canvas,
 because Herdr theme files take `#rrggbb` only. The ANSI 16 are built from
 PReview's semantic and syntax colors; it has no terminal palette of its own.
