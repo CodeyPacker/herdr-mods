@@ -1,13 +1,13 @@
 // jump: tmux's prefix+w crossed with vimium. Every space and its tabs get a
-// letter; type one and you're there. A space's letter takes you to its active
-// tab. j/k or arrows move, enter goes, x closes the selected tab, t opens a new
+// letter; type one and you're there. A space with one tab is a single row. A
+// space's letter takes you to its active tab. j/k or arrows move, enter goes, x closes the selected tab, t opens a new
 // tab, n a new space, esc bails. Pick your own letters in
 // ~/.config/herdr-app/hints.json (see tiles.js).
 
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
-import { spaces, panes, agents, run, props, closeOverlay, shared, readTextFile, appHome } from "herdr";
-import { colors, hints, tile, header, navigate, spaceColor, hintLine, guide, isHelpKey, readHintConfig, ROW_H } from "./tiles.js";
+import { spaces, panes, agents, run, props, closeOverlay, shared, readTextFile, appHome, home } from "herdr";
+import { colors, hints, row, avatar, spaceName, spaceNote, glyph, navigate, spaceColor, hintLine, readHintConfig, ROW_H } from "./tiles.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("gpui-kit").KeyEvent} KeyEvent */
@@ -16,22 +16,9 @@ import { colors, hints, tile, header, navigate, spaceColor, hintLine, guide, isH
 /** @typedef {import("herdr").TabInfo} TabInfo */
 /** @typedef {import("./tiles.js").HintConfig} HintConfig */
 /** @typedef {{ kind: "space", s: SpaceInfo, hint?: string, pinned?: boolean }} SpaceItem */
-/** @typedef {{ kind: "tab", s: SpaceInfo, tab: TabInfo, who: string, status: string | null, hint?: string, pinned?: boolean }} TabItem */
+/** @typedef {{ kind: "tab", s: SpaceInfo, tab: TabInfo, who: string, status: string | null, merged: boolean, hint?: string, pinned?: boolean }} TabItem */
 /** @typedef {{ kind: "new-tab" | "new-space", hint: string, pinned?: boolean }} NewItem */
 /** @typedef {SpaceItem | TabItem | NewItem} Item */
-
-/** @type {{ intro: string, rows: [string, string][] }} */
-const GUIDE = {
-  intro: "Type a letter, land on that tab.",
-  rows: [
-    ["letter", "go there. A space's letter opens its active tab."],
-    ["j  k", "move, then enter to go"],
-    ["x", "close the selected tab"],
-    ["r", "rename the selected tab or space"],
-    ["t  n", "new tab here, new space"],
-    ["", "Pick your own letters in ~/.config/herdr-app/hints.json. They show in color."],
-  ],
-};
 
 // These do things, so they can't be hints.
 const RESERVED = "tnqjkxr";
@@ -48,9 +35,6 @@ export default class Jump extends View {
     /** @type {HintConfig} */
     this.hintConfig = { spaces: {}, tabs: {} };
     cx.spawn(async (cx) => { this.hintConfig = await readHintConfig(readTextFile, appHome); cx.notify(); });
-    // Show the guide on the first run only. ? or the help button brings it back.
-    this.showGuide = localStorage.getItem("seen") !== "1";
-    localStorage.setItem("seen", "1");
     /** @type {FocusHandle} */
     this.handle = cx.focus_handle();
     this.handle.focus();
@@ -61,22 +45,24 @@ export default class Jump extends View {
     closeOverlay(props().overlay);
   }
 
-  /** Every hinted thing in order: a header per space, its tabs, then the two new rows. @returns {Item[]} */
+  /** Every hinted thing in order: a space's only tab as one row, else a header and its tabs, then the two new rows. @returns {Item[]} */
   items() {
     /** @type {Item[]} */
     const out = [];
     const ps = panes();
     const ag = agents();
     for (const s of spaces()) {
-      out.push({ kind: "space", s });
-      for (const tab of s.tabs ?? []) {
+      const tabs = s.tabs ?? [];
+      const merged = tabs.length === 1;
+      if (!merged) out.push({ kind: "space", s });
+      for (const tab of tabs) {
         const mine = ps.filter((p) => p.tab === tab.id);
         const who = mine.map((p) => p.mod ?? p.program?.name ?? "shell");
         const status = ag.filter((a) => a.tab === tab.id).map((a) => a.status);
-        out.push({ kind: "tab", s, tab, who: [...new Set(who)].join(" · "), status: tab.status ?? status[0] ?? null });
+        out.push({ kind: "tab", s, tab, who: [...new Set(who)].join(" · "), status: tab.status ?? status[0] ?? null, merged });
       }
     }
-    const wanted = out.map((it) => (it.kind === "space" ? this.hintConfig.spaces[it.s.name] : it.kind === "tab" ? this.hintConfig.tabs[`${it.s.name}/${it.tab.name}`] : null));
+    const wanted = out.map((it) => (it.kind === "space" ? this.hintConfig.spaces[it.s.name] : it.kind === "tab" ? (it.merged && this.hintConfig.spaces[it.s.name]) || this.hintConfig.tabs[`${it.s.name}/${it.tab.name}`] : null));
     const hs = hints(out.length, RESERVED, wanted);
     out.forEach((it, i) => { it.hint = hs[i]; it.pinned = !!wanted[i] && hs[i] === String(wanted[i]).toLowerCase(); });
     out.push({ kind: "new-tab", hint: "t" });
@@ -96,7 +82,7 @@ export default class Jump extends View {
 
   /** Opens the name box for a tab or space. @param {SpaceItem | TabItem} it @param {Context} cx */
   startRename(it, cx) {
-    const name = it.kind === "tab" ? it.tab.name : it.s.name;
+    const name = it.kind === "tab" && !it.merged ? it.tab.name : it.s.name;
     const input = InputState.new({ value: name });
     input.set_selected_range({ start: 0, end: name.length });
     input.on("submit", (_e, cx) => this.finishRename(true, cx));
@@ -111,7 +97,7 @@ export default class Jump extends View {
     const { it, input } = this.renaming;
     this.renaming = null;
     if (save) {
-      if (it.kind === "tab") run("tab.rename", { id: it.tab.id, name: input.value() });
+      if (it.kind === "tab" && !it.merged) run("tab.rename", { id: it.tab.id, name: input.value() });
       else run("space.rename", { id: it.s.id, name: input.value() });
     }
     this.handle.focus();
@@ -132,12 +118,6 @@ export default class Jump extends View {
     this.at = state.at;
     this.typed = state.typed;
     if (r === "close") { this.close(); cx.stop_propagation(); return; }
-    if (isHelpKey(e)) {
-      this.showGuide = !this.showGuide;
-      cx.stop_propagation();
-      cx.notify();
-      return;
-    }
     if (r === "hit" || r === "act") this.go(items[this.at]);
     if (r) { cx.stop_propagation(); cx.notify(); return; }
     const it = items[this.at];
@@ -160,36 +140,49 @@ export default class Jump extends View {
     this.at = Math.max(0, Math.min(this.at, items.length - 1));
     const at = this.at;
     const space = /** @type {Record<string, string> | undefined} */ (shared("space.colors"));
-    // gpui elements are single-use, so collect each space's rows first and build the group after.
-    /** @type {{ it: SpaceItem, on: boolean, tiles: ReturnType<typeof tile>[] }[]} */
-    const groups = [];
-    /** @type {ReturnType<typeof tile>[]} */
+    const all = spaces();
+    // gpui elements are single-use, so collect each block's rows first and build it after.
+    /** @type {{ merged: boolean, rows: ReturnType<typeof row>[] }[]} */
+    const blocks = [];
+    /** @type {ReturnType<typeof row>[]} */
     const extras = [];
     items.forEach((it, i) => {
       const on = i === at;
-      if (it.kind === "space") { groups.push({ it, on, tiles: [] }); return; }
-      if (it.kind === "tab") {
-        groups[groups.length - 1].tiles.push(tile(t, {
-          id: `j-${it.tab.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, status: it.status,
-          title: it.tab.name, detail: it.who || "empty",
-          onClick: () => this.go(it),
-        }));
-        return;
+      if (it.kind === "space") {
+        blocks.push({ merged: false, rows: [
+          row(t, { id: `j-${it.s.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: () => this.go(it) }).child(avatar(it.s, spaceColor(t, it.s, space))).child(spaceName(t, it.s)).child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(spaceNote(all, it.s, home()))),
+        ] });
+      } else if (it.kind === "tab" && it.merged) {
+        if (!blocks[blocks.length - 1]?.merged) blocks.push({ merged: true, rows: [] });
+        blocks[blocks.length - 1].rows.push(
+          row(t, { id: `j-${it.tab.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: () => this.go(it) })
+            .child(avatar(it.s, spaceColor(t, it.s, space)))
+            .child(spaceName(t, it.s))
+            .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(spaceNote(all, it.s, home())))
+            .when(!!it.status, (el) => el.child(glyph(t, it.status)))
+            .child(div().flex_none().max_w(180).truncate().text_size(11).text_color(t.dim).child([it.tab.named ? it.tab.name : "", it.who || "empty"].filter(Boolean).join(" · "))),
+        );
+      } else if (it.kind === "tab") {
+        blocks[blocks.length - 1].rows.push(
+          row(t, { id: `j-${it.tab.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: () => this.go(it) })
+            .child(div().w(18).flex_none())
+            .when(!!it.status, (el) => el.child(glyph(t, it.status)))
+            .child(div().flex_none().max_w(260).truncate().text_color(t.muted).child(it.tab.name))
+            .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(it.who || "empty")),
+        );
+      } else {
+        extras.push(
+          row(t, { id: `j-${it.kind}`, hint: it.hint, typed: this.typed, pinned: false, on, onClick: () => this.go(it) })
+            .child(div().flex_none().text_color(t.foreground).child(it.kind === "new-tab" ? "new tab" : "new space"))
+            .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(it.kind === "new-tab" ? "in this space" : "on this computer")),
+        );
       }
-      extras.push(tile(t, {
-        id: `j-${it.kind}`, hint: it.hint, typed: this.typed, on, status: null, flat: true,
-        title: it.kind === "new-tab" ? "new tab" : "new space", detail: it.kind === "new-tab" ? "in this space" : "on this computer",
-        onClick: () => this.go(it),
-      }));
     });
-    const sections = groups.map(({ it, on, tiles }) =>
-      v_flex().gap(2)
-        .child(header(t, { id: `jh-${it.s.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, name: it.s.name, color: spaceColor(t, it.s, space), onClick: () => this.go(it) }))
-        .children(tiles),
-    );
+    const rowCount = blocks.reduce((n, b) => n + b.rows.length, 0);
+    const sections = blocks.map((b) => v_flex().gap(2).children(b.rows));
     sections.push(v_flex().gap(2).pt(8).border_t(1).border_color(t.border).children(extras));
     // The popup sizes to content, so the scrollable list needs an explicit height or it collapses.
-    const est = groups.reduce((h, g) => h + 30 + g.tiles.length * (ROW_H + 2) + 8, 0) + 2 * (ROW_H + 2) + 16;
+    const est = (rowCount + 2) * (ROW_H + 2) + blocks.length * 8 + 16;
     const listH = Math.min(560, est);
 
     return v_flex()
@@ -207,22 +200,12 @@ export default class Jump extends View {
           .child(div().flex_1().text_size(15).font_semibold().text_color(t.foreground).child("Jump to…"))
           .child(div().pr(10).text_size(11).text_color(t.dim).child("Esc")),
       )
-      .when(this.showGuide, (el) => el.child(guide(t, GUIDE)))
       .when(!!this.renaming, (el) => el.child(
         h_flex().items_center().gap(10)
-          .child(div().flex_none().text_size(11).text_color(t.dim).child(this.renaming?.it.kind === "space" ? "Rename space" : "Rename tab"))
+          .child(div().flex_none().text_size(11).text_color(t.dim).child(this.renaming?.it.kind === "tab" && !this.renaming.it.merged ? "Rename tab" : "Rename space"))
           .child(Input.new(this.renaming?.input).flex_1().h(30).px(8).rounded(6).border_1().border_color(t.accent).bg(t.background).text_size(12.5).text_color(t.foreground)),
       ))
       .child(v_flex().id("jump-list").h(listH).flex_none().overflow_y_scrollbar().gap(8).children(sections))
-      .child(
-        h_flex().items_end().gap(12)
-          .child(div().flex_1().child(hintLine(t, [["letter", "go"], ["j/k ctrl-n/p", "move"], ["enter", "go"], ["t", "new tab"], ["n", "new space"], ["x", "close tab"], ["r", "rename"]])))
-          .child(
-            h_flex().id("jump-help").flex_none().items_center().gap(4).cursor_pointer().text_size(11)
-              .on_click((_e, cx) => { this.showGuide = !this.showGuide; cx.notify(); })
-              .child(div().text_color(t.accent).font_semibold().child("?"))
-              .child(div().text_color(t.dim).child("help")),
-          ),
-      );
+      .child(hintLine(t, [["j/k", "move"], ["x", "close tab"], ["r", "rename"]]));
   }
 }

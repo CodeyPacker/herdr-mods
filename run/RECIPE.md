@@ -8,23 +8,22 @@ them with single keys. The mprocs idea, with letter hints instead of a list.
 
 ## What you see
 
-A 760 px popup at the top of the window, popover background, 18 px padding.
-Top line: "Processes" (15 px semibold), or "Processes · every space" when
-showing all; at the right "Esc" in the dim color.
+A 560 px popup at the top of the window, popover background, 18 px padding.
+Top line: "Run" (15 px semibold), or "Run · every space" when showing all; at
+the right "Esc" in the dim color, inset to line up with the row edge.
 
-On the first run only, a help box (raised background, 1 px border, 12 px text) with
-five lines explaining the keys. `?` or the help button hides and shows it again.
+Every row is 30 px and starts with its hint badge, so the letters form one
+column at the left. One section per space: a header row with the space's colored
+avatar (18 px square, the first letter) and its name in semibold foreground, then
+one row per declared process under the name column: a status dot, the name in the
+muted color, and a detail in 11 px dim text. Spaces with the same name also show
+their folder in dim text, and their branch when the folders match too. The
+selected row has the theme's `selected` background, a 3 px accent bar at its left
+edge and an accent badge. Hover is the `hover` color at 40% opacity. At the right
+of the header, a space with no `herdr.procs.json` says so, and one with nothing
+running says "nothing running · u starts N".
 
-Then one section per space: a header row with the space's colored avatar
-(18 px square, the first letter), its name in the muted color, and its hint
-letter in a badge at the right edge. Under it one 30 px row per declared
-process: a status dot, the name, a detail in 11 px dim text, and the hint
-badge at the right edge. The selected row has the theme's `selected`
-background. A space with no `herdr.procs.json` says so under its header;
-one with nothing running says "nothing running · u starts N".
-
-Bottom line: the key hints in accent/dim pairs, and "? help" at the right, which
-clicks to show or hide the help box.
+Bottom line: `j/k`, `s`, `x`, `r`, `u`, `enter` and `a` in accent/dim pairs.
 
 ## How it behaves
 
@@ -50,8 +49,8 @@ clicks to show or hide the help box.
 ## Built from
 
 - `mods/run/main.js` (the view) and `mods/run/tiles.js` (hints, rows,
-  header, navigation, the help box; the same file the Jump mod carries).
-- `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 760, "height": 0.75 } }`.
+  navigation; the same file the Jump mod carries).
+- `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 560, "height": 0.75 } }`.
 - `keys.json` opens it: `"ctrl-shift-r": "mod.open:run"`.
 - Config, `herdr.procs.json` at the repo root, found by walking up from the
   space's first pane's folder:

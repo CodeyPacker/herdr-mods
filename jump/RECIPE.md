@@ -7,42 +7,45 @@ its letter. tmux's prefix+w with vimium's hints, in place of the built-in picker
 
 ## What you see
 
-A 760 px popup at the top of the window, popover background, 18 px padding.
+A 560 px popup at the top of the window, popover background, 18 px padding.
 Top line: "Jump to…" (15 px semibold) and "Esc" at the right in the
-dim color. On the first run only, a help box (raised background, 1 px border, 12 px
-text) with five lines; `?` or the help button hides and shows it again.
+dim color.
 
-One section per space: a header row with the space's colored avatar (18 px
-square, its first letter), its name in the muted color, and its hint badge
-at the right edge. Under it one 30 px row per tab: a status dot, the tab's
-name, what runs in it in 11 px dim text (program names joined by " · ", or
-"empty"), and the hint badge. The selected row has the `selected`
-background. After a 1 px top border, two more rows: "new tab · in this
-space" with the letter `t`, and "new space · on this computer" with `n`.
+Every row is 30 px and starts with its hint badge, so the letters form one
+column at the left. A space with one tab is one row: the space's colored avatar
+(18 px square, its first letter), its name in semibold foreground, and what runs
+in it right-aligned in 11 px dim text (program names joined by " · ", or "empty";
+a named tab's name first). A space with several tabs has that header without the
+detail, then one row per tab under the name column: the tab's name in the muted
+color, then what runs in it. Rows show a status dot only when there is a status.
+Spaces with the same name also show their folder in dim text, and their branch
+when the folders match too. The selected row has the `selected` background, a
+3 px accent bar at its left edge and an accent badge. Hover is the `hover` color
+at 40% opacity. After a 1 px top border, two more rows: "new tab" and "in this
+space" with the letter `t`, and "new space" and "on this computer" with `n`.
 
-Bottom line: the key hints in accent/dim pairs, and "? help" at the right, which
-clicks to show or hide the help box.
+Bottom line: `j/k`, `x` and `r` in accent/dim pairs.
 
 ## How it behaves
 
 - Opens on the active tab of the active space.
-- The status dot follows the tab's agent status: a spinner for working,
-  `blocked`, `done` and `idle` in the theme's colors, a dim dot otherwise.
+- The status dot, when there is a status, follows the tab's agent status: a spinner for working,
+  `blocked`, `done` and `idle` in the theme's colors.
 - Typing a row's letter goes to that tab and closes. A space's letter goes
   to its active tab. Hints are single letters while they fit, two beyond,
   never starting with a chosen letter. Chosen letters draw in the accent
   color and come from `~/.config/herdr-app/hints.json`.
 - `j`/`k`, arrows and `ctrl-n`/`ctrl-p` move; `Enter` goes; `x` closes
   the selected tab with no confirm and the popup stays open; `t` new tab here; `n` new space; `r` renames the selected tab or
-  space in a name box above the list (`Enter` saves, `Esc` cancels, the popup
+  space (the space, on a one-tab row) in a name box above the list (`Enter` saves, `Esc` cancels, the popup
   stays open; an empty name goes back to Herdr's default); `q` or `Esc` closes.
 - Every space is always listed; nothing folds away.
 
 ## Built from
 
 - `mods/jump/main.js` and `mods/jump/tiles.js` (the same tiles file as the
-  Run mod: hints, rows, headers, navigation, help box).
-- `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 760, "height": 0.75 } }`.
+  Run mod: hints, badges, navigation).
+- `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 560, "height": 0.75 } }`.
 - `keys.json` opens it: `"ctrl-shift-k": "mod.open:jump"`.
 - Data: `spaces()` for spaces and tabs, `panes()` for what each tab runs
   (`program.name`, or `mod`), `agents()` for status, `shared("space.colors")`

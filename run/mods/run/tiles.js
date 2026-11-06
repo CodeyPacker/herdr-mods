@@ -1,4 +1,4 @@
-// Bits shared by jump and procs: hint letters, rows, space headers, the guide card.
+// Bits shared by jump and procs: hint letters, rows, space headers.
 // A mod can only import from its own folder, so each one carries a copy of this file.
 // Edit the one in run/ and copy it over.
 
@@ -66,18 +66,18 @@ export const SPIN = "mods/workspace-chrome/spinner.svg";
  * @param {string | null} status working | blocked | done | idle | running | exited | null
  */
 export function glyph(t, status) {
-  // Skips a space's avatar and gap, so the glyph lines up with space names and the row reads as indented.
-  if (status === "working") return h_flex().w(32).pl(26).flex_none().child(svg(SPIN).size(12).flex_none().text_color(t.working).spin(900));
+  const slot = () => h_flex().w(12).flex_none();
+  if (status === "working") return slot().child(svg(SPIN).size(12).flex_none().text_color(t.working).spin(900));
   // Running green, dead red. Agent statuses use whatever the theme says.
   /** @type {Record<string, Color>} */
   const tone = { blocked: t.blocked, done: t.done, idle: t.idle, running: t.ansi2, exited: t.ansi1 };
   const color = tone[status ?? ""] ?? t.dim;
   const ch = status === "idle" ? "○" : status ? "●" : "·";
-  return h_flex().w(32).pl(26).flex_none().text_color(color).child(ch);
+  return slot().text_color(color).child(ch);
 }
 
 /**
- * The hint badge at a row's end.
+ * The hint badge at a row's start.
  * @param {Theme} t
  * @param {string} hint
  * @param {string} typed the letters typed so far, shown highlighted
@@ -104,54 +104,53 @@ export function badge(t, hint, typed, pinned = false) {
 export const ROW_H = 30;
 
 /**
- * A row: glyph, title, detail, and the hint at the end. `on` is the active one.
+ * A row's shell: its letter first, an accent bar when selected. Callers add the rest.
  * @param {Theme} t
- * @param {{ id: string, hint: string, typed: string, pinned?: boolean, on: boolean, status: string | null, flat?: boolean, title: string, detail?: string, onClick: Click }} r
+ * @param {{ id: string, hint: string, typed: string, pinned?: boolean, on: boolean, onClick: Click }} r
  */
-export function tile(t, { id, hint, typed, pinned, on, status, flat = false, title, detail, onClick }) {
+export function row(t, { id, hint, typed, pinned, on, onClick }) {
   return h_flex()
     .id(id)
+    .relative()
     .w_full()
     .h(ROW_H)
     .flex_none()
     .px(10)
-    .gap(8)
+    .gap(10)
     .items_center()
     .rounded(7)
     .when(on, (el) => el.bg(t.selected))
     .cursor_pointer()
-    .hover((s) => s.bg(on ? t.selected : t.hover))
+    .hover((s) => s.bg(on ? t.selected : faint(t.hover)))
     .on_click(onClick)
-    .when(!flat, (el) => el.child(glyph(t, status)))
-    .child(div().flex_none().max_w(260).truncate().text_color(t.foreground).when(on, (d) => d.font_semibold()).child(title))
-    .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(detail ?? ""))
-    .child(badge(t, hint, typed, pinned));
+    .when(on, (el) => el.child(div().absolute().left(0).top(6).w(3).h(18).rounded(2).bg(t.accent)))
+    .child(badge(t, hint, typed, pinned || on));
+}
+
+/** A hover well below the selected row's weight. @param {Color} c @returns {Color} */
+const faint = (c) => (/^#[0-9a-f]{6}$/i.test(c) ? /** @type {Color} */ (c + "66") : c);
+
+/** A space's colored square. @param {SpaceInfo} s @param {Color} color */
+export function avatar(s, color) {
+  return h_flex().size(18).flex_none().rounded(5).bg(color).items_center().justify_center().text_size(10.5).font_bold().text_color("#ffffff").child([...s.name][0]?.toUpperCase() ?? "?");
+}
+
+/** @param {Theme} t @param {SpaceInfo} s */
+export function spaceName(t, s) {
+  return div().flex_none().max_w(200).truncate().font_semibold().text_color(t.foreground).child(s.name);
 }
 
 /**
- * A space header: avatar letter, name, and its hint.
- * @param {Theme} t
- * @param {{ id: string, hint: string, typed: string, pinned?: boolean, on?: boolean, name: string, color: Color, onClick: Click }} h
+ * Tells spaces with the same name apart: the folder, plus the branch when the folders match too.
+ * @param {SpaceInfo[]} all
+ * @param {SpaceInfo} s
+ * @param {string} home
  */
-export function header(t, { id, hint, typed, pinned, on = false, name, color, onClick }) {
-  return h_flex()
-    .id(id)
-    .w_full()
-    .h(ROW_H)
-    .flex_none()
-    .px(10)
-    .gap(8)
-    .items_center()
-    .text_size(11)
-    .font_semibold()
-    .text_color(t.dim)
-    .rounded(7)
-    .when(on, (el) => el.bg(t.selected))
-    .cursor_pointer()
-    .on_click(onClick)
-    .child(h_flex().size(18).rounded(5).bg(color).items_center().justify_center().text_size(10.5).font_bold().text_color("#ffffff").child([...name][0]?.toUpperCase() ?? "?"))
-    .child(div().flex_1().truncate().text_color(t.muted).child(name))
-    .child(badge(t, hint, typed, pinned));
+export function spaceNote(all, s, home) {
+  const same = all.filter((o) => o.id !== s.id && o.name === s.name);
+  if (!same.length) return "";
+  const folder = s.folder.replace(home, "~");
+  return same.some((o) => o.folder === s.folder) && s.branch ? `${folder} · ${s.branch}` : folder;
 }
 
 /**
@@ -237,38 +236,3 @@ export async function readHintConfig(readTextFile, appHome) {
   }
 }
 
-/** The help key: ? on any layout. @param {KeyEvent} e */
-export function isHelpKey(e) {
-  return e.key === "?" || e.key_char === "?" || e.keystroke === "shift-/";
-}
-
-/**
- * The first-run guide card. Yellow so it gets noticed, ? badge, one row per key.
- * @param {Theme} t
- * @param {{ intro: string, rows: [string, string][] }} g
- */
-export function guide(t, g) {
-  const yellow = t.ansi3 ?? t.accent;
-  /** @param {Color} c @param {string} a @returns {Color} */
-  const tint = (c, a) => (/^#[0-9a-f]{6}$/i.test(c) ? /** @type {Color} */ (c + a) : c);
-  /** @param {string} k */
-  const key = (k) =>
-    div().flex_none().min_w(58).px(6).h(18).rounded(4).bg(tint(yellow, "22")).border_1().border_color(tint(yellow, "55")).text_size(11).font_semibold().text_color(t.foreground).child(k);
-  return h_flex()
-    .w_full()
-    .items_start()
-    .p(12)
-    .gap(12)
-    .rounded(8)
-    .bg(tint(yellow, "16"))
-    .border_1()
-    .border_color(tint(yellow, "66"))
-    .text_size(12)
-    .child(h_flex().flex_none().size(20).mt(1).rounded(10).border_1().border_color(yellow).items_center().justify_center().text_size(12).font_bold().text_color(yellow).child("?"))
-    .child(
-      h_flex().flex_1().flex_wrap().gap(6)
-        .child(div().w_full().mb(2).text_size(12.5).font_semibold().text_color(t.foreground).child(g.intro))
-        .children(g.rows.map(([k, what]) => h_flex().w_full().gap(10).items_center().when(!!k, (el) => el.child(key(k))).child(div().flex_1().text_color(t.muted).child(what))))
-        .child(div().w_full().mt(2).text_size(11).text_color(t.dim).child("? hides this. Press it again any time.")),
-    );
-}

@@ -15,8 +15,8 @@
 
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { spaces, panes, terminals, machines, focused, run, hc, exec, notify, props, closeOverlay, openOverlay, shared, window as win, readTextFile, appHome, nextCommand } from "herdr";
-import { colors, hints, tile, header, navigate, spaceColor, hintLine, guide, isHelpKey, readHintConfig, ROW_H } from "./tiles.js";
+import { spaces, panes, terminals, machines, focused, run, hc, exec, notify, props, closeOverlay, openOverlay, shared, window as win, readTextFile, appHome, nextCommand, home } from "herdr";
+import { colors, hints, row, avatar, spaceName, spaceNote, glyph, navigate, spaceColor, hintLine, readHintConfig, ROW_H } from "./tiles.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("gpui-kit").KeyEvent} KeyEvent */
@@ -33,20 +33,6 @@ import { colors, hints, tile, header, navigate, spaceColor, hintLine, guide, isH
 /** @typedef {{ kind: "proc", s: SpaceInfo, p: Proc, t: Term | null, key: string, state: "stopped" | "running" | "exited", detail: string, busy: string | undefined, hint?: string, pinned?: boolean }} ProcItem */
 /** @typedef {SpaceItem | ProcItem} Item */
 /** @typedef {{ address: string, name: string, space: string, spaceName: string }} Peek */
-
-/** @type {{ intro: string, rows: [string, string][] }} */
-const GUIDE = {
-  intro: "Your repo's herdr.procs.json, running in the background. Its commands run as you, so trust the repo.",
-  rows: [
-    ["letter", "pick a process. Colored letters are yours."],
-    ["j  k", "move"],
-    ["s  x  r", "start, stop, restart"],
-    ["u", "start everything marked autostart"],
-    ["enter", "watch its output"],
-    ["o", "give it a tab"],
-    ["a", "show every space"],
-  ],
-};
 
 const FILE = "herdr.procs.json";
 const LABEL_SPACE = "run.space";
@@ -187,9 +173,6 @@ export default class Procs extends View {
     /** @type {string[] | null} */
     this.shell = null;
     cx.spawn(async (cx) => { this.shell = await findShell(); cx.notify(); });
-    // Show the guide on the first run only. ? or the help button brings it back.
-    this.showGuide = localStorage.getItem("seen") !== "1";
-    localStorage.setItem("seen", "1");
     /** @type {Set<string>} addresses seen live at the last refresh, for the exit toast */
     this.wasLive = new Set();
     this.handle.focus();
@@ -502,12 +485,6 @@ export default class Procs extends View {
     this.typed = state.typed;
     this.note = "";
     if (r === "close") { this.close(); cx.stop_propagation(); return; }
-    if (isHelpKey(e)) {
-      this.showGuide = !this.showGuide;
-      cx.stop_propagation();
-      cx.notify();
-      return;
-    }
     if (r === "hit" && items[this.at]?.kind === "space") {
       // Typing a space's letter selects its first process, not the header.
       const next = items[this.at + 1];
@@ -552,9 +529,10 @@ export default class Procs extends View {
     const at = Math.max(0, Math.min(this.at ?? 0, items.length - 1));
     if (this.at !== null) this.at = at;
     const space = /** @type {Record<string, string> | undefined} */ (shared("space.colors"));
-    // gpui elements are single-use, so collect each space's rows first and build the group after.
-    /** @type {{ it: SpaceItem, i: number, empty: string | null, error: boolean, tiles: ReturnType<typeof tile>[] }[]} */
-    const groups = [];
+    const all = spaces();
+    // gpui elements are single-use, so collect each space's rows first and build the block after.
+    /** @type {ReturnType<typeof row>[][]} */
+    const blocks = [];
     items.forEach((it, i) => {
       const on = i === at;
       if (it.kind === "space") {
@@ -566,24 +544,28 @@ export default class Procs extends View {
         if (cfg && !cfg.procs) empty = cfg.error ?? `no ${FILE} in ${cfg.root ?? "this space"}`;
         else if (cfg?.procs && !running && auto) empty = `nothing running · u starts ${auto}`;
         else if (cfg?.procs?.length === 0) empty = `${FILE} declares no procs`;
-        groups.push({ it, i, empty, error: !!cfg?.error, tiles: [] });
+        blocks.push([
+          row(t, { id: `h-${it.s.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => { this.at = i + 1 < items.length && items[i + 1].kind === "proc" ? i + 1 : i; cx.notify(); } })
+            .child(avatar(it.s, spaceColor(t, it.s, space)))
+            .child(spaceName(t, it.s))
+            .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(spaceNote(all, it.s, home())))
+            .when(!!empty, (el) => el.child(div().flex_none().max_w(280).truncate().text_size(11).text_color(cfg?.error ? t.blocked : t.dim).child(empty ?? ""))),
+        ]);
         return;
       }
-      groups[groups.length - 1].tiles.push(tile(t, {
-        id: `p-${it.key}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, status: it.busy ? "working" : it.state,
-        title: it.p.name, detail: it.detail,
-        onClick: (_e, cx) => { this.at = i; cx.notify(); },
-      }));
+      blocks[blocks.length - 1].push(
+        row(t, { id: `p-${it.key}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => { this.at = i; cx.notify(); } })
+          .child(div().w(18).flex_none())
+          .child(glyph(t, it.busy ? "working" : it.state))
+          .child(div().flex_none().max_w(200).truncate().text_color(t.muted).child(it.p.name))
+          .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(it.detail)),
+      );
     });
-    const sections = groups.map(({ it, i, empty, error, tiles }) =>
-      v_flex().gap(2)
-        .child(header(t, { id: `h-${it.s.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, name: it.s.name, color: spaceColor(t, it.s, space), onClick: (_e, cx) => { this.at = i + 1 < items.length && items[i + 1].kind === "proc" ? i + 1 : i; cx.notify(); } }))
-        .when(!!empty, (el) => el.child(div().pl(26).pb(4).text_size(11).text_color(error ? t.blocked : t.dim).child(empty ?? "")))
-        .children(tiles),
-    );
+    const rowCount = blocks.reduce((n, b) => n + b.length, 0);
+    const sections = blocks.map((rows) => v_flex().gap(2).children(rows));
     if (!items.length) sections.push(div().text_color(t.dim).child("no spaces"));
     // The popup sizes to content, so the scrollable list needs an explicit height or it collapses.
-    const est = groups.reduce((h, g) => h + 30 + (g.empty ? 20 : 0) + g.tiles.length * (ROW_H + 2) + 8, 0) || 24;
+    const est = rowCount * (ROW_H + 2) + blocks.length * 8 || 24;
     const listH = Math.min(520, est);
 
     return v_flex()
@@ -599,20 +581,10 @@ export default class Procs extends View {
       .child(
         h_flex().items_center().gap(10)
           .child(div().flex_1().text_size(15).font_semibold().text_color(t.foreground).child(this.all ? "Run · every space" : "Run"))
-          .child(div().text_size(11).text_color(t.dim).child("Esc")),
+          .child(div().pr(10).text_size(11).text_color(t.dim).child("Esc")),
       )
-      .when(this.showGuide, (el) => el.child(guide(t, GUIDE)))
       .child(v_flex().id("run-list").h(listH).flex_none().overflow_y_scrollbar().gap(8).children(sections))
       .when(!!this.note, (el) => el.child(div().text_size(11).text_color(t.blocked).child(this.note)))
-      .child(
-        h_flex().items_end().gap(12)
-          .child(div().flex_1().child(hintLine(t, [["j/k ctrl-n/p", "move"], ["s", "start"], ["x", "stop"], ["r", "restart"], ["u", "up all"], ["shift-x", "stop all"], ["enter", "peek"], ["o", "keep as tab"], ["a", this.all ? "this space" : "all spaces"]])))
-          .child(
-            h_flex().id("run-help").flex_none().items_center().gap(4).cursor_pointer().text_size(11)
-              .on_click((_e, cx) => { this.showGuide = !this.showGuide; cx.notify(); })
-              .child(div().text_color(t.accent).font_semibold().child("?"))
-              .child(div().text_color(t.dim).child("help")),
-          ),
-      );
+      .child(hintLine(t, [["j/k", "move"], ["s", "start"], ["x", "stop"], ["r", "restart"], ["u", "up all"], ["enter", "peek"], ["a", this.all ? "this space" : "all spaces"]]));
   }
 }

@@ -1,5 +1,5 @@
 {
   "place": "none",
   "title": "Jump",
-  "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 760, "height": 0.75 }
+  "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 560, "height": 0.75 }
 }
