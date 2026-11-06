@@ -25,7 +25,7 @@
               "id": "spaces",
               "type": "block",
               "content": {
-                "mod": "spaces"
+                "mod": "cupertino-spaces"
               },
               "size": {
                 "weight": 1
@@ -42,7 +42,7 @@
               "id": "agents",
               "type": "block",
               "content": {
-                "mod": "agents"
+                "mod": "cupertino-agents"
               },
               "size": {
                 "weight": 1
@@ -107,7 +107,7 @@
                 "pane": {
                   "header": {
                     "content": {
-                      "mod": "pane"
+                      "mod": "cupertino-pane"
                     },
                     "reveal": "always",
                     "height": 30,
@@ -120,7 +120,7 @@
                   },
                   "focus": {
                     "width": 1,
-                    "color": "accent"
+                    "color": "border"
                   },
                   "radius": 14,
                   "gap": 12,
@@ -159,13 +159,7 @@
               },
               "min": 280,
               "max": 900,
-              "hidden": true,
-              "background": "surface",
-              "radius": 14,
-              "border": {
-                "width": 1,
-                "color": "border"
-              }
+              "hidden": true
             }
           ],
           "padding": 0,
