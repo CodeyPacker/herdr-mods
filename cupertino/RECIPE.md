@@ -34,7 +34,7 @@ Colors, light / dark:
 | accent | `#6b4ef6` | `#6b4ef6` |
 | accent_foreground | `#ffffff` | `#ffffff` |
 | solid / solid_foreground | `#16141f` / `#ffffff` | `#f4f3f9` / `#16141f` |
-| ring | `#f5a524` | `#e8a33a` |
+| ring | `#6b4ef6` | `#9c88ff` |
 | selection (terminal) | `#eeeaff` | `#2b2452` |
 | cursor | `#6b4ef6` | `#6b4ef6` |
 | working | `#3b82f6` | `#5b93f7` |
@@ -53,9 +53,7 @@ The values come from PReview's `tokens.css` (the same tokens Pensieve uses):
 `accent-soft`, `focus-ring`, and the info/warning/success fills. `selected`
 takes `accent-soft-hover` rather than `surface-selected`: it's what the
 selected sidebar row fills with, and the brighter tint reads better on a
-card. `ring` takes `warning-fill` (the yellow) rather than
-`focus-ring`: no shipped mod draws it, and the islands layout uses it for
-the active tab's border, text and icon, so it's the one standout color.
+card.
 The translucent ones (`surface`, `border`) are flattened onto the canvas,
 because Herdr theme files take `#rrggbb` only. The ANSI 16 are built from
 PReview's semantic and syntax colors; it has no terminal palette of its own.

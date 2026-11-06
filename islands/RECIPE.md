@@ -31,10 +31,11 @@ Right of that, the work column, 12 px between its three pieces:
   on it is a pill with `surface` fill and a 1 px `border`: each tab (29 px,
   7 px corners), `+` (26 px square, 6 px corners), Files and Changes (26 px,
   6 px corners). The active tab and the open panel button keep the same
-  fill and switch their border, text and icon tint to `ring`: the theme's
-  focus color, so a theme can make the active tab stand out without touching
-  `accent` (cupertino uses its yellow). Hover is `hover` on all of them. The
-  window buttons on Windows and Linux stay plain glyphs.
+  fill and switch their border, text and icon tint to `accent`. That's the
+  theme's accent, and a person can pick their own in settings.json:
+  `"colors": { "accent": "#20a68e" }` recolors it (and everything else
+  accent) on any theme. Hover is `hover` on all of them. The window buttons
+  on Windows and Linux stay plain glyphs.
 - The focused tab's panes are `background` cards, 12 px apart. The focused
   pane looks the same as the others: no accent ring. Each pane has a 30 px
   header on top (program icon, name, folder, split/zoom/close on hover) with
@@ -84,9 +85,9 @@ terminals. Nothing is set, so settings.json still wins there.
   - `pane`: `.rounded_t(13)` before the header's `.bg(t.background)`.
   - `tabs`: the root loses `.bg(t.chrome).border_b(1)`. The `button` helper
     takes a `pill` flag that adds `.bg(t.surface).border(1).border_color(t.border)`,
-    used for `+` only. Tab items get `.border_color(c.active ? t.ring : t.border)`,
-    `.bg(t.surface)` and `.text_color(c.active ? t.ring : t.muted)`, and a
-    tinted program icon gets `.text_color(c.active ? t.ring : t.muted)`.
+    used for `+` only. Tab items get `.border_color(c.active ? t.accent : t.border)`,
+    `.bg(t.surface)` and `.text_color(c.active ? t.accent : t.muted)`, and a
+    tinted program icon gets `.text_color(c.active ? t.accent : t.muted)`.
     Panel buttons get the same three with `on` in place of `c.active`, plus `.border(1)`.
   - `workspace-status`: its `label(icon, text)` helper takes a third `color`
     for the icon (`t.working` for the machine, `t.accent` for the branch), and
@@ -168,8 +169,10 @@ those already do (`git` for branch and worktree info).
 - `herdr-app shot` shows a flat canvas with a 12 px margin, pane cards with
   14 px corners, four cards down the left (brand, Spaces, Agents, footer), a
   status card along the bottom, and a tab bar with no fill whose tabs, `+`,
-  Files and Changes are bordered pills, the active tab in the theme's `ring`
-  color.
+  Files and Changes are bordered pills, the active tab outlined in the
+  theme's `accent`.
+- `"colors": { "accent": "#20a68e" }` in settings.json turns that outline,
+  text and icon teal within a second, with no other file touched.
   Zoomed in, every card corner is a clean arc with canvas outside it, the
   pane's bottom corners included.
 - `herdr-app do app.theme '{"name":"paper"}'` recolors every card without

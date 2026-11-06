@@ -102,6 +102,8 @@ herdr-app do layout.switch '{"name":"islands"}'
 
 Both at once: switch to islands, then `herdr-app do app.theme '{"name":"cupertino-dark"}'` and again with `cupertino-light`. The pick sticks to that layout.
 
+Want a different accent on the active tab? That is the theme's accent, so `"colors": { "accent": "#20a68e" }` in `~/.config/herdr-app/settings.json` changes it on any theme.
+
 ## Hacking
 
 Mods hot reload on save. `jump/mods/jump/tiles.js` and `run/mods/run/tiles.js` are the same file;
