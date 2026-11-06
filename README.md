@@ -38,7 +38,7 @@ Open the popup, hit `u`, everything starts in the background. Each row has a let
 
 A tmux-style prefix key. Press `ctrl-a`, then one more key.
 
-Mappings live in `~/.config/herdr-app/leader.json`. Copy `leader/leader.example.json` there to start:
+Mappings live in `~/.config/herdr-app/leader.json`. Copy `leader/mods/leader/leader.example.json` there to start:
 
 ```json
 { "j": "mod.open:jump", "r": "mod.open:run", "c": "tab.new" }
@@ -48,7 +48,25 @@ Don't want the little box? `{ "show": false, "keys": { ... } }`.
 
 ## Install
 
-Copy a mod folder (or symlink it) into `~/.config/herdr-app/mods/` and check it loads:
+### Tell your agent
+
+jump:
+
+```text
+Read ~/.config/herdr-app/AGENTS.md, then add this mod:
+https://github.com/CodeyPacker/herdr-mods/tree/main/jump
+```
+
+run:
+
+```text
+Read ~/.config/herdr-app/AGENTS.md, then add this mod:
+https://github.com/CodeyPacker/herdr-mods/tree/main/run
+```
+
+### By hand
+
+Copy a mod's `mods/<name>` folder (or symlink it) into `~/.config/herdr-app/mods/` and check it loads:
 
 ```sh
 herdr-app check ~/.config/herdr-app/mods/jump
@@ -59,6 +77,6 @@ Each folder has a `RECIPE.md` with the full details, including what it runs on y
 
 ## Hacking
 
-Mods hot reload on save. `jump/tiles.js` and `run/tiles.js` are the same file;
+Mods hot reload on save. `jump/mods/jump/tiles.js` and `run/mods/run/tiles.js` are the same file;
 edit the one in `run/` and copy it over. Type-check with
-`npx -p typescript tsc -p run/jsconfig.json`.
+`npx -p typescript tsc -p run/mods/run/jsconfig.json`.
