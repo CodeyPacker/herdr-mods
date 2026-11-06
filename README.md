@@ -1,40 +1,66 @@
 # herdr-mods
 
-Mods for the [Herdr](https://herdr.dev) desktop app. Each folder is one mod,
-installable on its own.
+A few mods for the [Herdr](https://herdr.dev) desktop app. Grab the ones you want.
 
-| Mod | What it does |
-| --- | --- |
-| [jump](jump/) | tmux's prefix+w with vimium-style letters. Type a letter, land on that space or tab. |
-| [procs](procs/) | mprocs for herdr. Declare your dev processes in `herdr.procs.json`, start/stop/restart/peek from one popup. |
-| [leader](leader/) | A tmux-style prefix key. `ctrl-a` then one more key runs whatever you mapped. |
+## jump
+
+tmux's `prefix+w`, with vimium-style letters. Open it, type a letter, you're on that tab.
+
+![jump](jump/preview.png)
+
+`j`/`k` move, `enter` goes, `x` closes the selected tab, `t` new tab, `n` new space.
+Want fixed letters for your spaces? Put them in `~/.config/herdr-app/hints.json`:
+
+```json
+{ "spaces": { "Logos": "l", "Component Library": "c" } }
+```
+
+## procs
+
+mprocs, but inside Herdr. Drop a `herdr.procs.json` in your repo:
+
+```json
+{
+  "procs": [
+    { "name": "web", "cmd": "npm run dev", "cwd": "apps/web" },
+    { "name": "api", "cmd": "dotnet run --project services/api", "env": { "PORT": "5000" } }
+  ]
+}
+```
+
+Open the popup, hit `u`, everything starts in the background. Each row has a letter.
+
+![procs](procs/preview.png)
+
+`s` start, `x` stop, `r` restart, `enter` to watch the output, `o` to turn it into a tab, `a` to see every space. Things that crash go red and you get a toast.
+
+## leader
+
+A tmux-style prefix key. Press `ctrl-a`, then one more key.
+
+![leader](leader/preview.png)
+
+Mappings live in `~/.config/herdr-app/leader.json`. Copy `leader/leader.example.json` there to start:
+
+```json
+{ "w": "mod.open:jump", "p": "mod.open:procs", "c": "tab.new" }
+```
+
+Don't want the little box? `{ "show": false, "keys": { ... } }`.
 
 ## Install
 
-Copy (or junction/symlink) a mod folder into `~/.config/herdr-app/mods/`, then
-check it loads:
+Copy a mod folder (or symlink it) into `~/.config/herdr-app/mods/` and check it loads:
 
 ```sh
 herdr-app check ~/.config/herdr-app/mods/jump
 ```
 
-Each mod's `keys.json` shows the binding it expects; merge it into your own
-`~/.config/herdr-app/keys.json`. The RECIPE.md in each folder is the full
-description, including what the mod runs on your machine.
-
-## Config files
-
-- `~/.config/herdr-app/hints.json`: your own hint letters for spaces and tabs (jump, procs).
-- `~/.config/herdr-app/leader.json`: the leader's key mappings. `leader/leader.example.json` is a starting point.
-- `herdr.procs.json` at a repo root: the processes procs manages for that repo.
+Then add the key from that mod's `keys.json` to your `~/.config/herdr-app/keys.json`.
+Each folder has a `RECIPE.md` with the full details, including what it runs on your machine.
 
 ## Hacking
 
-Mods hot reload on save. `jump/tiles.js` and `procs/tiles.js` are the same
-file; edit the one in `procs/` and copy it over. The app drops a `jsconfig.json`
-and `gpui-kit.d.ts` into each folder for editor completions; those are
-gitignored. Type-check with:
-
-```sh
-npx -p typescript tsc -p procs/jsconfig.json
-```
+Mods hot reload on save. `jump/tiles.js` and `procs/tiles.js` are the same file;
+edit the one in `procs/` and copy it over. Type-check with
+`npx -p typescript tsc -p procs/jsconfig.json`.
