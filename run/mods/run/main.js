@@ -36,6 +36,7 @@ import { colors, hints, row, avatar, spaceName, spaceNote, glyph, navigate, spac
 
 const FILE = "herdr.procs.json";
 const LABEL_SPACE = "run.space";
+const LABEL_ROOT = "run.root";
 const LABEL_NAME = "run.name";
 // These do things, so they can't be hints.
 const RESERVED = "sxruoaqjk";
@@ -63,6 +64,26 @@ function join(base, rel) {
   if (/^([A-Za-z]:|\/|\\)/.test(rel)) return rel;
   const sep = base.includes("\\") ? "\\" : "/";
   return base.replace(/[\\/]+$/, "") + sep + rel;
+}
+
+/**
+ * One id per repo folder per machine, so every space opened on the same repo
+ * shares one set of processes. Windows paths compare without case or slash style.
+ * @param {string | null | undefined} machine @param {string} root
+ */
+function repoKey(machine, root) {
+  let r = root.replace(/\\/g, "/").replace(/\/+$/, "");
+  if (/^[A-Za-z]:/.test(r)) r = r.toLowerCase();
+  return `${machine ?? ""}|${r}`;
+}
+
+/** True when the space's folder is the repo folder or inside it. @param {SpaceInfo} s @param {PaneInfo[]} ps @param {string} key */
+function spaceInRepo(s, ps, key) {
+  return [folderOf(s, ps), s.folder].some((dir) => {
+    if (!dir) return false;
+    const here = repoKey(s.machine, dir);
+    return here === key || here.startsWith(key + "/");
+  });
 }
 
 // Names end up in hc labels, our own keys and shell variables, so keep them boring.
@@ -249,7 +270,7 @@ export default class Procs extends View {
         for (const a of this.wasLive) {
           const f = next[a];
           if (!f || f.state === "live" || f.reason === "killed" || !byAddress[a]) continue;
-          const name = byAddress[a].split("/").slice(1).join("/");
+          const name = byAddress[a].split("/").pop();
           notify({ title: `${name} exited ${f.exit_code ?? "?"}`, body: "Open Run to see its output or restart it.", level: "error", action: { name: "mod.open", args: { name: "run" } } });
         }
         this.wasLive = new Set(Object.entries(next).filter(([a, f]) => f.state === "live" && byAddress[a]).map(([a]) => a));
@@ -259,9 +280,9 @@ export default class Procs extends View {
   }
 
   /**
-   * Clean up processes whose space was closed. Only runs once every machine's
-   * layout has loaded. If one is still loading or offline we just don't know
-   * its spaces yet, and guessing wrong here kills someone's dev server.
+   * Clean up processes whose repo no longer has an open space. Only runs once
+   * every machine's layout has loaded. If one is still loading or offline we
+   * just don't know its spaces yet, and guessing wrong here kills someone's dev server.
    * @param {Context} cx
    */
   sweep(cx) {
@@ -270,18 +291,25 @@ export default class Procs extends View {
       if (!ms.length || ms.some((m) => m.layout !== "ready")) return;
       const all = spaces();
       if (!all.length) return;
+      const ps = panes();
       const ids = new Set(all.map((s) => s.id));
+      /** @param {string} key */
+      const repoOpen = (key) => all.some((s) => spaceInRepo(s, ps, key));
       /** @param {string} address @param {boolean} live */
       const gone = async (address, live) => {
         if (live) await hc(["kill", address]).catch(() => {});
         await hc(["rm", address]).catch(() => {});
       };
       for (const t of /** @type {Term[]} */ (terminals())) {
+        const root = t.labels?.[LABEL_ROOT];
         const sid = t.labels?.[LABEL_SPACE];
-        if (sid && !ids.has(sid)) await gone(t.address, t.state === "live");
+        // Gone only once the space that started it is closed and no other space is on its repo.
+        if (sid && !ids.has(sid) && !(root && repoOpen(root))) await gone(t.address, t.state === "live");
       }
       for (const [key, address] of Object.entries(this.known)) {
-        if (ids.has(key.split("/")[0])) continue;
+        const owner = key.slice(0, key.lastIndexOf("/"));
+        // Keys from before repo sharing start with a space id, which has no "|".
+        if (owner.includes("|") ? repoOpen(owner) : ids.has(owner)) continue;
         await gone(address, false);
         this.remember(key, null);
       }
@@ -294,15 +322,17 @@ export default class Procs extends View {
   }
 
   /**
-   * Find the terminal for a process. A live one matches by label; a dead one is
-   * whatever address we remembered starting.
-   * @param {string} sid @param {string} name @param {Term[]} live terminals(), read once by the caller
+   * Find the terminal for a process. A live one matches by repo label (or, for
+   * ones started before repo sharing, by space label); a dead one is whatever
+   * address we remembered starting.
+   * @param {string} repo @param {string} sid @param {string} name @param {Term[]} live terminals(), read once by the caller
    * @returns {Term | null}
    */
-  termOf(sid, name, live) {
-    const t = live.find((t) => t.labels?.[LABEL_SPACE] === sid && t.labels?.[LABEL_NAME] === name && t.state === "live");
+  termOf(repo, sid, name, live) {
+    const t = live.find((t) => t.labels?.[LABEL_NAME] === name && t.state === "live" &&
+      (t.labels?.[LABEL_ROOT] === repo || (!t.labels?.[LABEL_ROOT] && t.labels?.[LABEL_SPACE] === sid)));
     if (t) return t;
-    const address = this.known[`${sid}/${name}`];
+    const address = this.known[`${repo}/${name}`];
     const f = address && this.finished[address];
     return f ? { address, ...f } : null;
   }
@@ -315,9 +345,10 @@ export default class Procs extends View {
     for (const s of this.shownSpaces()) {
       const cfg = this.configs[s.id];
       out.push({ kind: "space", s, cfg });
+      const repo = cfg?.root ? repoKey(s.machine, cfg.root) : s.id;
       for (const p of cfg?.procs ?? []) {
-        const t = this.termOf(s.id, p.name, live);
-        const key = `${s.id}/${p.name}`;
+        const t = this.termOf(repo, s.id, p.name, live);
+        const key = `${repo}/${p.name}`;
         const busy = this.busy[key];
         /** @type {ProcItem["state"]} */
         let state = "stopped";
@@ -345,7 +376,8 @@ export default class Procs extends View {
     if (!this.shell) this.shell = await findShell();
     if (it.t && it.t.state !== "live") await hc(["rm", it.t.address]).catch(() => {});
     const args = ["run", "--bg", "--no-parent", "--outlive-parent",
-      "--label", `${LABEL_SPACE}=${it.s.id}`, "--label", `${LABEL_NAME}=${it.p.name}`,
+      "--label", `${LABEL_SPACE}=${it.s.id}`, "--label", `${LABEL_ROOT}=${repoKey(it.s.machine, cfg.root)}`,
+      "--label", `${LABEL_NAME}=${it.p.name}`,
       "--cwd", join(cfg.root, it.p.cwd)];
     if (it.s.machine) args.push("--on", it.s.machine);
     /** @type {ExecResult} */
@@ -391,14 +423,23 @@ export default class Procs extends View {
 
   /** Starts every autostart process that isn't running. @param {Context} cx */
   async up(cx) {
+    // With every space shown, two spaces on one repo list the same process twice.
+    const done = new Set();
     for (const it of this.items()) {
-      if (it.kind === "proc" && it.p.autostart && it.state !== "running" && !this.busy[it.key]) await this.start(cx, it);
+      if (it.kind !== "proc" || done.has(it.key)) continue;
+      done.add(it.key);
+      if (it.p.autostart && it.state !== "running" && !this.busy[it.key]) await this.start(cx, it);
     }
   }
 
   /** @param {Context} cx */
   async stopAll(cx) {
-    for (const it of this.items()) if (it.kind === "proc" && it.state === "running") await this.stop(cx, it);
+    const done = new Set();
+    for (const it of this.items()) {
+      if (it.kind !== "proc" || done.has(it.key)) continue;
+      done.add(it.key);
+      if (it.state === "running") await this.stop(cx, it);
+    }
   }
 
   /**
