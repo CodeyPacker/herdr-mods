@@ -30,8 +30,9 @@ import { colors, hints, row, avatar, spaceName, spaceNote, glyph, navigate, spac
 /** @typedef {{ state: string, exit_code: number | null, reason: string | null }} Fin */
 /** @typedef {{ address: string, state: string, exit_code?: number | null, reason?: string | null, pid?: number, labels?: Record<string, string> }} Term */
 /** @typedef {{ kind: "space", s: SpaceInfo, cfg: Config | undefined, hint?: string, pinned?: boolean }} SpaceItem */
-/** @typedef {{ kind: "proc", s: SpaceInfo, p: Proc, t: Term | null, key: string, state: "stopped" | "running" | "exited", detail: string, busy: string | undefined, hint?: string, pinned?: boolean }} ProcItem */
-/** @typedef {SpaceItem | ProcItem} Item */
+/** @typedef {{ kind: "repo", s: SpaceInfo, cfg: Config, hint?: string, pinned?: boolean }} RepoItem a repo the space has left but still runs processes from */
+/** @typedef {{ kind: "proc", s: SpaceInfo, cfg: Config, extra: boolean, p: Proc, t: Term | null, key: string, state: "stopped" | "running" | "exited", detail: string, busy: string | undefined, hint?: string, pinned?: boolean }} ProcItem */
+/** @typedef {SpaceItem | RepoItem | ProcItem} Item */
 /** @typedef {{ address: string, name: string, space: string, spaceName: string }} Peek */
 
 const FILE = "herdr.procs.json";
@@ -43,13 +44,20 @@ const RESERVED = "sxruoaqjk";
 const STOP_WAIT_MS = 10000;
 
 /**
- * Where the space is right now: its first pane's cwd, falling back to where it was created.
+ * Where the space is right now: the folder of the pane you're in (the focused
+ * pane of the tab it shows), then any pane in that tab, then any pane in the
+ * space, falling back to where it was created. So a `cd` in any tab counts.
  * @param {SpaceInfo} s @param {PaneInfo[]} ps
  * @returns {string | null}
  */
 function folderOf(s, ps) {
-  const tabs = new Set((s.tabs ?? []).map((c) => c.id));
-  return ps.find((p) => tabs.has(p.tab) && p.cwd)?.cwd || s.folder || null;
+  const tabs = s.tabs ?? [];
+  const shown = new Set(tabs.filter((c) => c.active).map((c) => c.id));
+  const all = new Set(tabs.map((c) => c.id));
+  return ps.find((p) => shown.has(p.tab) && p.focused && p.cwd)?.cwd
+    || ps.find((p) => shown.has(p.tab) && p.cwd)?.cwd
+    || ps.find((p) => all.has(p.tab) && p.cwd)?.cwd
+    || s.folder || null;
 }
 
 /** @param {string} path @returns {string | null} */
@@ -179,6 +187,8 @@ export default class Procs extends View {
     this.all = localStorage.getItem("all") === "1";
     /** @type {Record<string, Config>} by space id */
     this.configs = {};
+    /** @type {Record<string, Config[]>} by space id: other repos this space started processes in that still run */
+    this.extras = {};
     /** @type {Record<string, string>} "space/name" -> starting | stopping | restarting | won't stop */
     this.busy = {};
     this.note = "";
@@ -236,15 +246,41 @@ export default class Procs extends View {
           if (text !== null) found = { root: dir, text };
           else dir = parent(dir);
         }
-        if (!found) { this.configs[s.id] = { root: folderOf(s, ps), procs: null }; return; }
-        try {
-          this.configs[s.id] = { root: found.root, procs: parseProcs(found.text) };
-        } catch (e) {
-          this.configs[s.id] = { root: found.root, procs: null, error: `${FILE}: ${errorText(e)}` };
+        if (!found) this.configs[s.id] = { root: folderOf(s, ps), procs: null };
+        else {
+          try {
+            this.configs[s.id] = { root: found.root, procs: parseProcs(found.text) };
+          } catch (e) {
+            this.configs[s.id] = { root: found.root, procs: null, error: `${FILE}: ${errorText(e)}` };
+          }
         }
+        await this.loadExtras(s);
       }));
       cx.notify();
     });
+  }
+
+  /**
+   * Repos this space started processes in that are still running, other than
+   * the one it's in now. You can cd away from a repo and still see and stop them.
+   * @param {SpaceInfo} s
+   */
+  async loadExtras(s) {
+    const cfg = this.configs[s.id];
+    const here = cfg?.procs ? repoKey(s.machine, cfg.root ?? "") : null;
+    /** @type {Set<string>} */
+    const keys = new Set();
+    for (const t of /** @type {Term[]} */ (terminals())) {
+      const key = t.labels?.[LABEL_ROOT];
+      if (t.state === "live" && key && key !== here && t.labels?.[LABEL_SPACE] === s.id) keys.add(key);
+    }
+    const loaded = await Promise.all([...keys].map(async (key) => {
+      const root = key.slice(key.indexOf("|") + 1);
+      const text = await readTextFile(join(root, FILE), { on: s.machine }).catch(none);
+      if (text === null) return null;
+      try { return { root, procs: parseProcs(text) }; } catch { return null; }
+    }));
+    this.extras[s.id] = /** @type {Config[]} */ (loaded.filter(Boolean));
   }
 
   /** @param {string} key @param {string | null} address */
@@ -342,11 +378,10 @@ export default class Procs extends View {
     /** @type {Item[]} */
     const out = [];
     const live = /** @type {Term[]} */ (terminals());
-    for (const s of this.shownSpaces()) {
-      const cfg = this.configs[s.id];
-      out.push({ kind: "space", s, cfg });
-      const repo = cfg?.root ? repoKey(s.machine, cfg.root) : s.id;
-      for (const p of cfg?.procs ?? []) {
+    /** @param {SpaceInfo} s @param {Config} cfg @param {boolean} extra */
+    const procs = (s, cfg, extra) => {
+      const repo = cfg.root ? repoKey(s.machine, cfg.root) : s.id;
+      for (const p of cfg.procs ?? []) {
         const t = this.termOf(repo, s.id, p.name, live);
         const key = `${repo}/${p.name}`;
         const busy = this.busy[key];
@@ -356,10 +391,19 @@ export default class Procs extends View {
         if (t?.state === "live") { state = "running"; detail = `running · pid ${t.pid ?? "?"}`; }
         else if (t) { state = "exited"; detail = `exited ${t.exit_code ?? "?"}${t.reason === "killed" ? " (stopped)" : ""}`; }
         if (busy) detail = busy;
-        out.push({ kind: "proc", s, p, t, key, state, detail, busy });
+        out.push({ kind: "proc", s, cfg, extra, p, t, key, state, detail, busy });
+      }
+    };
+    for (const s of this.shownSpaces()) {
+      const cfg = this.configs[s.id];
+      out.push({ kind: "space", s, cfg });
+      if (cfg) procs(s, cfg, false);
+      for (const x of this.extras[s.id] ?? []) {
+        out.push({ kind: "repo", s, cfg: x });
+        procs(s, x, true);
       }
     }
-    const wanted = out.map((it) => (it.kind === "space" ? this.hintConfig.spaces[it.s.name] : it.p.key));
+    const wanted = out.map((it) => (it.kind === "space" ? this.hintConfig.spaces[it.s.name] : it.kind === "proc" ? it.p.key : null));
     const hs = hints(out.length, RESERVED, wanted);
     out.forEach((it, i) => { it.hint = hs[i]; it.pinned = !!wanted[i] && hs[i] === String(wanted[i]).toLowerCase(); });
     return out;
@@ -369,7 +413,7 @@ export default class Procs extends View {
 
   /** @param {Context} cx @param {ProcItem} it */
   async start(cx, it) {
-    const cfg = this.configs[it.s.id];
+    const cfg = it.cfg;
     if (!cfg?.root) return;
     this.busy[it.key] = "starting";
     cx.notify();
@@ -428,7 +472,8 @@ export default class Procs extends View {
     for (const it of this.items()) {
       if (it.kind !== "proc" || done.has(it.key)) continue;
       done.add(it.key);
-      if (it.p.autostart && it.state !== "running" && !this.busy[it.key]) await this.start(cx, it);
+      // Only the repo the space is in. A repo it left keeps what's running, nothing more starts there.
+      if (!it.extra && it.p.autostart && it.state !== "running" && !this.busy[it.key]) await this.start(cx, it);
     }
   }
 
@@ -526,8 +571,8 @@ export default class Procs extends View {
     this.typed = state.typed;
     this.note = "";
     if (r === "close") { this.close(); cx.stop_propagation(); return; }
-    if (r === "hit" && items[this.at]?.kind === "space") {
-      // Typing a space's letter selects its first process, not the header.
+    if (r === "hit" && (items[this.at]?.kind === "space" || items[this.at]?.kind === "repo")) {
+      // Typing a header's letter selects its first process, not the header.
       const next = items[this.at + 1];
       if (next?.kind === "proc") this.at++;
     }
@@ -578,7 +623,7 @@ export default class Procs extends View {
       const on = i === at;
       if (it.kind === "space") {
         const cfg = it.cfg;
-        const running = items.filter((x) => x.kind === "proc" && x.s === it.s && x.state === "running").length;
+        const running = items.filter((x) => x.kind === "proc" && x.s === it.s && !x.extra && x.state === "running").length;
         const auto = (cfg?.procs ?? []).filter((p) => p.autostart).length;
         /** @type {string | null} */
         let empty = null;
@@ -594,9 +639,24 @@ export default class Procs extends View {
         ]);
         return;
       }
+      if (it.kind === "repo") {
+        // A repo this space left, under the space: its folder name and where it is.
+        const name = (it.cfg.root ?? "").replace(/[\\/]+$/, "").split(/[\\/]/).pop() ?? "";
+        blocks[blocks.length - 1].push(
+          row(t, { id: `r-${it.s.id}-${it.cfg.root}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => { this.at = i + 1 < items.length && items[i + 1].kind === "proc" ? i + 1 : i; cx.notify(); } })
+            .child(div().w(18).flex_none())
+            // The space avatar's shape, outlined: a project, not a space.
+            .child(h_flex().size(18).flex_none().rounded(5).border(1).border_color(t.dim).items_center().justify_center()
+              .text_size(10.5).font_bold().text_color(t.dim).child([...name][0]?.toUpperCase() ?? "?"))
+            .child(div().flex_none().font_semibold().text_color(t.foreground).child(name))
+            .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child("still running · you've left this repo")),
+        );
+        return;
+      }
       blocks[blocks.length - 1].push(
         row(t, { id: `p-${it.key}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => { this.at = i; cx.notify(); } })
-          .child(div().w(18).flex_none())
+          // A left repo's processes sit one step further in, under its badge.
+          .child(div().w(it.extra ? 44 : 18).flex_none())
           .child(glyph(t, it.busy ? "working" : it.state))
           .child(div().flex_none().max_w(200).truncate().text_color(t.muted).child(it.p.name))
           .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(it.detail)),
