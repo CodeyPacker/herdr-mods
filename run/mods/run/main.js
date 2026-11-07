@@ -16,7 +16,7 @@
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { spaces, panes, terminals, machines, focused, run, hc, exec, notify, props, closeOverlay, openOverlay, shared, window as win, readTextFile, appHome, nextCommand, home } from "herdr";
-import { colors, hints, row, avatar, spaceName, spaceNote, glyph, navigate, spaceColor, hintLine, readHintConfig, ROW_H } from "./tiles.js";
+import { colors, panelFill, hints, row, avatar, spaceName, spaceNote, glyph, navigate, spaceColor, hintLine, readHintConfig, ROW_H } from "./tiles.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("gpui-kit").KeyEvent} KeyEvent */
@@ -677,7 +677,7 @@ export default class Procs extends View {
       .min_h(0)
       .p(18)
       .gap(10)
-      .bg(t.popover)
+      .bg(panelFill(t, 1, 0.1, t.popover)) // the dialogs' popover color at the islands panel opacity, a bit more solid
       .rounded(14).overflow_hidden().border_1().border_color(t.border) // our own frame (mod.json says frame: none); no shadow, Herdr clips it
       .text_size(13)
       .child(

@@ -6,7 +6,14 @@
 
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
-import { panes, props, run, theme, home } from "herdr";
+import { panes, props, run, theme, home, shared } from "herdr";
+
+// The header at "main_opacity" in islands-workspace-chrome/settings.json (1 when unset), like the pane under it.
+const mainFill = (c) => {
+  const o = shared("islands.mainOpacity");
+  if (typeof o !== "number" || o >= 1 || !/^#[0-9a-f]{6}$/i.test(c)) return c;
+  return c + Math.round(Math.max(0, o) * 255).toString(16).padStart(2, "0");
+};
 
 function icon(p, size, color) {
   if (!p?.icon) return null;
@@ -54,7 +61,7 @@ export default class Pane extends View {
       .px(10)
       .gap(8)
       .items_center()
-      .rounded_t(13).bg(t.background) // sits inside a 14px card
+      .rounded_t(13).bg(mainFill(t.background)) // sits inside a 14px card
       .border_b(1)
       .border_color(t.border)
       .text_size(12)

@@ -5,6 +5,13 @@ import { View, div, image, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { agents, terminals, panes, focused, spaces, run, theme, shared, setShared, setAgentOrder, openOverlay, closeOverlay, props, window, layout } from "herdr";
 
+// The islands' fill at the opacity in islands-workspace-chrome/settings.json (1 when unset).
+const islandFill = (c) => {
+  const o = shared("islands.opacity");
+  if (typeof o !== "number" || o >= 1 || !/^#[0-9a-f]{6}$/i.test(c)) return c;
+  return c + Math.round(Math.max(0, o) * 255).toString(16).padStart(2, "0");
+};
+
 function find(node, id) {
   if (node?.id === id) return node;
   for (const child of node?.children ?? []) {
@@ -15,7 +22,7 @@ function find(node, id) {
 }
 
 // The sidebar's rail goes by its width, not a flag: dragging its edge narrows it too.
-const narrow = () => (find(layout(), "sidebar")?.size?.px ?? Infinity) < 160;
+const narrow = () => (find(layout(), "sidebar")?.size?.px ?? Infinity) < 100;
 
 // To the rail (on macOS wide enough for the traffic lights), or back to the width it had.
 function toggleSidebar() {
@@ -299,7 +306,9 @@ export default class Agents extends View {
         return h_flex()
           .id(`ag-${a.address}`)
           .h(26)
-          .px(8)
+          .w(34) // fixed width, centered by the list, so a wider rail doesn't stretch it
+          .px(4)
+          .rounded(6)
           .flex_none()
           .items_center()
           .gap(4)
@@ -395,7 +404,7 @@ export default class Agents extends View {
           open ? this.folded.add(g.id) : this.folded.delete(g.id);
           cx.notify();
         })
-        .child(div().truncate().text_color(t[g.status] ?? t.dim).child(g.label))
+        .child(div().min_w(0).truncate().text_color(t[g.status] ?? t.dim).child(g.label))
         .when(byPriority || !open, (el) => el.child(div().text_color(t.dim).child(String(g.members.length))))
         .child(div().flex_1())
         .when(!open, (el) => el
@@ -411,8 +420,9 @@ export default class Agents extends View {
       .min_h(0)
       .rounded(13) // its own card now, so no top divider
       .overflow_hidden()
-      .bg(t.chrome)
+      .bg(islandFill(t.chrome))
       .text_size(13)
+      .when(collapsed, (el) => el.pt(10))
       .when(!collapsed, (el) =>
         el.child(
           h_flex()
@@ -439,7 +449,7 @@ export default class Agents extends View {
       .when(list.length === 0 && !collapsed, (el) =>
         el.child(div().px(12).text_size(12).text_color(t.dim).child("No agent status yet. Agents show up here when they report their status. Older versions and agents inside tmux may not.")),
       )
-      .child(v_flex().id("ag-list").flex_1().min_h(0).px(collapsed ? 0 : 8).overflow_y_scrollbar().mode("always").children(rows))
+      .child(v_flex().id("ag-list").flex_1().min_h(0).px(collapsed ? 0 : 8).when(collapsed, (el) => el.items_center()).overflow_y_scrollbar().mode("always").children(rows))
       .when(collapsed, (el) =>
         el.child(
           h_flex()

@@ -7,7 +7,7 @@
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
 import { spaces, panes, agents, run, props, closeOverlay, shared, readTextFile, appHome, home } from "herdr";
-import { colors, hints, row, avatar, spaceName, spaceNote, glyph, navigate, spaceColor, hintLine, readHintConfig, ROW_H } from "./tiles.js";
+import { colors, panelFill, hints, row, avatar, spaceName, spaceNote, glyph, navigate, spaceColor, hintLine, readHintConfig, ROW_H } from "./tiles.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("gpui-kit").KeyEvent} KeyEvent */
@@ -30,7 +30,7 @@ export default class Jump extends View {
     this.at = null;
     /** @type {string} */
     this.typed = "";
-    /** @type {{ it: SpaceItem | TabItem, input: ReturnType<typeof InputState.new> } | null} */
+    /** @type {{ it: SpaceItem | TabItem | NewItem, input: ReturnType<typeof InputState.new> } | null} */
     this.renaming = null;
     /** @type {HintConfig} */
     this.hintConfig = { spaces: {}, tabs: {} };
@@ -70,21 +70,19 @@ export default class Jump extends View {
     return out;
   }
 
-  /** Goes where the item points, then closes. @param {Item | undefined} it */
-  go(it) {
+  /** Goes where the item points, then closes. A new tab or space asks for its name first. @param {Item | undefined} it @param {Context} cx */
+  go(it, cx) {
     if (!it) return;
+    if (it.kind === "new-space" || it.kind === "new-tab") return this.startRename(it, cx);
     this.close();
     if (it.kind === "tab") run("tab.select", { id: it.tab.id });
     else if (it.kind === "space") run("space.select", { id: it.s.id });
-    else if (it.kind === "new-tab") run("tab.new");
-    // Start in the home folder, not the current space's folder, so a new space shares nothing.
-    else if (it.kind === "new-space") run("space.new", { folder: home() });
   }
 
-  /** Opens the name box for a tab or space. @param {SpaceItem | TabItem} it @param {Context} cx */
+  /** Opens the name box for a tab or space, or empty for a new tab or space. @param {SpaceItem | TabItem | NewItem} it @param {Context} cx */
   startRename(it, cx) {
-    const name = it.kind === "tab" && !it.merged ? it.tab.name : it.s.name;
-    const input = InputState.new({ value: name });
+    const name = it.kind === "new-space" || it.kind === "new-tab" ? "" : it.kind === "tab" && !it.merged ? it.tab.name : it.s.name;
+    const input = InputState.new({ value: name, placeholder: it.kind === "new-tab" ? "Tab name" : "Space name" });
     input.set_selected_range({ start: 0, end: name.length });
     input.on("submit", (_e, cx) => this.finishRename(true, cx));
     input.focus();
@@ -97,7 +95,11 @@ export default class Jump extends View {
     if (!this.renaming) return;
     const { it, input } = this.renaming;
     this.renaming = null;
-    if (save) {
+    if (it.kind === "new-space" || it.kind === "new-tab") {
+      const name = input.value().trim();
+      // Start in the home folder, not the current space's folder, so a new space shares nothing.
+      if (save && name) { this.close(); if (it.kind === "new-tab") run("tab.new", { name }); else run("space.new", { folder: home(), name }); return; }
+    } else if (save) {
       if (it.kind === "tab" && !it.merged) run("tab.rename", { id: it.tab.id, name: input.value() });
       else run("space.rename", { id: it.s.id, name: input.value() });
     }
@@ -119,7 +121,7 @@ export default class Jump extends View {
     this.at = state.at;
     this.typed = state.typed;
     if (r === "close") { this.close(); cx.stop_propagation(); return; }
-    if (r === "hit" || r === "act") this.go(items[this.at]);
+    if (r === "hit" || r === "act") this.go(items[this.at], cx);
     if (r) { cx.stop_propagation(); cx.notify(); return; }
     const it = items[this.at];
     if (e.keystroke === "x" && it?.kind === "tab") {
@@ -151,12 +153,12 @@ export default class Jump extends View {
       const on = i === at;
       if (it.kind === "space") {
         blocks.push({ merged: false, rows: [
-          row(t, { id: `j-${it.s.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: () => this.go(it) }).child(avatar(it.s, spaceColor(t, it.s, space))).child(spaceName(t, it.s)).child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(spaceNote(all, it.s, home()))),
+          row(t, { id: `j-${it.s.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => this.go(it, cx) }).child(avatar(it.s, spaceColor(t, it.s, space))).child(spaceName(t, it.s)).child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(spaceNote(all, it.s, home()))),
         ] });
       } else if (it.kind === "tab" && it.merged) {
         if (!blocks[blocks.length - 1]?.merged) blocks.push({ merged: true, rows: [] });
         blocks[blocks.length - 1].rows.push(
-          row(t, { id: `j-${it.tab.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: () => this.go(it) })
+          row(t, { id: `j-${it.tab.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => this.go(it, cx) })
             .child(avatar(it.s, spaceColor(t, it.s, space)))
             .child(spaceName(t, it.s))
             .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(spaceNote(all, it.s, home())))
@@ -165,7 +167,7 @@ export default class Jump extends View {
         );
       } else if (it.kind === "tab") {
         blocks[blocks.length - 1].rows.push(
-          row(t, { id: `j-${it.tab.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: () => this.go(it) })
+          row(t, { id: `j-${it.tab.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => this.go(it, cx) })
             .child(div().w(18).flex_none())
             .when(!!it.status, (el) => el.child(glyph(t, it.status)))
             .child(div().flex_none().max_w(260).truncate().text_color(t.muted).child(it.tab.name))
@@ -173,7 +175,7 @@ export default class Jump extends View {
         );
       } else {
         extras.push(
-          row(t, { id: `j-${it.kind}`, hint: it.hint, typed: this.typed, pinned: false, on, onClick: () => this.go(it) })
+          row(t, { id: `j-${it.kind}`, hint: it.hint, typed: this.typed, pinned: false, on, onClick: (_e, cx) => this.go(it, cx) })
             .child(div().flex_none().text_color(t.foreground).child(it.kind === "new-tab" ? "new tab" : "new space"))
             .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(it.kind === "new-tab" ? "in this space" : "on this computer")),
         );
@@ -194,7 +196,7 @@ export default class Jump extends View {
       .min_h(0)
       .p(18)
       .gap(10)
-      .bg(t.popover)
+      .bg(panelFill(t, 1, 0.1, t.popover)) // the dialogs' popover color at the islands panel opacity, a bit more solid
       .rounded(14).overflow_hidden().border_1().border_color(t.border) // our own frame (mod.json says frame: none); no shadow, Herdr clips it
       .text_size(13)
       .child(
@@ -204,7 +206,7 @@ export default class Jump extends View {
       )
       .when(!!this.renaming, (el) => el.child(
         h_flex().items_center().gap(10)
-          .child(div().flex_none().text_size(11).text_color(t.dim).child(this.renaming?.it.kind === "tab" && !this.renaming.it.merged ? "Rename tab" : "Rename space"))
+          .child(div().flex_none().text_size(11).text_color(t.dim).child(this.renaming?.it.kind === "new-space" ? "New space" : this.renaming?.it.kind === "new-tab" ? "New tab" : this.renaming?.it.kind === "tab" && !this.renaming.it.merged ? "Rename tab" : "Rename space"))
           .child(Input.new(this.renaming?.input).flex_1().h(30).px(8).rounded(6).border_1().border_color(t.accent).bg(t.background).text_size(12.5).text_color(t.foreground)),
       ))
       .child(v_flex().id("jump-list").h(listH).flex_none().overflow_y_scrollbar().gap(8).children(sections))

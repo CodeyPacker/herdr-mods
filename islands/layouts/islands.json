@@ -13,10 +13,9 @@
             "mod": "islands-workspace-chrome"
           },
           "size": {
-            "px": 46
+            "px": 38
           },
           "window_drag": true,
-          "background": "surface",
           "radius": 14,
           "border": {
             "width": 1,
@@ -37,7 +36,6 @@
                 "weight": 1
               },
               "min": 90,
-              "background": "surface",
               "radius": 14,
               "border": {
                 "width": 1,
@@ -54,7 +52,6 @@
                 "weight": 1
               },
               "min": 90,
-              "background": "surface",
               "radius": 14,
               "border": {
                 "width": 1,
@@ -76,7 +73,6 @@
           "size": {
             "px": 72
           },
-          "background": "surface",
           "radius": 14,
           "border": {
             "width": 1,
@@ -103,7 +99,7 @@
             "mod": "islands-tabs"
           },
           "size": {
-            "px": 30
+            "px": 38
           },
           "window_drag": true
         },
@@ -186,7 +182,6 @@
           "size": {
             "px": 32
           },
-          "background": "surface",
           "radius": 14,
           "border": {
             "width": 1,
