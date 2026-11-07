@@ -77,7 +77,7 @@ terminals. Nothing is set, so settings.json still wins there.
   until you look, `dim` when idle. Space and tab rows carry the dot, the
   agents card lists them, the status bar counts them.
 - Everything else is stock Herdr: `ctrl-shift-b` folds the sidebar to a
-  44 px rail (the cards narrow with it), `ctrl-shift-l` cycles layouts,
+  44 px rail (the cards narrow with it, Spaces show their letter tiles), `ctrl-shift-l` cycles layouts,
   panes split, zoom, close and drag like the default layout, Files and
   Changes open from the tab bar and stay open per space.
 
@@ -89,6 +89,10 @@ terminals. Nothing is set, so settings.json still wins there.
 - `mods/islands-*`: `mod.clone` of the shipped `spaces`, `agents`, `pane`,
   `tabs`, `workspace-chrome` and `workspace-status`, each with a few lines
   changed in `main.js`, the rest shipped code:
+  - `spaces`: its rail row (`compact`) shows the space's colored letter tile
+    instead of a number, and is `.mx(5).rounded(6)` so the hover and selected
+    fills stay inside the card. The agents rail row and the footer rows get
+    the same inset for the same reason.
   - `spaces`, `agents`, `workspace-chrome` (both its brand row and its footer)
     and `workspace-status`: `.rounded(13).overflow_hidden()` before the root's
     `.bg(t.chrome)`, and their `.border_t(1)` / `.border_b(1)` dividers removed.

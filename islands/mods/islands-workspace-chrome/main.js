@@ -33,11 +33,11 @@ export default class WorkspaceChrome extends View {
     const t = theme();
     const collapsed = narrow();
     if (props()?.footer) {
-      const row = (id, icon, label, dim, action) => h_flex().id(id).h(28).px(8).gap(9).items_center().rounded(8)
+      const row = (id, icon, label, dim, action) => h_flex().id(id).h(28).px(collapsed ? 6 : 8).gap(9).items_center().rounded(8).when(collapsed, el => el.justify_center())
         .text_color(dim ? t.dim : t.muted).hover(s => s.bg(t.hover).text_color(t.foreground)).cursor_pointer()
         .on_click(action).child(svg(`mods/islands-workspace-chrome/${icon}.svg`).size(14))
         .when(!collapsed, el => el.child(label));
-      return v_flex().size_full().rounded(13).overflow_hidden().bg(t.chrome).px(8).py(8).text_size(13) // its own card, no divider
+      return v_flex().size_full().rounded(13).overflow_hidden().bg(t.chrome).px(collapsed ? 5 : 8).py(8).text_size(13) // its own card, no divider
         .child(row("settings", "settings", "Settings", false, () => run("app.settings"))
           .when(Boolean(updates().app.ready), el => el.child(div().size(6).rounded_full().bg(t.accent))))
         .child(row("machine", "plus", "Add machine", true, () => run("mod.open", { name: "machine-add" })));

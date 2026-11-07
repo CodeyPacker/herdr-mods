@@ -299,7 +299,9 @@ export default class Agents extends View {
         return h_flex()
           .id(`ag-${a.address}`)
           .h(26)
-          .px(8)
+          .mx(5) // inset and rounded so the hover fill stays inside the card
+          .px(4)
+          .rounded(6)
           .flex_none()
           .items_center()
           .gap(4)

@@ -430,18 +430,27 @@ export default class Spaces extends View {
       );
   }
 
-  compact({ w, i }, t) {
+  // The rail: the space's letter tile, like the wide list, with the status glyph beside it.
+  // Rounded and inset so the hover fill stays inside the card.
+  compact({ w }, t) {
+    const colors = shared("space.colors") ?? {};
+    const color = colors[w.id] ?? "ansi6";
+    const fill = color.startsWith("#") ? color : (MARK[color] ?? t[color]);
     return h_flex()
       .id(`space-${w.id}`)
-      .h(26)
+      .h(28)
+      .mx(5)
       .flex_none()
+      .items_center()
       .justify_center()
-      .gap(4)
-      .when(w.active, (el) => el.bg(t.raised))
-      .hover((s) => s.bg(t.hover))
+      .gap(3)
+      .rounded(6)
+      .when(w.active, (el) => el.bg(t.selected))
+      .when(!w.active, (el) => el.hover((s) => s.bg(t.hover)))
       .on_click(() => run("space.select", { id: w.id }))
-      .child(div().text_color(w.active ? t.foreground : t.muted).child(String(i + 1)))
-      .child(div().text_color(tone(t, w.status)).child(glyph(w.status)));
+      .on_mouse_down("right", () => this.menu(w))
+      .child(h_flex().size(18).flex_none().rounded(5).bg(fill).items_center().justify_center().text_size(10.5).font_bold().text_color("#ffffff").child([...w.name][0]?.toUpperCase() ?? "?"))
+      .child(div().w(6).flex_none().text_size(11).text_color(tone(t, w.status)).child(glyph(w.status)));
   }
 
   render() {
