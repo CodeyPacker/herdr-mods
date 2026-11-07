@@ -4,7 +4,7 @@
 
 import { div, svg } from "gpui-kit";
 import { h_flex } from "gpui-base";
-import { theme } from "herdr";
+import { theme, shared } from "herdr";
 
 /** @typedef {import("gpui-kit").Color} Color */
 /** @typedef {import("gpui-kit").Context} Context */
@@ -21,6 +21,22 @@ import { theme } from "herdr";
 /** The app's theme colors, typed as colors the builders accept. @returns {Theme} */
 export function colors() {
   return /** @type {Theme} */ (theme());
+}
+
+/**
+ * The islands layout's main panel fill: the theme background at islands' "main_opacity"
+ * (solid when islands isn't installed). shade < 1 darkens it, 0.8 is 20% darker.
+ * more adds to the opacity, so 0.1 makes it a bit more solid than the panel.
+ * @param {Theme} t @param {number} [shade] @param {number} [more] @returns {Color}
+ */
+export function panelFill(t, shade = 1, more = 0) {
+  const c = String(t.background), o = shared("islands.mainOpacity");
+  if (!/^#[0-9a-f]{6}$/i.test(c)) return t.background;
+  const hex = (n) => Math.round(n).toString(16).padStart(2, "0");
+  const rgb = [1, 3, 5].map((i) => hex(parseInt(c.slice(i, i + 2), 16) * shade)).join("");
+  const a = typeof o === "number" ? Math.min(1, o + more) : 1;
+  const alpha = a < 1 ? hex(Math.max(0, a) * 255) : "";
+  return /** @type {Color} */ (`#${rgb}${alpha}`);
 }
 
 // Home row first, then everything else. One letter each until we run out, then pairs.
