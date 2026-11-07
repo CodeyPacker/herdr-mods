@@ -196,7 +196,7 @@ export default class Jump extends View {
       .min_h(0)
       .p(18)
       .gap(10)
-      .bg(panelFill(t, 0.7, 0.1)) // the islands main panel, 30% darker and a bit more solid
+      .bg(panelFill(t, 1, 0.1, t.popover)) // the dialogs' popover color at the islands panel opacity, a bit more solid
       .rounded(14).overflow_hidden().border_1().border_color(t.border) // our own frame (mod.json says frame: none); no shadow, Herdr clips it
       .text_size(13)
       .child(

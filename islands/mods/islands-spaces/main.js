@@ -38,7 +38,7 @@ function place(s, ps) {
   const tabs = new Set((s.tabs ?? []).map((c) => c.id));
   return ps.find((p) => tabs.has(p.tab) && p.cwd)?.cwd || s.folder;
 }
-const rowHeight = ({ tree }) => (tree ? 28 : 30);
+const rowHeight = ({ tree }) => (tree ? 34 : 36); // 6px taller than the content for padding
 const where = (s, ps) => JSON.stringify([s.machine ?? null, place(s, ps)]);
 const base = (path) => path.replace(/\/+$/, "").split("/").pop();
 // Changes made outside Herdr (an editor's save, a commit in another app): looked
@@ -388,9 +388,10 @@ export default class Spaces extends View {
     return v_flex()
       .relative()
       .id(`space-${w.id}`)
-      .px(8)
-      .h(tail ? 44 : rowHeight({ tree })) // taller only when the pill goes under the name
+      .px(10)
+      .h(tail ? 50 : rowHeight({ tree })) // taller only when the pill goes under the name
       .flex_none()
+      .my(2) // 4px between spaces
       .justify_center()
       .rounded(8)
       .when(on, (el) => el.bg(t.selected))
@@ -447,6 +448,7 @@ export default class Spaces extends View {
       .id(`space-${w.id}`)
       .size(28)
       .flex_none()
+      .my(2) // 4px between spaces
       .items_center()
       .justify_center()
       .rounded(6)

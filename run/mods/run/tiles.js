@@ -29,9 +29,9 @@ export function colors() {
  * more adds to the opacity, so 0.1 makes it a bit more solid than the panel.
  * @param {Theme} t @param {number} [shade] @param {number} [more] @returns {Color}
  */
-export function panelFill(t, shade = 1, more = 0) {
-  const c = String(t.background), o = shared("islands.mainOpacity");
-  if (!/^#[0-9a-f]{6}$/i.test(c)) return t.background;
+export function panelFill(t, shade = 1, more = 0, base = t.background) {
+  const c = String(base), o = shared("islands.mainOpacity");
+  if (!/^#[0-9a-f]{6}$/i.test(c)) return base;
   const hex = (n) => Math.round(n).toString(16).padStart(2, "0");
   const rgb = [1, 3, 5].map((i) => hex(parseInt(c.slice(i, i + 2), 16) * shade)).join("");
   const a = typeof o === "number" ? Math.min(1, o + more) : 1;
