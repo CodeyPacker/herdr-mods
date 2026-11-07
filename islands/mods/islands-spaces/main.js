@@ -7,6 +7,13 @@ import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { spaces, machines, panes, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, layout, home } from "herdr";
 
+// The islands' fill at the opacity in islands-workspace-chrome/settings.json (1 when unset).
+const islandFill = (c) => {
+  const o = shared("islands.opacity");
+  if (typeof o !== "number" || o >= 1 || !/^#[0-9a-f]{6}$/i.test(c)) return c;
+  return c + Math.round(Math.max(0, o) * 255).toString(16).padStart(2, "0");
+};
+
 // A new space starts in home, not the focused space's folder, so it shares no
 // repo, name or processes with it. Another machine's space starts in that machine's home.
 /** @param {string | null | undefined} m */
@@ -23,7 +30,7 @@ function find(node, id) {
 }
 
 // The sidebar's rail goes by its width, not a flag: dragging its edge narrows it too.
-const narrow = () => (find(layout(), "sidebar")?.size?.px ?? Infinity) < 160;
+const narrow = () => (find(layout(), "sidebar")?.size?.px ?? Infinity) < 100;
 
 // Where a space is now: its first terminal's live folder, else where it was made.
 // `ps`: panes(), read once by the caller (each read copies every pane).
@@ -351,26 +358,24 @@ export default class Spaces extends View {
     });
   }
 
-  // Only what's unusual, after the name: "herdr \u00b7 spike \u21912 \u21931". The repo or
-  // branch goes when the name already says it (a worktree is named after its branch),
-  // and master/main go: nearly every space is on one.
+  // Only what's unusual, under the name: a small "herdr \u00b7 spike" pill, then "\u21912 \u21931".
+  // The repo or branch goes when the name already says it (a worktree is named after
+  // its branch), and master/main go: nearly every space is on one. Null: nothing to show.
   gitTail(g, tree, name, t) {
     const raw = g.branch ?? "detached";
     const same = (a) => a.toLowerCase() === name.toLowerCase();
     const branch = same(raw) || raw === "master" || raw === "main" ? "" : raw;
     const repo = tree || same(g.name) ? "" : g.name;
     const where = [repo, branch].filter(Boolean).join(" \u00b7 ");
-    return h_flex()
-      .flex_1()
-      .min_w(0)
-      .gap(5)
-      .justify_end()
-      .items_center()
-      .text_size(11.5)
-      .text_color(t.dim)
+    if (!where && !(g.ahead > 0) && !(g.behind > 0)) return null;
+    // One pill holds the branch and the counts, all in the same dark text.
+    return h_flex().self_start().max_w_full().min_w(0).h(14).px(5).gap(4).items_center().rounded_full()
+      .text_size(9)
+      // Filled with the theme's yellow (ansi3), dark text so it reads on it.
+      .bg(t.ansi3).text_color(t.background)
       .when(Boolean(where), (el) => el.child(div().min_w(0).truncate().child(where)))
-      .when(g.ahead > 0, (el) => el.child(div().flex_none().text_color(t.ansi2).child(`\u2191${g.ahead}`)))
-      .when(g.behind > 0, (el) => el.child(div().flex_none().text_color(t.ansi1).child(`\u2193${g.behind}`)));
+      .when(g.ahead > 0, (el) => el.child(div().flex_none().child(`\u2191${g.ahead}`)))
+      .when(g.behind > 0, (el) => el.child(div().flex_none().child(`\u2193${g.behind}`)));
   }
 
   row({ w, i, g, tree }, t) {
@@ -379,11 +384,12 @@ export default class Spaces extends View {
     const colors = shared("space.colors") ?? {};
     const color = colors[w.id] ?? "ansi6";
     const fill = color.startsWith("#") ? color : (MARK[color] ?? t[color]);
+    const tail = g ? this.gitTail(g, tree, w.name, t) : null;
     return v_flex()
       .relative()
       .id(`space-${w.id}`)
       .px(8)
-      .h(rowHeight({ tree }))
+      .h(tail ? 44 : rowHeight({ tree })) // taller only when the pill goes under the name
       .flex_none()
       .justify_center()
       .rounded(8)
@@ -419,15 +425,16 @@ export default class Spaces extends View {
         cx.notify();
       })
       .on_mouse_down("right", () => this.menu(w))
+      // The name sits level with the letter; the pill goes under the name, lined up with it.
       .child(
         h_flex()
           .gap(9)
           .items_center()
           .when(Boolean(tree), el => el.pl(22).child(svg("mods/workspace-chrome/branch.svg").size(13).text_color(t.dim)))
           .when(!tree, el => el.child(h_flex().size(18).flex_none().rounded(5).bg(fill).items_center().justify_center().text_size(10.5).font_bold().text_color("#ffffff").child([...w.name][0]?.toUpperCase() ?? "?")))
-          .child(div().flex_shrink(0).max_w(150).truncate().text_color(t.foreground).child(w.name))
-          .child(g ? this.gitTail(g, tree, w.name, t) : div().flex_1()),
-      );
+          .child(div().flex_1().min_w(0).truncate().text_color(t.foreground).child(w.name)),
+      )
+      .when(Boolean(tail), el => el.child(h_flex().min_w(0).mt(3).pl(tree ? 44 : 27).child(tail)));
   }
 
   // The rail: the space's letter tile, like the wide list.
@@ -465,7 +472,7 @@ export default class Spaces extends View {
       changed = true;
     }
     if (changed) setShared("space.colors", kept);
-    return v_flex().size_full().min_h(0).rounded(13).overflow_hidden().bg(t.chrome).text_size(13) // rounded so the card corners stay clean
+    return v_flex().size_full().min_h(0).rounded(13).overflow_hidden().bg(islandFill(t.chrome)).text_size(13) // rounded so the card corners stay clean
       .when(collapsed, el => el.pt(10))
       .child(h_flex().h(31).when(collapsed, el => el.justify_center()).when(!collapsed, el => el.pl(16).pr(10).justify_between()).items_center().text_size(11.5).text_color(t.dim)
         .when(!collapsed, el => el.child("Spaces"))
