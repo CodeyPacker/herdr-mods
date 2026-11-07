@@ -430,7 +430,7 @@ export default class Spaces extends View {
       );
   }
 
-  // The rail: the space's letter tile, like the wide list, with the status glyph beside it.
+  // The rail: the space's letter tile, like the wide list.
   // Rounded and inset so the hover fill stays inside the card.
   compact({ w }, t) {
     const colors = shared("space.colors") ?? {};
@@ -438,19 +438,16 @@ export default class Spaces extends View {
     const fill = color.startsWith("#") ? color : (MARK[color] ?? t[color]);
     return h_flex()
       .id(`space-${w.id}`)
-      .h(28)
-      .mx(5)
+      .size(28)
       .flex_none()
       .items_center()
       .justify_center()
-      .gap(3)
       .rounded(6)
       .when(w.active, (el) => el.bg(t.selected))
       .when(!w.active, (el) => el.hover((s) => s.bg(t.hover)))
       .on_click(() => run("space.select", { id: w.id }))
       .on_mouse_down("right", () => this.menu(w))
-      .child(h_flex().size(18).flex_none().rounded(5).bg(fill).items_center().justify_center().text_size(10.5).font_bold().text_color("#ffffff").child([...w.name][0]?.toUpperCase() ?? "?"))
-      .child(div().w(6).flex_none().text_size(11).text_color(tone(t, w.status)).child(glyph(w.status)));
+      .child(h_flex().size(18).flex_none().rounded(5).bg(fill).items_center().justify_center().text_size(10.5).font_bold().text_color("#ffffff").child([...w.name][0]?.toUpperCase() ?? "?"));
   }
 
   render() {
@@ -469,11 +466,12 @@ export default class Spaces extends View {
     }
     if (changed) setShared("space.colors", kept);
     return v_flex().size_full().min_h(0).rounded(13).overflow_hidden().bg(t.chrome).text_size(13) // rounded so the card corners stay clean
-      .child(h_flex().h(31).pl(16).pr(10).items_center().justify_between().text_size(11.5).text_color(t.dim)
+      .when(collapsed, el => el.pt(10))
+      .child(h_flex().h(31).when(collapsed, el => el.justify_center()).when(!collapsed, el => el.pl(16).pr(10).justify_between()).items_center().text_size(11.5).text_color(t.dim)
         .when(!collapsed, el => el.child("Spaces"))
         .child(div().id("space-new").size(26).flex_none().flex().items_center().justify_center().rounded(6).hover(s => s.bg(t.hover).text_color(t.foreground))
           .on_click(() => run("space.new", newSpaceArgs(null))).child(svg("mods/workspace-chrome/plus.svg").size(14))))
-      .child(v_flex().flex_1().min_h(0).px(8).pb(14).overflow_y_scrollbar().mode("always")
+      .child(v_flex().flex_1().min_h(0).px(collapsed ? 0 : 8).when(collapsed, el => el.items_center()).pb(14).overflow_y_scrollbar().mode("always")
         .on_mouse_up("left", (_e, cx) => { this.pressed = null; cx.notify(); })
         .children(this.grouped(t, collapsed)));
   }

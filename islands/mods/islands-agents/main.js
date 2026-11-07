@@ -415,6 +415,7 @@ export default class Agents extends View {
       .overflow_hidden()
       .bg(t.chrome)
       .text_size(13)
+      .when(collapsed, (el) => el.pt(10))
       .when(!collapsed, (el) =>
         el.child(
           h_flex()
