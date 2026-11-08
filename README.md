@@ -30,7 +30,7 @@ mprocs, but inside Herdr. Drop a `herdr.procs.json` in your repo:
 
 Press `ctrl-shift-r`, hit `u`, everything starts in the background. Each row has a letter.
 
-![run](run/preview.webp)
+![run](run/preview.png)
 
 `s` start, `x` stop, `r` restart, `enter` to watch the output, `o` to turn it into a tab, `a` to see every space. Things that crash go red and you get a toast.
 
@@ -48,7 +48,7 @@ Want a wallpaper behind the cards? Drop an image in `~/.config/herdr-app/backgro
 
 Claude gives you a guided tour of your code. Press `ctrl-a t`, pick what to tour (branch changes, the last commit, the whole repo, or a feature you describe), pick a depth, and Claude walks you through it file by file.
 
-![tourist](tourist/preview.webp)
+![tourist](tourist/preview.png)
 
 `n` next, `b` back, `d` deeper, `t` more technical, `a` ask, `o` open in VS Code, `q` ends the tour. Needs the `claude` CLI signed in.
 

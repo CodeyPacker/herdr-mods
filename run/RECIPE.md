@@ -4,7 +4,7 @@ A popup that runs the processes a repo declares (dev server, API, workers) as
 background herdr-core terminals and lets you start, stop, restart and peek at
 them with single keys. The mprocs idea, with letter hints instead of a list.
 
-![Run](preview.webp)
+![Run](preview.png)
 
 ## What you see
 

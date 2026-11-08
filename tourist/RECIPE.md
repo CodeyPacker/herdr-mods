@@ -5,7 +5,7 @@ last commit, the whole repo, or a feature you describe. Claude picks the stops
 and their order. You pick the depth, then go deeper, more technical or ask at
 any stop.
 
-![Tourist](preview.webp)
+![Tourist](preview.png)
 
 ## What you see
 
