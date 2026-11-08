@@ -44,7 +44,7 @@ export default class Pane extends View {
         cx.stop_propagation();
         run(command, args);
       })
-      .child(svg(`mods/islands-pane/${icon}.svg`).size(14));
+      .child(svg(`mods/pane/${icon}.svg`).size(14));
   }
 
   render(cx) {
