@@ -1,4 +1,4 @@
-// Tourist: Claude walks you through a branch, the last commit, the whole repo, or a feature you describe, one stop at a time.
+// Tourist: Claude or Codex walks you through a branch, the last commit, the whole repo, or a feature you describe, one stop at a time.
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, Editor, EditorState, TextView, InputState, Input } from "gpui-base";
 import { spaces, panes, focused, exec, hc, readTextFile, writeTextFile, appHome, theme, settings, nextCommand, props, window } from "herdr";
@@ -7,8 +7,8 @@ import * as fs from "fs/promises";
 const SCOPES = [
   { key: "b", id: "branch", label: "Branch changes", hint: "since this branch left the base, plus uncommitted edits" },
   { key: "c", id: "commit", label: "Last commit", hint: "HEAD only" },
-  { key: "r", id: "repo", label: "Whole repo", hint: "slower, Claude surveys the codebase" },
-  { key: "f", id: "feature", label: "A feature", hint: "describe it, Claude finds the code" },
+  { key: "r", id: "repo", label: "Whole repo", hint: "slower, the agent surveys the codebase" },
+  { key: "f", id: "feature", label: "A feature", hint: "describe it, the agent finds the code" },
 ];
 const DEPTHS = [
   { key: "1", id: "overview", label: "Overview", text: "Plain language. Say what each part does and why it exists. 2 to 4 sentences per stop. No jargon." },
@@ -17,6 +17,8 @@ const DEPTHS = [
 ];
 // Read-only tools. Claude can look at the repo but never change it.
 const TOOLS = ["--allowedTools", "Read", "Grep", "Glob", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(git status:*)"];
+// The agents a tour can use, in the order Tourist prefers them.
+const AGENTS = [{ id: "claude", name: "Claude" }, { id: "codex", name: "Codex" }];
 const LANG = { ts: "js", tsx: "js", mts: "js", cts: "js", jsx: "js", mjs: "js", toml: "yaml", jsonc: "json", svelte: "html", vue: "html" };
 const SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
@@ -28,10 +30,10 @@ function startFolder() {
   return { cwd: mine?.cwd || sibling?.cwd || f?.cwd || space?.folder || null, on: space?.machine ?? null };
 }
 
-/** Pulls the JSON object out of Claude's reply, even with prose or fences around it. */
+/** Pulls the JSON object out of the agent's reply, even with prose or fences around it. */
 function parsePlan(text) {
   const a = text.indexOf("{"), b = text.lastIndexOf("}");
-  if (a < 0 || b < a) throw new Error("Claude did not return a tour plan.");
+  if (a < 0 || b < a) throw new Error("The agent did not return a tour plan.");
   const plan = JSON.parse(text.slice(a, b + 1));
   if (!Array.isArray(plan.stops) || plan.stops.length === 0) throw new Error("The tour plan has no stops.");
   for (const s of plan.stops) { s.file = String(s.file).replace(/\\/g, "/").replace(/^\.\//, ""); s.notes = []; }
@@ -46,7 +48,8 @@ export default class Tourist extends View {
     this.git = { root: null, branch: "", base: null, mergeBase: null, changed: [], head: "" };
     this.plan = null; this.idx = 0; this.code = null; this.codeLines = 0; this.codeError = null;
     this.session = null; this.busy = null; this.error = null;
-    this.step = 1;        // setup step: 1 what to tour, 2 how deep
+    this.agents = []; this.agent = null; // installed agent ids, and the one tours use
+    this.step = 1;       // setup step: 1 what to tour, 2 how deep
     this.cursor = 0;      // highlighted row in the current step
     this.asking = false;  // the ask box only exists while asking, so it can't take tour keys
     this.typing = null;   // "ask" | "feature" while a text box has the keyboard
@@ -86,7 +89,7 @@ export default class Tourist extends View {
     if (this.job) await hc(["kill", this.job]).catch(() => {});
   }
 
-  /** `tourist.<name>` commands: focus, start, next, prev, deeper, technical, open, reset, scope-<id>, depth-<id>. */
+  /** `tourist.<name>` commands: focus, start, next, prev, deeper, technical, open, reset, agent, scope-<id>, depth-<id>. */
   command(c, cx) {
     if (c === "focus") this.handle.focus();
     else if (c.startsWith("scope-")) { this.scope = c.slice(6); this.goStep(1); }
@@ -102,6 +105,7 @@ export default class Tourist extends View {
     else if (c === "technical") this.technical(cx);
     else if (c === "open") this.openInEditor();
     else if (c === "reset") this.reset(cx);
+    else if (c === "agent") this.switchAgent();
   }
 
   /** Runs git in the repo and returns trimmed stdout, or null on failure. */
@@ -116,6 +120,7 @@ export default class Tourist extends View {
     if (!this.cwd) { this.fail("No folder to tour. Open Tourist from a terminal inside a repo."); return; }
     const root = await this.run(["rev-parse", "--show-toplevel"]);
     if (!root) { this.fail(`${this.cwd} is not inside a git repo.`); return; }
+    if (!(await this.findAgents())) { this.fail("Tourist needs the claude or codex CLI on PATH, signed in."); return; }
     this.git.root = root;
     this.git.branch = (await this.run(["branch", "--show-current"])) || "detached HEAD";
     this.git.head = (await this.run(["log", "-1", "--format=%h %s"])) || "";
@@ -131,6 +136,29 @@ export default class Tourist extends View {
     this.goStep(1);
   }
 
+  /** Finds which agent CLIs are installed and picks the last one used, else the first found. */
+  async findAgents() {
+    // Ask the same shell the jobs run in, so PATH matches.
+    const { argv, ps } = await this.shell();
+    const found = await Promise.all(AGENTS.map(a =>
+      exec(argv[0], [...argv.slice(1), ps ? `Get-Command ${a.id} -ErrorAction Stop` : `command -v ${a.id}`], { on: this.on })
+        .then(r => r.code === 0, () => false)));
+    this.agents = AGENTS.filter((_a, i) => found[i]).map(a => a.id);
+    let saved = null;
+    try { saved = localStorage.getItem("agent"); } catch {}
+    this.agent = this.agents.includes(saved) ? saved : this.agents[0] ?? null;
+    return this.agent !== null;
+  }
+
+  /** Switches to the next installed agent and remembers it. */
+  switchAgent() {
+    if (this.agents.length < 2) return;
+    this.agent = this.agents[(this.agents.indexOf(this.agent) + 1) % this.agents.length];
+    try { localStorage.setItem("agent", this.agent); } catch {}
+  }
+
+  agentName() { return AGENTS.find(a => a.id === this.agent)?.name ?? "The agent"; }
+
   fail(message) { this.phase = "error"; this.error = message; this.busy = null; }
 
   subject() {
@@ -143,7 +171,7 @@ export default class Tourist extends View {
 
   depthText() { return DEPTHS.find(d => d.id === this.depth)?.text ?? ""; }
 
-  /** The shell that runs a Claude job: [argv..., script]. */
+  /** The shell that runs an agent job: [argv..., script]. */
   async shell() {
     if (window()?.platform !== "windows") return { argv: ["sh", "-c"], ps: false };
     const pwsh = await exec("pwsh", ["-NoLogo", "-Command", "exit 0"]).then(r => r.code === 0, () => false);
@@ -151,24 +179,29 @@ export default class Tourist extends View {
   }
 
   /**
-   * One `claude -p` call. Follow-ups resume the planning session so Claude keeps what it read.
-   * exec stops anything over 30 s, so Claude runs as a hidden herdr-core terminal
-   * that reads the prompt from a file and writes its JSON reply to another.
+   * One agent call. Follow-ups resume the planning session so the agent keeps what it read.
+   * exec stops anything over 30 s, so the agent runs as a hidden herdr-core terminal
+   * that reads the prompt from a file and writes its reply to another.
+   * Claude: `claude -p`, one JSON reply. Codex: `codex exec` in a read-only sandbox,
+   * JSONL events on stdout (the session id) and its last message in a file.
    */
-  async claude(prompt) {
+  async askAgent(prompt) {
+    const agent = this.agent, name = this.agentName();
     const dir = `${appHome()}/data/tourist`.replace(/\\/g, "/");
     await fs.mkdir(dir, { recursive: true });
     const id = `${Date.now()}-${(this.jobs = (this.jobs ?? 0) + 1)}`;
-    const inFile = `${dir}/${id}.in.txt`, outFile = `${dir}/${id}.out.json`, errFile = `${dir}/${id}.err.txt`;
+    const inFile = `${dir}/${id}.in.txt`, outFile = `${dir}/${id}.out.json`, errFile = `${dir}/${id}.err.txt`, lastFile = `${dir}/${id}.last.txt`;
     await writeTextFile(inFile, prompt, null);
-    const flags = ["-p", "--output-format", "json", ...(this.session ? ["--resume", this.session] : []), ...TOOLS];
+    const flags = agent === "codex"
+      ? ["exec", ...(this.session ? ["resume", this.session, "-c", 'sandbox_mode="read-only"'] : ["--sandbox", "read-only"]), "--json", "-o", lastFile, "-"]
+      : ["-p", "--output-format", "json", ...(this.session ? ["--resume", this.session] : []), ...TOOLS];
     const { argv, ps } = await this.shell();
     const q = ps ? (s => `'${s.replace(/'/g, "''")}'`) : (s => `'${s.replace(/'/g, `'\\''`)}'`);
     const script = ps
-      ? `$OutputEncoding = [Console]::InputEncoding = [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); Get-Content -Raw -Encoding utf8 -LiteralPath ${q(inFile)} | claude ${flags.map(q).join(" ")} 2> ${q(errFile)} | Set-Content -NoNewline -Encoding utf8 -LiteralPath ${q(outFile)}`
-      : `claude ${flags.map(q).join(" ")} < ${q(inFile)} > ${q(outFile)} 2> ${q(errFile)}`;
+      ? `$OutputEncoding = [Console]::InputEncoding = [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); Get-Content -Raw -Encoding utf8 -LiteralPath ${q(inFile)} | ${agent} ${flags.map(q).join(" ")} 2> ${q(errFile)} | Set-Content -NoNewline -Encoding utf8 -LiteralPath ${q(outFile)}`
+      : `${agent} ${flags.map(q).join(" ")} < ${q(inFile)} > ${q(outFile)} 2> ${q(errFile)}`;
     const started = await hc(["run", "--bg", "--no-parent", "--outlive-parent", "--cwd", this.git.root ?? "", "--json", "--", ...argv, script]);
-    if (started.code !== 0) throw new Error(started.stderr || "Could not start claude.");
+    if (started.code !== 0) throw new Error(started.stderr || `Could not start ${agent}.`);
     const address = JSON.parse(started.stdout).address;
     this.job = address;
     try {
@@ -182,12 +215,23 @@ export default class Tourist extends View {
     }
     const text = ((await readTextFile(outFile)) ?? "").replace(/^﻿/, "");
     const err = (await readTextFile(errFile)) ?? "";
-    for (const f of [inFile, outFile, errFile]) await fs.unlink(f).catch(() => {});
+    const last = agent === "codex" ? ((await readTextFile(lastFile).catch(() => null)) ?? "").replace(/^﻿/, "") : "";
+    for (const f of [inFile, outFile, errFile, lastFile]) await fs.unlink(f).catch(() => {});
+    if (agent === "codex") {
+      let failure = null;
+      for (const line of text.split(/\r?\n/)) {
+        let ev; try { ev = JSON.parse(line); } catch { continue; }
+        if (ev.type === "thread.started" && ev.thread_id) this.session = ev.thread_id;
+        if (ev.type === "turn.failed" || ev.type === "error") failure = ev.error?.message ?? ev.message ?? failure;
+      }
+      if (failure || !last.trim()) throw new Error(String(failure || err || text || `${name} returned nothing.`).trim().slice(-600));
+      return last;
+    }
     let out;
     try { out = JSON.parse(text); }
-    catch { throw new Error((err || text || "Claude returned nothing.").trim().slice(-600)); }
+    catch { throw new Error((err || text || `${name} returned nothing.`).trim().slice(-600)); }
     if (out.session_id) this.session = out.session_id;
-    if (out.is_error) throw new Error(String(out.result || "Claude reported an error."));
+    if (out.is_error) throw new Error(String(out.result || `${name} reported an error.`));
     return String(out.result ?? "");
   }
 
@@ -208,7 +252,7 @@ export default class Tourist extends View {
     const gen = this.gen = (this.gen ?? 0) + 1;
     cx.spawn(async cx => {
       try {
-        const plan = parsePlan(await this.claude(prompt));
+        const plan = parsePlan(await this.askAgent(prompt));
         if (gen !== this.gen) return;
         this.plan = plan; this.phase = "tour"; this.show(0, cx);
       } catch (e) { if (gen === this.gen) this.fail(String(e?.message ?? e)); }
@@ -246,7 +290,7 @@ export default class Tourist extends View {
     this.busy = label;
     const prompt = `${question}\n\nThis is about stop ${this.idx + 1}, "${s.title}" (${s.file} lines ${s.start}-${s.end}). Read more code if you need to. Reply in markdown only, under 250 words, with file:line references.`;
     cx.spawn(async cx => {
-      try { s.notes.push({ label, text: await this.claude(prompt) }); }
+      try { s.notes.push({ label, text: await this.askAgent(prompt) }); }
       catch (e) { s.notes.push({ label: "Error", text: String(e?.message ?? e) }); }
       this.busy = null; cx.notify();
     });
@@ -332,6 +376,7 @@ export default class Tourist extends View {
       else if (k === "enter") this.pick(cx);
       else if (k === "tab" && onFeature) this.focusBox(this.featureInput, cx);
       else if (k === "escape" && this.step === 2) this.goStep(1);
+      else if (k === "a" && this.agents.length > 1) this.switchAgent();
       else handled = false;
     } else if (this.phase === "planning") {
       if (k === "escape" || k === "q") this.reset(cx);
@@ -383,7 +428,11 @@ export default class Tourist extends View {
     const section = (title) => div().pt(14).pb(6).text_size(11.5).text_color(t.dim).child(title);
     const head = v_flex()
       .child(div().text_size(16).font_semibold().child("Tourist"))
-      .child(div().pt(2).text_size(11.5).text_color(t.dim).child(g.root ? `${g.root} · ${g.branch}` : "Finding the repo…"));
+      .child(div().pt(2).text_size(11.5).text_color(t.dim).child(g.root ? `${g.root} · ${g.branch}` : "Finding the repo…"))
+      .when(Boolean(this.agent), el => el.child(h_flex().id("agent").pt(2).gap(4).text_size(11.5).text_color(t.dim)
+        .when(this.agents.length > 1, el => el.cursor_pointer().on_click((_e, cx) => { this.switchAgent(); cx.notify(); }))
+        .child(`Tour by ${this.agentName()}`)
+        .when(this.agents.length > 1, el => el.child(div().text_color(t.accent).child("· a switches")))));
     // A click works like moving there and pressing enter.
     const click = (i) => (_e, cx) => { this.leaveBox(); this.cursor = i; this.pick(cx); cx.notify(); };
     let rows, title, help;
@@ -421,7 +470,7 @@ export default class Tourist extends View {
     const scope = SCOPES.find(s => s.id === this.scope)?.label ?? "";
     return v_flex().flex_1().items_center().justify_center().gap(8).p(24)
       .child(div().text_size(22).text_color(t.accent).frames(SPINNER, 90).child(SPINNER[0]))
-      .child(div().font_medium().child("Claude is planning the tour"))
+      .child(div().font_medium().child(`${this.agentName()} is planning the tour`))
       .child(div().text_size(11.5).text_color(t.dim).child(`${scope} · ${this.depth}. Usually 30 to 90 seconds, longer for a whole repo.`))
       .child(div().pt(6).text_size(11.5).text_color(t.dim).child("q or esc cancels"));
   }

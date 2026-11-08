@@ -46,11 +46,11 @@ Want a wallpaper behind the cards? Drop an image in `~/.config/herdr-app/backgro
 
 ## tourist
 
-Claude gives you a guided tour of your code. Press `ctrl-a t`, pick what to tour (branch changes, the last commit, the whole repo, or a feature you describe), pick a depth, and Claude walks you through it file by file.
+Claude or Codex gives you a guided tour of your code. Press `ctrl-a t`, pick what to tour (branch changes, the last commit, the whole repo, or a feature you describe), pick a depth, and the agent walks you through it file by file.
 
 ![tourist](tourist/preview.png)
 
-`n` next, `b` back, `d` deeper, `t` more technical, `a` ask, `o` open in VS Code, `q` ends the tour. Needs the `claude` CLI signed in.
+`n` next, `b` back, `d` deeper, `t` more technical, `a` ask, `o` open in VS Code, `q` ends the tour. `a` on the setup screen switches between Claude and Codex. Needs the `claude` or `codex` CLI signed in.
 
 ## Install
 
