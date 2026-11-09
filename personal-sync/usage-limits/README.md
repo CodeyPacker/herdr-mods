@@ -8,7 +8,7 @@ With Herdr running and Islands installed, run from this repository on either com
 
 ```sh
 git pull
-python3 personal-sync/usage-limits/install.py
+sh personal-sync/usage-limits/install.sh
 ```
 
 The installer downloads the pinned upstream version, applies the patch, validates
