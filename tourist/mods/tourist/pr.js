@@ -15,9 +15,21 @@ async function gh(args, { cwd, on }) {
   return r.stdout;
 }
 
+/**
+ * "owner/repo" from origin's URL. gh is given this with -R rather than finding the
+ * repo itself, because its own git call doesn't get the folder when Herdr runs it.
+ */
+async function repoName(root, on) {
+  const url = await git(["remote", "get-url", "origin"], { cwd: root, on });
+  const m = /github\.com[:/]([^/\s]+\/[^/\s]+?)(?:\.git)?\/?$/.exec(url ?? "");
+  if (!m) throw new Error("Pull request tours need an origin remote on GitHub.");
+  return m[1];
+}
+
 /** The repo's open pull requests, newest first. */
 export async function listPRs(root, on) {
-  return JSON.parse(await gh(["pr", "list", "--state", "open", "--limit", "50", "--json", LIST_FIELDS], { cwd: root, on }));
+  const repo = await repoName(root, on);
+  return JSON.parse(await gh(["pr", "list", "-R", repo, "--state", "open", "--limit", "50", "--json", LIST_FIELDS], { cwd: root, on }));
 }
 
 /**
@@ -25,7 +37,8 @@ export async function listPRs(root, on) {
  * point where it left its base branch. Nothing is checked out.
  */
 export async function loadPR(root, on, number) {
-  const p = JSON.parse(await gh(["pr", "view", String(number), "--json", VIEW_FIELDS], { cwd: root, on }));
+  const repo = await repoName(root, on);
+  const p = JSON.parse(await gh(["pr", "view", String(number), "-R", repo, "--json", VIEW_FIELDS], { cwd: root, on }));
   const run = args => git(args, { cwd: root, on });
   const fetched = await run(["fetch", "--quiet", "origin", `+refs/pull/${p.number}/head:refs/tourist/pr-${p.number}`, p.baseRefName]);
   if (fetched === null) throw new Error(`Could not fetch PR #${p.number} from origin.`);
