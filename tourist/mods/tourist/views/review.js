@@ -5,6 +5,7 @@ import { v_flex, h_flex } from "gpui-base";
 import { settings } from "herdr";
 import { button, option, spinner, textInput } from "../ui.js";
 import { eventsFor } from "../review.js";
+import { linesOf } from "../comments.js";
 
 /** `v` is the Tourist view: its state is read here and its methods run on clicks. */
 export function reviewView(v, t) {
@@ -17,7 +18,7 @@ export function reviewView(v, t) {
       .child(`by ${pr.author} · posting as ${pr.me || "the gh account"} · ${v.comments.length} comment${v.comments.length === 1 ? "" : "s"}`));
   const comments = v.comments.map(c => v_flex().gap(2).px(10).py(6).rounded(7).bg(t.raised)
     .child(div().text_size(11.5).text_color(t.accent).font_family(settings().font_family).truncate()
-      .child(`${c.file}:${c.line}${c.side === "old" ? " (removed line)" : ""}`))
+      .child(`${c.file}:${linesOf(c)}${c.startLine === undefined && c.side === "old" ? " (removed line)" : ""}`))
     .child(div().text_size(12.5).child(c.text)));
   const pick = (i) => (_e, cx) => { v.leaveBox(); r.cursor = i; r.confirm = false; cx.notify(); };
   const content = v_flex().gap(6).max_w(720)

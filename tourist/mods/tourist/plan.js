@@ -50,7 +50,11 @@ export function prPlanPrompt(subjectText, depth) {
 
 /** Review comments as a numbered list: where, the code there, and what the reviewer wrote. */
 export function commentLines(comments) {
-  return comments.map((c, i) => `${i + 1}. ${c.file}:${c.line}${c.side === "old" ? " (a removed line)" : ""}\n   code: ${String(c.code ?? "").trim()}\n   comment: ${c.text}`).join("\n");
+  return comments.map((c, i) => {
+    const where = c.startLine !== undefined ? `${c.file}:${c.startLine}-${c.line}` : `${c.file}:${c.line}${c.side === "old" ? " (a removed line)" : ""}`;
+    const code = String(c.code ?? "").replace(/\s+$/, "").split("\n").map(l => `      ${l}`).join("\n");
+    return `${i + 1}. ${where}\n   code:\n${code}\n   comment: ${c.text}`;
+  }).join("\n");
 }
 
 /** A question about one stop, sent into the tour's session, with the reader's comments on that file. */

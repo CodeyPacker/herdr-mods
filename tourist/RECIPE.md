@@ -42,9 +42,17 @@ page in the browser, since the PR isn't on disk.
 Line comments (PR tours): clicking a numbered diff line opens a comment box
 under it. `enter` saves, an empty comment or `esc` closes it. Saved comments
 sit under their line with an accent border and a `×` that deletes them. The
-file line reads "click a line to comment (N saved)". Each comment keeps the
-file, line, side (`new`, or `old` for a removed line), that line's code and the
-text. Deeper and Ask include your comments on the stop's file.
+file line reads "click a line to comment, shift-click to extend (N saved)".
+Each comment keeps the file, line, side (`new`, or `old` for a removed line),
+that line's code and the text. Deeper and Ask include your comments on the
+stop's file.
+
+Multi-line comments: with a comment box open, shift-clicking another line turns
+it into a range from the line first clicked to that one, keeping what you typed.
+The range stops at a hunk header, because GitHub only takes a range inside one
+hunk. The covered lines get an accent bar on the left, the box and the saved
+comment sit under the last line, and the comment shows "Lines 12-18" above its
+text. It saves `startLine`/`startSide` and the code of every line in the range.
 
 Post review (PR tours): `p` or "Post review (N)" opens a screen that lists your
 comments, a verdict (1 Comment, 2 Approve, 3 Request changes; Comment only on
@@ -142,7 +150,8 @@ and its branch are deleted, and the comments stay.
   -D`. Discard runs the last two.
 - Review: `gh api user --jq .login` decides whether the PR is yours. Posting
   writes `{commit_id: <head>, event, body, comments: [{path, line, side:
-  RIGHT|LEFT, body}]}` to a temp file in `<appHome>/data/tourist/` and runs `gh
+  RIGHT|LEFT, body, start_line?, start_side?}]}` (the start fields only on
+  multi-line comments) to a temp file in `<appHome>/data/tourist/` and runs `gh
   api repos/<owner>/<repo>/pulls/<n>/reviews -X POST --input <file>`, then
   deletes the file. Your comment text goes up as written; no agent is involved.
 - Code excerpts use `EditorState`/`Editor`, read-only, without line numbers.

@@ -18,7 +18,7 @@ import { readExcerpt, codeState, openInEditor, openUrl } from "./code.js";
 import { listPRs, loadPR, prFileDiff } from "./pr.js";
 import { diffRows, rowsInRange, splitDiff } from "./diff.js";
 import { openWorktree, worktreeDiff, pushFix, removeWorktree } from "./worktree.js";
-import { commentKey, loadComments, saveComments, sideOf } from "./comments.js";
+import { commentKey, loadComments, saveComments, sideOf, rangeOf } from "./comments.js";
 import { setupView } from "./views/setup.js";
 import { tourView } from "./views/tour.js";
 import { planningView, errorView } from "./views/status.js";
@@ -216,13 +216,26 @@ export default class Tourist extends View {
     this.followUp(`You asked: ${q}`, q, cx);
   }
 
-  /** Opens the comment box under a diff line of the current stop. */
-  startComment(row, cx) {
-    const s = this.plan?.stops[this.idx];
+  /**
+   * Opens the comment box under a diff line of the current stop. With shift held and a
+   * comment already open on this stop, it stretches that comment from the line first
+   * clicked (`anchor`) to this one instead, keeping what was typed.
+   */
+  startComment(row, cx, { index = -1, shift = false } = {}) {
+    const s = this.plan?.stops[this.idx], rows = this.diff ?? [];
     if (!this.pr || !s || row.number === undefined) return;
     this.asking = false;
-    this.commenting = { file: s.file, line: row.number, side: sideOf(row), code: row.text };
-    this.commentInput.set_value("");
+    const open = this.commenting;
+    if (shift && open?.file === s.file && open.anchor >= 0 && index >= 0) {
+      const [a, b] = rangeOf(rows, open.anchor, index);
+      const lines = rows.slice(a, b + 1).filter(r => r.number !== undefined);
+      const first = rows[a], last = rows[b];
+      this.commenting = { file: s.file, anchor: open.anchor, line: last.number, side: sideOf(last), code: lines.map(r => r.text).join("\n") };
+      if (a !== b) Object.assign(this.commenting, { startLine: first.number, startSide: sideOf(first) });
+    } else {
+      this.commenting = { file: s.file, anchor: index, line: row.number, side: sideOf(row), code: row.text };
+      this.commentInput.set_value("");
+    }
     this.focusBox(this.commentInput, cx);
   }
 
@@ -232,7 +245,8 @@ export default class Tourist extends View {
     this.commentInput.set_value("");
     this.leaveBox();
     if (!text || !at || !this.pr) return;
-    this.comments.push({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, ...at, text, created: new Date().toISOString() });
+    const { anchor, ...where } = at; // the anchor only means something while the box is open
+    this.comments.push({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, ...where, text, created: new Date().toISOString() });
     this.storeComments(cx);
   }
 

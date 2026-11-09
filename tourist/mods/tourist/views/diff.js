@@ -1,18 +1,22 @@
 // A stop's diff: hunk headers, then added and removed lines tinted green and red.
-// Clicking a numbered line opens a comment box under it. Saved comments sit under their line.
+// Clicking a numbered line opens a comment box under it; shift-clicking another line in the
+// same hunk turns it into a multi-line comment. Saved comments sit under their last line, and
+// the lines a multi-line comment covers get an accent bar on the left.
 import { div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { settings } from "herdr";
-import { commentsOn } from "../comments.js";
+import { commentsOn, coveredRows, linesOf } from "../comments.js";
 import { textInput } from "../ui.js";
 
-function row(r, id, t, onRow) {
+function row(r, i, id, t, onRow, covered) {
   const { kind, number, text } = r;
   const mono = settings().font_family ?? "JetBrains Mono";
   if (kind === "@") return div().font_family(mono).text_size(11.5).w_full().px(12).h(20).flex_none().whitespace_nowrap().bg(t.raised).text_color(t.dim).child(text);
   return h_flex().id(id).font_family(mono).text_size(11.5).w_full().h(20).flex_none().gap(10)
     .when(kind === "+", e => e.bg(t.ansi2 + "18")).when(kind === "-", e => e.bg(t.ansi1 + "18"))
-    .when(number !== undefined && Boolean(onRow), e => e.cursor_pointer().hover(s => s.bg(t.hover)).on_click((_e, cx) => { onRow(r, cx); cx.notify(); }))
+    .border_l_2().border_color(covered ? t.accent : "#00000000")
+    .when(number !== undefined && Boolean(onRow), e => e.cursor_pointer().hover(s => s.bg(t.hover))
+      .on_click((ev, cx) => { onRow(r, cx, { index: i, shift: Boolean(ev?.modifiers?.shift) }); cx.notify(); }))
     .child(div().w(36).flex_none().text_right().text_color(t.dim).child(number === undefined ? "" : String(number)))
     .child(div().w(10).flex_none().text_color(kind === "+" ? t.ansi2 : kind === "-" ? t.ansi1 : t.dim).child(kind.trim()))
     .child(div().flex_none().pr(12).whitespace_nowrap().child(text.replace(/\t/g, "    ")));
@@ -26,7 +30,9 @@ const GUTTER = 80; // line number, +/− mark and gaps
 function bubble(c, t, onDelete) {
   return h_flex().ml(56).mr(10).my(3).max_w(640).px(10).py(6).gap(8).items_start().rounded(7)
     .border_1().border_color(t.accent).bg(t.raised).text_size(12)
-    .child(div().flex_1().min_w(0).child(c.text))
+    .child(div().flex_1().min_w(0)
+      .when(c.startLine !== undefined, el => el.child(div().text_size(11).text_color(t.dim).child(`Lines ${linesOf(c)}`)))
+      .child(c.text))
     .child(div().id(`del-${c.id}`).flex_none().px(4).rounded(4).text_color(t.dim).cursor_pointer()
       .hover(s => s.bg(t.hover).text_color(t.foreground)).on_click((_e, cx) => { onDelete(c, cx); cx.notify(); }).child("×"));
 }
@@ -34,8 +40,9 @@ function bubble(c, t, onDelete) {
 /** The diff rows of one file with a sideways scroll of their own, for stacking several in one list. */
 export function diffBlock(id, rows, t, c = null) {
   const items = [];
+  const covered = c ? coveredRows(rows, c.list, c.file, c.open) : new Set();
   rows.forEach((r, i) => {
-    items.push(row(r, `${id}-row-${i}`, t, c?.onRow));
+    items.push(row(r, i, `${id}-row-${i}`, t, c?.onRow, covered.has(i)));
     if (!c) return;
     for (const saved of commentsOn(c.list, c.file, r)) items.push(bubble(saved, t, c.onDelete));
     if (c.open && c.open.line === r.number && c.open.side === (r.kind === "-" ? "old" : "new"))

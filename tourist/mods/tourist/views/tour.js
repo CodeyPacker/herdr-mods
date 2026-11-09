@@ -18,13 +18,13 @@ export function tourView(v, t) {
     .hover(st => st.bg(t.hover)).on_click(() => v.openInEditor())
     .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.accent).font_family(settings().font_family).child(s.file))
     .child(div().text_size(11.5).text_color(t.dim).child(v.pr
-      ? `lines ${s.start}–${s.end}  ·  click a line to comment${v.comments.length ? ` (${v.comments.length} saved)` : ""}  ·  o opens the PR`
+      ? `lines ${s.start}–${s.end}  ·  click a line to comment, shift-click to extend${v.comments.length ? ` (${v.comments.length} saved)` : ""}  ·  o opens the PR`
       : `lines ${s.start}–${s.end}  ·  o opens`));
   // On PR tours each diff line takes a comment.
   const comments = v.pr ? {
     file: s.file, list: v.comments, input: v.commentInput,
     open: v.commenting?.file === s.file ? v.commenting : null,
-    onRow: (r, cx) => v.startComment(r, cx), onDelete: (c, cx) => v.deleteComment(c, cx),
+    onRow: (r, cx, how) => v.startComment(r, cx, how), onDelete: (c, cx) => v.deleteComment(c, cx),
   } : null;
   const code = div().flex_1().min_h(0).mx(14).mb(4).rounded(8).border_1().border_color(t.border).bg(t.background).overflow_hidden()
     .child(v.diff ? diffView(`diff-${v.idx}`, v.diff, t, comments)

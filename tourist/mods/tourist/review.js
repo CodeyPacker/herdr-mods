@@ -15,6 +15,9 @@ export function eventsFor(pr) { return pr.mine ? EVENTS.slice(0, 1) : EVENTS; }
 // GitHub needs a body for Comment and Request changes. This is used when the summary is left empty.
 export const DEFAULT_SUMMARY = "See the inline comments.";
 
+/** GitHub's name for a diff side: RIGHT is the PR's version, LEFT the base's (removed lines). */
+const ghSide = side => side === "old" ? "LEFT" : "RIGHT";
+
 /**
  * Posts every comment as one review on the commit the tour reviewed. GitHub only takes
  * lines inside the diff's hunks, which is where Tourist lets you comment. Returns the review's URL.
@@ -22,7 +25,11 @@ export const DEFAULT_SUMMARY = "See the inline comments.";
 export async function postReview(root, on, pr, comments, event, summary) {
   const review = {
     commit_id: pr.headOid, event, body: summary.trim() || (event === "APPROVE" ? "" : DEFAULT_SUMMARY),
-    comments: comments.map(c => ({ path: c.file, line: c.line, side: c.side === "old" ? "LEFT" : "RIGHT", body: c.text })),
+    comments: comments.map(c => ({
+      path: c.file, line: c.line, side: ghSide(c.side), body: c.text,
+      // A multi-line comment also names its first line.
+      ...(c.startLine !== undefined ? { start_line: c.startLine, start_side: ghSide(c.startSide ?? c.side) } : {}),
+    })),
   };
   const dir = `${appHome()}/data/tourist`.replace(/\\/g, "/");
   await fs.mkdir(dir, { recursive: true });
