@@ -1,0 +1,254 @@
+diff --git a/mods/usage-limits/helpers/claude-usage.ps1 b/mods/usage-limits/helpers/claude-usage.ps1
+new file mode 100644
+index 0000000..f804305
+--- /dev/null
++++ b/mods/usage-limits/helpers/claude-usage.ps1
+@@ -0,0 +1,47 @@
++# Windows port of claude-usage.sh: prints Claude Code's usage (one
++# `control_response` JSON line) and exits.
++#
++# Runs your own `claude` CLI briefly and sends it the `get_usage` control
++# request. The CLI signs itself in. This script reads no tokens or credential
++# files, sends no prompt and starts no turn.
++#
++# Exit: 0 = printed the reply, 127 = claude CLI not found, 1 = no reply in 15 s.
++# Override the binary with HERDR_USAGE_CLAUDE_BIN.
++
++[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
++$bin = if ($env:HERDR_USAGE_CLAUDE_BIN) { $env:HERDR_USAGE_CLAUDE_BIN } else { 'claude' }
++$cmd = Get-Command $bin -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
++if (-not $cmd) { exit 127 }
++
++$psi = [Diagnostics.ProcessStartInfo]::new($cmd.Source)
++foreach ($a in '-p', '--safe-mode', '--no-session-persistence', '--input-format', 'stream-json',
++  '--output-format', 'stream-json', '--verbose') { $psi.ArgumentList.Add($a) }
++$psi.UseShellExecute = $false
++$psi.CreateNoWindow = $true
++$psi.RedirectStandardInput = $true
++$psi.RedirectStandardOutput = $true
++$psi.RedirectStandardError = $true
++$psi.StandardOutputEncoding = [Text.UTF8Encoding]::new($false)
++
++$found = $null
++$p = [Diagnostics.Process]::Start($psi)
++try {
++  $p.BeginErrorReadLine()
++  # Stdin stays open until the reply arrives, then the CLI is killed.
++  $p.StandardInput.WriteLine('{"type":"control_request","request_id":"herdr-usage-limits","request":{"subtype":"get_usage","skip_behaviors":true}}')
++  $p.StandardInput.Flush()
++  $deadline = (Get-Date).AddSeconds(15)
++  while (-not $found) {
++    $left = [int]($deadline - (Get-Date)).TotalMilliseconds
++    if ($left -le 0) { break }
++    $read = $p.StandardOutput.ReadLineAsync()
++    if (-not $read.Wait($left)) { break }
++    if ($null -eq $read.Result) { break }
++    if ($read.Result.Contains('"control_response"')) { $found = $read.Result }
++  }
++} finally {
++  try { $p.Kill($true) } catch {}
++}
++
++if ($found) { [Console]::Out.WriteLine($found); exit 0 }
++exit 1
+diff --git a/mods/usage-limits/helpers/codex-limits.ps1 b/mods/usage-limits/helpers/codex-limits.ps1
+new file mode 100644
+index 0000000..e612b20
+--- /dev/null
++++ b/mods/usage-limits/helpers/codex-limits.ps1
+@@ -0,0 +1,67 @@
++# Windows port of codex-limits.sh: prints Codex's rate limits as one JSON line
++# and exits.
++#
++# Asks `codex app-server` (JSON-RPC: initialize, initialized,
++# account/rateLimits/read). Codex signs itself in and this script reads no
++# tokens. If that fails, prints the newest rate-limit snapshot Codex logged in
++# its sessions (last 14 days) as {"snapshot": <line>}.
++#
++# Exit: 0 = printed something, 127 = codex CLI not found,
++# 1 = codex found but no reply and no snapshot.
++# Override the binary with HERDR_USAGE_CODEX_BIN. Sessions follow CODEX_HOME.
++
++[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
++$bin = if ($env:HERDR_USAGE_CODEX_BIN) { $env:HERDR_USAGE_CODEX_BIN } else { 'codex' }
++$cmd = Get-Command $bin -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
++# Not installed: say so, even if old session logs exist (they'd look like a reading).
++if (-not $cmd) { exit 127 }
++
++$psi = [Diagnostics.ProcessStartInfo]::new($cmd.Source)
++$psi.ArgumentList.Add('app-server')
++$psi.UseShellExecute = $false
++$psi.CreateNoWindow = $true
++$psi.RedirectStandardInput = $true
++$psi.RedirectStandardOutput = $true
++$psi.RedirectStandardError = $true
++$psi.StandardOutputEncoding = [Text.UTF8Encoding]::new($false)
++
++$found = $null
++try {
++  $p = [Diagnostics.Process]::Start($psi)
++  try {
++    $p.BeginErrorReadLine()
++    $p.StandardInput.WriteLine('{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"clientInfo":{"name":"herdr-usage-limits","version":"1.0"}}}')
++    $p.StandardInput.WriteLine('{"jsonrpc":"2.0","method":"initialized"}')
++    $p.StandardInput.WriteLine('{"jsonrpc":"2.0","id":2,"method":"account/rateLimits/read","params":{}}')
++    $p.StandardInput.Flush()
++    $deadline = (Get-Date).AddSeconds(15)
++    while (-not $found) {
++      $left = [int]($deadline - (Get-Date)).TotalMilliseconds
++      if ($left -le 0) { break }
++      $read = $p.StandardOutput.ReadLineAsync()
++      if (-not $read.Wait($left)) { break }
++      if ($null -eq $read.Result) { break }
++      if ($read.Result.Contains('"id":2')) { $found = $read.Result }
++    }
++  } finally {
++    try { $p.Kill($true) } catch {}
++  }
++} catch {}
++
++if ($found) { [Console]::Out.WriteLine($found); exit 0 }
++
++# app-server didn't answer: offer the newest logged snapshot (the mod shows it
++# as the last reading, dated, with the provider marked as failing).
++$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME '.codex' }
++$sessions = Join-Path $codexHome 'sessions'
++if (Test-Path $sessions) {
++  $since = (Get-Date).AddDays(-14)
++  $files = Get-ChildItem $sessions -Recurse -Filter '*.jsonl' -File -ErrorAction SilentlyContinue |
++    Where-Object LastWriteTime -gt $since | Sort-Object LastWriteTime -Descending | Select-Object -First 30
++  foreach ($f in $files) {
++    $line = Select-String -LiteralPath $f.FullName -SimpleMatch '"rate_limits":{' -ErrorAction SilentlyContinue |
++      Select-Object -Last 1
++    if ($line) { [Console]::Out.WriteLine('{"snapshot":' + $line.Line + '}'); exit 0 }
++  }
++}
++exit 1
+diff --git a/mods/usage-limits/helpers/session.ps1 b/mods/usage-limits/helpers/session.ps1
+new file mode 100644
+index 0000000..8d16999
+--- /dev/null
++++ b/mods/usage-limits/helpers/session.ps1
+@@ -0,0 +1,81 @@
++# Windows port of session.sh: prints one line of numbers about the Claude
++# session a terminal is running, and exits:
++#   tokens=N calls=N compactions=N [lastTrigger=auto lastPre=N lastPost=N]
++#
++# Usage: session.ps1 claude <pid>
++# The pid is the terminal's foreground process. On Windows that is the shell,
++# so the claude.exe is looked for among its children.
++#
++# Session files hold the whole conversation. Only numbers leave this script.
++# Calls are the person's messages, as in session.sh.
++#
++# Exit: 0 = printed, 1 = no session found for that process (never a guess).
++# Codex isn't supported here: finding its session needs lsof.
++# Claude's files follow CLAUDE_CONFIG_DIR.
++
++param([string]$App, [string]$ProcId)
++
++if ($App -ne 'claude' -or $ProcId -notmatch '^\d+$') { exit 1 }
++$dir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
++
++# The pid itself when it is claude, else its claude.exe child.
++$agent = $null
++$self = Get-CimInstance Win32_Process -Filter "ProcessId=$ProcId" -ErrorAction SilentlyContinue
++if ($self -and $self.Name -eq 'claude.exe') { $agent = $self.ProcessId }
++else {
++  $kids = @(Get-CimInstance Win32_Process -Filter "ParentProcessId=$ProcId AND Name='claude.exe'" -ErrorAction SilentlyContinue)
++  if ($kids.Count -ne 1) { exit 1 }   # none, or several: never a guess
++  $agent = $kids[0].ProcessId
++}
++
++$meta = Join-Path $dir "sessions/$agent.json"
++if (-not (Test-Path -LiteralPath $meta)) { exit 1 }
++try { $id = (Get-Content -LiteralPath $meta -Raw | ConvertFrom-Json).sessionId } catch { exit 1 }
++if ($id -notmatch '^[0-9a-zA-Z-]+$') { exit 1 }
++$file = Get-ChildItem (Join-Path $dir 'projects') -Directory -ErrorAction SilentlyContinue |
++  ForEach-Object { Join-Path $_.FullName "$id.jsonl" } | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
++if (-not $file) { exit 1 }
++
++# The number after "key": in a string, 0 if there is none.
++function Num([string]$s, [string]$k) {
++  $m = [regex]::Match($s, '"' + $k + '":([0-9]+)')
++  if ($m.Success) { [long]$m.Groups[1].Value } else { 0 }
++}
++
++$calls = 0; $compactions = 0; $tokens = 0; $pre = 0; $post = 0; $trigger = ''
++# Claude keeps the file open for writing, so share it.
++$stream = [IO.FileStream]::new($file, 'Open', 'Read', 'ReadWrite')
++$reader = [IO.StreamReader]::new($stream, [Text.Encoding]::UTF8)
++try {
++  while ($null -ne ($line = $reader.ReadLine())) {
++    if ($line.Contains('"type":"user"') -and $line.Contains('"isSidechain":false') -and
++        -not $line.Contains('"isMeta":true') -and -not $line.Contains('"isCompactSummary":true') -and
++        -not $line.Contains('"type":"tool_result"')) { $calls++ }
++    if ($line.Contains('"subtype":"compact_boundary"')) {
++      $compactions++
++      $pre = Num $line 'preTokens'; $post = Num $line 'postTokens'; $tokens = $post
++      $t = [regex]::Match($line, '"trigger":"([a-z]+)"')
++      $trigger = if ($t.Success) { $t.Groups[1].Value } else { '' }
++    }
++    if ($line.Contains('"type":"assistant"') -and $line.Contains('"isSidechain":false')) {
++      $u = $line.IndexOf('"usage":{')
++      if ($u -ge 0) {
++        $s = $line.Substring($u)
++        # With server tools, usage adds up every request of the turn: the last one is the context.
++        $i = $s.IndexOf('"iterations":[')
++        if ($i -ge 0) {
++          $last = $s.LastIndexOf('{"input_tokens":')
++          if ($last -gt $i) { $s = $s.Substring($last) }
++        }
++        $n = (Num $s 'input_tokens') + (Num $s 'cache_creation_input_tokens') + (Num $s 'cache_read_input_tokens')
++        if ($n -gt 0) { $tokens = $n }
++      }
++    }
++  }
++} finally { $reader.Dispose() }
++
++if (-not $tokens) { exit 1 }
++$out = "tokens=$tokens calls=$calls compactions=$compactions"
++if ($compactions) { $out += " lastTrigger=$trigger lastPre=$pre lastPost=$post" }
++[Console]::Out.WriteLine($out)
++exit 0
+diff --git a/mods/usage-limits/main.js b/mods/usage-limits/main.js
+index 8cb5cb0..c835294 100644
+--- a/mods/usage-limits/main.js
++++ b/mods/usage-limits/main.js
+@@ -29,6 +29,15 @@ const LEFT_W = 48;                   // the time-left column in the panel
+ const PANEL_OPEN_DELAY = 350;       // ms, so passing over the bar doesn't flash it
+ const PANEL_CLOSE_DELAY = 300;      // ms, lets the pointer cross from the bar to the card
+ 
++// Windows has no sh: run the PowerShell ports of the helpers (helpers/*.ps1) instead.
++const WINDOWS = /^[A-Za-z]:/.test(appHome());
++function helper(path, args = []) {
++  const file = `${appHome()}/mods/${MOD}/${path}`;
++  return WINDOWS
++    ? exec("pwsh", ["-NoLogo", "-NoProfile", "-NonInteractive", "-File", file.replace(/\.sh$/, ".ps1"), ...args])
++    : exec("sh", [file, ...args]);
++}
++
+ const now = () => Math.floor(Date.now() / 1000);
+ const states = () => shared(KEY_STATE) ?? {};
+ 
+@@ -84,7 +93,7 @@ export default class UsageLimits extends View {
+       let next;
+       const prev = states()[p.id] ?? { report: null, lastGood: null, installed: null };
+       try {
+-        const r = await exec("sh", [`${appHome()}/mods/${MOD}/${p.helper}`]);
++        const r = await helper(p.helper);
+         next = r.code === 127 ? nextState(prev, null, false) : nextState(prev, p.parse(r.stdout, now()), true);
+       } catch (e) {
+         next = { ...prev, report: { status: "error", message: String(e?.message ?? e), plan: null, observedAt: now(), source: p.helper, windows: [] } };
+@@ -113,9 +122,9 @@ export default class UsageLimits extends View {
+         const app = AGENTS[info.status?.app];
+         const pid = info.foreground?.pid;
+         if (app && pid) {
+-          const r = await exec("sh", [`${appHome()}/mods/${MOD}/helpers/session.sh`, app, String(pid)]);
++          const r = await helper("helpers/session.sh", [app, String(pid)]);
+           const data = r.code === 0 ? parseSession(r.stdout, app) : null;
+-          if (data) next = { data, title: (info.cwd ?? "").split("/").pop() };
++          if (data) next = { data, title: (info.cwd ?? "").split(/[\\/]/).pop() };
+         }
+       } catch {
+         next = null;
