@@ -50,7 +50,7 @@ Claude or Codex gives you a guided tour of your code. Press `ctrl-shift-g`, pick
 
 ![tourist](tourist/preview.png)
 
-`n` next, `b` back, `d` deeper, `t` more technical, `a` ask, `o` open in VS Code, `s` switches between split and stacked (wide panes start split), `q` ends the tour. `a` on the setup screen switches between Claude and Codex. Needs the `claude` or `codex` CLI signed in, and `gh` signed in for pull requests.
+`n` next, `b` back, `d` deeper, `t` more technical, `a` ask, `o` open in VS Code, `s` switches between split and stacked (wide panes start split), `z` zooms the pane to full size and back, `q` ends the tour. `a` on the setup screen switches between Claude and Codex. Needs the `claude` or `codex` CLI signed in, and `gh` signed in for pull requests.
 
 ## Install
 

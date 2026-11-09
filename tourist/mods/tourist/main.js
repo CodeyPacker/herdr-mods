@@ -9,7 +9,7 @@
 //   views/        the setup, tour, planning and error screens
 import { View } from "gpui-kit";
 import { v_flex, InputState } from "gpui-base";
-import { theme, nextCommand, props } from "herdr";
+import { theme, nextCommand, props, run } from "herdr";
 import { SCOPES, DEPTHS, SPLIT_WIDTH } from "./constants.js";
 import { startFolder, readRepo } from "./git.js";
 import { AgentSession, agentName, findAgents, rememberAgent } from "./agent.js";
@@ -462,6 +462,8 @@ export default class Tourist extends View {
       return;
     }
     if (e.modifiers?.control || e.modifiers?.alt || e.modifiers?.platform) return;
+    // z zooms this pane to fill the tab and back, on every screen (Herdr's pane.zoom, ctrl-shift-z).
+    if (k === "z") { run("pane.zoom"); cx.stop_propagation(); return; }
     let handled = true;
     if (this.phase === "setup" && !this.git.root) {
       handled = false; // still finding the repo; see pick()

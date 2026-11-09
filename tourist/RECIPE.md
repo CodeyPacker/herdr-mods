@@ -95,6 +95,8 @@ and its branch are deleted, and the comments stay.
 - Post review: `1` to `3` or `j`/`k` pick the verdict, `tab` types the summary,
   `p` twice posts, `o` opens it once posted, `b` or `esc` back to the tour.
 - Fix: `b` or `esc` back to the tour, `p` twice pushes, `x` discards.
+- Every screen: `z` zooms the pane to fill the tab and back (Herdr's `pane.zoom`,
+  the same as `ctrl-shift-z`), except while typing in a box.
 - Error: `enter`, `q` or `esc` starts over.
 - Branch changes is skipped (enter does nothing) when the branch has no
   changes. The default scope is commit or repo in that case.
