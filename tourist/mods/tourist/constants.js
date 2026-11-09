@@ -3,6 +3,7 @@
 export const SCOPES = [
   { key: "b", id: "branch", label: "Branch changes", hint: "since this branch left the base, plus uncommitted edits" },
   { key: "c", id: "commit", label: "Last commit", hint: "HEAD only" },
+  { key: "p", id: "pr", label: "Pull request", hint: "pick an open PR for a guided review" },
   { key: "r", id: "repo", label: "Whole repo", hint: "slower, the agent surveys the codebase" },
   { key: "f", id: "feature", label: "A feature", hint: "describe it, the agent finds the code" },
 ];

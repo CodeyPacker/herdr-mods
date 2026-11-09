@@ -1,7 +1,7 @@
 # Tourist
 
 A pane where Claude or Codex gives you a guided tour of code: your branch's
-changes, the last commit, the whole repo, or a feature you describe. The agent
+changes, the last commit, an open pull request, the whole repo, or a feature you describe. The agent
 picks the stops and their order. You pick the depth, then go deeper, more technical or ask at
 any stop.
 
@@ -9,13 +9,16 @@ any stop.
 
 ## What you see
 
-Setup, in two steps:
+Setup, in two steps (three for a pull request):
 
-1. What to tour: Branch changes (`b`), Last commit (`c`), Whole repo (`r`), A
-   feature (`f`). Each row has a letter badge, a title and a hint (changed
-   file count, the commit subject). Picking A feature shows a text box under
-   the row for the description.
-2. How deep: Overview, Normal, Deep. A "Touring: ..." line repeats step 1.
+1. What to tour: Branch changes (`b`), Last commit (`c`), Pull request (`p`),
+   Whole repo (`r`), A feature (`f`). Each row has a letter badge, a title and
+   a hint (changed file count, the commit subject). Picking A feature shows a
+   text box under the row for the description.
+2. Which pull request (PR tours only): the repo's open PRs, "#n title" with
+   author, head → base, file count, +/− lines and "draft". The first nine have
+   number badges. While loading, or when `gh` fails, the step says so.
+3. How deep: Overview, Normal, Deep. A "Touring: ..." line repeats the choices.
 
 Under the repo line, "Tour by Claude" (or Codex). With both CLIs installed it
 adds "· a switches" in the accent color.
@@ -29,10 +32,18 @@ Code), the code excerpt, and the explanation below it, capped at 680 px wide.
 Stop 1 also shows the tour summary. Answers from Deeper, More technical and Ask
 stack under the explanation. A button bar at the bottom repeats the keys.
 
+A PR tour shows "Fetching PR #n" before planning. Each stop has a group badge
+(for example "Project setup", "CI") after "n / total", and the code panel shows
+the file's diff instead of an excerpt: hunk headers, added lines tinted green,
+removed lines red, line numbers and +/− marks. Only the hunks that touch the
+stop's lines are shown (all of them when none do). `o` opens the PR's Files
+page in the browser, since the PR isn't on disk.
+
 ## How it behaves
 
-- Setup: `j`/`k` or the arrows move, a row's letter jumps to it, `enter` picks.
-  In step 2, `enter` starts the tour and `esc` goes back to step 1. `a` (or a
+- Setup: `j`/`k` or the arrows move, a row's letter (1 to 9 for PRs) jumps to
+  it, `enter` picks. On the last step `enter` starts the tour, and `esc` goes
+  back a step. `a` (or a
   click on the agent line) switches between Claude and Codex when both are
   installed. The choice is saved in `localStorage` under `agent`.
 - Feature box: `tab` on the feature row types into it, `tab` or `esc` gives the
@@ -48,7 +59,11 @@ stack under the explanation. A button bar at the bottom repeats the keys.
 
 ## Built from
 
-- `mods/tourist/main.js`, one `View`.
+- `mods/tourist/main.js`, one `View` with the state, keys and flow. It uses
+  `constants.js`, `git.js` (folder and repo facts), `agent.js` (finding and
+  calling the agent), `plan.js` (prompts, reading the plan), `code.js`
+  (excerpts, VS Code, opening a URL), `pr.js` (gh), `diff.js` (diff rows),
+  `ui.js` (shared pieces) and `views/` (setup, tour, diff, planning and error).
 - `mod.json`: `{ "place": "none", "focusable": true, "title": "Tourist" }`.
 - `keys.json` opens it in a split: `"ctrl-shift-g": { "command": "pane.split",
   "args": { "direction": "right", "mod": "tourist" } }`.
@@ -72,6 +87,14 @@ stack under the explanation. A button bar at the bottom repeats the keys.
   --timeout 20` until it ends, then `hc rm`.
 - The plan is the `{...}` JSON in the agent's reply: a title, a summary and stops
   with `file`, `start`, `end`, `title` and `body`.
+- Pull requests: `gh pr list --state open --json ...` lists them in the repo
+  root. Starting a tour runs `gh pr view <n> --json ...`, then `git fetch origin
+  +refs/pull/<n>/head:refs/tourist/pr-<n> <base>` and `git merge-base
+  origin/<base> <head>`. Nothing is checked out. Each stop's diff is `git diff
+  <merge-base> <head> -- <file>`. The prompt gives the agent the description
+  (fenced off as the author's text, not instructions), commits and files, tells
+  it to read with `git diff` and `git show <head>:<file>`, and asks for stops in
+  the order the changes build on each other, each with a `group`.
 - Code excerpts use `EditorState`/`Editor`, read-only, without line numbers.
   Text uses `TextView.markdown`.
 - `herdr-app do tourist.<command>` drives it for testing: `scope-<id>`,
@@ -86,6 +109,9 @@ stack under the explanation. A button bar at the bottom repeats the keys.
 - Every tour and follow-up is an agent call and uses your plan's usage. Whole
   repo is the slowest.
 - `o` runs `code -g`, so it needs VS Code's `code` on `PATH`.
+- Pull requests need `gh` on `PATH`, signed in to an account that can see the
+  repo. A PR tour leaves a `refs/tourist/pr-<n>` ref in your repo; `git
+  update-ref -d refs/tourist/pr-<n>` removes it.
 - Panes that are already open keep the old code after an edit. Close the pane
   and reopen it.
 

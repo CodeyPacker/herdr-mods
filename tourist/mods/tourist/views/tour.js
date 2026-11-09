@@ -3,20 +3,25 @@ import { div } from "gpui-kit";
 import { v_flex, h_flex, Editor, TextView, h_resizable, v_resizable, resizable_panel } from "gpui-base";
 import { settings } from "herdr";
 import { button, spinner, textInput } from "../ui.js";
+import { diffView } from "./diff.js";
 
 /** `v` is the Tourist view: its state is read here and its methods run on clicks. */
 export function tourView(v, t) {
   const plan = v.plan, s = plan.stops[v.idx], last = plan.stops.length - 1;
   const header = h_flex().px(14).py(10).gap(10).items_center().border_b_1().border_color(t.border)
     .child(div().text_size(11.5).text_color(t.dim).child(`${v.idx + 1} / ${plan.stops.length}`))
+    .when(Boolean(s.group), el => el.child(div().flex_none().max_w(180).truncate().px(6).py(1).rounded(5).bg(t.raised)
+      .text_size(11).text_color(t.accent).child(String(s.group))))
     .child(div().flex_1().min_w(0).truncate().font_semibold().child(s.title))
     .child(div().max_w(200).truncate().text_size(11.5).text_color(t.dim).child(plan.title ?? ""));
   const fileLine = h_flex().id("file").px(14).py(6).gap(8).items_center().cursor_pointer()
     .hover(st => st.bg(t.hover)).on_click(() => v.openInEditor())
     .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.accent).font_family(settings().font_family).child(s.file))
-    .child(div().text_size(11.5).text_color(t.dim).child(`lines ${s.start}–${s.end}  ·  o opens`));
+    .child(div().text_size(11.5).text_color(t.dim).child(`lines ${s.start}–${s.end}  ·  ${v.pr ? "o opens the PR" : "o opens"}`));
   const code = div().flex_1().min_h(0).mx(14).mb(4).rounded(8).border_1().border_color(t.border).bg(t.background).overflow_hidden()
-    .child(v.code ? Editor.new(v.code).size_full() : div().p(10).text_size(12).text_color(t.dim).child(v.codeError ?? "Loading…"));
+    .child(v.diff ? diffView(`diff-${v.idx}`, v.diff, t)
+      : v.code ? Editor.new(v.code).size_full()
+      : div().p(10).text_size(12).text_color(t.dim).child(v.codeError ?? "Loading…"));
   const notes = s.notes.map((n, i) => v_flex().gap(4).pt(6).border_t_1().border_color(t.border)
     .child(div().text_size(11.5).font_semibold().text_color(t.accent).child(n.label))
     .child(TextView.markdown(`note-${v.idx}-${i}`, n.text).selectable()));
@@ -45,7 +50,7 @@ export function tourView(v, t) {
   // The group remembers each layout's sizes under its id.
   const codeSide = v_flex().size_full().min_h(0).child(fileLine).child(code);
   const textSide = v_flex().size_full().min_h(0).child(explain).when(v.asking, el => el.child(ask));
-  const codeHeight = Math.min(360, Math.max(80, v.codeLines * 17 + 24));
+  const codeHeight = Math.min(360, Math.max(80, v.codeLines * (v.diff ? 20 : 17) + 24));
   const panes = v.isSplit()
     ? h_resizable("tour-split").size_full()
       .child(resizable_panel().size(560).size_range(200).child(codeSide.pb(8)))

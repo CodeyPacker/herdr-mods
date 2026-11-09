@@ -13,8 +13,10 @@ import { theme, nextCommand, props } from "herdr";
 import { SCOPES, DEPTHS, SPLIT_WIDTH } from "./constants.js";
 import { startFolder, readRepo } from "./git.js";
 import { AgentSession, agentName, findAgents, rememberAgent } from "./agent.js";
-import { subject, planPrompt, followUpPrompt, parsePlan } from "./plan.js";
-import { readExcerpt, codeState, openInEditor } from "./code.js";
+import { subject, planPrompt, prSubject, prPlanPrompt, followUpPrompt, parsePlan } from "./plan.js";
+import { readExcerpt, codeState, openInEditor, openUrl } from "./code.js";
+import { listPRs, loadPR, prFileDiff } from "./pr.js";
+import { diffRows, rowsInRange } from "./diff.js";
 import { setupView } from "./views/setup.js";
 import { tourView } from "./views/tour.js";
 import { planningView, errorView } from "./views/status.js";
@@ -29,7 +31,11 @@ export default class Tourist extends View {
     this.session = null;  // the AgentSession of the tour in progress
     this.busy = null; this.error = null;
     this.agents = []; this.agent = null; // installed agent ids, and the one tours use
-    this.step = 1;       // setup step: 1 what to tour, 2 how deep
+    this.step = "scope"; // setup step: "scope" what to tour, "pr" which pull request, "depth" how deep
+    this.prs = null; this.prsError = null; // the open PRs, loaded when the PR step first opens
+    this.prNumber = null; this.pr = null;  // the picked PR, and its details once the tour starts
+    this.diff = null;     // the stop's diff rows, on PR tours
+    this.planNote = null; // what planning is waiting on before the agent starts
     this.cursor = 0;      // highlighted row in the current step
     this.split = null;    // null: split when the pane is wide enough. true or false: the s key chose
     this.width = 0;       // the pane width, from on_size_change
@@ -74,12 +80,12 @@ export default class Tourist extends View {
   /** `tourist.<name>` commands: focus, start, next, prev, deeper, technical, open, reset, agent, scope-<id>, depth-<id>. */
   command(c, cx) {
     if (c === "focus") this.handle.focus();
-    else if (c.startsWith("scope-")) { this.scope = c.slice(6); this.goStep(1); }
-    else if (c.startsWith("depth-")) { this.depth = c.slice(6); this.goStep(2); }
+    else if (c.startsWith("scope-")) { this.scope = c.slice(6); this.goStep("scope"); }
+    else if (c.startsWith("depth-")) { this.depth = c.slice(6); this.goStep("depth"); }
     else if (c === "down") this.moveCursor(1);
     else if (c === "up") this.moveCursor(-1);
     else if (c === "pick") this.pick(cx);
-    else if (c === "back") this.goStep(1);
+    else if (c === "back") this.back();
     else if (c === "start") this.start(cx);
     else if (c === "next") this.show(this.idx + 1, cx);
     else if (c === "prev") this.show(this.idx - 1, cx);
@@ -99,7 +105,7 @@ export default class Tourist extends View {
     if (!this.agent) { this.fail("Tourist needs the claude or codex CLI on PATH, signed in."); return; }
     this.git = repo;
     if (repo.changed.length === 0) this.scope = repo.head ? "commit" : "repo";
-    this.goStep(1);
+    this.goStep("scope");
   }
 
   /** Switches to the next installed agent and remembers it. */
@@ -117,13 +123,21 @@ export default class Tourist extends View {
     if (this.phase !== "setup" || !this.git.root) return;
     if (this.scope === "branch" && this.git.changed.length === 0) return;
     if (this.scope === "feature" && !this.featureInput.value().trim()) { this.focusBox(this.featureInput, cx); return; }
+    if (this.scope === "pr" && !this.prNumber) return;
     this.leaveBox();
     this.phase = "planning";
     const session = this.session = new AgentSession(this.agent, this.git.root);
-    const prompt = planPrompt(subject(this.scope, this.git, this.featureInput.value().trim()), this.depth);
     const gen = this.gen = (this.gen ?? 0) + 1;
     cx.spawn(async cx => {
       try {
+        let prompt;
+        if (this.scope === "pr") {
+          this.planNote = `Fetching PR #${this.prNumber}`; cx.notify();
+          const pr = await loadPR(this.git.root, this.on, this.prNumber);
+          if (gen !== this.gen) return;
+          this.pr = pr; this.planNote = null; cx.notify();
+          prompt = prPlanPrompt(prSubject(pr), this.depth);
+        } else prompt = planPrompt(subject(this.scope, this.git, this.featureInput.value().trim()), this.depth);
         const plan = parsePlan(await session.ask(prompt));
         if (gen !== this.gen) return;
         this.plan = plan; this.phase = "tour"; this.show(0, cx);
@@ -135,9 +149,19 @@ export default class Tourist extends View {
   show(i, cx) {
     if (!this.plan) return;
     this.idx = Math.max(0, Math.min(i, this.plan.stops.length - 1));
-    this.code?.release(); this.code = null; this.codeError = null;
+    this.code?.release(); this.code = null; this.codeError = null; this.diff = null;
     const s = this.plan.stops[this.idx], idx = this.idx;
     cx.spawn(async cx => {
+      // A PR isn't on disk: show the stop's part of the file's diff instead.
+      if (this.pr) {
+        const text = await prFileDiff(this.git.root, this.on, this.pr, s.file);
+        if (this.idx !== idx) return;
+        const rows = text ? rowsInRange(diffRows(text), Number(s.start) || 1, Number(s.end) || Infinity) : [];
+        if (rows.length === 0) this.codeError = `No changes to ${s.file} in this PR`;
+        else { this.diff = rows; this.codeLines = rows.length; }
+        cx.notify();
+        return;
+      }
       const excerpt = await readExcerpt(this.git.root, s, this.on);
       if (this.idx !== idx) return;
       if (!excerpt) { this.codeError = `Cannot read ${s.file}`; cx.notify(); return; }
@@ -176,27 +200,59 @@ export default class Tourist extends View {
     this.focusBox(this.input, cx);
   }
 
+  /** The setup steps for a scope, in order. A PR tour adds the PR picker. */
+  steps(scope = this.scope) { return scope === "pr" ? ["scope", "pr", "depth"] : ["scope", "depth"]; }
+
+  /** How many rows the current setup step has. */
+  stepRows() { return this.step === "scope" ? SCOPES.length : this.step === "pr" ? (this.prs?.length ?? 0) : DEPTHS.length; }
+
   /** Moves the highlight within the current setup step. */
   moveCursor(delta) {
-    const rows = this.step === 1 ? SCOPES.length : DEPTHS.length;
-    this.cursor = (this.cursor + delta + rows) % rows;
+    const rows = this.stepRows();
+    if (rows > 0) this.cursor = (this.cursor + delta + rows) % rows;
   }
 
-  /** Step 1: what to tour. Step 2: how deep. */
+  /** Shows a setup step with its current choice highlighted. */
   goStep(step) {
     this.step = step;
-    this.cursor = step === 1 ? SCOPES.findIndex(s => s.id === this.scope) : DEPTHS.findIndex(d => d.id === this.depth);
+    this.cursor = step === "scope" ? SCOPES.findIndex(s => s.id === this.scope)
+      : step === "pr" ? Math.max(0, (this.prs ?? []).findIndex(p => p.number === this.prNumber))
+      : DEPTHS.findIndex(d => d.id === this.depth);
   }
 
-  /** Enter on the highlighted row: step 1 moves on to step 2, step 2 starts the tour. */
+  back() {
+    const steps = this.steps(), i = steps.indexOf(this.step);
+    if (i > 0) this.goStep(steps[i - 1]);
+  }
+
+  /** Loads the open PRs once. A failure (no gh, signed out) shows on the PR step. */
+  loadPRs(cx) {
+    if (this.prs || this.prsLoading) return;
+    this.prsLoading = true; this.prsError = null;
+    cx.spawn(async cx => {
+      try { this.prs = await listPRs(this.git.root, this.on); }
+      catch (e) { this.prs = []; this.prsError = String(e?.message ?? e); }
+      this.prsLoading = false;
+      if (this.step === "pr") this.goStep("pr");
+      cx.notify();
+    });
+  }
+
+  /** Enter on the highlighted row: move to the next step, or start the tour from the last one. */
   pick(cx) {
-    if (this.step === 1) {
+    if (this.step === "scope") {
       const s = SCOPES[this.cursor];
       if (s.id === "branch" && this.git.changed.length === 0) return;
       this.scope = s.id;
       if (s.id === "feature" && !this.featureInput.value().trim()) { this.focusBox(this.featureInput, cx); return; }
       this.leaveBox();
-      this.goStep(2);
+      this.goStep(this.steps()[1]);
+      if (this.step === "pr") this.loadPRs(cx);
+    } else if (this.step === "pr") {
+      const p = this.prs?.[this.cursor];
+      if (!p) return;
+      this.prNumber = p.number;
+      this.goStep("depth");
     } else {
       this.depth = DEPTHS[this.cursor].id;
       this.start(cx);
@@ -210,7 +266,9 @@ export default class Tourist extends View {
 
   openInEditor() {
     const s = this.plan?.stops[this.idx];
-    if (s) openInEditor(`${this.git.root}/${s.file}`, s.start);
+    if (!s) return;
+    if (this.pr) openUrl(`${this.pr.url}/files`); // the PR's files aren't on disk
+    else openInEditor(`${this.git.root}/${s.file}`, s.start);
   }
 
   reset(cx) {
@@ -219,8 +277,9 @@ export default class Tourist extends View {
     this.leaveBox();
     this.code?.release(); this.code = null;
     this.plan = null; this.busy = null; this.error = null;
+    this.pr = null; this.prNumber = null; this.prs = null; this.diff = null; this.planNote = null;
     this.phase = this.git.root ? "setup" : "error";
-    this.goStep(1);
+    this.goStep("scope");
     if (!this.git.root) cx.spawn(async cx => { this.phase = "setup"; await this.detect(); cx.notify(); });
   }
 
@@ -234,14 +293,16 @@ export default class Tourist extends View {
     if (e.modifiers?.control || e.modifiers?.alt || e.modifiers?.platform) return;
     let handled = true;
     if (this.phase === "setup") {
-      const letter = this.step === 1 ? SCOPES.findIndex(s => s.key === k) : DEPTHS.findIndex(d => d.key === k);
-      const onFeature = this.step === 1 && SCOPES[this.cursor]?.id === "feature";
+      // Scopes and depths have letters. PRs take 1 to 9 for the first nine.
+      const list = this.step === "scope" ? SCOPES : this.step === "depth" ? DEPTHS : null;
+      const letter = list ? list.findIndex(x => x.key === k) : /^[1-9]$/.test(k) && +k <= this.stepRows() ? +k - 1 : -1;
+      const onFeature = this.step === "scope" && SCOPES[this.cursor]?.id === "feature";
       if (letter >= 0) this.cursor = letter;
       else if (k === "j" || k === "down") this.moveCursor(1);
       else if (k === "k" || k === "up") this.moveCursor(-1);
       else if (k === "enter") this.pick(cx);
       else if (k === "tab" && onFeature) this.focusBox(this.featureInput, cx);
-      else if (k === "escape" && this.step === 2) this.goStep(1);
+      else if (k === "escape" && this.step !== "scope") this.back();
       else if (k === "a" && this.agents.length > 1) this.switchAgent();
       else handled = false;
     } else if (this.phase === "planning") {
