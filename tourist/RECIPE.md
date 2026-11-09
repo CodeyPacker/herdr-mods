@@ -39,6 +39,13 @@ removed lines red, line numbers and +/− marks. Only the hunks that touch the
 stop's lines are shown (all of them when none do). `o` opens the PR's Files
 page in the browser, since the PR isn't on disk.
 
+Line comments (PR tours): clicking a numbered diff line opens a comment box
+under it. `enter` saves, an empty comment or `esc` closes it. Saved comments
+sit under their line with an accent border and a `×` that deletes them. The
+file line reads "click a line to comment (N saved)". Each comment keeps the
+file, line, side (`new`, or `old` for a removed line), that line's code and the
+text.
+
 ## How it behaves
 
 - Setup: `j`/`k` or the arrows move, a row's letter (1 to 9 for PRs) jumps to
@@ -63,6 +70,7 @@ page in the browser, since the PR isn't on disk.
   `constants.js`, `git.js` (folder and repo facts), `agent.js` (finding and
   calling the agent), `plan.js` (prompts, reading the plan), `code.js`
   (excerpts, VS Code, opening a URL), `pr.js` (gh), `diff.js` (diff rows),
+  `comments.js` (saving line comments),
   `ui.js` (shared pieces) and `views/` (setup, tour, diff, planning and error).
 - `mod.json`: `{ "place": "none", "focusable": true, "title": "Tourist" }`.
 - `keys.json` opens it in a split: `"ctrl-shift-g": { "command": "pane.split",
@@ -112,6 +120,8 @@ page in the browser, since the PR isn't on disk.
 - Pull requests need `gh` on `PATH`, signed in to an account that can see the
   repo. A PR tour leaves a `refs/tourist/pr-<n>` ref in your repo; `git
   update-ref -d refs/tourist/pr-<n>` removes it.
+- Line comments are saved to `<appHome>/data/tourist/comments/<repo>_pr-<n>.json`
+  and stay on this computer. Nothing is posted to GitHub.
 - Panes that are already open keep the old code after an edit. Close the pane
   and reopen it.
 

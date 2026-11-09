@@ -17,6 +17,7 @@ import { subject, planPrompt, prSubject, prPlanPrompt, followUpPrompt, parsePlan
 import { readExcerpt, codeState, openInEditor, openUrl } from "./code.js";
 import { listPRs, loadPR, prFileDiff } from "./pr.js";
 import { diffRows, rowsInRange } from "./diff.js";
+import { commentKey, loadComments, saveComments, sideOf } from "./comments.js";
 import { setupView } from "./views/setup.js";
 import { tourView } from "./views/tour.js";
 import { planningView, errorView } from "./views/status.js";
@@ -27,7 +28,7 @@ export default class Tourist extends View {
     this.cwd = props()?.folder ?? start.cwd; this.on = start.on;
     this.phase = "setup"; this.scope = "branch"; this.depth = "normal";
     this.git = { root: null, branch: "", base: null, mergeBase: null, changed: [], head: "" };
-    this.plan = null; this.idx = 0; this.code = null; this.codeLines = 0; this.codeError = null;
+    this.plan = null; this.idx = 0; this.code = null; this.codeError = null;
     this.session = null;  // the AgentSession of the tour in progress
     this.busy = null; this.error = null;
     this.agents = []; this.agent = null; // installed agent ids, and the one tours use
@@ -36,6 +37,8 @@ export default class Tourist extends View {
     this.prNumber = null; this.pr = null;  // the picked PR, and its details once the tour starts
     this.diff = null;     // the stop's diff rows, on PR tours
     this.planNote = null; // what planning is waiting on before the agent starts
+    this.comments = [];   // line comments on the PR, saved by comments.js
+    this.commenting = null; // { file, line, side, code } while the comment box is open
     this.cursor = 0;      // highlighted row in the current step
     this.split = null;    // null: split when the pane is wide enough. true or false: the s key chose
     this.width = 0;       // the pane width, from on_size_change
@@ -43,6 +46,7 @@ export default class Tourist extends View {
     this.typing = null;   // "ask" | "feature" while a text box has the keyboard
     this.input = this.textBox("ask", "Ask about this stop, then press enter", cx => this.ask(cx));
     this.featureInput = this.textBox("feature", "e.g. how a space gets its hint letter", cx => this.pick(cx));
+    this.commentInput = this.textBox("comment", "Comment on this line, then press enter", cx => this.saveComment(cx));
     this.handle = cx.focus_handle();
     // The pane isn't drawn yet, so focus again once it is.
     this.handle.focus();
@@ -68,12 +72,12 @@ export default class Tourist extends View {
 
   /** Takes the keyboard back from a text box. */
   leaveBox() {
-    this.typing = null; this.asking = false;
+    this.typing = null; this.asking = false; this.commenting = null;
     this.handle.focus();
   }
 
   async close() {
-    this.code?.release(); this.input.release(); this.featureInput.release();
+    this.code?.release(); this.input.release(); this.featureInput.release(); this.commentInput.release();
     await this.session?.stop();
   }
 
@@ -135,7 +139,9 @@ export default class Tourist extends View {
           this.planNote = `Fetching PR #${this.prNumber}`; cx.notify();
           const pr = await loadPR(this.git.root, this.on, this.prNumber);
           if (gen !== this.gen) return;
-          this.pr = pr; this.planNote = null; cx.notify();
+          this.pr = pr; this.planNote = null;
+          this.comments = await loadComments(commentKey(this.git.root, pr.number));
+          cx.notify();
           prompt = prPlanPrompt(prSubject(pr), this.depth);
         } else prompt = planPrompt(subject(this.scope, this.git, this.featureInput.value().trim()), this.depth);
         const plan = parsePlan(await session.ask(prompt));
@@ -150,6 +156,7 @@ export default class Tourist extends View {
     if (!this.plan) return;
     this.idx = Math.max(0, Math.min(i, this.plan.stops.length - 1));
     this.code?.release(); this.code = null; this.codeError = null; this.diff = null;
+    if (this.commenting) this.leaveBox();
     const s = this.plan.stops[this.idx], idx = this.idx;
     cx.spawn(async cx => {
       // A PR isn't on disk: show the stop's part of the file's diff instead.
@@ -158,7 +165,7 @@ export default class Tourist extends View {
         if (this.idx !== idx) return;
         const rows = text ? rowsInRange(diffRows(text), Number(s.start) || 1, Number(s.end) || Infinity) : [];
         if (rows.length === 0) this.codeError = `No changes to ${s.file} in this PR`;
-        else { this.diff = rows; this.codeLines = rows.length; }
+        else this.diff = rows;
         cx.notify();
         return;
       }
@@ -166,7 +173,6 @@ export default class Tourist extends View {
       if (this.idx !== idx) return;
       if (!excerpt) { this.codeError = `Cannot read ${s.file}`; cx.notify(); return; }
       s.start = excerpt.start; s.end = excerpt.end;
-      this.codeLines = excerpt.end - excerpt.start + 1;
       this.code = codeState(s.file, excerpt.text);
       cx.notify();
     });
@@ -192,6 +198,36 @@ export default class Tourist extends View {
     this.input.set_value("");
     this.leaveBox();
     this.followUp(`You asked: ${q}`, q, cx);
+  }
+
+  /** Opens the comment box under a diff line of the current stop. */
+  startComment(row, cx) {
+    const s = this.plan?.stops[this.idx];
+    if (!this.pr || !s || row.number === undefined) return;
+    this.asking = false;
+    this.commenting = { file: s.file, line: row.number, side: sideOf(row), code: row.text };
+    this.commentInput.set_value("");
+    this.focusBox(this.commentInput, cx);
+  }
+
+  /** Saves the open comment. An empty one just closes the box. */
+  saveComment(cx) {
+    const text = this.commentInput.value().trim(), at = this.commenting;
+    this.commentInput.set_value("");
+    this.leaveBox();
+    if (!text || !at || !this.pr) return;
+    this.comments.push({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, ...at, text, created: new Date().toISOString() });
+    this.storeComments(cx);
+  }
+
+  deleteComment(comment, cx) {
+    this.comments = this.comments.filter(c => c.id !== comment.id);
+    this.storeComments(cx);
+  }
+
+  storeComments(cx) {
+    const key = commentKey(this.git.root, this.pr.number), list = this.comments;
+    cx.spawn(async () => { await saveComments(key, list).catch(() => {}); });
   }
 
   startAsking(cx) {
@@ -277,7 +313,7 @@ export default class Tourist extends View {
     this.leaveBox();
     this.code?.release(); this.code = null;
     this.plan = null; this.busy = null; this.error = null;
-    this.pr = null; this.prNumber = null; this.prs = null; this.diff = null; this.planNote = null;
+    this.pr = null; this.prNumber = null; this.prs = null; this.diff = null; this.planNote = null; this.comments = [];
     this.phase = this.git.root ? "setup" : "error";
     this.goStep("scope");
     if (!this.git.root) cx.spawn(async cx => { this.phase = "setup"; await this.detect(); cx.notify(); });
@@ -316,6 +352,7 @@ export default class Tourist extends View {
       else if (k === "a" || k === "/") this.startAsking(cx);
       else if (k === "o") this.openInEditor();
       else if (k === "s") this.toggleSplit();
+      else if (k === "escape" && this.commenting) this.leaveBox();
       else if (k === "q") this.reset(cx);
       else handled = false;
     } else if (this.phase === "error") {

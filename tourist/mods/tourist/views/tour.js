@@ -17,9 +17,17 @@ export function tourView(v, t) {
   const fileLine = h_flex().id("file").px(14).py(6).gap(8).items_center().cursor_pointer()
     .hover(st => st.bg(t.hover)).on_click(() => v.openInEditor())
     .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.accent).font_family(settings().font_family).child(s.file))
-    .child(div().text_size(11.5).text_color(t.dim).child(`lines ${s.start}–${s.end}  ·  ${v.pr ? "o opens the PR" : "o opens"}`));
+    .child(div().text_size(11.5).text_color(t.dim).child(v.pr
+      ? `lines ${s.start}–${s.end}  ·  click a line to comment${v.comments.length ? ` (${v.comments.length} saved)` : ""}  ·  o opens the PR`
+      : `lines ${s.start}–${s.end}  ·  o opens`));
+  // On PR tours each diff line takes a comment.
+  const comments = v.pr ? {
+    file: s.file, list: v.comments, input: v.commentInput,
+    open: v.commenting?.file === s.file ? v.commenting : null,
+    onRow: (r, cx) => v.startComment(r, cx), onDelete: (c, cx) => v.deleteComment(c, cx),
+  } : null;
   const code = div().flex_1().min_h(0).mx(14).mb(4).rounded(8).border_1().border_color(t.border).bg(t.background).overflow_hidden()
-    .child(v.diff ? diffView(`diff-${v.idx}`, v.diff, t)
+    .child(v.diff ? diffView(`diff-${v.idx}`, v.diff, t, comments)
       : v.code ? Editor.new(v.code).size_full()
       : div().p(10).text_size(12).text_color(t.dim).child(v.codeError ?? "Loading…"));
   const notes = s.notes.map((n, i) => v_flex().gap(4).pt(6).border_t_1().border_color(t.border)
@@ -50,13 +58,14 @@ export function tourView(v, t) {
   // The group remembers each layout's sizes under its id.
   const codeSide = v_flex().size_full().min_h(0).child(fileLine).child(code);
   const textSide = v_flex().size_full().min_h(0).child(explain).when(v.asking, el => el.child(ask));
-  const codeHeight = Math.min(360, Math.max(80, v.codeLines * (v.diff ? 20 : 17) + 24));
+  // The group keeps the first size it sees and then whatever the user drags to, so start from a
+  // fixed height rather than one measured before the code has loaded.
   const panes = v.isSplit()
     ? h_resizable("tour-split").size_full()
       .child(resizable_panel().size(560).size_range(200).child(codeSide.pb(8)))
       .child(resizable_panel().size_range(240).child(textSide))
     : v_resizable("tour-stack").size_full()
-      .child(resizable_panel().size(codeHeight + 34).size_range(80).child(codeSide))
+      .child(resizable_panel().size(360).size_range(80).child(codeSide))
       .child(resizable_panel().size_range(80).child(textSide));
   return v_flex().flex_1().min_h(0).child(header)
     .child(div().flex_1().min_h(0).child(panes)).child(bar);
