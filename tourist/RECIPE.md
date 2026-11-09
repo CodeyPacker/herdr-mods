@@ -39,7 +39,8 @@ stack under the explanation. A button bar at the bottom repeats the keys.
   keys back to the list. `enter` in the box goes to step 2.
 - Planning: `q` or `esc` cancels.
 - Tour: `n`/`l`/right next, `b`/`h`/left back, `d` deeper, `t` more technical,
-  `a` or `/` ask (the box only exists while asking), `o` open in VS Code, `q`
+  `a` or `/` ask (the box only exists while asking), `o` open in VS Code, `s` switches split and stacked
+  (wide panes start split), `q`
   ends the tour and returns to step 1.
 - Error: `enter`, `q` or `esc` starts over.
 - Branch changes is skipped (enter does nothing) when the branch has no

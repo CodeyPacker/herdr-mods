@@ -1,6 +1,6 @@
 // Tourist: Claude or Codex walks you through a branch, the last commit, the whole repo, or a feature you describe, one stop at a time.
 import { View, div } from "gpui-kit";
-import { v_flex, h_flex, Editor, EditorState, TextView, InputState, Input } from "gpui-base";
+import { v_flex, h_flex, Editor, EditorState, TextView, InputState, Input, h_resizable, v_resizable, resizable_panel } from "gpui-base";
 import { spaces, panes, focused, exec, hc, readTextFile, writeTextFile, appHome, theme, settings, nextCommand, props, window } from "herdr";
 import * as fs from "fs/promises";
 
@@ -51,6 +51,8 @@ export default class Tourist extends View {
     this.agents = []; this.agent = null; // installed agent ids, and the one tours use
     this.step = 1;       // setup step: 1 what to tour, 2 how deep
     this.cursor = 0;      // highlighted row in the current step
+    this.split = null;    // null: split when the pane is wide enough. true or false: the s key chose
+    this.width = 0;       // the pane width, from on_size_change
     this.asking = false;  // the ask box only exists while asking, so it can't take tour keys
     this.typing = null;   // "ask" | "feature" while a text box has the keyboard
     this.input = this.textBox("ask", "Ask about this stop, then press enter", cx => this.ask(cx));
@@ -339,6 +341,11 @@ export default class Tourist extends View {
     }
   }
 
+  /** Code beside the explanation when the pane is wide, unless the s key chose. */
+  isSplit() { return this.split ?? this.width >= 1100; }
+
+  toggleSplit() { this.split = !this.isSplit(); }
+
   openInEditor() {
     const s = this.plan?.stops[this.idx];
     if (!s) return;
@@ -388,6 +395,7 @@ export default class Tourist extends View {
       else if (k === "t") this.technical(cx);
       else if (k === "a" || k === "/") this.startAsking(cx);
       else if (k === "o") this.openInEditor();
+      else if (k === "s") this.toggleSplit();
       else if (k === "q") this.reset(cx);
       else handled = false;
     } else if (this.phase === "error") {
@@ -400,7 +408,8 @@ export default class Tourist extends View {
   render(cx) {
     const t = theme();
     const root = v_flex().id("tourist").track_focus(this.handle).on_key_down((e, cx) => this.key(e, cx))
-      .size_full().min_h(0).text_color(t.foreground).text_size(13); // no fill: the pane's own background shows, like a terminal
+      .size_full().min_h(0).text_color(t.foreground).text_size(13)
+      .on_size_change((size, cx) => { if (size.width !== this.width) { this.width = size.width; cx.notify(); } }); // no fill: the pane's own background shows, like a terminal
     if (this.phase === "setup") return root.child(this.setupView(t, cx));
     if (this.phase === "planning") return root.child(this.planningView(t));
     if (this.phase === "error") return root.child(this.errorView(t));
@@ -493,7 +502,7 @@ export default class Tourist extends View {
       .hover(st => st.bg(t.hover)).on_click(() => this.openInEditor())
       .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.accent).font_family(settings().font_family).child(s.file))
       .child(div().text_size(11.5).text_color(t.dim).child(`lines ${s.start}–${s.end}  ·  o opens`));
-    const code = div().h(codeHeight).mx(14).rounded(8).border_1().border_color(t.border).bg(t.background).overflow_hidden()
+    const code = div().flex_1().min_h(0).mx(14).mb(4).rounded(8).border_1().border_color(t.border).bg(t.background).overflow_hidden()
       .child(this.code ? Editor.new(this.code).size_full() : div().p(10).text_size(12).text_color(t.dim).child(this.codeError ?? "Loading…"));
     const notes = s.notes.map((n, i) => v_flex().gap(4).pt(6).border_t_1().border_color(t.border)
       .child(div().text_size(11.5).font_semibold().text_color(t.accent).child(n.label))
@@ -523,8 +532,20 @@ export default class Tourist extends View {
       .child(btn("deeper", "Deeper", "d", free, (_e, cx) => { this.deeper(cx); cx.notify(); }))
       .child(btn("tech", "More technical", "t", free, (_e, cx) => { this.technical(cx); cx.notify(); }))
       .child(btn("askbtn", "Ask", "a", free, (_e, cx) => { this.startAsking(cx); cx.notify(); }))
+      .child(btn("layout", this.isSplit() ? "Stacked" : "Split", "s", true, (_e, cx) => { this.toggleSplit(); cx.notify(); }))
       .child(btn("restart", "New tour", "q", true, (_e, cx) => { this.reset(cx); cx.notify(); }));
-    return v_flex().flex_1().min_h(0).child(header).child(fileLine).child(code).child(explain)
-      .when(this.asking, el => el.child(ask)).child(bar);
+    // Code and explanation sit in a resizable group: drag the line between them.
+    // The group remembers each layout's sizes under its id.
+    const codeSide = v_flex().size_full().min_h(0).child(fileLine).child(code);
+    const textSide = v_flex().size_full().min_h(0).child(explain).when(this.asking, el => el.child(ask));
+    const panes = this.isSplit()
+      ? h_resizable("tour-split").size_full()
+        .child(resizable_panel().size(560).size_range(200).child(codeSide.pb(8)))
+        .child(resizable_panel().size_range(240).child(textSide))
+      : v_resizable("tour-stack").size_full()
+        .child(resizable_panel().size(codeHeight + 34).size_range(80).child(codeSide))
+        .child(resizable_panel().size_range(80).child(textSide));
+    return v_flex().flex_1().min_h(0).child(header)
+      .child(div().flex_1().min_h(0).child(panes)).child(bar);
   }
 }
