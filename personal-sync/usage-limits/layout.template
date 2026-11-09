@@ -17,7 +17,7 @@
             "mod": "islands-workspace-chrome"
           },
           "size": {
-            "px": 38
+            "px": 32
           },
           "border": {
             "width": 1,
@@ -103,7 +103,7 @@
             "mod": "islands-tabs"
           },
           "size": {
-            "px": 38
+            "px": 32
           },
           "window_drag": true
         },
