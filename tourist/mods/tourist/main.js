@@ -33,7 +33,7 @@ export default class Tourist extends View {
     this.busy = null; this.error = null;
     this.agents = []; this.agent = null; // installed agent ids, and the one tours use
     this.step = "scope"; // setup step: "scope" what to tour, "pr" which pull request, "depth" how deep
-    this.prs = null; this.prsError = null; // the open PRs, loaded when the PR step first opens
+    this.prs = null; this.prsError = null; // the open PRs, loaded when the PR step opens (again after a failure)
     this.prNumber = null; this.pr = null;  // the picked PR, and its details once the tour starts
     this.diff = null;     // the stop's diff rows, on PR tours
     this.planNote = null; // what planning is waiting on before the agent starts
@@ -261,13 +261,13 @@ export default class Tourist extends View {
     if (i > 0) this.goStep(steps[i - 1]);
   }
 
-  /** Loads the open PRs once. A failure (no gh, signed out) shows on the PR step. */
+  /** Loads the open PRs once they are needed. A failure (no gh, signed out) shows on the PR step and the next visit retries. */
   loadPRs(cx) {
     if (this.prs || this.prsLoading) return;
     this.prsLoading = true; this.prsError = null;
     cx.spawn(async cx => {
       try { this.prs = await listPRs(this.git.root, this.on); }
-      catch (e) { this.prs = []; this.prsError = String(e?.message ?? e); }
+      catch (e) { this.prsError = `${String(e?.message ?? e)} Press esc and pick Pull request again to retry.`; }
       this.prsLoading = false;
       if (this.step === "pr") this.goStep("pr");
       cx.notify();

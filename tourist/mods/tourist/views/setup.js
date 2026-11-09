@@ -40,8 +40,8 @@ export function setupView(v, t) {
     rows = prs.map((p, i) => option(t, `pr-${p.number}`, i < 9 ? String(i + 1) : "·", `#${p.number} ${p.title}`,
       `${p.author?.login ?? ""} · ${p.headRefName} → ${p.baseRefName} · ${p.changedFiles} files +${p.additions} −${p.deletions}${p.isDraft ? " · draft" : ""}`,
       v.cursor === i, click(i)));
-    if (!v.prs) rows = [note("Loading open pull requests…")];
-    else if (v.prsError) rows = [note(v.prsError)];
+    if (v.prsError) rows = [note(v.prsError)];
+    else if (!v.prs) rows = [note("Loading open pull requests…")];
     else if (prs.length === 0) rows = [note("No open pull requests in this repo.")];
     help = "j/k or 1-9 move · enter next · esc back";
   } else {

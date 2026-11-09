@@ -22,7 +22,7 @@ async function gh(args, { cwd, on }) {
 async function repoName(root, on) {
   const url = await git(["remote", "get-url", "origin"], { cwd: root, on });
   const m = /github\.com[:/]([^/\s]+\/[^/\s]+?)(?:\.git)?\/?$/.exec(url ?? "");
-  if (!m) throw new Error("Pull request tours need an origin remote on GitHub.");
+  if (!m) throw new Error(url ? `Pull request tours need a GitHub origin, and origin is ${url}.` : `Could not read the origin remote in ${root}.`);
   return m[1];
 }
 
