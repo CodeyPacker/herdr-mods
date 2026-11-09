@@ -1,4 +1,4 @@
-// portal: local TCP listeners and UDP sockets on macOS, grouped by the process that owns them.
+// portal: local TCP listeners and UDP sockets on macOS and Windows, grouped by the process that owns them.
 // Favorite ports, open them in the browser, copy values, end the owning process.
 //
 // Keys: j/k move, space expands, enter opens a port in the browser, f favorites it,
@@ -10,7 +10,7 @@
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, v_virtual_list, VirtualListScrollHandle, Scrollbar, Popover } from "gpui-base";
 import { theme, props, closeOverlay, shared, window as win, readTextFile, appHome } from "herdr";
-import { scan, identity, currentIdentity, signal, probe, hostFor, urlFor, validUrl } from "./scan.js";
+import { scan, identity, currentIdentity, signal, probe, hostFor, urlFor, validUrl, endName, killName } from "./scan.js";
 
 /** @typedef {import("gpui-kit").Color} Color */
 /** @typedef {import("gpui-kit").Context} Context */
@@ -92,8 +92,9 @@ export default class Portal extends View {
   init(_props, cx) {
     /** @type {FocusHandle} */
     this.handle = cx.focus_handle();
-    this.mac = win()?.platform === "macos";
-    if (!this.mac) return;
+    const platform = win()?.platform;
+    this.supported = platform === "macos" || platform === "windows";
+    if (!this.supported) return;
     // Kept across opens.
     /** @type {number[]} */
     this.favs = load("favs", []);
@@ -287,7 +288,7 @@ export default class Portal extends View {
       const key = info ? identity(info) : b.pid ? `pid|${b.pid}` : "unknown";
       let g = by.get(key);
       if (!g) {
-        const name = b.pid ? b.pname || info?.path.split("/").pop() || `pid ${b.pid}` : "Owner unavailable";
+        const name = b.pid ? b.pname || info?.path.split(/[\\/]/).pop() || `pid ${b.pid}` : "Owner unavailable";
         g = { key, pid: b.pid, name, info, all: [], shown: [] };
         by.set(key, g);
       }
@@ -533,7 +534,7 @@ export default class Portal extends View {
       this.refresh(cx);
     } else if (force) {
       this.kill = null;
-      this.say(`SIGKILL was sent, but ${k.name} (pid ${k.pid}) is still there`, true);
+      this.say(`${killName()} was sent, but ${k.name} (pid ${k.pid}) is still there`, true);
     } else {
       k.phase = "stuck";
       k.msg = `${k.name} is still running after ${GRACE_MS / 1000} s.`;
@@ -787,7 +788,7 @@ export default class Portal extends View {
       const sockets = `${k.total} socket${k.total === 1 ? "" : "s"}${k.hidden ? ` (${k.hidden} hidden by filters)` : ""}`;
       /** @type {[string, Color, [string, string][]]} */
       const [text, edge, keys] =
-        k.phase === "ask" ? [`End ${k.name} (pid ${k.pid})? Sends SIGTERM and closes all ${sockets}.`, t.border, [["enter", "end"], ["esc", "cancel"]]]
+        k.phase === "ask" ? [`End ${k.name} (pid ${k.pid})? Sends ${endName()} and closes all ${sockets}.`, t.border, [["enter", "end"], ["esc", "cancel"]]]
         : k.phase === "term" ? [`Asking ${k.name} to quit… waiting up to ${GRACE_MS / 1000} s`, t.border, []]
         : k.phase === "stuck" ? [`${k.msg} Force Kill is available.`, t.blocked, [["f", "force kill"], ["esc", "leave it"]]]
         : k.phase === "askForce" ? [`Force kill ${k.name} (pid ${k.pid})? It can't clean up. Unsaved work may be lost.`, t.blocked, [["enter", "force kill"], ["esc", "cancel"]]]
@@ -813,10 +814,10 @@ export default class Portal extends View {
     const t = colors();
     const frame = v_flex().id("portal").track_focus(this.handle).size_full().p(16).gap(10)
       .bg(panelFill(t)).rounded(14).overflow_hidden().border_1().border_color(t.border).text_size(13);
-    if (!this.mac) {
+    if (!this.supported) {
       return frame.on_key_down((e, cx) => { if (e.key === "escape") this.close(); cx.stop_propagation(); })
         .child(div().text_size(15).font_semibold().text_color(t.foreground).child("Portal"))
-        .child(div().text_color(t.muted).child("Portal supports macOS only for now."));
+        .child(div().text_color(t.muted).child("Portal supports macOS and Windows only for now."));
     }
     const { items, groups } = this.build();
     const at = this.selection(items);

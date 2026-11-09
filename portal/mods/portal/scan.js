@@ -1,9 +1,18 @@
-// Finding sockets and processes on macOS, probing for HTTP, and ending processes.
-// netstat -anv lists every TCP listener and UDP socket with its owner's pid, other
+// Finding sockets and processes, probing for HTTP, and ending processes.
+// macOS: netstat -anv lists every TCP listener and UDP socket with its owner's pid, other
 // users' included. ps fills in the owner's start time, path, user and command.
+// Windows: netstat -ano lists them with the owner's pid. Win32_Process (through pwsh)
+// fills in the name, start time, path and command. taskkill ends processes.
 
-import { exec } from "herdr";
+import { exec, window as win } from "herdr";
 import net from "net";
+
+const isWindows = () => win()?.platform === "windows";
+
+/** What "end" sends, for messages: SIGTERM on macOS, a close request on Windows. */
+export const endName = () => (isWindows() ? "a close request" : "SIGTERM");
+/** What "force kill" sends, for messages. */
+export const killName = () => (isWindows() ? "taskkill /F" : "SIGKILL");
 
 /** @typedef {"tcp" | "udp"} Proto */
 /** @typedef {{ key: string, proto: Proto, family: "4" | "6" | "46", addr: string, port: number, pid: number | null, pname: string }} Binding */
@@ -68,6 +77,80 @@ export function parseNetstat(text) {
   return [...out.values()];
 }
 
+// Windows netstat -ano: proto, local, foreign, [state], pid. UDP has no state.
+const WIN_LINE = /^(TCP|UDP)\s+(\S+)\s+(\S+)\s+(?:(\S+)\s+)?(\d+)$/;
+
+/**
+ * "0.0.0.0:135" -> ["*", "4", 135], "[::1]:3000" -> ["::1", "6", 3000]. The
+ * any-address becomes "*", as on macOS.
+ * @param {string} s @returns {[string, "4" | "6", number] | null}
+ */
+export function splitWindowsAddress(s) {
+  const i = s.lastIndexOf(":");
+  if (i < 0) return null;
+  const port = Number(s.slice(i + 1));
+  if (!Number.isInteger(port) || port <= 0) return null;
+  const v6 = s.startsWith("[");
+  const host = v6 ? s.slice(1, i - 1) : s.slice(0, i);
+  const any = host === "0.0.0.0" || host === "::";
+  return [any ? "*" : host, v6 ? "6" : "4", port];
+}
+
+/**
+ * TCP listeners and UDP sockets with no fixed peer, from Windows netstat -ano.
+ * The process name comes later, from readProcs.
+ * @param {string} text @returns {Binding[]}
+ */
+export function parseWindowsNetstat(text) {
+  /** @type {Map<string, Binding>} */
+  const out = new Map();
+  for (const line of text.split(/\r?\n/)) {
+    const m = WIN_LINE.exec(line.trim());
+    if (!m) continue;
+    const [, p, local, foreign, state, pidText] = m;
+    const proto = /** @type {Proto} */ (p.toLowerCase());
+    if (proto === "tcp" && state !== "LISTENING") continue;
+    if (proto === "udp" && foreign !== "*:*") continue;
+    const a = splitWindowsAddress(local);
+    if (!a) continue;
+    const pid = Number(pidText) > 0 ? Number(pidText) : null;
+    const key = `${proto}|${a[1]}|${a[0]}|${a[2]}|${pid ?? "-"}`;
+    if (!out.has(key)) out.set(key, { key, proto, family: a[1], addr: a[0], port: a[2], pid, pname: "" });
+  }
+  return [...out.values()];
+}
+
+/**
+ * Name, start time and executable for each pid, from Win32_Process. No user: the
+ * owner lookup takes over a second per process, too slow for a 5 s refresh.
+ * @param {number[]} pids @returns {Promise<{ procs: Record<number, ProcInfo & { name: string }>, error: string | null }>}
+ */
+async function readWindowsProcs(pids) {
+  /** @type {Record<number, ProcInfo & { name: string }>} */
+  const procs = {};
+  const ids = pids.filter((p) => Number.isInteger(p) && p > 0);
+  if (!ids.length) return { procs, error: null };
+  const script = [
+    "[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)",
+    `@(Get-CimInstance Win32_Process -Filter '${ids.map((p) => `ProcessId=${p}`).join(" OR ")}' | ForEach-Object {`,
+    "  [pscustomobject]@{ pid = [int]$_.ProcessId; name = $_.Name; start = $(if ($_.CreationDate) { $_.CreationDate.ToString('yyyy-MM-dd HH:mm:ss') } else { '' }); path = $_.ExecutablePath; args = $_.CommandLine }",
+    "}) | ConvertTo-Json -Compress -AsArray",
+  ].join("\n");
+  const r = await run("pwsh", ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script]);
+  if (r.code !== 0) return { procs, error: `Win32_Process: ${(r.stderr || `exit ${r.code}`).trim()}` };
+  /** @type {{ pid: number, name: string | null, start: string, path: string | null, args: string | null }[]} */
+  let rows;
+  try {
+    rows = JSON.parse(r.stdout || "[]");
+  } catch (e) {
+    return { procs, error: `Win32_Process: ${errorText(e)}` };
+  }
+  for (const row of rows) {
+    procs[row.pid] = { pid: row.pid, name: (row.name ?? "").replace(/\.exe$/i, ""), user: "", start: row.start, path: row.path ?? "", args: row.args ?? "" };
+  }
+  return { procs, error: null };
+}
+
 const LSTART = /^\s*(\d+)\s+(\S+)\s+(\w{3} \w{3} [ \d]\d \d\d:\d\d:\d\d \d{4})\s+(.*)$/;
 
 /**
@@ -76,6 +159,7 @@ const LSTART = /^\s*(\d+)\s+(\S+)\s+(\w{3} \w{3} [ \d]\d \d\d:\d\d:\d\d \d{4})\s
  * @param {number[]} pids @returns {Promise<{ procs: Record<number, ProcInfo>, error: string | null }>}
  */
 export async function readProcs(pids) {
+  if (isWindows()) return readWindowsProcs(pids);
   /** @type {Record<number, ProcInfo>} */
   const procs = {};
   if (!pids.length) return { procs, error: null };
@@ -101,6 +185,16 @@ export async function readProcs(pids) {
 export async function scan() {
   /** @type {string[]} */
   const errors = [];
+  if (isWindows()) {
+    const r = await run("netstat", ["-ano"]);
+    const bindings = r.code === 0 ? parseWindowsNetstat(r.stdout) : [];
+    if (r.code !== 0) errors.push(`netstat: ${(r.stderr || `exit ${r.code}`).trim()}`);
+    const pids = [...new Set(bindings.map((b) => b.pid).filter((p) => p !== null))];
+    const { procs, error } = await readWindowsProcs(/** @type {number[]} */ (pids));
+    if (error) errors.push(error);
+    for (const b of bindings) if (b.pid !== null) b.pname = procs[b.pid]?.name ?? "";
+    return { bindings, procs, complete: errors.length === 0, errors, at: Date.now() };
+  }
   const [tcp, udp] = await Promise.all([run("netstat", ["-anv", "-p", "tcp"]), run("netstat", ["-anv", "-p", "udp"])]);
   /** @type {Binding[]} */
   const bindings = [];
@@ -125,6 +219,12 @@ export async function currentIdentity(pid) {
 
 /** Sends a signal. @param {number} pid @param {"TERM" | "KILL"} sig @returns {Promise<string | null>} the error, or null */
 export async function signal(pid, sig) {
+  if (isWindows()) {
+    // Without /F, taskkill asks the process to close. Console programs refuse that,
+    // which shows as an error and offers Force Kill.
+    const r = await run("taskkill", [...(sig === "KILL" ? ["/F"] : []), "/PID", String(pid)]);
+    return r.code === 0 ? null : (r.stderr || r.stdout || `taskkill exited ${r.code}`).trim().replace(/^ERROR:\s*/, "");
+  }
   const r = await run("/bin/kill", [`-${sig}`, String(pid)]);
   return r.code === 0 ? null : (r.stderr || `kill exited ${r.code}`).trim().replace(/^kill: \d+: /, "");
 }
