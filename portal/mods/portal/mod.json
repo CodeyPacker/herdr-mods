@@ -1,0 +1,7 @@
+{
+  "place": "none",
+  "title": "Portal",
+  "overlay": { "kind": "dialog", "width": 860, "height": 0.8, "frame": "none" },
+  "refresh": 5,
+  "star": "accent"
+}

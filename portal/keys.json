@@ -1,0 +1,5 @@
+{
+  "global": {
+    "ctrl-a p": "mod.open:portal"
+  }
+}
