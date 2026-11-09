@@ -23,6 +23,8 @@ import { setupView } from "./views/setup.js";
 import { tourView } from "./views/tour.js";
 import { planningView, errorView } from "./views/status.js";
 import { fixView } from "./views/fix.js";
+import { postReview, eventsFor, DEFAULT_SUMMARY } from "./review.js";
+import { reviewView } from "./views/review.js";
 
 export default class Tourist extends View {
   init(_props, cx) {
@@ -44,6 +46,8 @@ export default class Tourist extends View {
     // The fix run on a PR: { phase: "running" | "ready" | "failed" | "pushing" | "pushed",
     // count, note, path, summary, files, error, confirm }. Shown when phase is "fix".
     this.fix = null; this.fixSession = null;
+    // Posting the comments to GitHub: { phase: "editing" | "posting" | "posted", cursor, confirm, url, error }.
+    this.review = null;
     this.cursor = 0;      // highlighted row in the current step
     this.split = null;    // null: split when the pane is wide enough. true or false: the s key chose
     this.width = 0;       // the pane width, from on_size_change
@@ -52,6 +56,7 @@ export default class Tourist extends View {
     this.input = this.textBox("ask", "Ask about this stop, then press enter", cx => this.ask(cx));
     this.featureInput = this.textBox("feature", "e.g. how a space gets its hint letter", cx => this.pick(cx));
     this.commentInput = this.textBox("comment", "Comment on this line, then press enter", cx => this.saveComment(cx));
+    this.summaryInput = this.textBox("summary", DEFAULT_SUMMARY, () => this.leaveBox());
     this.handle = cx.focus_handle();
     // The pane isn't drawn yet, so focus again once it is.
     this.handle.focus();
@@ -82,7 +87,7 @@ export default class Tourist extends View {
   }
 
   async close() {
-    this.code?.release(); this.input.release(); this.featureInput.release(); this.commentInput.release();
+    this.code?.release(); this.input.release(); this.featureInput.release(); this.commentInput.release(); this.summaryInput.release();
     await this.session?.stop(); await this.fixSession?.stop();
   }
 
@@ -106,6 +111,8 @@ export default class Tourist extends View {
     else if (c === "fix") this.startFix(cx);
     else if (c === "fix-back") this.closeFix();
     else if (c === "fix-discard") this.discardFix(cx);
+    else if (c === "review") this.startReview(cx);
+    else if (c === "review-back") this.closeReview();
   }
 
   async detect() {
@@ -244,7 +251,7 @@ export default class Tourist extends View {
    * saved comment in a worktree on the PR's commit. Later, it shows that run's result.
    */
   startFix(cx) {
-    if (!this.pr) return;
+    if (!this.pr?.mine) return; // never edit someone else's PR
     if (this.fix && this.fix.phase !== "pushed") { this.leaveBox(); this.phase = "fix"; return; }
     if (this.comments.length === 0 || this.busy) return;
     this.leaveBox();
@@ -291,6 +298,53 @@ export default class Tourist extends View {
     this.fix = null; this.closeFix();
     cx.spawn(async cx => { await removeWorktree(this.git.root, this.on, pr).catch(() => {}); cx.notify(); });
   }
+
+  /** Opens the post-review screen for the saved comments. */
+  startReview(cx) {
+    if (!this.pr || this.comments.length === 0) return;
+    this.leaveBox();
+    if (!this.review || this.review.phase === "posted") {
+      this.review = { phase: "editing", cursor: 0, confirm: false, url: null, error: null };
+      this.summaryInput.set_value("");
+    }
+    this.phase = "review";
+  }
+
+  closeReview() {
+    if (this.review?.phase === "posting") return;
+    if (this.review?.phase === "posted") this.review = null;
+    else if (this.review) this.review.confirm = false;
+    this.leaveBox();
+    this.phase = this.plan ? "tour" : "setup";
+  }
+
+  /** Moves the verdict highlight. Any change asks for the two presses again. */
+  moveVerdict(i) {
+    const r = this.review, n = this.pr ? eventsFor(this.pr).length : 0;
+    if (!r || r.phase !== "editing" || n === 0) return;
+    r.cursor = (i + n) % n; r.confirm = false;
+  }
+
+  /** Posts the comments as one GitHub review. The first press only asks for a second one. */
+  postReview(cx) {
+    const r = this.review, pr = this.pr;
+    if (!r || !pr || r.phase !== "editing" || this.comments.length === 0) return;
+    if (!r.confirm) { r.confirm = true; return; }
+    const event = (eventsFor(pr)[r.cursor] ?? eventsFor(pr)[0]).id;
+    const comments = [...this.comments], summary = this.summaryInput.value();
+    r.confirm = false; r.phase = "posting"; r.error = null;
+    this.leaveBox();
+    cx.spawn(async cx => {
+      try {
+        r.url = await postReview(this.git.root, this.on, pr, comments, event, summary);
+        r.phase = "posted";
+        if (this.pr === pr) { this.comments = this.comments.filter(c => !comments.includes(c)); this.storeComments(cx); }
+      } catch (e) { r.phase = "editing"; r.error = `GitHub refused the review: ${String(e?.message ?? e)}`; }
+      cx.notify();
+    });
+  }
+
+  openReview() { if (this.review?.url) openUrl(this.review.url); }
 
   startAsking(cx) {
     if (this.busy) return;
@@ -373,6 +427,7 @@ export default class Tourist extends View {
     this.gen = (this.gen ?? 0) + 1;
     this.session?.stop(); this.session = null;
     this.fixSession?.stop(); this.fixSession = null; this.fix = null; // a fix's worktree stays and is reused next time
+    this.review = null;
     this.leaveBox();
     this.code?.release(); this.code = null;
     this.plan = null; this.busy = null; this.error = null;
@@ -416,13 +471,24 @@ export default class Tourist extends View {
       else if (k === "o") this.openInEditor();
       else if (k === "s") this.toggleSplit();
       else if (k === "escape" && this.commenting) this.leaveBox();
-      else if (k === "f" && this.pr) this.startFix(cx);
+      else if (k === "f" && this.pr?.mine) this.startFix(cx);
+      else if (k === "r" && this.pr) this.startReview(cx);
       else if (k === "q") this.reset(cx);
       else handled = false;
     } else if (this.phase === "fix") {
       if (k === "b" || k === "escape") this.closeFix();
       else if (k === "p") this.pushFix(cx);
       else if (k === "x") this.discardFix(cx);
+      else handled = false;
+    } else if (this.phase === "review") {
+      const r = this.review, verdict = /^[1-3]$/.test(k) ? +k - 1 : -1;
+      if (k === "b" || k === "escape") this.closeReview();
+      else if (k === "p") this.postReview(cx);
+      else if (k === "o") this.openReview();
+      else if (k === "tab" && r?.phase === "editing") this.focusBox(this.summaryInput, cx);
+      else if (verdict >= 0 && this.pr && verdict < eventsFor(this.pr).length) this.moveVerdict(verdict);
+      else if (k === "j" || k === "down") this.moveVerdict((r?.cursor ?? 0) + 1);
+      else if (k === "k" || k === "up") this.moveVerdict((r?.cursor ?? 0) - 1);
       else handled = false;
     } else if (this.phase === "error") {
       if (k === "enter" || k === "q" || k === "escape") this.reset(cx);
@@ -440,6 +506,7 @@ export default class Tourist extends View {
     if (this.phase === "planning") return root.child(planningView(this, t));
     if (this.phase === "error") return root.child(errorView(this, t));
     if (this.phase === "fix" && this.fix && this.pr) return root.child(fixView(this, t));
+    if (this.phase === "review" && this.review && this.pr) return root.child(reviewView(this, t));
     return root.child(tourView(this, t));
   }
 }

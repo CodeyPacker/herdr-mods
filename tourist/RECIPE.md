@@ -46,7 +46,19 @@ file line reads "click a line to comment (N saved)". Each comment keeps the
 file, line, side (`new`, or `old` for a removed line), that line's code and the
 text. Deeper and Ask include your comments on the stop's file.
 
-Fix (PR tours): `f` or "Fix N comments" opens the fix screen. An agent that can
+Post review (PR tours): `r` or "Post review (N)" opens a screen that lists your
+comments, a verdict (1 Comment, 2 Approve, 3 Request changes; Comment only on
+your own PR, since GitHub refuses the others from the author) and an optional
+summary box (`tab` types, the placeholder "See the inline comments." is used
+when it's empty). The header names the author and the `gh` account that will
+post. `p` asks "Press p again to post <verdict> to GitHub", and the second `p`
+posts every comment as one review on the lines they sit on. Then it says
+"Posted to GitHub", `o` opens the review, and the posted comments are cleared.
+Changing the verdict asks for the two presses again.
+
+Fix (your own PRs only): `f` or "Fix N comments" opens the fix screen. A PR is
+yours when its author is the signed-in `gh` account, so a peer's PR never shows
+Fix. An agent that can
 edit files works through every saved comment in a git worktree on the PR's
 commit, so your checkout is never touched. While it runs: a spinner, "<Agent>
 is working through N comments", and the worktree path in the header. `b` goes
@@ -70,7 +82,10 @@ and its branch are deleted, and the comments stay.
 - Tour: `n`/`l`/right next, `b`/`h`/left back, `d` deeper, `t` more technical,
   `a` or `/` ask (the box only exists while asking), `o` open in VS Code, `s` switches split and stacked
   (wide panes start split), `q`
-  ends the tour and returns to step 1. On PR tours, `f` opens the fix.
+  ends the tour and returns to step 1. On PR tours, `r` posts a review and `f`
+  (your own PRs) opens the fix.
+- Post review: `1` to `3` or `j`/`k` pick the verdict, `tab` types the summary,
+  `p` twice posts, `o` opens it once posted, `b` or `esc` back to the tour.
 - Fix: `b` or `esc` back to the tour, `p` twice pushes, `x` discards.
 - Error: `enter`, `q` or `esc` starts over.
 - Branch changes is skipped (enter does nothing) when the branch has no
@@ -83,8 +98,8 @@ and its branch are deleted, and the comments stay.
   calling the agent), `plan.js` (prompts, reading the plan), `code.js`
   (excerpts, VS Code, opening a URL), `pr.js` (gh), `diff.js` (diff rows),
   `comments.js` (saving line comments), `worktree.js` (the fix's worktree, push
-  and discard), `ui.js` (shared pieces) and `views/` (setup, tour, diff, fix,
-  planning and error).
+  and discard), `review.js` (posting to GitHub), `ui.js` (shared pieces) and
+  `views/` (setup, tour, diff, fix, review, planning and error).
 - `mod.json`: `{ "place": "none", "focusable": true, "title": "Tourist" }`.
 - `keys.json` opens it in a split: `"ctrl-shift-g": { "command": "pane.split",
   "args": { "direction": "right", "mod": "tourist" } }`.
@@ -125,13 +140,18 @@ and its branch are deleted, and the comments stay.
   Push runs `git add --all`, `git commit`, `git push origin
   HEAD:refs/heads/<branch>`, then `git worktree remove --force` and `git branch
   -D`. Discard runs the last two.
+- Review: `gh api user --jq .login` decides whether the PR is yours. Posting
+  writes `{commit_id: <head>, event, body, comments: [{path, line, side:
+  RIGHT|LEFT, body}]}` to a temp file in `<appHome>/data/tourist/` and runs `gh
+  api repos/<owner>/<repo>/pulls/<n>/reviews -X POST --input <file>`, then
+  deletes the file. Your comment text goes up as written; no agent is involved.
 - Code excerpts use `EditorState`/`Editor`, read-only, without line numbers.
   Text uses `TextView.markdown`.
 - `herdr-app do tourist.<command>` drives it for testing: `scope-<id>`,
   `depth-<id>`, `down`, `up`, `pick`, `back`, `start`, `next`, `prev`,
   `deeper`, `technical`, `open`, `reset`, `agent` (switch agents), `fix`,
-  `fix-back`, `fix-discard`. There is no push command: pushing takes two key
-  presses in the pane.
+  `fix-back`, `fix-discard`, `review`, `review-back`. There is no push or post
+  command: both take two key presses in the pane.
 
 ## Watch out
 
@@ -145,7 +165,12 @@ and its branch are deleted, and the comments stay.
   repo. A PR tour leaves a `refs/tourist/pr-<n>` ref in your repo; `git
   update-ref -d refs/tourist/pr-<n>` removes it.
 - Line comments are saved to `<appHome>/data/tourist/comments/<repo>_pr-<n>.json`
-  and stay on this computer. Nothing is posted to GitHub.
+  and stay on this computer until you post them as a review.
+- A review posts as the signed-in `gh` account, and GitHub shows it to everyone
+  on the PR. It can't be unposted from Tourist; edit or delete it on GitHub.
+  GitHub only takes lines inside the diff, which is where Tourist lets you
+  comment. If the author pushed since the tour started, the comments land on
+  the older commit and GitHub marks them outdated.
 - A fix is the one place Tourist changes code. It edits only the worktree, and
   nothing leaves your machine until you press `p` twice. Pushing needs write
   access to the PR's branch (a PR from a fork will be rejected). If the branch

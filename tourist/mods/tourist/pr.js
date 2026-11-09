@@ -7,7 +7,7 @@ const LIST_FIELDS = "number,title,author,headRefName,baseRefName,additions,delet
 const VIEW_FIELDS = "number,title,body,url,author,headRefName,baseRefName,headRefOid,files,commits";
 
 /** Runs gh and returns stdout. Throws gh's own message when it fails. */
-async function gh(args, { cwd, on }) {
+export async function gh(args, { cwd, on }) {
   let r;
   try { r = await exec("gh", args, { cwd, on }); }
   catch { throw new Error("Pull request tours need the GitHub CLI (gh) on PATH."); }
@@ -19,7 +19,7 @@ async function gh(args, { cwd, on }) {
  * "owner/repo" from origin's URL. gh is given this with -R rather than finding the
  * repo itself, because its own git call doesn't get the folder when Herdr runs it.
  */
-async function repoName(root, on) {
+export async function repoName(root, on) {
   const url = await git(["remote", "get-url", "origin"], { cwd: root, on });
   const m = /github\.com[:/]([^/\s]+\/[^/\s]+?)(?:\.git)?\/?$/.exec(url ?? "");
   if (!m) throw new Error(url ? `Pull request tours need a GitHub origin, and origin is ${url}.` : `Could not read the origin remote in ${root}.`);
@@ -44,8 +44,12 @@ export async function loadPR(root, on, number) {
   if (fetched === null) throw new Error(`Could not fetch PR #${p.number} from origin.`);
   const mergeBase = await run(["merge-base", `refs/remotes/origin/${p.baseRefName}`, p.headRefOid]);
   if (!mergeBase) throw new Error(`Could not find where PR #${p.number} left ${p.baseRefName}.`);
+  // Yours when gh's signed-in account wrote it. Unknown counts as someone else's, so a fix is never offered by mistake.
+  const me = await gh(["api", "user", "--jq", ".login"], { cwd: root, on }).then(s => s.trim(), () => "");
+  const author = p.author?.login ?? "";
   return {
-    number: p.number, title: p.title, body: p.body ?? "", url: p.url, author: p.author?.login ?? "",
+    repo, number: p.number, title: p.title, body: p.body ?? "", url: p.url, author,
+    me, mine: Boolean(me) && me.toLowerCase() === author.toLowerCase(),
     head: p.headRefName, base: p.baseRefName, headOid: p.headRefOid, mergeBase,
     files: (p.files ?? []).map(f => f.path),
     commits: (p.commits ?? []).map(c => c.messageHeadline),
