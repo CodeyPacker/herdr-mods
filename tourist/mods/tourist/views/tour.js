@@ -63,11 +63,13 @@ export function tourView(v, t) {
   // The group remembers each layout's sizes under its id.
   const codeSide = v_flex().size_full().min_h(0).child(fileLine).child(code);
   const textSide = v_flex().size_full().min_h(0).child(explain).when(v.asking, el => el.child(ask));
-  // The group keeps the first size it sees and then whatever the user drags to, so start from a
-  // fixed height rather than one measured before the code has loaded.
+  // A group keeps the first size it sees and then whatever the user drags to. Split starts with the
+  // code at 70% of the pane (the pane is wide by then: its width is what picks split). Stacked starts
+  // from a fixed height rather than one measured before the code has loaded. Renaming a group
+  // id drops the size it remembered.
   const panes = v.isSplit()
-    ? h_resizable("tour-split").size_full()
-      .child(resizable_panel().size(560).size_range(200).child(codeSide.pb(8)))
+    ? h_resizable("tour-split-70").size_full()
+      .child(resizable_panel().size(Math.round(v.width * 0.7) || 560).size_range(200).child(codeSide.pb(8)))
       .child(resizable_panel().size_range(240).child(textSide))
     : v_resizable("tour-stack").size_full()
       .child(resizable_panel().size(360).size_range(80).child(codeSide))
