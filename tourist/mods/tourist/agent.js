@@ -7,21 +7,40 @@ let jobs = 0; // numbers each call's temp files
 
 export function agentName(id) { return AGENTS.find(a => a.id === id)?.name ?? "The agent"; }
 
+const PS_ARGS = ["-NoLogo", "-NoProfile", "-Command"]; // -NoProfile: a user profile can take seconds to load
+let psExe = null; // "pwsh" or "powershell.exe" once one has run; asked once per load of the mod
+
+/**
+ * Runs a PowerShell script, preferring PowerShell 7 (pwsh) and falling back to Windows
+ * PowerShell. The first call finds out which exists, so later calls start only one process.
+ */
+async function runPs(script, on) {
+  for (const exe of psExe ? [psExe] : ["pwsh", "powershell.exe"]) {
+    let r;
+    try { r = await exec(exe, [...PS_ARGS, script], { on }); } catch { continue; }
+    psExe = exe;
+    return r;
+  }
+  throw new Error("Tourist needs PowerShell (pwsh or powershell.exe).");
+}
+
 /** The shell that runs an agent job: [argv..., script]. */
 export async function shell() {
   if (window()?.platform !== "windows") return { argv: ["sh", "-c"], ps: false };
-  const pwsh = await exec("pwsh", ["-NoLogo", "-Command", "exit 0"]).then(r => r.code === 0, () => false);
-  return { argv: [pwsh ? "pwsh" : "powershell.exe", "-NoLogo", "-NoProfile", "-Command"], ps: true };
+  if (!psExe) await runPs("exit 0");
+  return { argv: [psExe, ...PS_ARGS], ps: true };
 }
 
 /** The installed agent ids, and the one to use: the last one picked, else the first found. */
 export async function findAgents(on) {
-  // Ask the same shell the jobs run in, so PATH matches.
-  const { argv, ps } = await shell();
-  const found = await Promise.all(AGENTS.map(a =>
-    exec(argv[0], [...argv.slice(1), ps ? `Get-Command ${a.id} -ErrorAction Stop` : `command -v ${a.id}`], { on })
-      .then(r => r.code === 0, () => false)));
-  const agents = AGENTS.filter((_a, i) => found[i]).map(a => a.id);
+  // One lookup for every agent, in the same shell the jobs run in, so PATH matches.
+  const ids = AGENTS.map(a => a.id);
+  const r = window()?.platform === "windows"
+    ? await runPs(`Get-Command ${ids.join(",")} -ErrorAction SilentlyContinue | ForEach-Object { $_.Name }`, on).catch(() => null)
+    : await exec("sh", ["-c", `for a in ${ids.join(" ")}; do command -v "$a" >/dev/null 2>&1 && echo "$a"; done`], { on }).catch(() => null);
+  // Windows names come back with an extension (claude.exe, codex.cmd).
+  const names = (r?.stdout ?? "").split(/\r?\n/).map(n => n.trim().toLowerCase().replace(/\.(exe|cmd|bat|ps1)$/, ""));
+  const agents = ids.filter(id => names.includes(id));
   let saved = null;
   try { saved = localStorage.getItem("agent"); } catch {}
   return { agents, agent: agents.includes(saved) ? saved : agents[0] ?? null };

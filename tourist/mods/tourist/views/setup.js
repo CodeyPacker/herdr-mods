@@ -2,7 +2,7 @@
 import { div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { SCOPES, DEPTHS } from "../constants.js";
-import { option, textInput } from "../ui.js";
+import { option, textInput, spinner } from "../ui.js";
 
 /** `v` is the Tourist view: its state is read here and its methods run on clicks. */
 export function setupView(v, t) {
@@ -12,11 +12,15 @@ export function setupView(v, t) {
   const note = (text) => div().px(10).py(7).text_size(12).text_color(t.dim).child(text);
   const head = v_flex()
     .child(div().text_size(16).font_semibold().child("Tourist"))
-    .child(div().pt(2).text_size(11.5).text_color(t.dim).child(g.root ? `${g.root} · ${g.branch}` : "Finding the repo and agents… (one moment)"))
+    .when(Boolean(g.root), el => el.child(div().pt(2).text_size(11.5).text_color(t.dim).child(`${g.root} · ${g.branch}`)))
     .when(Boolean(v.agent), el => el.child(h_flex().id("agent").pt(2).gap(4).text_size(11.5).text_color(t.dim)
       .when(v.agents.length > 1, el => el.cursor_pointer().on_click((_e, cx) => { v.switchAgent(); cx.notify(); }))
       .child(`Tour by ${v.agentName()}`)
       .when(v.agents.length > 1, el => el.child(div().text_color(t.accent).child("· a switches")))));
+  // Nothing can be picked until the repo and the agents are found (a second or two).
+  if (!g.root) return v_flex().id("setup").flex_1().min_h(0).p(18).child(head)
+    .child(h_flex().pt(18).gap(10).items_center().text_size(12.5).text_color(t.muted)
+      .child(spinner(t).text_size(16)).child("Finding the repo and agents…"));
   // A click works like moving there and pressing enter.
   const click = (i) => (_e, cx) => { v.leaveBox(); v.cursor = i; v.pick(cx); cx.notify(); };
   // On the first step, the count follows the highlighted scope.

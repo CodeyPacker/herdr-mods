@@ -117,8 +117,11 @@ and its branch are deleted, and the comments stay.
   finds the root, branch, base (`origin/HEAD`, `main` or `master`), merge-base
   and changed files.
 - The agent is whichever of `claude` and `codex` the job shell finds
-  (`command -v`, or `Get-Command` on Windows), Claude first unless the saved
-  choice says otherwise.
+  (one `command -v` loop, or one `Get-Command claude,codex` on Windows), Claude
+  first unless the saved choice says otherwise. PowerShell runs with `-NoProfile`
+  (a profile can take seconds), and which one exists (pwsh, else powershell.exe)
+  is learned once. The repo and agent checks run at the same time, and the
+  independent git calls run together; setup shows a spinner until both finish.
 - Claude runs as `claude -p --output-format json --allowedTools Read Grep Glob
   "Bash(git diff:*)" "Bash(git log:*)" "Bash(git show:*)" "Bash(git status:*)"`.
   Follow-ups add `--resume <session_id>` so Claude keeps the context.

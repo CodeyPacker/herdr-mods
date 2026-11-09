@@ -26,10 +26,15 @@ export async function readRepo(cwd, on) {
   if (!root) return null;
   const run = args => git(args, { cwd: root, on });
   const repo = { root, branch: "", head: "", base: null, mergeBase: null, changed: [] };
-  repo.branch = (await run(["branch", "--show-current"])) || "detached HEAD";
-  repo.head = (await run(["log", "-1", "--format=%h %s"])) || "";
-  let base = await run(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"]);
-  if (!base) for (const b of ["main", "master"]) if (await run(["rev-parse", "--verify", "--quiet", b])) { base = b; break; }
+  // Each git call costs a few hundred ms on Windows, so the independent ones run together.
+  const [branch, head, originHead, main, master] = await Promise.all([
+    run(["branch", "--show-current"]), run(["log", "-1", "--format=%h %s"]),
+    run(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"]),
+    run(["rev-parse", "--verify", "--quiet", "main"]), run(["rev-parse", "--verify", "--quiet", "master"]),
+  ]);
+  repo.branch = branch || "detached HEAD";
+  repo.head = head || "";
+  const base = originHead || (main ? "main" : master ? "master" : null);
   repo.base = base;
   if (base) {
     repo.mergeBase = await run(["merge-base", "HEAD", base]);

@@ -117,9 +117,9 @@ export default class Tourist extends View {
 
   async detect() {
     if (!this.cwd) { this.fail("No folder to tour. Open Tourist from a terminal inside a repo."); return; }
-    const repo = await readRepo(this.cwd, this.on);
+    // Both take a moment on Windows and don't depend on each other.
+    const [repo, found] = await Promise.all([readRepo(this.cwd, this.on), findAgents(this.on)]);
     if (!repo) { this.fail(`${this.cwd} is not inside a git repo.`); return; }
-    const found = await findAgents(this.on);
     this.agents = found.agents; this.agent = found.agent;
     if (!this.agent) { this.fail("Tourist needs the claude or codex CLI on PATH, signed in."); return; }
     this.git = repo;
