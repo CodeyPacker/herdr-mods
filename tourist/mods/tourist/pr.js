@@ -20,9 +20,13 @@ export async function gh(args, { cwd, on }) {
  * repo itself, because its own git call doesn't get the folder when Herdr runs it.
  */
 export async function repoName(root, on) {
-  const url = await git(["remote", "get-url", "origin"], { cwd: root, on });
-  const m = /github\.com[:/]([^/\s]+\/[^/\s]+?)(?:\.git)?\/?$/.exec(url ?? "");
-  if (!m) throw new Error(url ? `Pull request tours need a GitHub origin, and origin is ${url}.` : `Could not read the origin remote in ${root}.`);
+  let r;
+  try { r = await exec("git", ["remote", "get-url", "origin"], { cwd: root, on }); }
+  catch (e) { throw new Error(`Could not run git in ${root}: ${String(e?.message ?? e)}`); }
+  const url = r.code === 0 ? r.stdout.trim() : "";
+  if (!url) throw new Error(`Could not read the origin remote in ${root} (git exit ${r.code}): ${(r.stderr || r.stdout || "no output").trim().slice(-300)}`);
+  const m = /github\.com[:/]([^/\s]+\/[^/\s]+?)(?:\.git)?\/?$/.exec(url);
+  if (!m) throw new Error(`Pull request tours need a GitHub origin, and origin is ${url}.`);
   return m[1];
 }
 

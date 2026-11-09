@@ -393,7 +393,7 @@ export default class Tourist extends View {
 
   /** Loads the open PRs once they are needed. A failure (no gh, signed out) shows on the PR step and the next visit retries. */
   loadPRs(cx) {
-    if (this.prs || this.prsLoading) return;
+    if (this.prs || this.prsLoading || !this.git.root) return;
     this.prsLoading = true; this.prsError = null;
     cx.spawn(async cx => {
       try { this.prs = await listPRs(this.git.root, this.on); }
@@ -406,6 +406,9 @@ export default class Tourist extends View {
 
   /** Enter on the highlighted row: move to the next step, or start the tour from the last one. */
   pick(cx) {
+    // Finding the repo and the agent CLIs takes a few seconds. Until it's done there is
+    // nothing to tour, and the detection would also reset the step under the reader.
+    if (!this.git.root) return;
     if (this.step === "scope") {
       const s = SCOPES[this.cursor];
       if (s.id === "branch" && this.git.changed.length === 0) return;
@@ -460,7 +463,9 @@ export default class Tourist extends View {
     }
     if (e.modifiers?.control || e.modifiers?.alt || e.modifiers?.platform) return;
     let handled = true;
-    if (this.phase === "setup") {
+    if (this.phase === "setup" && !this.git.root) {
+      handled = false; // still finding the repo; see pick()
+    } else if (this.phase === "setup") {
       // Scopes and depths have letters. PRs take 1 to 9 for the first nine.
       const list = this.step === "scope" ? SCOPES : this.step === "depth" ? DEPTHS : null;
       const letter = list ? list.findIndex(x => x.key === k) : /^[1-9]$/.test(k) && +k <= this.stepRows() ? +k - 1 : -1;

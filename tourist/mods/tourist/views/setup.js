@@ -12,7 +12,7 @@ export function setupView(v, t) {
   const note = (text) => div().px(10).py(7).text_size(12).text_color(t.dim).child(text);
   const head = v_flex()
     .child(div().text_size(16).font_semibold().child("Tourist"))
-    .child(div().pt(2).text_size(11.5).text_color(t.dim).child(g.root ? `${g.root} · ${g.branch}` : "Finding the repo…"))
+    .child(div().pt(2).text_size(11.5).text_color(t.dim).child(g.root ? `${g.root} · ${g.branch}` : "Finding the repo and agents… (one moment)"))
     .when(Boolean(v.agent), el => el.child(h_flex().id("agent").pt(2).gap(4).text_size(11.5).text_color(t.dim)
       .when(v.agents.length > 1, el => el.cursor_pointer().on_click((_e, cx) => { v.switchAgent(); cx.notify(); }))
       .child(`Tour by ${v.agentName()}`)
