@@ -46,7 +46,7 @@ file line reads "click a line to comment (N saved)". Each comment keeps the
 file, line, side (`new`, or `old` for a removed line), that line's code and the
 text. Deeper and Ask include your comments on the stop's file.
 
-Post review (PR tours): `r` or "Post review (N)" opens a screen that lists your
+Post review (PR tours): `p` or "Post review (N)" opens a screen that lists your
 comments, a verdict (1 Comment, 2 Approve, 3 Request changes; Comment only on
 your own PR, since GitHub refuses the others from the author) and an optional
 summary box (`tab` types, the placeholder "See the inline comments." is used
@@ -82,7 +82,7 @@ and its branch are deleted, and the comments stay.
 - Tour: `n`/`l`/right next, `b`/`h`/left back, `d` deeper, `t` more technical,
   `a` or `/` ask (the box only exists while asking), `o` open in VS Code, `s` switches split and stacked
   (wide panes start split), `q`
-  ends the tour and returns to step 1. On PR tours, `r` posts a review and `f`
+  ends the tour and returns to step 1. On PR tours, `p` posts a review and `f`
   (your own PRs) opens the fix.
 - Post review: `1` to `3` or `j`/`k` pick the verdict, `tab` types the summary,
   `p` twice posts, `o` opens it once posted, `b` or `esc` back to the tour.

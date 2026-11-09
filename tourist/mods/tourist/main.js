@@ -472,7 +472,7 @@ export default class Tourist extends View {
       else if (k === "s") this.toggleSplit();
       else if (k === "escape" && this.commenting) this.leaveBox();
       else if (k === "f" && this.pr?.mine) this.startFix(cx);
-      else if (k === "r" && this.pr) this.startReview(cx);
+      else if (k === "p" && this.pr) this.startReview(cx);
       else if (k === "q") this.reset(cx);
       else handled = false;
     } else if (this.phase === "fix") {
