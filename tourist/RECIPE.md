@@ -37,11 +37,25 @@ A PR tour shows "Fetching PR #n" before planning. Each stop has a group badge
 the file's diff instead of an excerpt: hunk headers, added lines tinted green,
 removed lines red, line numbers and +/− marks. Only the hunks that touch the
 stop's lines are shown (all of them when none do). `o` opens the PR's Files
-page in the browser, since the PR isn't on disk.
+page in the browser, since the PR isn't on disk. There's no cap on the number of
+stops: one per changed area worth reviewing.
+
+Saved reviews: a PR review's plan is saved per PR head commit and depth, with
+the Deeper/Ask answers and the agent session. Opening the same PR at the same
+depth again skips planning and shows "saved review · r plans again" in the
+header; `r` throws the saved plan away and plans again. A new push to the PR
+changes the head, so it plans again on its own. If the saved session was made by
+the other agent, follow-ups start a fresh session that is told what the PR is.
+
+GitHub threads: the PR's existing review comments sit under their lines,
+read-only, with a neutral border: the author and "on GitHub", then replies
+indented below. Outdated ones (no longer on a line of the current diff) are left
+out. They reload after you post a review.
 
 Line comments (PR tours): clicking a numbered diff line opens a comment box
 under it. `enter` saves, an empty comment or `esc` closes it. Saved comments
-sit under their line with an accent border and a `×` that deletes them. The
+sit under their line with an accent border. Clicking one reopens it in the box
+with its text to edit (an empty save leaves it as it was), and `×` deletes it. The
 file line reads "click a line to comment, shift-click to extend (N saved)".
 Each comment keeps the file, line, side (`new`, or `old` for a removed line),
 that line's code and the text. Deeper and Ask include your comments on the
@@ -90,7 +104,7 @@ and its branch are deleted, and the comments stay.
 - Tour: `n`/`l`/right next, `b`/`h`/left back, `d` deeper, `t` more technical,
   `a` or `/` ask (the box only exists while asking), `o` open in VS Code, `s` switches split and stacked
   (wide panes start split), `q`
-  ends the tour and returns to step 1. On PR tours, `p` posts a review and `f`
+  ends the tour and returns to step 1. On PR tours, `p` posts a review, `r` plans again, and `f`
   (your own PRs) opens the fix.
 - Post review: `1` to `3` or `j`/`k` pick the verdict, `tab` types the summary,
   `p` twice posts, `o` opens it once posted, `b` or `esc` back to the tour.
@@ -143,7 +157,9 @@ and its branch are deleted, and the comments stay.
   <merge-base> <head> -- <file>`. The prompt gives the agent the description
   (fenced off as the author's text, not instructions), commits and files, tells
   it to read with `git diff` and `git show <head>:<file>`, and asks for stops in
-  the order the changes build on each other, each with a `group`.
+  the order the changes build on each other, each with a `group`. Saved plans
+  live in `<appHome>/data/tourist/plans/<repo>_pr-<n>-<head>-<depth>.json`.
+  Threads come from `gh api --paginate repos/<owner>/<repo>/pulls/<n>/comments`.
 - Fix: `git worktree add -B tourist/fix-pr-<n> <appHome>/data/tourist/worktrees/<repo>_pr-<n>
   <head>`, reused if it already exists. The agent runs there with edit tools:
   Claude adds `Edit MultiEdit Write` to its allowed tools (still only `git diff`

@@ -44,7 +44,7 @@ export function prPlanPrompt(subjectText, depth) {
     '{"title": "short review title", "summary": "markdown, 2 to 4 sentences: what the PR does and why", "stops": [{"group": "short group name", "file": "repo-relative path with forward slashes", "start": 1, "end": 40, "title": "short stop title", "body": "markdown explanation"}]}',
     "Order: review the changes in the order they build on each other. Put what other changes depend on first (types, schemas, config, shared helpers), then the code that uses it, then the entry points and tests. Stops that belong together share a group name, and groups appear in order.",
     "Each body says what changed, why it changed (from the description, commits and code), and how it connects to the stops before it. Flag anything that looks risky or unfinished.",
-    "Rules: one stop per changed area that matters, 4 to 12 stops. start and end are line numbers in the file as the PR has it (the new side of the diff) and must cover the changed lines. Only claim what the code you read shows.",
+    "Rules: one stop per changed area worth a reviewer's attention, however many that is. Don't pad a small PR or cut a large one short; fold only trivial changes (lockfiles, generated files, renames) into a related stop. start and end are line numbers in the file as the PR has it (the new side of the diff) and must cover the changed lines. Only claim what the code you read shows.",
   ].join("\n\n");
 }
 

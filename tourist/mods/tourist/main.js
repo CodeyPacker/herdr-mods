@@ -15,10 +15,11 @@ import { startFolder, readRepo } from "./git.js";
 import { AgentSession, agentName, findAgents, rememberAgent } from "./agent.js";
 import { subject, planPrompt, prSubject, prPlanPrompt, followUpPrompt, fixPrompt, parsePlan } from "./plan.js";
 import { readExcerpt, codeState, openInEditor, openUrl } from "./code.js";
-import { listPRs, loadPR, prFileDiff } from "./pr.js";
+import { listPRs, loadPR, prFileDiff, listThreads } from "./pr.js";
 import { diffRows, rowsInRange, splitDiff } from "./diff.js";
 import { openWorktree, worktreeDiff, pushFix, removeWorktree } from "./worktree.js";
 import { commentKey, loadComments, saveComments, sideOf, rangeOf } from "./comments.js";
+import { loadSavedPlan, savePlan, dropSavedPlan } from "./saved.js";
 import { setupView } from "./views/setup.js";
 import { tourView } from "./views/tour.js";
 import { planningView, errorView } from "./views/status.js";
@@ -42,7 +43,8 @@ export default class Tourist extends View {
     this.diff = null;     // the stop's diff rows, on PR tours
     this.planNote = null; // what planning is waiting on before the agent starts
     this.comments = [];   // line comments on the PR, saved by comments.js
-    this.commenting = null; // { file, line, side, code } while the comment box is open
+    this.commenting = null; // { file, line, side, code, anchor, editId? } while the comment box is open
+    this.threads = [];      // comment threads already on the PR on GitHub, read-only
     // The fix run on a PR: { phase: "running" | "ready" | "failed" | "pushing" | "pushed",
     // count, note, path, summary, files, error, confirm }. Shown when phase is "fix".
     this.fix = null; this.fixSession = null;
@@ -149,19 +151,24 @@ export default class Tourist extends View {
     const gen = this.gen = (this.gen ?? 0) + 1;
     cx.spawn(async cx => {
       try {
-        let prompt;
+        let prompt, plan = null;
         if (this.scope === "pr") {
           this.planNote = `Fetching PR #${this.prNumber}`; cx.notify();
           const pr = await loadPR(this.git.root, this.on, this.prNumber);
           if (gen !== this.gen) return;
-          this.pr = pr; this.planNote = null;
-          this.comments = await loadComments(commentKey(this.git.root, pr.number));
+          const [comments, saved] = await Promise.all([
+            loadComments(commentKey(this.git.root, pr.number)), loadSavedPlan(this.git.root, pr, this.depth)]);
+          this.pr = pr; this.planNote = null; this.comments = comments;
+          this.loadThreads(cx);
+          // The same PR head at the same depth was planned before: reuse it, and its agent session when the agent matches.
+          if (saved) { plan = saved.plan; plan.savedAt = saved.saved; if (saved.agent === session.agent) session.id = saved.session; }
           cx.notify();
           prompt = prPlanPrompt(prSubject(pr), this.depth);
         } else prompt = planPrompt(subject(this.scope, this.git, this.featureInput.value().trim()), this.depth);
-        const plan = parsePlan(await session.ask(prompt));
+        if (!plan) plan = parsePlan(await session.ask(prompt));
         if (gen !== this.gen) return;
         this.plan = plan; this.phase = "tour"; this.show(0, cx);
+        if (!plan.savedAt) this.storePlan();
       } catch (e) { if (gen === this.gen) this.fail(String(e?.message ?? e)); }
       cx.notify();
     });
@@ -200,10 +207,40 @@ export default class Tourist extends View {
     this.busy = label;
     cx.spawn(async cx => {
       const comments = this.comments.filter(c => c.file === s.file);
-      try { s.notes.push({ label, text: await session.ask(followUpPrompt(question, s, this.idx + 1, comments)) }); }
+      let prompt = followUpPrompt(question, s, this.idx + 1, comments);
+      // A reused review whose agent session couldn't be kept starts fresh, so say what the PR is.
+      if (this.pr && !session.id) prompt = `This is part of a guided review. ${prSubject(this.pr)}\n\n${prompt}`;
+      try { s.notes.push({ label, text: await session.ask(prompt) }); this.storePlan(); }
       catch (e) { s.notes.push({ label: "Error", text: String(e?.message ?? e) }); }
       this.busy = null; cx.notify();
     });
+  }
+
+  /** Loads the comment threads already on the PR from GitHub. Shown read-only; a failure just shows none. */
+  loadThreads(cx) {
+    const pr = this.pr;
+    this.threads = [];
+    cx.spawn(async cx => {
+      const threads = await listThreads(pr, this.git.root, this.on).catch(() => []);
+      if (this.pr === pr) { this.threads = threads; cx.notify(); }
+    });
+  }
+
+  /** Saves a PR review's plan and answers so reopening it skips planning. */
+  storePlan() {
+    if (!this.pr || !this.plan) return;
+    const { savedAt, ...plan } = this.plan;
+    savePlan(this.git.root, this.pr, this.depth, plan, this.session?.agent ?? this.agent, this.session?.id ?? null).catch(() => {});
+  }
+
+  /** Throws away the saved plan for this PR head and plans the review again. */
+  replan(cx) {
+    if (!this.pr || this.busy || this.phase !== "tour") return;
+    const pr = this.pr;
+    this.session?.stop();
+    this.code?.release(); this.code = null; this.diff = null;
+    this.plan = null; this.phase = "setup"; this.step = "depth";
+    cx.spawn(async cx => { await dropSavedPlan(this.git.root, pr, this.depth); this.start(cx); cx.notify(); });
   }
 
   deeper(cx) { this.followUp("Deeper", "Go deeper on this stop: what else in this file and the code it calls matters here?", cx); }
@@ -239,12 +276,27 @@ export default class Tourist extends View {
     this.focusBox(this.commentInput, cx);
   }
 
-  /** Saves the open comment. An empty one just closes the box. */
+  /** Reopens a saved comment in the box to change its text. */
+  startEdit(comment, cx) {
+    if (!this.pr) return;
+    this.asking = false;
+    const { id, text, created, ...where } = comment;
+    this.commenting = { ...where, anchor: -1, editId: id };
+    this.commentInput.set_value(text);
+    this.focusBox(this.commentInput, cx);
+  }
+
+  /** Saves the open comment, or the edit of a saved one. An empty box just closes. */
   saveComment(cx) {
     const text = this.commentInput.value().trim(), at = this.commenting;
     this.commentInput.set_value("");
     this.leaveBox();
     if (!text || !at || !this.pr) return;
+    if (at.editId) {
+      this.comments = this.comments.map(c => c.id === at.editId ? { ...c, text } : c);
+      this.storeComments(cx);
+      return;
+    }
     const { anchor, ...where } = at; // the anchor only means something while the box is open
     this.comments.push({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, ...where, text, created: new Date().toISOString() });
     this.storeComments(cx);
@@ -352,7 +404,7 @@ export default class Tourist extends View {
       try {
         r.url = await postReview(this.git.root, this.on, pr, comments, event, summary);
         r.phase = "posted";
-        if (this.pr === pr) { this.comments = this.comments.filter(c => !comments.includes(c)); this.storeComments(cx); }
+        if (this.pr === pr) { this.comments = this.comments.filter(c => !comments.includes(c)); this.storeComments(cx); this.loadThreads(cx); }
       } catch (e) { r.phase = "editing"; r.error = `GitHub refused the review: ${String(e?.message ?? e)}`; }
       cx.notify();
     });
@@ -448,7 +500,7 @@ export default class Tourist extends View {
     this.leaveBox();
     this.code?.release(); this.code = null;
     this.plan = null; this.busy = null; this.error = null;
-    this.pr = null; this.prNumber = null; this.prs = null; this.diff = null; this.planNote = null; this.comments = [];
+    this.pr = null; this.prNumber = null; this.prs = null; this.diff = null; this.planNote = null; this.comments = []; this.threads = [];
     this.phase = this.git.root ? "setup" : "error";
     this.goStep("scope");
     if (!this.git.root) cx.spawn(async cx => { this.phase = "setup"; await this.detect(); cx.notify(); });
@@ -494,6 +546,7 @@ export default class Tourist extends View {
       else if (k === "escape" && this.commenting) this.leaveBox();
       else if (k === "f" && this.pr?.mine) this.startFix(cx);
       else if (k === "p" && this.pr) this.startReview(cx);
+      else if (k === "r" && this.pr) this.replan(cx);
       else if (k === "q") this.reset(cx);
       else handled = false;
     } else if (this.phase === "fix") {

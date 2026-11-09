@@ -60,6 +60,29 @@ export async function loadPR(root, on, number) {
   };
 }
 
+/**
+ * The PR's review comment threads on GitHub that still sit on a line of the current
+ * diff (outdated ones have no `line`). Each is `{ file, line, side, startLine?, startSide?,
+ * comments: [{ author, body, created }] }`, replies in order after the first comment.
+ */
+export async function listThreads(pr, root, on) {
+  const out = await gh(["api", "--paginate", `repos/${pr.repo}/pulls/${pr.number}/comments`,
+    "-q", ".[] | {id, in_reply_to_id, path, line, side, start_line, start_side, author: .user.login, body, created: .created_at} | @json"], { cwd: root, on });
+  const all = out.split(/\r?\n/).filter(Boolean).map(l => JSON.parse(l));
+  const side = s => s === "LEFT" ? "old" : "new";
+  const threads = new Map();
+  for (const c of all.filter(c => !c.in_reply_to_id && c.line != null)) {
+    threads.set(c.id, {
+      file: c.path, line: c.line, side: side(c.side),
+      ...(c.start_line != null ? { startLine: c.start_line, startSide: side(c.start_side ?? c.side) } : {}),
+      comments: [{ author: c.author, body: c.body, created: c.created }],
+    });
+  }
+  for (const c of all.filter(c => c.in_reply_to_id)) threads.get(c.in_reply_to_id)?.comments.push({ author: c.author, body: c.body, created: c.created });
+  for (const t of threads.values()) t.comments.sort((a, b) => a.created.localeCompare(b.created));
+  return [...threads.values()];
+}
+
 /** The unified diff of one file in the PR, or null when git can't produce it. */
 export function prFileDiff(root, on, pr, file) {
   return git(["diff", "--no-color", "--unified=3", pr.mergeBase, pr.headOid, "--", file], { cwd: root, on });

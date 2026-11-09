@@ -13,6 +13,7 @@ export function tourView(v, t) {
     .when(Boolean(s.group), el => el.child(div().flex_none().max_w(180).truncate().px(6).py(1).rounded(5).bg(t.raised)
       .text_size(11).text_color(t.accent).child(String(s.group))))
     .child(div().flex_1().min_w(0).truncate().font_semibold().child(s.title))
+    .when(Boolean(plan.savedAt), el => el.child(div().flex_none().text_size(11).text_color(t.dim).child("saved review · r plans again")))
     .child(div().max_w(200).truncate().text_size(11.5).text_color(t.dim).child(plan.title ?? ""));
   const fileLine = h_flex().id("file").px(14).py(6).gap(8).items_center().cursor_pointer()
     .hover(st => st.bg(t.hover)).on_click(() => v.openInEditor())
@@ -22,9 +23,10 @@ export function tourView(v, t) {
       : `lines ${s.start}–${s.end}  ·  o opens`));
   // On PR tours each diff line takes a comment.
   const comments = v.pr ? {
-    file: s.file, list: v.comments, input: v.commentInput,
+    file: s.file, list: v.comments, input: v.commentInput, threads: v.threads,
     open: v.commenting?.file === s.file ? v.commenting : null,
     onRow: (r, cx, how) => v.startComment(r, cx, how), onDelete: (c, cx) => v.deleteComment(c, cx),
+    onEdit: (c, cx) => v.startEdit(c, cx),
   } : null;
   const code = div().flex_1().min_h(0).mx(14).mb(4).rounded(8).border_1().border_color(t.border).bg(t.background).overflow_hidden()
     .child(v.diff ? diffView(`diff-${v.idx}`, v.diff, t, comments)
