@@ -40,12 +40,15 @@ stop's lines are shown (all of them when none do). `o` opens the PR's Files
 page in the browser, since the PR isn't on disk. There's no cap on the number of
 stops: one per changed area worth reviewing.
 
-Saved reviews: a PR review's plan is saved per PR head commit and depth, with
-the Deeper/Ask answers and the agent session. Opening the same PR at the same
-depth again skips planning and shows "saved review · r plans again" in the
-header; `r` throws the saved plan away and plans again. A new push to the PR
-changes the head, so it plans again on its own. If the saved session was made by
-the other agent, follow-ups start a fresh session that is told what the PR is.
+Saved tours: a tour's plan is saved with its Deeper/Ask answers and the agent
+session, keyed by the commit it's about and the depth: the PR's head for a pull
+request, HEAD for the last commit and the whole repo, and HEAD plus the feature's
+text (ignoring case and spaces at the ends) for a feature. Opening the same tour
+again skips planning and shows "saved review · r plans again" in the header; `r`
+throws the saved plan away and plans again. A new commit or push changes the
+key, so it plans again on its own. Branch changes tours aren't saved, because
+their uncommitted edits change all the time. If the saved session was made by the
+other agent, follow-ups start a fresh session that is told what the tour is about.
 
 GitHub threads: the PR's existing review comments sit under their lines,
 read-only, with a neutral border: the author and "on GitHub", then replies
@@ -158,7 +161,8 @@ and its branch are deleted, and the comments stay.
   (fenced off as the author's text, not instructions), commits and files, tells
   it to read with `git diff` and `git show <head>:<file>`, and asks for stops in
   the order the changes build on each other, each with a `group`. Saved plans
-  live in `<appHome>/data/tourist/plans/<repo>_pr-<n>-<head>-<depth>.json`.
+  live in `<appHome>/data/tourist/plans/`, named `<repo>_pr-<n>-<head>-<depth>`,
+  `<repo>-commit|repo-<head>-<depth>` or `<repo>-feature-<text hash>-<head>-<depth>`.
   Threads come from `gh api --paginate repos/<owner>/<repo>/pulls/<n>/comments`.
 - Fix: `git worktree add -B tourist/fix-pr-<n> <appHome>/data/tourist/worktrees/<repo>_pr-<n>
   <head>`, reused if it already exists. The agent runs there with edit tools:

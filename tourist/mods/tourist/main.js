@@ -11,7 +11,7 @@ import { View } from "gpui-kit";
 import { v_flex, InputState } from "gpui-base";
 import { theme, nextCommand, props, run } from "herdr";
 import { SCOPES, DEPTHS, SPLIT_WIDTH } from "./constants.js";
-import { startFolder, readRepo } from "./git.js";
+import { startFolder, readRepo, git } from "./git.js";
 import { AgentSession, agentName, findAgents, rememberAgent } from "./agent.js";
 import { subject, planPrompt, prSubject, prPlanPrompt, followUpPrompt, fixPrompt, parsePlan } from "./plan.js";
 import { readExcerpt, codeState, openInEditor, openUrl } from "./code.js";
@@ -19,7 +19,7 @@ import { listPRs, loadPR, prFileDiff, listThreads } from "./pr.js";
 import { diffRows, rowsInRange, splitDiff } from "./diff.js";
 import { openWorktree, worktreeDiff, pushFix, removeWorktree } from "./worktree.js";
 import { commentKey, loadComments, saveComments, sideOf, rangeOf } from "./comments.js";
-import { loadSavedPlan, savePlan, dropSavedPlan } from "./saved.js";
+import { planKey, loadSavedPlan, savePlan, dropSavedPlan } from "./saved.js";
 import { setupView } from "./views/setup.js";
 import { tourView } from "./views/tour.js";
 import { planningView, errorView } from "./views/status.js";
@@ -151,20 +151,28 @@ export default class Tourist extends View {
     const gen = this.gen = (this.gen ?? 0) + 1;
     cx.spawn(async cx => {
       try {
-        let prompt, plan = null;
+        let prompt, plan = null, head = null;
+        const feature = this.featureInput.value().trim();
         if (this.scope === "pr") {
           this.planNote = `Fetching PR #${this.prNumber}`; cx.notify();
           const pr = await loadPR(this.git.root, this.on, this.prNumber);
           if (gen !== this.gen) return;
-          const [comments, saved] = await Promise.all([
-            loadComments(commentKey(this.git.root, pr.number)), loadSavedPlan(this.git.root, pr, this.depth)]);
-          this.pr = pr; this.planNote = null; this.comments = comments;
+          this.pr = pr; this.planNote = null; head = pr.headOid;
+          this.comments = await loadComments(commentKey(this.git.root, pr.number));
           this.loadThreads(cx);
-          // The same PR head at the same depth was planned before: reuse it, and its agent session when the agent matches.
-          if (saved) { plan = saved.plan; plan.savedAt = saved.saved; if (saved.agent === session.agent) session.id = saved.session; }
           cx.notify();
           prompt = prPlanPrompt(prSubject(pr), this.depth);
-        } else prompt = planPrompt(subject(this.scope, this.git, this.featureInput.value().trim()), this.depth);
+        } else {
+          // HEAD now, not when Tourist opened, so a commit made since then plans again.
+          head = await git(["rev-parse", "HEAD"], { cwd: this.git.root, on: this.on });
+          prompt = planPrompt(subject(this.scope, this.git, feature), this.depth);
+        }
+        // The same tour of the same commit at the same depth was planned before: reuse it,
+        // and its agent session when the agent matches.
+        this.savedKey = planKey({ root: this.git.root, scope: this.scope, depth: this.depth, head, pr: this.pr, feature });
+        const saved = this.savedKey ? await loadSavedPlan(this.savedKey) : null;
+        if (gen !== this.gen) return;
+        if (saved) { plan = saved.plan; plan.savedAt = saved.saved; if (saved.agent === session.agent) session.id = saved.session; }
         if (!plan) plan = parsePlan(await session.ask(prompt));
         if (gen !== this.gen) return;
         this.plan = plan; this.phase = "tour"; this.show(0, cx);
@@ -208,8 +216,8 @@ export default class Tourist extends View {
     cx.spawn(async cx => {
       const comments = this.comments.filter(c => c.file === s.file);
       let prompt = followUpPrompt(question, s, this.idx + 1, comments);
-      // A reused review whose agent session couldn't be kept starts fresh, so say what the PR is.
-      if (this.pr && !session.id) prompt = `This is part of a guided review. ${prSubject(this.pr)}\n\n${prompt}`;
+      // A reused tour whose agent session couldn't be kept starts fresh, so say what it's about.
+      if (!session.id) prompt = `This is part of a guided tour. Subject: ${this.pr ? prSubject(this.pr) : subject(this.scope, this.git, this.featureInput.value().trim())}\n\n${prompt}`;
       try { s.notes.push({ label, text: await session.ask(prompt) }); this.storePlan(); }
       catch (e) { s.notes.push({ label: "Error", text: String(e?.message ?? e) }); }
       this.busy = null; cx.notify();
@@ -226,21 +234,21 @@ export default class Tourist extends View {
     });
   }
 
-  /** Saves a PR review's plan and answers so reopening it skips planning. */
+  /** Saves the tour's plan and answers so reopening it skips planning. Branch tours have no key and aren't saved. */
   storePlan() {
-    if (!this.pr || !this.plan) return;
+    if (!this.savedKey || !this.plan) return;
     const { savedAt, ...plan } = this.plan;
-    savePlan(this.git.root, this.pr, this.depth, plan, this.session?.agent ?? this.agent, this.session?.id ?? null).catch(() => {});
+    savePlan(this.savedKey, plan, this.session?.agent ?? this.agent, this.session?.id ?? null).catch(() => {});
   }
 
-  /** Throws away the saved plan for this PR head and plans the review again. */
+  /** Throws away the saved plan and plans the tour again. */
   replan(cx) {
-    if (!this.pr || this.busy || this.phase !== "tour") return;
-    const pr = this.pr;
+    if (!this.savedKey || this.busy || this.phase !== "tour") return;
+    const key = this.savedKey;
     this.session?.stop();
     this.code?.release(); this.code = null; this.diff = null;
     this.plan = null; this.phase = "setup"; this.step = "depth";
-    cx.spawn(async cx => { await dropSavedPlan(this.git.root, pr, this.depth); this.start(cx); cx.notify(); });
+    cx.spawn(async cx => { await dropSavedPlan(key); this.start(cx); cx.notify(); });
   }
 
   deeper(cx) { this.followUp("Deeper", "Go deeper on this stop: what else in this file and the code it calls matters here?", cx); }
@@ -500,7 +508,7 @@ export default class Tourist extends View {
     this.leaveBox();
     this.code?.release(); this.code = null;
     this.plan = null; this.busy = null; this.error = null;
-    this.pr = null; this.prNumber = null; this.prs = null; this.diff = null; this.planNote = null; this.comments = []; this.threads = [];
+    this.pr = null; this.prNumber = null; this.prs = null; this.diff = null; this.planNote = null; this.comments = []; this.threads = []; this.savedKey = null;
     this.phase = this.git.root ? "setup" : "error";
     this.goStep("scope");
     if (!this.git.root) cx.spawn(async cx => { this.phase = "setup"; await this.detect(); cx.notify(); });
@@ -546,7 +554,7 @@ export default class Tourist extends View {
       else if (k === "escape" && this.commenting) this.leaveBox();
       else if (k === "f" && this.pr?.mine) this.startFix(cx);
       else if (k === "p" && this.pr) this.startReview(cx);
-      else if (k === "r" && this.pr) this.replan(cx);
+      else if (k === "r" && this.savedKey) this.replan(cx);
       else if (k === "q") this.reset(cx);
       else handled = false;
     } else if (this.phase === "fix") {
