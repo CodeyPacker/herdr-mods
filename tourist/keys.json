@@ -1,5 +1,5 @@
 {
   "global": {
-    "ctrl-a t": { "command": "pane.split", "args": { "direction": "right", "mod": "tourist" } }
+    "ctrl-shift-g": { "command": "pane.split", "args": { "direction": "right", "mod": "tourist" } }
   }
 }

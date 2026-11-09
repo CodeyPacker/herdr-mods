@@ -49,7 +49,7 @@ stack under the explanation. A button bar at the bottom repeats the keys.
 
 - `mods/tourist/main.js`, one `View`.
 - `mod.json`: `{ "place": "none", "focusable": true, "title": "Tourist" }`.
-- `keys.json` opens it in a split: `"ctrl-a t": { "command": "pane.split",
+- `keys.json` opens it in a split: `"ctrl-shift-g": { "command": "pane.split",
   "args": { "direction": "right", "mod": "tourist" } }`.
 - The folder is the pane's `props().folder`, else the focused pane's cwd. Git
   finds the root, branch, base (`origin/HEAD`, `main` or `master`), merge-base
@@ -91,7 +91,7 @@ stack under the explanation. A button bar at the bottom repeats the keys.
 ## Done when
 
 - `herdr-app check ~/.config/herdr-app/mods/tourist` passes.
-- `ctrl-a t` opens the pane on step 1 with the current repo and branch.
+- `ctrl-shift-g` opens the pane on step 1 with the current repo and branch.
 - `c`, `enter`, `enter` plans a tour of the last commit, and the first stop
   shows the file, code and explanation.
 - `d` adds a "Deeper" note that builds on the stop. `q` returns to step 1.
