@@ -13,14 +13,16 @@ import { theme, nextCommand, props } from "herdr";
 import { SCOPES, DEPTHS, SPLIT_WIDTH } from "./constants.js";
 import { startFolder, readRepo } from "./git.js";
 import { AgentSession, agentName, findAgents, rememberAgent } from "./agent.js";
-import { subject, planPrompt, prSubject, prPlanPrompt, followUpPrompt, parsePlan } from "./plan.js";
+import { subject, planPrompt, prSubject, prPlanPrompt, followUpPrompt, fixPrompt, parsePlan } from "./plan.js";
 import { readExcerpt, codeState, openInEditor, openUrl } from "./code.js";
 import { listPRs, loadPR, prFileDiff } from "./pr.js";
-import { diffRows, rowsInRange } from "./diff.js";
+import { diffRows, rowsInRange, splitDiff } from "./diff.js";
+import { openWorktree, worktreeDiff, pushFix, removeWorktree } from "./worktree.js";
 import { commentKey, loadComments, saveComments, sideOf } from "./comments.js";
 import { setupView } from "./views/setup.js";
 import { tourView } from "./views/tour.js";
 import { planningView, errorView } from "./views/status.js";
+import { fixView } from "./views/fix.js";
 
 export default class Tourist extends View {
   init(_props, cx) {
@@ -39,6 +41,9 @@ export default class Tourist extends View {
     this.planNote = null; // what planning is waiting on before the agent starts
     this.comments = [];   // line comments on the PR, saved by comments.js
     this.commenting = null; // { file, line, side, code } while the comment box is open
+    // The fix run on a PR: { phase: "running" | "ready" | "failed" | "pushing" | "pushed",
+    // count, note, path, summary, files, error, confirm }. Shown when phase is "fix".
+    this.fix = null; this.fixSession = null;
     this.cursor = 0;      // highlighted row in the current step
     this.split = null;    // null: split when the pane is wide enough. true or false: the s key chose
     this.width = 0;       // the pane width, from on_size_change
@@ -78,7 +83,7 @@ export default class Tourist extends View {
 
   async close() {
     this.code?.release(); this.input.release(); this.featureInput.release(); this.commentInput.release();
-    await this.session?.stop();
+    await this.session?.stop(); await this.fixSession?.stop();
   }
 
   /** `tourist.<name>` commands: focus, start, next, prev, deeper, technical, open, reset, agent, scope-<id>, depth-<id>. */
@@ -98,6 +103,9 @@ export default class Tourist extends View {
     else if (c === "open") this.openInEditor();
     else if (c === "reset") this.reset(cx);
     else if (c === "agent") this.switchAgent();
+    else if (c === "fix") this.startFix(cx);
+    else if (c === "fix-back") this.closeFix();
+    else if (c === "fix-discard") this.discardFix(cx);
   }
 
   async detect() {
@@ -184,7 +192,8 @@ export default class Tourist extends View {
     const s = this.plan.stops[this.idx], session = this.session;
     this.busy = label;
     cx.spawn(async cx => {
-      try { s.notes.push({ label, text: await session.ask(followUpPrompt(question, s, this.idx + 1)) }); }
+      const comments = this.comments.filter(c => c.file === s.file);
+      try { s.notes.push({ label, text: await session.ask(followUpPrompt(question, s, this.idx + 1, comments)) }); }
       catch (e) { s.notes.push({ label: "Error", text: String(e?.message ?? e) }); }
       this.busy = null; cx.notify();
     });
@@ -228,6 +237,59 @@ export default class Tourist extends View {
   storeComments(cx) {
     const key = commentKey(this.git.root, this.pr.number), list = this.comments;
     cx.spawn(async () => { await saveComments(key, list).catch(() => {}); });
+  }
+
+  /**
+   * Opens the fix screen. The first time, an agent with edit tools works through every
+   * saved comment in a worktree on the PR's commit. Later, it shows that run's result.
+   */
+  startFix(cx) {
+    if (!this.pr) return;
+    if (this.fix && this.fix.phase !== "pushed") { this.leaveBox(); this.phase = "fix"; return; }
+    if (this.comments.length === 0 || this.busy) return;
+    this.leaveBox();
+    const pr = this.pr, comments = [...this.comments];
+    const fix = this.fix = { phase: "running", count: comments.length, note: "Creating a worktree", path: null };
+    this.phase = "fix";
+    cx.spawn(async cx => {
+      try {
+        fix.path = await openWorktree(this.git.root, this.on, pr);
+        fix.note = `${this.agentName()} is working through ${comments.length} comment${comments.length === 1 ? "" : "s"}`; cx.notify();
+        const session = this.fixSession = new AgentSession(this.agent, fix.path, { write: true });
+        fix.summary = await session.ask(fixPrompt(pr, comments));
+        fix.files = splitDiff(await worktreeDiff(fix.path, this.on));
+        fix.phase = "ready";
+      } catch (e) { fix.phase = "failed"; fix.error = String(e?.message ?? e); }
+      if (this.fix === fix) this.fixSession = null;
+      cx.notify();
+    });
+  }
+
+  closeFix() { this.phase = this.plan ? "tour" : "setup"; if (this.fix) this.fix.confirm = false; }
+
+  /** Commits the fix and pushes it to the PR's branch. The first press only asks for a second one. */
+  pushFix(cx) {
+    const fix = this.fix, pr = this.pr;
+    if (!fix || !pr || fix.phase !== "ready" || !fix.files?.length) return;
+    if (!fix.confirm) { fix.confirm = true; return; }
+    fix.confirm = false; fix.phase = "pushing"; fix.error = null;
+    cx.spawn(async cx => {
+      try {
+        await pushFix(fix.path, this.on, pr, `Address review comments on #${pr.number}`);
+        fix.phase = "pushed";
+        await removeWorktree(this.git.root, this.on, pr);
+        if (this.pr === pr) { this.comments = []; this.storeComments(cx); }
+      } catch (e) { fix.phase = "ready"; fix.error = `Push failed: ${String(e?.message ?? e)}`; }
+      cx.notify();
+    });
+  }
+
+  /** Throws the fix away: the worktree and its branch are deleted. The comments stay. */
+  discardFix(cx) {
+    const fix = this.fix, pr = this.pr;
+    if (!fix || !pr || (fix.phase !== "ready" && fix.phase !== "failed")) return;
+    this.fix = null; this.closeFix();
+    cx.spawn(async cx => { await removeWorktree(this.git.root, this.on, pr).catch(() => {}); cx.notify(); });
   }
 
   startAsking(cx) {
@@ -310,6 +372,7 @@ export default class Tourist extends View {
   reset(cx) {
     this.gen = (this.gen ?? 0) + 1;
     this.session?.stop(); this.session = null;
+    this.fixSession?.stop(); this.fixSession = null; this.fix = null; // a fix's worktree stays and is reused next time
     this.leaveBox();
     this.code?.release(); this.code = null;
     this.plan = null; this.busy = null; this.error = null;
@@ -353,7 +416,13 @@ export default class Tourist extends View {
       else if (k === "o") this.openInEditor();
       else if (k === "s") this.toggleSplit();
       else if (k === "escape" && this.commenting) this.leaveBox();
+      else if (k === "f" && this.pr) this.startFix(cx);
       else if (k === "q") this.reset(cx);
+      else handled = false;
+    } else if (this.phase === "fix") {
+      if (k === "b" || k === "escape") this.closeFix();
+      else if (k === "p") this.pushFix(cx);
+      else if (k === "x") this.discardFix(cx);
       else handled = false;
     } else if (this.phase === "error") {
       if (k === "enter" || k === "q" || k === "escape") this.reset(cx);
@@ -370,6 +439,7 @@ export default class Tourist extends View {
     if (this.phase === "setup") return root.child(setupView(this, t));
     if (this.phase === "planning") return root.child(planningView(this, t));
     if (this.phase === "error") return root.child(errorView(this, t));
+    if (this.phase === "fix" && this.fix && this.pr) return root.child(fixView(this, t));
     return root.child(tourView(this, t));
   }
 }

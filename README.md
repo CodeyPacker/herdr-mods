@@ -46,7 +46,7 @@ Want a wallpaper behind the cards? Drop an image in `~/.config/herdr-app/backgro
 
 ## tourist
 
-Claude or Codex gives you a guided tour of your code. Press `ctrl-shift-g`, pick what to tour (branch changes, the last commit, an open pull request, the whole repo, or a feature you describe), pick a depth, and the agent walks you through it file by file. A pull request tour is a guided review: the stops follow the order the changes build on each other, and each one shows that file's diff.
+Claude or Codex gives you a guided tour of your code. Press `ctrl-shift-g`, pick what to tour (branch changes, the last commit, an open pull request, the whole repo, or a feature you describe), pick a depth, and the agent walks you through it file by file. A pull request tour is a guided review: the stops follow the order the changes build on each other, and each one shows that file's diff. Click a diff line to leave a comment, then press `f` and the agent fixes your comments in a separate worktree. You review its diff and push it to the PR's branch, or discard it.
 
 ![tourist](tourist/preview.png)
 

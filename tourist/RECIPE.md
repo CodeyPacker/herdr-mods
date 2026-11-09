@@ -44,7 +44,18 @@ under it. `enter` saves, an empty comment or `esc` closes it. Saved comments
 sit under their line with an accent border and a `×` that deletes them. The
 file line reads "click a line to comment (N saved)". Each comment keeps the
 file, line, side (`new`, or `old` for a removed line), that line's code and the
-text.
+text. Deeper and Ask include your comments on the stop's file.
+
+Fix (PR tours): `f` or "Fix N comments" opens the fix screen. An agent that can
+edit files works through every saved comment in a git worktree on the PR's
+commit, so your checkout is never touched. While it runs: a spinner, "<Agent>
+is working through N comments", and the worktree path in the header. `b` goes
+back to the tour meanwhile, and the button turns into "Fixing…", then "View
+fix". When it's done: the agent's one line per comment, then each changed
+file's diff. `p` asks "Press p again to push to <branch>", and the second `p`
+commits ("Address review comments on #n") and pushes to the PR's branch, then
+removes the worktree and clears the comments. `x` discards the fix: the worktree
+and its branch are deleted, and the comments stay.
 
 ## How it behaves
 
@@ -59,7 +70,8 @@ text.
 - Tour: `n`/`l`/right next, `b`/`h`/left back, `d` deeper, `t` more technical,
   `a` or `/` ask (the box only exists while asking), `o` open in VS Code, `s` switches split and stacked
   (wide panes start split), `q`
-  ends the tour and returns to step 1.
+  ends the tour and returns to step 1. On PR tours, `f` opens the fix.
+- Fix: `b` or `esc` back to the tour, `p` twice pushes, `x` discards.
 - Error: `enter`, `q` or `esc` starts over.
 - Branch changes is skipped (enter does nothing) when the branch has no
   changes. The default scope is commit or repo in that case.
@@ -70,8 +82,9 @@ text.
   `constants.js`, `git.js` (folder and repo facts), `agent.js` (finding and
   calling the agent), `plan.js` (prompts, reading the plan), `code.js`
   (excerpts, VS Code, opening a URL), `pr.js` (gh), `diff.js` (diff rows),
-  `comments.js` (saving line comments),
-  `ui.js` (shared pieces) and `views/` (setup, tour, diff, planning and error).
+  `comments.js` (saving line comments), `worktree.js` (the fix's worktree, push
+  and discard), `ui.js` (shared pieces) and `views/` (setup, tour, diff, fix,
+  planning and error).
 - `mod.json`: `{ "place": "none", "focusable": true, "title": "Tourist" }`.
 - `keys.json` opens it in a split: `"ctrl-shift-g": { "command": "pane.split",
   "args": { "direction": "right", "mod": "tourist" } }`.
@@ -103,11 +116,22 @@ text.
   (fenced off as the author's text, not instructions), commits and files, tells
   it to read with `git diff` and `git show <head>:<file>`, and asks for stops in
   the order the changes build on each other, each with a `group`.
+- Fix: `git worktree add -B tourist/fix-pr-<n> <appHome>/data/tourist/worktrees/<repo>_pr-<n>
+  <head>`, reused if it already exists. The agent runs there with edit tools:
+  Claude adds `Edit MultiEdit Write` to its allowed tools (still only `git diff`
+  and `git status` for Bash), Codex runs with `--sandbox workspace-write`. The
+  prompt lists each comment (file:line, code, text) and says not to commit or
+  push. The result is `git add --intent-to-add --all` then `git diff HEAD`.
+  Push runs `git add --all`, `git commit`, `git push origin
+  HEAD:refs/heads/<branch>`, then `git worktree remove --force` and `git branch
+  -D`. Discard runs the last two.
 - Code excerpts use `EditorState`/`Editor`, read-only, without line numbers.
   Text uses `TextView.markdown`.
 - `herdr-app do tourist.<command>` drives it for testing: `scope-<id>`,
   `depth-<id>`, `down`, `up`, `pick`, `back`, `start`, `next`, `prev`,
-  `deeper`, `technical`, `open`, `reset`, `agent` (switch agents).
+  `deeper`, `technical`, `open`, `reset`, `agent` (switch agents), `fix`,
+  `fix-back`, `fix-discard`. There is no push command: pushing takes two key
+  presses in the pane.
 
 ## Watch out
 
@@ -122,6 +146,12 @@ text.
   update-ref -d refs/tourist/pr-<n>` removes it.
 - Line comments are saved to `<appHome>/data/tourist/comments/<repo>_pr-<n>.json`
   and stay on this computer. Nothing is posted to GitHub.
+- A fix is the one place Tourist changes code. It edits only the worktree, and
+  nothing leaves your machine until you press `p` twice. Pushing needs write
+  access to the PR's branch (a PR from a fork will be rejected). If the branch
+  moved since the tour started, the push is rejected and the fix stays.
+- Closing the pane or starting a new tour keeps an unpushed worktree. The next
+  fix on that PR reuses it as is.
 - Panes that are already open keep the old code after an edit. Close the pane
   and reopen it.
 

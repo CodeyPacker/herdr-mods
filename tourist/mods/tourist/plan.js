@@ -48,9 +48,26 @@ export function prPlanPrompt(subjectText, depth) {
   ].join("\n\n");
 }
 
-/** A question about one stop, sent into the tour's session. */
-export function followUpPrompt(question, stop, number) {
-  return `${question}\n\nThis is about stop ${number}, "${stop.title}" (${stop.file} lines ${stop.start}-${stop.end}). Read more code if you need to. Reply in markdown only, under 250 words, with file:line references.`;
+/** Review comments as a numbered list: where, the code there, and what the reviewer wrote. */
+export function commentLines(comments) {
+  return comments.map((c, i) => `${i + 1}. ${c.file}:${c.line}${c.side === "old" ? " (a removed line)" : ""}\n   code: ${String(c.code ?? "").trim()}\n   comment: ${c.text}`).join("\n");
+}
+
+/** A question about one stop, sent into the tour's session, with the reader's comments on that file. */
+export function followUpPrompt(question, stop, number, comments = []) {
+  const mine = comments.length ? `\n\nThe reader left these review comments on this file. Keep them in mind:\n${commentLines(comments)}` : "";
+  return `${question}\n\nThis is about stop ${number}, "${stop.title}" (${stop.file} lines ${stop.start}-${stop.end}). Read more code if you need to. Reply in markdown only, under 250 words, with file:line references.${mine}`;
+}
+
+/** The fix run's one message: change the code the way the reader's comments ask. */
+export function fixPrompt(pr, comments) {
+  return [
+    `You are in a git worktree checked out at the head of pull request #${pr.number} "${pr.title}" (${pr.head} into ${pr.base}).`,
+    "The reader reviewed the PR and left these comments. Each is a request to change the code at that line:",
+    commentLines(comments),
+    "Make the changes the comments ask for by editing files in this folder. Keep each change as small as the comment allows and match the surrounding style. If a comment is a question or you disagree with it, change nothing for it and say why. Do not commit, push, or run commands other than reading git diff and git status.",
+    "When you are done, reply in markdown only: one short line per comment number saying what you changed (with file:line) or why you left it.",
+  ].join("\n\n");
 }
 
 /** Pulls the JSON object out of the agent's reply, even with prose or fences around it. */

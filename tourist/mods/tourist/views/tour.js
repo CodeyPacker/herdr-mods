@@ -52,6 +52,9 @@ export function tourView(v, t) {
     .child(button(t, "deeper", "Deeper", "d", free, (_e, cx) => { v.deeper(cx); cx.notify(); }))
     .child(button(t, "tech", "More technical", "t", free, (_e, cx) => { v.technical(cx); cx.notify(); }))
     .child(button(t, "askbtn", "Ask", "a", free, (_e, cx) => { v.startAsking(cx); cx.notify(); }))
+    .when(Boolean(v.pr), el => el.child(button(t, "fix",
+      v.fix?.phase === "running" ? "Fixing…" : v.fix && v.fix.phase !== "pushed" ? "View fix" : `Fix ${v.comments.length} comment${v.comments.length === 1 ? "" : "s"}`,
+      "f", Boolean(v.fix && v.fix.phase !== "pushed") || (v.comments.length > 0 && free), (_e, cx) => { v.startFix(cx); cx.notify(); })))
     .child(button(t, "layout", v.isSplit() ? "Stacked" : "Split", "s", true, (_e, cx) => { v.toggleSplit(); cx.notify(); }))
     .child(button(t, "restart", "New tour", "q", true, (_e, cx) => { v.reset(cx); cx.notify(); }));
   // Code and explanation sit in a resizable group: drag the line between them.

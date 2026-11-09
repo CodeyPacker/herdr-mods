@@ -23,6 +23,14 @@ export function diffRows(text) {
   });
 }
 
+/** A multi-file diff split into one `{ file, rows }` per file. */
+export function splitDiff(text) {
+  return String(text ?? "").replace(/\r/g, "").split(/^diff --git /m).slice(1).map(part => {
+    const head = part.split("\n")[0], m = / b\/(.+)$/.exec(head);
+    return { file: m ? m[1] : head, rows: diffRows(part) };
+  });
+}
+
 /** The hunks that touch new-file lines start..end. All hunks when none do. */
 export function rowsInRange(rows, start, end) {
   const hunks = [];
