@@ -1,0 +1,38 @@
+// The prompts Tourist sends, and reading the tour plan out of the reply.
+import { DEPTHS } from "./constants.js";
+
+/** What to tour, in words the agent can act on. */
+export function subject(scope, repo, feature) {
+  const g = repo;
+  if (scope === "branch") return `The changes on branch "${g.branch}" compared with ${g.base} (merge base ${g.mergeBase}), including uncommitted edits. Changed files:\n${g.changed.join("\n")}\nRead the changes with \`git diff ${g.mergeBase} -- <file>\` and the surrounding code as needed. Point the stops at the changed code.`;
+  if (scope === "commit") return `The most recent commit (${g.head}). Read it with \`git show HEAD\` and the surrounding code as needed. Point the stops at the changed code.`;
+  if (scope === "feature") return `A feature the reader described in their own words: "${feature}". Find the code that implements it with Grep and Glob. Start the tour where the feature begins (a key, route, command or call) and follow it to where the work happens. If nothing matches, return one stop at the closest code and say so in its body.`;
+  return "The whole repository. Start from the README, the manifests and the entry points.";
+}
+
+/** The first message of a tour: what to cover, how deep, and the JSON shape to reply in. */
+export function planPrompt(subjectText, depth) {
+  return [
+    "You are giving a guided code tour inside a desktop app. The reader sees one stop at a time: an excerpt from one file next to your explanation.",
+    `Subject: ${subjectText}`,
+    `Depth: ${DEPTHS.find(d => d.id === depth)?.text ?? ""}`,
+    "Read the code you need with your tools. Then reply with ONLY a JSON object, no prose and no code fences, in this shape:",
+    '{"title": "short tour title", "summary": "markdown, 2 to 4 sentences", "stops": [{"file": "repo-relative path with forward slashes", "start": 1, "end": 40, "title": "short stop title", "body": "markdown explanation"}]}',
+    "Rules: 4 to 10 stops (4 to 6 for an overview). Order the stops so each builds on the last, starting where a newcomer should start. Keep each excerpt under 60 lines. Line numbers must match the file as it is on disk now. Only claim what the code you read shows.",
+  ].join("\n\n");
+}
+
+/** A question about one stop, sent into the tour's session. */
+export function followUpPrompt(question, stop, number) {
+  return `${question}\n\nThis is about stop ${number}, "${stop.title}" (${stop.file} lines ${stop.start}-${stop.end}). Read more code if you need to. Reply in markdown only, under 250 words, with file:line references.`;
+}
+
+/** Pulls the JSON object out of the agent's reply, even with prose or fences around it. */
+export function parsePlan(text) {
+  const a = text.indexOf("{"), b = text.lastIndexOf("}");
+  if (a < 0 || b < a) throw new Error("The agent did not return a tour plan.");
+  const plan = JSON.parse(text.slice(a, b + 1));
+  if (!Array.isArray(plan.stops) || plan.stops.length === 0) throw new Error("The tour plan has no stops.");
+  for (const s of plan.stops) { s.file = String(s.file).replace(/\\/g, "/").replace(/^\.\//, ""); s.notes = []; }
+  return plan;
+}

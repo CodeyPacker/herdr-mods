@@ -1,44 +1,23 @@
 // Tourist: Claude or Codex walks you through a branch, the last commit, the whole repo, or a feature you describe, one stop at a time.
-import { View, div } from "gpui-kit";
-import { v_flex, h_flex, Editor, EditorState, TextView, InputState, Input, h_resizable, v_resizable, resizable_panel } from "gpui-base";
-import { spaces, panes, focused, exec, hc, readTextFile, writeTextFile, appHome, theme, settings, nextCommand, props, window } from "herdr";
-import * as fs from "fs/promises";
-
-const SCOPES = [
-  { key: "b", id: "branch", label: "Branch changes", hint: "since this branch left the base, plus uncommitted edits" },
-  { key: "c", id: "commit", label: "Last commit", hint: "HEAD only" },
-  { key: "r", id: "repo", label: "Whole repo", hint: "slower, the agent surveys the codebase" },
-  { key: "f", id: "feature", label: "A feature", hint: "describe it, the agent finds the code" },
-];
-const DEPTHS = [
-  { key: "1", id: "overview", label: "Overview", text: "Plain language. Say what each part does and why it exists. 2 to 4 sentences per stop. No jargon." },
-  { key: "2", id: "normal", label: "Normal", text: "Explain what the code does and how the pieces connect. 4 to 6 sentences per stop. Name the key functions and types." },
-  { key: "3", id: "deep", label: "Deep", text: "Technical. Explain mechanisms, data flow, edge cases and tradeoffs. Up to 10 sentences per stop." },
-];
-// Read-only tools. Claude can look at the repo but never change it.
-const TOOLS = ["--allowedTools", "Read", "Grep", "Glob", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(git status:*)"];
-// The agents a tour can use, in the order Tourist prefers them.
-const AGENTS = [{ id: "claude", name: "Claude" }, { id: "codex", name: "Codex" }];
-const LANG = { ts: "js", tsx: "js", mts: "js", cts: "js", jsx: "js", mjs: "js", toml: "yaml", jsonc: "json", svelte: "html", vue: "html" };
-const SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-
-/** The folder of the pane the tour was opened from, else the space's folder. */
-function startFolder() {
-  const f = focused(), space = spaces().find(s => s.active), all = panes();
-  const mine = f?.pane ? all.find(p => p.pane === f.pane) : null;
-  const sibling = mine ? all.find(p => p.tab === mine.tab && p.cwd) : null;
-  return { cwd: mine?.cwd || sibling?.cwd || f?.cwd || space?.folder || null, on: space?.machine ?? null };
-}
-
-/** Pulls the JSON object out of the agent's reply, even with prose or fences around it. */
-function parsePlan(text) {
-  const a = text.indexOf("{"), b = text.lastIndexOf("}");
-  if (a < 0 || b < a) throw new Error("The agent did not return a tour plan.");
-  const plan = JSON.parse(text.slice(a, b + 1));
-  if (!Array.isArray(plan.stops) || plan.stops.length === 0) throw new Error("The tour plan has no stops.");
-  for (const s of plan.stops) { s.file = String(s.file).replace(/\\/g, "/").replace(/^\.\//, ""); s.notes = []; }
-  return plan;
-}
+// This file holds the view's state, keys and flow. The pieces it uses:
+//   constants.js  scopes, depths, agents and other fixed tables
+//   git.js        the folder to tour and its repo facts
+//   agent.js      finding Claude or Codex and talking to it
+//   plan.js       the prompts and reading the tour plan
+//   code.js       a stop's lines, its editor, opening VS Code
+//   ui.js         shared buttons, rows and inputs
+//   views/        the setup, tour, planning and error screens
+import { View } from "gpui-kit";
+import { v_flex, InputState } from "gpui-base";
+import { theme, nextCommand, props } from "herdr";
+import { SCOPES, DEPTHS, SPLIT_WIDTH } from "./constants.js";
+import { startFolder, readRepo } from "./git.js";
+import { AgentSession, agentName, findAgents, rememberAgent } from "./agent.js";
+import { subject, planPrompt, followUpPrompt, parsePlan } from "./plan.js";
+import { readExcerpt, codeState, openInEditor } from "./code.js";
+import { setupView } from "./views/setup.js";
+import { tourView } from "./views/tour.js";
+import { planningView, errorView } from "./views/status.js";
 
 export default class Tourist extends View {
   init(_props, cx) {
@@ -47,7 +26,8 @@ export default class Tourist extends View {
     this.phase = "setup"; this.scope = "branch"; this.depth = "normal";
     this.git = { root: null, branch: "", base: null, mergeBase: null, changed: [], head: "" };
     this.plan = null; this.idx = 0; this.code = null; this.codeLines = 0; this.codeError = null;
-    this.session = null; this.busy = null; this.error = null;
+    this.session = null;  // the AgentSession of the tour in progress
+    this.busy = null; this.error = null;
     this.agents = []; this.agent = null; // installed agent ids, and the one tours use
     this.step = 1;       // setup step: 1 what to tour, 2 how deep
     this.cursor = 0;      // highlighted row in the current step
@@ -88,7 +68,7 @@ export default class Tourist extends View {
 
   async close() {
     this.code?.release(); this.input.release(); this.featureInput.release();
-    if (this.job) await hc(["kill", this.job]).catch(() => {});
+    await this.session?.stop();
   }
 
   /** `tourist.<name>` commands: focus, start, next, prev, deeper, technical, open, reset, agent, scope-<id>, depth-<id>. */
@@ -110,151 +90,41 @@ export default class Tourist extends View {
     else if (c === "agent") this.switchAgent();
   }
 
-  /** Runs git in the repo and returns trimmed stdout, or null on failure. */
-  async run(args) {
-    try {
-      const r = await exec("git", args, { cwd: this.git.root ?? this.cwd ?? undefined, on: this.on });
-      return r.code === 0 ? r.stdout.trim() : null;
-    } catch { return null; }
-  }
-
   async detect() {
     if (!this.cwd) { this.fail("No folder to tour. Open Tourist from a terminal inside a repo."); return; }
-    const root = await this.run(["rev-parse", "--show-toplevel"]);
-    if (!root) { this.fail(`${this.cwd} is not inside a git repo.`); return; }
-    if (!(await this.findAgents())) { this.fail("Tourist needs the claude or codex CLI on PATH, signed in."); return; }
-    this.git.root = root;
-    this.git.branch = (await this.run(["branch", "--show-current"])) || "detached HEAD";
-    this.git.head = (await this.run(["log", "-1", "--format=%h %s"])) || "";
-    let base = await this.run(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"]);
-    if (!base) for (const b of ["main", "master"]) if (await this.run(["rev-parse", "--verify", "--quiet", b])) { base = b; break; }
-    this.git.base = base;
-    if (base) {
-      this.git.mergeBase = await this.run(["merge-base", "HEAD", base]);
-      const files = this.git.mergeBase ? await this.run(["diff", "--name-only", this.git.mergeBase]) : null;
-      this.git.changed = files ? files.split("\n").filter(Boolean) : [];
-    }
-    if (this.git.changed.length === 0) this.scope = this.git.head ? "commit" : "repo";
+    const repo = await readRepo(this.cwd, this.on);
+    if (!repo) { this.fail(`${this.cwd} is not inside a git repo.`); return; }
+    const found = await findAgents(this.on);
+    this.agents = found.agents; this.agent = found.agent;
+    if (!this.agent) { this.fail("Tourist needs the claude or codex CLI on PATH, signed in."); return; }
+    this.git = repo;
+    if (repo.changed.length === 0) this.scope = repo.head ? "commit" : "repo";
     this.goStep(1);
-  }
-
-  /** Finds which agent CLIs are installed and picks the last one used, else the first found. */
-  async findAgents() {
-    // Ask the same shell the jobs run in, so PATH matches.
-    const { argv, ps } = await this.shell();
-    const found = await Promise.all(AGENTS.map(a =>
-      exec(argv[0], [...argv.slice(1), ps ? `Get-Command ${a.id} -ErrorAction Stop` : `command -v ${a.id}`], { on: this.on })
-        .then(r => r.code === 0, () => false)));
-    this.agents = AGENTS.filter((_a, i) => found[i]).map(a => a.id);
-    let saved = null;
-    try { saved = localStorage.getItem("agent"); } catch {}
-    this.agent = this.agents.includes(saved) ? saved : this.agents[0] ?? null;
-    return this.agent !== null;
   }
 
   /** Switches to the next installed agent and remembers it. */
   switchAgent() {
     if (this.agents.length < 2) return;
     this.agent = this.agents[(this.agents.indexOf(this.agent) + 1) % this.agents.length];
-    try { localStorage.setItem("agent", this.agent); } catch {}
+    rememberAgent(this.agent);
   }
 
-  agentName() { return AGENTS.find(a => a.id === this.agent)?.name ?? "The agent"; }
+  agentName() { return agentName(this.agent); }
 
   fail(message) { this.phase = "error"; this.error = message; this.busy = null; }
-
-  subject() {
-    const g = this.git;
-    if (this.scope === "branch") return `The changes on branch "${g.branch}" compared with ${g.base} (merge base ${g.mergeBase}), including uncommitted edits. Changed files:\n${g.changed.join("\n")}\nRead the changes with \`git diff ${g.mergeBase} -- <file>\` and the surrounding code as needed. Point the stops at the changed code.`;
-    if (this.scope === "commit") return `The most recent commit (${g.head}). Read it with \`git show HEAD\` and the surrounding code as needed. Point the stops at the changed code.`;
-    if (this.scope === "feature") return `A feature the reader described in their own words: "${this.featureInput.value().trim()}". Find the code that implements it with Grep and Glob. Start the tour where the feature begins (a key, route, command or call) and follow it to where the work happens. If nothing matches, return one stop at the closest code and say so in its body.`;
-    return "The whole repository. Start from the README, the manifests and the entry points.";
-  }
-
-  depthText() { return DEPTHS.find(d => d.id === this.depth)?.text ?? ""; }
-
-  /** The shell that runs an agent job: [argv..., script]. */
-  async shell() {
-    if (window()?.platform !== "windows") return { argv: ["sh", "-c"], ps: false };
-    const pwsh = await exec("pwsh", ["-NoLogo", "-Command", "exit 0"]).then(r => r.code === 0, () => false);
-    return { argv: [pwsh ? "pwsh" : "powershell.exe", "-NoLogo", "-NoProfile", "-Command"], ps: true };
-  }
-
-  /**
-   * One agent call. Follow-ups resume the planning session so the agent keeps what it read.
-   * exec stops anything over 30 s, so the agent runs as a hidden herdr-core terminal
-   * that reads the prompt from a file and writes its reply to another.
-   * Claude: `claude -p`, one JSON reply. Codex: `codex exec` in a read-only sandbox,
-   * JSONL events on stdout (the session id) and its last message in a file.
-   */
-  async askAgent(prompt) {
-    const agent = this.agent, name = this.agentName();
-    const dir = `${appHome()}/data/tourist`.replace(/\\/g, "/");
-    await fs.mkdir(dir, { recursive: true });
-    const id = `${Date.now()}-${(this.jobs = (this.jobs ?? 0) + 1)}`;
-    const inFile = `${dir}/${id}.in.txt`, outFile = `${dir}/${id}.out.json`, errFile = `${dir}/${id}.err.txt`, lastFile = `${dir}/${id}.last.txt`;
-    await writeTextFile(inFile, prompt, null);
-    const flags = agent === "codex"
-      ? ["exec", ...(this.session ? ["resume", this.session, "-c", 'sandbox_mode="read-only"'] : ["--sandbox", "read-only"]), "--json", "-o", lastFile, "-"]
-      : ["-p", "--output-format", "json", ...(this.session ? ["--resume", this.session] : []), ...TOOLS];
-    const { argv, ps } = await this.shell();
-    const q = ps ? (s => `'${s.replace(/'/g, "''")}'`) : (s => `'${s.replace(/'/g, `'\\''`)}'`);
-    const script = ps
-      ? `$OutputEncoding = [Console]::InputEncoding = [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); Get-Content -Raw -Encoding utf8 -LiteralPath ${q(inFile)} | ${agent} ${flags.map(q).join(" ")} 2> ${q(errFile)} | Set-Content -NoNewline -Encoding utf8 -LiteralPath ${q(outFile)}`
-      : `${agent} ${flags.map(q).join(" ")} < ${q(inFile)} > ${q(outFile)} 2> ${q(errFile)}`;
-    const started = await hc(["run", "--bg", "--no-parent", "--outlive-parent", "--cwd", this.git.root ?? "", "--json", "--", ...argv, script]);
-    if (started.code !== 0) throw new Error(started.stderr || `Could not start ${agent}.`);
-    const address = JSON.parse(started.stdout).address;
-    this.job = address;
-    try {
-      for (;;) {
-        const w = await hc(["wait", address, "--timeout", "20", "--json"]);
-        if (w.code !== 0 || JSON.parse(w.stdout).ended) break;
-      }
-    } finally {
-      this.job = null;
-      await hc(["rm", address]).catch(() => {});
-    }
-    const text = ((await readTextFile(outFile)) ?? "").replace(/^﻿/, "");
-    const err = (await readTextFile(errFile)) ?? "";
-    const last = agent === "codex" ? ((await readTextFile(lastFile).catch(() => null)) ?? "").replace(/^﻿/, "") : "";
-    for (const f of [inFile, outFile, errFile, lastFile]) await fs.unlink(f).catch(() => {});
-    if (agent === "codex") {
-      let failure = null;
-      for (const line of text.split(/\r?\n/)) {
-        let ev; try { ev = JSON.parse(line); } catch { continue; }
-        if (ev.type === "thread.started" && ev.thread_id) this.session = ev.thread_id;
-        if (ev.type === "turn.failed" || ev.type === "error") failure = ev.error?.message ?? ev.message ?? failure;
-      }
-      if (failure || !last.trim()) throw new Error(String(failure || err || text || `${name} returned nothing.`).trim().slice(-600));
-      return last;
-    }
-    let out;
-    try { out = JSON.parse(text); }
-    catch { throw new Error((err || text || `${name} returned nothing.`).trim().slice(-600)); }
-    if (out.session_id) this.session = out.session_id;
-    if (out.is_error) throw new Error(String(out.result || `${name} reported an error.`));
-    return String(out.result ?? "");
-  }
 
   start(cx) {
     if (this.phase !== "setup" || !this.git.root) return;
     if (this.scope === "branch" && this.git.changed.length === 0) return;
     if (this.scope === "feature" && !this.featureInput.value().trim()) { this.focusBox(this.featureInput, cx); return; }
     this.leaveBox();
-    this.phase = "planning"; this.session = null;
-    const prompt = [
-      "You are giving a guided code tour inside a desktop app. The reader sees one stop at a time: an excerpt from one file next to your explanation.",
-      `Subject: ${this.subject()}`,
-      `Depth: ${this.depthText()}`,
-      "Read the code you need with your tools. Then reply with ONLY a JSON object, no prose and no code fences, in this shape:",
-      '{"title": "short tour title", "summary": "markdown, 2 to 4 sentences", "stops": [{"file": "repo-relative path with forward slashes", "start": 1, "end": 40, "title": "short stop title", "body": "markdown explanation"}]}',
-      "Rules: 4 to 10 stops (4 to 6 for an overview). Order the stops so each builds on the last, starting where a newcomer should start. Keep each excerpt under 60 lines. Line numbers must match the file as it is on disk now. Only claim what the code you read shows.",
-    ].join("\n\n");
+    this.phase = "planning";
+    const session = this.session = new AgentSession(this.agent, this.git.root);
+    const prompt = planPrompt(subject(this.scope, this.git, this.featureInput.value().trim()), this.depth);
     const gen = this.gen = (this.gen ?? 0) + 1;
     cx.spawn(async cx => {
       try {
-        const plan = parsePlan(await this.askAgent(prompt));
+        const plan = parsePlan(await session.ask(prompt));
         if (gen !== this.gen) return;
         this.plan = plan; this.phase = "tour"; this.show(0, cx);
       } catch (e) { if (gen === this.gen) this.fail(String(e?.message ?? e)); }
@@ -268,31 +138,23 @@ export default class Tourist extends View {
     this.code?.release(); this.code = null; this.codeError = null;
     const s = this.plan.stops[this.idx], idx = this.idx;
     cx.spawn(async cx => {
-      let text = null;
-      try { text = await readTextFile(`${this.git.root}/${s.file}`, { on: this.on }); } catch { text = null; }
+      const excerpt = await readExcerpt(this.git.root, s, this.on);
       if (this.idx !== idx) return;
-      if (text === null) { this.codeError = `Cannot read ${s.file}`; cx.notify(); return; }
-      const lines = text.split(/\r?\n/);
-      const a = Math.max(1, Number(s.start) || 1), b = Math.min(lines.length, Math.max(a, Number(s.end) || a + 40));
-      s.start = a; s.end = b;
-      const excerpt = lines.slice(a - 1, b).join("\n");
-      const t = theme(), ext = s.file.includes(".") ? s.file.split(".").pop() : "txt";
-      this.codeLines = b - a + 1;
-      this.code = EditorState.new({ language: LANG[ext] ?? ext, readonly: true, value: excerpt, line_numbers: false,
-        font_family: settings().font_family, font_size: 12,
-        syntax: { keyword: t.ansi5, string: t.ansi2, comment: t.dim, function: t.ansi4, type: t.ansi3, number: t.ansi1, constant: t.ansi6 } });
+      if (!excerpt) { this.codeError = `Cannot read ${s.file}`; cx.notify(); return; }
+      s.start = excerpt.start; s.end = excerpt.end;
+      this.codeLines = excerpt.end - excerpt.start + 1;
+      this.code = codeState(s.file, excerpt.text);
       cx.notify();
     });
   }
 
   /** Sends a follow-up about the current stop and adds the answer under it. */
   followUp(label, question, cx) {
-    if (this.busy || !this.plan) return;
-    const s = this.plan.stops[this.idx];
+    if (this.busy || !this.plan || !this.session) return;
+    const s = this.plan.stops[this.idx], session = this.session;
     this.busy = label;
-    const prompt = `${question}\n\nThis is about stop ${this.idx + 1}, "${s.title}" (${s.file} lines ${s.start}-${s.end}). Read more code if you need to. Reply in markdown only, under 250 words, with file:line references.`;
     cx.spawn(async cx => {
-      try { s.notes.push({ label, text: await this.askAgent(prompt) }); }
+      try { s.notes.push({ label, text: await session.ask(followUpPrompt(question, s, this.idx + 1)) }); }
       catch (e) { s.notes.push({ label: "Error", text: String(e?.message ?? e) }); }
       this.busy = null; cx.notify();
     });
@@ -342,24 +204,21 @@ export default class Tourist extends View {
   }
 
   /** Code beside the explanation when the pane is wide, unless the s key chose. */
-  isSplit() { return this.split ?? this.width >= 1100; }
+  isSplit() { return this.split ?? this.width >= SPLIT_WIDTH; }
 
   toggleSplit() { this.split = !this.isSplit(); }
 
   openInEditor() {
     const s = this.plan?.stops[this.idx];
-    if (!s) return;
-    const target = `${this.git.root}/${s.file}:${s.start}`;
-    const win = window()?.platform === "windows";
-    exec(win ? "cmd" : "code", win ? ["/c", "code", "-g", target] : ["-g", target]).catch(() => {});
+    if (s) openInEditor(`${this.git.root}/${s.file}`, s.start);
   }
 
   reset(cx) {
     this.gen = (this.gen ?? 0) + 1;
-    if (this.job) { hc(["kill", this.job]).catch(() => {}); this.job = null; }
+    this.session?.stop(); this.session = null;
     this.leaveBox();
     this.code?.release(); this.code = null;
-    this.plan = null; this.session = null; this.busy = null; this.error = null;
+    this.plan = null; this.busy = null; this.error = null;
     this.phase = this.git.root ? "setup" : "error";
     this.goStep(1);
     if (!this.git.root) cx.spawn(async cx => { this.phase = "setup"; await this.detect(); cx.notify(); });
@@ -410,142 +269,9 @@ export default class Tourist extends View {
     const root = v_flex().id("tourist").track_focus(this.handle).on_key_down((e, cx) => this.key(e, cx))
       .size_full().min_h(0).text_color(t.foreground).text_size(13)
       .on_size_change((size, cx) => { if (size.width !== this.width) { this.width = size.width; cx.notify(); } }); // no fill: the pane's own background shows, like a terminal
-    if (this.phase === "setup") return root.child(this.setupView(t, cx));
-    if (this.phase === "planning") return root.child(this.planningView(t));
-    if (this.phase === "error") return root.child(this.errorView(t));
-    return root.child(this.tourView(t, cx));
-  }
-
-  // ---- views ----
-
-  badge(t, letter, on) {
-    return div().w(20).h(20).flex_none().flex().items_center().justify_center().rounded(5).text_size(11).font_semibold()
-      .bg(on ? t.accent : t.raised).text_color(on ? t.accent_foreground : t.muted).child(letter);
-  }
-
-  option(t, id, letter, label, hint, on, here, click) {
-    return h_flex().id(id).gap(10).px(10).py(7).rounded(7).items_center().cursor_pointer()
-      .when(on, el => el.bg(t.selected)).hover(s => s.bg(t.hover))
-      .on_click(click)
-      .child(this.badge(t, letter, on))
-      .child(v_flex().flex_1().min_w(0).gap(1).child(div().font_medium().child(label)).child(div().text_size(11.5).text_color(t.dim).child(hint)));
-  }
-
-  setupView(t, cx) {
-    const g = this.git;
-    const noChanges = g.changed.length === 0;
-    const section = (title) => div().pt(14).pb(6).text_size(11.5).text_color(t.dim).child(title);
-    const head = v_flex()
-      .child(div().text_size(16).font_semibold().child("Tourist"))
-      .child(div().pt(2).text_size(11.5).text_color(t.dim).child(g.root ? `${g.root} · ${g.branch}` : "Finding the repo…"))
-      .when(Boolean(this.agent), el => el.child(h_flex().id("agent").pt(2).gap(4).text_size(11.5).text_color(t.dim)
-        .when(this.agents.length > 1, el => el.cursor_pointer().on_click((_e, cx) => { this.switchAgent(); cx.notify(); }))
-        .child(`Tour by ${this.agentName()}`)
-        .when(this.agents.length > 1, el => el.child(div().text_color(t.accent).child("· a switches")))));
-    // A click works like moving there and pressing enter.
-    const click = (i) => (_e, cx) => { this.leaveBox(); this.cursor = i; this.pick(cx); cx.notify(); };
-    let rows, title, help;
-    if (this.step === 1) {
-      title = "Step 1 of 2 · What to tour";
-      rows = SCOPES.map((s, i) => {
-        const hint = s.id === "branch" ? (g.base ? (noChanges ? `no changes vs ${g.base}` : `${g.changed.length} files vs ${g.base}`) : "no base branch found")
-          : s.id === "commit" ? (g.head || s.hint) : s.hint;
-        return this.option(t, `scope-${s.id}`, s.key, s.label, hint, this.cursor === i, this.cursor === i, click(i));
-      });
-      const onFeature = SCOPES[this.cursor]?.id === "feature";
-      if (onFeature) {
-        const box = div().pl(40).pr(10).pt(2).pb(6).child(Input.new(this.featureInput).h(32).px(10).rounded(8).border_1()
-          .border_color(this.typing === "feature" ? t.accent : t.input).bg(t.background).text_size(12.5));
-        rows.splice(this.cursor + 1, 0, box);
-      }
-      help = this.typing === "feature" ? "type the feature · enter next · tab or esc back to the list"
-        : onFeature ? "j/k move · tab types · enter next" : "j/k move · enter next";
-    } else {
-      const s = SCOPES.find(s => s.id === this.scope);
-      title = "Step 2 of 2 · How deep";
-      rows = DEPTHS.map((d, i) => this.option(t, `depth-${d.id}`, d.key, d.label, d.text.split(". ")[0], this.cursor === i, this.cursor === i, click(i)));
-      rows.unshift(div().pb(8).text_size(12).text_color(t.muted)
-        .child(`Touring: ${s?.label ?? ""}${this.scope === "feature" ? ` · "${this.featureInput.value().trim()}"` : ""}`));
-      help = "j/k move · enter starts the tour · esc back";
-    }
-    return v_flex().id("setup").flex_1().min_h(0).overflow_y_scrollbar().p(18)
-      .child(head)
-      .child(section(title))
-      .children(rows)
-      .child(div().pt(14).text_size(11.5).text_color(t.dim).child(help));
-  }
-
-  planningView(t) {
-    const scope = SCOPES.find(s => s.id === this.scope)?.label ?? "";
-    return v_flex().flex_1().items_center().justify_center().gap(8).p(24)
-      .child(div().text_size(22).text_color(t.accent).frames(SPINNER, 90).child(SPINNER[0]))
-      .child(div().font_medium().child(`${this.agentName()} is planning the tour`))
-      .child(div().text_size(11.5).text_color(t.dim).child(`${scope} · ${this.depth}. Usually 30 to 90 seconds, longer for a whole repo.`))
-      .child(div().pt(6).text_size(11.5).text_color(t.dim).child("q or esc cancels"));
-  }
-
-  errorView(t) {
-    return v_flex().flex_1().p(18).gap(10)
-      .child(div().font_semibold().text_color(t.ansi1).child("Tour stopped"))
-      .child(div().text_size(12).text_color(t.muted).child(this.error ?? ""))
-      .child(div().text_size(11.5).text_color(t.dim).child("enter or q to start over"));
-  }
-
-  tourView(t, cx) {
-    const plan = this.plan, s = plan.stops[this.idx], last = plan.stops.length - 1;
-    const codeHeight = Math.min(360, Math.max(80, this.codeLines * 17 + 24));
-    const header = h_flex().px(14).py(10).gap(10).items_center().border_b_1().border_color(t.border)
-      .child(div().text_size(11.5).text_color(t.dim).child(`${this.idx + 1} / ${plan.stops.length}`))
-      .child(div().flex_1().min_w(0).truncate().font_semibold().child(s.title))
-      .child(div().max_w(200).truncate().text_size(11.5).text_color(t.dim).child(plan.title ?? ""));
-    const fileLine = h_flex().id("file").px(14).py(6).gap(8).items_center().cursor_pointer()
-      .hover(st => st.bg(t.hover)).on_click(() => this.openInEditor())
-      .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.accent).font_family(settings().font_family).child(s.file))
-      .child(div().text_size(11.5).text_color(t.dim).child(`lines ${s.start}–${s.end}  ·  o opens`));
-    const code = div().flex_1().min_h(0).mx(14).mb(4).rounded(8).border_1().border_color(t.border).bg(t.background).overflow_hidden()
-      .child(this.code ? Editor.new(this.code).size_full() : div().p(10).text_size(12).text_color(t.dim).child(this.codeError ?? "Loading…"));
-    const notes = s.notes.map((n, i) => v_flex().gap(4).pt(6).border_t_1().border_color(t.border)
-      .child(div().text_size(11.5).font_semibold().text_color(t.accent).child(n.label))
-      .child(TextView.markdown(`note-${this.idx}-${i}`, n.text).selectable()));
-    // Cap the line length so long explanations stay readable in wide panes.
-    const body = v_flex().w_full().max_w(680).gap(10)
-      .when(this.idx === 0 && Boolean(plan.summary), el => el.child(v_flex().p(10).rounded(8).bg(t.raised)
-        .child(TextView.markdown("summary", String(plan.summary)).selectable())))
-      .child(TextView.markdown(`body-${this.idx}`, String(s.body ?? "")).selectable())
-      .children(notes)
-      .when(Boolean(this.busy), el => el.child(h_flex().gap(8).items_center().text_color(t.dim)
-        .child(div().text_color(t.accent).frames(SPINNER, 90).child(SPINNER[0]))
-        .child(div().text_size(12).child(`${this.busy}…`))));
-    const explain = v_flex().id(`explain-${this.idx}`).flex_1().min_h(0).overflow_y_scrollbar().px(14).py(12).child(body);
-    // The ask box is only drawn while asking, so tour keys can never land in it.
-    const ask = div().px(14).pb(8).child(Input.new(this.input).h(32).px(10).rounded(8).border_1()
-      .border_color(t.accent).bg(t.background).text_size(12.5));
-    const btn = (id, label, keyHint, enabled, click) => h_flex().id(id).h(28).px(10).gap(6).items_center().rounded(7)
-      .border_1().border_color(t.border).bg(t.raised).text_size(12)
-      .text_color(enabled ? t.foreground : t.dim)
-      .when(enabled, el => el.cursor_pointer().hover(st => st.bg(t.hover)).on_click(click))
-      .child(div().text_color(t.accent).child(keyHint)).child(label);
-    const free = !this.busy;
-    const bar = h_flex().px(14).py(10).gap(6).flex_wrap().border_t_1().border_color(t.border)
-      .child(btn("prev", "Back", "b", this.idx > 0, (_e, cx) => { this.show(this.idx - 1, cx); cx.notify(); }))
-      .child(btn("next", this.idx === last ? "Last stop" : "Next", "n", this.idx < last, (_e, cx) => { this.show(this.idx + 1, cx); cx.notify(); }))
-      .child(btn("deeper", "Deeper", "d", free, (_e, cx) => { this.deeper(cx); cx.notify(); }))
-      .child(btn("tech", "More technical", "t", free, (_e, cx) => { this.technical(cx); cx.notify(); }))
-      .child(btn("askbtn", "Ask", "a", free, (_e, cx) => { this.startAsking(cx); cx.notify(); }))
-      .child(btn("layout", this.isSplit() ? "Stacked" : "Split", "s", true, (_e, cx) => { this.toggleSplit(); cx.notify(); }))
-      .child(btn("restart", "New tour", "q", true, (_e, cx) => { this.reset(cx); cx.notify(); }));
-    // Code and explanation sit in a resizable group: drag the line between them.
-    // The group remembers each layout's sizes under its id.
-    const codeSide = v_flex().size_full().min_h(0).child(fileLine).child(code);
-    const textSide = v_flex().size_full().min_h(0).child(explain).when(this.asking, el => el.child(ask));
-    const panes = this.isSplit()
-      ? h_resizable("tour-split").size_full()
-        .child(resizable_panel().size(560).size_range(200).child(codeSide.pb(8)))
-        .child(resizable_panel().size_range(240).child(textSide))
-      : v_resizable("tour-stack").size_full()
-        .child(resizable_panel().size(codeHeight + 34).size_range(80).child(codeSide))
-        .child(resizable_panel().size_range(80).child(textSide));
-    return v_flex().flex_1().min_h(0).child(header)
-      .child(div().flex_1().min_h(0).child(panes)).child(bar);
+    if (this.phase === "setup") return root.child(setupView(this, t));
+    if (this.phase === "planning") return root.child(planningView(this, t));
+    if (this.phase === "error") return root.child(errorView(this, t));
+    return root.child(tourView(this, t));
   }
 }
