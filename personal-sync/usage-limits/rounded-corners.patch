@@ -1,0 +1,13 @@
+--- a/mods/usage-limits/main.js
++++ b/mods/usage-limits/main.js
+@@ -179,8 +179,8 @@
+     const numbers = sessionOnBar(this.session?.data, prefs);
+     const numbersWidth = numbers.reduce((w, n) => w + 7 * n.text.length + 14, numbers.length ? 14 : 0);
+     const density = chooseDensity(model, this.width ? this.width - 24 - numbersWidth : Infinity, prefs.showBars);
+-    const root = h_flex().id("root").size_full().px(12).items_center().justify_end().overflow_hidden()
+-      .bg(t.chrome).border_t(1).border_color(t.border).text_size(11.8).text_color(t.muted)
++    const root = h_flex().id("root").size_full().px(12).items_center().justify_end().rounded(13).overflow_hidden()
++      .bg(t.chrome).text_size(11.8).text_color(t.muted)
+       .on_size_change((size, cx) => { this.width = size.width; cx.notify(); });
+     // Only the limits themselves open the panel, not the empty rest of the block.
+     const content = h_flex().id("ul-content").gap(14).items_center().flex_none().on_hover((on, cx) => this.hover(on, cx));
