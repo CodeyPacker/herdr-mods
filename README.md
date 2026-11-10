@@ -52,6 +52,14 @@ Claude or Codex gives you a guided tour of your code. Press `ctrl-shift-g`, pick
 
 `n` next, `b` back, `d` deeper, `t` more technical, `a` ask, `o` open in VS Code, `s` switches between split and stacked (wide panes start split), `z` zooms the pane to full size and back, `q` ends the tour. `a` on the setup screen switches between Claude and Codex. Needs the `claude` or `codex` CLI signed in, and `gh` signed in for pull requests.
 
+## zen
+
+VS Code's zen mode for Herdr. Press `ctrl-shift-enter` (`cmd-shift-enter` on macOS) and everything but your panes goes away: sidebar, tab bar, status bars, side panels. Press it again and it all comes back. Works in any layout.
+
+![zen](zen/preview.png)
+
+Anything you'd already hidden stays hidden when you leave zen. If your layout draws its own window buttons in the tab bar, those hide too until you press the key again.
+
 ## Install
 
 ### Tell your agent
@@ -75,6 +83,13 @@ tourist:
 ```text
 Read ~/.config/herdr-app/AGENTS.md, then add this mod:
 https://github.com/CodeyPacker/herdr-mods/tree/main/tourist
+```
+
+zen:
+
+```text
+Read ~/.config/herdr-app/AGENTS.md, then add this mod:
+https://github.com/CodeyPacker/herdr-mods/tree/main/zen
 ```
 
 islands:
