@@ -6,18 +6,28 @@
 //   plan.js       the prompts and reading the tour plan
 //   code.js       a stop's lines, its editor, opening VS Code
 //   ui.js         shared buttons, rows and inputs
+//   files.js      grouping the PR's files for the file list
 //   views/        the setup, tour, planning and error screens
 import { View } from "gpui-kit";
 import { v_flex, InputState } from "gpui-base";
-import { theme, nextCommand, props } from "herdr";
+import { theme, nextCommand, props, run } from "herdr";
 import { SCOPES, DEPTHS, SPLIT_WIDTH } from "./constants.js";
-import { startFolder, readRepo } from "./git.js";
+import { startFolder, readRepo, git } from "./git.js";
 import { AgentSession, agentName, findAgents, rememberAgent } from "./agent.js";
-import { subject, planPrompt, followUpPrompt, parsePlan } from "./plan.js";
-import { readExcerpt, codeState, openInEditor } from "./code.js";
+import { subject, planPrompt, prSubject, prPlanPrompt, followUpPrompt, filePrompt, fixPrompt, fixReplyPrompt, parsePlan } from "./plan.js";
+import { readExcerpt, codeState, openInEditor, openUrl } from "./code.js";
+import { listPRs, loadPR, prFileDiff, prFileStats, listThreads } from "./pr.js";
+import { groupFiles } from "./files.js";
+import { diffRows, rowsInRange, splitDiff } from "./diff.js";
+import { openWorktree, worktreeDiff, pushFix, removeWorktree } from "./worktree.js";
+import { commentKey, loadComments, saveComments, loadViewed, saveViewed, sideOf, rangeOf } from "./comments.js";
+import { planKey, loadSavedPlan, savePlan, dropSavedPlan } from "./saved.js";
 import { setupView } from "./views/setup.js";
 import { tourView } from "./views/tour.js";
 import { planningView, errorView } from "./views/status.js";
+import { fixView } from "./views/fix.js";
+import { postReview, eventsFor, DEFAULT_SUMMARY } from "./review.js";
+import { reviewView } from "./views/review.js";
 
 export default class Tourist extends View {
   init(_props, cx) {
@@ -25,11 +35,29 @@ export default class Tourist extends View {
     this.cwd = props()?.folder ?? start.cwd; this.on = start.on;
     this.phase = "setup"; this.scope = "branch"; this.depth = "normal";
     this.git = { root: null, branch: "", base: null, mergeBase: null, changed: [], head: "" };
-    this.plan = null; this.idx = 0; this.code = null; this.codeLines = 0; this.codeError = null;
+    this.plan = null; this.idx = 0; this.code = null; this.codeError = null;
     this.session = null;  // the AgentSession of the tour in progress
     this.busy = null; this.error = null;
     this.agents = []; this.agent = null; // installed agent ids, and the one tours use
-    this.step = 1;       // setup step: 1 what to tour, 2 how deep
+    this.step = "scope"; // setup step: "scope" what to tour, "pr" which pull request, "depth" how deep
+    this.prs = null; this.prsError = null; // the open PRs, loaded when the PR step opens (again after a failure)
+    this.prNumber = null; this.pr = null;  // the picked PR, and its details once the tour starts
+    this.diff = null;     // the stop's diff rows, on PR tours
+    this.planNote = null; // what planning is waiting on before the agent starts
+    this.comments = [];   // line comments on the PR, saved by comments.js
+    this.commenting = null; // { file, line, side, code, anchor, editId? } while the comment box is open
+    this.threads = [];      // comment threads already on the PR on GitHub, read-only
+    this.files = null;      // every file the PR changes, grouped for the file list (files.js)
+    this.viewed = {};       // files marked viewed on this PR: { file: the head commit it was marked at }
+    this.other = null;      // a PR file the tour doesn't stop at, while it's open instead of a stop
+    this.showFiles = true;  // the file list beside a PR tour, toggled with l
+    // The fix run on a PR: { phase: "running" | "ready" | "failed" | "pushing" | "pushed",
+    // count, note, path, summary, replies, files, error, confirm }. Shown when phase is "fix".
+    // replies: [{ text, answer }], the reader's replies to the fix agent and what it said back.
+    this.fix = null; this.fixSession = null;
+    this.replying = false; // the fix screen's reply box only exists while replying
+    // Posting the comments to GitHub: { phase: "editing" | "posting" | "posted", cursor, confirm, url, error }.
+    this.review = null;
     this.cursor = 0;      // highlighted row in the current step
     this.split = null;    // null: split when the pane is wide enough. true or false: the s key chose
     this.width = 0;       // the pane width, from on_size_change
@@ -37,6 +65,9 @@ export default class Tourist extends View {
     this.typing = null;   // "ask" | "feature" while a text box has the keyboard
     this.input = this.textBox("ask", "Ask about this stop, then press enter", cx => this.ask(cx));
     this.featureInput = this.textBox("feature", "e.g. how a space gets its hint letter", cx => this.pick(cx));
+    this.commentInput = this.textBox("comment", "Comment on this line, then press enter", cx => this.saveComment(cx));
+    this.summaryInput = this.textBox("summary", DEFAULT_SUMMARY, () => this.leaveBox());
+    this.replyInput = this.textBox("reply", "Reply to the agent, then press enter", cx => this.replyFix(cx));
     this.handle = cx.focus_handle();
     // The pane isn't drawn yet, so focus again once it is.
     this.handle.focus();
@@ -62,44 +93,56 @@ export default class Tourist extends View {
 
   /** Takes the keyboard back from a text box. */
   leaveBox() {
-    this.typing = null; this.asking = false;
+    this.typing = null; this.asking = false; this.commenting = null; this.replying = false;
     this.handle.focus();
   }
 
   async close() {
-    this.code?.release(); this.input.release(); this.featureInput.release();
-    await this.session?.stop();
+    this.code?.release(); this.input.release(); this.featureInput.release(); this.commentInput.release(); this.summaryInput.release(); this.replyInput.release();
+    await this.session?.stop(); await this.fixSession?.stop();
   }
 
   /** `tourist.<name>` commands: focus, start, next, prev, deeper, technical, open, reset, agent, scope-<id>, depth-<id>. */
   command(c, cx) {
     if (c === "focus") this.handle.focus();
-    else if (c.startsWith("scope-")) { this.scope = c.slice(6); this.goStep(1); }
-    else if (c.startsWith("depth-")) { this.depth = c.slice(6); this.goStep(2); }
-    else if (c === "down") this.moveCursor(1);
-    else if (c === "up") this.moveCursor(-1);
+    else if (c.startsWith("scope-")) { this.scope = c.slice(6); this.goStep("scope"); }
+    else if (c.startsWith("depth-")) { this.depth = c.slice(6); this.goStep("depth"); }
+    else if (c === "down") this.phase === "tour" ? this.move(1, cx) : this.moveCursor(1);
+    else if (c === "up") this.phase === "tour" ? this.move(-1, cx) : this.moveCursor(-1);
     else if (c === "pick") this.pick(cx);
-    else if (c === "back") this.goStep(1);
+    else if (c === "back") this.back();
     else if (c === "start") this.start(cx);
-    else if (c === "next") this.show(this.idx + 1, cx);
-    else if (c === "prev") this.show(this.idx - 1, cx);
+    else if (c === "next") this.move(1, cx);
+    else if (c === "prev") this.move(-1, cx);
     else if (c === "deeper") this.deeper(cx);
     else if (c === "technical") this.technical(cx);
     else if (c === "open") this.openInEditor();
     else if (c === "reset") this.reset(cx);
     else if (c === "agent") this.switchAgent();
+    else if (c === "fix") this.startFix(cx);
+    else if (c === "fix-back") this.closeFix();
+    else if (c === "fix-discard") this.discardFix(cx);
+    else if (c === "review") this.startReview(cx);
+    else if (c === "review-back") this.closeReview();
+    else if (c === "explain") this.explainFile(cx);
+    else if (c === "viewed") this.toggleViewed(this.currentFile(), cx);
+    else if (c.startsWith("file-") && this.files) {
+      // file-<n>: the nth file in the list, counting down from the top
+      const f = [...this.files.tour, ...this.files.also, ...this.files.side][Number(c.slice(5)) - 1];
+      if (f) this.openFile(f, cx);
+    }
   }
 
   async detect() {
     if (!this.cwd) { this.fail("No folder to tour. Open Tourist from a terminal inside a repo."); return; }
-    const repo = await readRepo(this.cwd, this.on);
+    // Both take a moment on Windows and don't depend on each other.
+    const [repo, found] = await Promise.all([readRepo(this.cwd, this.on), findAgents(this.on)]);
     if (!repo) { this.fail(`${this.cwd} is not inside a git repo.`); return; }
-    const found = await findAgents(this.on);
     this.agents = found.agents; this.agent = found.agent;
     if (!this.agent) { this.fail("Tourist needs the claude or codex CLI on PATH, signed in."); return; }
     this.git = repo;
     if (repo.changed.length === 0) this.scope = repo.head ? "commit" : "repo";
-    this.goStep(1);
+    this.goStep("scope");
   }
 
   /** Switches to the next installed agent and remembers it. */
@@ -117,16 +160,41 @@ export default class Tourist extends View {
     if (this.phase !== "setup" || !this.git.root) return;
     if (this.scope === "branch" && this.git.changed.length === 0) return;
     if (this.scope === "feature" && !this.featureInput.value().trim()) { this.focusBox(this.featureInput, cx); return; }
+    if (this.scope === "pr" && !this.prNumber) return;
     this.leaveBox();
     this.phase = "planning";
     const session = this.session = new AgentSession(this.agent, this.git.root);
-    const prompt = planPrompt(subject(this.scope, this.git, this.featureInput.value().trim()), this.depth);
     const gen = this.gen = (this.gen ?? 0) + 1;
     cx.spawn(async cx => {
       try {
-        const plan = parsePlan(await session.ask(prompt));
+        let prompt, plan = null, head = null;
+        const feature = this.featureInput.value().trim();
+        if (this.scope === "pr") {
+          this.planNote = `Fetching PR #${this.prNumber}`; cx.notify();
+          const pr = await loadPR(this.git.root, this.on, this.prNumber);
+          if (gen !== this.gen) return;
+          this.pr = pr; this.planNote = null; head = pr.headOid;
+          this.comments = await loadComments(commentKey(this.git.root, pr.number));
+          this.viewed = await loadViewed(commentKey(this.git.root, pr.number));
+          this.loadThreads(cx);
+          cx.notify();
+          prompt = prPlanPrompt(prSubject(pr), this.depth);
+        } else {
+          // HEAD now, not when Tourist opened, so a commit made since then plans again.
+          head = await git(["rev-parse", "HEAD"], { cwd: this.git.root, on: this.on });
+          prompt = planPrompt(subject(this.scope, this.git, feature), this.depth);
+        }
+        // The same tour of the same commit at the same depth was planned before: reuse it,
+        // and its agent session when the agent matches.
+        this.savedKey = planKey({ root: this.git.root, scope: this.scope, depth: this.depth, head, pr: this.pr, feature });
+        const saved = this.savedKey ? await loadSavedPlan(this.savedKey) : null;
+        if (gen !== this.gen) return;
+        if (saved) { plan = saved.plan; plan.savedAt = saved.saved; if (saved.agent === session.agent) session.id = saved.session; }
+        if (!plan) plan = parsePlan(await session.ask(prompt));
         if (gen !== this.gen) return;
         this.plan = plan; this.phase = "tour"; this.show(0, cx);
+        if (this.pr) this.loadFiles(cx);
+        if (!plan.savedAt) this.storePlan();
       } catch (e) { if (gen === this.gen) this.fail(String(e?.message ?? e)); }
       cx.notify();
     });
@@ -135,14 +203,25 @@ export default class Tourist extends View {
   show(i, cx) {
     if (!this.plan) return;
     this.idx = Math.max(0, Math.min(i, this.plan.stops.length - 1));
-    this.code?.release(); this.code = null; this.codeError = null;
+    this.other = null;
+    this.code?.release(); this.code = null; this.codeError = null; this.diff = null;
+    if (this.commenting) this.leaveBox();
     const s = this.plan.stops[this.idx], idx = this.idx;
     cx.spawn(async cx => {
+      // A PR isn't on disk: show the stop's part of the file's diff instead.
+      if (this.pr) {
+        const text = await prFileDiff(this.git.root, this.on, this.pr, s.file);
+        if (this.idx !== idx) return;
+        const rows = text ? rowsInRange(diffRows(text), Number(s.start) || 1, Number(s.end) || Infinity) : [];
+        if (rows.length === 0) this.codeError = `No changes to ${s.file} in this PR`;
+        else this.diff = rows;
+        cx.notify();
+        return;
+      }
       const excerpt = await readExcerpt(this.git.root, s, this.on);
       if (this.idx !== idx) return;
       if (!excerpt) { this.codeError = `Cannot read ${s.file}`; cx.notify(); return; }
       s.start = excerpt.start; s.end = excerpt.end;
-      this.codeLines = excerpt.end - excerpt.start + 1;
       this.code = codeState(s.file, excerpt.text);
       cx.notify();
     });
@@ -151,17 +230,112 @@ export default class Tourist extends View {
   /** Sends a follow-up about the current stop and adds the answer under it. */
   followUp(label, question, cx) {
     if (this.busy || !this.plan || !this.session) return;
-    const s = this.plan.stops[this.idx], session = this.session;
+    const s = this.plan.stops[this.idx], session = this.session, other = this.other;
+    const file = other ?? s.file, notes = other ? this.otherNotes(other) : s.notes;
     this.busy = label;
     cx.spawn(async cx => {
-      try { s.notes.push({ label, text: await session.ask(followUpPrompt(question, s, this.idx + 1)) }); }
-      catch (e) { s.notes.push({ label: "Error", text: String(e?.message ?? e) }); }
+      const comments = this.comments.filter(c => c.file === file);
+      let prompt = other ? filePrompt(question, other, this.pr, comments) : followUpPrompt(question, s, this.idx + 1, comments);
+      // A reused tour whose agent session couldn't be kept starts fresh, so say what it's about.
+      if (!session.id) prompt = `This is part of a guided tour. Subject: ${this.pr ? prSubject(this.pr) : subject(this.scope, this.git, this.featureInput.value().trim())}\n\n${prompt}`;
+      try { notes.push({ label, text: await session.ask(prompt) }); this.storePlan(); }
+      catch (e) { notes.push({ label: "Error", text: String(e?.message ?? e) }); }
       this.busy = null; cx.notify();
     });
   }
 
-  deeper(cx) { this.followUp("Deeper", "Go deeper on this stop: what else in this file and the code it calls matters here?", cx); }
-  technical(cx) { this.followUp("More technical", "Explain this stop again, more technically: exact mechanisms, types, data flow and edge cases.", cx); }
+  /** The file whose code is showing: the open other file, or the current stop's. */
+  currentFile() { return this.other ?? this.plan?.stops[this.idx]?.file ?? null; }
+
+  /** The answers about a file the tour doesn't stop at. Kept in the plan, so they're saved with it. */
+  otherNotes(file) {
+    const all = this.plan.fileNotes ??= {};
+    return all[file] ??= [];
+  }
+
+  /** Loads every file the PR changes for the file list. A failure just leaves the list empty. */
+  loadFiles(cx) {
+    const pr = this.pr, plan = this.plan;
+    this.files = null;
+    cx.spawn(async cx => {
+      const stats = await prFileStats(this.git.root, this.on, pr).catch(() => []);
+      if (this.pr === pr && this.plan === plan) { this.files = groupFiles(stats, plan.stops); cx.notify(); }
+    });
+  }
+
+  /** Opens a file from the list: a tour file goes to its first stop, any other shows its whole diff. */
+  openFile(f, cx) {
+    if (f.stop !== undefined) { this.show(f.stop, cx); return; }
+    if (!this.pr) return;
+    this.other = f.file;
+    this.code?.release(); this.code = null; this.codeError = null; this.diff = null;
+    if (this.commenting) this.leaveBox();
+    const file = f.file;
+    cx.spawn(async cx => {
+      const text = await prFileDiff(this.git.root, this.on, this.pr, file);
+      if (this.other !== file) return;
+      const rows = text ? rowsInRange(diffRows(text), 1, Infinity) : [];
+      if (rows.length === 0) this.codeError = f.add === null ? `${file} is a binary file` : `No changes to ${file} in this PR`;
+      else this.diff = rows;
+      cx.notify();
+    });
+  }
+
+  /** The files after the tour stops, in list order: "Also changed", then tests, docs and generated. */
+  laterFiles() { return this.files ? [...this.files.also, ...this.files.side] : []; }
+
+  /**
+   * Where j (1) or k (-1) goes: the tour stops in order, then on into the other files in the
+   * list after the last stop, and back the same way.
+   */
+  moveTarget(dir) {
+    const later = this.laterFiles(), last = (this.plan?.stops.length ?? 0) - 1;
+    if (this.other) {
+      const j = later.findIndex(f => f.file === this.other) + dir;
+      return j < 0 ? { stop: last } : j < later.length ? { file: later[j] } : null;
+    }
+    const i = this.idx + dir;
+    if (i >= 0 && i <= last) return { stop: i };
+    return dir > 0 && later.length ? { file: later[0] } : null;
+  }
+
+  move(dir, cx) {
+    const to = this.moveTarget(dir);
+    if (to?.file) this.openFile(to.file, cx);
+    else if (to) this.show(to.stop, cx);
+  }
+
+  explainFile(cx) { if (this.other) this.followUp("Explain", "Explain what changed in this file, why, and how it connects to the rest of the PR.", cx); }
+
+  /** Loads the comment threads already on the PR from GitHub. Shown read-only; a failure just shows none. */
+  loadThreads(cx) {
+    const pr = this.pr;
+    this.threads = [];
+    cx.spawn(async cx => {
+      const threads = await listThreads(pr, this.git.root, this.on).catch(() => []);
+      if (this.pr === pr) { this.threads = threads; cx.notify(); }
+    });
+  }
+
+  /** Saves the tour's plan and answers so reopening it skips planning. Branch tours have no key and aren't saved. */
+  storePlan() {
+    if (!this.savedKey || !this.plan) return;
+    const { savedAt, ...plan } = this.plan;
+    savePlan(this.savedKey, plan, this.session?.agent ?? this.agent, this.session?.id ?? null).catch(() => {});
+  }
+
+  /** Throws away the saved plan and plans the tour again. */
+  replan(cx) {
+    if (!this.savedKey || this.busy || this.phase !== "tour") return;
+    const key = this.savedKey;
+    this.session?.stop();
+    this.code?.release(); this.code = null; this.diff = null;
+    this.plan = null; this.files = null; this.other = null; this.phase = "setup"; this.step = "depth";
+    cx.spawn(async cx => { await dropSavedPlan(key); this.start(cx); cx.notify(); });
+  }
+
+  deeper(cx) { this.followUp("Deeper", "Go deeper here: what else in this file and the code it calls matters?", cx); }
+  technical(cx) { this.followUp("More technical", "Explain this again, more technically: exact mechanisms, types, data flow and edge cases.", cx); }
   ask(cx) {
     const q = this.input.value().trim();
     if (!q || this.busy) return;
@@ -170,33 +344,267 @@ export default class Tourist extends View {
     this.followUp(`You asked: ${q}`, q, cx);
   }
 
+  /**
+   * Opens the comment box under a diff line of the current stop. With shift held and a
+   * comment already open on this stop, it stretches that comment from the line first
+   * clicked (`anchor`) to this one instead, keeping what was typed.
+   */
+  startComment(row, cx, { index = -1, shift = false } = {}) {
+    const file = this.currentFile(), rows = this.diff ?? [];
+    if (!this.pr || !file || row.number === undefined) return;
+    this.asking = false;
+    const open = this.commenting;
+    if (shift && open?.file === file && open.anchor >= 0 && index >= 0) {
+      const [a, b] = rangeOf(rows, open.anchor, index);
+      const lines = rows.slice(a, b + 1).filter(r => r.number !== undefined);
+      const first = rows[a], last = rows[b];
+      this.commenting = { file, anchor: open.anchor, line: last.number, side: sideOf(last), code: lines.map(r => r.text).join("\n") };
+      if (a !== b) Object.assign(this.commenting, { startLine: first.number, startSide: sideOf(first) });
+    } else {
+      this.commenting = { file, anchor: index, line: row.number, side: sideOf(row), code: row.text };
+      this.commentInput.set_value("");
+    }
+    this.focusBox(this.commentInput, cx);
+  }
+
+  /** Reopens a saved comment in the box to change its text. */
+  startEdit(comment, cx) {
+    if (!this.pr) return;
+    this.asking = false;
+    const { id, text, created, ...where } = comment;
+    this.commenting = { ...where, anchor: -1, editId: id };
+    this.commentInput.set_value(text);
+    this.focusBox(this.commentInput, cx);
+  }
+
+  /** Saves the open comment, or the edit of a saved one. An empty box just closes. */
+  saveComment(cx) {
+    const text = this.commentInput.value().trim(), at = this.commenting;
+    this.commentInput.set_value("");
+    this.leaveBox();
+    if (!text || !at || !this.pr) return;
+    if (at.editId) {
+      this.comments = this.comments.map(c => c.id === at.editId ? { ...c, text } : c);
+      this.storeComments(cx);
+      return;
+    }
+    const { anchor, ...where } = at; // the anchor only means something while the box is open
+    this.comments.push({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, ...where, text, created: new Date().toISOString() });
+    this.storeComments(cx);
+  }
+
+  deleteComment(comment, cx) {
+    this.comments = this.comments.filter(c => c.id !== comment.id);
+    this.storeComments(cx);
+  }
+
+  /** True when the file was marked viewed at the PR's current head. */
+  isViewed(file) { return Boolean(this.pr) && this.viewed[file] === this.pr.headOid; }
+
+  /** Marks a file viewed, or clears the mark. Saved per PR. */
+  toggleViewed(file, cx) {
+    if (!this.pr || !file) return;
+    const viewed = { ...this.viewed };
+    if (this.isViewed(file)) delete viewed[file]; else viewed[file] = this.pr.headOid;
+    this.viewed = viewed;
+    const key = commentKey(this.git.root, this.pr.number);
+    cx.spawn(async () => { await saveViewed(key, viewed).catch(() => {}); });
+  }
+
+  storeComments(cx) {
+    const key = commentKey(this.git.root, this.pr.number), list = this.comments;
+    cx.spawn(async () => { await saveComments(key, list).catch(() => {}); });
+  }
+
+  /**
+   * Opens the fix screen. The first time, an agent with edit tools works through every
+   * saved comment in a worktree on the PR's commit. Later, it shows that run's result.
+   */
+  startFix(cx) {
+    if (!this.pr?.mine) return; // never edit someone else's PR
+    if (this.fix && this.fix.phase !== "pushed") { this.leaveBox(); this.phase = "fix"; return; }
+    if (this.comments.length === 0 || this.busy) return;
+    this.leaveBox();
+    const pr = this.pr, comments = [...this.comments];
+    const fix = this.fix = { phase: "running", count: comments.length, note: "Creating a worktree", path: null, replies: [] };
+    this.phase = "fix";
+    cx.spawn(async cx => {
+      try {
+        fix.path = await openWorktree(this.git.root, this.on, pr);
+        fix.note = `${this.agentName()} is working through ${comments.length} comment${comments.length === 1 ? "" : "s"}`; cx.notify();
+        const session = this.fixSession = new AgentSession(this.agent, fix.path, { write: true });
+        fix.summary = await session.ask(fixPrompt(pr, comments));
+        fix.files = splitDiff(await worktreeDiff(fix.path, this.on));
+        fix.phase = "ready";
+      } catch (e) { fix.phase = "failed"; fix.error = String(e?.message ?? e); }
+      cx.notify();
+    });
+  }
+
+  /** Opens the reply box on the fix screen, once the agent has finished a run. */
+  startReply(cx) {
+    const fix = this.fix;
+    if (!fix || !this.fixSession?.id || (fix.phase !== "ready" && fix.phase !== "failed")) return;
+    this.replying = true;
+    this.focusBox(this.replyInput, cx);
+  }
+
+  /** Sends the reader's reply into the fix agent's session, so it keeps editing the same worktree. */
+  replyFix(cx) {
+    const fix = this.fix, session = this.fixSession, text = this.replyInput.value().trim();
+    if (!text || !fix || !session || (fix.phase !== "ready" && fix.phase !== "failed")) return;
+    this.replyInput.set_value("");
+    this.leaveBox();
+    fix.phase = "running"; fix.error = null; fix.confirm = false;
+    fix.note = `${this.agentName()} is working on your reply`;
+    const reply = { text, answer: null };
+    fix.replies.push(reply);
+    cx.spawn(async cx => {
+      try {
+        reply.answer = await session.ask(fixReplyPrompt(text));
+        fix.files = splitDiff(await worktreeDiff(fix.path, this.on));
+      } catch (e) { fix.error = String(e?.message ?? e); }
+      fix.phase = "ready";
+      cx.notify();
+    });
+  }
+
+  closeFix() { this.phase = this.plan ? "tour" : "setup"; if (this.fix) this.fix.confirm = false; }
+
+  /** Commits the fix and pushes it to the PR's branch. The first press only asks for a second one. */
+  pushFix(cx) {
+    const fix = this.fix, pr = this.pr;
+    if (!fix || !pr || fix.phase !== "ready" || !fix.files?.length) return;
+    if (!fix.confirm) { fix.confirm = true; return; }
+    fix.confirm = false; fix.phase = "pushing"; fix.error = null;
+    cx.spawn(async cx => {
+      try {
+        await pushFix(fix.path, this.on, pr, `Address review comments on #${pr.number}`);
+        fix.phase = "pushed";
+        await removeWorktree(this.git.root, this.on, pr);
+        if (this.pr === pr) { this.comments = []; this.storeComments(cx); }
+      } catch (e) { fix.phase = "ready"; fix.error = `Push failed: ${String(e?.message ?? e)}`; }
+      cx.notify();
+    });
+  }
+
+  /** Throws the fix away: the worktree and its branch are deleted. The comments stay. */
+  discardFix(cx) {
+    const fix = this.fix, pr = this.pr;
+    if (!fix || !pr || (fix.phase !== "ready" && fix.phase !== "failed")) return;
+    this.fix = null; this.closeFix();
+    cx.spawn(async cx => { await removeWorktree(this.git.root, this.on, pr).catch(() => {}); cx.notify(); });
+  }
+
+  /** Opens the post-review screen for the saved comments. */
+  startReview(cx) {
+    if (!this.pr || this.comments.length === 0) return;
+    this.leaveBox();
+    if (!this.review || this.review.phase === "posted") {
+      this.review = { phase: "editing", cursor: 0, confirm: false, url: null, error: null };
+      this.summaryInput.set_value("");
+    }
+    this.phase = "review";
+  }
+
+  closeReview() {
+    if (this.review?.phase === "posting") return;
+    if (this.review?.phase === "posted") this.review = null;
+    else if (this.review) this.review.confirm = false;
+    this.leaveBox();
+    this.phase = this.plan ? "tour" : "setup";
+  }
+
+  /** Moves the verdict highlight. Any change asks for the two presses again. */
+  moveVerdict(i) {
+    const r = this.review, n = this.pr ? eventsFor(this.pr).length : 0;
+    if (!r || r.phase !== "editing" || n === 0) return;
+    r.cursor = (i + n) % n; r.confirm = false;
+  }
+
+  /** Posts the comments as one GitHub review. The first press only asks for a second one. */
+  postReview(cx) {
+    const r = this.review, pr = this.pr;
+    if (!r || !pr || r.phase !== "editing" || this.comments.length === 0) return;
+    if (!r.confirm) { r.confirm = true; return; }
+    const event = (eventsFor(pr)[r.cursor] ?? eventsFor(pr)[0]).id;
+    const comments = [...this.comments], summary = this.summaryInput.value();
+    r.confirm = false; r.phase = "posting"; r.error = null;
+    this.leaveBox();
+    cx.spawn(async cx => {
+      try {
+        r.url = await postReview(this.git.root, this.on, pr, comments, event, summary);
+        r.phase = "posted";
+        if (this.pr === pr) { this.comments = this.comments.filter(c => !comments.includes(c)); this.storeComments(cx); this.loadThreads(cx); }
+      } catch (e) { r.phase = "editing"; r.error = `GitHub refused the review: ${String(e?.message ?? e)}`; }
+      cx.notify();
+    });
+  }
+
+  openReview() { if (this.review?.url) openUrl(this.review.url); }
+
   startAsking(cx) {
     if (this.busy) return;
     this.asking = true;
     this.focusBox(this.input, cx);
   }
 
+  /** The setup steps for a scope, in order. A PR tour adds the PR picker. */
+  steps(scope = this.scope) { return scope === "pr" ? ["scope", "pr", "depth"] : ["scope", "depth"]; }
+
+  /** How many rows the current setup step has. */
+  stepRows() { return this.step === "scope" ? SCOPES.length : this.step === "pr" ? (this.prs?.length ?? 0) : DEPTHS.length; }
+
   /** Moves the highlight within the current setup step. */
   moveCursor(delta) {
-    const rows = this.step === 1 ? SCOPES.length : DEPTHS.length;
-    this.cursor = (this.cursor + delta + rows) % rows;
+    const rows = this.stepRows();
+    if (rows > 0) this.cursor = (this.cursor + delta + rows) % rows;
   }
 
-  /** Step 1: what to tour. Step 2: how deep. */
+  /** Shows a setup step with its current choice highlighted. */
   goStep(step) {
     this.step = step;
-    this.cursor = step === 1 ? SCOPES.findIndex(s => s.id === this.scope) : DEPTHS.findIndex(d => d.id === this.depth);
+    this.cursor = step === "scope" ? SCOPES.findIndex(s => s.id === this.scope)
+      : step === "pr" ? Math.max(0, (this.prs ?? []).findIndex(p => p.number === this.prNumber))
+      : DEPTHS.findIndex(d => d.id === this.depth);
   }
 
-  /** Enter on the highlighted row: step 1 moves on to step 2, step 2 starts the tour. */
+  back() {
+    const steps = this.steps(), i = steps.indexOf(this.step);
+    if (i > 0) this.goStep(steps[i - 1]);
+  }
+
+  /** Loads the open PRs once they are needed. A failure (no gh, signed out) shows on the PR step and the next visit retries. */
+  loadPRs(cx) {
+    if (this.prs || this.prsLoading || !this.git.root) return;
+    this.prsLoading = true; this.prsError = null;
+    cx.spawn(async cx => {
+      try { this.prs = await listPRs(this.git.root, this.on); }
+      catch (e) { this.prsError = `${String(e?.message ?? e)} Press esc and pick Pull request again to retry.`; }
+      this.prsLoading = false;
+      if (this.step === "pr") this.goStep("pr");
+      cx.notify();
+    });
+  }
+
+  /** Enter on the highlighted row: move to the next step, or start the tour from the last one. */
   pick(cx) {
-    if (this.step === 1) {
+    // Finding the repo and the agent CLIs takes a few seconds. Until it's done there is
+    // nothing to tour, and the detection would also reset the step under the reader.
+    if (!this.git.root) return;
+    if (this.step === "scope") {
       const s = SCOPES[this.cursor];
       if (s.id === "branch" && this.git.changed.length === 0) return;
       this.scope = s.id;
       if (s.id === "feature" && !this.featureInput.value().trim()) { this.focusBox(this.featureInput, cx); return; }
       this.leaveBox();
-      this.goStep(2);
+      this.goStep(this.steps()[1]);
+      if (this.step === "pr") this.loadPRs(cx);
+    } else if (this.step === "pr") {
+      const p = this.prs?.[this.cursor];
+      if (!p) return;
+      this.prNumber = p.number;
+      this.goStep("depth");
     } else {
       this.depth = DEPTHS[this.cursor].id;
       this.start(cx);
@@ -210,17 +618,23 @@ export default class Tourist extends View {
 
   openInEditor() {
     const s = this.plan?.stops[this.idx];
-    if (s) openInEditor(`${this.git.root}/${s.file}`, s.start);
+    if (!s) return;
+    if (this.pr) openUrl(`${this.pr.url}/files`); // the PR's files aren't on disk
+    else openInEditor(`${this.git.root}/${s.file}`, s.start);
   }
 
   reset(cx) {
     this.gen = (this.gen ?? 0) + 1;
     this.session?.stop(); this.session = null;
+    this.fixSession?.stop(); this.fixSession = null; this.fix = null; // a fix's worktree stays and is reused next time
+    this.review = null;
     this.leaveBox();
     this.code?.release(); this.code = null;
     this.plan = null; this.busy = null; this.error = null;
+    this.pr = null; this.prNumber = null; this.prs = null; this.diff = null; this.planNote = null; this.comments = []; this.threads = []; this.savedKey = null; this.viewed = {};
+    this.files = null; this.other = null;
     this.phase = this.git.root ? "setup" : "error";
-    this.goStep(1);
+    this.goStep("scope");
     if (!this.git.root) cx.spawn(async cx => { this.phase = "setup"; await this.detect(); cx.notify(); });
   }
 
@@ -232,30 +646,59 @@ export default class Tourist extends View {
       return;
     }
     if (e.modifiers?.control || e.modifiers?.alt || e.modifiers?.platform) return;
+    // z zooms this pane to fill the tab and back, on every screen (Herdr's pane.zoom, ctrl-shift-z).
+    if (k === "z") { run("pane.zoom"); cx.stop_propagation(); return; }
     let handled = true;
-    if (this.phase === "setup") {
-      const letter = this.step === 1 ? SCOPES.findIndex(s => s.key === k) : DEPTHS.findIndex(d => d.key === k);
-      const onFeature = this.step === 1 && SCOPES[this.cursor]?.id === "feature";
+    if (this.phase === "setup" && !this.git.root) {
+      handled = false; // still finding the repo; see pick()
+    } else if (this.phase === "setup") {
+      // Scopes and depths have letters. PRs take 1 to 9 for the first nine.
+      const list = this.step === "scope" ? SCOPES : this.step === "depth" ? DEPTHS : null;
+      const letter = list ? list.findIndex(x => x.key === k) : /^[1-9]$/.test(k) && +k <= this.stepRows() ? +k - 1 : -1;
+      const onFeature = this.step === "scope" && SCOPES[this.cursor]?.id === "feature";
       if (letter >= 0) this.cursor = letter;
       else if (k === "j" || k === "down") this.moveCursor(1);
       else if (k === "k" || k === "up") this.moveCursor(-1);
       else if (k === "enter") this.pick(cx);
       else if (k === "tab" && onFeature) this.focusBox(this.featureInput, cx);
-      else if (k === "escape" && this.step === 2) this.goStep(1);
+      else if (k === "escape" && this.step !== "scope") this.back();
       else if (k === "a" && this.agents.length > 1) this.switchAgent();
       else handled = false;
     } else if (this.phase === "planning") {
       if (k === "escape" || k === "q") this.reset(cx);
       else handled = false;
     } else if (this.phase === "tour") {
-      if (k === "n" || k === "right" || k === "l") this.show(this.idx + 1, cx);
-      else if (k === "b" || k === "left" || k === "h") this.show(this.idx - 1, cx);
+      if (k === "j" || k === "down") this.move(1, cx);
+      else if (k === "k" || k === "up") this.move(-1, cx);
       else if (k === "d") this.deeper(cx);
       else if (k === "t") this.technical(cx);
       else if (k === "a" || k === "/") this.startAsking(cx);
       else if (k === "o") this.openInEditor();
       else if (k === "s") this.toggleSplit();
+      else if (k === "b" && this.pr) this.showFiles = !this.showFiles;
+      else if (k === "e" && this.other) this.explainFile(cx);
+      else if (k === "v" && this.pr) this.toggleViewed(this.currentFile(), cx);
+      else if (k === "escape" && this.commenting) this.leaveBox();
+      else if (k === "f" && this.pr?.mine) this.startFix(cx);
+      else if (k === "p" && this.pr) this.startReview(cx);
+      else if (k === "r" && this.savedKey) this.replan(cx);
       else if (k === "q") this.reset(cx);
+      else handled = false;
+    } else if (this.phase === "fix") {
+      if (k === "b" || k === "escape") this.closeFix();
+      else if (k === "p") this.pushFix(cx);
+      else if (k === "x") this.discardFix(cx);
+      else if (k === "r" || k === "a" || k === "/") this.startReply(cx);
+      else handled = false;
+    } else if (this.phase === "review") {
+      const r = this.review, verdict = /^[1-3]$/.test(k) ? +k - 1 : -1;
+      if (k === "b" || k === "escape") this.closeReview();
+      else if (k === "p") this.postReview(cx);
+      else if (k === "o") this.openReview();
+      else if (k === "tab" && r?.phase === "editing") this.focusBox(this.summaryInput, cx);
+      else if (verdict >= 0 && this.pr && verdict < eventsFor(this.pr).length) this.moveVerdict(verdict);
+      else if (k === "j" || k === "down") this.moveVerdict((r?.cursor ?? 0) + 1);
+      else if (k === "k" || k === "up") this.moveVerdict((r?.cursor ?? 0) - 1);
       else handled = false;
     } else if (this.phase === "error") {
       if (k === "enter" || k === "q" || k === "escape") this.reset(cx);
@@ -272,6 +715,8 @@ export default class Tourist extends View {
     if (this.phase === "setup") return root.child(setupView(this, t));
     if (this.phase === "planning") return root.child(planningView(this, t));
     if (this.phase === "error") return root.child(errorView(this, t));
+    if (this.phase === "fix" && this.fix && this.pr) return root.child(fixView(this, t));
+    if (this.phase === "review" && this.review && this.pr) return root.child(reviewView(this, t));
     return root.child(tourView(this, t));
   }
 }

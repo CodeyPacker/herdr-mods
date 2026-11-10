@@ -3,6 +3,7 @@
 export const SCOPES = [
   { key: "b", id: "branch", label: "Branch changes", hint: "since this branch left the base, plus uncommitted edits" },
   { key: "c", id: "commit", label: "Last commit", hint: "HEAD only" },
+  { key: "p", id: "pr", label: "Pull request", hint: "pick an open PR for a guided review" },
   { key: "r", id: "repo", label: "Whole repo", hint: "slower, the agent surveys the codebase" },
   { key: "f", id: "feature", label: "A feature", hint: "describe it, the agent finds the code" },
 ];
@@ -13,6 +14,8 @@ export const DEPTHS = [
 ];
 // Read-only tools. Claude can look at the repo but never change it.
 export const TOOLS = ["--allowedTools", "Read", "Grep", "Glob", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(git status:*)"];
+// A fix run may also edit files. It runs in its own worktree, and still can't run other commands.
+export const FIX_TOOLS = ["--allowedTools", "Read", "Grep", "Glob", "Edit", "MultiEdit", "Write", "Bash(git diff:*)", "Bash(git status:*)"];
 // The agents a tour can use, in the order Tourist prefers them.
 export const AGENTS = [{ id: "claude", name: "Claude" }, { id: "codex", name: "Codex" }];
 // File extensions the editor highlights with another language's grammar.

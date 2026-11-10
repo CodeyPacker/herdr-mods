@@ -358,15 +358,13 @@ export default class Spaces extends View {
     });
   }
 
-  // Only what's unusual, under the name: a small "herdr \u00b7 spike" pill, then "\u21912 \u21931".
-  // The repo or branch goes when the name already says it (a worktree is named after
+  // Only what's unusual, under the name: a small "spike" pill, then "\u21912 \u21931". The repo
+  // is never shown. The branch goes when the name already says it (a worktree is named after
   // its branch), and master/main go: nearly every space is on one. Null: nothing to show.
   gitTail(g, tree, name, t) {
     const raw = g.branch ?? "detached";
     const same = (a) => a.toLowerCase() === name.toLowerCase();
-    const branch = same(raw) || raw === "master" || raw === "main" ? "" : raw;
-    const repo = tree || same(g.name) ? "" : g.name;
-    const where = [repo, branch].filter(Boolean).join(" \u00b7 ");
+    const where = same(raw) || raw === "master" || raw === "main" ? "" : raw;
     if (!where && !(g.ahead > 0) && !(g.behind > 0)) return null;
     // One pill holds the branch and the counts, all in the same dark text.
     return h_flex().self_start().max_w_full().min_w(0).h(14).px(5).gap(4).items_center().rounded_full()

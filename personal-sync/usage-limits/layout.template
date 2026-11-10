@@ -97,15 +97,76 @@
       "type": "column",
       "children": [
         {
-          "id": "tabs",
-          "type": "block",
-          "content": {
-            "mod": "islands-tabs"
-          },
+          "id": "top",
+          "type": "row",
           "size": {
             "px": 32
           },
-          "window_drag": true
+          "resizable": false,
+          "gap": 12,
+          "children": [
+            {
+              "id": "tabs",
+              "type": "block",
+              "content": {
+                "mod": "islands-tabs",
+                "props": {
+                  "part": "tabs"
+                }
+              },
+              "size": {
+                "weight": 1
+              },
+              "window_drag": true
+            },
+            {
+              "id": "status",
+              "type": "block",
+              "content": {
+                "mod": "islands-workspace-status",
+                "props": {
+                  "fit": "status"
+                }
+              },
+              "border": {
+                "width": 1,
+                "color": "border"
+              },
+              "radius": 14,
+              "size": {
+                "px": 205
+              }
+            },
+            {
+              "id": "usage-limits",
+              "type": "block",
+              "size": {
+                "px": 320
+              },
+              "radius": 14,
+              "border": {
+                "width": 1,
+                "color": "border"
+              },
+              "content": {
+                "mod": "usage-limits"
+              }
+            },
+            {
+              "id": "tab-actions",
+              "type": "block",
+              "content": {
+                "mod": "islands-tabs",
+                "props": {
+                  "part": "actions"
+                }
+              },
+              "size": {
+                "px": 191
+              },
+              "window_drag": true
+            }
+          ]
         },
         {
           "id": "work-body",
@@ -176,48 +237,6 @@
           ],
           "padding": 0,
           "gap": 12
-        },
-        {
-          "id": "status-row",
-          "type": "row",
-          "size": {
-            "px": 32
-          },
-          "resizable": false,
-          "gap": 12,
-          "children": [
-            {
-              "id": "status",
-              "type": "block",
-              "content": {
-                "mod": "islands-workspace-status"
-              },
-              "border": {
-                "width": 1,
-                "color": "border"
-              },
-              "radius": 14,
-              "size": {
-                "weight": 1
-              }
-            },
-            {
-              "id": "usage-limits",
-              "type": "block",
-              "size": {
-                "weight": 2.2
-              },
-              "min": 130,
-              "radius": 14,
-              "border": {
-                "width": 1,
-                "color": "border"
-              },
-              "content": {
-                "mod": "usage-limits"
-              }
-            }
-          ]
         }
       ],
       "gap": 12,

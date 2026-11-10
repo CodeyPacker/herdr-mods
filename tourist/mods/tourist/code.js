@@ -22,6 +22,14 @@ export function codeState(file, text) {
     syntax: { keyword: t.ansi5, string: t.ansi2, comment: t.dim, function: t.ansi4, type: t.ansi3, number: t.ansi1, constant: t.ansi6 } });
 }
 
+/** Opens a web page in the default browser. */
+export function openUrl(url) {
+  if (!/^https:\/\//.test(url)) return;
+  const os = window()?.platform;
+  const [cmd, args] = os === "windows" ? ["rundll32", ["url.dll,FileProtocolHandler", url]] : [os === "macos" ? "open" : "xdg-open", [url]];
+  exec(cmd, args).catch(() => {});
+}
+
 /** Opens `path` at `line` in VS Code. Needs `code` on PATH. */
 export function openInEditor(path, line) {
   const target = `${path}:${line}`;
