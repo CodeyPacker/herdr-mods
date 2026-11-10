@@ -39,7 +39,9 @@ export async function loadSavedPlan(key) {
 /** Saves the plan with its answers so far, and the agent session that made it so follow-ups keep its context. */
 export async function savePlan(key, plan, agent, session) {
   await fs.mkdir(dir(), { recursive: true });
-  await writeTextFile(`${dir()}/${key}.json`, JSON.stringify({ plan, agent, session, saved: new Date().toISOString() }), null);
+  // writeTextFile only replaces a file when handed its current text (null means it must not exist yet).
+  const path = `${dir()}/${key}.json`;
+  await writeTextFile(path, JSON.stringify({ plan, agent, session, saved: new Date().toISOString() }), await readTextFile(path));
 }
 
 export async function dropSavedPlan(key) {

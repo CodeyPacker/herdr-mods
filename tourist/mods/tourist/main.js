@@ -6,6 +6,7 @@
 //   plan.js       the prompts and reading the tour plan
 //   code.js       a stop's lines, its editor, opening VS Code
 //   ui.js         shared buttons, rows and inputs
+//   files.js      grouping the PR's files for the file list
 //   views/        the setup, tour, planning and error screens
 import { View } from "gpui-kit";
 import { v_flex, InputState } from "gpui-base";
@@ -13,9 +14,10 @@ import { theme, nextCommand, props, run } from "herdr";
 import { SCOPES, DEPTHS, SPLIT_WIDTH } from "./constants.js";
 import { startFolder, readRepo, git } from "./git.js";
 import { AgentSession, agentName, findAgents, rememberAgent } from "./agent.js";
-import { subject, planPrompt, prSubject, prPlanPrompt, followUpPrompt, fixPrompt, parsePlan } from "./plan.js";
+import { subject, planPrompt, prSubject, prPlanPrompt, followUpPrompt, filePrompt, fixPrompt, fixReplyPrompt, parsePlan } from "./plan.js";
 import { readExcerpt, codeState, openInEditor, openUrl } from "./code.js";
-import { listPRs, loadPR, prFileDiff, listThreads } from "./pr.js";
+import { listPRs, loadPR, prFileDiff, prFileStats, listThreads } from "./pr.js";
+import { groupFiles } from "./files.js";
 import { diffRows, rowsInRange, splitDiff } from "./diff.js";
 import { openWorktree, worktreeDiff, pushFix, removeWorktree } from "./worktree.js";
 import { commentKey, loadComments, saveComments, sideOf, rangeOf } from "./comments.js";
@@ -45,9 +47,14 @@ export default class Tourist extends View {
     this.comments = [];   // line comments on the PR, saved by comments.js
     this.commenting = null; // { file, line, side, code, anchor, editId? } while the comment box is open
     this.threads = [];      // comment threads already on the PR on GitHub, read-only
+    this.files = null;      // every file the PR changes, grouped for the file list (files.js)
+    this.other = null;      // a PR file the tour doesn't stop at, while it's open instead of a stop
+    this.showFiles = true;  // the file list beside a PR tour, toggled with l
     // The fix run on a PR: { phase: "running" | "ready" | "failed" | "pushing" | "pushed",
-    // count, note, path, summary, files, error, confirm }. Shown when phase is "fix".
+    // count, note, path, summary, replies, files, error, confirm }. Shown when phase is "fix".
+    // replies: [{ text, answer }], the reader's replies to the fix agent and what it said back.
     this.fix = null; this.fixSession = null;
+    this.replying = false; // the fix screen's reply box only exists while replying
     // Posting the comments to GitHub: { phase: "editing" | "posting" | "posted", cursor, confirm, url, error }.
     this.review = null;
     this.cursor = 0;      // highlighted row in the current step
@@ -59,6 +66,7 @@ export default class Tourist extends View {
     this.featureInput = this.textBox("feature", "e.g. how a space gets its hint letter", cx => this.pick(cx));
     this.commentInput = this.textBox("comment", "Comment on this line, then press enter", cx => this.saveComment(cx));
     this.summaryInput = this.textBox("summary", DEFAULT_SUMMARY, () => this.leaveBox());
+    this.replyInput = this.textBox("reply", "Reply to the agent, then press enter", cx => this.replyFix(cx));
     this.handle = cx.focus_handle();
     // The pane isn't drawn yet, so focus again once it is.
     this.handle.focus();
@@ -84,12 +92,12 @@ export default class Tourist extends View {
 
   /** Takes the keyboard back from a text box. */
   leaveBox() {
-    this.typing = null; this.asking = false; this.commenting = null;
+    this.typing = null; this.asking = false; this.commenting = null; this.replying = false;
     this.handle.focus();
   }
 
   async close() {
-    this.code?.release(); this.input.release(); this.featureInput.release(); this.commentInput.release(); this.summaryInput.release();
+    this.code?.release(); this.input.release(); this.featureInput.release(); this.commentInput.release(); this.summaryInput.release(); this.replyInput.release();
     await this.session?.stop(); await this.fixSession?.stop();
   }
 
@@ -103,8 +111,8 @@ export default class Tourist extends View {
     else if (c === "pick") this.pick(cx);
     else if (c === "back") this.back();
     else if (c === "start") this.start(cx);
-    else if (c === "next") this.show(this.idx + 1, cx);
-    else if (c === "prev") this.show(this.idx - 1, cx);
+    else if (c === "next") this.move(1, cx);
+    else if (c === "prev") this.move(-1, cx);
     else if (c === "deeper") this.deeper(cx);
     else if (c === "technical") this.technical(cx);
     else if (c === "open") this.openInEditor();
@@ -115,6 +123,12 @@ export default class Tourist extends View {
     else if (c === "fix-discard") this.discardFix(cx);
     else if (c === "review") this.startReview(cx);
     else if (c === "review-back") this.closeReview();
+    else if (c === "explain") this.explainFile(cx);
+    else if (c.startsWith("file-") && this.files) {
+      // file-<n>: the nth file in the list, counting down from the top
+      const f = [...this.files.tour, ...this.files.also, ...this.files.side][Number(c.slice(5)) - 1];
+      if (f) this.openFile(f, cx);
+    }
   }
 
   async detect() {
@@ -176,6 +190,7 @@ export default class Tourist extends View {
         if (!plan) plan = parsePlan(await session.ask(prompt));
         if (gen !== this.gen) return;
         this.plan = plan; this.phase = "tour"; this.show(0, cx);
+        if (this.pr) this.loadFiles(cx);
         if (!plan.savedAt) this.storePlan();
       } catch (e) { if (gen === this.gen) this.fail(String(e?.message ?? e)); }
       cx.notify();
@@ -185,6 +200,7 @@ export default class Tourist extends View {
   show(i, cx) {
     if (!this.plan) return;
     this.idx = Math.max(0, Math.min(i, this.plan.stops.length - 1));
+    this.other = null;
     this.code?.release(); this.code = null; this.codeError = null; this.diff = null;
     if (this.commenting) this.leaveBox();
     const s = this.plan.stops[this.idx], idx = this.idx;
@@ -211,18 +227,82 @@ export default class Tourist extends View {
   /** Sends a follow-up about the current stop and adds the answer under it. */
   followUp(label, question, cx) {
     if (this.busy || !this.plan || !this.session) return;
-    const s = this.plan.stops[this.idx], session = this.session;
+    const s = this.plan.stops[this.idx], session = this.session, other = this.other;
+    const file = other ?? s.file, notes = other ? this.otherNotes(other) : s.notes;
     this.busy = label;
     cx.spawn(async cx => {
-      const comments = this.comments.filter(c => c.file === s.file);
-      let prompt = followUpPrompt(question, s, this.idx + 1, comments);
+      const comments = this.comments.filter(c => c.file === file);
+      let prompt = other ? filePrompt(question, other, this.pr, comments) : followUpPrompt(question, s, this.idx + 1, comments);
       // A reused tour whose agent session couldn't be kept starts fresh, so say what it's about.
       if (!session.id) prompt = `This is part of a guided tour. Subject: ${this.pr ? prSubject(this.pr) : subject(this.scope, this.git, this.featureInput.value().trim())}\n\n${prompt}`;
-      try { s.notes.push({ label, text: await session.ask(prompt) }); this.storePlan(); }
-      catch (e) { s.notes.push({ label: "Error", text: String(e?.message ?? e) }); }
+      try { notes.push({ label, text: await session.ask(prompt) }); this.storePlan(); }
+      catch (e) { notes.push({ label: "Error", text: String(e?.message ?? e) }); }
       this.busy = null; cx.notify();
     });
   }
+
+  /** The file whose code is showing: the open other file, or the current stop's. */
+  currentFile() { return this.other ?? this.plan?.stops[this.idx]?.file ?? null; }
+
+  /** The answers about a file the tour doesn't stop at. Kept in the plan, so they're saved with it. */
+  otherNotes(file) {
+    const all = this.plan.fileNotes ??= {};
+    return all[file] ??= [];
+  }
+
+  /** Loads every file the PR changes for the file list. A failure just leaves the list empty. */
+  loadFiles(cx) {
+    const pr = this.pr, plan = this.plan;
+    this.files = null;
+    cx.spawn(async cx => {
+      const stats = await prFileStats(this.git.root, this.on, pr).catch(() => []);
+      if (this.pr === pr && this.plan === plan) { this.files = groupFiles(stats, plan.stops); cx.notify(); }
+    });
+  }
+
+  /** Opens a file from the list: a tour file goes to its first stop, any other shows its whole diff. */
+  openFile(f, cx) {
+    if (f.stop !== undefined) { this.show(f.stop, cx); return; }
+    if (!this.pr) return;
+    this.other = f.file;
+    this.code?.release(); this.code = null; this.codeError = null; this.diff = null;
+    if (this.commenting) this.leaveBox();
+    const file = f.file;
+    cx.spawn(async cx => {
+      const text = await prFileDiff(this.git.root, this.on, this.pr, file);
+      if (this.other !== file) return;
+      const rows = text ? rowsInRange(diffRows(text), 1, Infinity) : [];
+      if (rows.length === 0) this.codeError = f.add === null ? `${file} is a binary file` : `No changes to ${file} in this PR`;
+      else this.diff = rows;
+      cx.notify();
+    });
+  }
+
+  /** The files after the tour stops, in list order: "Also changed", then tests, docs and generated. */
+  laterFiles() { return this.files ? [...this.files.also, ...this.files.side] : []; }
+
+  /**
+   * Where n (1) or b (-1) goes: the tour stops in order, then on into the other files in the
+   * list after the last stop, and back the same way.
+   */
+  moveTarget(dir) {
+    const later = this.laterFiles(), last = (this.plan?.stops.length ?? 0) - 1;
+    if (this.other) {
+      const j = later.findIndex(f => f.file === this.other) + dir;
+      return j < 0 ? { stop: last } : j < later.length ? { file: later[j] } : null;
+    }
+    const i = this.idx + dir;
+    if (i >= 0 && i <= last) return { stop: i };
+    return dir > 0 && later.length ? { file: later[0] } : null;
+  }
+
+  move(dir, cx) {
+    const to = this.moveTarget(dir);
+    if (to?.file) this.openFile(to.file, cx);
+    else if (to) this.show(to.stop, cx);
+  }
+
+  explainFile(cx) { if (this.other) this.followUp("Explain", "Explain what changed in this file, why, and how it connects to the rest of the PR.", cx); }
 
   /** Loads the comment threads already on the PR from GitHub. Shown read-only; a failure just shows none. */
   loadThreads(cx) {
@@ -247,12 +327,12 @@ export default class Tourist extends View {
     const key = this.savedKey;
     this.session?.stop();
     this.code?.release(); this.code = null; this.diff = null;
-    this.plan = null; this.phase = "setup"; this.step = "depth";
+    this.plan = null; this.files = null; this.other = null; this.phase = "setup"; this.step = "depth";
     cx.spawn(async cx => { await dropSavedPlan(key); this.start(cx); cx.notify(); });
   }
 
-  deeper(cx) { this.followUp("Deeper", "Go deeper on this stop: what else in this file and the code it calls matters here?", cx); }
-  technical(cx) { this.followUp("More technical", "Explain this stop again, more technically: exact mechanisms, types, data flow and edge cases.", cx); }
+  deeper(cx) { this.followUp("Deeper", "Go deeper here: what else in this file and the code it calls matters?", cx); }
+  technical(cx) { this.followUp("More technical", "Explain this again, more technically: exact mechanisms, types, data flow and edge cases.", cx); }
   ask(cx) {
     const q = this.input.value().trim();
     if (!q || this.busy) return;
@@ -267,18 +347,18 @@ export default class Tourist extends View {
    * clicked (`anchor`) to this one instead, keeping what was typed.
    */
   startComment(row, cx, { index = -1, shift = false } = {}) {
-    const s = this.plan?.stops[this.idx], rows = this.diff ?? [];
-    if (!this.pr || !s || row.number === undefined) return;
+    const file = this.currentFile(), rows = this.diff ?? [];
+    if (!this.pr || !file || row.number === undefined) return;
     this.asking = false;
     const open = this.commenting;
-    if (shift && open?.file === s.file && open.anchor >= 0 && index >= 0) {
+    if (shift && open?.file === file && open.anchor >= 0 && index >= 0) {
       const [a, b] = rangeOf(rows, open.anchor, index);
       const lines = rows.slice(a, b + 1).filter(r => r.number !== undefined);
       const first = rows[a], last = rows[b];
-      this.commenting = { file: s.file, anchor: open.anchor, line: last.number, side: sideOf(last), code: lines.map(r => r.text).join("\n") };
+      this.commenting = { file, anchor: open.anchor, line: last.number, side: sideOf(last), code: lines.map(r => r.text).join("\n") };
       if (a !== b) Object.assign(this.commenting, { startLine: first.number, startSide: sideOf(first) });
     } else {
-      this.commenting = { file: s.file, anchor: index, line: row.number, side: sideOf(row), code: row.text };
+      this.commenting = { file, anchor: index, line: row.number, side: sideOf(row), code: row.text };
       this.commentInput.set_value("");
     }
     this.focusBox(this.commentInput, cx);
@@ -330,7 +410,7 @@ export default class Tourist extends View {
     if (this.comments.length === 0 || this.busy) return;
     this.leaveBox();
     const pr = this.pr, comments = [...this.comments];
-    const fix = this.fix = { phase: "running", count: comments.length, note: "Creating a worktree", path: null };
+    const fix = this.fix = { phase: "running", count: comments.length, note: "Creating a worktree", path: null, replies: [] };
     this.phase = "fix";
     cx.spawn(async cx => {
       try {
@@ -341,7 +421,34 @@ export default class Tourist extends View {
         fix.files = splitDiff(await worktreeDiff(fix.path, this.on));
         fix.phase = "ready";
       } catch (e) { fix.phase = "failed"; fix.error = String(e?.message ?? e); }
-      if (this.fix === fix) this.fixSession = null;
+      cx.notify();
+    });
+  }
+
+  /** Opens the reply box on the fix screen, once the agent has finished a run. */
+  startReply(cx) {
+    const fix = this.fix;
+    if (!fix || !this.fixSession?.id || (fix.phase !== "ready" && fix.phase !== "failed")) return;
+    this.replying = true;
+    this.focusBox(this.replyInput, cx);
+  }
+
+  /** Sends the reader's reply into the fix agent's session, so it keeps editing the same worktree. */
+  replyFix(cx) {
+    const fix = this.fix, session = this.fixSession, text = this.replyInput.value().trim();
+    if (!text || !fix || !session || (fix.phase !== "ready" && fix.phase !== "failed")) return;
+    this.replyInput.set_value("");
+    this.leaveBox();
+    fix.phase = "running"; fix.error = null; fix.confirm = false;
+    fix.note = `${this.agentName()} is working on your reply`;
+    const reply = { text, answer: null };
+    fix.replies.push(reply);
+    cx.spawn(async cx => {
+      try {
+        reply.answer = await session.ask(fixReplyPrompt(text));
+        fix.files = splitDiff(await worktreeDiff(fix.path, this.on));
+      } catch (e) { fix.error = String(e?.message ?? e); }
+      fix.phase = "ready";
       cx.notify();
     });
   }
@@ -509,6 +616,7 @@ export default class Tourist extends View {
     this.code?.release(); this.code = null;
     this.plan = null; this.busy = null; this.error = null;
     this.pr = null; this.prNumber = null; this.prs = null; this.diff = null; this.planNote = null; this.comments = []; this.threads = []; this.savedKey = null;
+    this.files = null; this.other = null;
     this.phase = this.git.root ? "setup" : "error";
     this.goStep("scope");
     if (!this.git.root) cx.spawn(async cx => { this.phase = "setup"; await this.detect(); cx.notify(); });
@@ -544,13 +652,15 @@ export default class Tourist extends View {
       if (k === "escape" || k === "q") this.reset(cx);
       else handled = false;
     } else if (this.phase === "tour") {
-      if (k === "n" || k === "right" || k === "l") this.show(this.idx + 1, cx);
-      else if (k === "b" || k === "left" || k === "h") this.show(this.idx - 1, cx);
+      if (k === "n" || k === "right") this.move(1, cx);
+      else if (k === "b" || k === "left" || k === "h") this.move(-1, cx);
       else if (k === "d") this.deeper(cx);
       else if (k === "t") this.technical(cx);
       else if (k === "a" || k === "/") this.startAsking(cx);
       else if (k === "o") this.openInEditor();
       else if (k === "s") this.toggleSplit();
+      else if (k === "l" && this.pr) this.showFiles = !this.showFiles;
+      else if (k === "e" && this.other) this.explainFile(cx);
       else if (k === "escape" && this.commenting) this.leaveBox();
       else if (k === "f" && this.pr?.mine) this.startFix(cx);
       else if (k === "p" && this.pr) this.startReview(cx);
@@ -561,6 +671,7 @@ export default class Tourist extends View {
       if (k === "b" || k === "escape") this.closeFix();
       else if (k === "p") this.pushFix(cx);
       else if (k === "x") this.discardFix(cx);
+      else if (k === "r" || k === "a" || k === "/") this.startReply(cx);
       else handled = false;
     } else if (this.phase === "review") {
       const r = this.review, verdict = /^[1-3]$/.test(k) ? +k - 1 : -1;

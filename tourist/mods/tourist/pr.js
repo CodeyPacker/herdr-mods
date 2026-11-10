@@ -83,6 +83,24 @@ export async function listThreads(pr, root, on) {
   return [...threads.values()];
 }
 
+/**
+ * Every file the PR changes: `{ file, status, add, del }`. status is git's letter (M, A, D, ...).
+ * add and del are null for binary files. Renames count as a delete and an add, like the diffs.
+ */
+export async function prFileStats(root, on, pr) {
+  const run = args => git(["diff", "--no-renames", ...args, pr.mergeBase, pr.headOid], { cwd: root, on });
+  const [status, numstat] = await Promise.all([run(["--name-status"]), run(["--numstat"])]);
+  const counts = new Map();
+  for (const line of String(numstat ?? "").split(/\r?\n/).filter(Boolean)) {
+    const [add, del, ...path] = line.split("\t");
+    counts.set(path.join("\t"), { add: add === "-" ? null : +add, del: del === "-" ? null : +del });
+  }
+  return String(status ?? "").split(/\r?\n/).filter(Boolean).map(line => {
+    const [letter, ...path] = line.split("\t"), file = path.join("\t");
+    return { file, status: letter[0], ...(counts.get(file) ?? { add: null, del: null }) };
+  });
+}
+
 /** The unified diff of one file in the PR, or null when git can't produce it. */
 export function prFileDiff(root, on, pr, file) {
   return git(["diff", "--no-color", "--unified=3", pr.mergeBase, pr.headOid, "--", file], { cwd: root, on });

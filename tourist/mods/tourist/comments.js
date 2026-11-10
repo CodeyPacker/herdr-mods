@@ -20,7 +20,9 @@ export async function loadComments(key) {
 
 export async function saveComments(key, list) {
   await fs.mkdir(dir(), { recursive: true });
-  await writeTextFile(`${dir()}/${key}.json`, JSON.stringify(list, null, 2), null);
+  // writeTextFile only replaces a file when handed its current text (null means it must not exist yet).
+  const path = `${dir()}/${key}.json`;
+  await writeTextFile(path, JSON.stringify(list, null, 2), await readTextFile(path));
 }
 
 /** "new" for added and unchanged lines (numbered in the PR's file), "old" for removed ones. */

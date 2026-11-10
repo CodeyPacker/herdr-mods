@@ -63,6 +63,12 @@ export function followUpPrompt(question, stop, number, comments = []) {
   return `${question}\n\nThis is about stop ${number}, "${stop.title}" (${stop.file} lines ${stop.start}-${stop.end}). Read more code if you need to. Reply in markdown only, under 250 words, with file:line references.${mine}`;
 }
 
+/** A question about a PR file the tour didn't stop at, sent into the tour's session. */
+export function filePrompt(question, file, pr, comments = []) {
+  const mine = comments.length ? `\n\nThe reader left these review comments on this file. Keep them in mind:\n${commentLines(comments)}` : "";
+  return `${question}\n\nThis is about ${file}, which the PR changes but the tour didn't stop at. Read its change with \`git diff ${pr.mergeBase} ${pr.headOid} -- ${file}\`, and more code if you need to. Reply in markdown only, under 250 words, with file:line references.${mine}`;
+}
+
 /** The fix run's one message: change the code the way the reader's comments ask. */
 export function fixPrompt(pr, comments) {
   return [
@@ -71,6 +77,15 @@ export function fixPrompt(pr, comments) {
     commentLines(comments),
     "Make the changes the comments ask for by editing files in this folder. Keep each change as small as the comment allows and match the surrounding style. If a comment is a question or you disagree with it, change nothing for it and say why. Do not commit, push, or run commands other than reading git diff and git status.",
     "When you are done, reply in markdown only: one short line per comment number saying what you changed (with file:line) or why you left it.",
+  ].join("\n\n");
+}
+
+/** The reader's reply to the fix run, sent into the same session. The rules from the first message still hold. */
+export function fixReplyPrompt(text) {
+  return [
+    `The reader replied to your fix:\n${text}`,
+    "If they ask for more changes, make them in this folder. Same rules as before: do not commit, push, or run commands other than reading git diff and git status.",
+    "Reply in markdown only, under 200 words: what you changed (with file:line) or your answer.",
   ].join("\n\n");
 }
 

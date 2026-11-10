@@ -40,6 +40,20 @@ stop's lines are shown (all of them when none do). `o` opens the PR's Files
 page in the browser, since the PR isn't on disk. There's no cap on the number of
 stops: one per changed area worth reviewing.
 
+File list (PR tours): every file the PR changes, on the left of the tour. "In
+the tour" lists the tour's files in stop order, numbered by their first stop.
+"Also changed" lists the other code files, and "Tests, docs and generated" lists
+tests, Markdown and docs, lockfiles, snapshots and build output (`files.js`
+decides by path). A file the tour visits stays in the tour group. Each row shows
+the folder dimmed, the file name, and +/− line counts (`git diff --numstat`);
+skipped files show git's status letter (M, A, D). Clicking a tour file goes to its
+first stop. Clicking any other file shows its whole diff in the stop's place,
+with "The tour doesn't stop here", and `e` asks the agent for a short
+explanation. `a`, `d` and `t` work on it too, in the same agent session as the
+tour. Comments work on its lines. Answers about these files are saved with the
+tour (`fileNotes` in the saved plan). `n` after the last stop goes on through "Also changed" and then tests, docs and generated, in list order ("Next file", then "Last file"), and `b` walks back the same way. `l` or
+"Hide files" hides the list.
+
 Saved tours: a tour's plan is saved with its Deeper/Ask answers and the agent
 session, keyed by the commit it's about and the depth: the PR's head for a pull
 request, HEAD for the last commit and the whole repo, and HEAD plus the feature's
@@ -89,7 +103,9 @@ commit, so your checkout is never touched. While it runs: a spinner, "<Agent>
 is working through N comments", and the worktree path in the header. `b` goes
 back to the tour meanwhile, and the button turns into "Fixing…", then "View
 fix". When it's done: the agent's one line per comment, then each changed
-file's diff. `p` asks "Press p again to push to <branch>", and the second `p`
+file's diff. `r` (or `a`, `/`) opens a reply box: the reply goes into the same
+agent session, which can keep editing the same worktree. The screen then shows
+"You replied: …", the agent's answer, and the updated diff. `p` asks "Press p again to push to <branch>", and the second `p`
 commits ("Address review comments on #n") and pushes to the PR's branch, then
 removes the worktree and clears the comments. `x` discards the fix: the worktree
 and its branch are deleted, and the comments stay.
@@ -104,14 +120,16 @@ and its branch are deleted, and the comments stay.
 - Feature box: `tab` on the feature row types into it, `tab` or `esc` gives the
   keys back to the list. `enter` in the box goes to step 2.
 - Planning: `q` or `esc` cancels.
-- Tour: `n`/`l`/right next, `b`/`h`/left back, `d` deeper, `t` more technical,
+- Tour: `n`/right next (past the last stop, into the other files), `b`/`h`/left back, `d` deeper, `t` more technical,
   `a` or `/` ask (the box only exists while asking), `o` open in VS Code, `s` switches split and stacked
   (wide panes start split), `q`
   ends the tour and returns to step 1. On PR tours, `p` posts a review, `r` plans again, and `f`
-  (your own PRs) opens the fix.
+  (your own PRs) opens the fix. `l` shows or hides the file list, and `e`
+  explains a file the tour skipped.
 - Post review: `1` to `3` or `j`/`k` pick the verdict, `tab` types the summary,
   `p` twice posts, `o` opens it once posted, `b` or `esc` back to the tour.
-- Fix: `b` or `esc` back to the tour, `p` twice pushes, `x` discards.
+- Fix: `r`, `a` or `/` replies to the agent (`esc` or `tab` gives the keys
+  back), `b` or `esc` back to the tour, `p` twice pushes, `x` discards.
 - Every screen: `z` zooms the pane to fill the tab and back (Herdr's `pane.zoom`,
   the same as `ctrl-shift-z`), except while typing in a box.
 - Error: `enter`, `q` or `esc` starts over.
@@ -184,7 +202,8 @@ and its branch are deleted, and the comments stay.
 - `herdr-app do tourist.<command>` drives it for testing: `scope-<id>`,
   `depth-<id>`, `down`, `up`, `pick`, `back`, `start`, `next`, `prev`,
   `deeper`, `technical`, `open`, `reset`, `agent` (switch agents), `fix`,
-  `fix-back`, `fix-discard`, `review`, `review-back`. There is no push or post
+  `fix-back`, `fix-discard`, `review`, `review-back`, `file-<n>` (the nth file in
+  the file list, from the top), `explain`. There is no push or post
   command: both take two key presses in the pane.
 
 ## Watch out

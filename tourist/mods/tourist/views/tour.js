@@ -1,4 +1,5 @@
-// One tour stop: header, the code excerpt, the explanation, and the key bar.
+// One tour stop: header, the code excerpt, the explanation, and the key bar. On PR tours
+// a file list sits on the left, and a file the tour skips can be opened in a stop's place.
 import { div } from "gpui-kit";
 import { v_flex, h_flex, Editor, TextView, h_resizable, v_resizable, resizable_panel } from "gpui-base";
 import { settings } from "herdr";
@@ -7,8 +8,14 @@ import { diffView } from "./diff.js";
 
 /** `v` is the Tourist view: its state is read here and its methods run on clicks. */
 export function tourView(v, t) {
-  const plan = v.plan, s = plan.stops[v.idx], last = plan.stops.length - 1;
-  const header = h_flex().px(14).py(10).gap(10).items_center().border_b_1().border_color(t.border)
+  const plan = v.plan, s = plan.stops[v.idx];
+  const other = v.other, file = other ?? s.file;
+  const header = other ? h_flex().px(14).py(10).gap(10).items_center().border_b_1().border_color(t.border)
+    .child(div().flex_none().px(6).py(1).rounded(5).bg(t.raised).text_size(11).text_color(t.accent)
+      .child(v.files?.side.some(f => f.file === other) ? "Tests, docs and generated" : "Also changed"))
+    .child(div().flex_1().min_w(0).truncate().font_semibold().child(other.split("/").pop()))
+    .child(div().max_w(200).truncate().text_size(11.5).text_color(t.dim).child(plan.title ?? ""))
+    : h_flex().px(14).py(10).gap(10).items_center().border_b_1().border_color(t.border)
     .child(div().text_size(11.5).text_color(t.dim).child(`${v.idx + 1} / ${plan.stops.length}`))
     .when(Boolean(s.group), el => el.child(div().flex_none().max_w(180).truncate().px(6).py(1).rounded(5).bg(t.raised)
       .text_size(11).text_color(t.accent).child(String(s.group))))
@@ -17,40 +24,45 @@ export function tourView(v, t) {
     .child(div().max_w(200).truncate().text_size(11.5).text_color(t.dim).child(plan.title ?? ""));
   const fileLine = h_flex().id("file").px(14).py(6).gap(8).items_center().cursor_pointer()
     .hover(st => st.bg(t.hover)).on_click(() => v.openInEditor())
-    .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.accent).font_family(settings().font_family).child(s.file))
+    .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.accent).font_family(settings().font_family).child(file))
     .child(div().text_size(11.5).text_color(t.dim).child(v.pr
-      ? `lines ${s.start}–${s.end}  ·  click a line to comment, shift-click to extend${v.comments.length ? ` (${v.comments.length} saved)` : ""}  ·  o opens the PR`
+      ? `${other ? "whole diff" : `lines ${s.start}–${s.end}`}  ·  click a line to comment, shift-click to extend${v.comments.length ? ` (${v.comments.length} saved)` : ""}  ·  o opens the PR`
       : `lines ${s.start}–${s.end}  ·  o opens`));
   // On PR tours each diff line takes a comment.
   const comments = v.pr ? {
-    file: s.file, list: v.comments, input: v.commentInput, threads: v.threads,
-    open: v.commenting?.file === s.file ? v.commenting : null,
+    file, list: v.comments, input: v.commentInput, threads: v.threads,
+    open: v.commenting?.file === file ? v.commenting : null,
     onRow: (r, cx, how) => v.startComment(r, cx, how), onDelete: (c, cx) => v.deleteComment(c, cx),
     onEdit: (c, cx) => v.startEdit(c, cx),
   } : null;
   const code = div().flex_1().min_h(0).mx(14).mb(4).rounded(8).border_1().border_color(t.border).bg(t.background).overflow_hidden()
-    .child(v.diff ? diffView(`diff-${v.idx}`, v.diff, t, comments)
+    .child(v.diff ? diffView(other ? `diff-file-${other}` : `diff-${v.idx}`, v.diff, t, comments)
       : v.code ? Editor.new(v.code).size_full()
       : div().p(10).text_size(12).text_color(t.dim).child(v.codeError ?? "Loading…"));
-  const notes = s.notes.map((n, i) => v_flex().gap(4).pt(6).border_t_1().border_color(t.border)
+  const key = other ? `file-${other}` : String(v.idx);
+  const noteList = other ? plan.fileNotes?.[other] ?? [] : s.notes;
+  const notes = noteList.map((n, i) => v_flex().gap(4).pt(6).border_t_1().border_color(t.border)
     .child(div().text_size(11.5).font_semibold().text_color(t.accent).child(n.label))
-    .child(TextView.markdown(`note-${v.idx}-${i}`, n.text).selectable()));
+    .child(TextView.markdown(`note-${key}-${i}`, n.text).selectable()));
   // Cap the line length so long explanations stay readable in wide panes.
   const body = v_flex().w_full().max_w(680).gap(10)
-    .when(v.idx === 0 && Boolean(plan.summary), el => el.child(v_flex().p(10).rounded(8).bg(t.raised)
+    .when(!other && v.idx === 0 && Boolean(plan.summary), el => el.child(v_flex().p(10).rounded(8).bg(t.raised)
       .child(TextView.markdown("summary", String(plan.summary)).selectable())))
-    .child(TextView.markdown(`body-${v.idx}`, String(s.body ?? "")).selectable())
+    .when(!other, el => el.child(TextView.markdown(`body-${v.idx}`, String(s.body ?? "")).selectable()))
+    .when(Boolean(other) && noteList.length === 0 && !v.busy, el => el.child(div().text_size(12).text_color(t.dim)
+      .child("The tour doesn't stop here. Press e for a short explanation, or a to ask about this file.")))
     .children(notes)
     .when(Boolean(v.busy), el => el.child(h_flex().gap(8).items_center().text_color(t.dim)
       .child(spinner(t))
       .child(div().text_size(12).child(`${v.busy}…`))));
-  const explain = v_flex().id(`explain-${v.idx}`).flex_1().min_h(0).overflow_y_scrollbar().px(14).py(12).child(body);
+  const explain = v_flex().id(`explain-${key}`).flex_1().min_h(0).overflow_y_scrollbar().px(14).py(12).child(body);
   // The ask box is only drawn while asking, so tour keys can never land in it.
   const ask = div().px(14).pb(8).child(textInput(t, v.input, true));
   const free = !v.busy;
   const bar = h_flex().px(14).py(10).gap(6).flex_wrap().border_t_1().border_color(t.border)
-    .child(button(t, "prev", "Back", "b", v.idx > 0, (_e, cx) => { v.show(v.idx - 1, cx); cx.notify(); }))
-    .child(button(t, "next", v.idx === last ? "Last stop" : "Next", "n", v.idx < last, (_e, cx) => { v.show(v.idx + 1, cx); cx.notify(); }))
+    .child(button(t, "prev", "Back", "b", Boolean(v.moveTarget(-1)), (_e, cx) => { v.move(-1, cx); cx.notify(); }))
+    .child(button(t, "next", nextLabel(v), "n", Boolean(v.moveTarget(1)), (_e, cx) => { v.move(1, cx); cx.notify(); }))
+    .when(Boolean(other), el => el.child(button(t, "explainfile", "Explain", "e", free, (_e, cx) => { v.explainFile(cx); cx.notify(); })))
     .child(button(t, "deeper", "Deeper", "d", free, (_e, cx) => { v.deeper(cx); cx.notify(); }))
     .child(button(t, "tech", "More technical", "t", free, (_e, cx) => { v.technical(cx); cx.notify(); }))
     .child(button(t, "askbtn", "Ask", "a", free, (_e, cx) => { v.startAsking(cx); cx.notify(); }))
@@ -60,6 +72,7 @@ export function tourView(v, t) {
       v.fix?.phase === "running" ? "Fixing…" : v.fix && v.fix.phase !== "pushed" ? "View fix" : `Fix ${v.comments.length} comment${v.comments.length === 1 ? "" : "s"}`,
       "f", Boolean(v.fix && v.fix.phase !== "pushed") || (v.comments.length > 0 && free), (_e, cx) => { v.startFix(cx); cx.notify(); })))
     .child(button(t, "layout", v.isSplit() ? "Stacked" : "Split", "s", true, (_e, cx) => { v.toggleSplit(); cx.notify(); }))
+    .when(Boolean(v.pr), el => el.child(button(t, "files", v.showFiles ? "Hide files" : "Files", "l", true, (_e, cx) => { v.showFiles = !v.showFiles; cx.notify(); })))
     .child(button(t, "restart", "New tour", "q", true, (_e, cx) => { v.reset(cx); cx.notify(); }));
   // Code and explanation sit in a resizable group: drag the line between them.
   // The group remembers each layout's sizes under its id.
@@ -69,13 +82,56 @@ export function tourView(v, t) {
   // code at 70% of the pane (the pane is wide by then: its width is what picks split). Stacked starts
   // from a fixed height rather than one measured before the code has loaded. Renaming a group
   // id drops the size it remembered.
+  const rail = v.pr && v.showFiles ? fileList(v, t) : null;
   const panes = v.isSplit()
     ? h_resizable("tour-split-70").size_full()
-      .child(resizable_panel().size(Math.round(v.width * 0.7) || 560).size_range(200).child(codeSide.pb(8)))
+      .child(resizable_panel().size(Math.round((v.width - (rail ? RAIL_WIDTH : 0)) * 0.7) || 560).size_range(200).child(codeSide.pb(8)))
       .child(resizable_panel().size_range(240).child(textSide))
     : v_resizable("tour-stack").size_full()
       .child(resizable_panel().size(360).size_range(80).child(codeSide))
       .child(resizable_panel().size_range(80).child(textSide));
   return v_flex().flex_1().min_h(0).child(header)
-    .child(div().flex_1().min_h(0).child(panes)).child(bar);
+    .child(h_flex().flex_1().min_h(0).when(Boolean(rail), el => el.child(rail)).child(div().flex_1().min_w(0).h_full().child(panes)))
+    .child(bar);
+}
+
+const RAIL_WIDTH = 210;
+
+/** "Next" while there's more, "Next file" when it leaves the stops for the other files, "Last file" or "Last stop" at the end. */
+function nextLabel(v) {
+  const to = v.moveTarget(1);
+  if (!to) return v.other ? "Last file" : "Last stop";
+  return to.file && !v.other ? "Next file" : "Next";
+}
+
+/** The PR's files: the tour's in stop order, then the rest of the code, then tests, docs and generated files. */
+function fileList(v, t) {
+  const rail = v_flex().id("files").w(RAIL_WIDTH).flex_none().h_full().overflow_y_scrollbar().py(6)
+    .border_r_1().border_color(t.border);
+  const g = v.files;
+  if (!g) return rail.child(div().px(12).py(4).text_size(11.5).text_color(t.dim).child("Loading files…"));
+  const current = v.currentFile();
+  const label = text => div().px(12).pt(4).pb(2).text_size(11).text_color(t.dim).child(text);
+  const divider = () => div().mx(0).my(6).border_t_1().border_color(t.border);
+  const row = (f, id) => {
+    const name = f.file.split("/").pop(), dir = f.file.slice(0, f.file.length - name.length);
+    const on = f.file === current;
+    return h_flex().id(id).gap(6).items_center().pr(10).pl(on ? 8 : 10).py(4).cursor_pointer().text_size(12)
+      .when(on, el => el.border_l_2().border_color(t.accent).bg(t.raised))
+      .hover(st => st.bg(t.hover)).on_click((_e, cx) => { v.openFile(f, cx); cx.notify(); })
+      .child(div().w(14).flex_none().text_size(11).text_color(t.dim).font_family(settings().font_family)
+        .child(f.stop !== undefined ? String(f.stop + 1) : f.status))
+      .child(h_flex().flex_1().min_w(0).overflow_hidden().whitespace_nowrap()
+        .when(Boolean(dir), el => el.child(div().flex_shrink_1().min_w(0).truncate().text_color(t.dim).child(dir)))
+        .child(div().flex_none().child(name)))
+      .child(h_flex().flex_none().gap(4).text_size(11).font_family(settings().font_family)
+        .when(Boolean(f.add), el => el.child(div().text_color(t.ansi2).child(`+${f.add}`)))
+        .when(Boolean(f.del), el => el.child(div().text_color(t.ansi1).child(`−${f.del}`))));
+  };
+  const groups = [["In the tour", g.tour, "t"], ["Also changed", g.also, "a"], ["Tests, docs and generated", g.side, "s"]].filter(([, list]) => list.length);
+  groups.forEach(([name, list, k], i) => {
+    if (i > 0) rail.child(divider());
+    rail.child(label(name)).children(list.map((f, j) => row(f, `file-${k}-${j}`)));
+  });
+  return rail;
 }
