@@ -1,0 +1,5 @@
+{
+  "global": {
+    "ctrl-a z": "mod.open:zen"
+  }
+}
