@@ -1,5 +1,6 @@
 {
   "global": {
-    "ctrl-a z": "mod.open:zen"
+    "ctrl-shift-enter": "mod.open:zen",
+    "cmd-shift-enter": "mod.open:zen"
   }
 }
