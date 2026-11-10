@@ -60,8 +60,8 @@ export function tourView(v, t) {
   const ask = div().px(14).pb(8).child(textInput(t, v.input, true));
   const free = !v.busy;
   const bar = h_flex().px(14).py(10).gap(6).flex_wrap().border_t_1().border_color(t.border)
-    .child(button(t, "prev", "Back", "b", Boolean(v.moveTarget(-1)), (_e, cx) => { v.move(-1, cx); cx.notify(); }))
-    .child(button(t, "next", nextLabel(v), "n", Boolean(v.moveTarget(1)), (_e, cx) => { v.move(1, cx); cx.notify(); }))
+    .child(button(t, "prev", "Previous", "k", Boolean(v.moveTarget(-1)), (_e, cx) => { v.move(-1, cx); cx.notify(); }))
+    .child(button(t, "next", nextLabel(v), "j", Boolean(v.moveTarget(1)), (_e, cx) => { v.move(1, cx); cx.notify(); }))
     .when(Boolean(other), el => el.child(button(t, "explainfile", "Explain", "e", free, (_e, cx) => { v.explainFile(cx); cx.notify(); })))
     .child(button(t, "deeper", "Deeper", "d", free, (_e, cx) => { v.deeper(cx); cx.notify(); }))
     .child(button(t, "tech", "More technical", "t", free, (_e, cx) => { v.technical(cx); cx.notify(); }))
@@ -72,7 +72,7 @@ export function tourView(v, t) {
       v.fix?.phase === "running" ? "Fixing…" : v.fix && v.fix.phase !== "pushed" ? "View fix" : `Fix ${v.comments.length} comment${v.comments.length === 1 ? "" : "s"}`,
       "f", Boolean(v.fix && v.fix.phase !== "pushed") || (v.comments.length > 0 && free), (_e, cx) => { v.startFix(cx); cx.notify(); })))
     .child(button(t, "layout", v.isSplit() ? "Stacked" : "Split", "s", true, (_e, cx) => { v.toggleSplit(); cx.notify(); }))
-    .when(Boolean(v.pr), el => el.child(button(t, "files", v.showFiles ? "Hide files" : "Files", "l", true, (_e, cx) => { v.showFiles = !v.showFiles; cx.notify(); })))
+    .when(Boolean(v.pr), el => el.child(button(t, "files", v.showFiles ? "Hide files" : "Files", "b", true, (_e, cx) => { v.showFiles = !v.showFiles; cx.notify(); })))
     .child(button(t, "restart", "New tour", "q", true, (_e, cx) => { v.reset(cx); cx.notify(); }));
   // Code and explanation sit in a resizable group: drag the line between them.
   // The group remembers each layout's sizes under its id.
@@ -110,25 +110,34 @@ function fileList(v, t) {
     .border_r_1().border_color(t.border);
   const g = v.files;
   if (!g) return rail.child(div().px(12).py(4).text_size(11.5).text_color(t.dim).child("Loading files…"));
-  const current = v.currentFile();
+  const current = v.currentFile(), mono = settings().font_family;
+  const all = [...g.tour, ...g.also, ...g.side], seen = all.filter(f => v.isViewed(f.file)).length;
+  const notes = new Map();
+  for (const c of v.comments) notes.set(c.file, (notes.get(c.file) ?? 0) + 1);
   const label = text => div().px(12).pt(4).pb(2).text_size(11).text_color(t.dim).child(text);
   const divider = () => div().mx(0).my(6).border_t_1().border_color(t.border);
   const row = (f, id) => {
     const name = f.file.split("/").pop(), dir = f.file.slice(0, f.file.length - name.length);
-    const on = f.file === current;
+    const on = f.file === current, viewed = v.isViewed(f.file), count = notes.get(f.file) ?? 0;
     return h_flex().id(id).gap(6).items_center().pr(10).pl(on ? 8 : 10).py(4).cursor_pointer().text_size(12)
       .when(on, el => el.border_l_2().border_color(t.accent).bg(t.raised))
       .hover(st => st.bg(t.hover)).on_click((_e, cx) => { v.openFile(f, cx); cx.notify(); })
-      .child(div().w(14).flex_none().text_size(11).text_color(t.dim).font_family(settings().font_family)
-        .child(f.stop !== undefined ? String(f.stop + 1) : f.status))
+      // The check marks the file viewed without opening it.
+      .child(div().id(`${id}-v`).w(14).flex_none().text_size(11).text_color(viewed ? t.ansi2 : t.dim).font_family(mono)
+        .on_click((_e, cx) => { cx.stop_propagation(); v.toggleViewed(f.file, cx); cx.notify(); })
+        .child(viewed ? "✓" : f.stop !== undefined ? String(f.stop + 1) : f.status))
       .child(h_flex().flex_1().min_w(0).overflow_hidden().whitespace_nowrap()
         .when(Boolean(dir), el => el.child(div().flex_shrink_1().min_w(0).truncate().text_color(t.dim).child(dir)))
-        .child(div().flex_none().child(name)))
-      .child(h_flex().flex_none().gap(4).text_size(11).font_family(settings().font_family)
+        .child(div().flex_none().text_color(viewed ? t.dim : t.foreground).child(name)))
+      .when(count > 0, el => el.child(div().flex_none().px(5).rounded(4).bg(t.raised).text_size(10.5).text_color(t.accent)
+        .font_family(mono).child(String(count))))
+      .child(h_flex().flex_none().gap(4).text_size(11).font_family(mono)
         .when(Boolean(f.add), el => el.child(div().text_color(t.ansi2).child(`+${f.add}`)))
         .when(Boolean(f.del), el => el.child(div().text_color(t.ansi1).child(`−${f.del}`))));
   };
   const groups = [["In the tour", g.tour, "t"], ["Also changed", g.also, "a"], ["Tests, docs and generated", g.side, "s"]].filter(([, list]) => list.length);
+  rail.child(div().px(12).pb(4).text_size(11).text_color(seen === all.length && seen ? t.ansi2 : t.dim)
+    .child(seen === all.length && seen ? `All ${seen} viewed` : `${seen} of ${all.length} viewed · v marks · j/k move`));
   groups.forEach(([name, list, k], i) => {
     if (i > 0) rail.child(divider());
     rail.child(label(name)).children(list.map((f, j) => row(f, `file-${k}-${j}`)));

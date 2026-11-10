@@ -20,7 +20,7 @@ import { listPRs, loadPR, prFileDiff, prFileStats, listThreads } from "./pr.js";
 import { groupFiles } from "./files.js";
 import { diffRows, rowsInRange, splitDiff } from "./diff.js";
 import { openWorktree, worktreeDiff, pushFix, removeWorktree } from "./worktree.js";
-import { commentKey, loadComments, saveComments, sideOf, rangeOf } from "./comments.js";
+import { commentKey, loadComments, saveComments, loadViewed, saveViewed, sideOf, rangeOf } from "./comments.js";
 import { planKey, loadSavedPlan, savePlan, dropSavedPlan } from "./saved.js";
 import { setupView } from "./views/setup.js";
 import { tourView } from "./views/tour.js";
@@ -48,6 +48,7 @@ export default class Tourist extends View {
     this.commenting = null; // { file, line, side, code, anchor, editId? } while the comment box is open
     this.threads = [];      // comment threads already on the PR on GitHub, read-only
     this.files = null;      // every file the PR changes, grouped for the file list (files.js)
+    this.viewed = {};       // files marked viewed on this PR: { file: the head commit it was marked at }
     this.other = null;      // a PR file the tour doesn't stop at, while it's open instead of a stop
     this.showFiles = true;  // the file list beside a PR tour, toggled with l
     // The fix run on a PR: { phase: "running" | "ready" | "failed" | "pushing" | "pushed",
@@ -106,8 +107,8 @@ export default class Tourist extends View {
     if (c === "focus") this.handle.focus();
     else if (c.startsWith("scope-")) { this.scope = c.slice(6); this.goStep("scope"); }
     else if (c.startsWith("depth-")) { this.depth = c.slice(6); this.goStep("depth"); }
-    else if (c === "down") this.moveCursor(1);
-    else if (c === "up") this.moveCursor(-1);
+    else if (c === "down") this.phase === "tour" ? this.move(1, cx) : this.moveCursor(1);
+    else if (c === "up") this.phase === "tour" ? this.move(-1, cx) : this.moveCursor(-1);
     else if (c === "pick") this.pick(cx);
     else if (c === "back") this.back();
     else if (c === "start") this.start(cx);
@@ -124,6 +125,7 @@ export default class Tourist extends View {
     else if (c === "review") this.startReview(cx);
     else if (c === "review-back") this.closeReview();
     else if (c === "explain") this.explainFile(cx);
+    else if (c === "viewed") this.toggleViewed(this.currentFile(), cx);
     else if (c.startsWith("file-") && this.files) {
       // file-<n>: the nth file in the list, counting down from the top
       const f = [...this.files.tour, ...this.files.also, ...this.files.side][Number(c.slice(5)) - 1];
@@ -173,6 +175,7 @@ export default class Tourist extends View {
           if (gen !== this.gen) return;
           this.pr = pr; this.planNote = null; head = pr.headOid;
           this.comments = await loadComments(commentKey(this.git.root, pr.number));
+          this.viewed = await loadViewed(commentKey(this.git.root, pr.number));
           this.loadThreads(cx);
           cx.notify();
           prompt = prPlanPrompt(prSubject(pr), this.depth);
@@ -282,7 +285,7 @@ export default class Tourist extends View {
   laterFiles() { return this.files ? [...this.files.also, ...this.files.side] : []; }
 
   /**
-   * Where n (1) or b (-1) goes: the tour stops in order, then on into the other files in the
+   * Where j (1) or k (-1) goes: the tour stops in order, then on into the other files in the
    * list after the last stop, and back the same way.
    */
   moveTarget(dir) {
@@ -393,6 +396,19 @@ export default class Tourist extends View {
   deleteComment(comment, cx) {
     this.comments = this.comments.filter(c => c.id !== comment.id);
     this.storeComments(cx);
+  }
+
+  /** True when the file was marked viewed at the PR's current head. */
+  isViewed(file) { return Boolean(this.pr) && this.viewed[file] === this.pr.headOid; }
+
+  /** Marks a file viewed, or clears the mark. Saved per PR. */
+  toggleViewed(file, cx) {
+    if (!this.pr || !file) return;
+    const viewed = { ...this.viewed };
+    if (this.isViewed(file)) delete viewed[file]; else viewed[file] = this.pr.headOid;
+    this.viewed = viewed;
+    const key = commentKey(this.git.root, this.pr.number);
+    cx.spawn(async () => { await saveViewed(key, viewed).catch(() => {}); });
   }
 
   storeComments(cx) {
@@ -615,7 +631,7 @@ export default class Tourist extends View {
     this.leaveBox();
     this.code?.release(); this.code = null;
     this.plan = null; this.busy = null; this.error = null;
-    this.pr = null; this.prNumber = null; this.prs = null; this.diff = null; this.planNote = null; this.comments = []; this.threads = []; this.savedKey = null;
+    this.pr = null; this.prNumber = null; this.prs = null; this.diff = null; this.planNote = null; this.comments = []; this.threads = []; this.savedKey = null; this.viewed = {};
     this.files = null; this.other = null;
     this.phase = this.git.root ? "setup" : "error";
     this.goStep("scope");
@@ -652,15 +668,16 @@ export default class Tourist extends View {
       if (k === "escape" || k === "q") this.reset(cx);
       else handled = false;
     } else if (this.phase === "tour") {
-      if (k === "n" || k === "right") this.move(1, cx);
-      else if (k === "b" || k === "left" || k === "h") this.move(-1, cx);
+      if (k === "j" || k === "down") this.move(1, cx);
+      else if (k === "k" || k === "up") this.move(-1, cx);
       else if (k === "d") this.deeper(cx);
       else if (k === "t") this.technical(cx);
       else if (k === "a" || k === "/") this.startAsking(cx);
       else if (k === "o") this.openInEditor();
       else if (k === "s") this.toggleSplit();
-      else if (k === "l" && this.pr) this.showFiles = !this.showFiles;
+      else if (k === "b" && this.pr) this.showFiles = !this.showFiles;
       else if (k === "e" && this.other) this.explainFile(cx);
+      else if (k === "v" && this.pr) this.toggleViewed(this.currentFile(), cx);
       else if (k === "escape" && this.commenting) this.leaveBox();
       else if (k === "f" && this.pr?.mine) this.startFix(cx);
       else if (k === "p" && this.pr) this.startReview(cx);

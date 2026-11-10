@@ -69,3 +69,20 @@ export function rangeOf(rows, from, to) {
   }
   return [Math.min(from, end), Math.max(from, end)];
 }
+
+// Which of a PR's files the reader marked viewed: { file: headOid }. A mark counts only while
+// the PR's head is the commit it was made at, so a new push clears it.
+const viewedDir = () => `${appHome()}/data/tourist/viewed`.replace(/\\/g, "/");
+
+export async function loadViewed(key) {
+  try {
+    const map = JSON.parse((await readTextFile(`${viewedDir()}/${key}.json`)) ?? "{}");
+    return map && typeof map === "object" && !Array.isArray(map) ? map : {};
+  } catch { return {}; }
+}
+
+export async function saveViewed(key, map) {
+  await fs.mkdir(viewedDir(), { recursive: true });
+  const path = `${viewedDir()}/${key}.json`;
+  await writeTextFile(path, JSON.stringify(map, null, 2), await readTextFile(path));
+}

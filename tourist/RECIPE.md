@@ -51,8 +51,16 @@ first stop. Clicking any other file shows its whole diff in the stop's place,
 with "The tour doesn't stop here", and `e` asks the agent for a short
 explanation. `a`, `d` and `t` work on it too, in the same agent session as the
 tour. Comments work on its lines. Answers about these files are saved with the
-tour (`fileNotes` in the saved plan). `n` after the last stop goes on through "Also changed" and then tests, docs and generated, in list order ("Next file", then "Last file"), and `b` walks back the same way. `l` or
+tour (`fileNotes` in the saved plan). `j` after the last stop goes on through "Also changed" and then tests, docs and generated, in list order ("Next file", then "Last file"), and `k` walks back the same way. `b` or
 "Hide files" hides the list.
+
+Viewed marks: `v` marks the current file viewed (or clears it), and clicking a
+row's number or status letter does the same without opening it. A viewed file
+shows a green ✓ in place of its number and a dimmed name, and the list's top line
+says "N of M viewed". Marks are saved per PR in
+`<appHome>/data/tourist/viewed/<repo>_pr-<n>.json` as file → head commit, and
+only count while the PR's head is that commit, so a new push clears them. A file
+with your saved comments shows their count in an accent badge.
 
 Saved tours: a tour's plan is saved with its Deeper/Ask answers and the agent
 session, keyed by the commit it's about and the depth: the PR's head for a pull
@@ -120,11 +128,11 @@ and its branch are deleted, and the comments stay.
 - Feature box: `tab` on the feature row types into it, `tab` or `esc` gives the
   keys back to the list. `enter` in the box goes to step 2.
 - Planning: `q` or `esc` cancels.
-- Tour: `n`/right next (past the last stop, into the other files), `b`/`h`/left back, `d` deeper, `t` more technical,
+- Tour: `j`/down next (past the last stop, into the other files), `k`/up previous, `d` deeper, `t` more technical,
   `a` or `/` ask (the box only exists while asking), `o` open in VS Code, `s` switches split and stacked
   (wide panes start split), `q`
   ends the tour and returns to step 1. On PR tours, `p` posts a review, `r` plans again, and `f`
-  (your own PRs) opens the fix. `l` shows or hides the file list, and `e`
+  (your own PRs) opens the fix. `b` shows or hides the file list, `v` marks a file viewed, and `e`
   explains a file the tour skipped.
 - Post review: `1` to `3` or `j`/`k` pick the verdict, `tab` types the summary,
   `p` twice posts, `o` opens it once posted, `b` or `esc` back to the tour.
@@ -202,7 +210,7 @@ and its branch are deleted, and the comments stay.
 - `herdr-app do tourist.<command>` drives it for testing: `scope-<id>`,
   `depth-<id>`, `down`, `up`, `pick`, `back`, `start`, `next`, `prev`,
   `deeper`, `technical`, `open`, `reset`, `agent` (switch agents), `fix`,
-  `fix-back`, `fix-discard`, `review`, `review-back`, `file-<n>` (the nth file in
+  `fix-back`, `fix-discard`, `review`, `review-back`, `viewed`, `file-<n>` (the nth file in
   the file list, from the top), `explain`. There is no push or post
   command: both take two key presses in the pane.
 
