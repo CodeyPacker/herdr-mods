@@ -1,6 +1,6 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
-import { spaces, panes, run, openOverlay, theme, window, shared, layout, settings } from "herdr";
+import { spaces, panes, run, openOverlay, theme, window, shared, layout, settings, props } from "herdr";
 
 // The islands' fill at the opacity in islands-workspace-chrome/settings.json (1 when unset).
 const islandFill = (c) => {
@@ -87,29 +87,33 @@ export default class Tabs extends View {
       : 0; // tabs line up with the main panel's left edge
     const panel = find(root, "panel"), body = find(root, "panel-body");
     const enabled = shared("workspace.panels") ?? ["files", "changes"];
-    this.syncPanel(space, panel, body, enabled);
-    const panelButton = (id, label, icon) => {
+    // props.part: "tabs" draws only the tab strip, "actions" only the button card, unset both.
+    const part = props()?.part;
+    if (part !== "tabs") this.syncPanel(space, panel, body, enabled);
+    const panelButton = (id, icon) => {
       const on = panel && !panel.hidden && body?.active === id;
-      return h_flex().id(`panel-${id}`).h(26).px(8).gap(5).flex_none().items_center().rounded(6)
-        .text_size(12).border(1).border_color(on ? t.accent : "#00000000").text_color(on ? t.accent : t.muted)
+      return h_flex().id(`panel-${id}`).size(26).flex_none().items_center().justify_center().rounded(6)
+        .border(1).border_color(on ? t.accent : "#00000000").text_color(on ? t.accent : t.muted)
         .hover(s => s.bg(t.hover)).on_mouse_down("left", stop)
         .on_click(() => {
           if (on) run("layout.hide", { id: "panel" });
           else { run("layout.select", { stack: "panel-body", child: id }); run("layout.show", { id: "panel" }); }
-        }).child(svg(icon).size(14)).child(label);
+        }).child(svg(icon).size(14));
     };
+    // The buttons on the right share one card, like the sidebar's, flush with the main panel's right edge.
+    const actions = h_flex().id("tab-actions").flex_none().h_full().px(10).gap(2).items_center().rounded(14).bg(islandFill(t.chrome)).border(1).border_color(t.border)
+        .child(button("tab-new", "+", () => openOverlay({ mod: "new-menu", kind: "popup", width: 250, height: 512 })))
+        .when(enabled.includes("files"), el => el.child(panelButton("files", "mods/files/file.svg")))
+        .when(enabled.includes("changes"), el => el.child(panelButton("changes", "mods/changes/changes.svg")))
+        .when(w?.buttons, el => el.child(div().w(1).h(16).mx(3).flex_none().bg(t.border))
+          .child(button("minimize", w.platform === "windows" ? svg("mods/islands-tabs/win-min.svg").size(16) : "−", () => run("window.minimize")))
+          .child(button("maximize", w.platform === "windows" ? svg(`mods/islands-tabs/${w.maximized ? "win-restore" : "win-max"}.svg`).size(16) : "□", () => run("window.maximize")))
+          .child(button("close-window", w.platform === "windows" ? svg("mods/islands-tabs/win-close.svg").size(16) : svg("mods/pane/close.svg").size(13), () => run("window.close"))));
+    if (part === "actions") return h_flex().size_full().justify_end().items_center().child(actions);
     return h_flex().size_full().min_w(0).pl(lightsPadding).gap(3).items_center() // no fill: the canvas shows through
       .on_mouse_up("left", () => { this.pressed = null; })
       .on_scroll_wheel(e => { if (Math.abs(e.delta.y) >= 1) run(e.delta.y > 0 ? "tab.prev" : "tab.next"); })
       .child(h_flex().id("tab-scroll").flex_1().min_w(0).h_full().items_center().gap(3).overflow_x_scrollbar().children(shown.map(item)))
-      // The buttons on the right share one card, like the sidebar's, flush with the main panel's right edge.
-      .child(h_flex().id("tab-actions").flex_none().h_full().px(10).gap(2).items_center().rounded(14).bg(islandFill(t.chrome)).border(1).border_color(t.border)
-        .child(button("tab-new", "+", () => openOverlay({ mod: "new-menu", kind: "popup", width: 250, height: 512 })))
-        .when(enabled.includes("files"), el => el.child(panelButton("files", "Files", "mods/files/file.svg")))
-        .when(enabled.includes("changes"), el => el.child(panelButton("changes", "Changes", "mods/changes/changes.svg")))
-        .when(w?.buttons, el => el.child(div().w(1).h(16).mx(3).flex_none().bg(t.border))
-          .child(button("minimize", w.platform === "windows" ? svg("mods/islands-tabs/win-min.svg").size(16) : "−", () => run("window.minimize")))
-          .child(button("maximize", w.platform === "windows" ? svg(`mods/islands-tabs/${w.maximized ? "win-restore" : "win-max"}.svg`).size(16) : "□", () => run("window.maximize")))
-          .child(button("close-window", w.platform === "windows" ? svg("mods/islands-tabs/win-close.svg").size(16) : svg("mods/pane/close.svg").size(13), () => run("window.close")))));
+      .when(part !== "tabs", el => el.child(actions));
   }
 }
