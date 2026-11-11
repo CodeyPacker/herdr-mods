@@ -58,7 +58,8 @@ export function tourView(v, t) {
     .child(md(v, `note-${key}-${i}`, n.text)));
   // Cap the line length so long explanations stay readable in wide panes.
   const body = v_flex().w_full().max_w(680).gap(10)
-    .when(!other && v.idx === 0 && Boolean(plan.summary), el => el.child(v_flex().p(10).rounded(8).bg(t.raised)
+    .when(!other && v.idx === 0 && Boolean(plan.summary), el => el.child(v_flex().p(10).gap(4).rounded(8).bg(t.raised)
+      .child(div().text_size(11.5).font_semibold().text_color(t.accent).child("Tour summary"))
       .child(md(v, "summary", String(plan.summary)))))
     .when(!other, el => el.child(md(v, `body-${v.idx}`, String(s.body ?? ""))))
     .when(Boolean(other) && noteList.length === 0 && !v.busy, el => el.child(div().text_size(12).text_color(t.dim)

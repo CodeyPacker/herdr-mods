@@ -33,7 +33,7 @@ Row text wraps in narrow panes.
 While the agent plans, a spinner and "<Agent> is planning the tour". Then the tour: a header with "n / total", the stop
 title and the tour title, the file and line range (click or `o` opens it in VS
 Code), the code excerpt, and the explanation below it, capped at 680 px wide.
-Stop 1 also shows the tour summary.
+Stop 1 also shows the tour summary, in a raised box headed "Tour summary".
 
 Links: `path:line` and `path:start-end` in the agent's text (summary, stop
 bodies, answers) are links, when the path is a file in the repo (or the
