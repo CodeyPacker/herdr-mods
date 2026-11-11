@@ -52,9 +52,11 @@ the file's diff instead of an excerpt: hunk headers, added lines tinted green,
 removed lines red, line numbers and +/− marks. It holds the file's whole diff
 (up to 2000 rows), scrolled so the stop's lines sit near the top. The stop's
 own line numbers are accent-colored on a raised background. Every stop on the
-same file gets a label above its first line, "Stop 2 · title", and clicking
-another stop's label goes to it, so code from an earlier stop on the file is
-still there to scroll back to. `o` opens the PR's Files
+same file sits between two lines across the panel: the top one has "Stop 2 ·
+title" in its middle, the bottom one is plain. The current stop's lines are
+accent-colored, the others use the border color, and clicking another stop's
+label goes to it. Code from an earlier stop on the file is still there to
+scroll back to. `o` opens the PR's Files
 page in the browser, since the PR isn't on disk. There's no cap on the number of
 stops: one per changed area worth reviewing.
 

@@ -283,7 +283,7 @@ export default class Tourist extends View {
     return this.plan.stops.flatMap((st, index) => {
       if (st.file !== file) return [];
       const range = rowsFor(rows, Number(st.start) || 1, Number(st.end) || Infinity);
-      return range ? [{ index, title: st.title, row: range[0], current: index === this.idx && !this.other }] : [];
+      return range ? [{ index, title: st.title, row: range[0], end: range[1], current: index === this.idx && !this.other }] : [];
     });
   }
 

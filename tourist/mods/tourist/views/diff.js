@@ -83,38 +83,48 @@ function thread(th, t, c) {
     .when(c.threadReply !== th.id, el => el.child(actions));
 }
 
-/** A label above a stop's first line: "Stop 2 · title". Click goes to that stop. */
-function stopLabel(st, id, t, onStop) {
-  return h_flex().id(id).ml(56).mt(6).mb(2).gap(6).items_center().text_size(11)
-    .when(!st.current, el => el.cursor_pointer().on_click((_e, cx) => { onStop(st.index, cx); cx.notify(); }))
-    .child(div().px(6).py(1).rounded(5).bg(st.current ? t.accent : t.raised).text_color(st.current ? t.accent_foreground : t.accent)
-      .child(`Stop ${st.index + 1}`))
-    .child(div().text_color(st.current ? t.foreground : t.dim).child(st.current ? `${st.title} · this stop` : st.title));
+/**
+ * The line above a stop's first row, "Stop 2 · title" in the middle of it, or the plain line below
+ * its last row (`label` false). The current stop's lines are accent-colored. Clicking another
+ * stop's label goes to it.
+ */
+function stopLine(st, id, t, onStop, label) {
+  const color = st.current ? t.accent : t.border, line = () => div().flex_1().h(1).bg(color);
+  if (!label) return div().w_full().px(12).mt(2).mb(6).child(line());
+  return h_flex().id(id).w_full().px(12).mt(8).mb(2).gap(8).items_center().text_size(11)
+    .when(!st.current, el => el.cursor_pointer().hover(s => s.text_color(t.foreground)).on_click((_e, cx) => { onStop(st.index, cx); cx.notify(); }))
+    .text_color(st.current ? t.accent : t.dim)
+    .child(line())
+    .child(div().flex_none().max_w(420).truncate().child(`Stop ${st.index + 1} · ${st.title}`))
+    .child(line());
 }
 
 /**
- * The rows with everything that sits between them: stop labels, threads, comments and the
- * comment box. Returns the items, which item each row is (`at[rowIndex]`), and the width the
- * longest line needs. `m` holds the stop marks: `stops` ([{ index, title, row, current }]),
+ * The rows with everything that sits between them: stop lines, threads, comments and the
+ * comment box. Returns the items, which item each row is (`at[rowIndex]`), which items span the
+ * visible width rather than the longest line (`wide`, the stop lines, so their labels stay in
+ * view), and the width the longest line needs. `m` holds the stop marks: `stops` ([{ index, title, row, end, current }]),
  * `stopRows` and `linkRows` ([first, last] row indexes, or null) and `onStop`.
  */
 function diffItems(id, rows, t, c, m) {
-  const items = [], at = [];
+  const items = [], at = [], wide = new Set();
   const covered = c ? coveredRows(rows, c.list, c.file, c.open) : new Set();
   const inside = (range, i) => Boolean(range) && i >= range[0] && i <= range[1];
   rows.forEach((r, i) => {
-    for (const st of m?.stops ?? []) if (st.row === i) items.push(stopLabel(st, `${id}-stop-${st.index}`, t, m.onStop));
+    for (const st of m?.stops ?? []) if (st.row === i) { wide.add(items.length); items.push(stopLine(st, `${id}-stop-${st.index}`, t, m.onStop, true)); }
     at[i] = items.length;
     items.push(row(r, i, `${id}-row-${i}`, t, c?.onRow, { covered: covered.has(i), stop: inside(m?.stopRows, i), linked: inside(m?.linkRows, i) }));
-    if (!c) return;
+    const ends = () => { for (const st of m?.stops ?? []) if (st.end === i) { wide.add(items.length); items.push(stopLine(st, null, t, null, false)); } };
+    if (!c) { ends(); return; }
     for (const th of commentsOn(c.threads ?? [], c.file, r)) items.push(thread(th, t, c));
     // The comment being edited shows as the box below instead.
     for (const saved of commentsOn(c.list, c.file, r)) if (saved.id !== c.open?.editId) items.push(bubble(saved, t, c.onDelete, c.onEdit));
     if (c.open && c.open.line === r.number && c.open.side === (r.kind === "-" ? "old" : "new"))
       items.push(div().ml(56).mr(10).my(4).max_w(640).child(textInput(t, c.input, true)));
+    ends();
   });
   const longest = rows.reduce((n, r) => Math.max(n, r.text.replace(/\t/g, "    ").length), 0);
-  return { items, at, width: GUTTER + longest * CHAR_WIDTH };
+  return { items, at, wide, width: GUTTER + longest * CHAR_WIDTH };
 }
 
 /** The diff rows of one file with a sideways scroll of their own, for stacking several in one list. */
@@ -136,7 +146,7 @@ export function diffBlock(id, rows, t, c = null) {
  * stop marks (see diffItems).
  */
 export function diffView(id, rows, t, c = null, m = null, scroll = null) {
-  const { items, at, width } = diffItems(id, rows, t, c, m);
+  const { items, at, wide, width } = diffItems(id, rows, t, c, m);
   if (scroll && items.length) {
     if (scroll.step === 1) scroll.handle.scroll_to_item(items.length - 1);
     else if (scroll.step === 2) scroll.handle.scroll_to_item(at[Math.max(0, Math.min(scroll.row, rows.length - 1))] ?? 0);
@@ -144,7 +154,7 @@ export function diffView(id, rows, t, c = null, m = null, scroll = null) {
   // A plain scroll area driven by the handle, with the scrollbars drawn over it, the same way
   // the explanation scrolls. A built-in scrollbar area keeps a scroll position of its own.
   const area = v_flex().id(id).size_full().overflow_scroll().py(4)
-    .children(items.map(item => div().min_w(width).flex_none().child(item)));
+    .children(items.map((item, i) => wide.has(i) ? item : div().min_w(width).flex_none().child(item)));
   return div().relative().size_full()
     .child(scroll ? area.track_scroll(scroll.handle) : area)
     .child(Scrollbar.new(id).absolute().inset_0());
