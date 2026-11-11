@@ -9,7 +9,7 @@
 //   files.js      grouping the PR's files for the file list
 //   views/        the setup, tour, planning and error screens
 import { View } from "gpui-kit";
-import { v_flex, InputState } from "gpui-base";
+import { v_flex, InputState, VirtualListScrollHandle } from "gpui-base";
 import { theme, nextCommand, props, run } from "herdr";
 import { SCOPES, DEPTHS, SPLIT_WIDTH } from "./constants.js";
 import { startFolder, readRepo, git } from "./git.js";
@@ -67,6 +67,7 @@ export default class Tourist extends View {
     this.width = 0;       // the pane width, from on_size_change
     this.asking = false;  // the ask box only exists while asking, so it can't take tour keys
     this.typing = null;   // "ask" | "feature" while a text box has the keyboard
+    this.explainScroll = VirtualListScrollHandle.new(); // the explanation's scroll position, moved from code
     this.input = this.textBox("ask", "Ask about this stop, then press enter", cx => this.ask(cx));
     this.featureInput = this.textBox("feature", "e.g. how a space gets its hint letter", cx => this.pick(cx));
     this.commentInput = this.textBox("comment", "Comment on this line, then press enter", cx => this.saveComment(cx));
@@ -102,7 +103,7 @@ export default class Tourist extends View {
   }
 
   async close() {
-    this.code?.release(); this.input.release(); this.featureInput.release(); this.commentInput.release(); this.summaryInput.release(); this.replyInput.release();
+    this.code?.release(); this.explainScroll.release(); this.input.release(); this.featureInput.release(); this.commentInput.release(); this.summaryInput.release(); this.replyInput.release();
     await this.session?.stop(); await this.fixSession?.stop();
   }
 
@@ -348,6 +349,9 @@ export default class Tourist extends View {
     this.input.set_value("");
     this.leaveBox();
     this.followUp(`You asked: ${q}`, q, cx);
+    // Jump to the bottom so the answer appears in view, and again once the question is drawn.
+    this.explainScroll.scroll_to_bottom();
+    cx.timer.after(50, () => { this.explainScroll.scroll_to_bottom(); cx.notify(); });
   }
 
   /**

@@ -1,7 +1,7 @@
 // One tour stop: header, the code excerpt, the explanation, and the key bar. On PR tours
 // a file list sits on the left, and a file the tour skips can be opened in a stop's place.
 import { div } from "gpui-kit";
-import { v_flex, h_flex, Editor, TextView, h_resizable, v_resizable, resizable_panel } from "gpui-base";
+import { v_flex, h_flex, Editor, TextView, Scrollbar, h_resizable, v_resizable, resizable_panel } from "gpui-base";
 import { settings } from "herdr";
 import { button, spinner, textInput } from "../ui.js";
 import { diffView } from "./diff.js";
@@ -55,7 +55,11 @@ export function tourView(v, t) {
     .when(Boolean(v.busy), el => el.child(h_flex().gap(8).items_center().text_color(t.dim)
       .child(spinner(t))
       .child(div().text_size(12).child(`${v.busy}…`))));
-  const explain = v_flex().id(`explain-${key}`).flex_1().min_h(0).overflow_y_scrollbar().px(14).py(12).child(body);
+  // The explanation scrolls through v.explainScroll, so asking can jump it to the bottom.
+  const explainId = `explain-${key}`;
+  const explain = div().relative().flex_1().min_h(0)
+    .child(v_flex().id(explainId).size_full().overflow_y_scroll().track_scroll(v.explainScroll).px(14).py(12).child(body))
+    .child(Scrollbar.vertical(explainId).absolute().inset_0());
   // The ask box is only drawn while asking, so tour keys can never land in it.
   const ask = div().px(14).pb(8).child(textInput(t, v.input, true));
   const free = !v.busy;
