@@ -153,7 +153,7 @@ needs comments, an approval, or a typed summary.
 Merge (your own PRs only): GitHub won't let you approve your own PR, so `m` or
 "Merge" opens a merge screen instead. It reads the repo's allowed methods
 (`gh api repos/<repo>`: squash, merge commit, rebase) and lists only those, as
-1 to 3. `j`/`k` or a number picks one. `m` opens a confirm dialog, "<Method>?" into
+1 to 3. `j`/`k` or a number picks one. `enter` or `m` opens a confirm dialog, "<Method>?" into
 <base>, and `y` runs `gh pr merge <n> -R <repo> --<method>
 --match-head-commit <head>`, so it merges only if the PR's head is still the
 commit you reviewed. GitHub's reason shows when it's blocked (checks, reviews,
@@ -198,7 +198,7 @@ and its branch are deleted, and the comments stay.
   explains a file the tour skipped.
 - Checks: `j`/`k` or `1` to `9` pick, `e` or `enter` explains a failure, `o`
   opens it, `r` refreshes, `b` or `esc` back to the tour.
-- Merge: `1` to `3` or `j`/`k` pick the method, `m` then `y` merges, `o` opens the
+- Merge: `1` to `3` or `j`/`k` pick the method, `enter` or `m`, then `y`, merges, `o` opens the
   PR once merged, `b` or `esc` back to the tour.
 - Post review: `1` to `3` or `j`/`k` pick the verdict, `tab` types the summary,
   `p` then `y` posts, `o` opens it once posted, `b` or `esc` back to the tour.

@@ -1,4 +1,4 @@
-// The merge screen, for your own PRs: pick a merge method, press m, then y to confirm.
+// The merge screen, for your own PRs: pick a merge method, press enter or m, then y to confirm.
 import { div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { button, option, spinner } from "../ui.js";
@@ -21,7 +21,7 @@ export function mergeView(v, t) {
       .when(Boolean(m.error), el => el.child(banner(m.error, t.ansi1)))
       .when(m.phase === "merged", el => el.child(banner(`Merged into ${pr.base}. o opens the PR.`, t.ansi2)))
       .when(m.phase === "picking", el => el
-        .child(div().pb(4).text_size(11.5).text_color(t.dim).child("How to merge (only the methods this repo allows)"))
+        .child(div().pb(4).text_size(11.5).text_color(t.dim).child("How to merge (only the methods this repo allows) · enter merges"))
         .children(methods.map((x, i) => option(t, `merge-${x.id}`, x.key, x.label, x.hint, m.cursor === i, pick(i))))
         .child(div().pt(8).text_size(11.5).text_color(t.dim)
           .child(`Merges only if the PR's head is still the commit you reviewed. GitHub's own rules (checks, reviews, conflicts) still apply.`)));
