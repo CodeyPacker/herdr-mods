@@ -89,10 +89,7 @@ export default class Tourist extends View {
     this.width = 0;       // the pane width, from on_size_change
     this.asking = false;  // the ask box only exists while asking, so it can't take tour keys
     this.typing = null;   // "ask" | "feature" while a text box has the keyboard
-    // The explanation scrolls by hand, since Herdr can't scroll a plain area from code.
-    // offsets: pixels scrolled per stop key (Infinity: go to the bottom once measured).
-    // view, content: the visible height and the full height, from on_size_change.
-    this.explainScroll = { offsets: {}, view: 0, content: 0 };
+    this.explainScroll = ScrollHandle.new(); // the explanation's scroll position, moved to the bottom after asking
     this.input = this.textBox("ask", "Ask about this stop, then press enter", cx => this.ask(cx));
     this.featureInput = this.textBox("feature", "e.g. how a space gets its hint letter", cx => this.pick(cx));
     this.commentInput = this.textBox("comment", "Comment on this line, then press enter", cx => this.saveComment(cx));
@@ -129,7 +126,7 @@ export default class Tourist extends View {
   }
 
   async close() {
-    this.code?.release(); this.diffScroll.release(); this.input.release(); this.featureInput.release(); this.commentInput.release(); this.summaryInput.release(); this.replyInput.release(); this.threadInput.release();
+    this.code?.release(); this.explainScroll.release(); this.diffScroll.release(); this.input.release(); this.featureInput.release(); this.commentInput.release(); this.summaryInput.release(); this.replyInput.release(); this.threadInput.release();
     await this.session?.stop(); await this.fixSession?.stop();
   }
 
@@ -587,39 +584,10 @@ export default class Tourist extends View {
     this.input.set_value("");
     this.leaveBox();
     this.followUp(`You asked: ${q}`, q, cx);
-    // Go to the bottom once the question is drawn, so the answer appears in view.
-    this.explainScroll.offsets[this.explainKey()] = Infinity;
-  }
-
-  /** Names the explanation being shown, so each stop and file keeps its own scroll position. */
-  explainKey() { return this.other ? `file-${this.other}` : String(this.idx); }
-
-  /** The furthest the explanation can scroll. */
-  explainMax() {
-    const sc = this.explainScroll;
-    return Math.max(0, sc.content - sc.view);
-  }
-
-  /** Where the explanation is scrolled to now. */
-  explainOffset() {
-    return Math.min(this.explainScroll.offsets[this.explainKey()] ?? 0, this.explainMax());
-  }
-
-  /** Scrolls the explanation by `dy` pixels (positive moves down). */
-  scrollExplain(dy, cx) {
-    const at = this.explainOffset(), to = Math.max(0, Math.min(at + dy, this.explainMax()));
-    if (to === at) return;
-    this.explainScroll.offsets[this.explainKey()] = to;
-    cx.notify();
-  }
-
-  /** Records a measured height ("view" or "content"). A pending jump to the bottom lands here. */
-  explainSized(kind, height, cx) {
-    const sc = this.explainScroll, key = this.explainKey();
-    const changed = sc[kind] !== height;
-    sc[kind] = height;
-    if (kind === "content" && sc.offsets[key] === Infinity) sc.offsets[key] = this.explainMax();
-    if (changed) cx.notify();
+    // Reveal the empty marker at the end of the explanation once the question is drawn,
+    // so the answer appears in view. Again a moment later in case that layout came early.
+    this.explainScroll.scroll_to_item(1);
+    cx.timer.after(50, cx => { this.explainScroll.scroll_to_item(1); cx.notify(); });
   }
 
   /**

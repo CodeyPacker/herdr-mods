@@ -1,7 +1,7 @@
 // One tour stop: header, the code excerpt, the explanation, and the key bar. On PR tours
 // a file list sits on the left, and a file the tour skips can be opened in a stop's place.
 import { div } from "gpui-kit";
-import { v_flex, h_flex, Editor, TextView, h_resizable, v_resizable, resizable_panel } from "gpui-base";
+import { v_flex, h_flex, Editor, TextView, Scrollbar, h_resizable, v_resizable, resizable_panel } from "gpui-base";
 import { settings } from "herdr";
 import { button, spinner, textInput } from "../ui.js";
 import { diffView } from "./diff.js";
@@ -68,20 +68,13 @@ export function tourView(v, t) {
     .when(Boolean(v.busy), el => el.child(h_flex().gap(8).items_center().text_color(t.dim)
       .child(spinner(t))
       .child(div().text_size(12).child(`${v.busy}…`))));
-  // The explanation scrolls by hand (see explainScroll in main.js), so asking can jump it to the bottom.
-  // The body sits shifted up by the offset inside a clipped box, with a thin bar showing where it is.
-  const sc = v.explainScroll, off = v.explainOffset();
-  const thumb = sc.content > sc.view && sc.view > 0
-    ? div().absolute().right(2).w(4).rounded(2).bg(t.border)
-      .top(off / sc.content * sc.view).h(Math.max(20, sc.view * sc.view / sc.content))
-    : null;
-  const explain = div().id(`explain-${key}`).relative().flex_1().min_h(0).overflow_hidden()
-    .on_size_change((size, cx) => v.explainSized("view", size.height, cx))
-    .on_scroll_wheel((e, cx) => v.scrollExplain(-e.delta.y, cx))
-    .child(v_flex().id(`explain-body-${key}`).absolute().left_0().right_0().top(-off).px(14).py(12)
-      .on_size_change((size, cx) => v.explainSized("content", size.height, cx))
-      .child(body))
-    .when(Boolean(thumb), el => el.child(thumb));
+  // A plain scroll area driven by v.explainScroll, with the scrollbar drawn over it, the same way
+  // the diff scrolls. Its second child is an empty marker at the end: asking reveals it.
+  const explainId = `explain-${key}`;
+  const explain = div().relative().flex_1().min_h(0)
+    .child(v_flex().id(explainId).size_full().overflow_y_scroll().track_scroll(v.explainScroll).px(14).py(12)
+      .child(body).child(div().h(1)))
+    .child(Scrollbar.vertical(explainId).absolute().inset_0());
   // The ask box is only drawn while asking, so tour keys can never land in it.
   const ask = div().px(14).pb(8).child(textInput(t, v.input, true));
   const free = !v.busy;
