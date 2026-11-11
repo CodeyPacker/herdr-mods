@@ -155,7 +155,8 @@ Merge (your own PRs only): GitHub won't let you approve your own PR, so `m` or
 and the second `m` runs `gh pr merge <n> -R <repo> --<method>
 --match-head-commit <head>`, so it merges only if the PR's head is still the
 commit you reviewed. GitHub's reason shows when it's blocked (checks, reviews,
-conflicts). It never deletes branches or touches your checkout: the repo's own
+conflicts). When someone else pushed since the tour started, it says the PR has
+newer commits and to open it again to review them. It never deletes branches or touches your checkout: the repo's own
 auto-delete setting decides. Then it says "Merged", and `o` opens the PR. A
 peer's PR never shows Merge.
 
@@ -171,7 +172,10 @@ file's diff. `r` (or `a`, `/`) opens a reply box: the reply goes into the same
 agent session, which can keep editing the same worktree. The screen then shows
 "You replied: …", the agent's answer, and the updated diff. `p` asks "Press p again to push to <branch>", and the second `p`
 commits ("Address review comments on #n") and pushes to the PR's branch, then
-removes the worktree and clears the comments. `x` discards the fix: the worktree
+removes the worktree and clears the comments. The tour then moves to the
+pushed commit, since that's the PR's new head: the diffs, file list, threads
+and checks reload, viewed marks carry over, and the plan is saved under the new
+head. Merge works right after, with no need to plan again. `x` discards the fix: the worktree
 and its branch are deleted, and the comments stay.
 
 ## How it behaves
