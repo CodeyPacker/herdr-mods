@@ -37,6 +37,7 @@ import { reviewView } from "./views/review.js";
 import { mergeMethods, mergePR } from "./merge.js";
 import { mergeView } from "./views/merge.js";
 import { checksView } from "./views/checks.js";
+import { confirmDialog, pendingConfirm } from "./views/confirm.js";
 
 export default class Tourist extends View {
   init(_props, cx) {
@@ -726,7 +727,7 @@ export default class Tourist extends View {
   pushFix(cx) {
     const fix = this.fix, pr = this.pr;
     if (!fix || !pr || fix.phase !== "ready" || !fix.files?.length) return;
-    if (!fix.confirm) { fix.confirm = true; return; }
+    if (!fix.confirm) { fix.confirm = true; this.leaveBox(); return; } // leaveBox gives the dialog the keyboard
     fix.confirm = false; fix.phase = "pushing"; fix.error = null;
     cx.spawn(async cx => {
       try {
@@ -811,7 +812,7 @@ export default class Tourist extends View {
   postReview(cx) {
     const r = this.review, pr = this.pr;
     if (!this.canPost()) return;
-    if (!r.confirm) { r.confirm = true; return; }
+    if (!r.confirm) { r.confirm = true; this.leaveBox(); return; }
     const event = (eventsFor(pr)[r.cursor] ?? eventsFor(pr)[0]).id;
     const comments = [...this.comments], summary = this.summaryInput.value();
     r.confirm = false; r.phase = "posting"; r.error = null;
@@ -861,7 +862,7 @@ export default class Tourist extends View {
   doMerge(cx) {
     const m = this.merge, pr = this.pr, method = m?.methods?.[m.cursor];
     if (!m || !pr?.mine || m.phase !== "picking" || !method) return;
-    if (!m.confirm) { m.confirm = true; return; }
+    if (!m.confirm) { m.confirm = true; this.leaveBox(); return; }
     m.confirm = false; m.phase = "merging"; m.error = null;
     cx.spawn(async cx => {
       try { await mergePR(this.git.root, this.on, pr, method.id); m.phase = "merged"; }
@@ -997,6 +998,14 @@ export default class Tourist extends View {
     // z zooms this pane to fill the tab and back, on every screen (Herdr's pane.zoom, ctrl-shift-z).
     if (k === "z") { run("pane.zoom"); cx.stop_propagation(); return; }
     let handled = true;
+    // The confirm dialog is open (push, post or merge): y goes ahead, n or esc cancels, other keys wait.
+    const asking = pendingConfirm(this);
+    if (asking) {
+      if (k === "y") asking.go(cx);
+      else if (k === "n" || k === "escape") asking.cancel();
+      cx.stop_propagation(); cx.notify();
+      return;
+    }
     if (this.phase === "setup" && !this.git.root) {
       handled = false; // still finding the repo; see pick()
     } else if (this.phase === "setup") {
@@ -1043,7 +1052,7 @@ export default class Tourist extends View {
     } else if (this.phase === "merge") {
       const m = this.merge, n = /^[1-3]$/.test(k) ? +k - 1 : -1;
       if (k === "b" || k === "escape") this.closeMerge();
-      else if (k === "m") this.doMerge(cx);
+      else if (k === "m" || k === "enter") this.doMerge(cx);
       else if (k === "o" && m?.phase === "merged") this.openPR();
       else if (n >= 0 && n < (m?.methods?.length ?? 0)) this.moveMethod(n);
       else if (k === "j" || k === "down") this.moveMethod((m?.cursor ?? 0) + 1);
@@ -1078,15 +1087,17 @@ export default class Tourist extends View {
 
   render(cx) {
     const t = theme();
-    const root = v_flex().id("tourist").track_focus(this.handle).on_key_down((e, cx) => this.key(e, cx))
+    const root = v_flex().id("tourist").relative().track_focus(this.handle).on_key_down((e, cx) => this.key(e, cx))
       .size_full().min_h(0).text_color(t.foreground).text_size(13)
       .on_size_change((size, cx) => { if (size.width !== this.width) { this.width = size.width; cx.notify(); } }); // no fill: the pane's own background shows, like a terminal
     if (this.phase === "setup") return root.child(setupView(this, t));
     if (this.phase === "planning") return root.child(planningView(this, t));
     if (this.phase === "error") return root.child(errorView(this, t));
-    if (this.phase === "fix" && this.fix && this.pr) return root.child(fixView(this, t));
-    if (this.phase === "review" && this.review && this.pr) return root.child(reviewView(this, t));
-    if (this.phase === "merge" && this.merge && this.pr) return root.child(mergeView(this, t));
+    // Push, post and merge ask first, in a dialog over the screen.
+    const dialog = confirmDialog(this, t);
+    if (this.phase === "fix" && this.fix && this.pr) return root.child(fixView(this, t)).when(Boolean(dialog), el => el.child(dialog));
+    if (this.phase === "review" && this.review && this.pr) return root.child(reviewView(this, t)).when(Boolean(dialog), el => el.child(dialog));
+    if (this.phase === "merge" && this.merge && this.pr) return root.child(mergeView(this, t)).when(Boolean(dialog), el => el.child(dialog));
     if (this.phase === "checks" && this.checks && this.pr) return root.child(checksView(this, t));
     return root.child(tourView(this, t));
   }

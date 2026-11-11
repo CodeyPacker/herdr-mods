@@ -27,7 +27,7 @@ export function reviewView(v, t) {
     .when(r.phase !== "posted", el => el
       .child(section(comments.length ? "Your comments, posted on the lines they sit on" : "No line comments. You can approve, or write a summary to comment."))
       .children(comments)
-      .child(section(pr.mine ? "Verdict (your own PR can only take comments) · p twice posts" : "Verdict · pick one, then p twice posts"))
+      .child(section(pr.mine ? "Verdict (your own PR can only take comments) · p posts" : "Verdict · pick one, then p posts"))
       .children(events.map((e, i) => option(t, `event-${e.id}`, e.key, e.label, e.hint, r.cursor === i, pick(i))))
       .child(section(v.comments.length ? `Summary (optional, tab types; empty posts "${DEFAULT_SUMMARY}")` : "Summary (optional, tab types)"))
       .child(textInput(t, v.summaryInput, v.typing === "summary")));
@@ -39,7 +39,7 @@ export function reviewView(v, t) {
     .child(button(t, "review-back", "Back to tour", "b", r.phase !== "posting", (_e, cx) => { v.closeReview(); cx.notify(); }))
     .when(r.phase === "posted", el => el.child(button(t, "review-open", "Open on GitHub", "o", true, (_e, cx) => { v.openReview(); cx.notify(); })))
     .when(r.phase !== "posted", el => el.child(button(t, "review-post",
-      r.confirm ? `Press p again to post "${event.label}" to GitHub` : `Post as ${event.label}`,
+      `Post as ${event.label}`,
       "p", v.canPost(), (_e, cx) => { v.postReview(cx); cx.notify(); })));
   return v_flex().flex_1().min_h(0).child(header).child(body).child(bar);
 }

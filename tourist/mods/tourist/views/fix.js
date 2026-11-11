@@ -47,7 +47,7 @@ export function fixView(v, t) {
   const bar = h_flex().px(14).py(10).gap(6).flex_wrap().border_t_1().border_color(t.border)
     .child(button(t, "fix-back", "Back to tour", "b", true, (_e, cx) => { v.closeFix(); cx.notify(); }))
     .child(button(t, "fix-reply", "Reply to the agent", "r", canReply, (_e, cx) => { v.startReply(cx); cx.notify(); }))
-    .child(button(t, "fix-push", f.confirm ? `Press p again to push to ${pr.head}` : `Push to ${pr.head}`, "p", canPush, (_e, cx) => { v.pushFix(cx); cx.notify(); }))
+    .child(button(t, "fix-push", `Push to ${pr.head}`, "p", canPush, (_e, cx) => { v.pushFix(cx); cx.notify(); }))
     .child(button(t, "fix-discard", "Discard fix", "x", canDiscard, (_e, cx) => { v.discardFix(cx); cx.notify(); }));
   return v_flex().flex_1().min_h(0).child(header).child(body).when(v.replying, el => el.child(reply)).child(bar);
 }
