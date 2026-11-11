@@ -1,5 +1,5 @@
 import { View, div } from "gpui-kit";
-import { v_flex, h_flex, InputState, Input } from "gpui-base";
+import { v_flex, h_flex, InputState, Input, ScrollHandle } from "gpui-base";
 import { spaces, panes, agents, run, props, closeOverlay, readTextFile, appHome, home } from "herdr";
 import { colors, panelFill, hints, row, spaceNote, glyph, navigate, hintLine, readHintConfig, ROW_H } from "./tiles.js";
 
@@ -35,6 +35,10 @@ export default class Jump extends View {
     this.handle = cx.focus_handle();
     this.handle.focus();
     cx.timer.after(600, () => this.handle.focus());
+    /** The list's scroll position, so the selected row stays in view. */
+    this.scroll = ScrollHandle.new();
+    /** True after the selection moves, until the next render scrolls to it. */
+    this.reveal = true;
   }
 
   close() {
@@ -115,7 +119,18 @@ export default class Jump extends View {
     const items = this.items();
     /** @type {import("./tiles.js").NavState} */
     const state = { at: this.at ?? 0, typed: this.typed };
+    // The new tab and new space rows sit in the footer, outside the list, so moving covers the list rows only.
+    const last = items.findLastIndex((it) => it.kind !== "new-tab" && it.kind !== "new-space");
+    const from = state.at;
     const r = navigate(state, e, items);
+    if (r === "done") state.at = Math.min(state.at, last);
+    // Moving past either end wraps around to the other.
+    const plain = !e.modifiers.control && !e.modifiers.alt && !e.modifiers.platform;
+    const down = e.keystroke === "ctrl-n" || (plain && (e.key === "down" || e.key === "j"));
+    const up = e.keystroke === "ctrl-p" || (plain && (e.key === "up" || e.key === "k"));
+    if (r === "done" && down && from >= last) state.at = 0;
+    else if (r === "done" && up && from === 0) state.at = last;
+    if (state.at !== from) this.reveal = true;
     this.at = state.at;
     this.typed = state.typed;
     if (r === "close") { this.close(); cx.stop_propagation(); return; }
@@ -147,38 +162,40 @@ export default class Jump extends View {
     const at = this.at;
     const all = spaces();
     // gpui elements are single-use, so collect each block's rows first and build it after.
-    /** @type {{ rows: ReturnType<typeof row>[], tabs: ReturnType<typeof row>[], agents: ReturnType<typeof row>[] }[]} */
+    // Each row keeps its item index, so the selected one can be scrolled into view.
+    /** @typedef {{ el: ReturnType<typeof row>, i: number }} Row */
+    /** @type {{ rows: Row[], tabs: Row[], agents: Row[] }[]} */
     const blocks = [];
     /** @type {ReturnType<typeof h_flex>[]} */
     const extras = [];
     items.forEach((it, i) => {
       const on = i === at;
       if (it.kind === "space") {
-        blocks.push({ tabs: [], agents: [], rows: [
+        blocks.push({ tabs: [], agents: [], rows: [{ i, el:
           row(t, { id: `j-space-${it.s.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => this.go(it, cx) })
             .child(div().flex_none().max_w(260).truncate().text_size(16).font_semibold().text_color(t.foreground).child(it.s.name))
             .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(spaceNote(all, it.s, home())))
             .child(div().text_size(10).text_color(t.dim).child("Space")),
-        ] });
+        }] });
       } else if (it.kind === "tab") {
         const name = !it.tab.named && /^\d+$/.test(it.tab.name) ? it.who || "Tab" : it.tab.name;
-        blocks[blocks.length - 1].tabs.push(
+        blocks[blocks.length - 1].tabs.push({ i, el:
           row(t, { id: `j-tab-${it.tab.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => this.go(it, cx) })
             .child(div().w(18).flex_none())
             .child(div().flex_none().max_w(220).truncate().text_color(t.muted).child(name))
             .when(!!it.status, (el) => el.child(glyph(t, it.status)))
             .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(name === it.who ? "" : it.who || "empty")),
-        );
+        });
       } else if (it.kind === "agent") {
         const tab = it.s.tabs.find((tab) => tab.id === it.agent.tab);
         const tabName = !tab?.named && /^\d+$/.test(it.agent.tab_name) ? "" : it.agent.tab_name;
-        blocks[blocks.length - 1].agents.push(
+        blocks[blocks.length - 1].agents.push({ i, el:
           row(t, { id: `j-agent-${it.agent.address}`, hint: it.hint ?? "", typed: this.typed, pinned: false, on, onClick: (_e, cx) => this.go(it, cx) })
             .child(div().w(18).flex_none())
             .child(div().flex_1().min_w(0).truncate().text_color(t.foreground).child(it.agent.title || it.agent.program.name || it.agent.app || "Agent"))
             .child(div().flex_none().max_w(180).truncate().text_size(11).text_color(t.dim).child([tabName, it.agent.program.name].filter(Boolean).join(" · ")))
             .child(glyph(t, it.agent.status)),
-        );
+        });
       } else {
         extras.push(
           h_flex().id(`j-${it.kind}`).gap(4).items_center().text_size(11).rounded(3)
@@ -194,11 +211,20 @@ export default class Jump extends View {
     const label = (name) => div().h(20).flex_none().pl(70).text_size(10).font_semibold().text_color(t.accent).child(name);
     const rowCount = blocks.reduce((n, b) => n + b.rows.length + b.tabs.length + b.agents.length, 0);
     const labelCount = blocks.reduce((n, b) => n + Number(b.tabs.length > 0) + Number(b.agents.length > 0), 0);
-    const sections = blocks.map((b, i) => v_flex().gap(2)
-      .when(i > 0, (el) => el.pt(8).border_t(1).border_color(t.border))
-      .children(b.rows)
-      .when(b.tabs.length > 0, (el) => el.child(label("Tabs")).children(b.tabs))
-      .when(b.agents.length > 0, (el) => el.child(label("Agents")).children(b.agents)));
+    // One flat column, so the scroll handle can reveal a row by its place among the list's children.
+    // A divider line between spaces stands in for the old section border (8px above and below).
+    /** @type {any[]} */
+    const kids = [];
+    let selectedKid = -1;
+    /** @param {Row} r */
+    const add = (r) => { if (r.i === at) selectedKid = kids.length; kids.push(r.el); };
+    blocks.forEach((b, i) => {
+      if (i > 0) kids.push(div().h(1).flex_none().my(6).bg(t.border));
+      b.rows.forEach(add);
+      if (b.tabs.length > 0) { kids.push(label("Tabs")); b.tabs.forEach(add); }
+      if (b.agents.length > 0) { kids.push(label("Agents")); b.agents.forEach(add); }
+    });
+    if (this.reveal && selectedKid >= 0) { this.scroll.scroll_to_item(selectedKid); this.reveal = false; }
     // The popup sizes to content, so the scrollable list needs an explicit height or it collapses.
     const est = rowCount * (ROW_H + 2) + labelCount * 22 + blocks.length * 16 + 16;
     const listH = Math.min(560, est);
@@ -224,7 +250,7 @@ export default class Jump extends View {
           .child(div().flex_none().text_size(11).text_color(t.dim).child(this.renaming?.it.kind === "new-space" ? "New space" : this.renaming?.it.kind === "new-tab" ? "New tab" : this.renaming?.it.kind === "tab" ? "Rename tab" : "Rename space"))
           .child(Input.new(this.renaming?.input).flex_1().h(30).px(8).rounded(6).border_1().border_color(t.accent).bg(t.background).text_size(12.5).text_color(t.foreground)),
       ))
-      .child(v_flex().id("jump-list").h(listH).flex_none().overflow_y_scrollbar().gap(8).children(sections))
+      .child(v_flex().id("jump-list").h(listH).flex_none().overflow_y_scrollbar().track_scroll(this.scroll).gap(2).children(kids))
       .child(h_flex().flex_none().flex_wrap().items_center().gap(12)
         .child(hintLine(t, [["j/k", "move"], ["x", "close tab"], ["r", "rename"]]))
         .children(extras));
