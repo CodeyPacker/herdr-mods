@@ -142,7 +142,7 @@ summary box (`tab` types, the placeholder "See the inline comments." is used
 when it's empty). The header names the author and the `gh` account that will
 post. `p` or `enter` swaps the buttons for a confirm bar: "Post <verdict> on PR #n
 as <account>, with N comments? Everyone on the PR will see it." `y` (or "Post")
-posts every comment as one review on the lines they sit on, and `n`, `esc` or
+posts every comment as one review on the lines they sit on, and `n`, `esc` or <!-- test comment -->
 "Cancel" goes back. Then it says
 "Posted to GitHub", `o` opens the review, and the posted comments are cleared.
 On a peer's PR the screen
