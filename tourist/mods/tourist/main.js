@@ -1054,6 +1054,7 @@ export default class Tourist extends View {
       if (k === "b" || k === "escape") this.closeMerge();
       else if (k === "m" || k === "enter") this.doMerge(cx);
       else if (k === "o" && m?.phase === "merged") this.openPR();
+      else if (k === "q" && m?.phase === "merged") this.reset(cx);
       else if (n >= 0 && n < (m?.methods?.length ?? 0)) this.moveMethod(n);
       else if (k === "j" || k === "down") this.moveMethod((m?.cursor ?? 0) + 1);
       else if (k === "k" || k === "up") this.moveMethod((m?.cursor ?? 0) - 1);
