@@ -46,19 +46,21 @@ export function tourView(v, t) {
     onEdit: (c, cx) => v.startEdit(c, cx),
   } : null;
   const code = div().flex_1().min_h(0).mx(14).mb(4).rounded(8).border_1().border_color(t.border).bg(t.background).overflow_hidden()
-    .child(v.diff ? diffView(other ? `diff-file-${other}` : `diff-${v.idx}`, v.diff, t, comments)
+    .child(v.diff ? diffView(other ? `diff-file-${other}` : `diff-${v.idx}`, v.diff, t, comments,
+        { ...(v.diffMarks ?? { stops: [], stopRows: null }), linkRows: v.linkRows, onStop: (i, cx) => v.show(i, cx) },
+        v.scrollReq ?? { handle: v.diffScroll, step: 0 })
       : v.code ? Editor.new(v.code).size_full()
       : div().p(10).text_size(12).text_color(t.dim).child(v.codeError ?? "Loading…"));
   const key = other ? `file-${other}` : String(v.idx);
   const noteList = other ? plan.fileNotes?.[other] ?? [] : s.notes;
   const notes = noteList.map((n, i) => v_flex().gap(4).pt(6).border_t_1().border_color(t.border)
     .child(div().text_size(11.5).font_semibold().text_color(t.accent).child(n.label))
-    .child(TextView.markdown(`note-${key}-${i}`, n.text).selectable()));
+    .child(md(v, `note-${key}-${i}`, n.text)));
   // Cap the line length so long explanations stay readable in wide panes.
   const body = v_flex().w_full().max_w(680).gap(10)
     .when(!other && v.idx === 0 && Boolean(plan.summary), el => el.child(v_flex().p(10).rounded(8).bg(t.raised)
-      .child(TextView.markdown("summary", String(plan.summary)).selectable())))
-    .when(!other, el => el.child(TextView.markdown(`body-${v.idx}`, String(s.body ?? "")).selectable()))
+      .child(md(v, "summary", String(plan.summary)))))
+    .when(!other, el => el.child(md(v, `body-${v.idx}`, String(s.body ?? ""))))
     .when(Boolean(other) && noteList.length === 0 && !v.busy, el => el.child(div().text_size(12).text_color(t.dim)
       .child("The tour doesn't stop here. Press e for a short explanation, or a to ask about this file.")))
     .children(notes)
@@ -112,6 +114,11 @@ export function tourView(v, t) {
 }
 
 const RAIL_WIDTH = 210;
+
+/** The agent's markdown, with file:line references as links that move the code panel. */
+function md(v, id, text) {
+  return TextView.markdown(id, v.linkify(text)).selectable().on_link_click((url, cx) => { v.clickLink(url, cx); cx.notify(); });
+}
 
 /** The PR's CI state in the header: failing, running or passed. Click opens the checks. Null with no checks. */
 function checksBadge(v, t) {
