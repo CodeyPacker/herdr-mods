@@ -110,7 +110,13 @@ export function tourView(v, t) {
       .child(resizable_panel().size(360).size_range(80).child(codeSide))
       .child(resizable_panel().size_range(80).child(textSide));
   return v_flex().flex_1().min_h(0).child(header)
-    .child(h_flex().flex_1().min_h(0).when(Boolean(rail), el => el.child(rail)).child(div().flex_1().min_w(0).h_full().child(panes)))
+    .child(v.pr
+      // The file list and the tour sit in a resizable group: drag the line between them. The
+      // list's panel is hidden rather than removed when b hides it, so its width is kept.
+      ? h_resizable("tour-files").w_full().flex_1().min_h(0)
+        .child(resizable_panel().size(RAIL_WIDTH).size_range(140, 560).visible(Boolean(rail)).child(rail ?? div()))
+        .child(resizable_panel().size_range(300).child(div().size_full().min_w(0).child(panes)))
+      : h_flex().flex_1().min_h(0).child(div().flex_1().min_w(0).h_full().child(panes)))
     .child(bar);
 }
 
@@ -140,7 +146,7 @@ function nextLabel(v) {
 
 /** The PR's files: the tour's in stop order, then the rest of the code, then tests, docs and generated files. */
 function fileList(v, t) {
-  const rail = v_flex().id("files").w(RAIL_WIDTH).flex_none().h_full().overflow_y_scrollbar().py(6)
+  const rail = v_flex().id("files").size_full().overflow_y_scrollbar().py(6)
     .border_r_1().border_color(t.border);
   const g = v.files;
   if (!g) return rail.child(div().px(12).py(4).text_size(11.5).text_color(t.dim).child("Loading files…"));

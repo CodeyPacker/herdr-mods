@@ -72,7 +72,9 @@ with "The tour doesn't stop here", and `e` asks the agent for a short
 explanation. `a`, `d` and `t` work on it too, in the same agent session as the
 tour. Comments work on its lines. Answers about these files are saved with the
 tour (`fileNotes` in the saved plan). `j` after the last stop goes on through "Also changed" and then tests, docs and generated, in list order ("Next file", then "Last file"), and `k` walks back the same way. `b` or
-"Hide files" hides the list.
+"Hide files" hides the list. Drag the line between the list and the tour to
+resize it (140 to 560 px, 210 to start). The width is kept while the list is
+hidden and across stops.
 
 Viewed marks: `v` marks the current file viewed (or clears it), and clicking a
 row's number or status letter does the same without opening it. A viewed file
