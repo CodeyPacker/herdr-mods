@@ -7,18 +7,24 @@
 //   code.js       a stop's lines, its editor, opening VS Code
 //   ui.js         shared buttons, rows and inputs
 //   files.js      grouping the PR's files for the file list
+//   since.js      the commit you last reviewed a PR at, for re-reviews
+//   checks.js     the PR's CI checks and failed logs
+//   links.js      file:line references in the agent's text, as links that move the code
 //   views/        the setup, tour, planning and error screens
 import { View } from "gpui-kit";
-import { v_flex, InputState, VirtualListScrollHandle } from "gpui-base";
+import { v_flex, InputState, VirtualListScrollHandle, ScrollHandle } from "gpui-base";
 import { theme, nextCommand, props, run } from "herdr";
-import { SCOPES, DEPTHS, SPLIT_WIDTH } from "./constants.js";
+import { SCOPES, DEPTHS, PASSES, SPLIT_WIDTH } from "./constants.js";
 import { startFolder, readRepo, git } from "./git.js";
 import { AgentSession, agentName, findAgents, rememberAgent } from "./agent.js";
-import { subject, planPrompt, prSubject, prPlanPrompt, followUpPrompt, filePrompt, fixPrompt, fixReplyPrompt, parsePlan } from "./plan.js";
+import { subject, planPrompt, prSubject, prPlanPrompt, followUpPrompt, filePrompt, checkPrompt, fixPrompt, fixReplyPrompt, parsePlan } from "./plan.js";
 import { readExcerpt, codeState, openInEditor, openUrl } from "./code.js";
-import { listPRs, loadPR, prFileDiff, prFileStats, listThreads } from "./pr.js";
+import { listPRs, loadPR, prFileDiff, prFileStats, listThreads, replyToThread, setThreadResolved } from "./pr.js";
+import { lastReviewed, saveReviewed, haveCommit, changesSince } from "./since.js";
+import { listChecks, failedLog } from "./checks.js";
 import { groupFiles } from "./files.js";
-import { diffRows, rowsInRange, splitDiff } from "./diff.js";
+import { diffRows, splitDiff, markOutsidePR, rowsFor, nearestRow, windowRows } from "./diff.js";
+import { linkify, readLink, resolver } from "./links.js";
 import { openWorktree, worktreeDiff, pushFix, removeWorktree } from "./worktree.js";
 import { commentKey, loadComments, saveComments, loadViewed, saveViewed, sideOf, rangeOf } from "./comments.js";
 import { planKey, loadSavedPlan, savePlan, dropSavedPlan } from "./saved.js";
@@ -30,6 +36,7 @@ import { postReview, eventsFor } from "./review.js";
 import { reviewView } from "./views/review.js";
 import { mergeMethods, mergePR } from "./merge.js";
 import { mergeView } from "./views/merge.js";
+import { checksView } from "./views/checks.js";
 
 export default class Tourist extends View {
   init(_props, cx) {
@@ -44,11 +51,25 @@ export default class Tourist extends View {
     this.step = "scope"; // setup step: "scope" what to tour, "pr" which pull request, "depth" how deep
     this.prs = null; this.prsError = null; // the open PRs, loaded when the PR step opens (again after a failure)
     this.prNumber = null; this.pr = null;  // the picked PR, and its details once the tour starts
-    this.diff = null;     // the stop's diff rows, on PR tours
+    this.diff = null;     // the stop's file's whole diff rows, on PR tours
+    this.diffMarks = null; // { stops: [{ index, title, row, current }], stopRows: [first, last] | null } for the shown diff
+    this.linkRows = null;  // [first, last] rows a clicked file:line link points at
+    this.diffScroll = ScrollHandle.new(); // the diff's scroll position, moved to a stop or a link
+    this.scrollReq = null; // { handle, row, step } while the diff is being scrolled (views/diff.js)
+    this.repoFiles = new Set(); // every file in the repo (at the PR's head on PR tours), for resolving links
     this.planNote = null; // what planning is waiting on before the agent starts
     this.comments = [];   // line comments on the PR, saved by comments.js
     this.commenting = null; // { file, line, side, code, anchor, editId? } while the comment box is open
-    this.threads = [];      // comment threads already on the PR on GitHub, read-only
+    this.threads = [];      // comment threads already on the PR on GitHub (pr.js listThreads)
+    this.threadReply = null;  // the thread id whose reply box is open
+    this.threadBusy = null;   // { id, note } while a reply or resolve is going to GitHub
+    this.threadError = null;  // { id, text, draft } when GitHub refused one
+    this.openResolved = new Set(); // resolved threads the reader expanded
+    // Re-review: { number, oid, at }, the commit you last reviewed the picked PR at, when the PR
+    // moved since. pass is "since" (only what changed since) or "whole".
+    this.since = null; this.pass = "since"; this.sinceLoading = false;
+    // The PR's CI checks: { number, list, loading, error, cursor, notes: { key: [{ label, text }] } }.
+    this.checks = null;
     this.files = null;      // every file the PR changes, grouped for the file list (files.js)
     this.viewed = {};       // files marked viewed on this PR: { file: the head commit it was marked at }
     this.other = null;      // a PR file the tour doesn't stop at, while it's open instead of a stop
@@ -73,6 +94,7 @@ export default class Tourist extends View {
     this.commentInput = this.textBox("comment", "Comment on this line, then press enter", cx => this.saveComment(cx));
     this.summaryInput = this.textBox("summary", "Optional", () => this.leaveBox());
     this.replyInput = this.textBox("reply", "Reply to the agent, then press enter", cx => this.replyFix(cx));
+    this.threadInput = this.textBox("thread", "Reply on GitHub, then press enter to post", cx => this.postThreadReply(cx));
     this.handle = cx.focus_handle();
     // The pane isn't drawn yet, so focus again once it is.
     this.handle.focus();
@@ -98,12 +120,12 @@ export default class Tourist extends View {
 
   /** Takes the keyboard back from a text box. */
   leaveBox() {
-    this.typing = null; this.asking = false; this.commenting = null; this.replying = false;
+    this.typing = null; this.asking = false; this.commenting = null; this.replying = false; this.threadReply = null;
     this.handle.focus();
   }
 
   async close() {
-    this.code?.release(); this.explainScroll.release(); this.input.release(); this.featureInput.release(); this.commentInput.release(); this.summaryInput.release(); this.replyInput.release();
+    this.code?.release(); this.explainScroll.release(); this.diffScroll.release(); this.input.release(); this.featureInput.release(); this.commentInput.release(); this.summaryInput.release(); this.replyInput.release(); this.threadInput.release();
     await this.session?.stop(); await this.fixSession?.stop();
   }
 
@@ -112,6 +134,9 @@ export default class Tourist extends View {
     if (c === "focus") this.handle.focus();
     else if (c.startsWith("scope-")) { this.scope = c.slice(6); this.goStep("scope"); }
     else if (c.startsWith("depth-")) { this.depth = c.slice(6); this.goStep("depth"); }
+    else if (c.startsWith("pass-")) { this.pass = c.slice(5); if (this.steps().includes("pass")) this.goStep("pass"); }
+    else if (c === "checks") this.openChecks(cx);
+    else if (c === "checks-back") this.closeChecks();
     else if (c === "down") this.phase === "tour" ? this.move(1, cx) : this.moveCursor(1);
     else if (c === "up") this.phase === "tour" ? this.move(-1, cx) : this.moveCursor(-1);
     else if (c === "pick") this.pick(cx);
@@ -180,10 +205,21 @@ export default class Tourist extends View {
           this.planNote = `Fetching PR #${this.prNumber}`; cx.notify();
           const pr = await loadPR(this.git.root, this.on, this.prNumber);
           if (gen !== this.gen) return;
+          // A re-review tours only what changed in the PR's files since the commit you last reviewed.
+          const last = this.since?.number === pr.number && this.pass === "since" && this.since.oid !== pr.headOid ? this.since : null;
+          if (last) {
+            const short = last.oid.slice(0, 7);
+            this.planNote = `Finding what changed since ${short}`; cx.notify();
+            if (!await haveCommit(this.git.root, this.on, last.oid)) throw new Error(`Could not fetch ${short}, the commit you last reviewed. A force-push can remove it from GitHub. Start over and pick The whole PR.`);
+            const changes = await changesSince(this.git.root, this.on, pr, last.oid);
+            if (gen !== this.gen) return;
+            if (changes.files.length === 0) throw new Error(`None of the PR's files changed since your last review at ${short}. Start over and pick The whole PR.`);
+            Object.assign(pr, { sinceOid: last.oid, sinceAt: last.at, sinceFiles: changes.files, sinceCommits: changes.commits });
+          }
           this.pr = pr; this.planNote = null; head = pr.headOid;
           this.comments = await loadComments(commentKey(this.git.root, pr.number));
           this.viewed = await loadViewed(commentKey(this.git.root, pr.number));
-          this.loadThreads(cx);
+          this.threads = []; this.loadThreads(cx); this.loadChecks(cx);
           cx.notify();
           prompt = prPlanPrompt(prSubject(pr), this.depth);
         } else {
@@ -200,6 +236,7 @@ export default class Tourist extends View {
         if (!plan) plan = parsePlan(await session.ask(prompt));
         if (gen !== this.gen) return;
         this.plan = plan; this.phase = "tour"; this.show(0, cx);
+        this.loadRepoFiles(cx);
         if (this.pr) this.loadFiles(cx);
         if (!plan.savedAt) this.storePlan();
       } catch (e) { if (gen === this.gen) this.fail(String(e?.message ?? e)); }
@@ -207,22 +244,29 @@ export default class Tourist extends View {
     });
   }
 
-  show(i, cx) {
+  /**
+   * Shows stop i. On a PR tour the code panel holds the file's whole diff, scrolled to the stop,
+   * with every stop on the file labelled. `focus` ({ a, b }, new-file lines) highlights and
+   * scrolls to those lines instead, for a file:line link.
+   */
+  show(i, cx, focus = null) {
     if (!this.plan) return;
     this.idx = Math.max(0, Math.min(i, this.plan.stops.length - 1));
     this.other = null;
-    this.code?.release(); this.code = null; this.codeError = null; this.diff = null;
+    this.code?.release(); this.code = null; this.codeError = null; this.diff = null; this.diffMarks = null; this.linkRows = null;
     if (this.commenting) this.leaveBox();
     const s = this.plan.stops[this.idx], idx = this.idx;
     cx.spawn(async cx => {
-      // A PR isn't on disk: show the stop's part of the file's diff instead.
+      // A PR isn't on disk: show the file's diff instead.
       if (this.pr) {
-        const text = await prFileDiff(this.git.root, this.on, this.pr, s.file);
-        if (this.idx !== idx) return;
-        const rows = text ? rowsInRange(diffRows(text), Number(s.start) || 1, Number(s.end) || Infinity) : [];
-        if (rows.length === 0) this.codeError = `No changes to ${s.file} in this PR`;
-        else this.diff = rows;
-        cx.notify();
+        const all = await this.loadDiff(s.file);
+        if (this.idx !== idx || this.other) return;
+        const range = rowsFor(all, Number(s.start) || 1, Number(s.end) || Infinity);
+        const rows = windowRows(all, range?.[0] ?? 0);
+        if (rows.length === 0) { this.codeError = `No changes to ${s.file} in this PR`; cx.notify(); return; }
+        this.diff = rows;
+        this.diffMarks = { stops: this.stopsOn(s.file, rows), stopRows: rowsFor(rows, Number(s.start) || 1, Number(s.end) || Infinity) };
+        this.focusDiff(focus, cx);
         return;
       }
       const excerpt = await readExcerpt(this.git.root, s, this.on);
@@ -232,6 +276,99 @@ export default class Tourist extends View {
       this.code = codeState(s.file, excerpt.text);
       cx.notify();
     });
+  }
+
+  /** The tour's stops on `file`, each with the first row of its lines in `rows`. Stops whose lines aren't shown are left out. */
+  stopsOn(file, rows) {
+    return this.plan.stops.flatMap((st, index) => {
+      if (st.file !== file) return [];
+      const range = rowsFor(rows, Number(st.start) || 1, Number(st.end) || Infinity);
+      return range ? [{ index, title: st.title, row: range[0], end: range[1], current: index === this.idx && !this.other }] : [];
+    });
+  }
+
+  /**
+   * Scrolls the shown diff to a link's lines (highlighting them) or, without one, to the
+   * current stop. A few lines above stay in view for context.
+   */
+  focusDiff(focus, cx) {
+    const rows = this.diff;
+    if (!rows) return;
+    this.linkRows = focus ? rowsFor(rows, focus.a, focus.b) : null;
+    const target = focus ? (this.linkRows?.[0] ?? nearestRow(rows, focus.a)) : this.diffMarks?.stopRows?.[0] ?? 0;
+    const labelled = this.diffMarks?.stops.some(st => st.row === target);
+    this.scrollTo(Math.max(0, target - (labelled ? 4 : 3)), cx);
+  }
+
+  /**
+   * Scrolls the diff so row `row` sits at the top. The scroll handle only brings an item into
+   * view the shortest way, so it first jumps to the end and then scrolls back up to the row.
+   */
+  scrollTo(row, cx) {
+    const req = this.scrollReq = { handle: this.diffScroll, row, step: 1 };
+    cx.notify();
+    // Each timer uses the cx it is handed: a click's cx is gone by the time the timer runs.
+    cx.timer.after(40, cx => { if (this.scrollReq === req) { req.step = 2; cx.notify(); } });
+    cx.timer.after(300, cx => { if (this.scrollReq === req) { this.scrollReq = null; cx.notify(); } });
+  }
+
+  /** Every file in the repo, or in the PR's head commit, so the agent's file:line references can be resolved. */
+  loadRepoFiles(cx) {
+    const args = this.pr ? ["ls-tree", "-r", "--name-only", this.pr.headOid] : ["ls-files"];
+    const plan = this.plan;
+    cx.spawn(async cx => {
+      const out = await git(args, { cwd: this.git.root, on: this.on });
+      if (this.plan === plan && out) { this.repoFiles = new Set(out.split(/\r?\n/).filter(Boolean)); cx.notify(); }
+    });
+  }
+
+  /** The agent's markdown with its file:line references turned into links. */
+  linkify(text) {
+    const files = new Set([...this.repoFiles, ...(this.plan?.stops ?? []).map(s => s.file)]);
+    const prefer = [this.currentFile(), ...(this.plan?.stops ?? []).map(s => s.file)].filter(Boolean);
+    return linkify(text, resolver(files, prefer));
+  }
+
+  /** A link in the agent's text: a file:line reference moves the code, anything else opens in the browser. */
+  clickLink(url, cx) {
+    const ref = readLink(url);
+    if (ref) this.followLink(ref, cx); else openUrl(url);
+  }
+
+  /**
+   * Shows a file:line reference. On a PR tour: the shown diff scrolls to it, or the stop on that
+   * file (the one holding the line first), or the file from the list, or GitHub for a file the PR
+   * doesn't change. On other tours: the stop holding the line, else VS Code.
+   */
+  followLink({ file, a, b }, cx) {
+    if (!this.plan) return;
+    const stops = this.plan.stops.map((st, i) => ({ st, i })).filter(x => x.st.file === file);
+    const holding = stops.find(x => a >= Number(x.st.start) && a <= Number(x.st.end));
+    if (this.pr) {
+      if (file === this.currentFile() && this.diff) { this.focusDiff({ a, b }, cx); return; }
+      const stop = holding ?? stops[0];
+      if (stop) { this.show(stop.i, cx, { a, b }); return; }
+      const f = this.laterFiles().find(x => x.file === file);
+      if (f) { this.openFile(f, cx, { a, b }); return; }
+      openUrl(`${this.pr.url.replace(/\/pull\/\d+\/?$/, "")}/blob/${this.pr.headOid}/${file}#L${a}${b > a ? `-L${b}` : ""}`);
+      return;
+    }
+    if (holding && holding.i !== this.idx) this.show(holding.i, cx);
+    else openInEditor(`${this.git.root}/${file}`, a);
+  }
+
+  /**
+   * One PR file's whole diff, or [] when git can't produce it. On a re-review the diff starts at
+   * the commit you last reviewed, and lines GitHub won't take a comment on are marked.
+   */
+  async loadDiff(file) {
+    const pr = this.pr;
+    const [text, whole] = await Promise.all([
+      prFileDiff(this.git.root, this.on, pr, file),
+      pr.sinceOid ? prFileDiff(this.git.root, this.on, pr, file, true) : null,
+    ]);
+    const rows = text ? diffRows(text) : [];
+    return pr.sinceOid ? markOutsidePR(rows, whole ? diffRows(whole) : null) : rows;
   }
 
   /** Sends a follow-up about the current stop and adds the answer under it. */
@@ -271,20 +408,21 @@ export default class Tourist extends View {
   }
 
   /** Opens a file from the list: a tour file goes to its first stop, any other shows its whole diff. */
-  openFile(f, cx) {
-    if (f.stop !== undefined) { this.show(f.stop, cx); return; }
+  openFile(f, cx, focus = null) {
+    if (f.stop !== undefined) { this.show(f.stop, cx, focus); return; }
     if (!this.pr) return;
     this.other = f.file;
-    this.code?.release(); this.code = null; this.codeError = null; this.diff = null;
+    this.code?.release(); this.code = null; this.codeError = null; this.diff = null; this.diffMarks = null; this.linkRows = null;
     if (this.commenting) this.leaveBox();
     const file = f.file;
     cx.spawn(async cx => {
-      const text = await prFileDiff(this.git.root, this.on, this.pr, file);
+      const all = await this.loadDiff(file);
       if (this.other !== file) return;
-      const rows = text ? rowsInRange(diffRows(text), 1, Infinity) : [];
-      if (rows.length === 0) this.codeError = f.add === null ? `${file} is a binary file` : `No changes to ${file} in this PR`;
-      else this.diff = rows;
-      cx.notify();
+      const rows = windowRows(all, focus ? nearestRow(all, focus.a) : 0);
+      if (rows.length === 0) { this.codeError = f.add === null ? `${file} is a binary file` : `No changes to ${file} in this PR`; cx.notify(); return; }
+      this.diff = rows;
+      this.diffMarks = { stops: [], stopRows: null };
+      this.focusDiff(focus, cx);
     });
   }
 
@@ -314,15 +452,111 @@ export default class Tourist extends View {
 
   explainFile(cx) { if (this.other) this.followUp("Explain", "Explain what changed in this file, why, and how it connects to the rest of the PR.", cx); }
 
-  /** Loads the comment threads already on the PR from GitHub. Shown read-only; a failure just shows none. */
+  /** Loads the comment threads already on the PR from GitHub. A failure just shows none. */
   loadThreads(cx) {
     const pr = this.pr;
-    this.threads = [];
     cx.spawn(async cx => {
       const threads = await listThreads(pr, this.git.root, this.on).catch(() => []);
       if (this.pr === pr) { this.threads = threads; cx.notify(); }
     });
   }
+
+  /** Opens the reply box under a GitHub thread. A reply GitHub refused comes back in the box. */
+  startThreadReply(th, cx) {
+    if (!this.pr || th.canReply === false || this.threadBusy) return;
+    this.leaveBox();
+    this.threadReply = th.id;
+    this.threadInput.set_value(this.threadError?.id === th.id ? this.threadError.draft ?? "" : "");
+    this.threadError = null;
+    this.focusBox(this.threadInput, cx);
+  }
+
+  /** Posts the reply box's text to its thread on GitHub, then reloads the threads. Empty just closes. */
+  postThreadReply(cx) {
+    const id = this.threadReply, text = this.threadInput.value().trim(), pr = this.pr;
+    const th = this.threads.find(x => x.id === id);
+    this.threadInput.set_value("");
+    this.leaveBox();
+    if (!text || !th || !pr) return;
+    this.threadBusy = { id, note: "Posting reply" }; this.threadError = null;
+    cx.spawn(async cx => {
+      try { await replyToThread(pr, this.git.root, this.on, th, text); if (this.pr === pr) this.loadThreads(cx); }
+      catch (e) { this.threadError = { id, text: `GitHub refused the reply: ${String(e?.message ?? e)}`, draft: text }; }
+      this.threadBusy = null; cx.notify();
+    });
+  }
+
+  /** Resolves a GitHub thread, or unresolves a resolved one. */
+  toggleResolved(th, cx) {
+    const to = !th.resolved;
+    if (!this.pr || !th.nodeId || this.threadBusy || !(to ? th.canResolve : th.canUnresolve)) return;
+    this.threadBusy = { id: th.id, note: to ? "Resolving" : "Unresolving" }; this.threadError = null;
+    cx.spawn(async cx => {
+      try { await setThreadResolved(this.git.root, this.on, th, to); th.resolved = to; this.openResolved.delete(th.id); }
+      catch (e) { this.threadError = { id: th.id, text: `GitHub refused: ${String(e?.message ?? e)}` }; }
+      this.threadBusy = null; cx.notify();
+    });
+  }
+
+  /** Expands a resolved thread, or folds it back to one line. */
+  toggleResolvedOpen(th) {
+    if (this.openResolved.has(th.id)) this.openResolved.delete(th.id); else this.openResolved.add(th.id);
+  }
+
+  /** Loads the PR's CI checks, keeping answers already given. A failure shows on the checks screen. */
+  loadChecks(cx) {
+    const pr = this.pr;
+    if (!pr) return;
+    if (this.checks?.number !== pr.number) this.checks = { number: pr.number, list: null, loading: false, error: null, cursor: 0, notes: {} };
+    const c = this.checks;
+    if (c.loading) return;
+    c.loading = true; c.error = null;
+    cx.spawn(async cx => {
+      try { c.list = await listChecks(this.git.root, this.on, pr); c.cursor = Math.min(c.cursor, Math.max(0, c.list.length - 1)); }
+      catch (e) { c.error = String(e?.message ?? e); }
+      c.loading = false; cx.notify();
+    });
+  }
+
+  openChecks(cx) {
+    if (!this.pr) return;
+    this.leaveBox();
+    this.phase = "checks";
+    this.loadChecks(cx);
+  }
+
+  closeChecks() { this.phase = this.plan ? "tour" : "setup"; }
+
+  moveCheck(i) {
+    const c = this.checks, n = c?.list?.length ?? 0;
+    if (n) c.cursor = (i + n) % n;
+  }
+
+  /** The highlighted check, and where its answers are kept. */
+  currentCheck() {
+    const check = this.checks?.list?.[this.checks.cursor];
+    return check ? { check, key: `${check.workflow}/${check.name}` } : null;
+  }
+
+  /** Reads the highlighted failed check's log and asks the tour's agent why it failed. */
+  explainCheck(cx) {
+    const cur = this.currentCheck(), c = this.checks, pr = this.pr, session = this.session;
+    if (!cur || !pr || !session || this.busy || (cur.check.bucket !== "fail" && cur.check.bucket !== "cancel")) return;
+    const notes = c.notes[cur.key] ??= [];
+    this.busy = `Reading the log of ${cur.check.name}`;
+    cx.spawn(async cx => {
+      try {
+        const log = await failedLog(this.git.root, this.on, pr, cur.check);
+        this.busy = `${this.agentName()} is reading the failure`; cx.notify();
+        let prompt = checkPrompt(cur.check, log);
+        if (!session.id) prompt = `This is part of a guided review. Subject: ${prSubject(pr)}\n\n${prompt}`;
+        notes.push({ label: "Why it failed", text: await session.ask(prompt) });
+      } catch (e) { notes.push({ label: "Error", text: String(e?.message ?? e) }); }
+      this.busy = null; cx.notify();
+    });
+  }
+
+  openCheck() { const cur = this.currentCheck(); if (cur?.check.link) openUrl(cur.check.link); }
 
   /** Saves the tour's plan and answers so reopening it skips planning. Branch tours have no key and aren't saved. */
   storePlan() {
@@ -361,11 +595,12 @@ export default class Tourist extends View {
    */
   startComment(row, cx, { index = -1, shift = false } = {}) {
     const file = this.currentFile(), rows = this.diff ?? [];
-    if (!this.pr || !file || row.number === undefined) return;
+    if (!this.pr || !file || row.number === undefined || row.noComment) return;
     this.asking = false;
     const open = this.commenting;
     if (shift && open?.file === file && open.anchor >= 0 && index >= 0) {
       const [a, b] = rangeOf(rows, open.anchor, index);
+      if (rows[a].noComment || rows[b].noComment) return; // a re-review line GitHub won't take
       const lines = rows.slice(a, b + 1).filter(r => r.number !== undefined);
       const first = rows[a], last = rows[b];
       this.commenting = { file, anchor: open.anchor, line: last.number, side: sideOf(last), code: lines.map(r => r.text).join("\n") };
@@ -417,8 +652,14 @@ export default class Tourist extends View {
     const viewed = { ...this.viewed };
     if (this.isViewed(file)) delete viewed[file]; else viewed[file] = this.pr.headOid;
     this.viewed = viewed;
-    const key = commentKey(this.git.root, this.pr.number);
-    cx.spawn(async () => { await saveViewed(key, viewed).catch(() => {}); });
+    const key = commentKey(this.git.root, this.pr.number), head = this.pr.headOid;
+    // Every file viewed counts as reviewing this head, for the next re-review.
+    const all = this.files ? [...this.files.tour, ...this.files.also, ...this.files.side] : [];
+    const done = all.length > 0 && all.every(f => viewed[f.file] === head);
+    cx.spawn(async () => {
+      await saveViewed(key, viewed).catch(() => {});
+      if (done) await saveReviewed(key, head).catch(() => {});
+    });
   }
 
   storeComments(cx) {
@@ -556,6 +797,7 @@ export default class Tourist extends View {
       try {
         r.url = await postReview(this.git.root, this.on, pr, comments, event, summary);
         r.phase = "posted";
+        saveReviewed(commentKey(this.git.root, pr.number), pr.headOid).catch(() => {});
         if (this.pr === pr) { this.comments = this.comments.filter(c => !comments.includes(c)); this.storeComments(cx); this.loadThreads(cx); }
       } catch (e) { r.phase = "editing"; r.error = `GitHub refused the review: ${String(e?.message ?? e)}`; }
       cx.notify();
@@ -614,10 +856,14 @@ export default class Tourist extends View {
   }
 
   /** The setup steps for a scope, in order. A PR tour adds the PR picker. */
-  steps(scope = this.scope) { return scope === "pr" ? ["scope", "pr", "depth"] : ["scope", "depth"]; }
+  steps(scope = this.scope) {
+    if (scope !== "pr") return ["scope", "depth"];
+    // A PR you reviewed at an older head asks whether to review only what changed since.
+    return this.since && this.since.number === this.prNumber ? ["scope", "pr", "pass", "depth"] : ["scope", "pr", "depth"];
+  }
 
   /** How many rows the current setup step has. */
-  stepRows() { return this.step === "scope" ? SCOPES.length : this.step === "pr" ? (this.prs?.length ?? 0) : DEPTHS.length; }
+  stepRows() { return this.step === "scope" ? SCOPES.length : this.step === "pr" ? (this.prs?.length ?? 0) : this.step === "pass" ? PASSES.length : DEPTHS.length; }
 
   /** Moves the highlight within the current setup step. */
   moveCursor(delta) {
@@ -630,6 +876,7 @@ export default class Tourist extends View {
     this.step = step;
     this.cursor = step === "scope" ? SCOPES.findIndex(s => s.id === this.scope)
       : step === "pr" ? Math.max(0, (this.prs ?? []).findIndex(p => p.number === this.prNumber))
+      : step === "pass" ? Math.max(0, PASSES.findIndex(p => p.id === this.pass))
       : DEPTHS.findIndex(d => d.id === this.depth);
   }
 
@@ -666,8 +913,21 @@ export default class Tourist extends View {
       if (this.step === "pr") this.loadPRs(cx);
     } else if (this.step === "pr") {
       const p = this.prs?.[this.cursor];
-      if (!p) return;
-      this.prNumber = p.number;
+      if (!p || this.sinceLoading) return;
+      this.prNumber = p.number; this.since = null; this.pass = "since";
+      // Look up your last review of this PR. When it was at an older head, offer a re-review.
+      this.sinceLoading = true;
+      cx.spawn(async cx => {
+        const last = await lastReviewed(this.git.root, this.on, commentKey(this.git.root, p.number), p.number, p.headRefOid).catch(() => null);
+        this.sinceLoading = false;
+        if (this.prNumber === p.number && this.step === "pr") {
+          this.since = last ? { number: p.number, ...last } : null;
+          this.goStep(this.since ? "pass" : "depth");
+        }
+        cx.notify();
+      });
+    } else if (this.step === "pass") {
+      this.pass = PASSES[this.cursor].id;
       this.goStep("depth");
     } else {
       this.depth = DEPTHS[this.cursor].id;
@@ -691,12 +951,13 @@ export default class Tourist extends View {
     this.gen = (this.gen ?? 0) + 1;
     this.session?.stop(); this.session = null;
     this.fixSession?.stop(); this.fixSession = null; this.fix = null; // a fix's worktree stays and is reused next time
-    this.review = null; this.merge = null;
+    this.review = null; this.merge = null; this.checks = null; this.since = null; this.sinceLoading = false;
+    this.threadBusy = null; this.threadError = null; this.openResolved = new Set();
     this.leaveBox();
     this.code?.release(); this.code = null;
     this.plan = null; this.busy = null; this.error = null;
     this.pr = null; this.prNumber = null; this.prs = null; this.diff = null; this.planNote = null; this.comments = []; this.threads = []; this.savedKey = null; this.viewed = {};
-    this.files = null; this.other = null;
+    this.files = null; this.other = null; this.diffMarks = null; this.linkRows = null; this.scrollReq = null; this.repoFiles = new Set();
     this.phase = this.git.root ? "setup" : "error";
     this.goStep("scope");
     if (!this.git.root) cx.spawn(async cx => { this.phase = "setup"; await this.detect(); cx.notify(); });
@@ -717,7 +978,7 @@ export default class Tourist extends View {
       handled = false; // still finding the repo; see pick()
     } else if (this.phase === "setup") {
       // Scopes and depths have letters. PRs take 1 to 9 for the first nine.
-      const list = this.step === "scope" ? SCOPES : this.step === "depth" ? DEPTHS : null;
+      const list = this.step === "scope" ? SCOPES : this.step === "depth" ? DEPTHS : this.step === "pass" ? PASSES : null;
       const letter = list ? list.findIndex(x => x.key === k) : /^[1-9]$/.test(k) && +k <= this.stepRows() ? +k - 1 : -1;
       const onFeature = this.step === "scope" && SCOPES[this.cursor]?.id === "feature";
       if (letter >= 0) this.cursor = letter;
@@ -746,6 +1007,7 @@ export default class Tourist extends View {
       else if (k === "escape" && this.commenting) this.leaveBox();
       else if (k === "f" && this.pr?.mine) this.startFix(cx);
       else if (k === "p" && this.pr) this.startReview(cx);
+      else if (k === "c" && this.pr) this.openChecks(cx);
       else if (k === "r" && this.savedKey) this.replan(cx);
       else if (k === "q") this.reset(cx);
       else handled = false;
@@ -763,6 +1025,16 @@ export default class Tourist extends View {
       else if (n >= 0 && n < (m?.methods?.length ?? 0)) this.moveMethod(n);
       else if (k === "j" || k === "down") this.moveMethod((m?.cursor ?? 0) + 1);
       else if (k === "k" || k === "up") this.moveMethod((m?.cursor ?? 0) - 1);
+      else handled = false;
+    } else if (this.phase === "checks") {
+      const n = /^[1-9]$/.test(k) ? +k - 1 : -1;
+      if (k === "b" || k === "escape") this.closeChecks();
+      else if (k === "e" || k === "enter") this.explainCheck(cx);
+      else if (k === "o") this.openCheck();
+      else if (k === "r") this.loadChecks(cx);
+      else if (n >= 0 && n < (this.checks?.list?.length ?? 0)) this.checks.cursor = n;
+      else if (k === "j" || k === "down") this.moveCheck((this.checks?.cursor ?? 0) + 1);
+      else if (k === "k" || k === "up") this.moveCheck((this.checks?.cursor ?? 0) - 1);
       else handled = false;
     } else if (this.phase === "review") {
       const r = this.review, verdict = /^[1-3]$/.test(k) ? +k - 1 : -1;
@@ -792,6 +1064,7 @@ export default class Tourist extends View {
     if (this.phase === "fix" && this.fix && this.pr) return root.child(fixView(this, t));
     if (this.phase === "review" && this.review && this.pr) return root.child(reviewView(this, t));
     if (this.phase === "merge" && this.merge && this.pr) return root.child(mergeView(this, t));
+    if (this.phase === "checks" && this.checks && this.pr) return root.child(checksView(this, t));
     return root.child(tourView(this, t));
   }
 }

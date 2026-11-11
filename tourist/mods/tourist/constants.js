@@ -12,6 +12,11 @@ export const DEPTHS = [
   { key: "2", id: "normal", label: "Normal", text: "Explain what the code does and how the pieces connect. 4 to 6 sentences per stop. Name the key functions and types." },
   { key: "3", id: "deep", label: "Deep", text: "Technical. Explain mechanisms, data flow, edge cases and tradeoffs. Up to 10 sentences per stop." },
 ];
+// The re-review step, shown for a PR you reviewed before at an older head.
+export const PASSES = [
+  { key: "s", id: "since", label: "Changes since your last review" },
+  { key: "w", id: "whole", label: "The whole PR", hint: "every change, as on a first review" },
+];
 // Read-only tools. Claude can look at the repo but never change it.
 export const TOOLS = ["--allowedTools", "Read", "Grep", "Glob", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(git status:*)"];
 // A fix run may also edit files. It runs in its own worktree, and still can't run other commands.

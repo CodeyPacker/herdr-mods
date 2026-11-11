@@ -5,6 +5,7 @@ import { v_flex, h_flex, Editor, TextView, Scrollbar, h_resizable, v_resizable, 
 import { settings } from "herdr";
 import { button, spinner, textInput } from "../ui.js";
 import { diffView } from "./diff.js";
+import { checkCounts } from "../checks.js";
 
 /** `v` is the Tourist view: its state is read here and its methods run on clicks. */
 export function tourView(v, t) {
@@ -20,35 +21,46 @@ export function tourView(v, t) {
     .when(Boolean(s.group), el => el.child(div().flex_none().max_w(180).truncate().px(6).py(1).rounded(5).bg(t.raised)
       .text_size(11).text_color(t.accent).child(String(s.group))))
     .child(div().flex_1().min_w(0).truncate().font_semibold().child(s.title))
+    .when(Boolean(v.pr?.sinceOid), el => el.child(div().flex_none().px(6).py(1).rounded(5).bg(t.raised).text_size(11).text_color(t.accent)
+      .child(`since your review at ${v.pr.sinceOid.slice(0, 7)}`)))
     .when(Boolean(plan.savedAt), el => el.child(div().flex_none().text_size(11).text_color(t.dim).child("saved review · r plans again")))
     .child(div().max_w(200).truncate().text_size(11.5).text_color(t.dim).child(plan.title ?? ""));
+  const badge = checksBadge(v, t);
+  if (badge) header.child(badge);
   const fileLine = h_flex().id("file").px(14).py(6).gap(8).items_center().cursor_pointer()
     .hover(st => st.bg(t.hover)).on_click(() => v.openInEditor())
     .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.accent).font_family(settings().font_family).child(file))
     .child(div().flex_shrink_1().min_w(0).truncate().text_size(11.5).text_color(t.dim).child(v.pr
       ? `${other ? "whole diff" : `lines ${s.start}–${s.end}`}  ·  click a line to comment, shift-click to extend${v.comments.length ? ` (${v.comments.length} saved)` : ""}  ·  o opens the PR`
       : `lines ${s.start}–${s.end}  ·  o opens`));
-  // On PR tours each diff line takes a comment.
+  // On PR tours each diff line takes a comment. A re-review's removed lines are from the old
+  // commit, so comments and threads on the base's side don't belong on them.
+  const newSide = list => v.pr?.sinceOid ? list.filter(c => c.side !== "old") : list;
   const comments = v.pr ? {
-    file, list: v.comments, input: v.commentInput, threads: v.threads,
+    file, list: newSide(v.comments), input: v.commentInput, threads: newSide(v.threads),
+    threadReply: v.threadReply, threadInput: v.threadInput, threadBusy: v.threadBusy, threadError: v.threadError,
+    openResolved: v.openResolved, onReply: (th, cx) => v.startThreadReply(th, cx), onResolve: (th, cx) => v.toggleResolved(th, cx),
+    onExpand: th => v.toggleResolvedOpen(th),
     open: v.commenting?.file === file ? v.commenting : null,
     onRow: (r, cx, how) => v.startComment(r, cx, how), onDelete: (c, cx) => v.deleteComment(c, cx),
     onEdit: (c, cx) => v.startEdit(c, cx),
   } : null;
   const code = div().flex_1().min_h(0).mx(14).mb(4).rounded(8).border_1().border_color(t.border).bg(t.background).overflow_hidden()
-    .child(v.diff ? diffView(other ? `diff-file-${other}` : `diff-${v.idx}`, v.diff, t, comments)
+    .child(v.diff ? diffView(other ? `diff-file-${other}` : `diff-${v.idx}`, v.diff, t, comments,
+        { ...(v.diffMarks ?? { stops: [], stopRows: null }), linkRows: v.linkRows, onStop: (i, cx) => v.show(i, cx) },
+        v.scrollReq ?? { handle: v.diffScroll, step: 0 })
       : v.code ? Editor.new(v.code).size_full()
       : div().p(10).text_size(12).text_color(t.dim).child(v.codeError ?? "Loading…"));
   const key = other ? `file-${other}` : String(v.idx);
   const noteList = other ? plan.fileNotes?.[other] ?? [] : s.notes;
   const notes = noteList.map((n, i) => v_flex().gap(4).pt(6).border_t_1().border_color(t.border)
     .child(div().text_size(11.5).font_semibold().text_color(t.accent).child(n.label))
-    .child(TextView.markdown(`note-${key}-${i}`, n.text).selectable()));
+    .child(md(v, `note-${key}-${i}`, n.text)));
   // Cap the line length so long explanations stay readable in wide panes.
   const body = v_flex().w_full().max_w(680).gap(10)
     .when(!other && v.idx === 0 && Boolean(plan.summary), el => el.child(v_flex().p(10).rounded(8).bg(t.raised)
-      .child(TextView.markdown("summary", String(plan.summary)).selectable())))
-    .when(!other, el => el.child(TextView.markdown(`body-${v.idx}`, String(s.body ?? "")).selectable()))
+      .child(md(v, "summary", String(plan.summary)))))
+    .when(!other, el => el.child(md(v, `body-${v.idx}`, String(s.body ?? ""))))
     .when(Boolean(other) && noteList.length === 0 && !v.busy, el => el.child(div().text_size(12).text_color(t.dim)
       .child("The tour doesn't stop here. Press e for a short explanation, or a to ask about this file.")))
     .children(notes)
@@ -75,6 +87,7 @@ export function tourView(v, t) {
     .when(Boolean(v.pr?.mine), el => el.child(button(t, "fix",
       v.fix?.phase === "running" ? "Fixing…" : v.fix && v.fix.phase !== "pushed" ? "View fix" : `Fix ${v.comments.length} comment${v.comments.length === 1 ? "" : "s"}`,
       "f", Boolean(v.fix && v.fix.phase !== "pushed") || (v.comments.length > 0 && free), (_e, cx) => { v.startFix(cx); cx.notify(); })))
+    .when(Boolean(v.pr), el => el.child(button(t, "checks", "Checks", "c", true, (_e, cx) => { v.openChecks(cx); cx.notify(); })))
     .when(Boolean(v.pr?.mine), el => el.child(button(t, "merge", "Merge", "m", true, (_e, cx) => { v.startMerge(cx); cx.notify(); })))
     .child(button(t, "layout", v.isSplit() ? "Stacked" : "Split", "s", true, (_e, cx) => { v.toggleSplit(); cx.notify(); }))
     .when(Boolean(v.pr), el => el.child(button(t, "files", v.showFiles ? "Hide files" : "Files", "b", true, (_e, cx) => { v.showFiles = !v.showFiles; cx.notify(); })))
@@ -101,6 +114,21 @@ export function tourView(v, t) {
 }
 
 const RAIL_WIDTH = 210;
+
+/** The agent's markdown, with file:line references as links that move the code panel. */
+function md(v, id, text) {
+  return TextView.markdown(id, v.linkify(text)).selectable().on_link_click((url, cx) => { v.clickLink(url, cx); cx.notify(); });
+}
+
+/** The PR's CI state in the header: failing, running or passed. Click opens the checks. Null with no checks. */
+function checksBadge(v, t) {
+  const list = v.checks?.list;
+  if (!v.pr || !list?.length) return null;
+  const n = checkCounts(list);
+  const [text, color] = n.fail ? [`✗ ${n.fail} failing`, t.ansi1] : n.pending ? [`● ${n.pending} running`, t.ansi3] : [`✓ ${n.pass} passed`, t.ansi2];
+  return div().id("checks-badge").flex_none().px(6).py(1).rounded(5).bg(t.raised).text_size(11).text_color(color).cursor_pointer()
+    .hover(st => st.bg(t.hover)).on_click((_e, cx) => { v.openChecks(cx); cx.notify(); }).child(text);
+}
 
 /** "Next" while there's more, "Next file" when it leaves the stops for the other files, "Last file" or "Last stop" at the end. */
 function nextLabel(v) {
