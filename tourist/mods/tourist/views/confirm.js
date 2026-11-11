@@ -43,7 +43,7 @@ export function confirmDialog(v, t) {
   return div().id("confirm-backdrop").absolute().inset_0().flex().items_center().justify_center().p(16).pb(160)
     .bg(dim).on_mouse_down("left", (_e, cx) => cx.stop_propagation())
     .child(v_flex().id("confirm").w(440).max_w_full().p(18).gap(10).rounded(12)
-      .border_1().border_color(t.accent).bg(t.raised)
+      .border_1().border_color(t.accent).bg(t.popover) // the theme's color for floating surfaces
       .child(div().text_size(15).font_semibold().child(c.title))
       .child(div().text_size(12.5).text_color(t.muted).child(c.text))
       .child(h_flex().pt(6).gap(8).justify_end()
