@@ -2,22 +2,28 @@
 // Clicking a numbered line opens a comment box under it; shift-clicking another line in the
 // same hunk turns it into a multi-line comment. Saved comments sit under their last line, and
 // the lines a multi-line comment covers get an accent bar on the left.
+// A tour stop shows the file's whole diff: the stop's own lines have accent line numbers, every
+// stop on the file gets a label above its first line, and lines a link points at are highlighted.
 import { div } from "gpui-kit";
-import { v_flex, h_flex } from "gpui-base";
+import { v_flex, h_flex, Scrollbar } from "gpui-base";
 import { settings } from "herdr";
 import { commentsOn, coveredRows, linesOf } from "../comments.js";
 import { textInput, spinner } from "../ui.js";
 
-function row(r, i, id, t, onRow, covered) {
+/** One diff line. `mark` is { covered, stop, linked }: under a multi-line comment, in the current stop, pointed at by a link. */
+function row(r, i, id, t, onRow, mark = {}) {
   const { kind, number, text } = r;
+  const { covered, stop, linked } = mark;
   const mono = settings().font_family ?? "JetBrains Mono";
   if (kind === "@") return div().font_family(mono).text_size(11.5).w_full().px(12).h(20).flex_none().whitespace_nowrap().bg(t.raised).text_color(t.dim).child(text);
   return h_flex().id(id).font_family(mono).text_size(11.5).w_full().h(20).flex_none().gap(10)
     .when(kind === "+", e => e.bg(t.ansi2 + "18")).when(kind === "-", e => e.bg(t.ansi1 + "18"))
+    .when(Boolean(linked), e => e.bg(t.selected))
     .border_l_2().border_color(covered ? t.accent : "#00000000")
     .when(number !== undefined && !r.noComment && Boolean(onRow), e => e.cursor_pointer().hover(s => s.bg(t.hover))
       .on_click((ev, cx) => { onRow(r, cx, { index: i, shift: Boolean(ev?.modifiers?.shift) }); cx.notify(); }))
-    .child(div().w(36).flex_none().text_right().text_color(t.dim).child(number === undefined ? "" : String(number)))
+    .child(div().w(36).flex_none().text_right().when(Boolean(stop), e => e.bg(t.raised).font_semibold())
+      .text_color(stop ? t.accent : t.dim).child(number === undefined ? "" : String(number)))
     .child(div().w(10).flex_none().text_color(kind === "+" ? t.ansi2 : kind === "-" ? t.ansi1 : t.dim).child(kind.trim()))
     .child(div().flex_none().pr(12).whitespace_nowrap().child(text.replace(/\t/g, "    ")));
 }
@@ -77,33 +83,79 @@ function thread(th, t, c) {
     .when(c.threadReply !== th.id, el => el.child(actions));
 }
 
-/** The diff rows of one file with a sideways scroll of their own, for stacking several in one list. */
-export function diffBlock(id, rows, t, c = null) {
-  const items = [];
+/**
+ * The line above a stop's first row, "Stop 2 · title" in the middle of it, or the plain line below
+ * its last row (`label` false). The current stop's lines are accent-colored. Clicking another
+ * stop's label goes to it.
+ */
+function stopLine(st, id, t, onStop, label) {
+  const color = st.current ? t.accent : t.border, line = () => div().flex_1().h(1).bg(color);
+  if (!label) return div().w_full().px(12).mt(2).mb(6).child(line());
+  return h_flex().id(id).w_full().px(12).mt(8).mb(2).gap(8).items_center().text_size(11)
+    .when(!st.current, el => el.cursor_pointer().hover(s => s.text_color(t.foreground)).on_click((_e, cx) => { onStop(st.index, cx); cx.notify(); }))
+    .text_color(st.current ? t.accent : t.dim)
+    .child(line())
+    .child(div().flex_none().max_w(420).truncate().child(`Stop ${st.index + 1} · ${st.title}`))
+    .child(line());
+}
+
+/**
+ * The rows with everything that sits between them: stop lines, threads, comments and the
+ * comment box. Returns the items, which item each row is (`at[rowIndex]`), which items span the
+ * visible width rather than the longest line (`wide`, the stop lines, so their labels stay in
+ * view), and the width the longest line needs. `m` holds the stop marks: `stops` ([{ index, title, row, end, current }]),
+ * `stopRows` and `linkRows` ([first, last] row indexes, or null) and `onStop`.
+ */
+function diffItems(id, rows, t, c, m) {
+  const items = [], at = [], wide = new Set();
   const covered = c ? coveredRows(rows, c.list, c.file, c.open) : new Set();
+  const inside = (range, i) => Boolean(range) && i >= range[0] && i <= range[1];
   rows.forEach((r, i) => {
-    items.push(row(r, i, `${id}-row-${i}`, t, c?.onRow, covered.has(i)));
-    if (!c) return;
+    for (const st of m?.stops ?? []) if (st.row === i) { wide.add(items.length); items.push(stopLine(st, `${id}-stop-${st.index}`, t, m.onStop, true)); }
+    at[i] = items.length;
+    items.push(row(r, i, `${id}-row-${i}`, t, c?.onRow, { covered: covered.has(i), stop: inside(m?.stopRows, i), linked: inside(m?.linkRows, i) }));
+    const ends = () => { for (const st of m?.stops ?? []) if (st.end === i) { wide.add(items.length); items.push(stopLine(st, null, t, null, false)); } };
+    if (!c) { ends(); return; }
     for (const th of commentsOn(c.threads ?? [], c.file, r)) items.push(thread(th, t, c));
     // The comment being edited shows as the box below instead.
     for (const saved of commentsOn(c.list, c.file, r)) if (saved.id !== c.open?.editId) items.push(bubble(saved, t, c.onDelete, c.onEdit));
     if (c.open && c.open.line === r.number && c.open.side === (r.kind === "-" ? "old" : "new"))
       items.push(div().ml(56).mr(10).my(4).max_w(640).child(textInput(t, c.input, true)));
+    ends();
   });
-  // Long lines scroll sideways instead of being cut off.
   const longest = rows.reduce((n, r) => Math.max(n, r.text.replace(/\t/g, "    ").length), 0);
+  return { items, at, wide, width: GUTTER + longest * CHAR_WIDTH };
+}
+
+/** The diff rows of one file with a sideways scroll of their own, for stacking several in one list. */
+export function diffBlock(id, rows, t, c = null) {
+  const { items, width } = diffItems(id, rows, t, c, null);
+  // Long lines scroll sideways instead of being cut off.
   return div().id(`${id}-x`).w_full().overflow_x_scrollbar()
-    .child(v_flex().w_full().min_w(GUTTER + longest * CHAR_WIDTH).children(items));
+    .child(v_flex().w_full().min_w(width).children(items));
 }
 
 /**
- * One file's diff that scrolls on its own; `id` must change with the stop so each stop
- * starts at the top. The sideways scroll sits inside the vertical one, so the vertical
- * scrollbar stays at the panel's right edge. `c` holds the comment state: `file`, `list`,
- * `open` (the row being commented on, or null), `input`, `threads` (GitHub's), and the
- * `onRow`, `onDelete` and `onEdit` handlers. Threads also need `threadReply`, `threadInput`,
- * `threadBusy`, `threadError`, `openResolved`, and the `onReply`, `onResolve` and `onExpand` handlers. Leave it out for a plain diff.
+ * One file's diff that scrolls on its own, both ways; `id` must change with the stop. Rows are
+ * the scroll area's direct children, so `scroll` ({ handle, row, step }) can bring a row into
+ * view: step 1 jumps to the end, step 2 then scrolls back up just far enough that the row sits
+ * at the top. `c` holds the comment state: `file`, `list`, `open` (the row being commented on, or
+ * null), `input`, `threads` (GitHub's), and the `onRow`, `onDelete` and `onEdit` handlers. Threads
+ * also need `threadReply`, `threadInput`, `threadBusy`, `threadError`, `openResolved`, and the
+ * `onReply`, `onResolve` and `onExpand` handlers. Leave it out for a plain diff. `m` holds the
+ * stop marks (see diffItems).
  */
-export function diffView(id, rows, t, c = null) {
-  return v_flex().id(id).size_full().overflow_y_scrollbar().py(4).child(diffBlock(id, rows, t, c));
+export function diffView(id, rows, t, c = null, m = null, scroll = null) {
+  const { items, at, wide, width } = diffItems(id, rows, t, c, m);
+  if (scroll && items.length) {
+    if (scroll.step === 1) scroll.handle.scroll_to_item(items.length - 1);
+    else if (scroll.step === 2) scroll.handle.scroll_to_item(at[Math.max(0, Math.min(scroll.row, rows.length - 1))] ?? 0);
+  }
+  // A plain scroll area driven by the handle, with the scrollbars drawn over it, the same way
+  // the explanation scrolls. A built-in scrollbar area keeps a scroll position of its own.
+  const area = v_flex().id(id).size_full().overflow_scroll().py(4)
+    .children(items.map((item, i) => wide.has(i) ? item : div().min_w(width).flex_none().child(item)));
+  return div().relative().size_full()
+    .child(scroll ? area.track_scroll(scroll.handle) : area)
+    .child(Scrollbar.new(id).absolute().inset_0());
 }

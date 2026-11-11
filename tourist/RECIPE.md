@@ -33,14 +33,30 @@ Row text wraps in narrow panes.
 While the agent plans, a spinner and "<Agent> is planning the tour". Then the tour: a header with "n / total", the stop
 title and the tour title, the file and line range (click or `o` opens it in VS
 Code), the code excerpt, and the explanation below it, capped at 680 px wide.
-Stop 1 also shows the tour summary. Answers from Deeper, More technical and Ask
+Stop 1 also shows the tour summary.
+
+Links: `path:line` and `path:start-end` in the agent's text (summary, stop
+bodies, answers) are links, when the path is a file in the repo (or the
+PR's head commit). A bare name like `main.js:40` counts when only one file
+ends with it, or one of the tour's files does. On a PR tour a click scrolls
+the code panel to those lines and highlights them: in the shown file, else at
+the stop on that file that holds the line, else that file from the list, else
+GitHub for a file the PR doesn't change. On other tours it goes to the stop
+holding the line, else opens VS Code there. Code blocks are left alone, and
+other links open in the browser. Answers from Deeper, More technical and Ask
 stack under the explanation. A button bar at the bottom repeats the keys.
 
 A PR tour shows "Fetching PR #n" before planning. Each stop has a group badge
 (for example "Project setup", "CI") after "n / total", and the code panel shows
 the file's diff instead of an excerpt: hunk headers, added lines tinted green,
-removed lines red, line numbers and +/− marks. Only the hunks that touch the
-stop's lines are shown (all of them when none do). `o` opens the PR's Files
+removed lines red, line numbers and +/− marks. It holds the file's whole diff
+(up to 2000 rows), scrolled so the stop's lines sit near the top. The stop's
+own line numbers are accent-colored on a raised background. Every stop on the
+same file sits between two lines across the panel: the top one has "Stop 2 ·
+title" in its middle, the bottom one is plain. The current stop's lines are
+accent-colored, the others use the border color, and clicking another stop's
+label goes to it. Code from an earlier stop on the file is still there to
+scroll back to. `o` opens the PR's Files
 page in the browser, since the PR isn't on disk. There's no cap on the number of
 stops: one per changed area worth reviewing.
 
@@ -269,6 +285,14 @@ and its branch are deleted, and the comments stay.
   api repos/<owner>/<repo>/pulls/<n>/reviews -X POST --input <file>`, then
   deletes the file. Your comment text goes up as written; no agent is involved.
 - Code excerpts use `EditorState`/`Editor`, read-only, without line numbers.
+  The editor can't be scrolled or highlighted from code, which is why whole
+  files and link highlights are PR-only.
+- The diff scrolls with a `ScrollHandle`, whose rows are the scroll area's
+  direct children. It only brings an item into view the shortest way, so a
+  scroll first jumps to the last item, then back up to the target row.
+- Links (`links.js`) point at `https://tourist.invalid/line?f=&a=&b=`, which
+  `on_link_click` catches. The repo's files come from `git ls-files`, or `git
+  ls-tree -r --name-only <head>` on a PR tour.
   Text uses `TextView.markdown`.
 - `herdr-app do tourist.<command>` drives it for testing: `scope-<id>`,
   `depth-<id>`, `down`, `up`, `pick`, `back`, `start`, `next`, `prev`,

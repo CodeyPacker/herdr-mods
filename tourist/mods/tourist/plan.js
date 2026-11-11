@@ -18,7 +18,7 @@ export function planPrompt(subjectText, depth) {
     `Depth: ${DEPTHS.find(d => d.id === depth)?.text ?? ""}`,
     "Read the code you need with your tools. Then reply with ONLY a JSON object, no prose and no code fences, in this shape:",
     '{"title": "short tour title", "summary": "markdown, 2 to 4 sentences", "stops": [{"file": "repo-relative path with forward slashes", "start": 1, "end": 40, "title": "short stop title", "body": "markdown explanation"}]}',
-    "Rules: 4 to 10 stops (4 to 6 for an overview). Order the stops so each builds on the last, starting where a newcomer should start. Keep each excerpt under 60 lines. Line numbers must match the file as it is on disk now. Only claim what the code you read shows.",
+    "Rules: 4 to 10 stops (4 to 6 for an overview). Order the stops so each builds on the last, starting where a newcomer should start. Keep each excerpt under 60 lines. Line numbers must match the file as it is on disk now. When a body points at specific code, write it as repo-relative \`path:line\` or \`path:start-end\`; the reader can click those. Only claim what the code you read shows.",
   ].join("\n\n");
 }
 
@@ -51,7 +51,7 @@ export function prPlanPrompt(subjectText, depth) {
     '{"title": "short review title", "summary": "markdown, 2 to 4 sentences: what the PR does and why", "stops": [{"group": "short group name", "file": "repo-relative path with forward slashes", "start": 1, "end": 40, "title": "short stop title", "body": "markdown explanation"}]}',
     "Order: review the changes in the order they build on each other. Put what other changes depend on first (types, schemas, config, shared helpers), then the code that uses it, then the entry points and tests. Stops that belong together share a group name, and groups appear in order.",
     "Each body says what changed, why it changed (from the description, commits and code), and how it connects to the stops before it. Flag anything that looks risky or unfinished.",
-    "Rules: one stop per changed area worth a reviewer's attention, however many that is. Don't pad a small PR or cut a large one short; fold only trivial changes (lockfiles, generated files, renames) into a related stop. start and end are line numbers in the file as the PR has it (the new side of the diff) and must cover the changed lines. Only claim what the code you read shows.",
+    "Rules: one stop per changed area worth a reviewer's attention, however many that is. Don't pad a small PR or cut a large one short; fold only trivial changes (lockfiles, generated files, renames) into a related stop. start and end are line numbers in the file as the PR has it (the new side of the diff) and must cover the changed lines. When a body points at specific code, write it as repo-relative \`path:line\` or \`path:start-end\` (new-side line numbers); the reader can click those. Only claim what the code you read shows.",
   ].join("\n\n");
 }
 

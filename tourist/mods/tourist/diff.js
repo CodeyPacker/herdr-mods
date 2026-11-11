@@ -53,3 +53,35 @@ export function markOutsidePR(rows, prRows) {
   for (const r of rows) if (r.number !== undefined && (r.kind === "-" || !ok.has(r.number))) r.noComment = true;
   return rows;
 }
+
+/**
+ * The first and last row (indexes) showing new-file lines start..end, removed lines between them
+ * included. Null when none of those lines are in the diff.
+ */
+export function rowsFor(rows, start, end) {
+  let first = -1, last = -1;
+  rows.forEach((r, i) => {
+    if (r.kind === "@" || r.kind === "-" || r.number === undefined || r.number < start || r.number > end) return;
+    if (first < 0) first = i;
+    last = i;
+  });
+  return first < 0 ? null : [first, last];
+}
+
+/** The row closest to new-file line `line`, for scrolling to a line the diff doesn't show. */
+export function nearestRow(rows, line) {
+  let best = 0, gap = Infinity;
+  rows.forEach((r, i) => {
+    if (r.kind === "@" || r.kind === "-" || r.number === undefined) return;
+    const d = Math.abs(r.number - line);
+    if (d < gap) { gap = d; best = i; }
+  });
+  return best;
+}
+
+/** At most `max` rows, around row `at` when the file's diff is longer. */
+export function windowRows(rows, at, max = 2000) {
+  if (rows.length <= max) return rows;
+  const start = Math.max(0, Math.min(rows.length - max, at - Math.floor(max / 2)));
+  return rows.slice(start, start + max);
+}
