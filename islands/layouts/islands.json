@@ -15,12 +15,12 @@
           "size": {
             "px": 38
           },
-          "window_drag": true,
-          "radius": 14,
           "border": {
             "width": 1,
             "color": "border"
-          }
+          },
+          "radius": 14,
+          "window_drag": true
         },
         {
           "id": "sidebar-lists",
@@ -33,14 +33,14 @@
                 "mod": "islands-spaces"
               },
               "size": {
-                "weight": 1
+                "weight": 0.9538976550102234
               },
               "min": 90,
-              "radius": 14,
               "border": {
                 "width": 1,
                 "color": "border"
-              }
+              },
+              "radius": 14
             },
             {
               "id": "agents",
@@ -49,14 +49,14 @@
                 "mod": "islands-agents"
               },
               "size": {
-                "weight": 1
+                "weight": 1.0461022853851318
               },
               "min": 90,
-              "radius": 14,
               "border": {
                 "width": 1,
                 "color": "border"
-              }
+              },
+              "radius": 14
             }
           ],
           "gap": 12
@@ -73,11 +73,11 @@
           "size": {
             "px": 72
           },
-          "radius": 14,
           "border": {
             "width": 1,
             "color": "border"
-          }
+          },
+          "radius": 14
         }
       ],
       "size": {
@@ -85,8 +85,8 @@
       },
       "min": 44,
       "max": 480,
-      "resizable": false,
-      "gap": 12
+      "gap": 12,
+      "resizable": false
     },
     {
       "id": "work",
@@ -121,7 +121,7 @@
                     "height": 30,
                     "position": "top"
                   },
-                  "background": "background",
+                  "background": "#17191dd9",
                   "border": {
                     "width": 1,
                     "color": "border"
@@ -182,29 +182,29 @@
           "size": {
             "px": 32
           },
-          "radius": 14,
           "border": {
             "width": 1,
             "color": "border"
-          }
+          },
+          "radius": 14
         }
       ],
-      "resizable": false,
-      "gap": 12
+      "gap": 12,
+      "resizable": false
     }
   ],
   "background": "canvas",
+  "padding": 12,
   "terminal_padding": [
     16,
     14
   ],
+  "terminal_opacity": 0,
+  "gap": 12,
   "titlebar": "none",
   "traffic_lights": [
     12,
     16
   ],
-  "preview": "layouts/islands.svg",
-  "padding": 12,
-  "gap": 12,
-  "terminal_opacity": 0
+  "preview": "layouts/islands.svg"
 }
