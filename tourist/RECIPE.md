@@ -159,7 +159,8 @@ Merge (your own PRs only): GitHub won't let you approve your own PR, so `m` or
 commit you reviewed. GitHub's reason shows when it's blocked (checks, reviews,
 conflicts). When someone else pushed since the tour started, it says the PR has
 newer commits and to open it again to review them. It never deletes branches or touches your checkout: the repo's own
-auto-delete setting decides. Then it says "Merged", and `o` opens the PR. A
+auto-delete setting decides. Then a dialog says "Merged into <base>" with the PR and method, and offers
+`o` Open PR, `b` Back to tour and `q` New tour. A
 peer's PR never shows Merge.
 
 Fix (your own PRs only): `f` or "Fix N comments" opens the fix screen. A PR is
@@ -198,8 +199,8 @@ and its branch are deleted, and the comments stay.
   explains a file the tour skipped.
 - Checks: `j`/`k` or `1` to `9` pick, `e` or `enter` explains a failure, `o`
   opens it, `r` refreshes, `b` or `esc` back to the tour.
-- Merge: `1` to `3` or `j`/`k` pick the method, `enter` or `m`, then `y`, merges, `o` opens the
-  PR once merged, `b` or `esc` back to the tour.
+- Merge: `1` to `3` or `j`/`k` pick the method, `enter` or `m`, then `y`, merges, once merged `o`
+  opens the PR and `q` starts a new tour, `b` or `esc` back to the tour.
 - Post review: `1` to `3` or `j`/`k` pick the verdict, `tab` types the summary,
   `p` then `y` posts, `o` opens it once posted, `b` or `esc` back to the tour.
 - Fix: `r`, `a` or `/` replies to the agent (`esc` or `tab` gives the keys
