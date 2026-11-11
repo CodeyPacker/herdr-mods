@@ -1,7 +1,7 @@
-// The merge screen, for your own PRs: pick a merge method, then press m twice.
+// The merge screen, for your own PRs: pick a merge method, press m, then y to confirm.
 import { div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { button, option, spinner } from "../ui.js";
+import { confirmBar, button, option, spinner } from "../ui.js";
 
 /** `v` is the Tourist view: its state is read here and its methods run on clicks. */
 export function mergeView(v, t) {
@@ -32,7 +32,9 @@ export function mergeView(v, t) {
     .child(button(t, "merge-back", "Back to tour", "b", m.phase !== "merging", (_e, cx) => { v.closeMerge(); cx.notify(); }))
     .when(m.phase === "merged", el => el.child(button(t, "merge-open", "Open on GitHub", "o", true, (_e, cx) => { v.openPR(); cx.notify(); })))
     .when(m.phase === "picking", el => el.child(button(t, "merge-go",
-      m.confirm ? `Press m again to ${method?.label.toLowerCase()}` : method?.label ?? "Merge",
+      method?.label ?? "Merge",
       "m", Boolean(method), (_e, cx) => { v.doMerge(cx); cx.notify(); })));
-  return v_flex().flex_1().min_h(0).child(header).child(body).child(bar);
+  const ask = confirmBar(t, "merge-confirm", `${method?.label} PR #${pr.number} into ${pr.base}?`, "Merge",
+    (_e, cx) => { v.doMerge(cx); cx.notify(); }, (_e, cx) => { m.confirm = false; cx.notify(); });
+  return v_flex().flex_1().min_h(0).child(header).child(body).child(m.confirm && m.phase === "picking" ? ask : bar);
 }

@@ -997,6 +997,14 @@ export default class Tourist extends View {
     // z zooms this pane to fill the tab and back, on every screen (Herdr's pane.zoom, ctrl-shift-z).
     if (k === "z") { run("pane.zoom"); cx.stop_propagation(); return; }
     let handled = true;
+    // A confirm bar is up (push, post or merge): y goes ahead, n or esc cancels, other keys wait.
+    const asking = this.phase === "fix" ? this.fix : this.phase === "review" ? this.review : this.phase === "merge" ? this.merge : null;
+    if (asking?.confirm) {
+      if (k === "y") this.phase === "fix" ? this.pushFix(cx) : this.phase === "review" ? this.postReview(cx) : this.doMerge(cx);
+      else if (k === "n" || k === "escape") asking.confirm = false;
+      cx.stop_propagation(); cx.notify();
+      return;
+    }
     if (this.phase === "setup" && !this.git.root) {
       handled = false; // still finding the repo; see pick()
     } else if (this.phase === "setup") {

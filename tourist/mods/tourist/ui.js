@@ -27,6 +27,17 @@ export function button(t, id, label, keyHint, enabled, click) {
     .child(div().text_color(t.accent).child(keyHint)).child(label);
 }
 
+/**
+ * The bar shown in place of a screen's buttons while an action waits for a yes: what will happen,
+ * then y and n. Used before anything goes to GitHub.
+ */
+export function confirmBar(t, id, text, yes, onYes, onNo) {
+  return h_flex().px(14).py(10).gap(10).flex_wrap().items_center().border_t_1().border_color(t.accent).bg(t.raised)
+    .child(div().flex_1().min_w(200).text_size(12.5).font_medium().child(text))
+    .child(button(t, `${id}-yes`, yes, "y", true, onYes))
+    .child(button(t, `${id}-no`, "Cancel", "n", true, onNo));
+}
+
 export function spinner(t) {
   return div().text_color(t.accent).frames(SPINNER, 90).child(SPINNER[0]);
 }
