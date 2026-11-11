@@ -26,8 +26,10 @@ import { setupView } from "./views/setup.js";
 import { tourView } from "./views/tour.js";
 import { planningView, errorView } from "./views/status.js";
 import { fixView } from "./views/fix.js";
-import { postReview, eventsFor, DEFAULT_SUMMARY } from "./review.js";
+import { postReview, eventsFor } from "./review.js";
 import { reviewView } from "./views/review.js";
+import { mergeMethods, mergePR } from "./merge.js";
+import { mergeView } from "./views/merge.js";
 
 export default class Tourist extends View {
   init(_props, cx) {
@@ -58,6 +60,8 @@ export default class Tourist extends View {
     this.replying = false; // the fix screen's reply box only exists while replying
     // Posting the comments to GitHub: { phase: "editing" | "posting" | "posted", cursor, confirm, url, error }.
     this.review = null;
+    // Merging your own PR: { phase: "loading" | "picking" | "merging" | "merged", methods, cursor, confirm, error }.
+    this.merge = null;
     this.cursor = 0;      // highlighted row in the current step
     this.split = null;    // null: split when the pane is wide enough. true or false: the s key chose
     this.width = 0;       // the pane width, from on_size_change
@@ -66,7 +70,7 @@ export default class Tourist extends View {
     this.input = this.textBox("ask", "Ask about this stop, then press enter", cx => this.ask(cx));
     this.featureInput = this.textBox("feature", "e.g. how a space gets its hint letter", cx => this.pick(cx));
     this.commentInput = this.textBox("comment", "Comment on this line, then press enter", cx => this.saveComment(cx));
-    this.summaryInput = this.textBox("summary", DEFAULT_SUMMARY, () => this.leaveBox());
+    this.summaryInput = this.textBox("summary", "Optional", () => this.leaveBox());
     this.replyInput = this.textBox("reply", "Reply to the agent, then press enter", cx => this.replyFix(cx));
     this.handle = cx.focus_handle();
     // The pane isn't drawn yet, so focus again once it is.
@@ -124,6 +128,8 @@ export default class Tourist extends View {
     else if (c === "fix-discard") this.discardFix(cx);
     else if (c === "review") this.startReview(cx);
     else if (c === "review-back") this.closeReview();
+    else if (c === "merge") this.startMerge(cx);
+    else if (c === "merge-back") this.closeMerge();
     else if (c === "explain") this.explainFile(cx);
     else if (c === "viewed") this.toggleViewed(this.currentFile(), cx);
     else if (c.startsWith("file-") && this.files) {
@@ -498,10 +504,13 @@ export default class Tourist extends View {
 
   /** Opens the post-review screen for the saved comments. */
   startReview(cx) {
-    if (!this.pr || this.comments.length === 0) return;
+    // A peer's PR can be approved with no comments. Your own can only take comments.
+    if (!this.pr || (this.comments.length === 0 && this.pr.mine)) return;
     this.leaveBox();
     if (!this.review || this.review.phase === "posted") {
-      this.review = { phase: "editing", cursor: 0, confirm: false, url: null, error: null };
+      // With no comments the likely verdict is Approve, so it starts highlighted.
+      const cursor = this.comments.length === 0 ? Math.max(0, eventsFor(this.pr).findIndex(e => e.id === "APPROVE")) : 0;
+      this.review = { phase: "editing", cursor, confirm: false, url: null, error: null };
       this.summaryInput.set_value("");
     }
     this.phase = "review";
@@ -522,10 +531,18 @@ export default class Tourist extends View {
     r.cursor = (i + n) % n; r.confirm = false;
   }
 
+  /** True when the review has something to post: comments, an approval, or a summary. */
+  canPost() {
+    const r = this.review, pr = this.pr;
+    if (!r || !pr || r.phase !== "editing") return false;
+    const event = (eventsFor(pr)[r.cursor] ?? eventsFor(pr)[0]).id;
+    return this.comments.length > 0 || event === "APPROVE" || this.summaryInput.value().trim() !== "";
+  }
+
   /** Posts the comments as one GitHub review. The first press only asks for a second one. */
   postReview(cx) {
     const r = this.review, pr = this.pr;
-    if (!r || !pr || r.phase !== "editing" || this.comments.length === 0) return;
+    if (!this.canPost()) return;
     if (!r.confirm) { r.confirm = true; return; }
     const event = (eventsFor(pr)[r.cursor] ?? eventsFor(pr)[0]).id;
     const comments = [...this.comments], summary = this.summaryInput.value();
@@ -542,6 +559,49 @@ export default class Tourist extends View {
   }
 
   openReview() { if (this.review?.url) openUrl(this.review.url); }
+
+  /** Opens the merge screen for your own PR and reads which merge methods the repo allows. */
+  startMerge(cx) {
+    const pr = this.pr;
+    if (!pr?.mine) return; // never merge someone else's PR
+    this.leaveBox();
+    this.phase = "merge";
+    if (this.merge && this.merge.phase !== "loading") { this.merge.confirm = false; return; }
+    const m = this.merge = { phase: "loading", methods: null, cursor: 0, confirm: false, error: null };
+    cx.spawn(async cx => {
+      try { m.methods = await mergeMethods(this.git.root, this.on, pr); m.phase = "picking"; }
+      catch (e) { m.methods = []; m.phase = "picking"; m.error = `Could not read the repo's merge settings: ${String(e?.message ?? e)}`; }
+      cx.notify();
+    });
+  }
+
+  closeMerge() {
+    if (this.merge?.phase === "merging") return;
+    if (this.merge) this.merge.confirm = false;
+    this.phase = this.plan ? "tour" : "setup";
+  }
+
+  /** Moves the merge method highlight. Any change asks for the two presses again. */
+  moveMethod(i) {
+    const m = this.merge, n = m?.methods?.length ?? 0;
+    if (!m || m.phase !== "picking" || n === 0) return;
+    m.cursor = (i + n) % n; m.confirm = false;
+  }
+
+  /** Merges the PR with the picked method. The first press only asks for a second one. */
+  doMerge(cx) {
+    const m = this.merge, pr = this.pr, method = m?.methods?.[m.cursor];
+    if (!m || !pr?.mine || m.phase !== "picking" || !method) return;
+    if (!m.confirm) { m.confirm = true; return; }
+    m.confirm = false; m.phase = "merging"; m.error = null;
+    cx.spawn(async cx => {
+      try { await mergePR(this.git.root, this.on, pr, method.id); m.phase = "merged"; }
+      catch (e) { m.phase = "picking"; m.error = `GitHub did not merge it: ${String(e?.message ?? e)}`; }
+      cx.notify();
+    });
+  }
+
+  openPR() { if (this.pr?.url) openUrl(this.pr.url); }
 
   startAsking(cx) {
     if (this.busy) return;
@@ -627,7 +687,7 @@ export default class Tourist extends View {
     this.gen = (this.gen ?? 0) + 1;
     this.session?.stop(); this.session = null;
     this.fixSession?.stop(); this.fixSession = null; this.fix = null; // a fix's worktree stays and is reused next time
-    this.review = null;
+    this.review = null; this.merge = null;
     this.leaveBox();
     this.code?.release(); this.code = null;
     this.plan = null; this.busy = null; this.error = null;
@@ -678,6 +738,7 @@ export default class Tourist extends View {
       else if (k === "b" && this.pr) this.showFiles = !this.showFiles;
       else if (k === "e" && this.other) this.explainFile(cx);
       else if (k === "v" && this.pr) this.toggleViewed(this.currentFile(), cx);
+      else if (k === "m" && this.pr?.mine) this.startMerge(cx);
       else if (k === "escape" && this.commenting) this.leaveBox();
       else if (k === "f" && this.pr?.mine) this.startFix(cx);
       else if (k === "p" && this.pr) this.startReview(cx);
@@ -690,10 +751,19 @@ export default class Tourist extends View {
       else if (k === "x") this.discardFix(cx);
       else if (k === "r" || k === "a" || k === "/") this.startReply(cx);
       else handled = false;
+    } else if (this.phase === "merge") {
+      const m = this.merge, n = /^[1-3]$/.test(k) ? +k - 1 : -1;
+      if (k === "b" || k === "escape") this.closeMerge();
+      else if (k === "m") this.doMerge(cx);
+      else if (k === "o" && m?.phase === "merged") this.openPR();
+      else if (n >= 0 && n < (m?.methods?.length ?? 0)) this.moveMethod(n);
+      else if (k === "j" || k === "down") this.moveMethod((m?.cursor ?? 0) + 1);
+      else if (k === "k" || k === "up") this.moveMethod((m?.cursor ?? 0) - 1);
+      else handled = false;
     } else if (this.phase === "review") {
       const r = this.review, verdict = /^[1-3]$/.test(k) ? +k - 1 : -1;
       if (k === "b" || k === "escape") this.closeReview();
-      else if (k === "p") this.postReview(cx);
+      else if (k === "p" || k === "enter") this.postReview(cx);
       else if (k === "o") this.openReview();
       else if (k === "tab" && r?.phase === "editing") this.focusBox(this.summaryInput, cx);
       else if (verdict >= 0 && this.pr && verdict < eventsFor(this.pr).length) this.moveVerdict(verdict);
@@ -717,6 +787,7 @@ export default class Tourist extends View {
     if (this.phase === "error") return root.child(errorView(this, t));
     if (this.phase === "fix" && this.fix && this.pr) return root.child(fixView(this, t));
     if (this.phase === "review" && this.review && this.pr) return root.child(reviewView(this, t));
+    if (this.phase === "merge" && this.merge && this.pr) return root.child(mergeView(this, t));
     return root.child(tourView(this, t));
   }
 }
