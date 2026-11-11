@@ -1,24 +1,20 @@
-// jump: tmux's prefix+w crossed with vimium. Every space and its tabs get a
-// letter; type one and you're there. A space with one tab is a single row. A
-// space's letter takes you to its active tab. j/k or arrows move, enter goes, x closes the selected tab, t opens a new
-// tab, n a new space, esc bails. Pick your own letters in
-// ~/.config/herdr-app/hints.json (see tiles.js).
-
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
-import { spaces, panes, agents, run, props, closeOverlay, shared, readTextFile, appHome, home } from "herdr";
-import { colors, panelFill, hints, row, avatar, spaceName, spaceNote, glyph, navigate, spaceColor, hintLine, readHintConfig, ROW_H } from "./tiles.js";
+import { spaces, panes, agents, run, props, closeOverlay, readTextFile, appHome, home } from "herdr";
+import { colors, panelFill, hints, row, spaceNote, glyph, navigate, hintLine, readHintConfig, ROW_H } from "./tiles.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("gpui-kit").KeyEvent} KeyEvent */
 /** @typedef {import("gpui-kit").FocusHandle} FocusHandle */
 /** @typedef {import("herdr").SpaceInfo} SpaceInfo */
 /** @typedef {import("herdr").TabInfo} TabInfo */
+/** @typedef {import("herdr").AgentInfo} AgentInfo */
 /** @typedef {import("./tiles.js").HintConfig} HintConfig */
 /** @typedef {{ kind: "space", s: SpaceInfo, hint?: string, pinned?: boolean }} SpaceItem */
-/** @typedef {{ kind: "tab", s: SpaceInfo, tab: TabInfo, who: string, status: string | null, merged: boolean, hint?: string, pinned?: boolean }} TabItem */
+/** @typedef {{ kind: "tab", s: SpaceInfo, tab: TabInfo, who: string, status: string | null, hint?: string, pinned?: boolean }} TabItem */
+/** @typedef {{ kind: "agent", s: SpaceInfo, agent: AgentInfo, hint?: string, pinned?: boolean }} AgentItem */
 /** @typedef {{ kind: "new-tab" | "new-space", hint: string, pinned?: boolean }} NewItem */
-/** @typedef {SpaceItem | TabItem | NewItem} Item */
+/** @typedef {SpaceItem | TabItem | AgentItem | NewItem} Item */
 
 // These do things, so they can't be hints.
 const RESERVED = "tnqjkxr";
@@ -45,24 +41,25 @@ export default class Jump extends View {
     closeOverlay(props().overlay);
   }
 
-  /** Every hinted thing in order: a space's only tab as one row, else a header and its tabs, then the two new rows. @returns {Item[]} */
+  /** Each space, its tabs and agents, then the two new rows. @returns {Item[]} */
   items() {
     /** @type {Item[]} */
     const out = [];
     const ps = panes();
     const ag = agents();
+    const agentTabs = new Set(ag.map((a) => a.tab));
     for (const s of spaces()) {
       const tabs = s.tabs ?? [];
-      const merged = tabs.length === 1;
-      if (!merged) out.push({ kind: "space", s });
+      out.push({ kind: "space", s });
       for (const tab of tabs) {
+        if (agentTabs.has(tab.id)) continue;
         const mine = ps.filter((p) => p.tab === tab.id);
         const who = mine.map((p) => p.mod ?? p.program?.name ?? "shell");
-        const status = ag.filter((a) => a.tab === tab.id).map((a) => a.status);
-        out.push({ kind: "tab", s, tab, who: [...new Set(who)].join(" · "), status: tab.status ?? status[0] ?? null, merged });
+        out.push({ kind: "tab", s, tab, who: [...new Set(who)].join(" · "), status: tab.status ?? null });
       }
+      for (const agent of ag.filter((a) => a.space === s.id)) out.push({ kind: "agent", s, agent });
     }
-    const wanted = out.map((it) => (it.kind === "space" ? this.hintConfig.spaces[it.s.name] : it.kind === "tab" ? (it.merged && this.hintConfig.spaces[it.s.name]) || this.hintConfig.tabs[`${it.s.name}/${it.tab.name}`] : null));
+    const wanted = out.map((it) => (it.kind === "space" ? this.hintConfig.spaces[it.s.name] : it.kind === "tab" ? this.hintConfig.tabs[`${it.s.name}/${it.tab.name}`] : null));
     const hs = hints(out.length, RESERVED, wanted);
     out.forEach((it, i) => { it.hint = hs[i]; it.pinned = !!wanted[i] && hs[i] === String(wanted[i]).toLowerCase(); });
     out.push({ kind: "new-tab", hint: "t" });
@@ -75,14 +72,15 @@ export default class Jump extends View {
     if (!it) return;
     if (it.kind === "new-space" || it.kind === "new-tab") return this.startRename(it, cx);
     this.close();
-    if (it.kind === "tab") run("tab.select", { id: it.tab.id });
+    if (it.kind === "agent") run("agent.focus", { terminal: it.agent.address });
+    else if (it.kind === "tab") run("tab.select", { id: it.tab.id });
     else if (it.kind === "space") run("space.select", { id: it.s.id });
   }
 
   /** Opens the name box for a tab or space, or empty for a new tab or space. @param {SpaceItem | TabItem | NewItem} it @param {Context} cx */
   startRename(it, cx) {
-    const name = it.kind === "new-space" || it.kind === "new-tab" ? "" : it.kind === "tab" && !it.merged ? it.tab.name : it.s.name;
-    const input = InputState.new({ value: name, placeholder: it.kind === "new-tab" ? "Tab name" : "Space name" });
+    const name = it.kind === "new-space" || it.kind === "new-tab" ? "" : it.kind === "tab" ? it.tab.name : it.kind === "space" ? it.s.name : "";
+    const input = InputState.new({ value: name, placeholder: it.kind === "new-tab" || it.kind === "tab" ? "Tab name" : "Space name" });
     input.set_selected_range({ start: 0, end: name.length });
     input.on("submit", (_e, cx) => this.finishRename(true, cx));
     input.focus();
@@ -100,8 +98,8 @@ export default class Jump extends View {
       // Start in the home folder, not the current space's folder, so a new space shares nothing.
       if (save && name) { this.close(); if (it.kind === "new-tab") run("tab.new", { name }); else run("space.new", { folder: home(), name }); return; }
     } else if (save) {
-      if (it.kind === "tab" && !it.merged) run("tab.rename", { id: it.tab.id, name: input.value() });
-      else run("space.rename", { id: it.s.id, name: input.value() });
+      if (it.kind === "tab") run("tab.rename", { id: it.tab.id, name: input.value() });
+      else if (it.kind === "space") run("space.rename", { id: it.s.id, name: input.value() });
     }
     this.handle.focus();
     cx.notify();
@@ -138,54 +136,71 @@ export default class Jump extends View {
   render(cx) {
     const t = colors();
     const items = this.items();
-    // Start on the tab you're already in.
-    if (this.at === null) this.at = Math.max(0, items.findIndex((it) => it.kind === "tab" && it.s.active && it.tab.active));
+    // Prefer the focused agent, then a destination in the active tab.
+    if (this.at === null) {
+      const focused = items.findIndex((it) => it.kind === "agent" && it.agent.focused);
+      const active = items.findIndex((it) => (it.kind === "tab" && it.s.active && it.tab.active)
+        || (it.kind === "agent" && it.s.active && it.s.tabs.some((tab) => tab.id === it.agent.tab && tab.active)));
+      this.at = Math.max(0, focused >= 0 ? focused : active);
+    }
     this.at = Math.max(0, Math.min(this.at, items.length - 1));
     const at = this.at;
-    const space = /** @type {Record<string, string> | undefined} */ (shared("space.colors"));
     const all = spaces();
     // gpui elements are single-use, so collect each block's rows first and build it after.
-    /** @type {{ merged: boolean, rows: ReturnType<typeof row>[] }[]} */
+    /** @type {{ rows: ReturnType<typeof row>[], tabs: ReturnType<typeof row>[], agents: ReturnType<typeof row>[] }[]} */
     const blocks = [];
-    /** @type {ReturnType<typeof row>[]} */
+    /** @type {ReturnType<typeof h_flex>[]} */
     const extras = [];
     items.forEach((it, i) => {
       const on = i === at;
       if (it.kind === "space") {
-        blocks.push({ merged: false, rows: [
-          row(t, { id: `j-${it.s.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => this.go(it, cx) }).child(avatar(it.s, spaceColor(t, it.s, space))).child(spaceName(t, it.s)).child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(spaceNote(all, it.s, home()))),
-        ] });
-      } else if (it.kind === "tab" && it.merged) {
-        if (!blocks[blocks.length - 1]?.merged) blocks.push({ merged: true, rows: [] });
-        blocks[blocks.length - 1].rows.push(
-          row(t, { id: `j-${it.tab.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => this.go(it, cx) })
-            .child(avatar(it.s, spaceColor(t, it.s, space)))
-            .child(spaceName(t, it.s))
+        blocks.push({ tabs: [], agents: [], rows: [
+          row(t, { id: `j-space-${it.s.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => this.go(it, cx) })
+            .child(div().flex_none().max_w(260).truncate().text_size(16).font_semibold().text_color(t.foreground).child(it.s.name))
             .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(spaceNote(all, it.s, home())))
-            .when(!!it.status, (el) => el.child(glyph(t, it.status)))
-            .child(div().flex_none().max_w(180).truncate().text_size(11).text_color(t.dim).child([it.tab.named ? it.tab.name : "", it.who || "empty"].filter(Boolean).join(" · "))),
-        );
+            .child(div().text_size(10).text_color(t.dim).child("Space")),
+        ] });
       } else if (it.kind === "tab") {
-        blocks[blocks.length - 1].rows.push(
-          row(t, { id: `j-${it.tab.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => this.go(it, cx) })
+        const name = !it.tab.named && /^\d+$/.test(it.tab.name) ? it.who || "Tab" : it.tab.name;
+        blocks[blocks.length - 1].tabs.push(
+          row(t, { id: `j-tab-${it.tab.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => this.go(it, cx) })
             .child(div().w(18).flex_none())
+            .child(div().flex_none().max_w(220).truncate().text_color(t.muted).child(name))
             .when(!!it.status, (el) => el.child(glyph(t, it.status)))
-            .child(div().flex_none().max_w(260).truncate().text_color(t.muted).child(it.tab.name))
-            .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(it.who || "empty")),
+            .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(name === it.who ? "" : it.who || "empty")),
+        );
+      } else if (it.kind === "agent") {
+        const tab = it.s.tabs.find((tab) => tab.id === it.agent.tab);
+        const tabName = !tab?.named && /^\d+$/.test(it.agent.tab_name) ? "" : it.agent.tab_name;
+        blocks[blocks.length - 1].agents.push(
+          row(t, { id: `j-agent-${it.agent.address}`, hint: it.hint ?? "", typed: this.typed, pinned: false, on, onClick: (_e, cx) => this.go(it, cx) })
+            .child(div().w(18).flex_none())
+            .child(div().flex_1().min_w(0).truncate().text_color(t.foreground).child(it.agent.title || it.agent.program.name || it.agent.app || "Agent"))
+            .child(div().flex_none().max_w(180).truncate().text_size(11).text_color(t.dim).child([tabName, it.agent.program.name].filter(Boolean).join(" · ")))
+            .child(glyph(t, it.agent.status)),
         );
       } else {
         extras.push(
-          row(t, { id: `j-${it.kind}`, hint: it.hint, typed: this.typed, pinned: false, on, onClick: (_e, cx) => this.go(it, cx) })
-            .child(div().flex_none().text_color(t.foreground).child(it.kind === "new-tab" ? "new tab" : "new space"))
-            .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(it.kind === "new-tab" ? "in this space" : "on this computer")),
+          h_flex().id(`j-${it.kind}`).gap(4).items_center().text_size(11).rounded(3)
+            .when(on, (el) => el.bg(t.selected))
+            .cursor_pointer().hover((style) => style.bg(t.hover))
+            .on_click((_e, cx) => this.go(it, cx))
+            .child(div().text_color(t.accent).font_semibold().child(it.hint))
+            .child(div().text_color(t.dim).child(it.kind === "new-tab" ? "new tab" : "new space")),
         );
       }
     });
-    const rowCount = blocks.reduce((n, b) => n + b.rows.length, 0);
-    const sections = blocks.map((b) => v_flex().gap(2).children(b.rows));
-    sections.push(v_flex().gap(2).pt(8).border_t(1).border_color(t.border).children(extras));
+    /** @param {string} name */
+    const label = (name) => div().h(20).flex_none().pl(70).text_size(10).font_semibold().text_color(t.accent).child(name);
+    const rowCount = blocks.reduce((n, b) => n + b.rows.length + b.tabs.length + b.agents.length, 0);
+    const labelCount = blocks.reduce((n, b) => n + Number(b.tabs.length > 0) + Number(b.agents.length > 0), 0);
+    const sections = blocks.map((b, i) => v_flex().gap(2)
+      .when(i > 0, (el) => el.pt(8).border_t(1).border_color(t.border))
+      .children(b.rows)
+      .when(b.tabs.length > 0, (el) => el.child(label("Tabs")).children(b.tabs))
+      .when(b.agents.length > 0, (el) => el.child(label("Agents")).children(b.agents)));
     // The popup sizes to content, so the scrollable list needs an explicit height or it collapses.
-    const est = (rowCount + 2) * (ROW_H + 2) + blocks.length * 8 + 16;
+    const est = rowCount * (ROW_H + 2) + labelCount * 22 + blocks.length * 16 + 16;
     const listH = Math.min(560, est);
 
     return v_flex()
@@ -206,10 +221,12 @@ export default class Jump extends View {
       )
       .when(!!this.renaming, (el) => el.child(
         h_flex().items_center().gap(10)
-          .child(div().flex_none().text_size(11).text_color(t.dim).child(this.renaming?.it.kind === "new-space" ? "New space" : this.renaming?.it.kind === "new-tab" ? "New tab" : this.renaming?.it.kind === "tab" && !this.renaming.it.merged ? "Rename tab" : "Rename space"))
+          .child(div().flex_none().text_size(11).text_color(t.dim).child(this.renaming?.it.kind === "new-space" ? "New space" : this.renaming?.it.kind === "new-tab" ? "New tab" : this.renaming?.it.kind === "tab" ? "Rename tab" : "Rename space"))
           .child(Input.new(this.renaming?.input).flex_1().h(30).px(8).rounded(6).border_1().border_color(t.accent).bg(t.background).text_size(12.5).text_color(t.foreground)),
       ))
       .child(v_flex().id("jump-list").h(listH).flex_none().overflow_y_scrollbar().gap(8).children(sections))
-      .child(hintLine(t, [["j/k", "move"], ["x", "close tab"], ["r", "rename"]]));
+      .child(h_flex().flex_none().flex_wrap().items_center().gap(12)
+        .child(hintLine(t, [["j/k", "move"], ["x", "close tab"], ["r", "rename"]]))
+        .children(extras));
   }
 }
