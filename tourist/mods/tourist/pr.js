@@ -3,7 +3,7 @@
 import { exec } from "herdr";
 import { git } from "./git.js";
 
-const LIST_FIELDS = "number,title,author,headRefName,baseRefName,additions,deletions,changedFiles,isDraft";
+const LIST_FIELDS = "number,title,author,headRefName,headRefOid,baseRefName,additions,deletions,changedFiles,isDraft";
 const VIEW_FIELDS = "number,title,body,url,author,headRefName,baseRefName,headRefOid,files,commits";
 
 /** Runs gh and returns stdout. Throws gh's own message when it fails. */
@@ -60,21 +60,46 @@ export async function loadPR(root, on, number) {
   };
 }
 
+// Each review thread's GraphQL id and state, keyed by its first comment's REST id. Resolving
+// a thread is GraphQL only. Up to 100 threads a page, every page.
+const THREADS_QUERY = `query($owner: String!, $name: String!, $number: Int!, $endCursor: String) {
+  repository(owner: $owner, name: $name) { pullRequest(number: $number) {
+    reviewThreads(first: 100, after: $endCursor) { pageInfo { hasNextPage endCursor }
+      nodes { id isResolved viewerCanReply viewerCanResolve viewerCanUnresolve comments(first: 1) { nodes { databaseId } } } } } } }`;
+
+async function threadStates(pr, root, on) {
+  const [owner, name] = pr.repo.split("/");
+  const out = await gh(["api", "graphql", "--paginate", "-f", `query=${THREADS_QUERY}`, "-F", `owner=${owner}`, "-F", `name=${name}`, "-F", `number=${pr.number}`,
+    "-q", ".data.repository.pullRequest.reviewThreads.nodes[] | @json"], { cwd: root, on });
+  const states = new Map();
+  for (const l of out.split(/\r?\n/).filter(Boolean)) {
+    const n = JSON.parse(l), first = n.comments?.nodes?.[0]?.databaseId;
+    if (first) states.set(first, { nodeId: n.id, resolved: n.isResolved, canReply: n.viewerCanReply, canResolve: n.viewerCanResolve, canUnresolve: n.viewerCanUnresolve });
+  }
+  return states;
+}
+
 /**
  * The PR's review comment threads on GitHub that still sit on a line of the current
- * diff (outdated ones have no `line`). Each is `{ file, line, side, startLine?, startSide?,
- * comments: [{ author, body, created }] }`, replies in order after the first comment.
+ * diff (outdated ones have no `line`). Each is `{ id, file, line, side, startLine?, startSide?,
+ * comments: [{ author, body, created }] }`, replies in order after the first comment. `id` is the
+ * first comment's id, which replies go to. When GraphQL answers, each also has `nodeId`,
+ * `resolved`, `canReply`, `canResolve` and `canUnresolve`.
  */
 export async function listThreads(pr, root, on) {
-  const out = await gh(["api", "--paginate", `repos/${pr.repo}/pulls/${pr.number}/comments`,
-    "-q", ".[] | {id, in_reply_to_id, path, line, side, start_line, start_side, author: .user.login, body, created: .created_at} | @json"], { cwd: root, on });
+  const [out, states] = await Promise.all([
+    gh(["api", "--paginate", `repos/${pr.repo}/pulls/${pr.number}/comments`,
+      "-q", ".[] | {id, in_reply_to_id, path, line, side, start_line, start_side, author: .user.login, body, created: .created_at} | @json"], { cwd: root, on }),
+    threadStates(pr, root, on).catch(() => new Map()),
+  ]);
   const all = out.split(/\r?\n/).filter(Boolean).map(l => JSON.parse(l));
   const side = s => s === "LEFT" ? "old" : "new";
   const threads = new Map();
   for (const c of all.filter(c => !c.in_reply_to_id && c.line != null)) {
     threads.set(c.id, {
-      file: c.path, line: c.line, side: side(c.side),
+      id: c.id, file: c.path, line: c.line, side: side(c.side),
       ...(c.start_line != null ? { startLine: c.start_line, startSide: side(c.start_side ?? c.side) } : {}),
+      ...(states.get(c.id) ?? {}),
       comments: [{ author: c.author, body: c.body, created: c.created }],
     });
   }
@@ -83,12 +108,25 @@ export async function listThreads(pr, root, on) {
   return [...threads.values()];
 }
 
+/** Posts a reply at the end of a thread, as the signed-in gh account. */
+export async function replyToThread(pr, root, on, thread, body) {
+  await gh(["api", `repos/${pr.repo}/pulls/${pr.number}/comments/${thread.id}/replies`, "-X", "POST", "-f", `body=${body}`], { cwd: root, on });
+}
+
+/** Resolves a thread, or unresolves it when `resolved` is false. */
+export async function setThreadResolved(root, on, thread, resolved) {
+  const name = resolved ? "resolveReviewThread" : "unresolveReviewThread";
+  await gh(["api", "graphql", "-f", `query=mutation($id: ID!) { ${name}(input: {threadId: $id}) { thread { isResolved } } }`, "-f", `id=${thread.nodeId}`], { cwd: root, on });
+}
+
 /**
  * Every file the PR changes: `{ file, status, add, del }`. status is git's letter (M, A, D, ...).
  * add and del are null for binary files. Renames count as a delete and an add, like the diffs.
  */
 export async function prFileStats(root, on, pr) {
-  const run = args => git(["diff", "--no-renames", ...args, pr.mergeBase, pr.headOid], { cwd: root, on });
+  // A re-review lists only the PR's files that changed since the last review.
+  const paths = pr.sinceOid ? ["--", ...pr.files] : [];
+  const run = args => git(["diff", "--no-renames", ...args, fromOf(pr), pr.headOid, ...paths], { cwd: root, on });
   const [status, numstat] = await Promise.all([run(["--name-status"]), run(["--numstat"])]);
   const counts = new Map();
   for (const line of String(numstat ?? "").split(/\r?\n/).filter(Boolean)) {
@@ -101,7 +139,13 @@ export async function prFileStats(root, on, pr) {
   });
 }
 
-/** The unified diff of one file in the PR, or null when git can't produce it. */
-export function prFileDiff(root, on, pr, file) {
-  return git(["diff", "--no-color", "--unified=3", pr.mergeBase, pr.headOid, "--", file], { cwd: root, on });
+/** Where the tour's diffs start: the commit last reviewed on a re-review, else the merge base. */
+export function fromOf(pr) { return pr.sinceOid ?? pr.mergeBase; }
+
+/**
+ * The unified diff of one file in the tour, or null when git can't produce it. `whole` asks for
+ * the whole PR's change even on a re-review.
+ */
+export function prFileDiff(root, on, pr, file, whole = false) {
+  return git(["diff", "--no-color", "--unified=3", whole ? pr.mergeBase : fromOf(pr), pr.headOid, "--", file], { cwd: root, on });
 }

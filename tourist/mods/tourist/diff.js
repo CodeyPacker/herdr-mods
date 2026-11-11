@@ -42,3 +42,14 @@ export function rowsInRange(rows, start, end) {
   const picked = hunks.filter(touches);
   return (picked.length ? picked : hunks).flat().slice(0, MAX_ROWS);
 }
+
+/**
+ * On a re-review, marks the rows GitHub won't take a comment on: removed lines (they're from the
+ * old review's commit, not the base) and lines outside the whole PR's hunks. `prRows` are the
+ * whole PR's diff rows of the same file, or null when git couldn't produce them.
+ */
+export function markOutsidePR(rows, prRows) {
+  const ok = new Set((prRows ?? []).filter(r => r.kind === "+" || r.kind === " ").map(r => r.number));
+  for (const r of rows) if (r.number !== undefined && (r.kind === "-" || !ok.has(r.number))) r.noComment = true;
+  return rows;
+}

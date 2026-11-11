@@ -6,7 +6,7 @@ import { div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { settings } from "herdr";
 import { commentsOn, coveredRows, linesOf } from "../comments.js";
-import { textInput } from "../ui.js";
+import { textInput, spinner } from "../ui.js";
 
 function row(r, i, id, t, onRow, covered) {
   const { kind, number, text } = r;
@@ -15,7 +15,7 @@ function row(r, i, id, t, onRow, covered) {
   return h_flex().id(id).font_family(mono).text_size(11.5).w_full().h(20).flex_none().gap(10)
     .when(kind === "+", e => e.bg(t.ansi2 + "18")).when(kind === "-", e => e.bg(t.ansi1 + "18"))
     .border_l_2().border_color(covered ? t.accent : "#00000000")
-    .when(number !== undefined && Boolean(onRow), e => e.cursor_pointer().hover(s => s.bg(t.hover))
+    .when(number !== undefined && !r.noComment && Boolean(onRow), e => e.cursor_pointer().hover(s => s.bg(t.hover))
       .on_click((ev, cx) => { onRow(r, cx, { index: i, shift: Boolean(ev?.modifiers?.shift) }); cx.notify(); }))
     .child(div().w(36).flex_none().text_right().text_color(t.dim).child(number === undefined ? "" : String(number)))
     .child(div().w(10).flex_none().text_color(kind === "+" ? t.ansi2 : kind === "-" ? t.ansi1 : t.dim).child(kind.trim()))
@@ -37,14 +37,44 @@ function bubble(c, t, onDelete, onEdit) {
       .hover(s => s.bg(t.hover).text_color(t.foreground)).on_click((_e, cx) => { onDelete(c, cx); cx.notify(); }).child("×"));
 }
 
-/** A thread already on GitHub: read-only, the first comment then its replies. */
-function thread(th, t) {
-  return v_flex().ml(56).mr(10).my(3).max_w(640).px(10).py(6).gap(6).rounded(7)
-    .border_1().border_color(t.border).bg(t.raised).text_size(12)
-    .when(th.startLine !== undefined, el => el.child(div().text_size(11).text_color(t.dim).child(`Lines ${linesOf(th)} · on GitHub`)))
+/** A small clickable word under a thread. */
+function action(t, id, label, click) {
+  return div().id(id).text_color(t.accent).cursor_pointer().hover(st => st.text_color(t.foreground))
+    .on_click((_e, cx) => { click(cx); cx.notify(); }).child(label);
+}
+
+/**
+ * A thread already on GitHub: the first comment then its replies, with Reply and Resolve under
+ * them. A resolved thread folds to one line until clicked.
+ */
+function thread(th, t, c) {
+  const busy = c.threadBusy?.id === th.id, error = c.threadError?.id === th.id ? c.threadError.text : null;
+  const box = v_flex().ml(56).mr(10).my(3).max_w(640).px(10).py(6).gap(6).rounded(7)
+    .border_1().border_color(t.border).bg(t.raised).text_size(12);
+  if (th.resolved && !c.openResolved.has(th.id)) {
+    const first = th.comments[0];
+    return box.id(`th-${th.id}`).cursor_pointer().hover(st => st.bg(t.hover))
+      .on_click((_e, cx) => { c.onExpand(th); cx.notify(); })
+      .child(div().truncate().text_size(11.5).text_color(t.dim)
+        .child(`Resolved · ${first.author}: ${first.body.split("\n")[0]}`));
+  }
+  const free = !c.threadBusy;
+  const actions = h_flex().gap(12).text_size(11.5)
+    .when(free && th.canReply !== false, el => el.child(action(t, `th-reply-${th.id}`, "Reply", cx => c.onReply(th, cx))))
+    .when(free && Boolean(th.nodeId) && (th.resolved ? th.canUnresolve : th.canResolve), el => el
+      .child(action(t, `th-resolve-${th.id}`, th.resolved ? "Unresolve" : "Resolve", cx => c.onResolve(th, cx))))
+    .when(th.resolved, el => el.child(action(t, `th-fold-${th.id}`, "Fold", () => c.onExpand(th))))
+    .when(busy, el => el.child(h_flex().gap(6).text_color(t.dim).child(spinner(t)).child(`${c.threadBusy.note}…`)));
+  return box
+    .when(th.startLine !== undefined || th.resolved, el => el.child(div().text_size(11).text_color(t.dim)
+      .child([th.startLine !== undefined ? `Lines ${linesOf(th)}` : "", th.resolved ? "Resolved" : "", "on GitHub"].filter(Boolean).join(" · "))))
     .children(th.comments.map((m, i) => v_flex().gap(1).when(i > 0, el => el.pl(10).border_l_2().border_color(t.border))
-      .child(div().text_size(11).font_semibold().text_color(t.muted).child(`${m.author}${i === 0 && th.startLine === undefined ? " · on GitHub" : ""}`))
-      .child(div().child(m.body))));
+      .child(div().text_size(11).font_semibold().text_color(t.muted)
+        .child(`${m.author}${i === 0 && th.startLine === undefined && !th.resolved ? " · on GitHub" : ""}`))
+      .child(div().child(m.body))))
+    .when(Boolean(error), el => el.child(div().text_size(11.5).text_color(t.ansi1).child(error)))
+    .when(c.threadReply === th.id, el => el.child(textInput(t, c.threadInput, true)))
+    .when(c.threadReply !== th.id, el => el.child(actions));
 }
 
 /** The diff rows of one file with a sideways scroll of their own, for stacking several in one list. */
@@ -54,7 +84,7 @@ export function diffBlock(id, rows, t, c = null) {
   rows.forEach((r, i) => {
     items.push(row(r, i, `${id}-row-${i}`, t, c?.onRow, covered.has(i)));
     if (!c) return;
-    for (const th of commentsOn(c.threads ?? [], c.file, r)) items.push(thread(th, t));
+    for (const th of commentsOn(c.threads ?? [], c.file, r)) items.push(thread(th, t, c));
     // The comment being edited shows as the box below instead.
     for (const saved of commentsOn(c.list, c.file, r)) if (saved.id !== c.open?.editId) items.push(bubble(saved, t, c.onDelete, c.onEdit));
     if (c.open && c.open.line === r.number && c.open.side === (r.kind === "-" ? "old" : "new"))
@@ -70,8 +100,9 @@ export function diffBlock(id, rows, t, c = null) {
  * One file's diff that scrolls on its own; `id` must change with the stop so each stop
  * starts at the top. The sideways scroll sits inside the vertical one, so the vertical
  * scrollbar stays at the panel's right edge. `c` holds the comment state: `file`, `list`,
- * `open` (the row being commented on, or null), `input`, `threads` (GitHub's, read-only), and the
- * `onRow`, `onDelete` and `onEdit` handlers. Leave it out for a plain diff.
+ * `open` (the row being commented on, or null), `input`, `threads` (GitHub's), and the
+ * `onRow`, `onDelete` and `onEdit` handlers. Threads also need `threadReply`, `threadInput`,
+ * `threadBusy`, `threadError`, `openResolved`, and the `onReply`, `onResolve` and `onExpand` handlers. Leave it out for a plain diff.
  */
 export function diffView(id, rows, t, c = null) {
   return v_flex().id(id).size_full().overflow_y_scrollbar().py(4).child(diffBlock(id, rows, t, c));

@@ -22,7 +22,7 @@ function hash(text) {
  */
 export function planKey({ root, scope, depth, head, pr, feature }) {
   if (!head) return null;
-  if (scope === "pr") return pr ? `${safe(`${root}#pr-${pr.number}`)}-${head.slice(0, 12)}-${depth}` : null;
+  if (scope === "pr") return pr ? `${safe(`${root}#pr-${pr.number}`)}-${head.slice(0, 12)}${pr.sinceOid ? `-since-${pr.sinceOid.slice(0, 12)}` : ""}-${depth}` : null;
   if (scope === "commit" || scope === "repo") return `${safe(root)}-${scope}-${head.slice(0, 12)}-${depth}`;
   if (scope === "feature") return `${safe(root)}-feature-${hash(feature.trim().toLowerCase())}-${head.slice(0, 12)}-${depth}`;
   return null;

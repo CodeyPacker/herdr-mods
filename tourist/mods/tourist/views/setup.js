@@ -1,7 +1,8 @@
 // The setup steps: what to tour, which pull request (PR tours only), then how deep.
 import { div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { SCOPES, DEPTHS } from "../constants.js";
+import { SCOPES, DEPTHS, PASSES } from "../constants.js";
+import { ago } from "../since.js";
 import { option, textInput, spinner } from "../ui.js";
 
 /** `v` is the Tourist view: its state is read here and its methods run on clicks. */
@@ -47,14 +48,23 @@ export function setupView(v, t) {
     if (v.prsError) rows = [note(v.prsError)];
     else if (!v.prs) rows = [note("Loading open pull requests…")];
     else if (prs.length === 0) rows = [note("No open pull requests in this repo.")];
+    if (v.sinceLoading) rows.push(h_flex().px(10).pt(10).gap(8).items_center().text_size(12).text_color(t.dim)
+      .child(spinner(t)).child(`Checking your last review of #${v.prNumber}…`));
     help = "j/k or 1-9 move · enter next · esc back";
+  } else if (v.step === "pass") {
+    title = stepTitle("What to review");
+    const at = v.since?.at ? `, ${ago(v.since.at)}` : "";
+    rows = PASSES.map((p, i) => option(t, `pass-${p.id}`, p.key, p.label,
+      p.id === "since" ? `you reviewed it at ${v.since?.oid.slice(0, 7)}${at}. Only the PR's files that changed since.` : p.hint,
+      v.cursor === i, click(i)));
+    help = "j/k or s/w move · enter next · esc back";
   } else {
     const s = SCOPES.find(s => s.id === v.scope);
     const pr = v.prs?.find(p => p.number === v.prNumber);
     title = stepTitle("How deep");
     rows = DEPTHS.map((d, i) => option(t, `depth-${d.id}`, d.key, d.label, d.text.split(". ")[0], v.cursor === i, click(i)));
     rows.unshift(div().pb(8).text_size(12).text_color(t.muted)
-      .child(`Touring: ${s?.label ?? ""}${v.scope === "feature" ? ` · "${v.featureInput.value().trim()}"` : ""}${pr ? ` · #${pr.number} ${pr.title}` : ""}`));
+      .child(`Touring: ${s?.label ?? ""}${v.scope === "feature" ? ` · "${v.featureInput.value().trim()}"` : ""}${pr ? ` · #${pr.number} ${pr.title}` : ""}${v.steps().includes("pass") && v.pass === "since" ? " · changes since your last review" : ""}`));
     help = "j/k move · enter starts the tour · esc back";
   }
   return v_flex().id("setup").flex_1().min_h(0).overflow_y_scrollbar().p(18)

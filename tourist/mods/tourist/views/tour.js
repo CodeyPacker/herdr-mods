@@ -5,6 +5,7 @@ import { v_flex, h_flex, Editor, TextView, Scrollbar, h_resizable, v_resizable, 
 import { settings } from "herdr";
 import { button, spinner, textInput } from "../ui.js";
 import { diffView } from "./diff.js";
+import { checkCounts } from "../checks.js";
 
 /** `v` is the Tourist view: its state is read here and its methods run on clicks. */
 export function tourView(v, t) {
@@ -20,17 +21,26 @@ export function tourView(v, t) {
     .when(Boolean(s.group), el => el.child(div().flex_none().max_w(180).truncate().px(6).py(1).rounded(5).bg(t.raised)
       .text_size(11).text_color(t.accent).child(String(s.group))))
     .child(div().flex_1().min_w(0).truncate().font_semibold().child(s.title))
+    .when(Boolean(v.pr?.sinceOid), el => el.child(div().flex_none().px(6).py(1).rounded(5).bg(t.raised).text_size(11).text_color(t.accent)
+      .child(`since your review at ${v.pr.sinceOid.slice(0, 7)}`)))
     .when(Boolean(plan.savedAt), el => el.child(div().flex_none().text_size(11).text_color(t.dim).child("saved review · r plans again")))
     .child(div().max_w(200).truncate().text_size(11.5).text_color(t.dim).child(plan.title ?? ""));
+  const badge = checksBadge(v, t);
+  if (badge) header.child(badge);
   const fileLine = h_flex().id("file").px(14).py(6).gap(8).items_center().cursor_pointer()
     .hover(st => st.bg(t.hover)).on_click(() => v.openInEditor())
     .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.accent).font_family(settings().font_family).child(file))
     .child(div().flex_shrink_1().min_w(0).truncate().text_size(11.5).text_color(t.dim).child(v.pr
       ? `${other ? "whole diff" : `lines ${s.start}–${s.end}`}  ·  click a line to comment, shift-click to extend${v.comments.length ? ` (${v.comments.length} saved)` : ""}  ·  o opens the PR`
       : `lines ${s.start}–${s.end}  ·  o opens`));
-  // On PR tours each diff line takes a comment.
+  // On PR tours each diff line takes a comment. A re-review's removed lines are from the old
+  // commit, so comments and threads on the base's side don't belong on them.
+  const newSide = list => v.pr?.sinceOid ? list.filter(c => c.side !== "old") : list;
   const comments = v.pr ? {
-    file, list: v.comments, input: v.commentInput, threads: v.threads,
+    file, list: newSide(v.comments), input: v.commentInput, threads: newSide(v.threads),
+    threadReply: v.threadReply, threadInput: v.threadInput, threadBusy: v.threadBusy, threadError: v.threadError,
+    openResolved: v.openResolved, onReply: (th, cx) => v.startThreadReply(th, cx), onResolve: (th, cx) => v.toggleResolved(th, cx),
+    onExpand: th => v.toggleResolvedOpen(th),
     open: v.commenting?.file === file ? v.commenting : null,
     onRow: (r, cx, how) => v.startComment(r, cx, how), onDelete: (c, cx) => v.deleteComment(c, cx),
     onEdit: (c, cx) => v.startEdit(c, cx),
@@ -75,6 +85,7 @@ export function tourView(v, t) {
     .when(Boolean(v.pr?.mine), el => el.child(button(t, "fix",
       v.fix?.phase === "running" ? "Fixing…" : v.fix && v.fix.phase !== "pushed" ? "View fix" : `Fix ${v.comments.length} comment${v.comments.length === 1 ? "" : "s"}`,
       "f", Boolean(v.fix && v.fix.phase !== "pushed") || (v.comments.length > 0 && free), (_e, cx) => { v.startFix(cx); cx.notify(); })))
+    .when(Boolean(v.pr), el => el.child(button(t, "checks", "Checks", "c", true, (_e, cx) => { v.openChecks(cx); cx.notify(); })))
     .when(Boolean(v.pr?.mine), el => el.child(button(t, "merge", "Merge", "m", true, (_e, cx) => { v.startMerge(cx); cx.notify(); })))
     .child(button(t, "layout", v.isSplit() ? "Stacked" : "Split", "s", true, (_e, cx) => { v.toggleSplit(); cx.notify(); }))
     .when(Boolean(v.pr), el => el.child(button(t, "files", v.showFiles ? "Hide files" : "Files", "b", true, (_e, cx) => { v.showFiles = !v.showFiles; cx.notify(); })))
@@ -101,6 +112,16 @@ export function tourView(v, t) {
 }
 
 const RAIL_WIDTH = 210;
+
+/** The PR's CI state in the header: failing, running or passed. Click opens the checks. Null with no checks. */
+function checksBadge(v, t) {
+  const list = v.checks?.list;
+  if (!v.pr || !list?.length) return null;
+  const n = checkCounts(list);
+  const [text, color] = n.fail ? [`✗ ${n.fail} failing`, t.ansi1] : n.pending ? [`● ${n.pending} running`, t.ansi3] : [`✓ ${n.pass} passed`, t.ansi2];
+  return div().id("checks-badge").flex_none().px(6).py(1).rounded(5).bg(t.raised).text_size(11).text_color(color).cursor_pointer()
+    .hover(st => st.bg(t.hover)).on_click((_e, cx) => { v.openChecks(cx); cx.notify(); }).child(text);
+}
 
 /** "Next" while there's more, "Next file" when it leaves the stops for the other files, "Last file" or "Last stop" at the end. */
 function nextLabel(v) {

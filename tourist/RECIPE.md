@@ -9,7 +9,7 @@ any stop.
 
 ## What you see
 
-Setup, in two steps (three for a pull request):
+Setup, in two steps (three or four for a pull request):
 
 1. What to tour: Branch changes (`b`), Last commit (`c`), Pull request (`p`),
    Whole repo (`r`), A feature (`f`). Each row has a letter badge, a title and
@@ -18,7 +18,11 @@ Setup, in two steps (three for a pull request):
 2. Which pull request (PR tours only): the repo's open PRs, "#n title" with
    author, head → base, file count, +/− lines and "draft". The first nine have
    number badges. While loading, or when `gh` fails, the step says so.
-3. How deep: Overview, Normal, Deep. A "Touring: ..." line repeats the choices.
+3. What to review (PR tours you reviewed before, only when the PR moved since):
+   Changes since your last review (`s`), with the commit and how long ago, or
+   The whole PR (`w`). Picking a PR shows "Checking your last review of #n" while
+   it looks.
+4. How deep: Overview, Normal, Deep. A "Touring: ..." line repeats the choices.
 
 Under the repo line, "Tour by Claude" (or Codex). With both CLIs installed it
 adds "· a switches" in the accent color.
@@ -72,10 +76,32 @@ key, so it plans again on its own. Branch changes tours aren't saved, because
 their uncommitted edits change all the time. If the saved session was made by the
 other agent, follow-ups start a fresh session that is told what the tour is about.
 
-GitHub threads: the PR's existing review comments sit under their lines,
-read-only, with a neutral border: the author and "on GitHub", then replies
-indented below. Outdated ones (no longer on a line of the current diff) are left
-out. They reload after you post a review.
+Re-review: a PR head counts as reviewed when you posted a review on it (from
+Tourist or on GitHub) or marked every file in its tour viewed. The newest wins.
+When the PR's head moved since, step 3 offers Changes since your last review.
+That tour diffs the commit you reviewed against the new head, in the PR's own
+files only (a merge of the base also changes other files). The header shows
+"since your review at abc1234", the file list holds only the files that changed
+since, and the agent is told what you already saw. Removed lines and lines
+outside the whole PR's diff can't take comments, because GitHub would refuse
+them. Saved plans for a re-review are keyed by both commits.
+
+GitHub threads: the PR's existing review comments sit under their lines with a
+neutral border: the author and "on GitHub", then replies indented below.
+Outdated ones (no longer on a line of the current diff) are left out. Under each
+thread, Reply opens a box: `enter` posts the reply to GitHub right away, an
+empty one or `esc` closes it, and a refused reply comes back in the box next
+time. Resolve and Unresolve show when GitHub lets you (the PR's author or
+anyone with write access). A resolved thread folds to one dim line, click opens
+it and Fold folds it again. Threads reload after you post a review or a reply.
+
+Checks (PR tours): the header shows the PR's CI state, "✗ 2 failing", "● 3
+running" or "✓ 5 passed", and `c`, "Checks" or a click on it opens the checks
+screen. It lists every check, failures first, with ✓ ✗ ● – marks. `j`/`k` or
+1 to 9 pick one. On a failed GitHub Actions check, `e` or `enter` reads the end
+of its log (up to the last `##[error]` line, 250 lines at most) and asks the
+tour's agent why it failed and which change caused it. The answer stays under
+the check. `o` opens the check on GitHub, `r` refreshes, `b` or `esc` goes back.
 
 Line comments (PR tours): clicking a numbered diff line opens a comment box
 under it. `enter` saves, an empty comment or `esc` closes it. Saved comments
@@ -146,8 +172,10 @@ and its branch are deleted, and the comments stay.
   `a` or `/` ask (the box only exists while asking), `o` open in VS Code, `s` switches split and stacked
   (wide panes start split), `q`
   ends the tour and returns to step 1. On PR tours, `p` posts a review, `r` plans again, and `f`
-  (your own PRs) opens the fix. `b` shows or hides the file list, `v` marks a file viewed, `m` (your own PRs) merges, and `e`
+  (your own PRs) opens the fix. `b` shows or hides the file list, `v` marks a file viewed, `m` (your own PRs) merges, `c` opens the checks, and `e`
   explains a file the tour skipped.
+- Checks: `j`/`k` or `1` to `9` pick, `e` or `enter` explains a failure, `o`
+  opens it, `r` refreshes, `b` or `esc` back to the tour.
 - Merge: `1` to `3` or `j`/`k` pick the method, `m` twice merges, `o` opens the
   PR once merged, `b` or `esc` back to the tour.
 - Post review: `1` to `3` or `j`/`k` pick the verdict, `tab` types the summary,
@@ -166,7 +194,8 @@ and its branch are deleted, and the comments stay.
   `constants.js`, `git.js` (folder and repo facts), `agent.js` (finding and
   calling the agent), `plan.js` (prompts, reading the plan), `code.js`
   (excerpts, VS Code, opening a URL), `pr.js` (gh), `diff.js` (diff rows),
-  `comments.js` (saving line comments), `worktree.js` (the fix's worktree, push
+  `comments.js` (saving line comments), `since.js` (the commit last reviewed),
+  `checks.js` (CI checks and failed logs), `worktree.js` (the fix's worktree, push
   and discard), `review.js` (posting to GitHub), `ui.js` (shared pieces) and
   `views/` (setup, tour, diff, fix, review, planning and error).
 - `mod.json`: `{ "place": "none", "focusable": true, "title": "Tourist" }`.
@@ -205,7 +234,25 @@ and its branch are deleted, and the comments stay.
   the order the changes build on each other, each with a `group`. Saved plans
   live in `<appHome>/data/tourist/plans/`, named `<repo>_pr-<n>-<head>-<depth>`,
   `<repo>-commit|repo-<head>-<depth>` or `<repo>-feature-<text hash>-<head>-<depth>`.
-  Threads come from `gh api --paginate repos/<owner>/<repo>/pulls/<n>/comments`.
+  Threads come from `gh api --paginate repos/<owner>/<repo>/pulls/<n>/comments`,
+  plus a GraphQL `reviewThreads` query for each thread's id, resolved state and
+  what you may do with it. A reply runs `gh api
+  repos/<repo>/pulls/<n>/comments/<first comment id>/replies -X POST`, and
+  resolving runs the `resolveReviewThread` or `unresolveReviewThread` mutation.
+- Re-review: the last reviewed head is the newer of
+  `<appHome>/data/tourist/reviewed/<repo>_pr-<n>.json` (`{ head, at }`, written
+  on posting a review or viewing every file) and your newest submitted review
+  from `gh api repos/<repo>/pulls/<n>/reviews`. A missing commit is fetched with
+  `git fetch origin <oid>`. Files come from `git diff --name-only <old> <head> --
+  <PR files>`, commits from `git log --no-merges <old>..<head> --not
+  origin/<base>`. Each stop diffs `<old> <head>`, and the whole PR's diff decides
+  which lines take comments.
+- Checks: `gh pr checks <n> -R <repo> --json
+  name,workflow,state,bucket,link,description` (exit 8 means pending and is
+  fine, "no checks reported" means none). A failed Actions job's log is `gh run
+  view <run> --job <job> --log-failed -R <repo>`, with the run and job ids taken
+  from the check's link. The log is fenced off in the prompt as output, not
+  instructions.
 - Fix: `git worktree add -B tourist/fix-pr-<n> <appHome>/data/tourist/worktrees/<repo>_pr-<n>
   <head>`, reused if it already exists. The agent runs there with edit tools:
   Claude adds `Edit MultiEdit Write` to its allowed tools (still only `git diff`
@@ -226,7 +273,7 @@ and its branch are deleted, and the comments stay.
 - `herdr-app do tourist.<command>` drives it for testing: `scope-<id>`,
   `depth-<id>`, `down`, `up`, `pick`, `back`, `start`, `next`, `prev`,
   `deeper`, `technical`, `open`, `reset`, `agent` (switch agents), `fix`,
-  `fix-back`, `fix-discard`, `review`, `review-back`, `merge`, `merge-back`, `viewed`, `file-<n>` (the nth file in
+  `fix-back`, `fix-discard`, `review`, `review-back`, `merge`, `merge-back`, `checks`, `checks-back`, `pass-since`, `pass-whole`, `viewed`, `file-<n>` (the nth file in
   the file list, from the top), `explain`. There is no push or post
   command: both take two key presses in the pane.
 
@@ -241,6 +288,13 @@ and its branch are deleted, and the comments stay.
 - Pull requests need `gh` on `PATH`, signed in to an account that can see the
   repo. A PR tour leaves a `refs/tourist/pr-<n>` ref in your repo; `git
   update-ref -d refs/tourist/pr-<n>` removes it.
+- A thread reply posts as soon as you press `enter`, as the signed-in `gh`
+  account. It can't be unposted from Tourist.
+- A re-review needs the commit you last reviewed. After a force-push GitHub may
+  no longer serve it, and the tour stops with an error: pick The whole PR.
+  A rebase onto a newer base shows the base's changes in the PR's files too.
+- Explaining a check uses an agent call. Checks from services other than
+  GitHub Actions can only be opened, not explained.
 - Line comments are saved to `<appHome>/data/tourist/comments/<repo>_pr-<n>.json`
   and stay on this computer until you post them as a review.
 - A review posts as the signed-in `gh` account, and GitHub shows it to everyone
