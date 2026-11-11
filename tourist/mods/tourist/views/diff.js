@@ -5,7 +5,7 @@
 // A tour stop shows the file's whole diff: the stop's own lines have accent line numbers, every
 // stop on the file gets a label above its first line, and lines a link points at are highlighted.
 import { div } from "gpui-kit";
-import { v_flex, h_flex } from "gpui-base";
+import { v_flex, h_flex, Scrollbar } from "gpui-base";
 import { settings } from "herdr";
 import { commentsOn, coveredRows, linesOf } from "../comments.js";
 import { textInput, spinner } from "../ui.js";
@@ -141,7 +141,11 @@ export function diffView(id, rows, t, c = null, m = null, scroll = null) {
     if (scroll.step === 1) scroll.handle.scroll_to_item(items.length - 1);
     else if (scroll.step === 2) scroll.handle.scroll_to_item(at[Math.max(0, Math.min(scroll.row, rows.length - 1))] ?? 0);
   }
-  const el = v_flex().id(id).size_full().overflow_scrollbar().py(4)
+  // A plain scroll area driven by the handle, with the scrollbars drawn over it, the same way
+  // the explanation scrolls. A built-in scrollbar area keeps a scroll position of its own.
+  const area = v_flex().id(id).size_full().overflow_scroll().py(4)
     .children(items.map(item => div().min_w(width).flex_none().child(item)));
-  return scroll ? el.track_scroll(scroll.handle) : el;
+  return div().relative().size_full()
+    .child(scroll ? area.track_scroll(scroll.handle) : area)
+    .child(Scrollbar.new(id).absolute().inset_0());
 }

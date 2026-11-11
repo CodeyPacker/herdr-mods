@@ -307,8 +307,9 @@ export default class Tourist extends View {
   scrollTo(row, cx) {
     const req = this.scrollReq = { handle: this.diffScroll, row, step: 1 };
     cx.notify();
-    cx.timer.after(40, () => { if (this.scrollReq === req) { req.step = 2; cx.notify(); } });
-    cx.timer.after(300, () => { if (this.scrollReq === req) this.scrollReq = null; });
+    // Each timer uses the cx it is handed: a click's cx is gone by the time the timer runs.
+    cx.timer.after(40, cx => { if (this.scrollReq === req) { req.step = 2; cx.notify(); } });
+    cx.timer.after(300, cx => { if (this.scrollReq === req) { this.scrollReq = null; cx.notify(); } });
   }
 
   /** Every file in the repo, or in the PR's head commit, so the agent's file:line references can be resolved. */
