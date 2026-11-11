@@ -141,9 +141,9 @@ your own PR, since GitHub refuses the others from the author) and an optional
 summary box (`tab` types, the placeholder "See the inline comments." is used
 when it's empty). The header names the author and the `gh` account that will
 post. `p` or `enter` opens a confirm dialog: "Post <verdict>?", posting to PR #n as
-<account> with N comments, which everyone on the PR will see. `y` (or "Post")
+<account> with N comments, which everyone on the PR will see. `y` (or "Yes")
 posts every comment as one review on the lines they sit on, and `n`, `esc` or
-"Cancel" goes back. Then it says
+"No" goes back. Then it says
 "Posted to GitHub", `o` opens the review, and the posted comments are cleared.
 On a peer's PR the screen
 also opens with no comments (the button reads "Review"), starts on Approve, and
@@ -204,7 +204,8 @@ and its branch are deleted, and the comments stay.
   `p` then `y` posts, `o` opens it once posted, `b` or `esc` back to the tour.
 - Fix: `r`, `a` or `/` replies to the agent (`esc` or `tab` gives the keys
   back), `b` or `esc` back to the tour, `p` then `y` pushes, `x` discards.
-- Confirm dialogs (push, post, merge): a card centered in the pane, over a
+- Confirm dialogs (push, post, merge): a card a little above the middle of the
+  pane, with No and Yes buttons, over a
   dimmed screen that takes no clicks. It has the keyboard: `y` goes ahead, `n`
   or `esc` cancels, and other keys wait until you answer.
 - Every screen: `z` zooms the pane to fill the tab and back (Herdr's `pane.zoom`,
