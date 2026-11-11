@@ -161,6 +161,7 @@ conflicts). When someone else pushed since the tour started, it says the PR has
 newer commits and to open it again to review them. It never deletes branches or touches your checkout: the repo's own
 auto-delete setting decides. Then it says "Merged", and `o` opens the PR. A
 peer's PR never shows Merge.
+<!-- test comment -->
 
 Fix (your own PRs only): `f` or "Fix N comments" opens the fix screen. A PR is
 yours when its author is the signed-in `gh` account, so a peer's PR never shows
