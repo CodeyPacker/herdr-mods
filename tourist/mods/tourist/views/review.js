@@ -4,7 +4,7 @@ import { div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { settings } from "herdr";
 import { button, option, spinner, textInput } from "../ui.js";
-import { eventsFor } from "../review.js";
+import { eventsFor, DEFAULT_SUMMARY } from "../review.js";
 import { linesOf } from "../comments.js";
 
 /** `v` is the Tourist view: its state is read here and its methods run on clicks. */
@@ -25,11 +25,11 @@ export function reviewView(v, t) {
     .when(Boolean(r.error), el => el.child(banner(r.error, t.ansi1)))
     .when(r.phase === "posted", el => el.child(banner(`Posted to GitHub. o opens it. The comments were cleared.`, t.ansi2)))
     .when(r.phase !== "posted", el => el
-      .child(section("Your comments, posted on the lines they sit on"))
+      .child(section(comments.length ? "Your comments, posted on the lines they sit on" : "No line comments. You can approve, or write a summary to comment."))
       .children(comments)
-      .child(section(pr.mine ? "Verdict (your own PR can only take comments)" : "Verdict"))
+      .child(section(pr.mine ? "Verdict (your own PR can only take comments) · p twice posts" : "Verdict · pick one, then p twice posts"))
       .children(events.map((e, i) => option(t, `event-${e.id}`, e.key, e.label, e.hint, r.cursor === i, pick(i))))
-      .child(section("Summary (optional, tab types)"))
+      .child(section(v.comments.length ? `Summary (optional, tab types; empty posts "${DEFAULT_SUMMARY}")` : "Summary (optional, tab types)"))
       .child(textInput(t, v.summaryInput, v.typing === "summary")));
   const body = r.phase === "posting"
     ? v_flex().flex_1().items_center().justify_center().gap(8).child(spinner(t).text_size(22)).child(div().child("Posting the review…"))
@@ -40,6 +40,6 @@ export function reviewView(v, t) {
     .when(r.phase === "posted", el => el.child(button(t, "review-open", "Open on GitHub", "o", true, (_e, cx) => { v.openReview(); cx.notify(); })))
     .when(r.phase !== "posted", el => el.child(button(t, "review-post",
       r.confirm ? `Press p again to post "${event.label}" to GitHub` : `Post as ${event.label}`,
-      "p", r.phase === "editing" && v.comments.length > 0, (_e, cx) => { v.postReview(cx); cx.notify(); })));
+      "p", v.canPost(), (_e, cx) => { v.postReview(cx); cx.notify(); })));
   return v_flex().flex_1().min_h(0).child(header).child(body).child(bar);
 }

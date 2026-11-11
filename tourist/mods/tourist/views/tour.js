@@ -1,7 +1,7 @@
 // One tour stop: header, the code excerpt, the explanation, and the key bar. On PR tours
 // a file list sits on the left, and a file the tour skips can be opened in a stop's place.
 import { div } from "gpui-kit";
-import { v_flex, h_flex, Editor, TextView, h_resizable, v_resizable, resizable_panel } from "gpui-base";
+import { v_flex, h_flex, Editor, TextView, Scrollbar, h_resizable, v_resizable, resizable_panel } from "gpui-base";
 import { settings } from "herdr";
 import { button, spinner, textInput } from "../ui.js";
 import { diffView } from "./diff.js";
@@ -25,7 +25,7 @@ export function tourView(v, t) {
   const fileLine = h_flex().id("file").px(14).py(6).gap(8).items_center().cursor_pointer()
     .hover(st => st.bg(t.hover)).on_click(() => v.openInEditor())
     .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.accent).font_family(settings().font_family).child(file))
-    .child(div().text_size(11.5).text_color(t.dim).child(v.pr
+    .child(div().flex_shrink_1().min_w(0).truncate().text_size(11.5).text_color(t.dim).child(v.pr
       ? `${other ? "whole diff" : `lines ${s.start}–${s.end}`}  ·  click a line to comment, shift-click to extend${v.comments.length ? ` (${v.comments.length} saved)` : ""}  ·  o opens the PR`
       : `lines ${s.start}–${s.end}  ·  o opens`));
   // On PR tours each diff line takes a comment.
@@ -55,7 +55,11 @@ export function tourView(v, t) {
     .when(Boolean(v.busy), el => el.child(h_flex().gap(8).items_center().text_color(t.dim)
       .child(spinner(t))
       .child(div().text_size(12).child(`${v.busy}…`))));
-  const explain = v_flex().id(`explain-${key}`).flex_1().min_h(0).overflow_y_scrollbar().px(14).py(12).child(body);
+  // The explanation scrolls through v.explainScroll, so asking can jump it to the bottom.
+  const explainId = `explain-${key}`;
+  const explain = div().relative().flex_1().min_h(0)
+    .child(v_flex().id(explainId).size_full().overflow_y_scroll().track_scroll(v.explainScroll).px(14).py(12).child(body))
+    .child(Scrollbar.vertical(explainId).absolute().inset_0());
   // The ask box is only drawn while asking, so tour keys can never land in it.
   const ask = div().px(14).pb(8).child(textInput(t, v.input, true));
   const free = !v.busy;
@@ -66,17 +70,18 @@ export function tourView(v, t) {
     .child(button(t, "deeper", "Deeper", "d", free, (_e, cx) => { v.deeper(cx); cx.notify(); }))
     .child(button(t, "tech", "More technical", "t", free, (_e, cx) => { v.technical(cx); cx.notify(); }))
     .child(button(t, "askbtn", "Ask", "a", free, (_e, cx) => { v.startAsking(cx); cx.notify(); }))
-    .when(Boolean(v.pr), el => el.child(button(t, "review", `Post review (${v.comments.length})`, "p",
-      v.comments.length > 0, (_e, cx) => { v.startReview(cx); cx.notify(); })))
+    .when(Boolean(v.pr), el => el.child(button(t, "review", v.comments.length ? `Post review (${v.comments.length})` : "Review", "p",
+      v.comments.length > 0 || !v.pr.mine, (_e, cx) => { v.startReview(cx); cx.notify(); })))
     .when(Boolean(v.pr?.mine), el => el.child(button(t, "fix",
       v.fix?.phase === "running" ? "Fixing…" : v.fix && v.fix.phase !== "pushed" ? "View fix" : `Fix ${v.comments.length} comment${v.comments.length === 1 ? "" : "s"}`,
       "f", Boolean(v.fix && v.fix.phase !== "pushed") || (v.comments.length > 0 && free), (_e, cx) => { v.startFix(cx); cx.notify(); })))
+    .when(Boolean(v.pr?.mine), el => el.child(button(t, "merge", "Merge", "m", true, (_e, cx) => { v.startMerge(cx); cx.notify(); })))
     .child(button(t, "layout", v.isSplit() ? "Stacked" : "Split", "s", true, (_e, cx) => { v.toggleSplit(); cx.notify(); }))
     .when(Boolean(v.pr), el => el.child(button(t, "files", v.showFiles ? "Hide files" : "Files", "b", true, (_e, cx) => { v.showFiles = !v.showFiles; cx.notify(); })))
     .child(button(t, "restart", "New tour", "q", true, (_e, cx) => { v.reset(cx); cx.notify(); }));
   // Code and explanation sit in a resizable group: drag the line between them.
   // The group remembers each layout's sizes under its id.
-  const codeSide = v_flex().size_full().min_h(0).child(fileLine).child(code);
+  const codeSide = v_flex().size_full().min_h(0).min_w(0).overflow_hidden().child(fileLine).child(code);
   const textSide = v_flex().size_full().min_h(0).child(explain).when(v.asking, el => el.child(ask));
   // A group keeps the first size it sees and then whatever the user drags to. Split starts with the
   // code at 70% of the pane (the pane is wide by then: its width is what picks split). Stacked starts

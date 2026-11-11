@@ -98,10 +98,24 @@ comments, a verdict (1 Comment, 2 Approve, 3 Request changes; Comment only on
 your own PR, since GitHub refuses the others from the author) and an optional
 summary box (`tab` types, the placeholder "See the inline comments." is used
 when it's empty). The header names the author and the `gh` account that will
-post. `p` asks "Press p again to post <verdict> to GitHub", and the second `p`
+post. `p` or `enter` asks "Press p again to post <verdict> to GitHub", and the second `p`
 posts every comment as one review on the lines they sit on. Then it says
 "Posted to GitHub", `o` opens the review, and the posted comments are cleared.
-Changing the verdict asks for the two presses again.
+Changing the verdict asks for the two presses again. On a peer's PR the screen
+also opens with no comments (the button reads "Review"), starts on Approve, and
+says "No line comments. You can approve, or write a summary to comment." Posting
+needs comments, an approval, or a typed summary.
+
+Merge (your own PRs only): GitHub won't let you approve your own PR, so `m` or
+"Merge" opens a merge screen instead. It reads the repo's allowed methods
+(`gh api repos/<repo>`: squash, merge commit, rebase) and lists only those, as
+1 to 3. `j`/`k` or a number picks one. `m` asks "Press m again to <method>",
+and the second `m` runs `gh pr merge <n> -R <repo> --<method>
+--match-head-commit <head>`, so it merges only if the PR's head is still the
+commit you reviewed. GitHub's reason shows when it's blocked (checks, reviews,
+conflicts). It never deletes branches or touches your checkout: the repo's own
+auto-delete setting decides. Then it says "Merged", and `o` opens the PR. A
+peer's PR never shows Merge.
 
 Fix (your own PRs only): `f` or "Fix N comments" opens the fix screen. A PR is
 yours when its author is the signed-in `gh` account, so a peer's PR never shows
@@ -132,8 +146,10 @@ and its branch are deleted, and the comments stay.
   `a` or `/` ask (the box only exists while asking), `o` open in VS Code, `s` switches split and stacked
   (wide panes start split), `q`
   ends the tour and returns to step 1. On PR tours, `p` posts a review, `r` plans again, and `f`
-  (your own PRs) opens the fix. `b` shows or hides the file list, `v` marks a file viewed, and `e`
+  (your own PRs) opens the fix. `b` shows or hides the file list, `v` marks a file viewed, `m` (your own PRs) merges, and `e`
   explains a file the tour skipped.
+- Merge: `1` to `3` or `j`/`k` pick the method, `m` twice merges, `o` opens the
+  PR once merged, `b` or `esc` back to the tour.
 - Post review: `1` to `3` or `j`/`k` pick the verdict, `tab` types the summary,
   `p` twice posts, `o` opens it once posted, `b` or `esc` back to the tour.
 - Fix: `r`, `a` or `/` replies to the agent (`esc` or `tab` gives the keys
@@ -210,7 +226,7 @@ and its branch are deleted, and the comments stay.
 - `herdr-app do tourist.<command>` drives it for testing: `scope-<id>`,
   `depth-<id>`, `down`, `up`, `pick`, `back`, `start`, `next`, `prev`,
   `deeper`, `technical`, `open`, `reset`, `agent` (switch agents), `fix`,
-  `fix-back`, `fix-discard`, `review`, `review-back`, `viewed`, `file-<n>` (the nth file in
+  `fix-back`, `fix-discard`, `review`, `review-back`, `merge`, `merge-back`, `viewed`, `file-<n>` (the nth file in
   the file list, from the top), `explain`. There is no push or post
   command: both take two key presses in the pane.
 
