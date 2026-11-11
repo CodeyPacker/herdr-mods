@@ -23,5 +23,11 @@ export async function mergeMethods(root, on, pr) {
  * Throws GitHub's reason when the merge is blocked (checks, required reviews, conflicts).
  */
 export async function mergePR(root, on, pr, method) {
-  await gh(["pr", "merge", String(pr.number), "-R", pr.repo, `--${method}`, "--match-head-commit", pr.headOid], { cwd: root, on });
+  try { await gh(["pr", "merge", String(pr.number), "-R", pr.repo, `--${method}`, "--match-head-commit", pr.headOid], { cwd: root, on }); }
+  catch (e) {
+    // Someone pushed since the tour started: say so, rather than GitHub's terse refusal.
+    if (/head branch was modified|match-head-commit|expected head sha/i.test(String(e?.message ?? e)))
+      throw new Error(`the PR has commits newer than ${pr.headOid.slice(0, 7)}, the one this tour reviewed. Press q and open the PR again to review them before merging.`);
+    throw e;
+  }
 }

@@ -29,15 +29,23 @@ export async function worktreeDiff(path, on) {
   return (await git(["diff", "--no-color", "HEAD"], { cwd: path, on })) ?? "";
 }
 
-/** Commits the fix in the worktree and pushes it to the PR's branch on origin. */
-export async function pushFix(path, on, pr, message) {
-  const run = async args => {
-    const r = await exec("git", args, { cwd: path, on });
+/**
+ * Commits the fix in the worktree and pushes it to the PR's branch on origin. Returns the pushed
+ * commit, which is the PR's new head. `root` is the main checkout, whose `refs/tourist/pr-<n>`
+ * moves to it so the commit outlives the worktree.
+ */
+export async function pushFix(path, root, on, pr, message) {
+  const run = async (args, cwd = path) => {
+    const r = await exec("git", args, { cwd, on });
     if (r.code !== 0) throw new Error((r.stderr || r.stdout || `git ${args[0]} failed.`).trim().slice(-500));
+    return r.stdout.trim();
   };
   await run(["add", "--all"]);
   await run(["commit", "-q", "-m", message]);
   await run(["push", "origin", `HEAD:refs/heads/${pr.head}`]);
+  const head = await run(["rev-parse", "HEAD"]);
+  await run(["update-ref", `refs/tourist/pr-${pr.number}`, head], root).catch(() => {});
+  return head;
 }
 
 /** Deletes the worktree and its local branch. Unpushed edits in it are lost. */

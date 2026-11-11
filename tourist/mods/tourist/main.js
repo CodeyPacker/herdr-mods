@@ -730,13 +730,36 @@ export default class Tourist extends View {
     fix.confirm = false; fix.phase = "pushing"; fix.error = null;
     cx.spawn(async cx => {
       try {
-        await pushFix(fix.path, this.on, pr, `Address review comments on #${pr.number}`);
+        const head = await pushFix(fix.path, this.git.root, this.on, pr, `Address review comments on #${pr.number}`);
         fix.phase = "pushed";
         await removeWorktree(this.git.root, this.on, pr);
-        if (this.pr === pr) { this.comments = []; this.storeComments(cx); }
+        if (this.pr === pr) { this.comments = []; this.storeComments(cx); this.adoptHead(head, cx); }
       } catch (e) { fix.phase = "ready"; fix.error = `Push failed: ${String(e?.message ?? e)}`; }
       cx.notify();
     });
+  }
+
+  /**
+   * Moves the tour to the PR's new head after you pushed a fix, so merging, posting and the diffs
+   * use the commit that's on GitHub now. You saw the fix's diff before pushing, so viewed marks
+   * carry over, and the plan is saved under the new head so reopening the tour skips planning.
+   */
+  adoptHead(head, cx) {
+    const pr = this.pr, old = pr.headOid;
+    if (!head || head === old) return;
+    pr.headOid = head;
+    const viewed = {};
+    for (const [file, at] of Object.entries(this.viewed)) viewed[file] = at === old ? head : at;
+    this.viewed = viewed;
+    const key = commentKey(this.git.root, pr.number);
+    cx.spawn(async () => { await saveViewed(key, viewed).catch(() => {}); });
+    this.savedKey = planKey({ root: this.git.root, scope: "pr", depth: this.depth, head, pr, feature: "" });
+    this.storePlan();
+    // The fix changed the code: show the new diffs, file counts, threads and the checks the push started.
+    if (this.other) { const f = this.laterFiles().find(x => x.file === this.other); if (f) this.openFile(f, cx); }
+    else this.show(this.idx, cx);
+    this.loadFiles(cx); this.loadThreads(cx); this.loadChecks(cx);
+    if (this.merge) this.merge.confirm = false;
   }
 
   /** Throws the fix away: the worktree and its branch are deleted. The comments stay. */
