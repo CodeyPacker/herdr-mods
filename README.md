@@ -119,6 +119,16 @@ herdr-app do layout.switch '{"name":"islands"}'
 
 Want a different accent on the active tab? That is the theme's accent, so `"colors": { "accent": "#20a68e" }` in `~/.config/herdr-app/settings.json` changes it on any theme.
 
+## Updating
+
+There's a Claude Code skill for that. Copy `skills/update-herdr-mods` into `~/.claude/skills/`, then ask Claude to "update my herdr mods". It lists the mods and layouts you have from this repo, shows which have updates, and you pick one, several or all. Copied mods are backed up first, your settings and saved data are kept, and it asks before overwriting a layout.
+
+Or tell your agent:
+
+```text
+Copy https://github.com/CodeyPacker/herdr-mods/tree/main/skills/update-herdr-mods into ~/.claude/skills/update-herdr-mods, then use it to update my herdr mods.
+```
+
 ## Hacking
 
 Mods hot reload on save. `jump/mods/jump/tiles.js` and `run/mods/run/tiles.js` are the same file;
