@@ -68,10 +68,12 @@ export function tourView(v, t) {
     .when(Boolean(v.busy), el => el.child(h_flex().gap(8).items_center().text_color(t.dim)
       .child(spinner(t))
       .child(div().text_size(12).child(`${v.busy}…`))));
-  // The explanation scrolls through v.explainScroll, so asking can jump it to the bottom.
+  // A plain scroll area driven by v.explainScroll, with the scrollbar drawn over it, the same way
+  // the diff scrolls. Its second child is an empty marker at the end: asking reveals it.
   const explainId = `explain-${key}`;
   const explain = div().relative().flex_1().min_h(0)
-    .child(v_flex().id(explainId).size_full().overflow_y_scroll().track_scroll(v.explainScroll).px(14).py(12).child(body))
+    .child(v_flex().id(explainId).size_full().overflow_y_scroll().track_scroll(v.explainScroll).px(14).py(12)
+      .child(body).child(div().h(1)))
     .child(Scrollbar.vertical(explainId).absolute().inset_0());
   // The ask box is only drawn while asking, so tour keys can never land in it.
   const ask = div().px(14).pb(8).child(textInput(t, v.input, true));

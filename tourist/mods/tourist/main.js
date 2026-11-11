@@ -12,7 +12,7 @@
 //   links.js      file:line references in the agent's text, as links that move the code
 //   views/        the setup, tour, planning and error screens
 import { View } from "gpui-kit";
-import { v_flex, InputState, VirtualListScrollHandle, ScrollHandle } from "gpui-base";
+import { v_flex, InputState, ScrollHandle } from "gpui-base";
 import { theme, nextCommand, props, run } from "herdr";
 import { SCOPES, DEPTHS, PASSES, SPLIT_WIDTH } from "./constants.js";
 import { startFolder, readRepo, git } from "./git.js";
@@ -89,7 +89,7 @@ export default class Tourist extends View {
     this.width = 0;       // the pane width, from on_size_change
     this.asking = false;  // the ask box only exists while asking, so it can't take tour keys
     this.typing = null;   // "ask" | "feature" while a text box has the keyboard
-    this.explainScroll = VirtualListScrollHandle.new(); // the explanation's scroll position, moved from code
+    this.explainScroll = ScrollHandle.new(); // the explanation's scroll position, moved to the bottom after asking
     this.input = this.textBox("ask", "Ask about this stop, then press enter", cx => this.ask(cx));
     this.featureInput = this.textBox("feature", "e.g. how a space gets its hint letter", cx => this.pick(cx));
     this.commentInput = this.textBox("comment", "Comment on this line, then press enter", cx => this.saveComment(cx));
@@ -584,9 +584,10 @@ export default class Tourist extends View {
     this.input.set_value("");
     this.leaveBox();
     this.followUp(`You asked: ${q}`, q, cx);
-    // Jump to the bottom so the answer appears in view, and again once the question is drawn.
-    this.explainScroll.scroll_to_bottom();
-    cx.timer.after(50, () => { this.explainScroll.scroll_to_bottom(); cx.notify(); });
+    // Reveal the empty marker at the end of the explanation once the question is drawn,
+    // so the answer appears in view. Again a moment later in case that layout came early.
+    this.explainScroll.scroll_to_item(1);
+    cx.timer.after(50, cx => { this.explainScroll.scroll_to_item(1); cx.notify(); });
   }
 
   /**

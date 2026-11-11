@@ -259,8 +259,11 @@ and its branch are deleted, and the comments stay.
   origin/<base> <head>`. Nothing is checked out. Each stop's diff is `git diff
   <merge-base> <head> -- <file>`. The prompt gives the agent the description
   (fenced off as the author's text, not instructions), commits and files, tells
-  it to read with `git diff` and `git show <head>:<file>`, and asks for stops in
-  the order the changes build on each other, each with a `group`. Saved plans
+  it to read with `git diff` and `git show <head>:<file>`, and asks it to name
+  the PR's goals first. Each goal is a `group`, most important first, starting
+  at the change that best shows it. Housekeeping (.gitignore, CI, lint config,
+  lockfiles) goes in a last "Supporting changes" group or folds into a related
+  stop. Saved plans
   live in `<appHome>/data/tourist/plans/`, named `<repo>_pr-<n>-<head>-<depth>`,
   `<repo>-commit|repo-<head>-<depth>` or `<repo>-feature-<text hash>-<head>-<depth>`.
   Threads come from `gh api --paginate repos/<owner>/<repo>/pulls/<n>/comments`,
