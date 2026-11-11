@@ -121,7 +121,7 @@
                     "height": 30,
                     "position": "top"
                   },
-                  "background": "#17191dd9",
+                  "background": "background",
                   "border": {
                     "width": 1,
                     "color": "border"
