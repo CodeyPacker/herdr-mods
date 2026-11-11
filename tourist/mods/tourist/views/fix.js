@@ -4,7 +4,7 @@
 import { div } from "gpui-kit";
 import { v_flex, h_flex, TextView } from "gpui-base";
 import { settings } from "herdr";
-import { confirmBar, button, spinner, textInput } from "../ui.js";
+import { button, spinner, textInput } from "../ui.js";
 import { diffBlock } from "./diff.js";
 
 /** `v` is the Tourist view: its state is read here and its methods run on clicks. */
@@ -49,7 +49,5 @@ export function fixView(v, t) {
     .child(button(t, "fix-reply", "Reply to the agent", "r", canReply, (_e, cx) => { v.startReply(cx); cx.notify(); }))
     .child(button(t, "fix-push", `Push to ${pr.head}`, "p", canPush, (_e, cx) => { v.pushFix(cx); cx.notify(); }))
     .child(button(t, "fix-discard", "Discard fix", "x", canDiscard, (_e, cx) => { v.discardFix(cx); cx.notify(); }));
-  const ask = confirmBar(t, "fix-confirm", `Commit the fix and push it to ${pr.head} on GitHub?`, "Push",
-    (_e, cx) => { v.pushFix(cx); cx.notify(); }, (_e, cx) => { f.confirm = false; cx.notify(); });
-  return v_flex().flex_1().min_h(0).child(header).child(body).when(v.replying, el => el.child(reply)).child(f.confirm && canPush ? ask : bar);
+  return v_flex().flex_1().min_h(0).child(header).child(body).when(v.replying, el => el.child(reply)).child(bar);
 }

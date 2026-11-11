@@ -140,8 +140,8 @@ comments, a verdict (1 Comment, 2 Approve, 3 Request changes; Comment only on
 your own PR, since GitHub refuses the others from the author) and an optional
 summary box (`tab` types, the placeholder "See the inline comments." is used
 when it's empty). The header names the author and the `gh` account that will
-post. `p` or `enter` swaps the buttons for a confirm bar: "Post <verdict> on PR #n
-as <account>, with N comments? Everyone on the PR will see it." `y` (or "Post")
+post. `p` or `enter` opens a confirm dialog: "Post <verdict>?", posting to PR #n as
+<account> with N comments, which everyone on the PR will see. `y` (or "Post")
 posts every comment as one review on the lines they sit on, and `n`, `esc` or
 "Cancel" goes back. Then it says
 "Posted to GitHub", `o` opens the review, and the posted comments are cleared.
@@ -153,8 +153,8 @@ needs comments, an approval, or a typed summary.
 Merge (your own PRs only): GitHub won't let you approve your own PR, so `m` or
 "Merge" opens a merge screen instead. It reads the repo's allowed methods
 (`gh api repos/<repo>`: squash, merge commit, rebase) and lists only those, as
-1 to 3. `j`/`k` or a number picks one. `m` shows a confirm bar, "<Method> PR #n into
-<base>?", and `y` runs `gh pr merge <n> -R <repo> --<method>
+1 to 3. `j`/`k` or a number picks one. `m` opens a confirm dialog, "<Method>?" into
+<base>, and `y` runs `gh pr merge <n> -R <repo> --<method>
 --match-head-commit <head>`, so it merges only if the PR's head is still the
 commit you reviewed. GitHub's reason shows when it's blocked (checks, reviews,
 conflicts). When someone else pushed since the tour started, it says the PR has
@@ -172,8 +172,8 @@ back to the tour meanwhile, and the button turns into "Fixing…", then "View
 fix". When it's done: the agent's one line per comment, then each changed
 file's diff. `r` (or `a`, `/`) opens a reply box: the reply goes into the same
 agent session, which can keep editing the same worktree. The screen then shows
-"You replied: …", the agent's answer, and the updated diff. `p` shows a confirm bar, "Commit the fix and push it to <branch> on GitHub?",
-and `y` commits ("Address review comments on #n") and pushes to the PR's branch, then
+"You replied: …", the agent's answer, and the updated diff. `p` opens a confirm dialog, "Push the fix?", naming the commit message and
+branch, and `y` commits ("Address review comments on #n") and pushes to the PR's branch, then
 removes the worktree and clears the comments. The tour then moves to the
 pushed commit, since that's the PR's new head: the diffs, file list, threads
 and checks reload, viewed marks carry over, and the plan is saved under the new
@@ -204,8 +204,9 @@ and its branch are deleted, and the comments stay.
   `p` then `y` posts, `o` opens it once posted, `b` or `esc` back to the tour.
 - Fix: `r`, `a` or `/` replies to the agent (`esc` or `tab` gives the keys
   back), `b` or `esc` back to the tour, `p` then `y` pushes, `x` discards.
-- Confirm bars (push, post, merge): `y` goes ahead, `n` or `esc` cancels, and
-  other keys wait until you answer.
+- Confirm dialogs (push, post, merge): a card centered in the pane, over a
+  dimmed screen that takes no clicks. It has the keyboard: `y` goes ahead, `n`
+  or `esc` cancels, and other keys wait until you answer.
 - Every screen: `z` zooms the pane to fill the tab and back (Herdr's `pane.zoom`,
   the same as `ctrl-shift-z`), except while typing in a box.
 - Error: `enter`, `q` or `esc` starts over.
@@ -307,7 +308,7 @@ and its branch are deleted, and the comments stay.
   `deeper`, `technical`, `open`, `reset`, `agent` (switch agents), `fix`,
   `fix-back`, `fix-discard`, `review`, `review-back`, `merge`, `merge-back`, `checks`, `checks-back`, `pass-since`, `pass-whole`, `viewed`, `file-<n>` (the nth file in
   the file list, from the top), `explain`. There is no push, post or
-  merge command: each needs `y` on its confirm bar in the pane.
+  merge command: each needs `y` in its confirm dialog in the pane.
 
 ## Watch out
 

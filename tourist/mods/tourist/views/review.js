@@ -3,7 +3,7 @@
 import { div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { settings } from "herdr";
-import { confirmBar, button, option, spinner, textInput } from "../ui.js";
+import { button, option, spinner, textInput } from "../ui.js";
 import { eventsFor, DEFAULT_SUMMARY } from "../review.js";
 import { linesOf } from "../comments.js";
 
@@ -41,9 +41,5 @@ export function reviewView(v, t) {
     .when(r.phase !== "posted", el => el.child(button(t, "review-post",
       `Post as ${event.label}`,
       "p", v.canPost(), (_e, cx) => { v.postReview(cx); cx.notify(); })));
-  const n = v.comments.length;
-  const ask = confirmBar(t, "review-confirm",
-    `Post "${event.label}" on PR #${pr.number} as ${pr.me || "the gh account"}${n ? `, with ${n} comment${n === 1 ? "" : "s"}` : ""}? Everyone on the PR will see it.`,
-    "Post", (_e, cx) => { v.postReview(cx); cx.notify(); }, (_e, cx) => { r.confirm = false; cx.notify(); });
-  return v_flex().flex_1().min_h(0).child(header).child(body).child(r.confirm && r.phase === "editing" ? ask : bar);
+  return v_flex().flex_1().min_h(0).child(header).child(body).child(bar);
 }
