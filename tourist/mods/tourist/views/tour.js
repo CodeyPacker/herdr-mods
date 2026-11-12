@@ -114,14 +114,14 @@ export function tourView(v, t) {
     .child(v.pr
       // The file list and the tour sit in a resizable group: drag the line between them. The
       // list's panel is hidden rather than removed when b hides it, so its width is kept.
-      ? h_resizable("tour-files").w_full().flex_1().min_h(0)
+      ? h_resizable("tour-files-225").w_full().flex_1().min_h(0)
         .child(resizable_panel().size(RAIL_WIDTH).size_range(140, 560).visible(Boolean(rail)).child(rail ?? div()))
         .child(resizable_panel().size_range(300).child(div().size_full().min_w(0).child(panes)))
       : h_flex().flex_1().min_h(0).child(div().flex_1().min_w(0).h_full().child(panes)))
     .child(bar);
 }
 
-const RAIL_WIDTH = 210;
+const RAIL_WIDTH = 225;
 
 /** The agent's markdown, with file:line references as links that move the code panel. */
 function md(v, id, text) {
