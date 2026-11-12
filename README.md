@@ -153,7 +153,7 @@ Want a different accent on the active tab? That is the theme's accent, so `"colo
 Mods hot reload on save. Type-check with `npx -p typescript tsc -p run/mods/run/jsconfig.json`.
 
 The look and controls the mods share live in `kit/` at the repo root: the frame, list rows, letter
-badges, tabs, sliders, icon buttons, the key legend. A mod can only import from its own folder, so
+badges, tabs, chips, sliders, icon buttons, the key legend. A mod can only import from its own folder, so
 each mod that uses the kit carries a copy in `mods/<name>/kit/`. Edit `kit/`, never a copy, then:
 
 ```sh
@@ -161,4 +161,4 @@ node scripts/sync-kit.mjs          # copy kit/ into each mod
 node scripts/sync-kit.mjs --check  # fail if a copy differs
 ```
 
-`spotify`, `jump` and `run` use the kit. To add a mod, list its folder in `scripts/sync-kit.mjs`.
+`spotify`, `jump`, `run` and `portal` use the kit. To add a mod, list its folder in `scripts/sync-kit.mjs`.

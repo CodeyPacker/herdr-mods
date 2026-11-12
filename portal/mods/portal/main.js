@@ -9,14 +9,19 @@
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, v_virtual_list, VirtualListScrollHandle, Scrollbar, Popover } from "gpui-base";
-import { theme, props, closeOverlay, shared, window as win, readTextFile, appHome } from "herdr";
+import { props, closeOverlay, window as win, readTextFile, appHome } from "herdr";
+import { colors, SIZE } from "./kit/theme.js";
+import { frame, divider } from "./kit/frame.js";
+import { chip, toolButton } from "./kit/controls.js";
+import { legend } from "./kit/legend.js";
+import { listRow } from "./kit/list.js";
 import { scan, identity, currentIdentity, signal, probe, hostFor, urlFor, validUrl, endName, killName } from "./scan.js";
 
 /** @typedef {import("gpui-kit").Color} Color */
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("gpui-kit").KeyEvent} KeyEvent */
 /** @typedef {import("gpui-kit").FocusHandle} FocusHandle */
-/** @typedef {Record<string, Color>} Theme */
+/** @typedef {import("./kit/theme.js").Theme} Theme */
 /** @typedef {import("./scan.js").Binding} Binding */
 /** @typedef {import("./scan.js").ProcInfo} ProcInfo */
 /** @typedef {import("./scan.js").Scan} Scan */
@@ -48,18 +53,8 @@ const GRACE_MS = 5000;
 const FORCE_WAIT_MS = 3000;
 const PROBES_AT_ONCE = 4;
 const SPIN = "mods/workspace-chrome/spinner.svg";
-const H = { head: 28, fav: 30, proc: 30, detail: 22, bind: 28, empty: 34 };
-
-/** The app's theme colors, typed as colors the builders accept. @returns {Theme} */
-const colors = () => /** @type {Theme} */ (theme());
-
-/** The theme popover at the islands panel opacity, when islands is installed. @param {Theme} t @returns {Color} */
-function panelFill(t) {
-  const c = String(t.popover), o = shared("islands.mainOpacity");
-  if (!/^#[0-9a-f]{6}$/i.test(c) || typeof o !== "number") return t.popover;
-  const a = Math.round(Math.min(1, o + 0.1) * 255).toString(16).padStart(2, "0");
-  return /** @type {Color} */ (`${c}${a}`);
-}
+// Row heights by kind. The virtual list needs each one up front. Rows that can be selected use the kit's compact row.
+const H = { head: 28, fav: SIZE.compactRow, proc: SIZE.compactRow, detail: 22, bind: SIZE.compactRow, empty: 34 };
 
 /** @param {string} key @param {any} fallback */
 function load(key, fallback) {
@@ -661,30 +656,21 @@ export default class Portal extends View {
     return /^#[0-9a-f]{3,8}$/i.test(c) ? /** @type {Color} */ (c) : t[c] ?? t.accent;
   }
 
-  /** A toggle or choice at the top. @param {Theme} t @param {string} id @param {string | import("gpui-kit").NativeElement} label @param {boolean} on @param {(cx: Context) => void} act */
+  /** A toggle or choice at the top. A click also gives the keyboard back to the dialog. @param {Theme} t @param {string} id @param {string | import("gpui-kit").NativeElement} label @param {boolean} on @param {(cx: Context) => void} act */
   chip(t, id, label, on, act) {
-    return h_flex().id(id).flex_none().h(24).px(8).items_center().rounded(6).border_1()
-      .border_color(on ? t.accent : t.border).bg(on ? t.selected : t.raised)
-      .text_size(11.5).text_color(on ? t.foreground : t.muted).cursor_pointer()
-      .hover((s) => s.border_color(t.accent))
-      .on_click((_e, cx) => { act(cx); this.handle.focus(); cx.notify(); })
-      .child(label);
+    return chip(t, { id, label, on, click: (cx) => { act(cx); this.handle.focus(); cx.notify(); } });
   }
 
-  /** A small square button. @param {Theme} t @param {string} id @param {string} tip @param {(cx: Context) => void} act */
+  /** A small toolbar button. Callers add its icon. @param {Theme} t @param {string} id @param {string} tip @param {(cx: Context) => void} act */
   iconButton(t, id, tip, act) {
-    return h_flex().id(id).flex_none().h(24).min_w(26).px(5).gap(2).items_center().justify_center().rounded(6).border_1()
-      .border_color(t.border).bg(t.raised).text_color(t.muted).cursor_pointer()
-      .hover((s) => s.border_color(t.accent))
-      .tooltip(tip)
-      .on_click((_e, cx) => { act(cx); this.handle.focus(); cx.notify(); });
+    return toolButton(t, { id, tip, click: (cx) => { act(cx); this.handle.focus(); cx.notify(); } });
   }
 
   /** The address filter as a dropdown. @param {Theme} t */
   addrMenu(t) {
     const f = this.filter;
     const on = f.addr !== "all";
-    const trigger = h_flex().id("f-addr").flex_none().h(24).pl(8).pr(6).gap(4).items_center().rounded(6).border_1()
+    const trigger = h_flex().id("f-addr").flex_none().h(26).pl(10).pr(6).gap(4).items_center().rounded(8).border_1()
       .border_color(on || this.addrOpen ? t.accent : t.border).bg(on ? t.selected : t.raised)
       .text_size(11.5).text_color(on ? t.foreground : t.muted).cursor_pointer()
       .hover((s) => s.border_color(t.accent))
@@ -703,7 +689,7 @@ export default class Portal extends View {
 
   /** A filter box's frame. @param {Theme} t @param {string} id @param {ReturnType<typeof InputState.new>} state @param {boolean} on @param {boolean} bad @param {number | null} w */
   field(t, id, state, on, bad, w) {
-    return div().id(id).h(26).px(8).flex().items_center().rounded(6).border_1()
+    return div().id(id).h(30).px(10).flex().items_center().rounded(8).border_1()
       .border_color(bad ? t.blocked : on ? t.accent : t.border).bg(t.background).cursor_text()
       .when(w === null, (el) => el.flex_1().min_w(0)).when(w !== null, (el) => el.w(w ?? 0).flex_none())
       .on_mouse_down("left", (_e, cx) => { state.focus(); cx.stop_propagation(); })
@@ -731,10 +717,7 @@ export default class Portal extends View {
         .child(div().w(64).flex_none().text_color(t.dim).child(label))
         .child(div().flex_1().min_w(0).truncate().text_color(t.muted).child(value));
     }
-    const base = h_flex().id(it.id).relative().h(H[it.kind]).px(10).gap(8).items_center().rounded(7).cursor_pointer()
-      .when(on, (el) => el.bg(t.selected))
-      .hover((s) => s.bg(on ? t.selected : t.hover))
-      .when(on, (el) => el.child(div().absolute().left(0).top(6).w(3).h(H[it.kind] - 12).rounded(2).bg(t.accent)));
+    const base = listRow(t, { id: it.id, on, compact: true }).gap(8).text_size(13);
     if (it.kind === "fav") {
       const tone = it.state === "active" ? t.ansi2 : t.dim;
       const owners = [...new Set(it.bindings.map((b) => b.pname || "?"))].join(", ");
@@ -796,14 +779,14 @@ export default class Portal extends View {
       return line().border_color(edge)
         .when(k.phase === "term" || k.phase === "force", (el) => el.child(svg(SPIN).size(12).flex_none().text_color(t.working).spin(900)))
         .child(div().flex_1().min_w(0).text_color(t.foreground).child(text))
-        .child(hints(t, keys));
+        .child(legend(t, keys));
     }
     if (this.editing && this.editIn) {
       const what = this.editing;
       return line().border_color(t.accent)
         .child(div().flex_none().text_color(t.muted).child(what.kind === "url" ? `URL for ${where(what.b)}` : "Add favorite port"))
         .child(div().flex_1().min_w(0).h(24).flex().items_center().child(Input.new(this.editIn).h_full().w_full().text_size(12).text_color(t.foreground)))
-        .child(hints(t, [["enter", "save"], ["esc", "cancel"]]));
+        .child(legend(t, [["enter", "save"], ["esc", "cancel"]]));
     }
     if (this.note) return line().border_color(this.note.bad ? t.blocked : t.border).child(div().flex_1().min_w(0).truncate().text_color(this.note.bad ? t.blocked : t.muted).child(this.note.text));
     return null;
@@ -812,11 +795,8 @@ export default class Portal extends View {
   /** @param {Context} _cx */
   render(_cx) {
     const t = colors();
-    const frame = v_flex().id("portal").track_focus(this.handle).size_full().p(16).gap(10)
-      .bg(panelFill(t)).rounded(14).overflow_hidden().border_1().border_color(t.border).text_size(13);
     if (!this.supported) {
-      return frame.on_key_down((e, cx) => { if (e.key === "escape") this.close(); cx.stop_propagation(); })
-        .child(div().text_size(15).font_semibold().text_color(t.foreground).child("Portal"))
+      return frame(t, { id: "portal", title: "Portal", handle: this.handle, fill: true, onKey: (e, cx) => { if (e.key === "escape") this.close(); cx.stop_propagation(); } })
         .child(div().text_color(t.muted).child("Portal supports macOS and Windows only for now."));
     }
     const { items, groups } = this.build();
@@ -842,13 +822,12 @@ export default class Portal extends View {
     } else if (this.lastOk) status = `Updated ${clock(this.lastOk)}`;
 
     const strip = this.strip(t);
-    return frame.on_key_down((e, cx) => this.key(e, cx))
-      .child(h_flex().flex_none().items_center().gap(10)
-        .child(div().flex_none().text_size(15).font_semibold().text_color(t.foreground).child("Portal"))
-        .child(div().flex_none().text_size(11.5).text_color(t.dim).child(counts))
-        .child(div().flex_1())
-        .child(div().flex_none().max_w(320).truncate().text_size(11).text_color(statusColor).child(status))
-        .child(div().flex_none().text_size(11).text_color(t.dim).child("Esc")))
+    // Between the title and "Esc": the counts, then when the list was last read.
+    const details = h_flex().flex_1().min_w(0).items_center().gap(10)
+      .child(div().flex_none().text_size(11.5).text_color(t.dim).child(counts))
+      .child(div().flex_1())
+      .child(div().flex_none().max_w(320).truncate().text_size(SIZE.small).text_color(statusColor).child(status));
+    return frame(t, { id: "portal", title: "Portal", handle: this.handle, fill: true, onKey: (e, cx) => this.key(e, cx), details })
       .child(h_flex().flex_none().items_center().gap(6)
         .child(this.field(t, "f-text", this.textIn, this.typing === "text", false, null))
         .child(this.field(t, "f-range", this.rangeIn, this.typing === "range", range === "bad", 180)))
@@ -874,13 +853,9 @@ export default class Portal extends View {
           .track_scroll(this.scroll).on_item_click((key, cx) => this.clicked(key, cx)).size_full())
         .child(Scrollbar.vertical("portal-list").viewport_from_layout().absolute().inset_0()))
       .when(!!strip, (el) => el.child(/** @type {any} */ (strip)))
-      .child(hints(t, [["j/k", "move"], ["space", "expand"], ["enter", "open"], ["f", "favorite"], ["n", "add"], ["e", "URL"], ["x", "end"],
+      // A line above the key hints, so they do not read as more list rows.
+      .child(divider(t))
+      .child(legend(t, [["j/k", "move"], ["space", "expand"], ["enter", "open"], ["f", "favorite"], ["n", "add"], ["e", "URL"], ["x", "end"],
         ["c", "copy"], ["t/u/m/a", "filters"], ["/ p", "search"], ["s", "sort"], ["r", "refresh"]]));
   }
-}
-
-/** Key hints in accent/dim pairs. @param {Theme} t @param {[string, string][]} pairs */
-function hints(t, pairs) {
-  return h_flex().flex_none().flex_wrap().gap(12).text_size(11)
-    .children(pairs.map(([k, what]) => h_flex().gap(4).child(div().text_color(t.accent).font_semibold().child(k)).child(div().text_color(t.dim).child(what))));
 }

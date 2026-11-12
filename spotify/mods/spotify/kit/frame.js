@@ -20,6 +20,7 @@ import { SIZE } from "./theme.js";
  * @property {string} [icon] a picture before the title, as a path for svg()
  * @property {Color} [iconColor] defaults to the text color
  * @property {(width: number, cx: Context) => void} [onResize] told the frame's width, for content that needs widths in pixels
+ * @property {any} [details] an element for the room between the title and "Esc", such as counts or a status. It should take the spare width (flex_1).
  */
 
 /**
@@ -43,7 +44,8 @@ export function frame(t, o) {
     .when(Boolean(o.onResize), (el) => el.on_size_change((size, cx) => o.onResize?.(size.width, cx)));
   return root.child(h_flex().flex_none().items_center().gap(10)
     .when(Boolean(o.icon), (el) => el.child(svg(o.icon ?? "").size(22).flex_none().text_color(o.iconColor ?? t.foreground)))
-    .child(div().flex_1().text_size(SIZE.title).font_semibold().text_color(t.foreground).child(o.title))
+    .child(div().flex_none().text_size(SIZE.title).font_semibold().text_color(t.foreground).child(o.title))
+    .child(o.details ?? div().flex_1())
     .child(div().text_size(SIZE.small).text_color(t.dim).child("Esc")));
 }
 

@@ -8,15 +8,16 @@ import { SIZE } from "./theme.js";
 /**
  * A row's shell. Add its columns with `.child(...)` or `.children(...)`.
  * @param {Theme} t
- * @param {{ id: string, on: boolean, click: (cx: Context) => void, compact?: boolean }} r
+ * @param {{ id: string, on: boolean, click?: (cx: Context) => void, compact?: boolean }} r
  *   `on`: this row is selected. `compact`: the tighter height, for long lists.
+ *   `click`: leave it out when the list reports clicks itself, as a virtual list does.
  */
 export function listRow(t, r) {
   return h_flex().id(r.id).w_full().h(r.compact ? SIZE.compactRow : SIZE.row).flex_none().px(12).gap(10).items_center()
     .rounded(SIZE.rowRadius).cursor_pointer().text_size(SIZE.text)
     .when(r.on, (el) => el.bg(t.selected))
     .hover((s) => s.bg(r.on ? t.selected : t.hover))
-    .on_click((_e, cx) => r.click(cx));
+    .when(Boolean(r.click), (el) => el.on_click((_e, cx) => r.click?.(cx)));
 }
 
 /** One dim line in place of rows: "nothing here", an error, or a spinner. @param {Theme} t @param {any} child */

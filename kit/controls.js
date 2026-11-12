@@ -37,6 +37,33 @@ export function iconButton(t, id, icon, click, look = {}) {
 }
 
 /**
+ * A small toggle or choice, such as a filter. Filled and outlined in the accent color when on.
+ * @param {Theme} t
+ * @param {{ id: string, label: any, on: boolean, click: (cx: Context) => void }} c `label`: text or an element
+ */
+export function chip(t, c) {
+  return h_flex().id(c.id).flex_none().h(26).px(10).items_center().rounded(8).border_1()
+    .border_color(c.on ? t.accent : t.border).bg(c.on ? t.selected : t.raised)
+    .text_size(11.5).text_color(c.on ? t.foreground : t.muted).cursor_pointer()
+    .hover((s) => s.border_color(t.accent))
+    .on_click((_e, cx) => c.click(cx))
+    .child(c.label);
+}
+
+/**
+ * A small bordered button for a toolbar, as tall as a chip. Add its icon or text with `.child(...)`.
+ * @param {Theme} t
+ * @param {{ id: string, tip: string, click: (cx: Context) => void }} b `tip`: shown on hover
+ */
+export function toolButton(t, b) {
+  return h_flex().id(b.id).flex_none().h(26).min_w(28).px(6).gap(2).items_center().justify_center().rounded(8).border_1()
+    .border_color(t.border).bg(t.raised).text_color(t.muted).cursor_pointer()
+    .hover((s) => s.border_color(t.accent))
+    .tooltip(b.tip)
+    .on_click((_e, cx) => b.click(cx));
+}
+
+/**
  * A line with a round knob: drag the knob, or click along the line. Herdr places the fill
  * and the knob from `state`, a SliderState. Pair it with DragSlider (drag-slider.js) when the
  * value also changes by itself.
