@@ -1,4 +1,4 @@
-// Controls: the spinner, the text box, the round icon button and the slider.
+// Controls: the spinner, the text box, the round icon button, chips, buttons and the slider.
 import { div, svg } from "gpui-kit";
 import { h_flex, Input, Slider, SliderTrack, SliderIndicator, SliderThumb } from "gpui-base";
 
@@ -61,6 +61,19 @@ export function toolButton(t, b) {
     .hover((s) => s.border_color(t.accent))
     .tooltip(b.tip)
     .on_click((_e, cx) => b.click(cx));
+}
+
+/**
+ * A button that shows its key first, then what it does. Dim and inert when not enabled.
+ * @param {Theme} t @param {string} id @param {string} key @param {string} label
+ * @param {boolean} enabled @param {(cx: Context) => void} click
+ */
+export function keyButton(t, id, key, label, enabled, click) {
+  return h_flex().id(id).flex_none().h(28).px(10).gap(6).items_center().rounded(8).border_1()
+    .border_color(t.border).bg(t.raised).text_size(12).text_color(enabled ? t.foreground : t.dim)
+    .when(enabled, (el) => el.cursor_pointer().hover((s) => s.border_color(t.accent)).on_click((_e, cx) => click(cx)))
+    .child(div().font_semibold().text_color(enabled ? t.accent : t.dim).child(key))
+    .child(label);
 }
 
 /**

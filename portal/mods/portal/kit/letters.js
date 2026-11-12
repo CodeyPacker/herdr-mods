@@ -63,7 +63,7 @@ export function letterBadge(t, letters, typed, strong = false) {
 /**
  * A list row that starts with its letter badge. Add the rest with `.child(...)`.
  * @param {Theme} t
- * @param {{ id: string, letters: string, typed: string, pinned?: boolean, on: boolean, click: (cx: Context) => void, compact?: boolean }} r
+ * @param {{ id: string, letters: string, typed: string, pinned?: boolean, on: boolean, click: (cx: Context) => void, compact?: boolean, tall?: boolean }} r
  *   `pinned`: the person chose this letter in their config.
  */
 export function letterRow(t, r) {

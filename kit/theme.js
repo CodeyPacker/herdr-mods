@@ -22,9 +22,13 @@ export const SIZE = {
   /** The space between a frame's sections. */
   frameGap: 14,
   frameRadius: 16,
+  /** The space between a pane's edge and its content, sideways. A pane is tighter than a frame. */
+  panePad: 14,
   /** A list row, and the tighter row for long lists. */
   row: 38,
   compactRow: 32,
+  /** A row with a second, dim line under its name. */
+  tallRow: 48,
   rowRadius: 8,
   /** Text: a frame's title, a list row, and small print such as key hints. */
   title: 16,
