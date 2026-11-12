@@ -1091,6 +1091,9 @@ export default class Tourist extends View {
   render(cx) {
     const t = colors();
     const root = v_flex().id("tourist").relative().track_focus(this.handle).on_key_down((e, cx) => this.key(e, cx))
+      // A click on the code, the text or a divider can take the keyboard away. Take it back
+      // once the click is over, unless it landed in a text box.
+      .on_mouse_up("left", (_e, cx) => { cx.timer.after(30, () => { if (!this.typing) this.handle.focus(); }); })
       .size_full().min_h(0).text_color(t.foreground).text_size(13)
       .on_size_change((size, cx) => { if (size.width !== this.width) { this.width = size.width; cx.notify(); } }); // no fill: the pane's own background shows, like a terminal
     if (this.phase === "setup") return root.child(setupView(this, t));
