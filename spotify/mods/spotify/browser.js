@@ -81,6 +81,9 @@ export class Browser {
     this.tracks = new PagedList((offset) => readPlaylistTracks(this.playlist?.id ?? "", offset));
     this.searchInput = InputState.new({ value: "", placeholder: "Search songs" });
     this.searchInput.on("submit", (_e, cx) => this.runSearch(cx));
+    // The box can lose the keyboard without this file seeing a key (it may handle Esc or Tab
+    // itself, or the person clicks elsewhere). Take the keyboard back, or no key would work.
+    this.searchInput.on("blur", (_e, cx) => { if (this.typing) { this.stopTyping(); cx.notify(); } });
     /** @type {boolean} true while the search box has the keyboard */
     this.typing = false;
     /** The list's scroll position, so the selected row stays in view. */
@@ -162,7 +165,13 @@ export class Browser {
       else if (list.loaded) this.run(cx, () => playIn(playlist.uri));
     } else if (row?.kind === "playlist") this.openPlaylist(row, cx);
     else if (row?.kind === "device") this.run(cx, () => playOn(row.id));
-    else if (row?.kind === "track" && this.tab === "queue") this.run(cx, () => skipAhead(list.at + 1));
+    else if (row?.kind === "track" && this.tab === "queue") {
+      // The queue's first row is the track playing now, so a row's index is how many skips reach it.
+      // When nothing is playing there is no such row, and the first row is one skip away.
+      const first = list.rows[0];
+      const skips = list.at + (first?.kind === "track" && first.uri === this.now.track()?.uri ? 0 : 1);
+      if (skips > 0) this.run(cx, () => skipAhead(skips));
+    }
     else if (row?.kind === "track") this.run(cx, () => playTracks([row.uri]));
     cx.notify();
   }
@@ -235,9 +244,9 @@ export class Browser {
 
   /** @param {KeyEvent} e @param {Context} cx */
   key(e, cx) {
-    // While typing a search, every key but Esc belongs to the box (enter arrives as its submit).
+    // While typing a search, Esc and Tab leave the box. Every other key belongs to it (enter arrives as its submit).
     if (this.typing) {
-      if (e.keystroke === "escape") { this.stopTyping(); cx.notify(); cx.stop_propagation(); }
+      if (e.key === "escape" || e.key === "tab") { this.stopTyping(); cx.notify(); cx.stop_propagation(); }
       return;
     }
     const action = KEYS[e.keystroke];

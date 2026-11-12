@@ -56,10 +56,13 @@ async function readPage(path, build, forbidden) {
   }
 }
 
-/** What plays next, in order. Spotify sends the whole list (up to 20) at once. @returns {Promise<Page<TrackRow>>} */
+/**
+ * The track playing now, then what plays next, in order. Spotify sends the whole list (up to 20) at once.
+ * @returns {Promise<Page<TrackRow>>}
+ */
 export function readQueue() {
   return readPage("/me/player/queue", (data) => {
-    const rows = toTrackRows(data?.queue);
+    const rows = toTrackRows([data?.currently_playing, ...(data?.queue ?? [])]);
     return { rows, total: rows.length };
   });
 }

@@ -7,6 +7,9 @@ export const MOD = "spotify";
 export const REDIRECT_PORT = 43821;
 export const REDIRECT_URI = `http://127.0.0.1:${REDIRECT_PORT}/callback`;
 
+/** Spotify's brand green, for its logo. */
+export const SPOTIFY_GREEN = "#1DB954";
+
 export const DASHBOARD_URL = "https://developer.spotify.com/dashboard";
 export const AUTHORIZE_URL = "https://accounts.spotify.com/authorize";
 export const TOKEN_URL = "https://accounts.spotify.com/api/token";
