@@ -8,23 +8,23 @@ them with single keys. The mprocs idea, with letter hints instead of a list.
 
 ## What you see
 
-A 560 px popup at the top of the window, popover background, 18 px padding.
-Top line: "Run" (15 px semibold), or "Run · every space" when showing all; at
-the right "Esc" in the dim color, inset to line up with the row edge.
+A 560 px popup at the top of the window, in the shared kit's frame: popover
+background, 16 px round corners, its own border, 22 px padding. Top line: "Run"
+(16 px semibold), or "Run · every space" when showing all; at the right "Esc"
+in the dim color.
 
-Every row is 30 px and starts with its hint badge, so the letters form one
-column at the left. One section per space: a header row with the space's colored
-avatar (18 px square, the first letter) and its name in semibold foreground, then
-one row per declared process under the name column: a status dot, the name in the
-muted color, and a detail in 11 px dim text. Spaces with the same name also show
-their folder in dim text, and their branch when the folders match too. The
-selected row has the theme's `selected` background, a 3 px accent bar at its left
-edge and an accent badge. Hover is the `hover` color at 40% opacity. At the right
-of the header, a space with no `herdr.procs.json` says so, and one with nothing
-running says "nothing running · u starts N".
+Every row is 32 px with 8 px round corners and starts with its letter badge, so
+the letters form one column at the left. One section per space: a header row
+with the space's colored avatar (18 px square, the first letter) and its name in
+14 px semibold foreground, then one row per declared process under the name
+column: a status mark, the name, and a detail in 11 px dim text. Spaces with the
+same name also show their folder in dim text, and their branch when the folders
+match too. The selected row has the `selected` background and an accent badge.
+At the right of the header, a space with no `herdr.procs.json` says so, and one
+with nothing running says "nothing running · u starts N".
 
-Bottom line: `j/k`, `s`, `x`, `r`, `u`, `enter` and `a` in accent/dim pairs.
-
+Bottom, after a thin line: `j/k`, `s`, `x`, `r`, `u`, `enter` and `a` in
+accent/dim pairs.
 ## How it behaves
 
 - Status dot: green (`ansi2`) while running, with "running · pid N"; red
@@ -48,9 +48,9 @@ Bottom line: `j/k`, `s`, `x`, `r`, `u`, `enter` and `a` in accent/dim pairs.
 
 ## Built from
 
-- `mods/run/main.js` (the view) and `mods/run/tiles.js` (hints, rows,
-  navigation; the same file the Jump mod carries).
-- `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 560, "height": 0.75 } }`.
+- `mods/run/main.js` (the view), and `mods/run/kit/`, this repo's shared kit: the
+  frame, list rows, letter badges and their navigation, the key legend.
+- `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 560, "height": 0.75, "frame": "none" } }`.
 - `keys.json` opens it: `"ctrl-shift-r": "mod.open:run"`.
 - Config, `herdr.procs.json` at the repo root, found by walking up from the
   space's first pane's folder:
@@ -87,12 +87,13 @@ Bottom line: `j/k`, `s`, `x`, `r`, `u`, `enter` and `a` in accent/dim pairs.
 ## Watch out
 
 - Type-clean under the jsconfig the app writes (`checkJs`, `strict`): every
-  function carries JSDoc types, `colors()` in tiles.js casts `theme()` to the
+  function carries JSDoc types, `colors()` in kit/theme.js casts `theme()` to the
   builders' color type. Check with `npx -p typescript tsc -p jsconfig.json`.
 - Elements are single-use: collect each space's rows in an array, then
   build the section. Adding children to an element already placed throws.
 - A popup is sized by its content, so the list needs an explicit height;
-  the mod estimates it from row counts and caps it at 520 px with a scrollbar.
+  the mod estimates it from row counts and caps it at 470 px with a scrollbar,
+  so the key hints stay on screen.
 - `"transparent"` is not a color; an unselected row sets no background.
 - A layout overlay sends Esc to its terminal, so the bar mod must own the keyboard
   and close the overlay itself.

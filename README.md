@@ -161,4 +161,4 @@ node scripts/sync-kit.mjs          # copy kit/ into each mod
 node scripts/sync-kit.mjs --check  # fail if a copy differs
 ```
 
-`spotify` and `jump` use the kit. To add a mod, list its folder in `scripts/sync-kit.mjs`.
+`spotify`, `jump` and `run` use the kit. To add a mod, list its folder in `scripts/sync-kit.mjs`.
