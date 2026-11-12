@@ -5,7 +5,7 @@
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { spaces, machines, panes, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, layout, home } from "herdr";
+import { spaces, machines, panes, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, layout, home, props } from "herdr";
 
 // The islands' fill at the opacity in islands-workspace-chrome/settings.json (1 when unset).
 const islandFill = (c) => {
@@ -361,7 +361,9 @@ export default class Spaces extends View {
   // Only what's unusual, under the name: a small "spike" pill, then "\u21912 \u21931". The repo
   // is never shown. The branch goes when the name already says it (a worktree is named after
   // its branch), and master/main go: nearly every space is on one. Null: nothing to show.
+  // The layout can turn the pill off: "props": { "branch_pill": false } on this mod's block.
   gitTail(g, tree, name, t) {
+    if (props()?.branch_pill === false) return null;
     const raw = g.branch ?? "detached";
     const same = (a) => a.toLowerCase() === name.toLowerCase();
     const where = same(raw) || raw === "master" || raw === "main" ? "" : raw;

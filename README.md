@@ -42,6 +42,10 @@ Herdr, but every panel is its own rounded card on the canvas. IntelliJ Islands, 
 
 A layout plus six small mod clones that round off the shipped bars and lists and turn the tab bar controls into pills.
 
+Don't want the branch pill under each space name? Add `"props": { "branch_pill": false }` next to `"mod": "islands-spaces"` in the layout.
+
+Want all the tabs in one pill with dividers between them, instead of a pill each? Add `"props": { "joined": true }` next to `"mod": "islands-tabs"`.
+
 Want a wallpaper behind the cards? Drop an image in `~/.config/herdr-app/backgrounds/` and change the layout root to `"background": { "image": "backgrounds/your.png", "fit": "cover" }`.
 
 ## tourist
@@ -60,9 +64,34 @@ VS Code's zen mode for Herdr. Press `ctrl-shift-enter` (`cmd-shift-enter` on mac
 
 Anything you'd already hidden stays hidden when you leave zen. If your layout draws its own window buttons in the tab bar, those hide too until you press the key again.
 
+## spotify
+
+Spotify in Herdr. A now-playing slot for your bar, a hover card with the controls, and a dialog you drive from the keyboard. Press `ctrl-shift-m` (`cmd-shift-m` on macOS).
+
+![spotify](spotify/preview.png)
+
+`h`/`l` switch between Queue, Playlists, Search and Devices, `j`/`k` move, `enter` plays. `space` play/pause, `n`/`b` next/previous, `[`/`]` seek, `-`/`=` volume, `z` shuffle, `r` repeat, `s` search, `a` adds to the queue.
+
+It controls your Spotify, it plays nothing itself. Needs Spotify Premium, Spotify open on some device, and a free Spotify developer app of your own. The first open walks you through that.
+
+For the slot, add a block to your layout (`"card": "above"` opens the hover card upward, for a bottom bar):
+
+```json
+{ "id": "spotify", "type": "block", "size": { "px": 220 }, "content": { "mod": "spotify", "props": { "slot": true } } }
+```
+
+Built and tested on Windows. The macOS sign-in helper has not been run yet: if it misses the login, the dialog asks you to paste the browser's address instead.
+
 ## Install
 
 ### Tell your agent
+
+spotify:
+
+```text
+Read ~/.config/herdr-app/AGENTS.md, then add this mod:
+https://github.com/CodeyPacker/herdr-mods/tree/main/spotify
+```
 
 jump:
 

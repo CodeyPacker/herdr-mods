@@ -1,0 +1,5 @@
+{
+  "place": "none",
+  "title": "Spotify",
+  "overlay": { "kind": "dialog", "width": 860, "height": 0.92, "frame": "none" }
+}
