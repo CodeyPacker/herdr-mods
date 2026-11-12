@@ -11,8 +11,10 @@ A 560 px popup at the top of the window, in the shared kit's frame: popover
 background, 16 px round corners, its own border, 22 px padding. Top line:
 "Jump to…" (16 px semibold) and "Esc" at the right in the dim color.
 
-Every row is 32 px with 8 px round corners and starts with its letter badge, so
-the letters form one column at the left. Each space is a block: its own row with
+Every row is 32 px with 8 px round corners and starts with its letter badge.
+A space's tabs, agents and their labels are set in 33 px from it, behind a 1 px
+border-color line that drops from under the space's badge, so the space letters
+form one column and the tab letters a second. Each space is a block: its own row with
 the name in 14 px semibold and "Space" at the right, then a dim "Tabs" label and
 one row per tab (the tab's name, then what runs in it at the right in 11 px dim
 text: program names joined by " · ", or "empty"), then an "Agents" label and one
@@ -23,7 +25,7 @@ selected row has the `selected` background and an accent badge. A thin line
 separates one space's block from the next.
 
 Bottom, after a thin line: one row of key hints, `j/k`, `x` and `r` in
-accent/dim pairs, then `t` new tab and `n` new space, which are also buttons.
+accent/dim pairs, `R` set key, then `t` new tab and `n` new space, which are also buttons.
 ## How it behaves
 
 - Opens on the active tab of the active space.
@@ -50,8 +52,19 @@ accent/dim pairs, then `t` new tab and `n` new space, which are also buttons.
   for the avatar colors the shipped mods assign.
 - Commands: `tab.select {id}`, `space.select {id}`, `tab.new`, `space.new`,
   `tab.close {id, confirmed: true}`, `tab.rename {id, name}`, `space.rename {id, name}`.
-- `hints.json`: `{ "spaces": { "Logos": "l" }, "tabs": { "Logos/Code": "c" } }`,
-  read with `readTextFile(appHome() + "/hints.json")`.
+- `hints.json`: `{ "spaces": { "Logos": "l" }, "tabs": { "Code": "c", "Logos/Tests": "e" } }`,
+  read with `readTextFile(appHome() + "/hints.json")`. A tab is named alone
+  (every space) or as "space/tab" (one space, and it wins). Names match in any
+  case. An agent row uses its tab's letter.
+- Chosen letters may repeat, so every space's Code tab can be `c`. A letter
+  one row has jumps there. A letter several rows have moves to the next of
+  them, and `Enter` opens it. A space whose tabs share letters with other rows
+  does not jump on its letter: `l` selects Logos and waits, `c` then goes to
+  Logos/Code, `Enter` goes to Logos itself, `Esc` stops waiting. With no
+  repeated letters nothing waits, so an older `hints.json` behaves as before.
+- `shift-r` sets the selected row's letter in a box above the list and saves
+  it to `hints.json` with `writeTextFile`: a space by name, a tab as
+  "space/tab". An empty value removes the entry.
 - Theme colors only.
 
 ## Watch out

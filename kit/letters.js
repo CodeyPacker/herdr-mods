@@ -105,8 +105,8 @@ export function navigateByLetter(state, e, items) {
 }
 
 // A person's own letters live in ~/.config/herdr-app/hints.json, shared by every mod that uses letters:
-//   { "spaces": { "Logos": "l" }, "tabs": { "Logos/Code": "c" } }
-// Spaces by name, tabs as "space/tab". Reserved letters get ignored.
+//   { "spaces": { "Logos": "l" }, "tabs": { "Code": "c", "Logos/Tests": "e" } }
+// Spaces by name. Tabs by name for every space, or as "space/tab" for one. Reserved letters get ignored.
 export const LETTERS_FILE = "hints.json";
 
 /**
