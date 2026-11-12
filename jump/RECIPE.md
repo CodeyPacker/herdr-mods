@@ -45,7 +45,7 @@ accent/dim pairs, `R` set key, then `t` new tab and `n` new space, which are als
 
 - `mods/jump/main.js`, and `mods/jump/kit/`, this repo's shared kit: the frame,
   list rows, letter badges and their navigation, the key legend.
-- `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 560, "height": 0.75, "frame": "none" } }`.
+- `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 560, "height": 0.9, "frame": "none" } }`.
 - `keys.json` opens it: `"ctrl-shift-k": "mod.open:jump"`.
 - Data: `spaces()` for spaces and tabs, `panes()` for what each tab runs
   (`program.name`, or `mod`), `agents()` for status, `shared("space.colors")`
@@ -62,6 +62,11 @@ accent/dim pairs, `R` set key, then `t` new tab and `n` new space, which are als
   does not jump on its letter: `l` selects Logos and waits, `c` then goes to
   Logos/Code, `Enter` goes to Logos itself, `Esc` stops waiting. With no
   repeated letters nothing waits, so an older `hints.json` behaves as before.
+- A space's letter badge has no border, so only tabs and agents are outlined.
+  `"spaceColor"` in `hints.json` sets the color of a space's letter: a theme
+  color's name (`"ansi3"`), a plain color name (`"yellow"`, mapped to the
+  theme's `ansi0`..`ansi7`), or a hex color. Without it the letter is accent
+  when chosen or selected, muted otherwise.
 - `shift-r` sets the selected row's letter in a box above the list and saves
   it to `hints.json` with `writeTextFile`: a space by name, a tab as
   "space/tab". An empty value removes the entry.
@@ -75,7 +80,9 @@ accent/dim pairs, `R` set key, then `t` new tab and `n` new space, which are als
 - Elements are single-use: collect each space's rows before building its
   section.
 - A popup is sized by content; the list gets an estimated height, capped
-  at 470 px with a scrollbar so the key hints stay on screen.
+  at 90% of the window's height (`window.viewport_size()`, read in render)
+  less 130 px for the title, legend and padding. Past that it scrolls, so the
+  key hints stay on screen. The cap is 470 px if the size cannot be read.
 - Reserved letters, never hints: `t n q j k x r`.
 - The built-in picker stays installed; this mod has its own key instead.
 
