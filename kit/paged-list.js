@@ -1,8 +1,9 @@
 // A list that loads a page at a time and remembers which row is selected.
 
 /**
+ * One page of rows. `total` is how many rows exist in all, so the list knows whether to ask for more.
  * @template T
- * @typedef {import("./library.js").Page<T>} Page
+ * @typedef {{ rows: T[], total: number } | { error: string }} Page
  */
 
 /** @template T */

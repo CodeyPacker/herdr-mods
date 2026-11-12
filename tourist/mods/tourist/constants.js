@@ -25,6 +25,5 @@ export const FIX_TOOLS = ["--allowedTools", "Read", "Grep", "Glob", "Edit", "Mul
 export const AGENTS = [{ id: "claude", name: "Claude" }, { id: "codex", name: "Codex" }];
 // File extensions the editor highlights with another language's grammar.
 export const LANG = { ts: "js", tsx: "js", mts: "js", cts: "js", jsx: "js", mjs: "js", toml: "yaml", jsonc: "json", svelte: "html", vue: "html" };
-export const SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 // Panes at least this wide put the code beside the explanation.
 export const SPLIT_WIDTH = 1100;

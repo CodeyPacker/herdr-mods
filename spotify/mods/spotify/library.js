@@ -10,9 +10,8 @@ import { PLAYLIST_PAGE, SEARCH_PAGE } from "./constants.js";
  * @typedef {TrackRow | PlaylistRow | DeviceRow} Row
  */
 /**
- * One page. `total` is how many rows exist in all, so the list knows whether to ask for more.
  * @template T
- * @typedef {{ rows: T[], total: number } | { error: string }} Page
+ * @typedef {import("./kit/paged-list.js").Page<T>} Page
  */
 
 /** A song or podcast episode as a row, or null for an entry Spotify could not fill in. @param {any} item @returns {TrackRow | null} */

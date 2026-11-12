@@ -78,5 +78,3 @@ export const SETUP_STEPS = [
 
 /** How long "Copied" shows after the redirect URI is copied. */
 export const COPIED_MS = 2000;
-
-export const SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];

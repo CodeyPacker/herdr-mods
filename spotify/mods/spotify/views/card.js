@@ -2,10 +2,11 @@
 // progress, the playback buttons and the volume.
 import { div, image, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { slider, iconButton, iconPath, clock } from "../ui.js";
+import { slider, iconButton } from "../kit/controls.js";
+import { iconPath, clock } from "../ui.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
-/** @typedef {import("../ui.js").Theme} Theme */
+/** @typedef {import("../kit/theme.js").Theme} Theme */
 /** @typedef {import("../player.js").Track} Track */
 /** @typedef {import("../now-playing.js").NowPlaying} NowPlaying */
 /**
@@ -29,7 +30,7 @@ const VOLUME_W = BAR_W - 14 - VOLUME_LABEL_W - 16;
 export function playbackButtons(now, p, t, options = {}) {
   const { watch, large } = options;
   /** @param {string} id @param {string} name @param {(cx: Context) => void} click @param {{ lit?: boolean, big?: boolean, mark?: string }} [look] */
-  const button = (id, name, click, look) => iconButton(t, id, name, click, { ...look, large }).when(Boolean(watch), (el) => el.on_hover(watch?.(id) ?? (() => {})));
+  const button = (id, name, click, look) => iconButton(t, id, iconPath(name), click, { ...look, large }).when(Boolean(watch), (el) => el.on_hover(watch?.(id) ?? (() => {})));
   return h_flex().gap(large ? 22 : 6).items_center().flex_none()
     .child(button("sp-shuffle", "shuffle", (cx) => now.toggleShuffle(cx), { lit: p.shuffle }))
     .child(button("sp-previous", "previous", (cx) => now.previous(cx)))

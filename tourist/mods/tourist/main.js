@@ -13,7 +13,8 @@
 //   views/        the setup, tour, planning and error screens
 import { View } from "gpui-kit";
 import { v_flex, InputState, ScrollHandle } from "gpui-base";
-import { theme, nextCommand, props, run } from "herdr";
+import { nextCommand, props, run } from "herdr";
+import { colors } from "./kit/theme.js";
 import { SCOPES, DEPTHS, PASSES, SPLIT_WIDTH } from "./constants.js";
 import { startFolder, readRepo, git } from "./git.js";
 import { AgentSession, agentName, findAgents, rememberAgent } from "./agent.js";
@@ -1088,8 +1089,11 @@ export default class Tourist extends View {
   }
 
   render(cx) {
-    const t = theme();
+    const t = colors();
     const root = v_flex().id("tourist").relative().track_focus(this.handle).on_key_down((e, cx) => this.key(e, cx))
+      // A click on the code, the text or a divider can take the keyboard away. Take it back
+      // once the click is over, unless it landed in a text box.
+      .on_mouse_up("left", (_e, cx) => { cx.timer.after(30, () => { if (!this.typing) this.handle.focus(); }); })
       .size_full().min_h(0).text_color(t.foreground).text_size(13)
       .on_size_change((size, cx) => { if (size.width !== this.width) { this.width = size.width; cx.notify(); } }); // no fill: the pane's own background shows, like a terminal
     if (this.phase === "setup") return root.child(setupView(this, t));

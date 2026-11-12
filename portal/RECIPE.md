@@ -9,49 +9,47 @@ holding a port. macOS and Windows.
 
 ## What you see
 
-An 860 px wide dialog, 80% of the window tall, no frame of its own: a 14 px
-rounded card with a 1 px `border`, 16 px padding and the theme's `popover`
-background (at the islands main opacity plus 0.1 when the islands layout
-shares one). Top to bottom:
+An 860 px wide dialog, 80% of the window tall, in the shared kit's frame: a
+16 px rounded card with a 1 px `border`, 22 px padding and the theme's
+`popover` background. Top to bottom:
 
-- Title row: "Portal" (15 px semibold), then the counts in 11.5 px dim
+- Title row: "Portal" (16 px semibold), then the counts in 11.5 px dim
   ("12 bindings · 7 processes · 2 favorites", or "5 of 12" when filters cut
   them). At the right the status ("Updated 14:02:11", or in the `blocked`
   color "Stale · last ok …" / "Partial · <error>") and "Esc" in dim.
-- Two filter boxes, 26 px tall on the `background` color: "Process name,
+- Two filter boxes, 30 px tall with 8 px round corners on the `background` color: "Process name,
   path or pid" filling the row, and a 180 px "Ports, e.g. 3000-3999" box
   whose border turns `blocked` when the range is invalid. The focused box has
   an accent border.
-- Chips, 24 px: TCP, UDP, ★ (favorites only), an address dropdown (All
+- Chips, 26 px with 8 px round corners: TCP, UDP, ★ (favorites only), an address dropdown (All
   addresses, Loopback, Wildcard, Specific), then "Sort" with Name, PID and
   Port and an "↑ asc" / "↓ desc" chip. An on chip has an accent border and the
   `selected` background. At the right, a refresh button (↻, a spinner while
   scanning, tooltip "Refresh (every 5s)") and an add-favorite button (+★).
 - The list, with a vertical scrollbar:
   - FAVORITES header (11 px dim caps), with "N hidden by filters" at the
-    right when some are. One 30 px row per favorite port, lowest first: a
+    right when some are. One 32 px row per favorite port, lowest first: a
     star, the port in semibold, an 8 px dot (`ansi2` when something listens,
     dim when not), the owner names or "offline" / "not checked yet", and the
     URL in dim.
   - PROCESSES header, with "by lowest port ↑" (or name, PID) at the right.
-    One 30 px row per process: ▸/▾, the name in semibold (max 220 px), "pid N",
+    One 32 px row per process: ▸/▾, the name in semibold (max 220 px), "pid N",
     an "unverified" tag when its details couldn't be read, its first four
     ports ("+3" past that), and "N hidden" when filters hide some of its
     sockets.
   - An expanded process shows 22 px detail rows indented 44 px (PID, User,
-    Started, Path, Command) and then one 28 px row per socket: a TCP/UDP tag,
+    Started, Path, Command) and then one 32 px row per socket: a TCP/UDP tag,
     IPv4 / IPv6 / IPv4+6, the address (`*:5000`, `127.0.0.1:3000`,
     `[::1]:8080`), a star when favorited, an HTTP / HTTPS / URL / … tag in
     accent, and the URL in dim.
   - Any row whose port is used by more than one socket gets a "Shared port"
     tag.
-  - The selected row has the `selected` background and a 3 px accent bar at
-    its left edge.
+  - The selected row has the `selected` background and 8 px round corners.
 - A message strip, 34 px with an 8 px rounded border, only when there is
   something to say: the last action's result, a question, or an input box.
-- Key hints in accent/dim pairs: `j/k` move, `space` expand, `enter` open,
-  `f` favorite, `n` add, `e` URL, `x` end, `c` copy, `t/u/m/a` filters, `/ p`
-  search, `s` sort, `r` refresh.
+- A thin line, then one row of key hints in accent/dim pairs: `j/k` move, `space` expand, `enter` open,
+  `f` favorite, `n` add, `e` URL, `x` end, `c` copy, `t/u/m/a` filters, `/` search,
+  `p` ports, `s` sort, `r` refresh.
 
 Before the first scan finishes the list says "Scanning…". On Linux the card
 only says "Portal supports macOS and Windows only for now."
@@ -93,8 +91,9 @@ only says "Portal supports macOS and Windows only for now."
 
 ## Built from
 
-- `mods/portal/main.js` (the view) and `mods/portal/scan.js` (scanning,
-  probing, ending processes).
+- `mods/portal/main.js` (the view), `mods/portal/scan.js` (scanning,
+  probing, ending processes), and `mods/portal/kit/`, this repo's shared kit:
+  the frame, list rows, chips, toolbar buttons and the key legend.
 - `mod.json`: `{ "place": "none", "title": "Portal", "overlay": { "kind":
   "dialog", "width": 860, "height": 0.8, "frame": "none" }, "refresh": 5,
   "star": "accent" }`. `refresh` is seconds between scans and `star` is a
@@ -141,7 +140,8 @@ only says "Portal supports macOS and Windows only for now."
 - `net` and `fetch` take no timeout, so a probe races a 1 s timer and closes
   the socket.
 - `net`'s `write` takes strings, so the TLS hello keeps every byte below 0x80.
-- Rows have fixed heights (30, 28, 22 px) for the virtual list.
+- Rows have fixed heights (32 and 22 px) for the virtual list. The list reports
+  clicks itself, so the kit's rows are built without a click handler.
 - A `"place": "none"` mod lives only as its overlay, so nothing scans while
   it's closed.
 

@@ -8,7 +8,7 @@ import { div } from "gpui-kit";
 import { v_flex, h_flex, Scrollbar } from "gpui-base";
 import { settings } from "herdr";
 import { commentsOn, coveredRows, linesOf } from "../comments.js";
-import { textInput, spinner } from "../ui.js";
+import { spinner, textInput } from "../kit/controls.js";
 
 /** One diff line. `mark` is { covered, stop, linked }: under a multi-line comment, in the current stop, pointed at by a link. */
 function row(r, i, id, t, onRow, mark = {}) {

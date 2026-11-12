@@ -4,14 +4,14 @@
 import { InputState, ScrollHandle } from "gpui-base";
 import { SETTLE_MS, SEEK_STEP_MS, VOLUME_STEP } from "./constants.js";
 import { NowPlaying } from "./now-playing.js";
-import { PagedList } from "./paged-list.js";
+import { PagedList } from "./kit/paged-list.js";
 import { readQueue, readPlaylists, readPlaylistTracks, searchTracks, readDevices } from "./library.js";
 import { playTracks, playIn, addToQueue, playOn, skipAhead } from "./controls.js";
 import { browserView } from "./views/browser.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("gpui-kit").KeyEvent} KeyEvent */
-/** @typedef {import("./ui.js").Theme} Theme */
+/** @typedef {import("./kit/theme.js").Theme} Theme */
 /** @typedef {import("./dialog.js").Dialog} Dialog */
 /** @typedef {import("./library.js").Row} Row */
 /** @typedef {import("./library.js").PlaylistRow} PlaylistRow */

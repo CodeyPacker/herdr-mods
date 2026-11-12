@@ -16,7 +16,11 @@
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { spaces, panes, terminals, machines, focused, run, hc, exec, notify, props, closeOverlay, openOverlay, shared, window as win, readTextFile, appHome, nextCommand, home } from "herdr";
-import { colors, panelFill, hints, row, avatar, spaceName, spaceNote, glyph, navigate, spaceColor, hintLine, readHintConfig, ROW_H } from "./tiles.js";
+import { colors, SIZE } from "./kit/theme.js";
+import { frame, divider } from "./kit/frame.js";
+import { legend } from "./kit/legend.js";
+import { assignLetters, letterRow, navigateByLetter, readLetterConfig } from "./kit/letters.js";
+import { statusDot, spaceNote, spaceColor, avatar, spaceName } from "./kit/spaces.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("gpui-kit").KeyEvent} KeyEvent */
@@ -24,7 +28,7 @@ import { colors, panelFill, hints, row, avatar, spaceName, spaceNote, glyph, nav
 /** @typedef {import("herdr").SpaceInfo} SpaceInfo */
 /** @typedef {import("herdr").PaneInfo} PaneInfo */
 /** @typedef {import("herdr").ExecResult} ExecResult */
-/** @typedef {import("./tiles.js").HintConfig} HintConfig */
+/** @typedef {import("./kit/letters.js").LetterConfig} HintConfig */
 /** @typedef {{ name: string, cmd: string, cwd: string, autostart: boolean, key: string | null, env: Record<string, string> | null }} Proc */
 /** @typedef {{ root: string | null, procs: Proc[] | null, error?: string }} Config */
 /** @typedef {{ state: string, exit_code: number | null, reason: string | null }} Fin */
@@ -42,6 +46,14 @@ const LABEL_NAME = "run.name";
 // These do things, so they can't be hints.
 const RESERVED = "sxruoaqjk";
 const STOP_WAIT_MS = 10000;
+/** The space between one space's rows and the next space's. */
+const BLOCK_GAP = 8;
+/**
+ * The list scrolls past this height. The popup may be at most 75% of the window (mod.json), and
+ * the frame's title, legend and padding take about 125 px of that, so this keeps the legend on
+ * screen in a window as short as 800 px.
+ */
+const MAX_LIST_H = 470;
 
 /**
  * Where the space is right now: the folder of the pane you're in (the focused
@@ -200,7 +212,7 @@ export default class Procs extends View {
     this.finished = {};
     /** @type {HintConfig} */
     this.hintConfig = { spaces: {}, tabs: {} };
-    cx.spawn(async (cx) => { this.hintConfig = await readHintConfig(readTextFile, appHome); cx.notify(); });
+    cx.spawn(async (cx) => { this.hintConfig = await readLetterConfig(readTextFile, appHome); cx.notify(); });
     /** @type {string[] | null} */
     this.shell = null;
     cx.spawn(async (cx) => { this.shell = await findShell(); cx.notify(); });
@@ -404,7 +416,7 @@ export default class Procs extends View {
       }
     }
     const wanted = out.map((it) => (it.kind === "space" ? this.hintConfig.spaces[it.s.name] : it.kind === "proc" ? it.p.key : null));
-    const hs = hints(out.length, RESERVED, wanted);
+    const hs = assignLetters(out.length, RESERVED, wanted);
     out.forEach((it, i) => { it.hint = hs[i]; it.pinned = !!wanted[i] && hs[i] === String(wanted[i]).toLowerCase(); });
     return out;
   }
@@ -549,7 +561,7 @@ export default class Procs extends View {
       .child(div().flex_none().font_semibold().text_color(t.foreground).child(p.name))
       .child(div().flex_none().text_color(t.dim).child(`${p.spaceName} · ${state}`))
       .child(div().flex_1())
-      .child(hintLine(t, [["esc", "close"], ["o", "keep as tab"], ["b", "back to list"]]))
+      .child(legend(t, [["esc", "close"], ["o", "keep as tab"], ["b", "back to list"]]))
       .child(div().flex_none().text_size(11).text_color(t.dim).child("click the output to type in it, the bar to get these keys back"));
   }
 
@@ -564,9 +576,9 @@ export default class Procs extends View {
   /** @param {KeyEvent} e @param {Context} cx */
   key(e, cx) {
     const items = this.items();
-    /** @type {import("./tiles.js").NavState} */
+    /** @type {import("./kit/letters.js").NavState} */
     const state = { at: this.at ?? 0, typed: this.typed };
-    const r = navigate(state, e, items);
+    const r = navigateByLetter(state, e, items);
     this.at = state.at;
     this.typed = state.typed;
     this.note = "";
@@ -617,7 +629,16 @@ export default class Procs extends View {
     const space = /** @type {Record<string, string> | undefined} */ (shared("space.colors"));
     const all = spaces();
     // gpui elements are single-use, so collect each space's rows first and build the block after.
-    /** @type {ReturnType<typeof row>[][]} */
+    /**
+     * A row's shell: its letter badge first.
+     * @param {string} id @param {Item} it @param {boolean} on @param {(cx: Context) => void} click
+     */
+    const shell = (id, it, on, click) => letterRow(t, { id, letters: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, compact: true, click });
+    /** Clicking a space or repo header selects its first process, like typing its letter. @param {number} i */
+    const selectUnder = (i) => (/** @type {Context} */ cx) => { this.at = i + 1 < items.length && items[i + 1].kind === "proc" ? i + 1 : i; cx.notify(); };
+    /** The small print that fills the rest of a row. @param {string} text */
+    const detail = (text) => div().flex_1().min_w(0).truncate().text_size(SIZE.small).text_color(t.dim).child(text);
+    /** @type {ReturnType<typeof shell>[][]} */
     const blocks = [];
     items.forEach((it, i) => {
       const on = i === at;
@@ -631,11 +652,11 @@ export default class Procs extends View {
         else if (cfg?.procs && !running && auto) empty = `nothing running · u starts ${auto}`;
         else if (cfg?.procs?.length === 0) empty = `${FILE} declares no procs`;
         blocks.push([
-          row(t, { id: `h-${it.s.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => { this.at = i + 1 < items.length && items[i + 1].kind === "proc" ? i + 1 : i; cx.notify(); } })
+          shell(`h-${it.s.id}`, it, on, selectUnder(i))
             .child(avatar(it.s, spaceColor(t, it.s, space)))
             .child(spaceName(t, it.s))
-            .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(spaceNote(all, it.s, home())))
-            .when(!!empty, (el) => el.child(div().flex_none().max_w(280).truncate().text_size(11).text_color(cfg?.error ? t.blocked : t.dim).child(empty ?? ""))),
+            .child(detail(spaceNote(all, it.s, home())))
+            .when(!!empty, (el) => el.child(div().flex_none().max_w(280).truncate().text_size(SIZE.small).text_color(cfg?.error ? t.blocked : t.dim).child(empty ?? ""))),
         ]);
         return;
       }
@@ -643,50 +664,37 @@ export default class Procs extends View {
         // A repo this space left, under the space: its folder name and where it is.
         const name = (it.cfg.root ?? "").replace(/[\\/]+$/, "").split(/[\\/]/).pop() ?? "";
         blocks[blocks.length - 1].push(
-          row(t, { id: `r-${it.s.id}-${it.cfg.root}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => { this.at = i + 1 < items.length && items[i + 1].kind === "proc" ? i + 1 : i; cx.notify(); } })
+          shell(`r-${it.s.id}-${it.cfg.root}`, it, on, selectUnder(i))
             .child(div().w(18).flex_none())
             // The space avatar's shape, outlined: a project, not a space.
             .child(h_flex().size(18).flex_none().rounded(5).border(1).border_color(t.dim).items_center().justify_center()
               .text_size(10.5).font_bold().text_color(t.dim).child([...name][0]?.toUpperCase() ?? "?"))
             .child(div().flex_none().font_semibold().text_color(t.foreground).child(name))
-            .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child("still running · you've left this repo")),
+            .child(detail("still running · you've left this repo")),
         );
         return;
       }
       blocks[blocks.length - 1].push(
-        row(t, { id: `p-${it.key}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => { this.at = i; cx.notify(); } })
+        shell(`p-${it.key}`, it, on, (cx) => { this.at = i; cx.notify(); })
           // A left repo's processes sit one step further in, under its badge.
           .child(div().w(it.extra ? 44 : 18).flex_none())
-          .child(glyph(t, it.busy ? "working" : it.state))
-          .child(div().flex_none().max_w(200).truncate().text_color(t.muted).child(it.p.name))
-          .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(it.detail)),
+          .child(statusDot(t, it.busy ? "working" : it.state))
+          .child(div().flex_none().max_w(200).truncate().text_color(t.foreground).child(it.p.name))
+          .child(detail(it.detail)),
       );
     });
     const rowCount = blocks.reduce((n, b) => n + b.length, 0);
     const sections = blocks.map((rows) => v_flex().gap(2).children(rows));
     if (!items.length) sections.push(div().text_color(t.dim).child("no spaces"));
     // The popup sizes to content, so the scrollable list needs an explicit height or it collapses.
-    const est = rowCount * (ROW_H + 2) + blocks.length * 8 || 24;
-    const listH = Math.min(520, est);
+    // Each row is followed by its block's 2 px gap, and each block by the list's gap.
+    const est = rowCount * (SIZE.compactRow + 2) + blocks.length * BLOCK_GAP || 24;
+    const listH = Math.min(MAX_LIST_H, est);
 
-    return v_flex()
-      .id("run")
-      .track_focus(this.handle)
-      .on_key_down((e, cx) => this.key(e, cx))
-      .w_full()
-      .min_h(0)
-      .p(18)
-      .gap(10)
-      .bg(panelFill(t, 1, 0.1, t.popover)) // the dialogs' popover color at the islands panel opacity, a bit more solid
-      .rounded(14).overflow_hidden().border_1().border_color(t.border) // our own frame (mod.json says frame: none); no shadow, Herdr clips it
-      .text_size(13)
-      .child(
-        h_flex().items_center().gap(10)
-          .child(div().flex_1().text_size(15).font_semibold().text_color(t.foreground).child(this.all ? "Run · every space" : "Run"))
-          .child(div().pr(10).text_size(11).text_color(t.dim).child("Esc")),
-      )
-      .child(v_flex().id("run-list").h(listH).flex_none().overflow_y_scrollbar().gap(8).children(sections))
-      .when(!!this.note, (el) => el.child(div().text_size(11).text_color(t.blocked).child(this.note)))
-      .child(hintLine(t, [["j/k", "move"], ["s", "start"], ["x", "stop"], ["r", "restart"], ["u", "up all"], ["enter", "peek"], ["a", this.all ? "this space" : "all spaces"]]));
+    return frame(t, { id: "run", title: this.all ? "Run · every space" : "Run", handle: this.handle, onKey: (e, cx) => this.key(e, cx) })
+      .child(v_flex().id("run-list").h(listH).flex_none().overflow_y_scrollbar().gap(BLOCK_GAP).children(sections))
+      .when(!!this.note, (el) => el.child(div().text_size(SIZE.small).text_color(t.blocked).child(this.note)))
+      .child(divider(t))
+      .child(legend(t, [["j/k", "move"], ["s", "start"], ["x", "stop"], ["r", "restart"], ["u", "up all"], ["enter", "peek"], ["a", this.all ? "this space" : "all spaces"]]));
   }
 }

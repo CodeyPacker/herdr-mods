@@ -4,7 +4,7 @@ import { h_flex, Popup } from "gpui-base";
 import { cardView } from "./card.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
-/** @typedef {import("../ui.js").Theme} Theme */
+/** @typedef {import("../kit/theme.js").Theme} Theme */
 /** @typedef {import("../player.js").Playback} Playback */
 /** @typedef {import("../slot.js").Slot} Slot */
 /**

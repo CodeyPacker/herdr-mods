@@ -2,27 +2,31 @@
 import { div, image, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { TABS } from "../browser.js";
-import { slider, textInput, hintLine, spinner, clock, iconPath } from "../ui.js";
+import { slider, textInput, spinner } from "../kit/controls.js";
+import { divider } from "../kit/frame.js";
+import { legend } from "../kit/legend.js";
+import { listRow, listNote } from "../kit/list.js";
+import { tabStrip } from "../kit/tabs.js";
+import { clock, iconPath } from "../ui.js";
 import { playbackButtons } from "./card.js";
 import { restingText } from "./slot.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
-/** @typedef {import("../ui.js").Theme} Theme */
+/** @typedef {import("../kit/theme.js").Theme} Theme */
+/** @typedef {import("../kit/theme.js").Color} Color */
+/** @typedef {import("../kit/legend.js").Hint} Hint */
 /** @typedef {import("../browser.js").Browser} Browser */
 /** @typedef {import("../browser.js").Tab} Tab */
 /** @typedef {import("../library.js").Row} Row */
 /** @typedef {import("../player.js").Track} Track */
 
 const ART_SIZE = 104;
-const ROW_H = 38;
 /** The width kept for a time or a percent beside a slider. */
 const SIDE_W = 40;
 const SLIDER_GAP = 12;
 
 /** Each tab's icon and name. @type {Record<Tab, [string, string]>} */
 const TAB_LABELS = { queue: ["queue", "Queue"], playlists: ["playlists", "Playlists"], search: ["search", "Search"], devices: ["devices", "Devices"] };
-
-/** @typedef {import("../ui.js").Hint} Hint */
 
 /** The hints that depend on what the list shows. Kept short: all hints share one line. @param {Browser} b @returns {Hint[]} */
 function listHints(b) {
@@ -31,15 +35,19 @@ function listHints(b) {
   return [];
 }
 
-/** The hints that are always there. Playback keys show their button's icon in place of a word. @type {Hint[]} */
+/** The hints that are always there. @type {Hint[]} */
 const MOVE_HINTS = [["j/k", "move"], ["h/l", "tab"]];
-/** @type {Hint[]} */
-const PLAYBACK_HINTS = [["space", { icon: "play" }], ["n", { icon: "next" }], ["b", { icon: "previous" }], ["[ ]", "seek"], ["- =", { icon: "volume" }],
-  ["z", { icon: "shuffle" }], ["r", { icon: "repeat" }], ["shift-x", "sign out"], ["q", "close"]];
+
+/** Playback keys show their button's icon in place of a word. @returns {Hint[]} */
+function playbackHints() {
+  const icon = (/** @type {string} */ name) => ({ icon: iconPath(name) });
+  return [["space", icon("play")], ["n", icon("next")], ["b", icon("previous")], ["[ ]", "seek"], ["- =", icon("volume")],
+    ["z", icon("shuffle")], ["r", icon("repeat")], ["shift-x", "sign out"], ["q", "close"]];
+}
 
 /**
  * A full-width slider with something on each side of it.
- * @param {Browser} b @param {Theme} t @param {any} state the slider's state @param {any} color the fill
+ * @param {Browser} b @param {Theme} t @param {any} state the slider's state @param {Color} color the fill
  * @param {any} left @param {any} right what sits before and after the line
  */
 function sliderRow(b, t, state, color, left, right) {
@@ -73,16 +81,12 @@ function header(b, p, t) {
 
 /** @param {Browser} b @param {Theme} t */
 function tabs(b, t) {
-  return h_flex().flex_none().gap(6).children(TABS.map((tab) => {
-    const [icon, name] = TAB_LABELS[tab];
-    const on = tab === b.tab;
-    const ink = on ? t.foreground : t.muted;
-    return h_flex().id(`sp-tab-${tab}`).h(34).px(14).gap(8).items_center().rounded(8).cursor_pointer()
-      .when(on, (el) => el.bg(t.selected))
-      .hover((s) => s.bg(t.hover))
-      .on_click((_e, cx) => (tab === "search" ? b.startSearch(cx) : b.showTab(tab, cx)))
-      .child(svg(iconPath(icon)).size(15).flex_none().text_color(ink))
-      .child(div().text_size(13.5).text_color(ink).child(name));
+  return tabStrip(t, TABS.map((tab) => {
+    const [icon, label] = TAB_LABELS[tab];
+    return {
+      id: tab, label, icon: iconPath(icon), on: tab === b.tab,
+      click: (/** @type {Context} */ cx) => (tab === "search" ? b.startSearch(cx) : b.showTab(tab, cx)),
+    };
   }));
 }
 
@@ -124,23 +128,20 @@ function emptyText(b) {
 /** The scrolling list, or a line saying why there is none. @param {Browser} b @param {Theme} t */
 function listArea(b, t) {
   const list = b.list();
-  const note = (/** @type {any} */ child) => h_flex().px(12).py(10).gap(8).items_center().text_size(13).text_color(t.dim).child(child);
-  if (list.error) return v_flex().flex_1().min_h(0).child(note(list.error));
-  if (!list.loaded) return v_flex().flex_1().min_h(0).child(list.loading ? note(spinner(t)) : note(emptyText(b)));
-  if (list.rows.length === 0) return v_flex().flex_1().min_h(0).child(note(emptyText(b)));
+  const only = (/** @type {any} */ child) => v_flex().flex_1().min_h(0).child(listNote(t, child));
+  if (list.error) return only(list.error);
+  if (!list.loaded) return only(list.loading ? spinner(t) : emptyText(b));
+  if (list.rows.length === 0) return only(emptyText(b));
   const playingUri = b.now.track()?.uri;
   const rows = list.rows.map((row, i) =>
-    h_flex().id(`sp-row-${b.tab}-${i}`).h(ROW_H).flex_none().px(12).gap(10).items_center().rounded(8).cursor_pointer().text_size(13.5)
-      .when(i === list.at, (el) => el.bg(t.selected))
-      .hover((s) => s.bg(t.hover))
-      .on_click((_e, cx) => b.click(i, cx))
+    listRow(t, { id: `sp-row-${b.tab}-${i}`, on: i === list.at, click: (cx) => b.click(i, cx) })
       .children(rowCells(row, row.kind === "track" && row.uri === playingUri, t)));
   // The rows are the list's direct children, so the scroll handle can reveal one by its index.
   if (b.reveal) { b.scroll.scroll_to_item(list.at); b.reveal = false; }
   // The right padding keeps the last column clear of the scrollbar.
   return v_flex().id("sp-list").flex_1().min_h(0).overflow_y_scrollbar().track_scroll(b.scroll).gap(2).pr(12)
     .children(rows)
-    .when(list.loading, (el) => el.child(note(spinner(t))));
+    .when(list.loading, (el) => el.child(listNote(t, spinner(t))));
 }
 
 /** @param {Browser} b @param {Theme} t */
@@ -153,7 +154,7 @@ export function browserView(b, t) {
       ? header(b, p, t)
       : div().flex_none().py(8).text_size(13).text_color(t.dim)
         .child(p.kind === "idle" ? "Nothing playing. Start something from a list below, or press d to pick a device." : restingText(p)))
-    .child(div().h(1).flex_none().bg(t.border))
+    .child(divider(t))
     .child(tabs(b, t))
     .when(b.tab === "search", (el) => el.child(textInput(t, b.searchInput, b.typing)))
     .when(b.tab === "playlists" && Boolean(b.playlist), (el) => el.child(
@@ -162,6 +163,6 @@ export function browserView(b, t) {
     .child(listArea(b, t))
     .when(Boolean(notice), (el) => el.child(div().flex_none().text_size(11.5).text_color(notice?.bad ? t.ansi1 : t.ansi2).child(notice?.text ?? "")))
     // A line above the key hints, so they do not read as more list rows.
-    .child(div().h(1).flex_none().bg(t.border))
-    .child(hintLine(t, b.typing ? [["enter", "search"], ["esc", "back to the list"]] : [...MOVE_HINTS, ...listHints(b), ...PLAYBACK_HINTS]));
+    .child(divider(t))
+    .child(legend(t, b.typing ? [["enter", "search"], ["esc", "back to the list"]] : [...MOVE_HINTS, ...listHints(b), ...playbackHints()]));
 }
