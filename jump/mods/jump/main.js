@@ -5,7 +5,7 @@ import { colors, SIZE } from "./kit/theme.js";
 import { frame, divider } from "./kit/frame.js";
 import { textInput } from "./kit/controls.js";
 import { hint } from "./kit/legend.js";
-import { assignLetters, letterRow, navigateByLetter, readLetterConfig, LETTERS_FILE } from "./kit/letters.js";
+import { assignLetters, letterRow, navigateByLetter, readLetterConfig, configColor, LETTERS_FILE } from "./kit/letters.js";
 import { statusDot, spaceNote } from "./kit/spaces.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
@@ -30,11 +30,14 @@ const SPACE_GAP = 6;
 const CHILD_INDENT = 22;
 const CHILD_PAD = 10;
 /**
- * The list scrolls past this height. The popup may be at most 75% of the window (mod.json), and
- * the frame's title, legend and padding take about 125 px of that, so this keeps the legend on
- * screen in a window as short as 800 px.
+ * The list scrolls past its largest height. The popup may be at most this share of the window
+ * (the same number as mod.json's height), and the frame's title, legend and padding take about
+ * 130 px of that, so the list gets the rest and the legend stays on screen.
  */
-const MAX_LIST_H = 470;
+const POPUP_SHARE = 0.9;
+const FRAME_H = 130;
+/** The list's largest height when the window's size cannot be read. */
+const FALLBACK_LIST_H = 470;
 
 /** A chosen letter in lower case, or null when it is not letters or uses a reserved one. @param {unknown} v */
 function validLetters(v) {
@@ -68,7 +71,7 @@ export default class Jump extends View {
     cx.spawn(async (cx) => {
       // Names match in any case, so keep the keys in lower case.
       const c = await readLetterConfig(readTextFile, appHome);
-      this.hintConfig = { spaces: lowerKeys(c.spaces), tabs: lowerKeys(c.tabs) };
+      this.hintConfig = { ...c, spaces: lowerKeys(c.spaces), tabs: lowerKeys(c.tabs) };
       cx.notify();
     });
     /** @type {FocusHandle} */
@@ -193,7 +196,7 @@ export default class Jump extends View {
         if (letters) entries[name] = letters;
         json[group] = entries;
         await writeTextFile(path, JSON.stringify(json, null, 2) + "\n", text);
-        this.hintConfig = { spaces: lowerKeys(json.spaces ?? {}), tabs: lowerKeys(json.tabs ?? {}) };
+        this.hintConfig = { ...this.hintConfig, spaces: lowerKeys(json.spaces ?? {}), tabs: lowerKeys(json.tabs ?? {}) };
       } catch {
         // The file could not be read or written, so the letters stay as they were.
       }
@@ -307,9 +310,12 @@ export default class Jump extends View {
     this.at = Math.max(0, Math.min(this.at, items.length - 1));
     const at = this.at;
     const all = spaces();
+    // A space's badge has no border, so only what is inside a space is outlined. Its letter takes the config's color.
+    const spaceBadge = { border: false, color: configColor(t, this.hintConfig.spaceColor) };
     /** A row's shell: its letter badge first. @param {string} id @param {Item} it @param {boolean} on */
     const shell = (id, it, on) => letterRow(t, {
       id, letters: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, compact: true, click: (cx) => this.go(it, cx),
+      badge: it.kind === "space" ? spaceBadge : undefined,
     });
     /** The small print at a row's right. @param {string} text */
     const detail = (text) => div().flex_none().max_w(200).truncate().text_size(SIZE.small).text_color(t.dim).child(text);
@@ -377,7 +383,10 @@ export default class Jump extends View {
     // The popup sizes to content, so the scrollable list needs an explicit height or it collapses.
     // Every child is followed by the list's 2 px gap, and a line between spaces has its margin above and below.
     const est = rowCount * (SIZE.compactRow + 2) + labelCount * (LABEL_H + 2) + Math.max(0, blocks.length - 1) * (SPACE_GAP * 2 + 3);
-    const listH = Math.min(MAX_LIST_H, est);
+    // The list grows with the window, so it only scrolls when the window has no more room.
+    let maxListH = FALLBACK_LIST_H;
+    try { maxListH = Math.max(200, Math.floor(window.viewport_size().height * POPUP_SHARE) - FRAME_H); } catch { /* keep the fallback */ }
+    const listH = Math.min(maxListH, est);
 
     return frame(t, { id: "jump", title: "Jump to…", handle: this.handle, onKey: (e, cx) => this.key(e, cx) })
       .when(!!this.renaming, (el) => el.child(
