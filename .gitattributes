@@ -1,0 +1,2 @@
+# Git runs hooks with sh, which needs plain line endings on every system.
+.githooks/* text eol=lf
