@@ -92,12 +92,20 @@ export default class Tabs extends View {
       return 30 + (program?.icon ? 21 : 0) + Math.min(name.length * 6.2, 170) + status + (c.active ? 19 : 0);
     };
     const fit = this.fitTabs(shown, width);
+    // props.joined: all tabs share one pill with a thin divider between them, instead of a pill each.
+    const joined = props()?.joined === true;
     // compact: icon only (first letter without one), name in a tooltip. faded: more tabs are hidden past it.
-    const item = (c, i, compact, faded) => {
+    // first, last: this tab sits at that end of the joined pill.
+    const item = (c, i, compact, faded, first = false, last = false) => {
       const { program, name } = info(c);
-      return h_flex().id(`tab-${c.id}`).h_full().px(compact ? 10 : 14).gap(7).rounded(14).items_center().flex_none().text_size(12) // as tall and round as the Herdr card
+      return h_flex().id(`tab-${c.id}`).h_full().px(compact ? 10 : 14).gap(7).items_center().flex_none().text_size(12)
         .when(compact, el => el.tooltip(name)).when(faded, el => el.opacity(0.4))
-        .border(1).border_color(t.border).bg(islandFill(t.surface)).text_color(c.active ? t.ansi3 : t.muted) // every tab is a pill, the active one in the theme's yellow (ansi3), like the branch pill
+        // Every tab is a pill, as tall and round as the Herdr card. When joined, the one shared pill around them draws that instead.
+        .when(!joined, el => el.rounded(14).border(1).border_color(t.border).bg(islandFill(t.surface)))
+        // The pill clips to a rectangle, not to its round ends, so the end tabs round their own outer corners
+        // (the pill's 14 minus its 1 px border) to keep the hover color inside.
+        .when(joined && first, el => el.rounded_l(13)).when(joined && last, el => el.rounded_r(13))
+        .text_color(c.active ? t.ansi3 : t.muted) // the active one in the theme's yellow (ansi3), like the branch pill
         .hover(s => s.bg(t.hover))
         .on_mouse_down("left", (e, cx) => { cx.stop_propagation(); this.pressed = i; if (e.click_count === 2) run("tab.rename", { id: c.id }); })
         .on_mouse_up("left", () => {
@@ -142,15 +150,21 @@ export default class Tabs extends View {
           .child(button("maximize", w.platform === "windows" ? svg(`mods/islands-tabs/${w.maximized ? "win-restore" : "win-max"}.svg`).size(16) : "□", () => run("window.maximize")))
           .child(button("close-window", w.platform === "windows" ? svg("mods/islands-tabs/win-close.svg").size(16) : svg("mods/pane/close.svg").size(13), () => run("window.close"))));
     if (part === "actions") return h_flex().size_full().justify_end().items_center().child(actions);
+    const tabItems = shown.slice(fit.from, fit.to).map((c, k) => {
+      const i = fit.from + k;
+      return item(c, i, fit.compact && !c.active, (k === 0 && fit.from > 0) || (i === fit.to - 1 && fit.to < shown.length), k === 0, i === fit.to - 1);
+    });
+    // Joined: one pill that hugs the tabs, clipped to its round ends, with a divider before every tab but the first.
+    const strip = joined && tabItems.length > 0
+      ? [h_flex().id("tab-pill").h_full().flex_none().items_center().rounded(14).overflow_hidden().border(1).border_color(t.border).bg(islandFill(t.surface))
+          .children(tabItems.flatMap((el, k) => (k === 0 ? [el] : [div().w(1).h(14).flex_none().bg(t.border), el])))]
+      : tabItems;
     return h_flex().size_full().min_w(0).pl(lightsPadding).gap(3).items_center() // no fill: the canvas shows through
       .on_mouse_up("left", () => { this.pressed = null; })
       .on_scroll_wheel(e => { if (Math.abs(e.delta.y) >= 1) run(e.delta.y > 0 ? "tab.prev" : "tab.next"); })
       .child(h_flex().id("tab-scroll").flex_1().min_w(0).h_full().items_center().gap(3).overflow_x_scrollbar()
         .on_size_change((s, cx) => { const w = Math.floor(s.width); if (w !== this.stripWidth) { this.stripWidth = w; cx.notify(); } })
-        .children(shown.slice(fit.from, fit.to).map((c, k) => {
-          const i = fit.from + k;
-          return item(c, i, fit.compact && !c.active, (k === 0 && fit.from > 0) || (i === fit.to - 1 && fit.to < shown.length));
-        })))
+        .children(strip))
       .when(part !== "tabs", el => el.child(actions));
   }
 }
