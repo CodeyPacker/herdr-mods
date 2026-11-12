@@ -3,7 +3,9 @@
 import { div } from "gpui-kit";
 import { v_flex, h_flex, Editor, TextView, Scrollbar, h_resizable, v_resizable, resizable_panel } from "gpui-base";
 import { settings } from "herdr";
-import { button, spinner, textInput } from "../ui.js";
+import { button } from "../ui.js";
+import { spinner, textInput } from "../kit/controls.js";
+import { paneHeader, paneBar, tag } from "../kit/pane.js";
 import { diffView } from "./diff.js";
 import { checkCounts } from "../checks.js";
 
@@ -11,18 +13,15 @@ import { checkCounts } from "../checks.js";
 export function tourView(v, t) {
   const plan = v.plan, s = plan.stops[v.idx];
   const other = v.other, file = other ?? s.file;
-  const header = other ? h_flex().px(14).py(10).gap(10).items_center().border_b_1().border_color(t.border)
-    .child(div().flex_none().px(6).py(1).rounded(5).bg(t.raised).text_size(11).text_color(t.accent)
-      .child(v.files?.side.some(f => f.file === other) ? "Tests, docs and generated" : "Also changed"))
+  const header = other ? paneHeader(t)
+    .child(tag(t, v.files?.side.some(f => f.file === other) ? "Tests, docs and generated" : "Also changed"))
     .child(div().flex_1().min_w(0).truncate().font_semibold().child(other.split("/").pop()))
     .child(div().max_w(200).truncate().text_size(11.5).text_color(t.dim).child(plan.title ?? ""))
-    : h_flex().px(14).py(10).gap(10).items_center().border_b_1().border_color(t.border)
+    : paneHeader(t)
     .child(div().text_size(11.5).text_color(t.dim).child(`${v.idx + 1} / ${plan.stops.length}`))
-    .when(Boolean(s.group), el => el.child(div().flex_none().max_w(180).truncate().px(6).py(1).rounded(5).bg(t.raised)
-      .text_size(11).text_color(t.accent).child(String(s.group))))
+    .when(Boolean(s.group), el => el.child(tag(t, String(s.group)).max_w(180).truncate()))
     .child(div().flex_1().min_w(0).truncate().font_semibold().child(s.title))
-    .when(Boolean(v.pr?.sinceOid), el => el.child(div().flex_none().px(6).py(1).rounded(5).bg(t.raised).text_size(11).text_color(t.accent)
-      .child(`since your review at ${v.pr.sinceOid.slice(0, 7)}`)))
+    .when(Boolean(v.pr?.sinceOid), el => el.child(tag(t, `since your review at ${v.pr.sinceOid.slice(0, 7)}`)))
     .when(Boolean(plan.savedAt), el => el.child(div().flex_none().text_size(11).text_color(t.dim).child("saved review · r plans again")))
     .child(div().max_w(200).truncate().text_size(11.5).text_color(t.dim).child(plan.title ?? ""));
   const badge = checksBadge(v, t);
@@ -78,7 +77,7 @@ export function tourView(v, t) {
   // The ask box is only drawn while asking, so tour keys can never land in it.
   const ask = div().px(14).pb(8).child(textInput(t, v.input, true));
   const free = !v.busy;
-  const bar = h_flex().px(14).py(10).gap(6).flex_wrap().border_t_1().border_color(t.border)
+  const bar = paneBar(t)
     .child(button(t, "prev", "Previous", "k", Boolean(v.moveTarget(-1)), (_e, cx) => { v.move(-1, cx); cx.notify(); }))
     .child(button(t, "next", nextLabel(v), "j", Boolean(v.moveTarget(1)), (_e, cx) => { v.move(1, cx); cx.notify(); }))
     .when(Boolean(other), el => el.child(button(t, "explainfile", "Explain", "e", free, (_e, cx) => { v.explainFile(cx); cx.notify(); })))
@@ -135,8 +134,8 @@ function checksBadge(v, t) {
   if (!v.pr || !list?.length) return null;
   const n = checkCounts(list);
   const [text, color] = n.fail ? [`✗ ${n.fail} failing`, t.ansi1] : n.pending ? [`● ${n.pending} running`, t.ansi3] : [`✓ ${n.pass} passed`, t.ansi2];
-  return div().id("checks-badge").flex_none().px(6).py(1).rounded(5).bg(t.raised).text_size(11).text_color(color).cursor_pointer()
-    .hover(st => st.bg(t.hover)).on_click((_e, cx) => { v.openChecks(cx); cx.notify(); }).child(text);
+  return tag(t, text, color).id("checks-badge").cursor_pointer()
+    .hover(st => st.bg(t.hover)).on_click((_e, cx) => { v.openChecks(cx); cx.notify(); });
 }
 
 /** "Next" while there's more, "Next file" when it leaves the stops for the other files, "Last file" or "Last stop" at the end. */
