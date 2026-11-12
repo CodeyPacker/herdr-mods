@@ -42,6 +42,8 @@ Herdr, but every panel is its own rounded card on the canvas. IntelliJ Islands, 
 
 A layout plus six small mod clones that round off the shipped bars and lists and turn the tab bar controls into pills.
 
+Don't want the branch pill under each space name? Add `"props": { "branch_pill": false }` next to `"mod": "islands-spaces"` in the layout.
+
 Want a wallpaper behind the cards? Drop an image in `~/.config/herdr-app/backgrounds/` and change the layout root to `"background": { "image": "backgrounds/your.png", "fit": "cover" }`.
 
 ## tourist
