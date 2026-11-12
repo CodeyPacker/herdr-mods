@@ -9,7 +9,7 @@ import { listRow } from "./list.js";
 /** @typedef {import("./theme.js").Theme} Theme */
 /** @typedef {{ at: number, typed: string }} NavState the selected row's index, and the letters typed so far */
 /** @typedef {{ hint?: string }} Lettered anything that carries its letters in `hint` */
-/** @typedef {{ spaces: Record<string, string>, tabs: Record<string, string>, spaceColor?: string }} LetterConfig */
+/** @typedef {{ spaces: Record<string, string>, tabs: Record<string, string>, spaceColor?: string, jumpLayout?: string }} LetterConfig */
 /** @typedef {{ border?: boolean, color?: import("./theme.js").Color | null }} BadgeLook `border: false` draws no border. `color` is the letters' color. */
 
 // Home row first, then everything else. One letter each until we run out, then pairs.
@@ -110,7 +110,8 @@ export function navigateByLetter(state, e, items) {
 //   { "spaces": { "Logos": "l" }, "tabs": { "Code": "c", "Logos/Tests": "e" } }
 // Spaces by name. Tabs by name for every space, or as "space/tab" for one. Reserved letters get ignored.
 // "spaceColor" is the color of a space's letter: a theme color's name ("ansi3"), a plain color
-// name ("yellow"), or a hex color ("#e5c07b").
+// name ("yellow"), or a hex color ("#e5c07b"). "jumpLayout": "cards" draws the jump mod's spaces
+// as cards in columns.
 export const LETTERS_FILE = "hints.json";
 
 /** The eight plain terminal colors, by the theme's name for each. @type {Record<string, string>} */
@@ -138,7 +139,7 @@ export async function readLetterConfig(readTextFile, appHome) {
   try {
     const text = await readTextFile(appHome() + "/" + LETTERS_FILE);
     const json = text ? JSON.parse(text) : {};
-    return { spaces: json.spaces ?? {}, tabs: json.tabs ?? {}, spaceColor: typeof json.spaceColor === "string" ? json.spaceColor : undefined };
+    return { spaces: json.spaces ?? {}, tabs: json.tabs ?? {}, spaceColor: typeof json.spaceColor === "string" ? json.spaceColor : undefined, jumpLayout: typeof json.jumpLayout === "string" ? json.jumpLayout : undefined };
   } catch {
     return { spaces: {}, tabs: {} };
   }
