@@ -856,6 +856,6 @@ export default class Portal extends View {
       // A line above the key hints, so they do not read as more list rows.
       .child(divider(t))
       .child(legend(t, [["j/k", "move"], ["space", "expand"], ["enter", "open"], ["f", "favorite"], ["n", "add"], ["e", "URL"], ["x", "end"],
-        ["c", "copy"], ["t/u/m/a", "filters"], ["/ p", "search"], ["s", "sort"], ["r", "refresh"]]));
+        ["c", "copy"], ["t/u/m/a", "filters"], ["/", "search"], ["p", "ports"], ["s", "sort"], ["r", "refresh"]]));
   }
 }

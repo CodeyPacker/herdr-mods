@@ -48,8 +48,8 @@ An 860 px wide dialog, 80% of the window tall, in the shared kit's frame: a
 - A message strip, 34 px with an 8 px rounded border, only when there is
   something to say: the last action's result, a question, or an input box.
 - A thin line, then one row of key hints in accent/dim pairs: `j/k` move, `space` expand, `enter` open,
-  `f` favorite, `n` add, `e` URL, `x` end, `c` copy, `t/u/m/a` filters, `/ p`
-  search, `s` sort, `r` refresh.
+  `f` favorite, `n` add, `e` URL, `x` end, `c` copy, `t/u/m/a` filters, `/` search,
+  `p` ports, `s` sort, `r` refresh.
 
 Before the first scan finishes the list says "Scanning…". On Linux the card
 only says "Portal supports macOS and Windows only for now."
