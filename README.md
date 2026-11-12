@@ -161,4 +161,7 @@ node scripts/sync-kit.mjs          # copy kit/ into each mod
 node scripts/sync-kit.mjs --check  # fail if a copy differs
 ```
 
+To have every commit do this for you, turn on the repo's pre-commit hook once per clone:
+`git config core.hooksPath .githooks`. It copies `kit/` into the mods and adds the copies to the commit.
+
 `spotify`, `jump`, `run`, `portal` and `tourist` use the kit. To add a mod, list its folder in `scripts/sync-kit.mjs`.
