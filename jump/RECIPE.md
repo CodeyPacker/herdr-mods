@@ -7,25 +7,23 @@ its letter. tmux's prefix+w with vimium's hints, in place of the built-in picker
 
 ## What you see
 
-A 560 px popup at the top of the window, popover background, 18 px padding.
-Top line: "Jump to…" (15 px semibold) and "Esc" at the right in the
-dim color.
+A 560 px popup at the top of the window, in the shared kit's frame: popover
+background, 16 px round corners, its own border, 22 px padding. Top line:
+"Jump to…" (16 px semibold) and "Esc" at the right in the dim color.
 
-Every row is 30 px and starts with its hint badge, so the letters form one
-column at the left. A space with one tab is one row: the space's colored avatar
-(18 px square, its first letter), its name in semibold foreground, and what runs
-in it right-aligned in 11 px dim text (program names joined by " · ", or "empty";
-a named tab's name first). A space with several tabs has that header without the
-detail, then one row per tab under the name column: the tab's name in the muted
-color, then what runs in it. Rows show a status dot only when there is a status.
-Spaces with the same name also show their folder in dim text, and their branch
-when the folders match too. The selected row has the `selected` background, a
-3 px accent bar at its left edge and an accent badge. Hover is the `hover` color
-at 40% opacity. After a 1 px top border, two more rows: "new tab" and "in this
-space" with the letter `t`, and "new space" and "on this computer" with `n`.
+Every row is 32 px with 8 px round corners and starts with its letter badge, so
+the letters form one column at the left. Each space is a block: its own row with
+the name in 14 px semibold and "Space" at the right, then a dim "Tabs" label and
+one row per tab (the tab's name, then what runs in it at the right in 11 px dim
+text: program names joined by " · ", or "empty"), then an "Agents" label and one
+row per agent (its title, then its tab and program at the right). Rows show a
+status mark only when there is a status. Spaces with the same name also show
+their folder in dim text, and their branch when the folders match too. The
+selected row has the `selected` background and an accent badge. A thin line
+separates one space's block from the next.
 
-Bottom line: `j/k`, `x` and `r` in accent/dim pairs.
-
+Bottom, after a thin line: one row of key hints, `j/k`, `x` and `r` in
+accent/dim pairs, then `t` new tab and `n` new space, which are also buttons.
 ## How it behaves
 
 - Opens on the active tab of the active space.
@@ -43,9 +41,9 @@ Bottom line: `j/k`, `x` and `r` in accent/dim pairs.
 
 ## Built from
 
-- `mods/jump/main.js` and `mods/jump/tiles.js` (the same tiles file as the
-  Run mod: hints, badges, navigation).
-- `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 560, "height": 0.75 } }`.
+- `mods/jump/main.js`, and `mods/jump/kit/`, this repo's shared kit: the frame,
+  list rows, letter badges and their navigation, the key legend.
+- `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 560, "height": 0.75, "frame": "none" } }`.
 - `keys.json` opens it: `"ctrl-shift-k": "mod.open:jump"`.
 - Data: `spaces()` for spaces and tabs, `panes()` for what each tab runs
   (`program.name`, or `mod`), `agents()` for status, `shared("space.colors")`
@@ -59,12 +57,12 @@ Bottom line: `j/k`, `x` and `r` in accent/dim pairs.
 ## Watch out
 
 - Type-clean under the jsconfig the app writes (`checkJs`, `strict`): every
-  function carries JSDoc types, `colors()` in tiles.js casts `theme()` to the
+  function carries JSDoc types, `colors()` in kit/theme.js casts `theme()` to the
   builders' color type. Check with `npx -p typescript tsc -p jsconfig.json`.
 - Elements are single-use: collect each space's rows before building its
   section.
 - A popup is sized by content; the list gets an estimated height, capped
-  at 560 px with a scrollbar.
+  at 470 px with a scrollbar so the key hints stay on screen.
 - Reserved letters, never hints: `t n q j k x r`.
 - The built-in picker stays installed; this mod has its own key instead.
 

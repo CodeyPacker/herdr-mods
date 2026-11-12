@@ -1,6 +1,5 @@
-// Bits shared by jump and procs: hint letters, rows, space headers.
-// A mod can only import from its own folder, so each one carries a copy of this file.
-// Edit the one in run/ and copy it over.
+// Hint letters, rows and space headers for the Run mod.
+// Jump used to carry a copy of this file. It now uses the shared kit (kit/ at the repo root).
 
 import { div, svg } from "gpui-kit";
 import { h_flex } from "gpui-base";

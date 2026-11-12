@@ -1,7 +1,12 @@
 import { View, div } from "gpui-kit";
-import { v_flex, h_flex, InputState, Input, ScrollHandle } from "gpui-base";
+import { v_flex, h_flex, InputState, ScrollHandle } from "gpui-base";
 import { spaces, panes, agents, run, props, closeOverlay, readTextFile, appHome, home } from "herdr";
-import { colors, panelFill, hints, row, spaceNote, glyph, navigate, hintLine, readHintConfig, ROW_H } from "./tiles.js";
+import { colors, SIZE } from "./kit/theme.js";
+import { frame, divider } from "./kit/frame.js";
+import { textInput } from "./kit/controls.js";
+import { hint } from "./kit/legend.js";
+import { assignLetters, letterRow, navigateByLetter, readLetterConfig } from "./kit/letters.js";
+import { statusDot, spaceNote } from "./kit/spaces.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("gpui-kit").KeyEvent} KeyEvent */
@@ -9,7 +14,7 @@ import { colors, panelFill, hints, row, spaceNote, glyph, navigate, hintLine, re
 /** @typedef {import("herdr").SpaceInfo} SpaceInfo */
 /** @typedef {import("herdr").TabInfo} TabInfo */
 /** @typedef {import("herdr").AgentInfo} AgentInfo */
-/** @typedef {import("./tiles.js").HintConfig} HintConfig */
+/** @typedef {import("./kit/letters.js").LetterConfig} HintConfig */
 /** @typedef {{ kind: "space", s: SpaceInfo, hint?: string, pinned?: boolean }} SpaceItem */
 /** @typedef {{ kind: "tab", s: SpaceInfo, tab: TabInfo, who: string, status: string | null, hint?: string, pinned?: boolean }} TabItem */
 /** @typedef {{ kind: "agent", s: SpaceInfo, agent: AgentInfo, hint?: string, pinned?: boolean }} AgentItem */
@@ -18,6 +23,15 @@ import { colors, panelFill, hints, row, spaceNote, glyph, navigate, hintLine, re
 
 // These do things, so they can't be hints.
 const RESERVED = "tnqjkxr";
+/** A "Tabs" or "Agents" label's height, and the margin above and below the line between spaces. */
+const LABEL_H = 22;
+const SPACE_GAP = 6;
+/**
+ * The list scrolls past this height. The popup may be at most 75% of the window (mod.json), and
+ * the frame's title, legend and padding take about 125 px of that, so this keeps the legend on
+ * screen in a window as short as 800 px.
+ */
+const MAX_LIST_H = 470;
 
 export default class Jump extends View {
   /** @param {unknown} _props @param {Context} cx */
@@ -30,7 +44,7 @@ export default class Jump extends View {
     this.renaming = null;
     /** @type {HintConfig} */
     this.hintConfig = { spaces: {}, tabs: {} };
-    cx.spawn(async (cx) => { this.hintConfig = await readHintConfig(readTextFile, appHome); cx.notify(); });
+    cx.spawn(async (cx) => { this.hintConfig = await readLetterConfig(readTextFile, appHome); cx.notify(); });
     /** @type {FocusHandle} */
     this.handle = cx.focus_handle();
     this.handle.focus();
@@ -64,7 +78,7 @@ export default class Jump extends View {
       for (const agent of ag.filter((a) => a.space === s.id)) out.push({ kind: "agent", s, agent });
     }
     const wanted = out.map((it) => (it.kind === "space" ? this.hintConfig.spaces[it.s.name] : it.kind === "tab" ? this.hintConfig.tabs[`${it.s.name}/${it.tab.name}`] : null));
-    const hs = hints(out.length, RESERVED, wanted);
+    const hs = assignLetters(out.length, RESERVED, wanted);
     out.forEach((it, i) => { it.hint = hs[i]; it.pinned = !!wanted[i] && hs[i] === String(wanted[i]).toLowerCase(); });
     out.push({ kind: "new-tab", hint: "t" });
     out.push({ kind: "new-space", hint: "n" });
@@ -117,12 +131,12 @@ export default class Jump extends View {
       return;
     }
     const items = this.items();
-    /** @type {import("./tiles.js").NavState} */
+    /** @type {import("./kit/letters.js").NavState} */
     const state = { at: this.at ?? 0, typed: this.typed };
     // The new tab and new space rows sit in the footer, outside the list, so moving covers the list rows only.
     const last = items.findLastIndex((it) => it.kind !== "new-tab" && it.kind !== "new-space");
     const from = state.at;
-    const r = navigate(state, e, items);
+    const r = navigateByLetter(state, e, items);
     if (r === "done") state.at = Math.min(state.at, last);
     // Moving past either end wraps around to the other.
     const plain = !e.modifiers.control && !e.modifiers.alt && !e.modifiers.platform;
@@ -161,98 +175,83 @@ export default class Jump extends View {
     this.at = Math.max(0, Math.min(this.at, items.length - 1));
     const at = this.at;
     const all = spaces();
+    /** A row's shell: its letter badge first. @param {string} id @param {Item} it @param {boolean} on */
+    const shell = (id, it, on) => letterRow(t, {
+      id, letters: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, compact: true, click: (cx) => this.go(it, cx),
+    });
+    /** The small print at a row's right. @param {string} text */
+    const detail = (text) => div().flex_none().max_w(200).truncate().text_size(SIZE.small).text_color(t.dim).child(text);
     // gpui elements are single-use, so collect each block's rows first and build it after.
     // Each row keeps its item index, so the selected one can be scrolled into view.
-    /** @typedef {{ el: ReturnType<typeof row>, i: number }} Row */
+    /** @typedef {{ el: ReturnType<typeof shell>, i: number }} Row */
     /** @type {{ rows: Row[], tabs: Row[], agents: Row[] }[]} */
     const blocks = [];
-    /** @type {ReturnType<typeof h_flex>[]} */
+    /** The new tab and new space rows: they sit in the legend, as hints that are also buttons. @type {ReturnType<typeof hint>[]} */
     const extras = [];
     items.forEach((it, i) => {
       const on = i === at;
       if (it.kind === "space") {
         blocks.push({ tabs: [], agents: [], rows: [{ i, el:
-          row(t, { id: `j-space-${it.s.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => this.go(it, cx) })
-            .child(div().flex_none().max_w(260).truncate().text_size(16).font_semibold().text_color(t.foreground).child(it.s.name))
-            .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(spaceNote(all, it.s, home())))
-            .child(div().text_size(10).text_color(t.dim).child("Space")),
+          shell(`j-space-${it.s.id}`, it, on)
+            .child(div().flex_none().max_w(260).truncate().text_size(14).font_semibold().text_color(t.foreground).child(it.s.name))
+            .child(div().flex_1().min_w(0).truncate().text_size(SIZE.small).text_color(t.dim).child(spaceNote(all, it.s, home())))
+            .child(detail("Space")),
         }] });
       } else if (it.kind === "tab") {
         const name = !it.tab.named && /^\d+$/.test(it.tab.name) ? it.who || "Tab" : it.tab.name;
         blocks[blocks.length - 1].tabs.push({ i, el:
-          row(t, { id: `j-tab-${it.tab.id}`, hint: it.hint ?? "", typed: this.typed, pinned: it.pinned, on, onClick: (_e, cx) => this.go(it, cx) })
-            .child(div().w(18).flex_none())
-            .child(div().flex_none().max_w(220).truncate().text_color(t.muted).child(name))
-            .when(!!it.status, (el) => el.child(glyph(t, it.status)))
-            .child(div().flex_1().truncate().text_size(11).text_color(t.dim).child(name === it.who ? "" : it.who || "empty")),
+          shell(`j-tab-${it.tab.id}`, it, on)
+            .child(div().flex_1().min_w(0).truncate().text_color(t.foreground).child(name))
+            .when(!!it.status, (el) => el.child(statusDot(t, it.status)))
+            .child(detail(name === it.who ? "" : it.who || "empty")),
         });
       } else if (it.kind === "agent") {
         const tab = it.s.tabs.find((tab) => tab.id === it.agent.tab);
         const tabName = !tab?.named && /^\d+$/.test(it.agent.tab_name) ? "" : it.agent.tab_name;
         blocks[blocks.length - 1].agents.push({ i, el:
-          row(t, { id: `j-agent-${it.agent.address}`, hint: it.hint ?? "", typed: this.typed, pinned: false, on, onClick: (_e, cx) => this.go(it, cx) })
-            .child(div().w(18).flex_none())
+          shell(`j-agent-${it.agent.address}`, it, on)
             .child(div().flex_1().min_w(0).truncate().text_color(t.foreground).child(it.agent.title || it.agent.program.name || it.agent.app || "Agent"))
-            .child(div().flex_none().max_w(180).truncate().text_size(11).text_color(t.dim).child([tabName, it.agent.program.name].filter(Boolean).join(" · ")))
-            .child(glyph(t, it.agent.status)),
+            .child(detail([tabName, it.agent.program.name].filter(Boolean).join(" · ")))
+            .child(statusDot(t, it.agent.status)),
         });
       } else {
-        extras.push(
-          h_flex().id(`j-${it.kind}`).gap(4).items_center().text_size(11).rounded(3)
-            .when(on, (el) => el.bg(t.selected))
-            .cursor_pointer().hover((style) => style.bg(t.hover))
-            .on_click((_e, cx) => this.go(it, cx))
-            .child(div().text_color(t.accent).font_semibold().child(it.hint))
-            .child(div().text_color(t.dim).child(it.kind === "new-tab" ? "new tab" : "new space")),
-        );
+        extras.push(hint(t, [it.hint, it.kind === "new-tab" ? "new tab" : "new space"], { id: `j-${it.kind}`, click: (cx) => this.go(it, cx) }));
       }
     });
+    // A section label lines up with the text after the letter badge: the row's padding, the badge, the gap.
     /** @param {string} name */
-    const label = (name) => div().h(20).flex_none().pl(70).text_size(10).font_semibold().text_color(t.accent).child(name);
+    const label = (name) => div().h(LABEL_H).flex_none().pl(44).pt(4).text_size(SIZE.small).font_semibold().text_color(t.dim).child(name);
     const rowCount = blocks.reduce((n, b) => n + b.rows.length + b.tabs.length + b.agents.length, 0);
     const labelCount = blocks.reduce((n, b) => n + Number(b.tabs.length > 0) + Number(b.agents.length > 0), 0);
     // One flat column, so the scroll handle can reveal a row by its place among the list's children.
-    // A divider line between spaces stands in for the old section border (8px above and below).
+    // A line between spaces sets them apart.
     /** @type {any[]} */
     const kids = [];
     let selectedKid = -1;
     /** @param {Row} r */
     const add = (r) => { if (r.i === at) selectedKid = kids.length; kids.push(r.el); };
     blocks.forEach((b, i) => {
-      if (i > 0) kids.push(div().h(1).flex_none().my(6).bg(t.border));
+      if (i > 0) kids.push(divider(t).my(SPACE_GAP));
       b.rows.forEach(add);
       if (b.tabs.length > 0) { kids.push(label("Tabs")); b.tabs.forEach(add); }
       if (b.agents.length > 0) { kids.push(label("Agents")); b.agents.forEach(add); }
     });
     if (this.reveal && selectedKid >= 0) { this.scroll.scroll_to_item(selectedKid); this.reveal = false; }
     // The popup sizes to content, so the scrollable list needs an explicit height or it collapses.
-    const est = rowCount * (ROW_H + 2) + labelCount * 22 + blocks.length * 16 + 16;
-    const listH = Math.min(560, est);
+    // Every child is followed by the list's 2 px gap, and a line between spaces has its margin above and below.
+    const est = rowCount * (SIZE.compactRow + 2) + labelCount * (LABEL_H + 2) + Math.max(0, blocks.length - 1) * (SPACE_GAP * 2 + 3);
+    const listH = Math.min(MAX_LIST_H, est);
 
-    return v_flex()
-      .id("jump")
-      .track_focus(this.handle)
-      .on_key_down((e, cx) => this.key(e, cx))
-      .w_full()
-      .min_h(0)
-      .p(18)
-      .gap(10)
-      .bg(panelFill(t, 1, 0.1, t.popover)) // the dialogs' popover color at the islands panel opacity, a bit more solid
-      .rounded(14).overflow_hidden().border_1().border_color(t.border) // our own frame (mod.json says frame: none); no shadow, Herdr clips it
-      .text_size(13)
-      .child(
-        h_flex().items_center().gap(10)
-          .child(div().flex_1().text_size(15).font_semibold().text_color(t.foreground).child("Jump to…"))
-          .child(div().pr(10).text_size(11).text_color(t.dim).child("Esc")),
-      )
+    return frame(t, { id: "jump", title: "Jump to…", handle: this.handle, onKey: (e, cx) => this.key(e, cx) })
       .when(!!this.renaming, (el) => el.child(
         h_flex().items_center().gap(10)
-          .child(div().flex_none().text_size(11).text_color(t.dim).child(this.renaming?.it.kind === "new-space" ? "New space" : this.renaming?.it.kind === "new-tab" ? "New tab" : this.renaming?.it.kind === "tab" ? "Rename tab" : "Rename space"))
-          .child(Input.new(this.renaming?.input).flex_1().h(30).px(8).rounded(6).border_1().border_color(t.accent).bg(t.background).text_size(12.5).text_color(t.foreground)),
+          .child(div().flex_none().text_size(SIZE.small).text_color(t.dim).child(this.renaming?.it.kind === "new-space" ? "New space" : this.renaming?.it.kind === "new-tab" ? "New tab" : this.renaming?.it.kind === "tab" ? "Rename tab" : "Rename space"))
+          .child(textInput(t, this.renaming?.input).flex_1()),
       ))
       .child(v_flex().id("jump-list").h(listH).flex_none().overflow_y_scrollbar().track_scroll(this.scroll).gap(2).children(kids))
-      .child(h_flex().flex_none().flex_wrap().items_center().gap(12)
-        .child(hintLine(t, [["j/k", "move"], ["x", "close tab"], ["r", "rename"]]))
+      .child(divider(t))
+      .child(h_flex().flex_none().flex_wrap().items_center().gap(12).text_size(SIZE.small)
+        .child(hint(t, ["j/k", "move"])).child(hint(t, ["x", "close tab"])).child(hint(t, ["r", "rename"]))
         .children(extras));
   }
 }
