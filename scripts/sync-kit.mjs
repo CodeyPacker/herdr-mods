@@ -10,7 +10,7 @@ import { join, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /** The mods that carry a copy, as paths from the repo root. */
-const MODS = ["spotify/mods/spotify", "jump/mods/jump", "run/mods/run", "portal/mods/portal", "tourist/mods/tourist"];
+const MODS = ["spotify/mods/spotify", "jump/mods/jump", "run/mods/run", "portal/mods/portal", "tourist/mods/tourist", "tickets/mods/tickets"];
 
 /** Files the Herdr app writes into mod folders for editor completions. They are not part of the kit. */
 const APP_FILES = new Set(["gpui-kit.d.ts", "jsconfig.json"]);
