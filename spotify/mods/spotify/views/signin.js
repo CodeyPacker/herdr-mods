@@ -3,9 +3,10 @@
 import { div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { SETUP_STEPS, REDIRECT_PORT } from "../constants.js";
-import { spinner, textInput, hintLine } from "../ui.js";
+import { spinner, textInput } from "../kit/controls.js";
+import { legend } from "../kit/legend.js";
 
-/** @typedef {import("../ui.js").Theme} Theme */
+/** @typedef {import("../kit/theme.js").Theme} Theme */
 
 /** @param {Theme} t @param {string | null} text */
 const errorLine = (t, text) => div().text_size(12).text_color(t.ansi1).child(text ?? "");
@@ -43,7 +44,7 @@ export function setupView(v, t) {
           .when(Boolean(step.copy), (el) => el.child(copyable(v, t, step.copy ?? "")))))))
     .child(textInput(t, v.idInput))
     .when(Boolean(v.error), (el) => el.child(errorLine(t, v.error)))
-    .child(hintLine(t, [["enter", "sign in"], ["ctrl-o", "open the dashboard"], ["ctrl-r", "copy the redirect URI"], ["esc", "close"]]));
+    .child(legend(t, [["enter", "sign in"], ["ctrl-o", "open the dashboard"], ["ctrl-r", "copy the redirect URI"], ["esc", "close"]]));
 }
 
 /** @param {any} _v @param {Theme} t */
@@ -51,7 +52,7 @@ export function waitingView(_v, t) {
   return v_flex().id("sp-waiting").gap(12)
     .child(h_flex().gap(10).items_center().text_size(12.5).text_color(t.muted)
       .child(spinner(t).text_size(16)).child("Approve the login in your browser…"))
-    .child(hintLine(t, [["esc", "cancel"]]));
+    .child(legend(t, [["esc", "cancel"]]));
 }
 
 /** @param {any} v @param {Theme} t */
@@ -64,5 +65,5 @@ export function pasteView(v, t) {
       .child(`${why} After you approve in the browser, copy the whole address from the browser's address bar (it starts with http://127.0.0.1) and paste it here.`))
     .child(textInput(t, v.pasteInput))
     .when(Boolean(v.error), (el) => el.child(errorLine(t, v.error)))
-    .child(hintLine(t, [["enter", "finish"], ["esc", "back"]]));
+    .child(legend(t, [["enter", "finish"], ["esc", "back"]]));
 }

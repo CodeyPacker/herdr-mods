@@ -10,7 +10,7 @@ import { setupView, waitingView, pasteView } from "./views/signin.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("gpui-kit").KeyEvent} KeyEvent */
-/** @typedef {import("./ui.js").Theme} Theme */
+/** @typedef {import("./kit/theme.js").Theme} Theme */
 /** @typedef {import("./dialog.js").Dialog} Dialog */
 /** @typedef {"setup" | "waiting" | "paste"} Screen */
 

@@ -5,7 +5,7 @@ import { POLL_MS, IDLE_POLL_EVERY, SETTLE_MS, SEEK_STEPS } from "./constants.js"
 import { readPlayback } from "./player.js";
 import { artFile } from "./art.js";
 import { play, pause, next, previous, seekTo, setVolume, setShuffle, setRepeat, nextRepeat } from "./controls.js";
-import { DragSlider } from "./drag-slider.js";
+import { DragSlider } from "./kit/drag-slider.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("./player.js").Playback} Playback */

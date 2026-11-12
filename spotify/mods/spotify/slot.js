@@ -5,7 +5,7 @@ import { run, props } from "herdr";
 import { MOD, CARD_OPEN_DELAY, CARD_CLOSE_DELAY, CARD_AFTER_DRAG_DELAY } from "./constants.js";
 import { NowPlaying } from "./now-playing.js";
 import { authChangeStamp, dialogOpenStamp } from "./signals.js";
-import { colors } from "./ui.js";
+import { colors } from "./kit/theme.js";
 import { slotView } from "./views/slot.js";
 
 /** @typedef {import("gpui-kit").Context} Context */

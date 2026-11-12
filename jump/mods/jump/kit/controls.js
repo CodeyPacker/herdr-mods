@@ -1,0 +1,61 @@
+// Controls: the spinner, the text box, the round icon button and the slider.
+import { div, svg } from "gpui-kit";
+import { h_flex, Input, Slider, SliderTrack, SliderIndicator, SliderThumb } from "gpui-base";
+
+/** @typedef {import("gpui-kit").Context} Context */
+/** @typedef {import("./theme.js").Theme} Theme */
+/** @typedef {import("./theme.js").Color} Color */
+
+const SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+
+/** A small turning mark for "working on it". Herdr animates it, so it costs no redraws. @param {Theme} t */
+export function spinner(t) {
+  return div().text_color(t.accent).frames(SPINNER, 90).child(SPINNER[0]);
+}
+
+/** A one-line text box. `active` outlines it in the accent color. @param {Theme} t @param {any} state an InputState @param {boolean} [active] */
+export function textInput(t, state, active = true) {
+  return Input.new(state).h(32).px(10).rounded(8).border_1().border_color(active ? t.accent : t.input).bg(t.background).text_size(12.5).text_color(t.foreground);
+}
+
+/**
+ * A round button with one icon.
+ * @param {Theme} t @param {string} id @param {string} icon a path for svg() @param {(cx: Context) => void} click
+ * @param {{ lit?: boolean, big?: boolean, large?: boolean, mark?: string }} [look]
+ *   `lit`: drawn in the accent color, for a mode that is on. `big`: the main button, filled.
+ *   `large`: a roomier size, for a dialog. `mark`: a small label beside the icon.
+ */
+export function iconButton(t, id, icon, click, look = {}) {
+  const size = look.large ? (look.big ? 48 : 36) : (look.big ? 34 : 28);
+  const iconSize = look.large ? (look.big ? 20 : 18) : (look.big ? 16 : 14);
+  return h_flex().id(id).h(size).min_w(size).px(4).gap(2).flex_none().items_center().justify_center().rounded(size / 2)
+    .cursor_pointer().hover((s) => s.bg(t.hover))
+    .when(Boolean(look.big), (el) => el.bg(t.raised))
+    .on_click((_e, cx) => click(cx))
+    .child(svg(icon).size(iconSize).text_color(look.lit ? t.accent : look.big ? t.foreground : t.muted))
+    .when(Boolean(look.mark), (el) => el.child(div().text_size(9).font_semibold().text_color(t.accent).child(look.mark ?? "")));
+}
+
+/**
+ * A line with a round knob: drag the knob, or click along the line. Herdr places the fill
+ * and the knob from `state`, a SliderState. Pair it with DragSlider (drag-slider.js) when the
+ * value also changes by itself.
+ * @param {Theme} t @param {any} state @param {number} width
+ * @param {{ color?: Color, thick?: boolean, onHover?: (hovered: boolean, cx: Context) => void }} [look]
+ *   `color`: the fill (default: the accent). `thick`: a heavier line with a bright knob, for a dialog.
+ *   `onHover`: told when the pointer comes onto or leaves the slider.
+ */
+export function slider(t, state, width, look = {}) {
+  const color = look.color ?? t.accent;
+  const line = look.thick ? 5 : 3;
+  const knob = look.thick ? 14 : 10;
+  const onHover = look.onHover;
+  return Slider.new(state).child(
+    SliderTrack.new(state).flex().items_center().h(knob + 4).w(width).cursor_pointer()
+      .when(Boolean(onHover), (el) => el.on_hover((hovered, cx) => onHover?.(hovered, cx))).child(
+      SliderIndicator.new(state).relative().w_full().h(line).rounded(line / 2).bg(t.raised)
+        .range_style((fill) => fill.rounded(line / 2).bg(color))
+        // The knob starts at the line's top left: pull it up and left by half its extra size to center it.
+        .child(SliderThumb.new(state).size(knob).rounded(knob / 2).bg(look.thick ? t.foreground : color)
+          .ml(-knob / 2).mt(-(knob - line) / 2))));
+}
