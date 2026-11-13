@@ -8,8 +8,8 @@ export const SCOPES = [
   { key: "f", id: "feature", label: "A feature", hint: "describe it, the agent finds the code" },
 ];
 export const DEPTHS = [
-  { key: "1", id: "overview", label: "Overview", text: "Plain language. Say what each part does and why it exists. 2 to 4 sentences per stop. No jargon." },
-  { key: "2", id: "normal", label: "Normal", text: "Explain what the code does and how the pieces connect. 4 to 6 sentences per stop. Name the key functions and types." },
+  { key: "1", id: "overview", label: "Overview", text: "Very simple words, for someone new to this code. 1 to 2 short sentences per stop: what this part does and why it's here. No jargon and no function names." },
+  { key: "2", id: "normal", label: "Normal", text: "Simple words and short sentences. 2 to 3 sentences per stop: what this code does and how it connects to the stop before. Name a function only when the reader needs it to follow along. The reader can ask for more detail." },
   { key: "3", id: "deep", label: "Deep", text: "Technical. Explain mechanisms, data flow, edge cases and tradeoffs. Up to 10 sentences per stop." },
 ];
 // The re-review step, shown for a PR you reviewed before at an older head.
@@ -25,6 +25,5 @@ export const FIX_TOOLS = ["--allowedTools", "Read", "Grep", "Glob", "Edit", "Mul
 export const AGENTS = [{ id: "claude", name: "Claude" }, { id: "codex", name: "Codex" }];
 // File extensions the editor highlights with another language's grammar.
 export const LANG = { ts: "js", tsx: "js", mts: "js", cts: "js", jsx: "js", mjs: "js", toml: "yaml", jsonc: "json", svelte: "html", vue: "html" };
-export const SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 // Panes at least this wide put the code beside the explanation.
 export const SPLIT_WIDTH = 1100;

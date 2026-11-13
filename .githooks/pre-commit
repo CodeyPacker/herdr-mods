@@ -1,0 +1,12 @@
+#!/bin/sh
+# Keeps each mod's copy of the shared kit current: copies kit/ into the mods, then adds
+# the copies to this commit. Turn it on once per clone: git config core.hooksPath .githooks
+
+# A copy made from kit/ edits that are not part of this commit would not match the kit/ it is committed with.
+if ! git diff --quiet -- kit; then
+  echo "kit/ has changes that are not staged. Stage them (git add kit) or stash them, then commit again." >&2
+  exit 1
+fi
+
+node scripts/sync-kit.mjs >/dev/null || exit 1
+git add -- ":(glob)*/mods/*/kit/**"

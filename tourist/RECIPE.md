@@ -27,8 +27,9 @@ Setup, in two steps (three or four for a pull request):
 Under the repo line, "Tour by Claude" (or Codex). With both CLIs installed it
 adds "· a switches" in the accent color.
 
-The highlighted row has the theme's `selected` background and an accent badge.
-Row text wraps in narrow panes.
+The highlighted row has the theme's `selected` background and an accent border on its badge.
+Row text wraps in narrow panes. The key hints under the rows are the
+shared kit's legend: each key in the accent color, its meaning dim.
 
 While the agent plans, a spinner and "<Agent> is planning the tour". Then the tour: a header with "n / total", the stop
 title and the tour title, the file and line range (click or `o` opens it in VS
@@ -227,7 +228,9 @@ and its branch are deleted, and the comments stay.
   (excerpts, VS Code, opening a URL), `pr.js` (gh), `diff.js` (diff rows),
   `comments.js` (saving line comments), `since.js` (the commit last reviewed),
   `checks.js` (CI checks and failed logs), `worktree.js` (the fix's worktree, push
-  and discard), `review.js` (posting to GitHub), `ui.js` (shared pieces) and
+  and discard), `review.js` (posting to GitHub), `ui.js` (rows and buttons made from the kit),
+  `kit/` (this repo's shared kit: rows, letter badges, key buttons, pane header and bar,
+  tags, banners, the key legend, sizes) and
   `views/` (setup, tour, diff, fix, review, planning and error).
 - `mod.json`: `{ "place": "none", "focusable": true, "title": "Tourist" }`.
 - `keys.json` opens it in a split: `"ctrl-shift-g": { "command": "pane.split",
@@ -261,9 +264,11 @@ and its branch are deleted, and the comments stay.
   origin/<base> <head>`. Nothing is checked out. Each stop's diff is `git diff
   <merge-base> <head> -- <file>`. The prompt gives the agent the description
   (fenced off as the author's text, not instructions), commits and files, tells
-  it to read with `git diff` and `git show <head>:<file>`, and asks for stops in
-  the feature's flow (entry point first, types where first used, config and
-  tests last), each with a `group`. Saved plans
+  it to read with `git diff` and `git show <head>:<file>`, and asks it to name
+  the PR's goals first. Each goal is a `group`, most important first, starting
+  at the change that best shows it. Housekeeping (.gitignore, CI, lint config,
+  lockfiles) goes in a last "Supporting changes" group or folds into a related
+  stop. Saved plans
   live in `<appHome>/data/tourist/plans/`, named `<repo>_pr-<n>-<head>-<depth>`,
   `<repo>-commit|repo-<head>-<depth>` or `<repo>-feature-<text hash>-<head>-<depth>`.
   Threads come from `gh api --paginate repos/<owner>/<repo>/pulls/<n>/comments`,

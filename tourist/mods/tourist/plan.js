@@ -41,17 +41,19 @@ export function prSubject(pr) {
   ].join("\n");
 }
 
-/** The first message of a PR review: the stops follow the feature's flow, from where it starts. */
+/** The first message of a PR review: one group of stops per goal the PR serves, most important first. */
 export function prPlanPrompt(subjectText, depth) {
   return [
     "You are giving a guided review of a pull request inside a desktop app. The reader sees one stop at a time: the diff of one file next to your explanation.",
     `Subject: ${subjectText}`,
     `Depth: ${DEPTHS.find(d => d.id === depth)?.text ?? ""}`,
     "Read the changes you need with git. Then reply with ONLY a JSON object, no prose and no code fences, in this shape:",
-    '{"title": "short review title", "summary": "markdown, 2 to 4 sentences: what the PR does and why", "stops": [{"group": "short group name", "file": "repo-relative path with forward slashes", "start": 1, "end": 40, "title": "short stop title", "body": "markdown explanation"}]}',
-    "Order: follow the feature's flow. Start where the behavior begins (a user action, a command, a route, an event handler) and follow the data and calls through each layer in the order they run. Show a type, schema or helper at the stop where it is first used, not up front. Put supporting changes last: config, package manifests, build files, then tests. If the PR has no single flow (a refactor, a rename, unrelated fixes), order the stops so each builds on the last instead. Stops that belong together share a group name, and groups appear in order.",
-    "Each body says what changed, why it changed (from the description, commits and code), and how it connects to the stops before it. Flag anything that looks risky or unfinished.",
-    "Rules: one stop per changed area worth a reviewer's attention, however many that is. Don't pad a small PR or cut a large one short; fold only trivial changes (lockfiles, generated files, renames) into a related stop. start and end are line numbers in the file as the PR has it (the new side of the diff) and must cover the changed lines. When a body points at specific code, write it as repo-relative \`path:line\` or \`path:start-end\` (new-side line numbers); the reader can click those. Only claim what the code you read shows.",
+    '{"title": "short review title", "summary": "markdown: the problem or feature this PR addresses, in 1 to 3 sentences. If it addresses several, a short list naming each one.", "stops": [{"group": "the goal this stop serves", "file": "repo-relative path with forward slashes", "start": 1, "end": 40, "title": "short stop title", "body": "markdown explanation"}]}',
+    "First, work out what the PR is for: the problem it solves or the feature it adds. Use the description, commits and diff. A PR may have more than one goal. Each goal becomes a group, named after the goal (\"Retry failed uploads\", not \"Backend changes\"). Order the groups by importance, and keep each group's stops together.",
+    "Within a group, start at the change that best shows the goal: where the new behavior happens or the bug is fixed. Then follow outward to what it relies on, where it gets called from, and its tests. Each stop should help the reader understand the goal. Don't stop on a file just because it changed.",
+    "Changes that serve no goal go in a final \"Supporting changes\" group with one stop, or are folded into the stop they relate to. That covers .gitignore, CI, lint and format config, lockfiles, generated files, renames and formatting. They never come before the goal stops.",
+    "Each body says what this change does for its goal, why it's done this way, and how it connects to the stops before it. Flag anything that looks risky or unfinished.",
+    "Rules: one stop per piece of a goal worth a reviewer's attention, however many that is. Don't pad a small PR or cut a large one short. start and end are line numbers in the file as the PR has it (the new side of the diff) and must cover the changed lines. When a body points at specific code, write it as repo-relative \`path:line\` or \`path:start-end\` (new-side line numbers); the reader can click those. Only claim what the code you read shows.",
   ].join("\n\n");
 }
 
