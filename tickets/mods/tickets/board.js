@@ -102,6 +102,8 @@ export class Board {
     this.checking = true;
     /** The agent `s` starts with, by key. Kept across opens. */
     this.starterKey = localStorage.getItem("agent") ?? "";
+    /** The card whose workflow ticket `s` asked about. A second `s` on it starts an agent. @type {string | null} */
+    this.takeover = null;
     /** True from `s` until the agent's tab exists. */
     this.starting = false;
     /** What the last action has to say, shown above the key hints. */
@@ -246,6 +248,12 @@ export class Board {
     }
     if (card.ticket.status === "done") { this.say(`#${card.ticket.number} is done. Move it back before starting it again.`); return; }
     if (this.agentOf(card.ticket)) { this.say(`#${card.ticket.number} already has an agent. Press o to go to it.`); return; }
+    // A workflow run may still be on it. The second s in a row takes the ticket from that run.
+    if (card.ticket.runner === "workflow" && card.ticket.status === "doing" && this.takeover !== card.id) {
+      this.takeover = card.id;
+      this.say(`#${card.ticket.number} was started by a workflow run. Press s again to take it over.`);
+      return;
+    }
     this.starting = true;
     this.message = "";
     cx.spawn(async (cx) => {
@@ -273,6 +281,7 @@ export class Board {
   /** Does one command. Keys, clicks and `tickets.<name>` all come through here. @param {string} name @param {Context} cx */
   act(name, cx) {
     const at = this.place(this.columns());
+    if (name !== "start") this.takeover = null;
     if (name === "all") { this.all = !this.all; localStorage.setItem("all", String(this.all)); this.opened = false; }
     else if (name === "reload") this.reload(cx);
     else if (name === "back") this.opened = false;
@@ -447,7 +456,10 @@ export class Board {
   /** The agent on a ticket: its status mark and program name. Empty when none is running. @param {Theme} t @param {Ticket} ticket */
   agentMark(t, ticket) {
     const agent = this.agentOf(ticket);
-    if (!agent) return null;
+    if (!agent) {
+      if (ticket.runner !== "workflow" || ticket.status !== "doing") return null;
+      return div().flex_none().text_size(SIZE.small).text_color(t.muted).child("workflow");
+    }
     return h_flex().flex_none().gap(4).items_center().text_size(SIZE.small).text_color(t.muted)
       .child(statusDot(t, agent.status)).child(agent.program.name);
   }
