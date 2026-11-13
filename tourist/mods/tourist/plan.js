@@ -41,7 +41,7 @@ export function prSubject(pr) {
   ].join("\n");
 }
 
-/** The first message of a PR review: the stops follow the order the changes build on each other. */
+/** The first message of a PR review: the stops follow the feature's flow, from where it starts. */
 export function prPlanPrompt(subjectText, depth) {
   return [
     "You are giving a guided review of a pull request inside a desktop app. The reader sees one stop at a time: the diff of one file next to your explanation.",
@@ -49,7 +49,7 @@ export function prPlanPrompt(subjectText, depth) {
     `Depth: ${DEPTHS.find(d => d.id === depth)?.text ?? ""}`,
     "Read the changes you need with git. Then reply with ONLY a JSON object, no prose and no code fences, in this shape:",
     '{"title": "short review title", "summary": "markdown, 2 to 4 sentences: what the PR does and why", "stops": [{"group": "short group name", "file": "repo-relative path with forward slashes", "start": 1, "end": 40, "title": "short stop title", "body": "markdown explanation"}]}',
-    "Order: review the changes in the order they build on each other. Put what other changes depend on first (types, schemas, config, shared helpers), then the code that uses it, then the entry points and tests. Stops that belong together share a group name, and groups appear in order.",
+    "Order: follow the feature's flow. Start where the behavior begins (a user action, a command, a route, an event handler) and follow the data and calls through each layer in the order they run. Show a type, schema or helper at the stop where it is first used, not up front. Put supporting changes last: config, package manifests, build files, then tests. If the PR has no single flow (a refactor, a rename, unrelated fixes), order the stops so each builds on the last instead. Stops that belong together share a group name, and groups appear in order.",
     "Each body says what changed, why it changed (from the description, commits and code), and how it connects to the stops before it. Flag anything that looks risky or unfinished.",
     "Rules: one stop per changed area worth a reviewer's attention, however many that is. Don't pad a small PR or cut a large one short; fold only trivial changes (lockfiles, generated files, renames) into a related stop. start and end are line numbers in the file as the PR has it (the new side of the diff) and must cover the changed lines. When a body points at specific code, write it as repo-relative \`path:line\` or \`path:start-end\` (new-side line numbers); the reader can click those. Only claim what the code you read shows.",
   ].join("\n\n");

@@ -10,15 +10,16 @@ export function isSideFile(path) { return TEST.test(path) || DOCS.test(path) || 
 
 /**
  * `{ tour, also, side }`. Each entry is a file stat (`{ file, status, add, del }`). Tour entries
- * add `stop`, the index of the first stop on that file. A file the tour visits stays in the
- * tour group even when it's a test or a doc.
+ * add `stop`, the index of the first stop on that file, and `stops`, every stop on it in order.
+ * A file the tour visits stays in the tour group even when it's a test or a doc.
  */
 export function groupFiles(stats, stops) {
-  const first = new Map();
-  stops.forEach((s, i) => { if (!first.has(s.file)) first.set(s.file, i); });
+  const byFile = new Map();
+  stops.forEach((s, i) => { if (!byFile.has(s.file)) byFile.set(s.file, []); byFile.get(s.file).push(i); });
   const tour = [], also = [], side = [];
   for (const f of stats) {
-    if (first.has(f.file)) tour.push({ ...f, stop: first.get(f.file) });
+    const own = byFile.get(f.file);
+    if (own) tour.push({ ...f, stop: own[0], stops: own });
     else (isSideFile(f.file) ? side : also).push(f);
   }
   tour.sort((a, b) => a.stop - b.stop);

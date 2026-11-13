@@ -61,7 +61,9 @@ page in the browser, since the PR isn't on disk. There's no cap on the number of
 stops: one per changed area worth reviewing.
 
 File list (PR tours): every file the PR changes, on the left of the tour. "In
-the tour" lists the tour's files in stop order, numbered by their first stop.
+the tour" lists the tour's files in stop order, numbered 1, 2, 3. A file with
+more than one stop lists its later stops indented under it as 1.2, 1.3, each
+with the stop's title; clicking one goes to that stop.
 "Also changed" lists the other code files, and "Tests, docs and generated" lists
 tests, Markdown and docs, lockfiles, snapshots and build output (`files.js`
 decides by path). A file the tour visits stays in the tour group. Each row shows
@@ -260,7 +262,8 @@ and its branch are deleted, and the comments stay.
   <merge-base> <head> -- <file>`. The prompt gives the agent the description
   (fenced off as the author's text, not instructions), commits and files, tells
   it to read with `git diff` and `git show <head>:<file>`, and asks for stops in
-  the order the changes build on each other, each with a `group`. Saved plans
+  the feature's flow (entry point first, types where first used, config and
+  tests last), each with a `group`. Saved plans
   live in `<appHome>/data/tourist/plans/`, named `<repo>_pr-<n>-<head>-<depth>`,
   `<repo>-commit|repo-<head>-<depth>` or `<repo>-feature-<text hash>-<head>-<depth>`.
   Threads come from `gh api --paginate repos/<owner>/<repo>/pulls/<n>/comments`,
