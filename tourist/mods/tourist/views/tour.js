@@ -157,16 +157,18 @@ function fileList(v, t) {
   for (const c of v.comments) notes.set(c.file, (notes.get(c.file) ?? 0) + 1);
   const label = text => div().px(12).pt(4).pb(2).text_size(11).text_color(t.dim).child(text);
   const divider = () => div().mx(0).my(6).border_t_1().border_color(t.border);
-  const row = (f, id) => {
+  // A file with several stops lists the later ones under it, numbered 1.2, 1.3 and so on.
+  const many = f => (f.stops?.length ?? 0) > 1;
+  const row = (f, id, num) => {
     const name = f.file.split("/").pop(), dir = f.file.slice(0, f.file.length - name.length);
-    const on = f.file === current, viewed = v.isViewed(f.file), count = notes.get(f.file) ?? 0;
+    const on = f.file === current && !(many(f) && !v.other && v.idx !== f.stop), viewed = v.isViewed(f.file), count = notes.get(f.file) ?? 0;
     return h_flex().id(id).gap(6).items_center().pr(10).pl(on ? 8 : 10).py(4).cursor_pointer().text_size(12)
       .when(on, el => el.border_l_2().border_color(t.accent).bg(t.raised))
       .hover(st => st.bg(t.hover)).on_click((_e, cx) => { v.openFile(f, cx); cx.notify(); })
       // The check marks the file viewed without opening it.
       .child(div().id(`${id}-v`).w(14).flex_none().text_size(11).text_color(viewed ? t.ansi2 : t.dim).font_family(mono)
         .on_click((_e, cx) => { cx.stop_propagation(); v.toggleViewed(f.file, cx); cx.notify(); })
-        .child(viewed ? "✓" : f.stop !== undefined ? String(f.stop + 1) : f.status))
+        .child(viewed ? "✓" : num ?? f.status))
       .child(h_flex().flex_1().min_w(0).overflow_hidden().whitespace_nowrap()
         .when(Boolean(dir), el => el.child(div().flex_shrink_1().min_w(0).truncate().text_color(t.dim).child(dir)))
         .child(div().flex_none().text_color(viewed ? t.dim : t.foreground).child(name)))
@@ -176,12 +178,24 @@ function fileList(v, t) {
         .when(Boolean(f.add), el => el.child(div().text_color(t.ansi2).child(`+${f.add}`)))
         .when(Boolean(f.del), el => el.child(div().text_color(t.ansi1).child(`−${f.del}`))));
   };
+  const subRow = (stop, id, num) => {
+    const on = !v.other && v.idx === stop;
+    return h_flex().id(id).gap(6).items_center().pr(10).pl(on ? 22 : 24).py(3).cursor_pointer().text_size(11.5)
+      .when(on, el => el.border_l_2().border_color(t.accent).bg(t.raised))
+      .hover(st => st.bg(t.hover)).on_click((_e, cx) => { v.show(stop, cx); cx.notify(); })
+      .child(div().flex_none().text_size(11).text_color(t.dim).font_family(mono).child(num))
+      .child(div().flex_1().min_w(0).truncate().text_color(on ? t.foreground : t.dim).child(v.plan.stops[stop]?.title ?? ""));
+  };
+  const tourRows = list => list.flatMap((f, j) => [
+    row(f, `file-t-${j}`, String(j + 1)),
+    ...(f.stops ?? []).slice(1).map((stop, k) => subRow(stop, `file-t-${j}-${k}`, `${j + 1}.${k + 2}`)),
+  ]);
   const groups = [["In the tour", g.tour, "t"], ["Also changed", g.also, "a"], ["Tests, docs and generated", g.side, "s"]].filter(([, list]) => list.length);
   rail.child(div().px(12).pb(4).text_size(11).text_color(seen === all.length && seen ? t.ansi2 : t.dim)
     .child(seen === all.length && seen ? `All ${seen} viewed` : `${seen} of ${all.length} viewed · v marks · j/k move`));
   groups.forEach(([name, list, k], i) => {
     if (i > 0) rail.child(divider());
-    rail.child(label(name)).children(list.map((f, j) => row(f, `file-${k}-${j}`)));
+    rail.child(label(name)).children(k === "t" ? tourRows(list) : list.map((f, j) => row(f, `file-${k}-${j}`)));
   });
   return rail;
 }
