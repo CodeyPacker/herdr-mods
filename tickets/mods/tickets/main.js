@@ -1,5 +1,6 @@
 // tickets: one mod, two places. Opened as an overlay it is the board (board.js). In a layout
 // block with props { "slot": true } it is the small count of tickets waiting on you (slot.js).
+// The board opens a ticket as a second copy of itself, in its own dialog, with props { "ticket" }.
 // Tickets are made and changed with ticket.mjs in this folder (see its top comment).
 import { View } from "gpui-kit";
 import { props } from "herdr";
@@ -19,5 +20,10 @@ export default class Tickets extends View {
   /** @param {Context} cx */
   render(cx) {
     return this.part.render(cx);
+  }
+
+  /** Herdr calls this as the copy closes. */
+  async close() {
+    if (this.part instanceof Board) this.part.leaving();
   }
 }

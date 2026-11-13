@@ -6,16 +6,16 @@
 // records the agent's terminal on the ticket, so the card shows what that agent is doing.
 //
 // Keys on the board: h/j/k/l or the arrows move, enter opens the ticket, s starts an agent on it,
-// o goes to its agent, g picks the next agent to start with, a switches between this space's
+// o goes to its agent, g picks the next agent to start with, v switches between this space's
 // project and every project, r reloads, esc closes. In a ticket: esc goes back, s and o as above.
-// On a ticket in review, y approves it and c asks for changes. On a blocked ticket, c answers its
-// question. What you type for c is saved on the ticket and sent to its agent when one is running.
+// On a ticket in review, y approves it and c asks for changes. On a blocked ticket, a answers its
+// question. What you type is saved on the ticket and sent to its agent when one is running.
 // n makes a ticket for the shown space's repo: type a title, enter, then a description, enter.
 // Every key is also a command (`tickets.<name>`, see COMMANDS), for keys.json or `herdr-app do`.
 
 import { div } from "gpui-kit";
 import { v_flex, h_flex, ScrollHandle, InputState } from "gpui-base";
-import { props, closeOverlay, exec, hc, run, spaces, agents, knownAgents, shared, watchFolder, nextCommand } from "herdr";
+import { props, closeOverlay, openOverlay, setShared, exec, hc, run, spaces, agents, knownAgents, shared, watchFolder, nextCommand } from "herdr";
 import { colors, SIZE } from "./kit/theme.js";
 import { frame, divider } from "./kit/frame.js";
 import { chip, spinner, textInput } from "./kit/controls.js";
@@ -24,6 +24,7 @@ import { listNote } from "./kit/list.js";
 import { tag, banner, sectionLabel } from "./kit/pane.js";
 import { statusDot } from "./kit/spaces.js";
 import { script, dataDir, folderOf, readBoard } from "./data.js";
+import { installed, savedStarters, usableAgents, pickStarter, neededBy, startAgent } from "./start.js";
 
 /** @typedef {import("gpui-kit").Color} Color */
 /** @typedef {import("gpui-kit").Context} Context */
@@ -38,43 +39,19 @@ import { script, dataDir, folderOf, readBoard } from "./data.js";
 /** @typedef {import("./data.js").Status} Status */
 /** @typedef {import("./data.js").BoardData} BoardData */
 /** @typedef {{ id: string, p: Project, ticket: Ticket }} Card a ticket with its project. `id` is unique across projects. */
-/** @typedef {{ key: string, name: string, run: string[] }} Starter an agent that can be started */
+/** @typedef {import("./start.js").Starter} Starter */
 /** @typedef {{ card: Card, kind: "answer" | "changes", input: ReturnType<typeof InputState.new> }} Reply the text box that is open, and what it is for */
 
 /** How often to reload when nothing reported a change, in case a change was missed. */
 const RELOAD_MS = 10000;
 /** What each key does, by the command's name. The names are also what `tickets.<name>` takes. */
-const COMMANDS = ["left", "right", "up", "down", "open", "back", "start", "agent", "next-agent", "approve", "reply", "new", "all", "reload"];
+const COMMANDS = ["left", "right", "up", "down", "open", "back", "start", "agent", "next-agent", "hide-agent", "approve", "reply", "new", "all", "reload"];
 /** @type {Record<string, string>} keys by KeyEvent.key or keystroke -> command */
 const KEYS = { h: "left", left: "left", l: "right", right: "right", k: "up", up: "up", j: "down", down: "down",
-  enter: "open", backspace: "back", s: "start", o: "agent", g: "next-agent", y: "approve", c: "reply", n: "new", a: "all", r: "reload" };
-
-/** A path in one spelling, to compare two of them. @param {string} path */
-const samePath =(path) => path.replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+  enter: "open", backspace: "back", s: "start", o: "agent", g: "next-agent", y: "approve", a: "reply", c: "reply", n: "new", v: "all", r: "reload" };
 
 /** The text up to the end of its first sentence. @param {string} text */
 const firstSentence = (text) => /^.*?[.!?](?=\s|$)/s.exec(text.trim())?.[0] ?? text.trim();
-
-/** The first message for an agent that starts on a ticket: the ticket, then how to report back. @param {Ticket} ticket */
-function taskFor(ticket) {
-  const cmd = `node "${script()}"`;
-  const n = ticket.number;
-  return [
-    `Work on ticket #${n}: ${ticket.title}`,
-    ...(ticket.description ? ["", ticket.description] : []),
-    ...(ticket.criteria?.length ? ["", "Done when:", ...ticket.criteria.map((c) => `- ${c}`)] : []),
-    ...(ticket.answer ? ["", `An earlier agent asked: ${ticket.question}`, `The answer: ${ticket.answer}`] : []),
-    ...(ticket.feedback ? ["", `Earlier work was reviewed (${ticket.summary}). Changes requested: ${ticket.feedback}`] : []),
-    "",
-    "Report on the ticket with these commands, run from this repo:",
-    `- ${cmd} show ${n}   (read the ticket again)`,
-    `- ${cmd} block ${n} "<question>"   (you need an answer from me before you can go on, then stop)`,
-    `- ${cmd} submit ${n} "<summary>"   (the work is finished and ready for my review)`,
-  ].join("\n");
-}
-
-/** The agents that can be started, from a knownAgents() list. @param {{ key: string, name: string, run: string[], installed: boolean }[]} list @returns {Starter[]} */
-const installed = (list) => list.filter((a) => a.installed && a.run?.length).map((a) => ({ key: a.key, name: a.name, run: a.run }));
 
 export class Board {
   /** @param {Context} cx */
@@ -90,17 +67,28 @@ export class Board {
     this.loads = 0;
     /** @type {string | null} the selected card's id */
     this.selected = null;
-    /** True while the selected ticket is shown in full, in place of the columns. */
-    this.opened = false;
+    /**
+     * Set when this copy is one ticket in its own dialog, opened over the board: the card's id.
+     * Esc closes Herdr's top dialog, so the ticket closes and the board under it stays.
+     * @type {string | null}
+     */
+    this.only = typeof props()?.ticket === "string" ? props().ticket : null;
+    /** The board's overlay, for a ticket's dialog to close with its own when an agent's tab is shown. @type {string | null} */
+    this.parent = props()?.board ?? null;
+    /** The board: true while a ticket's dialog is open over it. Commands sent by name are that dialog's then. */
+    this.covered = false;
+    if (this.only) this.selected = this.only;
+    /** True when this copy shows one ticket in full. */
+    this.opened = Boolean(this.only);
     /**
      * The installed agents, most picked first. Asking takes a few seconds the first time, so it
      * starts with the list Herdr's own new-tab menu last saved.
      * @type {Starter[]}
      */
-    this.starters = installed(/** @type {any} */ (shared("new-menu.agents"))?.[""] ?? []);
+    this.starters = savedStarters();
     /** True until knownAgents() has answered. */
     this.checking = true;
-    /** The agent `s` starts with, by key. Kept across opens. */
+    /** The agent `s` starts with, by key, until one is chosen with g. That choice is shared, so the board and a ticket's dialog agree. */
     this.starterKey = localStorage.getItem("agent") ?? "";
     /** The card whose workflow ticket `s` asked about. A second `s` on it starts an agent. @type {string | null} */
     this.takeover = null;
@@ -136,8 +124,9 @@ export class Board {
     cx.spawn(async (cx) => {
       for (;;) {
         const command = await nextCommand();
-        if (command === "focus") this.handle.focus();
-        else { this.say(""); this.act(command, cx); }
+        // A ticket's dialog sends "focus" as it closes, so the board has the keyboard again.
+        if (command === "focus") { this.covered = false; this.handle.focus(); }
+        else if (!this.covered) { this.say(""); this.act(command, cx); }
         cx.notify();
       }
     });
@@ -171,11 +160,27 @@ export class Board {
     closeOverlay(props().overlay);
   }
 
+  /** Closes this dialog and the board under it, so a tab can be seen. */
+  closeAll() {
+    if (this.parent) closeOverlay(this.parent);
+    this.close();
+  }
+
+  /** A ticket's dialog is closing: the board under it takes the keyboard back. */
+  leaving() {
+    if (this.only) run("tickets.focus");
+  }
+
+  /** The agents `s` can start: the installed ones the person has not hidden. @returns {Starter[]} */
+  usable() {
+    return usableAgents(this.starters);
+  }
+
   /** The cards being shown, one list per status, in the board's column order. @returns {Card[][]} */
   columns() {
     const board = this.board;
     if (!board) return [];
-    const shown = this.all ? board.projects : board.projects.filter((p) => p.key === board.current);
+    const shown = this.all || this.only ? board.projects : board.projects.filter((p) => p.key === board.current);
     const cards = shown.flatMap((p) => p.tickets.map((ticket) => ({ id: `${p.key}#${ticket.number}`, p, ticket })));
     return board.statuses.map((s) => cards.filter((c) => c.ticket.status === s.id));
   }
@@ -190,6 +195,8 @@ export class Board {
       const row = cols[col].findIndex((c) => c.id === this.selected);
       if (row >= 0) return { col, row, card: cols[col][row] };
     }
+    // A ticket's dialog shows that ticket or nothing, never the first card in its place.
+    if (this.only) return null;
     const col = cols.findIndex((c) => c.length > 0);
     return col < 0 ? null : { col, row: 0, card: cols[col][0] };
   }
@@ -216,21 +223,12 @@ export class Board {
 
   /** The agent `s` starts with: the chosen one when it is installed, else the most picked. @returns {Starter | null} */
   starter() {
-    return this.starters.find((a) => a.key === this.starterKey) ?? this.starters[0] ?? null;
+    return pickStarter(this.starters, this.starterKey);
   }
 
   /** The running agent a ticket is linked to, if its terminal still has one. @param {Ticket} ticket @returns {AgentInfo | null} */
   agentOf(ticket) {
     return ticket.terminal ? agents().find((a) => a.address === ticket.terminal) ?? null : null;
-  }
-
-  /** A space that is on the project's repo: the shown one first. @param {Project} p */
-  spaceFor(p) {
-    if (!p.root) return null;
-    const root = samePath(p.root);
-    const on = (/** @type {SpaceInfo} */ s) => !s.machine && (samePath(folderOf(s)) + "/").startsWith(root + "/");
-    const all = spaces();
-    return all.find((s) => s.active && on(s)) ?? all.find(on) ?? null;
   }
 
   /**
@@ -258,18 +256,9 @@ export class Board {
     this.message = "";
     cx.spawn(async (cx) => {
       try {
-        const { p, ticket } = card;
-        const space = this.spaceFor(p);
-        const spec = { name: `#${ticket.number} ${ticket.title}`.slice(0, 40), argv: starter.run, task: taskFor(ticket),
-          ...(p.root ? { folder: p.root } : {}), ...(space ? { space: space.id } : {}) };
-        // run("tab.new") returns nothing. The CLI prints the terminal it made, which the ticket needs.
-        const made = await exec("herdr-app", ["do", "tab.new", JSON.stringify(spec)]);
-        if (made.code !== 0) throw new Error(made.stdout.trim() || made.stderr.trim() || "herdr-app could not open the tab");
-        const terminal = JSON.parse(made.stdout).terminal;
-        const saved = await exec("node", [script(), "start", String(ticket.number), "--terminal", terminal, ...(p.root ? ["--in", p.root] : [])]);
-        if (saved.code !== 0) throw new Error(saved.stderr.trim());
+        await startAgent(card.p, card.ticket, starter);
         this.starting = false;
-        this.close();
+        this.closeAll();
       } catch (e) {
         this.starting = false;
         this.say(`Could not start: ${e instanceof Error ? e.message : String(e)}`);
@@ -282,17 +271,32 @@ export class Board {
   act(name, cx) {
     const at = this.place(this.columns());
     if (name !== "start") this.takeover = null;
+    if (this.only && (name === "all" || name === "new")) return;
     if (name === "all") { this.all = !this.all; localStorage.setItem("all", String(this.all)); this.opened = false; }
     else if (name === "reload") this.reload(cx);
-    else if (name === "back") this.opened = false;
+    else if (name === "back") { if (this.only) this.close(); }
     else if (name === "next-agent") {
-      const i = this.starters.indexOf(/** @type {Starter} */ (this.starter()));
-      const next = this.starters[(i + 1) % Math.max(1, this.starters.length)];
-      if (next) { this.starterKey = next.key; localStorage.setItem("agent", next.key); }
+      const list = this.usable();
+      const i = list.indexOf(/** @type {Starter} */ (this.starter()));
+      const next = list[(i + 1) % Math.max(1, list.length)];
+      if (next) setShared("tickets.agent", next.key);
+    }
+    else if (name === "hide-agent") {
+      // No key does this: it is sent by name ("tickets.hide-agent"), since it is set once.
+      const now = this.starter();
+      if (!now || this.usable().length < 2) { this.say("The only agent left cannot be hidden."); return; }
+      const hidden = /** @type {any} */ (shared("tickets.hiddenAgents"));
+      setShared("tickets.hiddenAgents", [...(Array.isArray(hidden) ? hidden : []), now.key]);
+      this.say(`${now.name} will not be offered again. To bring it back, remove it from "tickets.hiddenAgents" in shared.json.`, false);
     }
     else if (name === "new") this.openDraft(cx);
     else if (!at) return;
-    else if (name === "open") { this.selected = at.card.id; this.opened = true; }
+    else if (name === "open") {
+      if (this.only) return;
+      this.selected = at.card.id;
+      this.covered = true;
+      openOverlay({ mod: "tickets", kind: "dialog", width: 0.6, height: 0.75, frame: "none", props: { ticket: at.card.id, board: props().overlay } });
+    }
     else if (name === "start") this.start(at.card, cx);
     else if (name === "approve") this.approve(at.card, cx);
     else if (name === "reply") this.openReply(at.card, cx);
@@ -300,7 +304,7 @@ export class Board {
       const agent = this.agentOf(at.card.ticket);
       if (!agent) { this.say(`#${at.card.ticket.number} has no running agent. Press s to start one.`); return; }
       run("agent.focus", { terminal: agent.address });
-      this.close();
+      this.closeAll();
     }
     else if (this.opened) return; // The rest move around the board, which a ticket in full hides.
     else if (name === "left") this.move(-1, 0);
@@ -324,7 +328,7 @@ export class Board {
     cx.stop_propagation();
     // Esc leaves a ticket first, then the board.
     if (e.key === "escape" || e.keystroke === "q") {
-      if (this.opened) this.opened = false; else this.close();
+      this.close();
       cx.notify();
       return;
     }
@@ -363,7 +367,7 @@ export class Board {
   openReply(card, cx) {
     const status = card.ticket.status;
     if (status !== "blocked" && status !== "review") {
-      this.say(`#${card.ticket.number} has nothing to reply to. c answers a blocked ticket or asks for changes on one in review.`);
+      this.say(`#${card.ticket.number} has nothing to reply to. a answers a blocked ticket, and c asks for changes on one in review.`);
       return;
     }
     const kind = status === "blocked" ? "answer" : "changes";
@@ -453,6 +457,12 @@ export class Board {
     cx.notify();
   }
 
+  /** What a ticket still waits on, as "Waits on #1, #2". Empty when nothing. @param {Card} card */
+  heldBy(card) {
+    const open = neededBy(card.p, card.ticket).filter((t) => t.status !== "done");
+    return open.length ? `Waits on ${open.map((t) => `#${t.number}`).join(", ")}` : "";
+  }
+
   /** The agent on a ticket: its status mark and program name. Empty when none is running. @param {Theme} t @param {Ticket} ticket */
   agentMark(t, ticket) {
     const agent = this.agentOf(ticket);
@@ -472,19 +482,22 @@ export class Board {
   card(t, card, on) {
     const { p, ticket } = card;
     const waiting = ticket.status === "blocked" && ticket.question;
+    const held = ticket.status === "todo" ? this.heldBy(card) : "";
     const note = waiting ? ticket.question
       : ticket.status === "review" && ticket.summary ? ticket.summary
       : ticket.status === "doing" && ticket.feedback ? `Changes: ${ticket.feedback}`
+      : held ? held
       : firstSentence(ticket.description ?? "");
     const mark = this.agentMark(t, ticket);
     return v_flex().id(`card-${card.id}`).flex_none().p(10).gap(4).rounded(SIZE.rowRadius).border_1().cursor_pointer()
       .bg(on ? t.selected : t.raised).border_color(on ? t.accent : waiting ? t.blocked : t.border)
       .hover((s) => s.border_color(t.accent))
-      .on_click((_e, cx) => { this.selected = card.id; this.opened = true; this.message = ""; cx.notify(); })
+      .on_click((_e, cx) => { this.selected = card.id; this.message = ""; this.act("open", cx); cx.notify(); })
       .child(h_flex().gap(6).items_center()
         .child(div().flex_none().text_size(SIZE.small).text_color(t.dim).child(`#${ticket.number}`))
         .when(this.all, (el) => el.child(div().min_w(0).truncate().text_size(SIZE.small).text_color(t.accent).child(p.name)))
         .child(div().flex_1())
+        .when(Boolean(ticket.auto) && ticket.status === "todo", (el) => el.child(div().flex_none().text_size(SIZE.small).text_color(t.muted).child("auto")))
         .when(Boolean(mark), (el) => el.child(mark)))
       .child(div().text_size(SIZE.text).font_medium().text_color(t.foreground).child(ticket.title))
       .when(Boolean(note), (el) => el.child(div().text_size(SIZE.small).text_color(waiting ? t.blocked : t.dim).child(note)));
@@ -517,6 +530,8 @@ export class Board {
       .child(h_flex().flex_none().gap(6).items_center()
         .child(tag(t, status, ticket.status === "blocked" ? t.blocked : t.accent))
         .child(tag(t, p.name, t.muted))
+        .when(Boolean(ticket.auto), (el) => el.child(tag(t, "auto", t.muted)))
+        .when(Boolean(this.heldBy(card)), (el) => el.child(div().text_size(SIZE.small).text_color(t.dim).child(this.heldBy(card))))
         .when(Boolean(mark), (el) => el.child(mark))
         .when(!mark && Boolean(ticket.terminal), (el) => el.child(div().text_size(SIZE.small).text_color(t.dim).child(`Agent ${ticket.terminal} has ended`))))
       .child(v_flex().id("ticket-body").flex_1().min_h(0).overflow_y_scrollbar()
@@ -534,7 +549,7 @@ export class Board {
   render(_cx) {
     const t = colors();
     const board = this.board;
-    const base = { id: "tickets", title: "Tickets", handle: this.handle, fill: true, onKey: (/** @type {KeyEvent} */ e, /** @type {Context} */ cx) => this.key(e, cx) };
+    const base = { id: "tickets", title: this.only ? "Ticket" : "Tickets", handle: this.handle, fill: true, onKey: (/** @type {KeyEvent} */ e, /** @type {Context} */ cx) => this.key(e, cx) };
     if (!board) return frame(t, base).child(listNote(t, this.error || "Loading…"));
 
     const cols = this.columns();
@@ -543,7 +558,7 @@ export class Board {
     const current = board.projects.find((p) => p.key === board.current) ?? null;
     const where = this.all ? `${board.projects.length} ${board.projects.length === 1 ? "project" : "projects"}` :(current?.name ?? spaces().find((s) => s.active)?.name ?? "");
     const details = h_flex().flex_1().min_w(0).items_center().gap(10)
-      .child(div().flex_none().text_size(11.5).text_color(t.dim).child(`${where} · ${count} ${count === 1 ? "ticket" : "tickets"}`))
+      .when(!this.only, (el) => el.child(div().flex_none().text_size(11.5).text_color(t.dim).child(`${where} · ${count} ${count === 1 ? "ticket" : "tickets"}`)))
       .child(div().flex_1())
       .when(Boolean(this.error), (el) => el.child(div().flex_none().max_w(360).truncate().text_size(SIZE.small).text_color(t.blocked).child(this.error)));
 
@@ -552,7 +567,7 @@ export class Board {
     // The review keys show only on a ticket they work on.
     const status = at?.card.ticket.status;
     /** @type {Hint[]} */
-    const review = status === "review" ? [["y", "approve"], ["c", "request changes"]] : status === "blocked" ? [["c", "answer"]] : [];
+    const review = status === "review" ? [["y", "approve"], ["c", "request changes"]] : status === "blocked" ? [["a", "answer"]] : [];
     const reply = this.reply;
     const draft = this.draft;
     const repo = current?.name ?? spaces().find((s) => s.active)?.name ?? "this space";
@@ -563,16 +578,17 @@ export class Board {
     /** @type {Hint[]} */
     const hints = entry ? [["enter", entry.enter], ["esc", "cancel"]]
       : this.opened && at
-      ? [["esc", "back"], ...review, start, ["o", "go to agent"], ["g", "next agent"]]
-      : [["h/j/k/l", "move"], ["enter", "open"], ["n", "new"], ...review, start, ["o", "go to agent"], ["g", "next agent"], ["a", this.all ? "this space" : "all spaces"], ["r", "reload"], ["esc", "close"]];
+      ? [["esc", "close"], ...review, start, ["o", "go to agent"], ["g", "switch agent"]]
+      : [["h/j/k/l", "move"], ["enter", "open"], ["n", "new"], ...review, start, ["o", "go to agent"], ["g", "switch agent"], ["v", this.all ? "this space" : "all spaces"], ["r", "reload"], ["esc", "close"]];
     const body = this.opened && at ? this.detail(t, at.card, board.statuses)
+      : this.only ? v_flex().flex_1().min_h(0).child(listNote(t, "This ticket is gone."))
       : count ? h_flex().flex_1().min_h(0).gap(10).children(board.statuses.map((s, i) => this.column(t, s, cols[i], at?.card.id ?? null)))
       : v_flex().flex_1().min_h(0).child(listNote(t, this.all
         ? "No tickets yet. Press n to make one for this space's repo."
-        : "No tickets for this space's repo yet. Press n to make one, or a to see every space."));
+        : "No tickets for this space's repo yet. Press n to make one, or v to see every space."));
 
     return frame(t, { ...base, details })
-      .when(!this.opened || !at, (el) => el.child(h_flex().flex_none().gap(6)
+      .when(!this.only, (el) => el.child(h_flex().flex_none().gap(6)
         .child(chip(t, { id: "scope-space", label: "This space", on: !this.all, click: (cx) => { if (this.all) this.act("all", cx); cx.notify(); } }))
         .child(chip(t, { id: "scope-all", label: "All spaces", on: this.all, click: (cx) => { if (!this.all) this.act("all", cx); cx.notify(); } }))))
       .child(body)

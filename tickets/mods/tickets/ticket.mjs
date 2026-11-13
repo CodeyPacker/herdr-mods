@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // ticket: the command agents and people use to create and update tickets for the tickets mod.
 //
-//   node ticket.mjs create "<title>" [--desc "<text>"] [--criteria "<text>"]...
+//   node ticket.mjs create "<title>" [--desc "<text>"] [--criteria "<text>"]... [--after <number>]...
+//   node ticket.mjs auto <number>... [--off]         Herdr starts an agent on these when they are ready
 //   node ticket.mjs list
 //   node ticket.mjs show <number>
-//   node ticket.mjs edit <number> [--title "<text>"] [--desc "<text>"] [--criteria "<text>"]...
+//   node ticket.mjs edit <number> [--title "<text>"] [--desc "<text>"] [--criteria "<text>"]... [--after <number>]...
 //   node ticket.mjs start <number> [--terminal <address>]   work begins, by the agent in that Herdr terminal
 //   node ticket.mjs start <number> --runner workflow         work begins, by an agent in a workflow run
 //   node ticket.mjs move <number> <todo|doing|blocked|review|done>
@@ -13,6 +14,9 @@
 //   node ticket.mjs answer <number> "<answer>"       answers a blocked ticket's question, work goes on
 //   node ticket.mjs changes <number> "<feedback>"    review found things to change, work goes on
 //   node ticket.mjs approve <number>                 review passed, the ticket is done
+//
+// --after names a ticket that must be done first. A ticket set to auto is started by the mod's
+// slot, in a Herdr tab, once every ticket it waits on is done.
 //
 // Every command takes --json (machine output) and --in <folder> (the repo, default: where you are).
 // `board --json [--for <folder>]` prints every project, for the mod.
@@ -37,6 +41,8 @@ import { execFileSync } from "node:child_process";
  * @property {string} [feedback] what a review asked to change, kept until the next submit
  * @property {string} summary what was done, given on submit
  * @property {string} terminal the Herdr terminal of the agent working on it ("t7"), or ""
+ * @property {number[]} [needs] the tickets that must be done before this one starts
+ * @property {boolean} [auto] true: Herdr starts an agent on it when it is ready
  * @property {string} [runner] "workflow" while a workflow run has the ticket, else empty
  * @property {string} created ISO time
  * @property {string} updated ISO time
@@ -128,7 +134,7 @@ function saveTicket(p, ticket) {
 /**
  * Makes a ticket with the next free number. The file is created only if it does not exist yet,
  * so two agents creating at once get different numbers.
- * @param {Project} p @param {{ title: string, description: string, criteria: string[] }} fields @returns {Ticket}
+ * @param {Project} p @param {{ title: string, description: string, criteria: string[], needs?: number[] }} fields @returns {Ticket}
  */
 function createTicket(p, fields) {
   ensureProject(p);
@@ -163,20 +169,32 @@ function readBoard() {
 function parse(argv) {
   /** @type {string[]} */
   const words = [];
-  /** @type {{ json: boolean, in: string, for: string, desc: string | null, title: string | null, terminal: string, runner: string, criteria: string[] }} */
-  const flags = { json: false, in: "", for: "", desc: null, title: null, terminal: "", runner: "", criteria: [] };
+  /** @type {{ json: boolean, in: string, for: string, desc: string | null, title: string | null, terminal: string, runner: string, criteria: string[], after: string[], off: boolean }} */
+  const flags = { json: false, in: "", for: "", desc: null, title: null, terminal: "", runner: "", criteria: [], after: [], off: false };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--json") flags.json = true;
-    else if (["--in", "--for", "--desc", "--title", "--terminal", "--runner", "--criteria"].includes(arg)) {
+    else if (arg === "--off") flags.off = true;
+    else if (["--in", "--for", "--desc", "--title", "--terminal", "--runner", "--criteria", "--after"].includes(arg)) {
       const value = argv[++i];
       if (value === undefined) throw new Problem(`${arg} needs a value.`);
       if (arg === "--criteria") flags.criteria.push(value);
+      else if (arg === "--after") flags.after.push(value);
       else flags[/** @type {"in" | "for" | "desc" | "title" | "terminal" | "runner"} */ (arg.slice(2))] = value;
     } else if (arg.startsWith("--")) throw new Problem(`Unknown option ${arg}.`);
     else words.push(arg);
   }
   return { words, flags };
+}
+
+/**
+ * The tickets named with --after, as numbers. Each must exist and must not be the ticket itself.
+ * @param {Project} p @param {string[]} after @param {number} [self] @returns {number[]}
+ */
+function needsFrom(p, after, self) {
+  const needs = [...new Set(after.map((text) => readTicket(p, text).number))];
+  if (self !== undefined && needs.includes(self)) throw new Problem(`#${self} cannot wait on itself.`);
+  return needs.sort((a, b) => a - b);
 }
 
 /** One ticket as a line: "#3  doing    Fix the login bug". @param {Ticket} t */
@@ -187,6 +205,8 @@ function describe(t) {
   const out = [`#${t.number} ${t.title}`, `Status: ${t.status}`];
   if (t.description) out.push("", t.description);
   if (t.criteria.length) out.push("", "Done when:", ...t.criteria.map((c) => `- ${c}`));
+  if (t.needs?.length) out.push("", `Waits on: ${t.needs.map((n) => `#${n}`).join(", ")}`);
+  if (t.auto) out.push("", "Auto: Herdr starts an agent on it when it is ready.");
   if (t.question) out.push("", `Question: ${t.question}`);
   if (t.answer) out.push(`Answer: ${t.answer}`);
   if (t.feedback) out.push("", `Changes requested: ${t.feedback}`);
@@ -197,10 +217,11 @@ function describe(t) {
 }
 
 const USAGE = `Usage: node ticket.mjs <command>
-  create "<title>" [--desc "<text>"] [--criteria "<text>"]...
+  create "<title>" [--desc "<text>"] [--criteria "<text>"]... [--after <number>]...
+  auto <number>... [--off]
   list
   show <number>
-  edit <number> [--title "<text>"] [--desc "<text>"] [--criteria "<text>"]...
+  edit <number> [--title "<text>"] [--desc "<text>"] [--criteria "<text>"]... [--after <number>]...
   start <number> [--terminal <address> | --runner workflow]
   move <number> <${STATUSES.map((s) => s.id).join("|")}>
   block <number> "<question>"
@@ -225,8 +246,17 @@ function main(argv) {
   const project = projectFor(flags.in || process.cwd());
   if (command === "create") {
     if (!first?.trim()) throw new Problem('create needs a title: create "<title>"');
-    const ticket = createTicket(project, { title: first.trim(), description: (flags.desc ?? "").trim(), criteria: flags.criteria.map((c) => c.trim()).filter(Boolean) });
+    const needs = needsFrom(project, flags.after);
+    const ticket = createTicket(project, { title: first.trim(), description: (flags.desc ?? "").trim(), criteria: flags.criteria.map((c) => c.trim()).filter(Boolean), ...(needs.length ? { needs } : {}) });
     return print(ticket, `Created #${ticket.number} in ${project.name}: ${ticket.title}`);
+  }
+  if (command === "auto") {
+    const numbers = words.slice(1);
+    if (!numbers.length) throw new Problem("auto needs ticket numbers: auto <number>... [--off]");
+    // Every number is read first, so a wrong one changes nothing.
+    const tickets = numbers.map((text) => readTicket(project, text));
+    for (const ticket of tickets) { ticket.auto = !flags.off; saveTicket(project, ticket); }
+    return print(tickets, `${tickets.map((t) => `#${t.number}`).join(", ")}: auto is ${flags.off ? "off" : "on"}.`);
   }
   if (command === "list") {
     const tickets = readTickets(project.dir);
@@ -250,7 +280,9 @@ function main(argv) {
   if (command === "edit") {
     const ticket = readTicket(project, first);
     const criteria = flags.criteria.map((c) => c.trim()).filter(Boolean);
-    if (flags.title === null && flags.desc === null && !criteria.length) throw new Problem("edit needs something to change: --title, --desc or --criteria.");
+    if (flags.title === null && flags.desc === null && !criteria.length && !flags.after.length) throw new Problem("edit needs something to change: --title, --desc, --criteria or --after.");
+    // The given tickets replace the ones it waited on, as with criteria.
+    if (flags.after.length) ticket.needs = needsFrom(project, flags.after, ticket.number);
     if (flags.title !== null) {
       if (!flags.title.trim()) throw new Problem("A ticket needs a title.");
       ticket.title = flags.title.trim();
