@@ -2,7 +2,7 @@
 import { appHome, exec, panes } from "herdr";
 
 /** @typedef {import("herdr").SpaceInfo} SpaceInfo */
-/** @typedef {{ number: number, title: string, description: string, criteria: string[], status: string, question: string, summary: string, terminal?: string, needs?: number[], auto?: boolean, answer?: string, feedback?: string }} Ticket */
+/** @typedef {{ number: number, title: string, description: string, criteria: string[], status: string, question: string, summary: string, terminal?: string, needs?: number[], auto?: boolean, answer?: string, feedback?: string, base?: string, tour?: boolean, pr?: number, prUrl?: string }} Ticket */
 /** @typedef {{ key: string, name: string, root: string, tickets: Ticket[] }} Project */
 /** @typedef {{ id: string, label: string }} Status */
 /** @typedef {{ statuses: Status[], current: string | null, projects: Project[] }} BoardData every project and its tickets, as ticket.mjs reports them */
@@ -12,6 +12,17 @@ const appDir = () => appHome().replace(/\\/g, "/");
 export const script = () => `${appDir()}/mods/tickets/ticket.mjs`;
 /** The folder every project's tickets are in. */
 export const dataDir = () => `${appDir()}/data/tickets`;
+
+/**
+ * True when every path a folder watch reported is inside the tickets' worktrees. Agents change
+ * files there all the time, and none of it is a ticket, so the board need not be read again.
+ * @param {string[]} paths
+ */
+export function onlyWorktrees(paths) {
+  const same = (/** @type {string} */ path) => path.replace(/\\/g, "/").toLowerCase();
+  const inside = `${same(dataDir())}/worktrees/`;
+  return paths.length > 0 && paths.every((path) => same(path).startsWith(inside));
+}
 
 /**
  * Where a space is right now: the folder of the focused pane in the tab it shows, then any pane

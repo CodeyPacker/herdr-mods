@@ -1,4 +1,4 @@
-// The dialogs over a screen. Before a fix is pushed, a review posted or a PR merged, a card a
+// The dialogs over a screen. Before a fix is pushed, a review posted, a PR merged or a ticket's comments sent, a card a
 // little above the middle of the pane says what will happen: y goes ahead, n or esc cancels.
 // After a merge, a card says it's done and offers what's next. The pane behind is dimmed and
 // takes no clicks while one is open.
@@ -25,6 +25,16 @@ export function pendingConfirm(v) {
       go: cx => v.postReview(cx), cancel: () => { v.review.confirm = false; },
     };
   }
+  const ticket = v.ticketTour();
+  if (v.phase === "tour" && v.handBack?.confirm && ticket) {
+    const n = v.comments.length, error = v.handBack.error;
+    return {
+      title: error ? "Send the comments again?" : `Send ${n} comment${n === 1 ? "" : "s"} to ticket #${ticket.number}?`,
+      text: error ? `They were not sent: ${error}`
+        : `Saves them on ticket #${ticket.number} as changes to make, sends them to its agent if it is running, and closes this tab. Nothing is posted on GitHub.`,
+      go: cx => v.requestChanges(cx), cancel: () => { v.handBack = null; },
+    };
+  }
   const m = v.merge, method = m?.methods?.[m.cursor];
   if (v.phase === "merge" && m?.confirm && m.phase === "picking" && method) return {
     title: `${method.label}?`,
@@ -38,11 +48,17 @@ export function pendingConfirm(v) {
 export function confirmDialog(v, t) {
   const m = v.merge;
   if (v.phase === "merge" && m?.phase === "merged") {
-    const method = m.methods?.[m.cursor];
-    return card(t, `Merged into ${v.pr.base}`, `PR #${v.pr.number}, ${method ? method.label.toLowerCase() : "merged"}.`, [
+    const method = m.methods?.[m.cursor], ticket = v.ticketTour(), a = m.approve;
+    // On a ticket's tour the merge also approves the ticket.
+    const approval = !ticket || !a ? ""
+      : a.phase === "approving" ? ` Approving ticket #${ticket.number}…`
+      : a.phase === "approved" ? ` Ticket #${ticket.number} is approved and done.${a.error ? ` ${a.error}` : ""}`
+      : ` Ticket #${ticket.number} was not approved: ${a.error}`;
+    return card(t, `Merged into ${v.pr.base}`, `PR #${v.pr.number}, ${method ? method.label.toLowerCase() : "merged"}.${approval}`, [
       button(t, "merged-back", "Back to tour", "b", true, (_e, cx) => { v.closeMerge(); cx.notify(); }),
       button(t, "merged-new", "New tour", "q", true, (_e, cx) => { v.reset(cx); cx.notify(); }),
       button(t, "merged-open", "Open PR", "o", true, (_e, cx) => { v.openPR(); cx.notify(); }),
+      ...(ticket ? [button(t, "merged-close", "Close tab", "c", a?.phase !== "approving", (_e, cx) => { v.closeTab(cx); cx.notify(); })] : []),
     ]);
   }
   const c = pendingConfirm(v);

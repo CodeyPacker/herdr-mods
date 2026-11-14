@@ -6,11 +6,12 @@
 // records the agent's terminal on the ticket, so the card shows what that agent is doing.
 //
 // Keys on the board: h/j/k/l or the arrows move, enter opens the ticket, s starts an agent on it now,
-// t has the slot start one when the tickets it waits on are done,
+// t has the slot start one when the tickets it waits on are done, u has the slot open a Tourist
+// review of its pull request when it reaches review,
 // o goes to its agent (a peek at it when it runs without a tab), g picks the next agent to start with, v switches between this space's
 // project and every project, r reloads, esc closes. In a ticket: esc goes back, s and o as above.
 // On a ticket in review, y approves it, which ends its agent, and c asks for changes. On a blocked ticket, a answers its
-// question. What you type is saved on the ticket and sent to its agent when one is running.
+// question. What you type is saved on the ticket and sent to its agent when one is running (ticket.mjs does both).
 // n makes a ticket for the shown space's repo: type a title, enter, then a description, enter.
 // p plans a batch: type what should be built, and a planner agent opens in a tab, writes the
 // tickets and waits for you. Tickets it releases, or you set to auto with t, are started by the
@@ -19,7 +20,7 @@
 
 import { div } from "gpui-kit";
 import { v_flex, h_flex, ScrollHandle, InputState } from "gpui-base";
-import { props, closeOverlay, openOverlay, setShared, exec, hc, run, spaces, focused, knownAgents, shared, watchFolder, nextCommand } from "herdr";
+import { props, closeOverlay, openOverlay, setShared, exec, run, spaces, panes, focused, knownAgents, shared, watchFolder, nextCommand } from "herdr";
 import { colors, SIZE } from "./kit/theme.js";
 import { frame, divider } from "./kit/frame.js";
 import { chip, spinner, textInput } from "./kit/controls.js";
@@ -27,7 +28,7 @@ import { legend } from "./kit/legend.js";
 import { listNote } from "./kit/list.js";
 import { tag, banner, sectionLabel } from "./kit/pane.js";
 import { statusDot } from "./kit/spaces.js";
-import { script, dataDir, folderOf, readBoard } from "./data.js";
+import { script, dataDir, folderOf, readBoard, onlyWorktrees } from "./data.js";
 import { installed, savedStarters, usableAgents, pickStarter, neededBy, startAgent, startPlanner, agentOn, showAgent, hideAgent, endAgent } from "./start.js";
 
 /** @typedef {import("gpui-kit").Color} Color */
@@ -49,10 +50,10 @@ import { installed, savedStarters, usableAgents, pickStarter, neededBy, startAge
 /** How often to reload when nothing reported a change, in case a change was missed. */
 const RELOAD_MS = 10000;
 /** What each key does, by the command's name. The names are also what `tickets.<name>` takes. */
-const COMMANDS = ["left", "right", "up", "down", "open", "back", "start", "agent", "next-agent", "hide-agent", "approve", "reply", "new", "plan", "auto", "all", "reload"];
+const COMMANDS = ["left", "right", "up", "down", "open", "back", "start", "agent", "next-agent", "hide-agent", "approve", "reply", "new", "plan", "auto", "tour", "all", "reload"];
 /** @type {Record<string, string>} keys by KeyEvent.key or keystroke -> command */
 const KEYS = { h: "left", left: "left", l: "right", right: "right", k: "up", up: "up", j: "down", down: "down",
-  enter: "open", backspace: "back", s: "start", o: "agent", g: "next-agent", y: "approve", a: "reply", c: "reply", n: "new", p: "plan", t: "auto", v: "all", r: "reload" };
+  enter: "open", backspace: "back", s: "start", o: "agent", g: "next-agent", y: "approve", a: "reply", c: "reply", n: "new", p: "plan", t: "auto", u: "tour", v: "all", r: "reload" };
 
 /** The text up to the end of its first sentence. @param {string} text */
 const firstSentence = (text) => /^.*?[.!?](?=\s|$)/s.exec(text.trim())?.[0] ?? text.trim();
@@ -115,7 +116,7 @@ export class Board {
       await this.load();
       cx.notify();
       for (;;) {
-        try { await watchFolder(dataDir()); } catch { return; } // The timer still reloads.
+        try { if (onlyWorktrees(await watchFolder(dataDir()))) continue; } catch { return; } // The timer still reloads.
         await this.load();
         cx.notify();
       }
@@ -295,6 +296,7 @@ export class Board {
     else if (name === "plan") this.openPlan(cx);
     else if (!at) return;
     else if (name === "auto") this.toggleAuto(at.card, cx);
+    else if (name === "tour") this.toggleTour(at.card, cx);
     else if (name === "open") {
       if (this.only) return;
       this.selected = at.card.id;
@@ -350,21 +352,33 @@ export class Board {
     this.failed = failed;
   }
 
-  /** Runs ticket.mjs on a card's ticket. Rejects with the script's own message. @param {Card} card @param {string[]} args */
+  /**
+   * Runs ticket.mjs on a card's ticket and returns what it printed. Rejects with the script's own message.
+   * Merging a pull request and removing a worktree can take a while, hence the long timeout.
+   * @param {Card} card @param {string[]} args
+   */
   async change(card, args) {
-    const r = await exec("node", [script(), ...args, ...(card.p.root ? ["--in", card.p.root] : [])]);
+    const r = await exec("node", [script(), ...args, ...(card.p.root ? ["--in", card.p.root] : [])], { timeout: 180000 });
     if (r.code !== 0) throw new Error(r.stderr.trim() || `ticket.mjs exited with ${r.code}`);
+    return r.stdout;
   }
 
-  /** Review passed: the ticket is done. @param {Card} card @param {Context} cx */
+  /** Review passed: the ticket is done. A ticket with a pull request has it merged first. @param {Card} card @param {Context} cx */
   approve(card, cx) {
     const n = card.ticket.number;
     if (card.ticket.status !== "review") { this.say(`#${n} is not in review, so there is nothing to approve.`); return; }
+    const base = Boolean(card.ticket.base);
+    // A tab that holds only the agent, to close once the agent has ended.
+    const tab = this.agentOf(card.ticket)?.tab ?? null;
+    const lone = tab && panes().filter((p) => p.tab === tab).length === 1 ? tab : null;
+    if (base) this.say(`Approving #${n}: merging PR #${card.ticket.pr ?? "?"} and removing its worktree…`, false);
     cx.spawn(async (cx) => {
       try {
-        await this.change(card, ["approve", String(n)]);
-        // The work is accepted, so its agent has nothing left to do.
-        endAgent(card.ticket);
+        // The work is accepted, so its agent has nothing left to do. A ticket with a worktree has
+        // ticket.mjs end the agent before it removes the worktree, which the agent's shell is in.
+        await this.change(card, ["approve", String(n), ...(base ? [] : ["--keep-agent"])]);
+        if (!base) endAgent(card.ticket);
+        else if (lone && panes().some((p) => p.tab === lone)) run("tab.close", { id: lone, confirmed: true });
         this.say(`#${n} approved.`, false);
         // A ticket's own dialog has nothing more to show. The board under it does.
         if (this.only) { this.close(); return; }
@@ -390,7 +404,7 @@ export class Board {
     cx.timer.after(50, () => input.focus());
   }
 
-  /** Saves what was typed on the ticket, then sends it to the ticket's agent if one is running. @param {Context} cx */
+  /** Saves what was typed on the ticket. ticket.mjs also sends it to the ticket's agent if one is running. @param {Context} cx */
   sendReply(cx) {
     const reply = this.reply;
     const text = reply?.input.value().trim();
@@ -401,15 +415,11 @@ export class Board {
     this.handle.focus();
     cx.spawn(async (cx) => {
       try {
-        await this.change(card, [kind, String(n), text]);
-        const agent = this.agentOf(card.ticket);
-        if (!agent) this.say(`Saved on #${n}. No agent is running on it. Press s to start one with your reply.`, false);
-        else {
-          const lead = kind === "answer" ? `Answer to your question on ticket #${n}` : `Changes requested on ticket #${n}`;
-          const sent = await hc(["send", agent.address, `${lead}: "${text}". Carry on with the ticket, and submit it again when it is done.`]);
-          if (sent.code === 0) this.say(`Saved on #${n} and sent to ${agent.name}.`, false);
-          else this.say(`Saved on #${n}, but it did not reach the agent: ${sent.stderr.trim() || sent.stdout.trim()}`);
-        }
+        /** @type {{ forwarded?: boolean, forwardError?: string }} */
+        const sent = JSON.parse(await this.change(card, [kind, String(n), text, "--json"]));
+        if (sent.forwarded) this.say(`Saved on #${n} and sent to its agent.`, false);
+        else if (sent.forwardError) this.say(`Saved on #${n}, but it did not reach the agent: ${sent.forwardError}`);
+        else this.say(`Saved on #${n}. No agent is running on it. Press s to start one with your reply.`, false);
       } catch (e) {
         this.say(`Could not save: ${e instanceof Error ? e.message : String(e)}`);
       }
@@ -518,6 +528,22 @@ export class Board {
     });
   }
 
+  /** Turns tour on or off for a ticket: whether the slot opens a Tourist review of its pull request when it reaches review. @param {Card} card @param {Context} cx */
+  toggleTour(card, cx) {
+    const n = card.ticket.number;
+    if (card.ticket.status === "done") { this.say(`#${n} is done, so there is nothing left to tour.`); return; }
+    const on = !card.ticket.tour;
+    cx.spawn(async (cx) => {
+      try {
+        await this.change(card, ["tour", String(n), ...(on ? [] : ["--off"])]);
+        this.say(on ? `#${n} gets a Tourist review of its pull request when it reaches review.${card.ticket.base ? "" : " It has no project branch, so it will not have a pull request."}` : `#${n} will not get a tour.`, false);
+      }
+      catch (e) { this.say(`Could not change #${n}: ${e instanceof Error ? e.message : String(e)}`); }
+      await this.load();
+      cx.notify();
+    });
+  }
+
   /** The agent on a ticket: its status mark and program name. Empty when none is running. @param {Theme} t @param {Ticket} ticket */
   agentMark(t, ticket) {
     const agent = this.agentOf(ticket);
@@ -550,6 +576,7 @@ export class Board {
         .when(this.all, (el) => el.child(div().min_w(0).truncate().text_size(SIZE.small).text_color(t.accent).child(p.name)))
         .child(div().flex_1())
         .when(Boolean(ticket.auto) && ticket.status === "todo", (el) => el.child(div().flex_none().text_size(SIZE.small).text_color(t.muted).child("auto")))
+        .when(Boolean(ticket.pr), (el) => el.child(div().flex_none().text_size(SIZE.small).text_color(t.muted).child(`PR #${ticket.pr}`)))
         .when(Boolean(mark), (el) => el.child(mark)))
       .child(div().text_size(SIZE.text).font_medium().text_color(t.foreground).child(ticket.title))
       .when(Boolean(note), (el) => el.child(div().text_size(SIZE.small).text_color(waiting ? t.blocked : t.dim).child(note)));
@@ -583,6 +610,8 @@ export class Board {
         .child(tag(t, status, ticket.status === "blocked" ? t.blocked : t.accent))
         .child(tag(t, p.name, t.muted))
         .when(Boolean(ticket.auto), (el) => el.child(tag(t, "auto", t.muted)))
+        .when(Boolean(ticket.tour), (el) => el.child(tag(t, "tour", t.muted)))
+        .when(Boolean(ticket.pr), (el) => el.child(tag(t, `PR #${ticket.pr}${ticket.base ? ` into ${ticket.base}` : ""}`, t.muted)))
         .when(Boolean(this.heldBy(card)), (el) => el.child(div().text_size(SIZE.small).text_color(t.dim).child(this.heldBy(card))))
         .when(Boolean(mark), (el) => el.child(mark))
         .when(!mark && Boolean(ticket.terminal), (el) => el.child(div().text_size(SIZE.small).text_color(t.dim).child(`Agent ${ticket.terminal} has ended`))))
@@ -623,6 +652,8 @@ export class Board {
     const review = status === "review" ? [["y", "approve"], ["c", "request changes"]] : status === "blocked" ? [["a", "answer"]] : [];
     /** @type {Hint[]} */
     const auto = status === "todo" ? [["t", at?.card.ticket.auto ? "auto off" : "auto on"]] : [];
+    /** @type {Hint[]} */
+    const tour = status && status !== "done" ? [["u", at?.card.ticket.tour ? "tour off" : "tour on"]] : [];
     const reply = this.reply;
     const draft = this.draft;
     const plan = this.plan;
@@ -635,8 +666,8 @@ export class Board {
     /** @type {Hint[]} */
     const hints = entry ? [["enter", entry.enter], ["esc", "cancel"]]
       : this.opened && at
-      ? [["esc", "close"], ...review, ...auto, start, look, ["g", "switch agent"]]
-      : [["h/j/k/l", "move"], ["enter", "open"], ["n", "new"], ["p", "plan"], ...review, ...auto, start, look, ["g", "switch agent"], ["v", this.all ? "this space" : "all spaces"], ["r", "reload"], ["esc", "close"]];
+      ? [["esc", "close"], ...review, ...auto, ...tour, start, look, ["g", "switch agent"]]
+      : [["h/j/k/l", "move"], ["enter", "open"], ["n", "new"], ["p", "plan"], ...review, ...auto, ...tour, start, look, ["g", "switch agent"], ["v", this.all ? "this space" : "all spaces"], ["r", "reload"], ["esc", "close"]];
     const body = this.opened && at ? this.detail(t, at.card, board.statuses)
       : this.only ? v_flex().flex_1().min_h(0).child(listNote(t, "This ticket is gone."))
       : count ? h_flex().flex_1().min_h(0).gap(10).children(board.statuses.map((s, i) => this.column(t, s, cols[i], at?.card.id ?? null)))

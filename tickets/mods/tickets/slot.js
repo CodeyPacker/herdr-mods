@@ -6,12 +6,15 @@
 // waited-on tickets are all done gets an agent, up to LIMIT agents at a time. That agent runs
 // without a tab, since nobody asked to see it. The board's o key peeks at it.
 // Only the slot does this, since it is always there. Without it in the layout nothing starts.
+//
+// A ticket set to tour (ticket.mjs tour) that reaches review with a pull request gets a Tourist
+// tab on that pull request, opened behind the shown tab. Its toast goes to that tab.
 import { div } from "gpui-kit";
 import { h_flex } from "gpui-base";
-import { run, notify, watchFolder, terminals, knownAgents, focused } from "herdr";
+import { run, exec, notify, watchFolder, terminals, knownAgents, focused } from "herdr";
 import { colors } from "./kit/theme.js";
-import { dataDir, readBoard } from "./data.js";
-import { installed, savedStarters, pickStarter, startAgent, hideAgent, agentOn } from "./start.js";
+import { dataDir, readBoard, onlyWorktrees } from "./data.js";
+import { installed, savedStarters, pickStarter, startAgent, hideAgent, agentOn, spaceFor } from "./start.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("./data.js").BoardData} BoardData */
@@ -61,7 +64,7 @@ export class Slot {
       await this.load();
       cx.notify();
       for (;;) {
-        try { await watchFolder(dataDir()); } catch { return; } // The timer still reloads.
+        try { if (onlyWorktrees(await watchFolder(dataDir()))) continue; } catch { return; } // The timer still reloads.
         await this.load();
         cx.notify();
       }
@@ -76,24 +79,49 @@ export class Slot {
     catch (e) { this.error = e instanceof Error ? e.message : String(e); return; }
     const waiting = board.projects.flatMap((p) => p.tickets.filter((ticket) => WAITING.includes(ticket.status)).map((ticket) => ({ p, ticket, id: `${p.key}#${ticket.number}:${ticket.status}` })));
     // The first load ever only records what is waiting. After that, anything not seen is new.
-    for (const w of this.seen ? waiting.filter((w) => !this.seen?.has(w.id)) : []) {
-      const blocked = w.ticket.status === "blocked";
-      notify({
-        title: blocked ? `#${w.ticket.number} needs an answer` : `#${w.ticket.number} is ready for review`,
-        body: `${w.p.name}: ${w.ticket.title}\n${blocked ? w.ticket.question : w.ticket.summary}`,
-        level: blocked ? "warning" : "success",
-        action: { name: "mod.open", args: { name: "tickets" } },
-      });
-    }
+    const fresh = this.seen ? waiting.filter((w) => !this.seen?.has(w.id)) : [];
     const ids = waiting.map((w) => w.id).sort();
     const saved = JSON.stringify(ids);
     // Herdr keeps this in the folder being watched, so saving wakes the watch. Saving only a
     // change keeps that from repeating forever.
     if (saved !== JSON.stringify([...(this.seen ?? [])].sort()) || !this.seen) localStorage.setItem("seen", saved);
+    // Recorded before any tour opens, so a load that starts meanwhile does not open it again.
     this.seen = new Set(ids);
     this.count = waiting.length;
+    for (const w of fresh) {
+      const blocked = w.ticket.status === "blocked";
+      const tab = !blocked && w.ticket.tour && w.ticket.pr && w.p.root ? await this.openTour(w.p, w.ticket) : null;
+      notify({
+        title: blocked ? `#${w.ticket.number} needs an answer` : tab ? `The tour of #${w.ticket.number} is ready. Click to review it` : `#${w.ticket.number} is ready for review`,
+        body: `${w.p.name}: ${w.ticket.title}\n${blocked ? w.ticket.question : w.ticket.summary}`,
+        level: blocked ? "warning" : "success",
+        action: tab ? { name: "tab.select", args: { id: tab } } : { name: "mod.open", args: { name: "tickets" } },
+      });
+    }
     this.warnStuck(board);
     await this.dispatch(board);
+  }
+
+  /**
+   * Opens a Tourist tab on a ticket's pull request, then shows again the tab that was shown, so
+   * the person is not taken away from what they are doing. Returns the new tab's id, or null.
+   * @param {import("./data.js").Project} p @param {import("./data.js").Ticket} ticket
+   */
+  async openTour(p, ticket) {
+    const space = spaceFor(p);
+    const spec = { name: `Review #${ticket.number} ${ticket.title}`.slice(0, 40), mod: "tourist",
+      props: { folder: p.root, pr: ticket.pr, ticket: { number: ticket.number, root: p.root, title: ticket.title } },
+      ...(space ? { space: space.id } : {}) };
+    const shown = focused();
+    try {
+      // run("tab.new") returns nothing. The CLI prints the tab it made, which the toast needs.
+      const made = await exec("herdr-app", ["do", "tab.new", JSON.stringify(spec)]);
+      return made.code === 0 ? JSON.parse(made.stdout).tab ?? null : null;
+    } catch {
+      return null;
+    } finally {
+      if (shown?.tab) run("tab.select", { id: shown.tab });
+    }
   }
 
   /**

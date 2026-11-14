@@ -86,7 +86,10 @@ export function tourView(v, t) {
     .child(button(t, "askbtn", "Ask", "a", free, (_e, cx) => { v.startAsking(cx); cx.notify(); }))
     .when(Boolean(v.pr), el => el.child(button(t, "review", v.comments.length ? `Post review (${v.comments.length})` : "Review", "p",
       v.comments.length > 0 || !v.pr.mine, (_e, cx) => { v.startReview(cx); cx.notify(); })))
-    .when(Boolean(v.pr?.mine), el => el.child(button(t, "fix",
+    // A ticket's tour sends the comments to the ticket's agent instead of fixing them here.
+    .when(Boolean(v.ticketTour()), el => el.child(button(t, "changes", `Request changes (${v.comments.length})`, "g",
+      v.comments.length > 0 && free, (_e, cx) => { v.requestChanges(cx); cx.notify(); })))
+    .when(Boolean(v.pr?.mine) && !v.ticketTour(), el => el.child(button(t, "fix",
       v.fix?.phase === "running" ? "Fixing…" : v.fix && v.fix.phase !== "pushed" ? "View fix" : `Fix ${v.comments.length} comment${v.comments.length === 1 ? "" : "s"}`,
       "f", Boolean(v.fix && v.fix.phase !== "pushed") || (v.comments.length > 0 && free), (_e, cx) => { v.startFix(cx); cx.notify(); })))
     .when(Boolean(v.pr), el => el.child(button(t, "checks", "Checks", "c", true, (_e, cx) => { v.openChecks(cx); cx.notify(); })))

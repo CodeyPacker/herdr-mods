@@ -51,6 +51,17 @@ export function taskFor(p, ticket) {
   const cmd = `node "${script()}"`;
   const n = ticket.number;
   const built = neededBy(p, ticket).filter((t) => t.summary);
+  const base = ticket.base;
+  // A ticket with a project branch has its own worktree and branch. Its review is a pull request.
+  const branch = `ticket/${base}/${n}`;
+  const git = base ? [
+    "",
+    `You are in your own git worktree of this repo, on branch ${branch}, cut from origin/${base} (the project branch). Work only here.`,
+    "Commit your work on this branch as you go, but do not push.",
+    `Before you submit: run \`git fetch origin\`, merge origin/${base} into your branch, fix any conflicts and commit.`,
+    `submit pushes your branch and opens a pull request into ${base}${ticket.pr ? ` (PR #${ticket.pr} is already open, so it only pushes)` : ""}. It refuses work that is not committed.`,
+    "When changes are requested, make them, commit, and run submit again. That pushes them to the pull request.",
+  ] : [];
   return [
     `Work on ticket #${n}: ${ticket.title}`,
     ...(ticket.description ? ["", ticket.description] : []),
@@ -58,6 +69,7 @@ export function taskFor(p, ticket) {
     ...(built.length ? ["", "This ticket builds on finished tickets. What their agents reported:", ...built.map((t) => `- #${t.number} ${t.title}: ${t.summary}`)] : []),
     ...(ticket.answer ? ["", `An earlier agent asked: ${ticket.question}`, `The answer: ${ticket.answer}`] : []),
     ...(ticket.feedback ? ["", `Earlier work was reviewed (${ticket.summary}). Changes requested: ${ticket.feedback}`] : []),
+    ...git,
     "",
     "Report on the ticket with these commands, run from this repo:",
     `- ${cmd} show ${n}   (read the ticket again)`,
@@ -74,13 +86,21 @@ export function taskFor(p, ticket) {
  */
 export async function startAgent(p, ticket, starter) {
   const space = spaceFor(p);
+  const inRepo = p.root ? ["--in", p.root] : [];
+  let folder = p.root;
+  if (ticket.base) {
+    // Its own worktree, so the main checkout is never touched. Making one fetches, which can take a while.
+    const made = await exec("node", [script(), "worktree", String(ticket.number), "--json", ...inRepo], { timeout: 120000 });
+    if (made.code !== 0) throw new Error(made.stderr.trim() || "ticket.mjs could not make the ticket's worktree");
+    folder = JSON.parse(made.stdout).path;
+  }
   const spec = { name: `#${ticket.number} ${ticket.title}`.slice(0, 40), argv: starter.run, task: taskFor(p, ticket),
-    ...(p.root ? { folder: p.root } : {}), ...(space ? { space: space.id } : {}) };
+    ...(folder ? { folder } : {}), ...(space ? { space: space.id } : {}) };
   // run("tab.new") returns nothing. The CLI prints the terminal it made, which the ticket needs.
   const made = await exec("herdr-app", ["do", "tab.new", JSON.stringify(spec)]);
   if (made.code !== 0) throw new Error(made.stdout.trim() || made.stderr.trim() || "herdr-app could not open the tab");
   const terminal = JSON.parse(made.stdout).terminal;
-  const saved = await exec("node", [script(), "start", String(ticket.number), "--terminal", terminal, ...(p.root ? ["--in", p.root] : [])]);
+  const saved = await exec("node", [script(), "start", String(ticket.number), "--terminal", terminal, ...inRepo]);
   if (saved.code !== 0) throw new Error(saved.stderr.trim());
   return terminal;
 }
@@ -96,8 +116,10 @@ export function planTask(goal) {
     "",
     "Read the code the goal touches first. If something only I can decide is unclear, ask me before you write tickets.",
     "",
+    "Pick a short kebab-case name for this project's branch, such as `branch-mod`. Each ticket's work goes to a pull request into that branch, which I review one by one.",
+    "",
     "Create each ticket with:",
-    `  ${cmd} create "<title>" --desc "<description>" --criteria "<done when>" [--criteria "..."] [--after <number>]`,
+    `  ${cmd} create "<title>" --base <project branch> --tour --desc "<description>" --criteria "<done when>" [--criteria "..."] [--after <number>]`,
     "Create them in the order they should be done, so a ticket can name earlier ones with --after.",
     "",
     "Each ticket is done by a separate agent that starts with no memory of this plan. It sees only its own ticket and the summaries of the tickets it waits on. So every ticket must stand alone:",
@@ -105,12 +127,12 @@ export function planTask(goal) {
     "- Every ticket has at least one --criteria the agent can check itself, such as a command that passes or a behavior it can see.",
     "- A ticket is one piece of work that can be reviewed alone. No ticket for planning, and none that only says to test everything.",
     "",
-    "Use --after for every ticket that must be finished first: when this ticket builds on what that one makes, or when both change the same files (the agents share one checkout). A ticket starts only after I approve the tickets it waits on, so do not add --after where it is not needed.",
+    "Each agent works in its own worktree, on its own branch cut from the project branch. Use --after for every ticket that must be finished first: when this ticket builds on what that one makes, or when both change the same files (their pull requests would conflict). Approving a ticket merges its pull request into the project branch, and a ticket starts only after I approve the tickets it waits on, so do not add --after where it is not needed.",
     "",
     `When the tickets are written, read each again with \`${cmd} show <number>\` as an agent that knows nothing but that ticket and the repo. Fix what is missing with \`${cmd} edit <number> [--title "..."] [--desc "..."] [--criteria "..."]... [--after <number>]...\` (--criteria and --after replace the whole list).`,
     "",
-    "Then stop and show me the list: each ticket's number, title and what it waits on. Do not release them yet. I may ask for changes.",
-    `When I tell you to go ahead, release them with \`${cmd} auto <every ticket number>\`. Herdr then starts an agent on each ticket as soon as the tickets it waits on are approved, up to 3 at a time.`,
+    "Then stop and show me the project branch's name and the list: each ticket's number, title and what it waits on. Do not release them yet. I may ask for changes.",
+    `When I tell you to go ahead, create the project branch with \`${cmd} project <project branch>\`, then release the tickets with \`${cmd} auto <every ticket number>\`. Herdr then starts an agent on each ticket as soon as the tickets it waits on are approved, up to 3 at a time.`,
   ].join("\n");
 }
 
