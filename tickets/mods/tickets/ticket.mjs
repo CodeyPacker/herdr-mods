@@ -7,7 +7,6 @@
 //   node ticket.mjs show <number>
 //   node ticket.mjs edit <number> [--title "<text>"] [--desc "<text>"] [--criteria "<text>"]... [--after <number>]...
 //   node ticket.mjs start <number> [--terminal <address>]   work begins, by the agent in that Herdr terminal
-//   node ticket.mjs start <number> --runner workflow         work begins, by an agent in a workflow run
 //   node ticket.mjs move <number> <todo|doing|blocked|review|done>
 //   node ticket.mjs block <number> "<question>"      needs an answer before work can go on
 //   node ticket.mjs submit <number> "<summary>"      work is finished and ready for review
@@ -43,7 +42,6 @@ import { execFileSync } from "node:child_process";
  * @property {string} terminal the Herdr terminal of the agent working on it ("t7"), or ""
  * @property {number[]} [needs] the tickets that must be done before this one starts
  * @property {boolean} [auto] true: Herdr starts an agent on it when it is ready
- * @property {string} [runner] "workflow" while a workflow run has the ticket, else empty
  * @property {string} created ISO time
  * @property {string} updated ISO time
  */
@@ -169,18 +167,18 @@ function readBoard() {
 function parse(argv) {
   /** @type {string[]} */
   const words = [];
-  /** @type {{ json: boolean, in: string, for: string, desc: string | null, title: string | null, terminal: string, runner: string, criteria: string[], after: string[], off: boolean }} */
-  const flags = { json: false, in: "", for: "", desc: null, title: null, terminal: "", runner: "", criteria: [], after: [], off: false };
+  /** @type {{ json: boolean, in: string, for: string, desc: string | null, title: string | null, terminal: string, criteria: string[], after: string[], off: boolean }} */
+  const flags = { json: false, in: "", for: "", desc: null, title: null, terminal: "", criteria: [], after: [], off: false };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--json") flags.json = true;
     else if (arg === "--off") flags.off = true;
-    else if (["--in", "--for", "--desc", "--title", "--terminal", "--runner", "--criteria", "--after"].includes(arg)) {
+    else if (["--in", "--for", "--desc", "--title", "--terminal", "--criteria", "--after"].includes(arg)) {
       const value = argv[++i];
       if (value === undefined) throw new Problem(`${arg} needs a value.`);
       if (arg === "--criteria") flags.criteria.push(value);
       else if (arg === "--after") flags.after.push(value);
-      else flags[/** @type {"in" | "for" | "desc" | "title" | "terminal" | "runner"} */ (arg.slice(2))] = value;
+      else flags[/** @type {"in" | "for" | "desc" | "title" | "terminal"} */ (arg.slice(2))] = value;
     } else if (arg.startsWith("--")) throw new Problem(`Unknown option ${arg}.`);
     else words.push(arg);
   }
@@ -212,7 +210,6 @@ function describe(t) {
   if (t.feedback) out.push("", `Changes requested: ${t.feedback}`);
   if (t.summary) out.push("", `Summary: ${t.summary}`);
   if (t.terminal) out.push("", `Agent: ${t.terminal}`);
-  if (t.runner) out.push("", `Runner: ${t.runner}`);
   return out.join("\n");
 }
 
@@ -222,7 +219,7 @@ const USAGE = `Usage: node ticket.mjs <command>
   list
   show <number>
   edit <number> [--title "<text>"] [--desc "<text>"] [--criteria "<text>"]... [--after <number>]...
-  start <number> [--terminal <address> | --runner workflow]
+  start <number> [--terminal <address>]
   move <number> <${STATUSES.map((s) => s.id).join("|")}>
   block <number> "<question>"
   submit <number> "<summary>"
@@ -270,12 +267,9 @@ function main(argv) {
     const ticket = readTicket(project, first);
     ticket.status = "doing";
     ticket.question = "";
-    if (flags.runner && flags.runner !== "workflow") throw new Problem(`"${flags.runner}" is not a runner. The only one is: workflow.`);
-    // One side has a ticket at a time: a Herdr terminal or a workflow run.
-    if (flags.terminal) { ticket.terminal = flags.terminal; ticket.runner = ""; }
-    else if (flags.runner) { ticket.runner = flags.runner; ticket.terminal = ""; }
+    if (flags.terminal) ticket.terminal = flags.terminal;
     saveTicket(project, ticket);
-    return print(ticket, `#${ticket.number} is now doing${ticket.terminal ? `, by ${ticket.terminal}` : ticket.runner ? `, by a ${ticket.runner}` : ""}.`);
+    return print(ticket, `#${ticket.number} is now doing${ticket.terminal ? `, by ${ticket.terminal}` : ""}.`);
   }
   if (command === "edit") {
     const ticket = readTicket(project, first);

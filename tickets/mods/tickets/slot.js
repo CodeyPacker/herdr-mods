@@ -3,14 +3,15 @@
 // a ticket starts waiting. Clicking it, or the toast, opens the board.
 //
 // It also starts the agents for tickets set to auto (ticket.mjs auto): a ticket in To do whose
-// waited-on tickets are all done gets a Herdr tab with an agent, up to LIMIT agents at a time.
+// waited-on tickets are all done gets an agent, up to LIMIT agents at a time. That agent runs
+// without a tab, since nobody asked to see it. The board's o key peeks at it.
 // Only the slot does this, since it is always there. Without it in the layout nothing starts.
 import { div } from "gpui-kit";
 import { h_flex } from "gpui-base";
-import { run, notify, watchFolder, panes, knownAgents, focused } from "herdr";
+import { run, notify, watchFolder, terminals, knownAgents, focused } from "herdr";
 import { colors } from "./kit/theme.js";
 import { dataDir, readBoard } from "./data.js";
-import { installed, savedStarters, pickStarter, startAgent } from "./start.js";
+import { installed, savedStarters, pickStarter, startAgent, hideAgent, agentOn } from "./start.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("./data.js").BoardData} BoardData */
@@ -19,8 +20,10 @@ import { installed, savedStarters, pickStarter, startAgent } from "./start.js";
 const RELOAD_MS = 30000;
 /** How many auto tickets may have a working agent at once. */
 const LIMIT = 3;
-/** How long a ticket this slot just started counts as busy, until Herdr lists its pane. */
+/** How long a ticket this slot just started counts as busy, until Herdr lists its terminal. */
 const SETTLE_MS = 30000;
+/** How long a started agent may take to begin working before the slot says it may be stuck on a prompt. */
+const STUCK_MS = 60000;
 /** The statuses that wait on a person. */
 const WAITING = ["blocked", "review"];
 
@@ -44,6 +47,8 @@ export class Slot {
     this.dispatching = false;
     /** When this slot started each ticket, by "project#number". @type {Map<string, number>} */
     this.started = new Map();
+    /** The started tickets already checked for a stuck agent. @type {Set<string>} */
+    this.checked = new Set();
     /** Tickets that could not be started. They are not tried again until Herdr restarts. @type {Set<string>} */
     this.unstartable = new Set();
     cx.spawn(async (cx) => {
@@ -87,7 +92,30 @@ export class Slot {
     if (saved !== JSON.stringify([...(this.seen ?? [])].sort()) || !this.seen) localStorage.setItem("seen", saved);
     this.seen = new Set(ids);
     this.count = waiting.length;
+    this.warnStuck(board);
     await this.dispatch(board);
+  }
+
+  /**
+   * An agent with no tab can sit on a prompt nobody sees (Claude Code asks whether to trust a new
+   * folder). So a ticket this slot started whose agent reports no status after STUCK_MS gets a toast
+   * that peeks at it. Each ticket is checked once.
+   * @param {BoardData} board
+   */
+  warnStuck(board) {
+    for (const [id, when] of this.started) {
+      if (this.checked.has(id) || Date.now() - when < STUCK_MS) continue;
+      this.checked.add(id);
+      const found = board.projects.flatMap((p) => p.tickets.map((ticket) => ({ p, ticket }))).find(({ p, ticket }) => `${p.key}#${ticket.number}` === id);
+      const agent = found && found.ticket.status === "doing" ? agentOn(found.ticket) : null;
+      if (!found || !agent || agent.status) continue;
+      notify({
+        title: `#${found.ticket.number} may be waiting on a prompt`,
+        body: `${found.p.name}: ${found.ticket.title}\nIts agent has not started working. Click to look at it.`,
+        level: "warning",
+        action: { name: "terminal.peek", args: { terminal: agent.address } },
+      });
+    }
   }
 
   /**
@@ -100,8 +128,8 @@ export class Slot {
     this.dispatching = true;
     try {
       for (;;) {
-        // A ticket is busy while its tab is open. Herdr may not list a program as an agent yet, so the pane is what counts.
-        const live = new Set(panes().map((pane) => pane.terminal));
+        // A ticket is busy while its terminal runs. Herdr may not list a program as an agent yet, so the terminal is what counts.
+        const live = new Set(terminals().filter((t) => t.state !== "finished").map((t) => t.address));
         const now = Date.now();
         const all = board.projects.flatMap((p) => p.tickets.map((ticket) => ({ p, ticket, id: `${p.key}#${ticket.number}` })));
         const busy = all.filter(({ ticket, id }) => ticket.auto && ticket.status === "doing"
@@ -115,14 +143,14 @@ export class Slot {
         const shown = focused();
         try {
           if (!starter) throw new Error("No agent is installed, or every one is hidden.");
-          await startAgent(next.p, next.ticket, starter);
+          hideAgent(await startAgent(next.p, next.ticket, starter));
           this.started.set(next.id, Date.now());
-          notify({ title: `Started #${n}`, body: `${next.p.name}: ${next.ticket.title}\n${starter.name} is on it.` });
+          notify({ title: `Started #${n}`, body: `${next.p.name}: ${next.ticket.title}\n${starter.name} is on it, without a tab. Press o on the ticket to look.` });
         } catch (e) {
           this.unstartable.add(next.id);
           notify({ title: `Could not start #${n}`, body: `${next.p.name}: ${next.ticket.title}\n${e instanceof Error ? e.message : String(e)}`, level: "warning" });
         }
-        // A new tab takes the window. Starting by itself must not, so the tab that was shown comes back.
+        // The new tab takes the window for a moment before it is taken away. The tab that was shown comes back.
         if (shown?.tab) run("tab.select", { id: shown.tab });
         board = await readBoard();
       }

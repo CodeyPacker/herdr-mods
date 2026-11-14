@@ -2,7 +2,7 @@
 import { appHome, exec, panes } from "herdr";
 
 /** @typedef {import("herdr").SpaceInfo} SpaceInfo */
-/** @typedef {{ number: number, title: string, description: string, criteria: string[], status: string, question: string, summary: string, terminal?: string, runner?: string, needs?: number[], auto?: boolean, answer?: string, feedback?: string }} Ticket */
+/** @typedef {{ number: number, title: string, description: string, criteria: string[], status: string, question: string, summary: string, terminal?: string, needs?: number[], auto?: boolean, answer?: string, feedback?: string }} Ticket */
 /** @typedef {{ key: string, name: string, root: string, tickets: Ticket[] }} Project */
 /** @typedef {{ id: string, label: string }} Status */
 /** @typedef {{ statuses: Status[], current: string | null, projects: Project[] }} BoardData every project and its tickets, as ticket.mjs reports them */
