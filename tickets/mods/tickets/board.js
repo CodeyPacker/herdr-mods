@@ -29,7 +29,7 @@ import { listNote } from "./kit/list.js";
 import { tag, banner, sectionLabel } from "./kit/pane.js";
 import { statusDot } from "./kit/spaces.js";
 import { script, dataDir, folderOf, readBoard, onlyWorktrees } from "./data.js";
-import { installed, savedStarters, usableAgents, pickStarter, neededBy, startAgent, startPlanner, agentOn, showAgent, hideAgent, endAgent } from "./start.js";
+import { installed, savedStarters, usableAgents, pickStarter, neededBy, startAgent, startPlanner, agentOn, showAgent, hideAgent, endAgent, spaceFor } from "./start.js";
 
 /** @typedef {import("gpui-kit").Color} Color */
 /** @typedef {import("gpui-kit").Context} Context */
@@ -50,10 +50,10 @@ import { installed, savedStarters, usableAgents, pickStarter, neededBy, startAge
 /** How often to reload when nothing reported a change, in case a change was missed. */
 const RELOAD_MS = 10000;
 /** What each key does, by the command's name. The names are also what `tickets.<name>` takes. */
-const COMMANDS = ["left", "right", "up", "down", "open", "back", "start", "agent", "next-agent", "hide-agent", "approve", "reply", "new", "plan", "auto", "tour", "all", "reload"];
+const COMMANDS = ["left", "right", "up", "down", "open", "back", "start", "agent", "next-agent", "hide-agent", "approve", "reply", "new", "plan", "review", "auto", "tour", "all", "reload"];
 /** @type {Record<string, string>} keys by KeyEvent.key or keystroke -> command */
 const KEYS = { h: "left", left: "left", l: "right", right: "right", k: "up", up: "up", j: "down", down: "down",
-  enter: "open", backspace: "back", s: "start", o: "agent", g: "next-agent", y: "approve", a: "reply", c: "reply", n: "new", p: "plan", t: "auto", u: "tour", v: "all", r: "reload" };
+  enter: "open", backspace: "back", s: "start", o: "agent", g: "next-agent", y: "approve", a: "reply", c: "reply", n: "new", p: "plan", t: "auto", u: "tour", w: "review", v: "all", r: "reload" };
 
 /** The text up to the end of its first sentence. @param {string} text */
 const firstSentence = (text) => /^.*?[.!?](?=\s|$)/s.exec(text.trim())?.[0] ?? text.trim();
@@ -296,6 +296,7 @@ export class Board {
     else if (name === "plan") this.openPlan(cx);
     else if (!at) return;
     else if (name === "auto") this.toggleAuto(at.card, cx);
+    else if (name === "review") this.openTour(at.card);
     else if (name === "tour") this.toggleTour(at.card, cx);
     else if (name === "open") {
       if (this.only) return;
@@ -515,6 +516,21 @@ export class Board {
     cx.notify();
   }
 
+  /**
+   * Opens a Tourist tab on the ticket's pull request and goes to it. The slot opens one by itself when
+   * a toured ticket reaches review. This is for a tour that was closed, or a ticket not set to tour.
+   * @param {Card} card
+   */
+  openTour(card) {
+    const { p, ticket } = card;
+    if (!ticket.pr || !p.root) { this.say(`#${ticket.number} has no pull request to tour. Only a ticket on a project branch opens one, when it is submitted.`); return; }
+    const space = spaceFor(p);
+    run("tab.new", { name: `Review #${ticket.number} ${ticket.title}`.slice(0, 40), mod: "tourist",
+      props: { folder: p.root, pr: ticket.pr, ticket: { number: ticket.number, root: p.root, title: ticket.title } },
+      ...(space ? { space: space.id } : {}) });
+    this.closeAll();
+  }
+
   /** Turns auto on or off for a ticket: whether the slot starts an agent on it when it is ready. @param {Card} card @param {Context} cx */
   toggleAuto(card, cx) {
     const n = card.ticket.number;
@@ -649,7 +665,7 @@ export class Board {
     // The review keys show only on a ticket they work on.
     const status = at?.card.ticket.status;
     /** @type {Hint[]} */
-    const review = status === "review" ? [["y", "approve"], ["c", "request changes"]] : status === "blocked" ? [["a", "answer"]] : [];
+    const review = status === "review" ? [["y", "approve"], ["c", "request changes"], ...(at?.card.ticket.pr ? /** @type {Hint[]} */ ([["w", "tour"]]) : [])] : status === "blocked" ? [["a", "answer"]] : [];
     /** @type {Hint[]} */
     const auto = status === "todo" ? [["t", at?.card.ticket.auto ? "auto off" : "auto on"]] : [];
     /** @type {Hint[]} */

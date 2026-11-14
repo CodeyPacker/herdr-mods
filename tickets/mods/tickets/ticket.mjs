@@ -191,9 +191,39 @@ const SCRIPT = fileURLToPath(import.meta.url).replace(/\\/g, "/");
  * @param {string} cmd @param {string[]} args @param {string} [cwd]
  */
 function call(cmd, args, cwd) {
-  const r = spawnSync(cmd, args, { cwd, encoding: "utf8", windowsHide: true });
+  // git and gh act as the account that owns the repo, when that account is signed in (see accountFor).
+  const account = cwd && (cmd === "git" || cmd === "gh") ? accountFor(cwd) : null;
+  const env = cmd === "gh" && account ? { ...process.env, GH_TOKEN: account.token } : process.env;
+  if (cmd === "git" && account) args = ["-c", `credential.https://github.com.username=${account.name}`, ...args];
+  const r = spawnSync(cmd, args, { cwd, env, encoding: "utf8", windowsHide: true });
   const out = (r.stdout ?? "").trim();
   return { ok: r.status === 0, out, err: (r.stderr ?? "").trim() || out || (r.error ? r.error.message : `${cmd} exited with ${r.status}`) };
+}
+
+/** @type {Map<string, { name: string, token: string } | null>} the answer per folder, since it takes two programs to find */
+const accounts = new Map();
+
+/**
+ * The signed-in GitHub account that owns the repo in `cwd`, with its token, or null.
+ * gh can have two accounts signed in (a personal and a work one) and uses the active one for
+ * everything. A pull request on a personal repo must not come from the work account, so when
+ * origin's owner is itself a signed-in account, that account is used. Any other owner (an
+ * organization) gets null, which leaves the active account in charge.
+ * @param {string} cwd
+ */
+function accountFor(cwd) {
+  if (accounts.has(cwd)) return accounts.get(cwd) ?? null;
+  let found = null;
+  if (!process.env.GH_TOKEN) {
+    const url = spawnSync("git", ["remote", "get-url", "origin"], { cwd, encoding: "utf8", windowsHide: true }).stdout ?? "";
+    const name = /github\.com[:/]([^/\s]+)\//.exec(url)?.[1] ?? "";
+    if (/^[A-Za-z0-9-]{1,39}$/.test(name)) {
+      const token = spawnSync("gh", ["auth", "token", "--user", name], { encoding: "utf8", windowsHide: true });
+      if (token.status === 0 && (token.stdout ?? "").trim()) found = { name, token: token.stdout.trim() };
+    }
+  }
+  accounts.set(cwd, found);
+  return found;
 }
 
 /** call, but a failure is a Problem that starts with `what`. @param {string} what @param {string} cmd @param {string[]} args @param {string} [cwd] */

@@ -1,6 +1,6 @@
 // Tours of a ticket's pull request, opened by the tickets mod. The review goes back through that
 // mod's own command, ticket.mjs, which saves it on the ticket and passes it to the ticket's agent.
-import { appHome, exec, panes, props, run } from "herdr";
+import { appHome, exec, focused, panes, props, run } from "herdr";
 import { linesOf } from "./comments.js";
 
 /** @typedef {{ number: number, root: string, title: string }} TicketRef the ticket a tour was opened for */
@@ -35,9 +35,22 @@ export function changesText(pr, comments) {
   ].join("\n");
 }
 
-/** Closes the tab this Tourist is in, or only its pane when the tab holds more. False when it cannot find its pane. */
-export function closeOwnTab() {
-  const all = panes(), me = all.find((p) => p.pane === props()?.pane);
+/**
+ * The pane this Tourist is in, or null. Herdr only tells a pane header which pane it is on, not a
+ * mod that is the pane. So it is the Tourist pane that has the keyboard, which is this one while
+ * the person presses a key in it, else the only Tourist pane there is.
+ */
+export function ownPane() {
+  const mine = panes().filter((p) => p.mod === "tourist");
+  return props()?.pane ?? mine.find((p) => p.pane === focused()?.pane)?.pane ?? (mine.length === 1 ? mine[0].pane : null);
+}
+
+/**
+ * Closes the tab this Tourist is in, or only its pane when the tab holds more. False when the pane is gone.
+ * @param {string | null} pane from ownPane(), read while the person was still in this pane
+ */
+export function closeOwnTab(pane) {
+  const all = panes(), me = all.find((p) => p.pane === pane);
   if (!me) return false;
   if (all.filter((p) => p.tab === me.tab).length > 1) run("pane.close", { pane: me.pane });
   else run("tab.close", { id: me.tab, confirmed: true });

@@ -40,7 +40,7 @@ import { mergeMethods, mergePR } from "./merge.js";
 import { mergeView } from "./views/merge.js";
 import { checksView } from "./views/checks.js";
 import { confirmDialog, pendingConfirm } from "./views/confirm.js";
-import { ticketCommand, changesText, closeOwnTab } from "./ticket.js";
+import { ticketCommand, changesText, closeOwnTab, ownPane } from "./ticket.js";
 
 export default class Tourist extends View {
   init(_props, cx) {
@@ -737,6 +737,8 @@ export default class Tourist extends View {
     if (!ticket || this.comments.length === 0 || this.busy) return;
     if (!this.handBack?.confirm) { this.handBack = { confirm: true, error: null }; this.leaveBox(); return; }
     const comments = [...this.comments], key = commentKey(this.git.root, pr.number);
+    // Read now, while this pane has the keyboard. The person may be elsewhere once the ticket answers.
+    const pane = ownPane();
     this.handBack = null;
     this.busy = `Sending ${comments.length} comment${comments.length === 1 ? "" : "s"} to ticket #${ticket.number}`;
     cx.spawn(async cx => {
@@ -751,14 +753,14 @@ export default class Tourist extends View {
             : r.forwardError ? `Saved on the ticket, but they did not reach its agent: ${r.forwardError}`
             : "Saved on the ticket. No agent is running on it. Start one from the tickets board.",
           level: r.forwarded ? "success" : "warning" });
-        if (!closeOwnTab()) this.reset(cx);
+        if (!closeOwnTab(pane)) this.reset(cx);
       } catch (e) { this.busy = null; this.handBack = { confirm: true, error: String(e?.message ?? e) }; }
       cx.notify();
     });
   }
 
   /** Closes this tab, after a ticket's tour is done with. */
-  closeTab(cx) { if (!closeOwnTab()) this.reset(cx); }
+  closeTab(cx) { if (!closeOwnTab(ownPane())) this.reset(cx); }
 
   /** Opens the reply box on the fix screen, once the agent has finished a run. */
   startReply(cx) {

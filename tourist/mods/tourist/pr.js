@@ -1,15 +1,27 @@
 // Pull requests through the GitHub CLI: listing the open ones, and fetching one so
 // git can diff it without checking it out.
-import { exec } from "herdr";
+import { exec, appHome } from "herdr";
 import { git } from "./git.js";
 
 const LIST_FIELDS = "number,title,author,headRefName,headRefOid,baseRefName,additions,deletions,changedFiles,isDraft";
 const VIEW_FIELDS = "number,title,body,url,author,headRefName,baseRefName,headRefOid,files,commits";
 
+/**
+ * Runs gh and resolves with its exit code and output. On this computer it goes through gh.mjs,
+ * which uses the signed-in account that owns the repo (see its top comment). Without node, or on
+ * another machine, gh runs as its active account. Rejects when gh cannot start.
+ */
+export async function execGh(args, { cwd, on }) {
+  if (!on) {
+    try { return await exec("node", [`${appHome().replace(/\\/g, "/")}/mods/tourist/gh.mjs`, ...args], { cwd }); } catch {}
+  }
+  return exec("gh", args, { cwd, on });
+}
+
 /** Runs gh and returns stdout. Throws gh's own message when it fails. */
 export async function gh(args, { cwd, on }) {
   let r;
-  try { r = await exec("gh", args, { cwd, on }); }
+  try { r = await execGh(args, { cwd, on }); }
   catch { throw new Error("Pull request tours need the GitHub CLI (gh) on PATH."); }
   if (r.code !== 0) throw new Error((r.stderr || r.stdout || "gh failed.").trim().slice(-400));
   return r.stdout;
