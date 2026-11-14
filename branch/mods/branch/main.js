@@ -388,7 +388,10 @@ export default class Branch extends View {
 
   /** @param {KeyEvent} e @param {Context} cx */
   key(e, cx) {
-    const c = this.commandOf(e.keystroke);
+    // Ctrl with j or k is read from the key and its modifiers, so it moves however the app spells the keystroke.
+    const m = e.modifiers;
+    const ctrlOnly = m.control && !m.shift && !m.alt && !m.platform;
+    const c = ctrlOnly && e.key === "j" ? "down" : ctrlOnly && e.key === "k" ? "up" : this.commandOf(e.keystroke);
     // Any other key clears the note too. Enter's own command clears it.
     if (!c) {
       if (this.note && !this.busy && e.keystroke !== "enter") { this.note = null; cx.notify(); }
@@ -474,6 +477,6 @@ export default class Branch extends View {
       ])))
       .when(!!note, (el) => el.child(div().flex_none().text_size(SIZE.small).text_color(note?.bad ? t.blocked : t.dim).child(note?.text ?? "")))
       .child(divider(t))
-      .child(legend(t, [["↑/↓", "move"], ["enter", "switch"], ["ctrl-n", "new"], ["ctrl-r", "rename"], ["ctrl-d", "delete"], ["ctrl-f", "fetch"], ["ctrl-l", "pull"], ["ctrl-p", "push"], ["ctrl-s", "stash"], ["ctrl-o", "pop"], ["esc", "close"]]));
+      .child(legend(t, [["↑/↓", "move"], ["ctrl-j/k", "move"], ["enter", "switch"], ["ctrl-n", "new"], ["ctrl-r", "rename"], ["ctrl-d", "delete"], ["ctrl-f", "fetch"], ["ctrl-l", "pull"], ["ctrl-p", "push"], ["ctrl-s", "stash"], ["ctrl-o", "pop"], ["esc", "close"]]));
   }
 }
