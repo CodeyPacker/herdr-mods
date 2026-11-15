@@ -1,0 +1,6 @@
+{
+  "global": {
+    "ctrl-shift-d": "mod.open:vim-docs",
+    "cmd-shift-d": "mod.open:vim-docs"
+  }
+}
