@@ -34,6 +34,18 @@ Press `ctrl-shift-r`, hit `u`, everything starts in the background. Each row has
 
 `s` start, `x` stop, `r` restart, `enter` to watch the output, `o` to turn it into a tab, `a` to see every space. Things that crash go red and you get a toast.
 
+## branch
+
+Manage the current space's Git branches. Press `ctrl-shift-y`, filter by name,
+and press `enter` to switch. Local and remote branches show their latest commit
+and ahead/behind counts.
+
+![branch](branch/preview.png)
+
+`ctrl-n` new, `ctrl-r` rename, `ctrl-d` delete with confirmation, `ctrl-f`
+fetch, `ctrl-l` pull (fast-forward only), `ctrl-p` push, `ctrl-s` stash,
+`ctrl-o` pop the newest stash. Arrows or `ctrl-j`/`ctrl-k` move.
+
 ## islands
 
 Herdr, but every panel is its own rounded card on the canvas. IntelliJ Islands, basically. Takes whatever theme you pick.
@@ -85,6 +97,13 @@ Built and tested on Windows. The macOS sign-in helper has not been run yet: if i
 ## Install
 
 ### Tell your agent
+
+branch:
+
+```text
+Read ~/.config/herdr-app/AGENTS.md, then add this mod:
+https://github.com/CodeyPacker/herdr-mods/tree/main/branch
+```
 
 spotify:
 
