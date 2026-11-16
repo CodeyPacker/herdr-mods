@@ -26,7 +26,7 @@ export function quizView(v, t) {
     const color = right ? t.ansi2 : wrong ? t.ansi1 : null;
     return listRow(t, { id: `choice-${i}-${n}`, on: false, tall: true, click: locked ? undefined : cx => { v.answer(n, cx); cx.notify(); } })
       .when(Boolean(color), el => el.border_1().border_color(color))
-      .child(letterBadge(t, LETTERS[n], "", Boolean(color)))
+      .child(letterBadge(t, LETTERS[n], "", Boolean(color), { color }))
       .child(div().flex_1().min_w(0).text_color(color ?? t.foreground).child(TextView.markdown(`choice-${mod.id}-${q.id}-${n}`, String(c))))
       .when(right, el => el.child(div().flex_none().text_size(11.5).text_color(t.ansi2).child(pick === q.answer ? "right" : "the answer")))
       .when(wrong, el => el.child(div().flex_none().text_size(11.5).text_color(t.ansi1).child("your pick")));
