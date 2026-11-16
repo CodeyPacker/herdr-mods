@@ -1,0 +1,626 @@
+/** @type {import("../types.js").Topic} */
+export const variables = {
+  id: "variables",
+  title: "Variables & constants",
+  description: "Declarations, initialization, inference, and reassignment.",
+  exercises: [
+    {
+      id: "integer",
+      title: "Declare an integer",
+      prompt: "Declare an int named count with the value 12.",
+      solution: "int count = 12;",
+      checks: ["count == 12"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare count using int.","name":"count","type":"int"},
+      ],
+      hints: [
+        "Put the type before the name.",
+        "Start with `int count =`, then add the integer literal and a semicolon.",
+        "Complete this form:\n\n```csharp\nint count = ___;\n```",
+      ],
+    },
+    {
+      id: "string",
+      title: "Declare a string",
+      prompt: "Declare a string named city with the value \"Denver\".",
+      solution: "string city = \"Denver\";",
+      checks: ["city == \"Denver\""],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare city using string.","name":"city","type":"string"},
+      ],
+      hints: [
+        "Strings use double quotes.",
+        "The form is `string city = \"text\";`. Replace text with the requested city.",
+        "Complete this form:\n\n```csharp\nstring city = \"___\";\n```",
+      ],
+    },
+    {
+      id: "boolean",
+      title: "Declare a boolean",
+      prompt: "Declare a bool named isReady with the value true.",
+      solution: "bool isReady = true;",
+      checks: ["isReady"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare isReady using bool.","name":"isReady","type":"bool"},
+      ],
+      hints: [
+        "Boolean literals are lowercase.",
+        "Use `bool isReady = ...;`. The boolean value has no quotation marks.",
+        "Complete this form:\n\n```csharp\nbool isReady = ___;\n```",
+      ],
+    },
+    {
+      id: "double",
+      title: "Declare a double",
+      prompt: "Declare a double named distance with the value 2.5.",
+      solution: "double distance = 2.5;",
+      checks: ["distance == 2.5"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare distance using double.","name":"distance","type":"double"},
+      ],
+      hints: [
+        "A decimal-point number is a double by default.",
+        "Use `double distance = ...;` with a decimal point in the numeric literal.",
+        "Complete this form:\n\n```csharp\ndouble distance = ___;\n```",
+      ],
+    },
+    {
+      id: "decimal",
+      title: "Declare a decimal",
+      prompt: "Declare a decimal named price with the value 19.95. Use a decimal literal.",
+      solution: "decimal price = 19.95m;",
+      checks: ["price == 19.95m"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare price using decimal.","name":"price","type":"decimal"},
+      ],
+      hints: [
+        "Decimal literals need an m suffix.",
+        "Use `decimal price = ...m;`. The suffix belongs directly after the number.",
+        "Complete this form:\n\n```csharp\ndecimal price = ___m;\n```",
+      ],
+    },
+    {
+      id: "float",
+      title: "Declare a float",
+      prompt: "Declare a float named ratio with the value 1.5. Use a float literal.",
+      solution: "float ratio = 1.5f;",
+      checks: ["ratio == 1.5f"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare ratio using float.","name":"ratio","type":"float"},
+      ],
+      hints: [
+        "Float literals need an f suffix.",
+        "Use `float ratio = ...f;`. The suffix belongs directly after the number.",
+        "Complete this form:\n\n```csharp\nfloat ratio = ___f;\n```",
+      ],
+    },
+    {
+      id: "character",
+      title: "Declare a character",
+      prompt: "Declare a char named grade with the character A.",
+      solution: "char grade = 'A';",
+      checks: ["grade == 'A'"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare grade using char.","name":"grade","type":"char"},
+      ],
+      hints: [
+        "Characters use single quotes.",
+        "Use `char grade = '...';`, with exactly one character between the single quotes.",
+        "Complete this form:\n\n```csharp\nchar grade = '___';\n```",
+      ],
+    },
+    {
+      id: "long",
+      title: "Declare a long",
+      prompt: "Declare a long named population with the value 8000000000.",
+      solution: "long population = 8000000000L;",
+      checks: ["population == 8000000000L"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare population using long.","name":"population","type":"long"},
+      ],
+      hints: [
+        "A long stores integers beyond the int range.",
+        "Use `long population = ...L;`. L marks a long integer literal.",
+        "Complete this form:\n\n```csharp\nlong population = ___L;\n```",
+      ],
+    },
+    {
+      id: "inferred-int",
+      title: "Infer an integer type",
+      prompt: "Use var to declare attempts initialized to 3.",
+      solution: "var attempts = 3;",
+      checks: ["attempts == 3","attempts.GetType() == typeof(int)"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare attempts using var.","name":"attempts","type":"var"},
+      ],
+      hints: [
+        "The initializer supplies the type.",
+        "Write `var attempts = ...;` with an integer literal on the right.",
+        "Complete this form:\n\n```csharp\nvar attempts = ___;\n```",
+      ],
+    },
+    {
+      id: "inferred-string",
+      title: "Infer a string type",
+      prompt: "Use var to declare greeting initialized to \"Hello\".",
+      solution: "var greeting = \"Hello\";",
+      checks: ["greeting == \"Hello\""],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare greeting using var.","name":"greeting","type":"var"},
+      ],
+      hints: [
+        "Inference still needs an initial value.",
+        "Write `var greeting = \"...\";`. Quotation marks make the initializer a string.",
+        "Complete this form:\n\n```csharp\nvar greeting = \"___\";\n```",
+      ],
+    },
+    {
+      id: "constant",
+      title: "Declare a constant",
+      prompt: "Declare a const int named MaxRetries equal to 5.",
+      solution: "const int MaxRetries = 5;",
+      checks: ["MaxRetries == 5"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare MaxRetries using int.","name":"MaxRetries","type":"int"},
+        {"kind":"LocalDeclarationStatement","message":"Put const before int.","modifier":"const"},
+      ],
+      hints: [
+        "A constant cannot be reassigned.",
+        "The declaration order is `const`, the type, the name, `=`, then the value.",
+        "Complete this form:\n\n```csharp\nconst int MaxRetries = ___;\n```",
+      ],
+    },
+    {
+      id: "constant-string",
+      title: "Declare a string constant",
+      prompt: "Declare a const string named AppName equal to \"Syntax\".",
+      solution: "const string AppName = \"Syntax\";",
+      checks: ["AppName == \"Syntax\""],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare AppName using string.","name":"AppName","type":"string"},
+        {"kind":"LocalDeclarationStatement","message":"Put const before string.","modifier":"const"},
+      ],
+      hints: [
+        "Const comes before the type.",
+        "Start with `const string AppName =` and finish with a quoted string and semicolon.",
+        "Complete this form:\n\n```csharp\nconst string AppName = \"___\";\n```",
+      ],
+    },
+    {
+      id: "reassign",
+      title: "Reassign a variable",
+      prompt: "Declare int score equal to 2, then use a separate assignment to change it to 9.",
+      solution: "int score = 2;\nscore = 9;",
+      checks: ["score == 9"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare score using int.","name":"score","type":"int"},
+        {"kind":"SimpleAssignmentExpression","message":"Assign the new value with =."},
+      ],
+      hints: [
+        "A later assignment omits the type.",
+        "Write the second statement as `score = ...;`, without declaring score again.",
+        "Complete this form:\n\n```csharp\nint score = 2;\nscore = ___;\n```",
+      ],
+    },
+    {
+      id: "declare-later",
+      title: "Initialize after declaration",
+      prompt: "Declare an int named total without an initializer, then assign 42 on the next line.",
+      solution: "int total;\ntotal = 42;",
+      checks: ["total == 42"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare total using int.","name":"total","type":"int"},
+        {"kind":"SimpleAssignmentExpression","message":"Use a separate assignment statement."},
+      ],
+      hints: [
+        "A local variable must be assigned before use.",
+        "End the first line immediately after the variable name. Put `total = ...;` on the second line.",
+        "Complete this form:\n\n```csharp\nint total;\ntotal = ___;\n```",
+      ],
+    },
+    {
+      id: "multiple",
+      title: "Declare two variables",
+      prompt: "In one int declaration, declare x equal to 4 and y equal to 7.",
+      solution: "int x = 4, y = 7;",
+      checks: ["x == 4 && y == 7"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare x using int.","name":"x","type":"int"},
+        {"kind":"VariableDeclarator","message":"Declare y using int.","name":"y","type":"int"},
+        {"kind":"VariableDeclaration","message":"Separate the two variables with a comma.","token":","},
+      ],
+      hints: [
+        "One type can introduce multiple variables.",
+        "Write the type once. Separate `x = ...` and `y = ...` with a comma.",
+        "Complete this form:\n\n```csharp\nint x = ___, y = ___;\n```",
+      ],
+    },
+    {
+      id: "nullable",
+      title: "Declare a nullable integer",
+      prompt: "Declare int? named optionalCount initialized to null.",
+      solution: "int? optionalCount = null;",
+      checks: ["optionalCount is null"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare optionalCount using int?.","name":"optionalCount","type":"int?"},
+      ],
+      hints: [
+        "A question mark allows a value type to hold null.",
+        "Attach ? to the type: `int?`. Write null as an unquoted keyword.",
+        "Complete this form:\n\n```csharp\nint? optionalCount = ___;\n```",
+      ],
+    },
+    {
+      id: "default-int",
+      title: "Use default(T)",
+      prompt: "Declare int balance initialized using default(int).",
+      solution: "int balance = default(int);",
+      checks: ["balance == 0"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare balance using int.","name":"balance","type":"int"},
+        {"kind":"DefaultExpression","message":"Use default with a type in parentheses."},
+      ],
+      hints: [
+        "The default int value is zero.",
+        "The initializer is `default(int)`, with the type inside parentheses.",
+        "Complete this form:\n\n```csharp\nint balance = default(___);\n```",
+      ],
+    },
+    {
+      id: "default-literal",
+      title: "Use the default literal",
+      prompt: "Declare bool enabled initialized using the default literal.",
+      solution: "bool enabled = default;",
+      checks: ["!enabled"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare enabled using bool.","name":"enabled","type":"bool"},
+        {"kind":"DefaultLiteralExpression","message":"Use default without parentheses."},
+      ],
+      hints: [
+        "The declared type determines the default value.",
+        "The initializer is just `default`, followed by the declaration semicolon.",
+        "Complete this form:\n\n```csharp\nbool enabled = ___;\n```",
+      ],
+    },
+    {
+      id: "tuple",
+      title: "Declare a named tuple",
+      prompt: "Use var to declare point as a tuple with named elements x equal to 3 and y equal to 8.",
+      solution: "var point = (x: 3, y: 8);",
+      checks: ["point.x == 3 && point.y == 8"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare point using var.","name":"point","type":"var"},
+        {"kind":"TupleExpression","message":"Name tuple elements with name: value."},
+      ],
+      hints: [
+        "Tuple elements go inside parentheses.",
+        "Write `(x: ..., y: ...)` as the initializer. A colon connects each name to its value.",
+        "Complete this form:\n\n```csharp\nvar point = (x: ___, y: ___);\n```",
+      ],
+    },
+    {
+      id: "deconstruct",
+      title: "Deconstruct a tuple",
+      prompt: "Deconstruct (7, \"seven\") into newly declared variables number and word using var.",
+      solution: "var (number, word) = (7, \"seven\");",
+      checks: ["number == 7 && word == \"seven\""],
+      rules: [
+        {"kind":"DeclarationExpression","message":"Put the variable names in parentheses after var."},
+      ],
+      hints: [
+        "Deconstruction declares multiple values from a tuple.",
+        "Put both variable names in parentheses immediately after var, then assign the tuple.",
+        "Complete this form:\n\n```csharp\nvar (number, word) = (___, \"___\");\n```",
+      ],
+    },
+    {
+      id: "integer-practice",
+      title: "Declare an integer: another example",
+      prompt: "Declare an int named itemCount with the value 27.",
+      solution: "int itemCount = 27;",
+      checks: ["itemCount == 27"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare itemCount using int.","name":"itemCount","type":"int"},
+      ],
+      hints: [
+        "Put the type before the name.",
+        "Start with `int itemCount =`, then add the integer literal and a semicolon.",
+        "Complete this form:\n\n```csharp\nint itemCount = ___;\n```",
+      ],
+    },
+    {
+      id: "string-practice",
+      title: "Declare a string: another example",
+      prompt: "Declare a string named destination with the value \"Austin\".",
+      solution: "string destination = \"Austin\";",
+      checks: ["destination == \"Austin\""],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare destination using string.","name":"destination","type":"string"},
+      ],
+      hints: [
+        "Strings use double quotes.",
+        "The form is `string destination = \"text\";`. Replace text with the requested destination.",
+        "Complete this form:\n\n```csharp\nstring destination = \"___\";\n```",
+      ],
+    },
+    {
+      id: "boolean-practice",
+      title: "Declare a boolean: another example",
+      prompt: "Declare a bool named available with the value true.",
+      solution: "bool available = true;",
+      checks: ["available"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare available using bool.","name":"available","type":"bool"},
+      ],
+      hints: [
+        "Boolean literals are lowercase.",
+        "Use `bool available = ...;`. The boolean value has no quotation marks.",
+        "Complete this form:\n\n```csharp\nbool available = ___;\n```",
+      ],
+    },
+    {
+      id: "double-practice",
+      title: "Declare a double: another example",
+      prompt: "Declare a double named length with the value 4.75.",
+      solution: "double length = 4.75;",
+      checks: ["length == 4.75"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare length using double.","name":"length","type":"double"},
+      ],
+      hints: [
+        "A decimal-point number is a double by default.",
+        "Use `double length = ...;` with a decimal point in the numeric literal.",
+        "Complete this form:\n\n```csharp\ndouble length = ___;\n```",
+      ],
+    },
+    {
+      id: "decimal-practice",
+      title: "Declare a decimal: another example",
+      prompt: "Declare a decimal named cost with the value 24.75. Use a decimal literal.",
+      solution: "decimal cost = 24.75m;",
+      checks: ["cost == 24.75m"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare cost using decimal.","name":"cost","type":"decimal"},
+      ],
+      hints: [
+        "Decimal literals need an m suffix.",
+        "Use `decimal cost = ...m;`. The suffix belongs directly after the number.",
+        "Complete this form:\n\n```csharp\ndecimal cost = ___m;\n```",
+      ],
+    },
+    {
+      id: "float-practice",
+      title: "Declare a float: another example",
+      prompt: "Declare a float named fraction with the value 2.25. Use a float literal.",
+      solution: "float fraction = 2.25f;",
+      checks: ["fraction == 2.25f"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare fraction using float.","name":"fraction","type":"float"},
+      ],
+      hints: [
+        "Float literals need an f suffix.",
+        "Use `float fraction = ...f;`. The suffix belongs directly after the number.",
+        "Complete this form:\n\n```csharp\nfloat fraction = ___f;\n```",
+      ],
+    },
+    {
+      id: "character-practice",
+      title: "Declare a character: another example",
+      prompt: "Declare a char named rating with the character A.",
+      solution: "char rating = 'B';",
+      checks: ["rating == 'B'"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare rating using char.","name":"rating","type":"char"},
+      ],
+      hints: [
+        "Characters use single quotes.",
+        "Use `char rating = '...';`, with exactly one character between the single quotes.",
+        "Complete this form:\n\n```csharp\nchar rating = '___';\n```",
+      ],
+    },
+    {
+      id: "long-practice",
+      title: "Declare a long: another example",
+      prompt: "Declare a long named residents with the value 9000000000.",
+      solution: "long residents = 9000000000L;",
+      checks: ["residents == 9000000000L"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare residents using long.","name":"residents","type":"long"},
+      ],
+      hints: [
+        "A long stores integers beyond the int range.",
+        "Use `long residents = ...L;`. L marks a long integer literal.",
+        "Complete this form:\n\n```csharp\nlong residents = ___L;\n```",
+      ],
+    },
+    {
+      id: "inferred-int-practice",
+      title: "Infer an integer type: another example",
+      prompt: "Use var to declare tries initialized to 3.",
+      solution: "var tries = 3;",
+      checks: ["tries == 3","tries.GetType() == typeof(int)"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare tries using var.","name":"tries","type":"var"},
+      ],
+      hints: [
+        "The initializer supplies the type.",
+        "Write `var tries = ...;` with an integer literal on the right.",
+        "Complete this form:\n\n```csharp\nvar tries = ___;\n```",
+      ],
+    },
+    {
+      id: "inferred-string-practice",
+      title: "Infer a string type: another example",
+      prompt: "Use var to declare welcome initialized to \"Welcome\".",
+      solution: "var welcome = \"Welcome\";",
+      checks: ["welcome == \"Welcome\""],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare welcome using var.","name":"welcome","type":"var"},
+      ],
+      hints: [
+        "Inference still needs an initial value.",
+        "Write `var welcome = \"...\";`. Quotation marks make the initializer a string.",
+        "Complete this form:\n\n```csharp\nvar welcome = \"___\";\n```",
+      ],
+    },
+    {
+      id: "constant-practice",
+      title: "Declare a constant: another example",
+      prompt: "Declare a const int named RetryLimit equal to 5.",
+      solution: "const int RetryLimit = 5;",
+      checks: ["RetryLimit == 5"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare RetryLimit using int.","name":"RetryLimit","type":"int"},
+        {"kind":"LocalDeclarationStatement","message":"Put const before int.","modifier":"const"},
+      ],
+      hints: [
+        "A constant cannot be reassigned.",
+        "The declaration order is `const`, the type, the name, `=`, then the value.",
+        "Complete this form:\n\n```csharp\nconst int RetryLimit = ___;\n```",
+      ],
+    },
+    {
+      id: "constant-string-practice",
+      title: "Declare a string constant: another example",
+      prompt: "Declare a const string named ProductName equal to \"Practice\".",
+      solution: "const string ProductName = \"Practice\";",
+      checks: ["ProductName == \"Practice\""],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare ProductName using string.","name":"ProductName","type":"string"},
+        {"kind":"LocalDeclarationStatement","message":"Put const before string.","modifier":"const"},
+      ],
+      hints: [
+        "Const comes before the type.",
+        "Start with `const string ProductName =` and finish with a quoted string and semicolon.",
+        "Complete this form:\n\n```csharp\nconst string ProductName = \"___\";\n```",
+      ],
+    },
+    {
+      id: "reassign-practice",
+      title: "Reassign a variable: another example",
+      prompt: "Declare int scoreSample equal to 2, then use a separate assignment to change it to 9.",
+      solution: "int scoreSample = 2;\nscoreSample = 9;",
+      checks: ["scoreSample == 9"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare scoreSample using int.","name":"scoreSample","type":"int"},
+        {"kind":"SimpleAssignmentExpression","message":"Assign the new value with =."},
+      ],
+      hints: [
+        "A later assignment omits the type.",
+        "Write the second statement as `scoreSample = ...;`, without declaring scoreSample again.",
+        "Complete this form:\n\n```csharp\nint scoreSample = 2;\nscoreSample = ___;\n```",
+      ],
+    },
+    {
+      id: "declare-later-practice",
+      title: "Initialize after declaration: another example",
+      prompt: "Declare an int named sum without an initializer, then assign 42 on the next line.",
+      solution: "int sum;\nsum = 42;",
+      checks: ["sum == 42"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare sum using int.","name":"sum","type":"int"},
+        {"kind":"SimpleAssignmentExpression","message":"Use a separate assignment statement."},
+      ],
+      hints: [
+        "A local variable must be assigned before use.",
+        "End the first line immediately after the variable name. Put `sum = ...;` on the second line.",
+        "Complete this form:\n\n```csharp\nint sum;\nsum = ___;\n```",
+      ],
+    },
+    {
+      id: "multiple-practice",
+      title: "Declare two variables: another example",
+      prompt: "In one int declaration, declare xSample equal to 4 and y equal to 7.",
+      solution: "int xSample = 4, y = 7;",
+      checks: ["xSample == 4 && y == 7"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare xSample using int.","name":"xSample","type":"int"},
+        {"kind":"VariableDeclarator","message":"Declare y using int.","name":"y","type":"int"},
+        {"kind":"VariableDeclaration","message":"Separate the two variables with a comma.","token":","},
+      ],
+      hints: [
+        "One type can introduce multiple variables.",
+        "Write the type once. Separate `xSample = ...` and `y = ...` with a comma.",
+        "Complete this form:\n\n```csharp\nint xSample = ___, y = ___;\n```",
+      ],
+    },
+    {
+      id: "nullable-practice",
+      title: "Declare a nullable integer: another example",
+      prompt: "Declare int? named optionalTotal initialized to null.",
+      solution: "int? optionalTotal = null;",
+      checks: ["optionalTotal is null"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare optionalTotal using int?.","name":"optionalTotal","type":"int?"},
+      ],
+      hints: [
+        "A question mark allows a value type to hold null.",
+        "Attach ? to the type: `int?`. Write null as an unquoted keyword.",
+        "Complete this form:\n\n```csharp\nint? optionalTotal = ___;\n```",
+      ],
+    },
+    {
+      id: "default-int-practice",
+      title: "Use default(T): another example",
+      prompt: "Declare int credit initialized using default(int).",
+      solution: "int credit = default(int);",
+      checks: ["credit == 0"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare credit using int.","name":"credit","type":"int"},
+        {"kind":"DefaultExpression","message":"Use default with a type in parentheses."},
+      ],
+      hints: [
+        "The default int value is zero.",
+        "The initializer is `default(int)`, with the type inside parentheses.",
+        "Complete this form:\n\n```csharp\nint credit = default(___);\n```",
+      ],
+    },
+    {
+      id: "default-literal-practice",
+      title: "Use the default literal: another example",
+      prompt: "Declare bool active initialized using the default literal.",
+      solution: "bool active = default;",
+      checks: ["!active"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare active using bool.","name":"active","type":"bool"},
+        {"kind":"DefaultLiteralExpression","message":"Use default without parentheses."},
+      ],
+      hints: [
+        "The declared type determines the default value.",
+        "The initializer is just `default`, followed by the declaration semicolon.",
+        "Complete this form:\n\n```csharp\nbool active = ___;\n```",
+      ],
+    },
+    {
+      id: "tuple-practice",
+      title: "Declare a named tuple: another example",
+      prompt: "Use var to declare location as a tuple with named elements x equal to 3 and y equal to 8.",
+      solution: "var location = (x: 3, y: 8);",
+      checks: ["location.x == 3 && location.y == 8"],
+      rules: [
+        {"kind":"VariableDeclarator","message":"Declare location using var.","name":"location","type":"var"},
+        {"kind":"TupleExpression","message":"Name tuple elements with name: value."},
+      ],
+      hints: [
+        "Tuple elements go inside parentheses.",
+        "Write `(x: ..., y: ...)` as the initializer. A colon connects each name to its value.",
+        "Complete this form:\n\n```csharp\nvar location = (x: ___, y: ___);\n```",
+      ],
+    },
+    {
+      id: "deconstruct-practice",
+      title: "Deconstruct a tuple: another example",
+      prompt: "Deconstruct (7, \"seven\") into newly declared variables digit and word using var.",
+      solution: "var (digit, word) = (7, \"seven\");",
+      checks: ["digit == 7 && word == \"seven\""],
+      rules: [
+        {"kind":"DeclarationExpression","message":"Put the variable names in parentheses after var."},
+      ],
+      hints: [
+        "Deconstruction declares multiple values from a tuple.",
+        "Put both variable names in parentheses immediately after var, then assign the tuple.",
+        "Complete this form:\n\n```csharp\nvar (digit, word) = (___, \"___\");\n```",
+      ],
+    },
+  ],
+};
