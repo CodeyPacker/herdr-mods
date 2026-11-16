@@ -7,23 +7,25 @@ its letter. tmux's prefix+w with vimium's hints, in place of the built-in picker
 
 ## What you see
 
-A 560 px popup at the top of the window, in the shared kit's frame: popover
+A popup at the top of the window, 560 px wide with the list look, in the shared kit's frame: popover
 background, 16 px round corners, its own border, 22 px padding. Top line:
 "Jump to…" (16 px semibold) and "Esc" at the right in the dim color.
 
-Every row is 32 px with 8 px round corners and starts with its letter badge, so
-the letters form one column at the left. Each space is a block: its own row with
+Every row is 32 px with 8 px round corners and starts with its letter badge.
+A space's tabs, agents and their labels are set in 33 px from it, behind a 1 px
+border-color line that drops from under the space's badge, so the space letters
+form one column and the tab letters a second. Each space is a block: its own row with
 the name in 14 px semibold and "Space" at the right, then a dim "Tabs" label and
 one row per tab (the tab's name, then what runs in it at the right in 11 px dim
 text: program names joined by " · ", or "empty"), then an "Agents" label and one
-row per agent (its title, then its tab and program at the right). Rows show a
+row per agent (its tab's name, then its title and program at the right; with an unnamed tab, its title, then its program). Rows show a
 status mark only when there is a status. Spaces with the same name also show
 their folder in dim text, and their branch when the folders match too. The
 selected row has the `selected` background and an accent badge. A thin line
 separates one space's block from the next.
 
 Bottom, after a thin line: one row of key hints, `j/k`, `x` and `r` in
-accent/dim pairs, then `t` new tab and `n` new space, which are also buttons.
+accent/dim pairs, `R` set key, then `t` new tab and `n` new space, which are also buttons.
 ## How it behaves
 
 - Opens on the active tab of the active space.
@@ -35,7 +37,7 @@ accent/dim pairs, then `t` new tab and `n` new space, which are also buttons.
   color and come from `~/.config/herdr-app/hints.json`.
 - `j`/`k`, arrows and `ctrl-n`/`ctrl-p` move; `Enter` goes; `x` closes
   the selected tab with no confirm and the popup stays open; `t` new tab here; `n` new space; `r` renames the selected tab or
-  space (the space, on a one-tab row) in a name box above the list (`Enter` saves, `Esc` cancels, the popup
+  space (the space, on a one-tab row; on an agent row, the tab the agent runs in) in a name box above the list (`Enter` saves, `Esc` cancels, the popup
   stays open; an empty name goes back to Herdr's default); `q` or `Esc` closes.
 - Every space is always listed; nothing folds away.
 
@@ -43,15 +45,51 @@ accent/dim pairs, then `t` new tab and `n` new space, which are also buttons.
 
 - `mods/jump/main.js`, and `mods/jump/kit/`, this repo's shared kit: the frame,
   list rows, letter badges and their navigation, the key legend.
-- `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 560, "height": 0.75, "frame": "none" } }`.
+- `mod.json`: `{ "place": "none", "overlay": { "kind": "popup", "at": "top", "offset": 40, "width": 0.9, "height": 0.9, "frame": "none" } }`. The overlay is wider than the frame, and the frame sits centered in it: 560 px for the list look, as wide as its columns for the card look.
 - `keys.json` opens it: `"ctrl-shift-k": "mod.open:jump"`.
 - Data: `spaces()` for spaces and tabs, `panes()` for what each tab runs
   (`program.name`, or `mod`), `agents()` for status, `shared("space.colors")`
   for the avatar colors the shipped mods assign.
 - Commands: `tab.select {id}`, `space.select {id}`, `tab.new`, `space.new`,
   `tab.close {id, confirmed: true}`, `tab.rename {id, name}`, `space.rename {id, name}`.
-- `hints.json`: `{ "spaces": { "Logos": "l" }, "tabs": { "Logos/Code": "c" } }`,
-  read with `readTextFile(appHome() + "/hints.json")`.
+- `hints.json`: `{ "spaces": { "Logos": "l" }, "tabs": { "Code": "c", "Logos/Tests": "e" } }`,
+  read with `readTextFile(appHome() + "/hints.json")`. A tab is named alone
+  (every space) or as "space/tab" (one space, and it wins). Names match in any
+  case. An agent row uses its tab's letter.
+- Chosen letters may repeat, so every space's Code tab can be `c`. A letter
+  one row has jumps there. A letter several rows have moves to the next of
+  them, and `Enter` opens it. A space whose tabs share letters with other rows
+  does not jump on its letter: `l` selects Logos and waits, `c` then goes to
+  Logos/Code, `Enter` goes to Logos itself, `Esc` stops waiting. With no
+  repeated letters nothing waits, so an older `hints.json` behaves as before.
+- A space's letter badge has no border, so only tabs and agents are outlined.
+  `"spaceColor"` in `hints.json` sets the color of a space's letter: a theme
+  color's name (`"ansi3"`), a plain color name (`"yellow"`, mapped to the
+  theme's `ansi0`..`ansi7`), or a hex color. Without it the letter is accent
+  when chosen or selected, muted otherwise.
+- `"jumpLayout": "cards"` in `hints.json` draws the card look. Each space is
+  a 400 px card with a 1 px border, 12 px round corners and a background of
+  the foreground color at 9% (`foreground` + `18`), which is a little lighter
+  than the frame on a dark theme and a little darker on a light one: the space's row,
+  then its tabs and agents, with no labels, indent or "Space" note. Every tab
+  and agent badge is accent, chosen letter or not. Spaces are
+  ordered by name in any case, and fill columns top to bottom. Two columns
+  for two or more spaces, each holding the same number of cards but the last.
+  The cards form a grid, and every card in a row is as tall as the row's
+  tallest card. While the cards are taller than 90% of the window less 130 px, a column
+  is added, up to what 90% of the window's width holds. Past that the cards
+  scroll, and the selected row is not scrolled into view. The frame is as
+  wide as its columns. Without the setting the list look is drawn.
+- In the card look, `ctrl-h` / `ctrl-l` and the left / right arrows move to
+  the next column, to the row nearest the same height, and stop at the first
+  and last column. `ctrl-j` / `ctrl-k` move like `j` / `k`, so ctrl can stay
+  held. `h` and `l` stay free as letters. The legend adds `ctrl-h/l` column.
+- A capital is a letter of its own, typed with shift, so a space can be `C`
+  while a tab is `c`. Automatic letters are lower case. `R` is reserved along
+  with `t n q j k x r`.
+- `shift-r` sets the selected row's letter in a box above the list and saves
+  it to `hints.json` with `writeTextFile`: a space by name, a tab as
+  "space/tab". An empty value removes the entry.
 - Theme colors only.
 
 ## Watch out
@@ -62,7 +100,9 @@ accent/dim pairs, then `t` new tab and `n` new space, which are also buttons.
 - Elements are single-use: collect each space's rows before building its
   section.
 - A popup is sized by content; the list gets an estimated height, capped
-  at 470 px with a scrollbar so the key hints stay on screen.
+  at 90% of the window's height (`window.viewport_size()`, read in render)
+  less 130 px for the title, legend and padding. Past that it scrolls, so the
+  key hints stay on screen. The cap is 470 px if the size cannot be read.
 - Reserved letters, never hints: `t n q j k x r`.
 - The built-in picker stays installed; this mod has its own key instead.
 
