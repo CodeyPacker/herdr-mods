@@ -1,0 +1,5 @@
+{
+  "place": "none",
+  "title": "Vim Docs",
+  "overlay": { "kind": "window", "key": "vim-docs", "width": 360, "height": 480, "frame": "none" }
+}
