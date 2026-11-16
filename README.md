@@ -82,14 +82,6 @@ For the slot, add a block to your layout (`"card": "above"` opens the hover card
 
 Built and tested on Windows. The macOS sign-in helper has not been run yet: if it misses the login, the dialog asks you to paste the browser's address instead.
 
-## branch
-
-Your git branches in a dialog. Press `ctrl-shift-y`, type to filter, hit `enter`, you're on that branch. It lists local and remote branches of the repo your current space is in.
-
-![branch](branch/preview.png)
-
-`↑`/`↓` move, `enter` switches, `ctrl-n` new branch, `ctrl-r` rename, `ctrl-d` delete (it asks first), `ctrl-f` fetch, `ctrl-l` pull, `ctrl-p` push, `ctrl-s` stash, `ctrl-o` pop, `esc` closes. Pull is fast-forward only and it never force pushes.
-
 ## Install
 
 ### Tell your agent
@@ -127,13 +119,6 @@ zen:
 ```text
 Read ~/.config/herdr-app/AGENTS.md, then add this mod:
 https://github.com/CodeyPacker/herdr-mods/tree/main/zen
-```
-
-branch:
-
-```text
-Read ~/.config/herdr-app/AGENTS.md, then add this mod:
-https://github.com/CodeyPacker/herdr-mods/tree/main/branch
 ```
 
 islands:
@@ -179,4 +164,4 @@ node scripts/sync-kit.mjs --check  # fail if a copy differs
 To have every commit do this for you, turn on the repo's pre-commit hook once per clone:
 `git config core.hooksPath .githooks`. It copies `kit/` into the mods and adds the copies to the commit.
 
-`spotify`, `jump`, `run`, `portal`, `tourist` and `branch` use the kit. To add a mod, list its folder in `scripts/sync-kit.mjs`.
+`spotify`, `jump`, `run`, `portal` and `tourist` use the kit. To add a mod, list its folder in `scripts/sync-kit.mjs`.
