@@ -93,9 +93,11 @@ export async function checkAnswer(root, exercise, answer, { timeout } = {}) {
     const outcome = JSON.parse(output.slice(0, -token.length).trim());
     if (outcome.status === "error") return { passed: false, kind: "compile", title: "Fix the SQL error", details: outcome.details };
     const missing = ruleFailures(answer, exercise.rules);
-    if (missing.length) return { passed: false, kind: "syntax", title: "Use the requested syntax", details: missing };
-    if (outcome.status === "mismatch") return { passed: false, kind: "result", title: "The result needs a correction", details: outcome.details };
-    return { passed: true, kind: "passed", title: "Correct. Stay here or try another exercise.", details: [] };
+    // What the answer returned goes last, so the explanation of what to fix stays on top.
+    const shown = outcome.output ? [outcome.output] : [];
+    if (missing.length) return { passed: false, kind: "syntax", title: "Use the requested syntax", details: [...missing, ...shown] };
+    if (outcome.status === "mismatch") return { passed: false, kind: "result", title: "The result needs a correction", details: [...outcome.details, ...shown] };
+    return { passed: true, kind: "passed", title: "Correct. Stay here or try another exercise.", details: shown };
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

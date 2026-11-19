@@ -6,7 +6,7 @@ import { dirname } from "node:path";
 import { randomUUID } from "node:crypto";
 import { PGlite, types } from "@electric-sql/pglite";
 import { datasetSql } from "./dataset.js";
-import { compareResults } from "./compare.js";
+import { compareResults, formatTable, rowChanges } from "./compare.js";
 
 const maxRows = 5000;
 // Keep every value as PostgreSQL's text output, so dates and numbers compare the same everywhere.
@@ -59,6 +59,17 @@ function describe(error, source) {
   return details;
 }
 
+/** What the check query shows changed: the affected rows before, then after. */
+function describeChanges(before, after) {
+  if (!before || !after || before.columns.join() !== after.columns.join()) return after ? `After your statements, the check query returns:\n${formatTable(after)}` : "";
+  const { added, removed } = rowChanges(before, after);
+  if (!added.rows.length && !removed.rows.length) return "The check query shows no changes.";
+  const parts = [];
+  if (removed.rows.length) parts.push(`Before (rows your statements changed or removed):\n${formatTable(removed)}`);
+  if (added.rows.length) parts.push(`After (rows your statements changed or added):\n${formatTable(added)}`);
+  return parts.join("\n\n");
+}
+
 /** @param {{ setup: string, solution: string, answer: string, verify: string, rejects: string[], ordered: boolean, compareResult: boolean }} job @param {Blob} blob */
 export async function runCheck(job, blob) {
   const options = { rowMode: "array" };
@@ -75,22 +86,31 @@ export async function runCheck(job, blob) {
   await reference.close();
 
   const learner = await open(blob, job.setup);
+  // The check query before the answer runs, so the feedback can show what the answer changed.
+  const before = job.verify ? lastResult(await learner.exec(job.verify, options)) : null;
   let results;
   try { results = await learner.exec(job.answer, options); }
   catch (error) { return { status: "error", details: describe(error, job.answer) }; }
 
   const problems = [];
+  let output = "";
+  let actual = null;
+  try { actual = lastResult(results); }
+  catch (error) { return { status: "mismatch", details: [error.message], output }; }
+  if (actual) output = `Your query returned:\n${formatTable(actual)}`;
+  else {
+    const changed = results.reduce((total, result) => total + (result.affectedRows ?? 0), 0);
+    if (changed) output = `Your statements changed ${changed} row${changed === 1 ? "" : "s"}.`;
+  }
   if (job.compareResult) {
-    let actual;
-    try { actual = lastResult(results); }
-    catch (error) { return { status: "mismatch", details: [error.message] }; }
-    if (!actual) return { status: "mismatch", details: ["Your answer didn't return a result. Write a query whose last statement returns rows."] };
+    if (!actual) return { status: "mismatch", details: ["Your answer didn't return a result. Write a query whose last statement returns rows."], output };
     problems.push(...compareResults(expected.result, actual, { ordered: job.ordered }));
   }
   if (job.verify && !problems.length) {
     try {
-      const actual = lastResult(await learner.exec(job.verify, options));
-      const found = compareResults(expected.verify, actual, { ordered: true });
+      const after = lastResult(await learner.exec(job.verify, options));
+      if (!job.compareResult) output = [output, describeChanges(before, after)].filter(Boolean).join("\n\n");
+      const found = compareResults(expected.verify, after, { ordered: true });
       if (found.length) problems.push(`After your statements, this check gave a different result:\n${job.verify.trim()}`, ...found);
     } catch (error) {
       problems.push(`After your statements, this check failed:\n${job.verify.trim()}`, error.message);
@@ -108,5 +128,5 @@ export async function runCheck(job, blob) {
     }
   }
   await learner.close();
-  return problems.length ? { status: "mismatch", details: problems } : { status: "passed", details: [] };
+  return problems.length ? { status: "mismatch", details: problems, output } : { status: "passed", details: [], output };
 }

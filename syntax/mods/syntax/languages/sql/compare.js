@@ -80,3 +80,43 @@ export function compareResults(expected, actual, { ordered = false } = {}) {
   if (extra.length) problems.push(`Not expected: ${list(extra, actual.types)}.`);
   return problems;
 }
+
+/**
+ * A result set as a psql-style text table, for showing learners what their query returned.
+ * @param {ResultSet} result @param {{ limit?: number, width?: number }} [options]
+ */
+export function formatTable(result, { limit = 20, width = 60 } = {}) {
+  const clip = text => text.length > width ? `${text.slice(0, width - 1)}…` : text;
+  const shown = result.rows.slice(0, limit).map(row => row.map((value, index) => clip(display(value, result.types[index]).replaceAll("\n", " "))));
+  const names = result.columns.map(name => clip(name));
+  const widths = names.map((name, index) => Math.max(name.length, ...shown.map(row => row[index].length)));
+  const line = cells => ` ${cells.map((cell, index) => cell.padEnd(widths[index])).join(" | ")}`.trimEnd();
+  const total = result.rows.length;
+  return [
+    line(names),
+    widths.map(size => "-".repeat(size + 2)).join("+"),
+    ...shown.map(line),
+    total > limit ? `(${total} rows, first ${limit} shown)` : `(${total} row${total === 1 ? "" : "s"})`,
+  ].join("\n");
+}
+
+/**
+ * Rows that differ between two results of the same query, as result sets with the after
+ * (or before) columns. A changed row appears once in each.
+ * @param {ResultSet} before @param {ResultSet} after
+ */
+export function rowChanges(before, after) {
+  const counts = new Map();
+  for (const row of before.rows) counts.set(rowKey(row), (counts.get(rowKey(row)) ?? 0) + 1);
+  const added = [];
+  for (const row of after.rows) {
+    const key = rowKey(row), left = counts.get(key) ?? 0;
+    if (left > 0) counts.set(key, left - 1); else added.push(row);
+  }
+  const removed = before.rows.filter(row => {
+    const key = rowKey(row), left = counts.get(key) ?? 0;
+    if (left > 0) { counts.set(key, left - 1); return true; }
+    return false;
+  });
+  return { added: { ...after, rows: added }, removed: { ...before, rows: removed } };
+}

@@ -69,9 +69,13 @@ test("SQL feedback separates errors, syntax, wrong rows, wrong order, and runawa
   assert.match(order.details[0], /not in the requested order/);
   const unordered = await check("where/greater-than", "SELECT name, price FROM products WHERE price > 300 ORDER BY name DESC;");
   assert.equal(unordered.passed, true, "Row order only matters when the exercise asks for it");
+  assert.match(unordered.details.at(-1), /^Your query returned:\n name +\| price\n-+\+-+\n Standing Desk +\| 549\.00\n[\s\S]*\n\(6 rows\)$/, "A passing check shows the rows the query returned");
+  const long = await check("sorting/order-asc", "SELECT name, price FROM products ORDER BY price;");
+  assert.match(long.details.at(-1), /\(24 rows, first 20 shown\)$/);
   const rows = await check("where/greater-than", "SELECT name, price FROM products WHERE price > 300 OR stock = 7;");
   assert.equal(rows.kind, "result");
-  assert.match(rows.details.join("\n"), /^Expected \d+ rows, got \d+\.\nNot expected: \(Soundbar, 249\.00\)\.$/);
+  assert.match(rows.details.at(-1), /^Your query returned:[\s\S]* Soundbar +\| 249\.00\n[\s\S]*\(7 rows\)$/, "A failing check still shows what the query returned");
+  assert.match(rows.details.slice(0, -1).join("\n"), /^Expected \d+ rows, got \d+\.\nNot expected: \(Soundbar, 249\.00\)\.$/);
   const columns = await check("where/greater-than", "SELECT name AS product, price FROM products WHERE price > 300;");
   assert.match(columns.details[0], /Name the columns name, price/);
   const unnamed = await check("select/expression", "SELECT name, price * stock FROM products;");
@@ -97,6 +101,11 @@ test("data-changing exercises compare the data afterward and enforce new constra
   const wrongRow = await check("modify/update-one", "UPDATE products SET stock = 50 WHERE id = 7;");
   assert.equal(wrongRow.kind, "result");
   assert.match(wrongRow.details[0], /After your statements, this check gave a different result/);
+  const shown = wrongRow.details.at(-1);
+  assert.match(shown, /^Your statements changed 1 row\.\n\nBefore \(rows your statements changed or removed\):\n[\s\S]* 7 +\| 27in Monitor[^\n]*\| 15 [\s\S]*\(1 row\)\n\nAfter \(rows your statements changed or added\):\n[\s\S]* 7 +\| 27in Monitor[^\n]*\| 50 [\s\S]*\(1 row\)$/);
+  const deleted = await check("modify/delete-where", "DELETE FROM reviews WHERE rating = 1;");
+  assert.equal(deleted.passed, true);
+  assert.match(deleted.details.at(-1), /^Your statements changed \d+ rows\.\n\nBefore \(rows your statements changed or removed\):/);
   const everyRow = await check("modify/update-one", "UPDATE products SET stock = 50;");
   assert.equal(everyRow.kind, "syntax", "Rules are reported before results, as in the other packs");
   const returning = await check("modify/update-returning", "UPDATE products SET stock = stock - 1 WHERE id = 1;");
