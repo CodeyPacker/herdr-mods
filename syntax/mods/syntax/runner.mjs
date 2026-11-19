@@ -1,6 +1,6 @@
 // Node owns files and child processes. The Herdr view only sends structured CLI arguments.
 import { realpathSync } from "node:fs";
-import { mkdir, readFile, writeFile, rename, copyFile, stat, open, unlink } from "node:fs/promises";
+import { mkdir, readFile, writeFile, rename, copyFile, stat, open, unlink, chmod } from "node:fs/promises";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash, randomUUID } from "node:crypto";
@@ -39,6 +39,35 @@ export function languageRoot(root, language = defaultLanguage) {
 export function exerciseFile(root, id, language = defaultLanguage) {
   catalogFor(language).findExercise(id); // Catalog IDs are the only allowed path components.
   return join(root, "answers", id, language.answerFile);
+}
+
+/** The reference answer, outside the answer folders so editor tooling never mixes it with yours. */
+export function referenceFile(root, id, language = defaultLanguage) {
+  catalogFor(language).findExercise(id);
+  return join(root, "answers", "_reference", id, `Reference${language.fileExtension}`);
+}
+
+/**
+ * Two answers are the same when only comments and whitespace differ. SQL also ignores the case
+ * of everything outside string literals, so `select` matches `SELECT`.
+ * @param {string} left @param {string} right @param {"sql" | string} codeFence
+ */
+export function sameAnswer(left, right, codeFence) {
+  const sql = codeFence === "sql";
+  const comment = sql ? /\/\*[\s\S]*?\*\/|--[^\n]*/g : /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g;
+  const normalize = text => {
+    const code = text.replace(comment, "").replace(/\s+/g, "").replace(/;+$/, "");
+    return sql ? code.split(/('(?:[^']|'')*')/).map((part, index) => index % 2 ? part : part.toLowerCase()).join("") : code;
+  };
+  return normalize(left) === normalize(right);
+}
+
+/** Write the reference read-only, so the diff can't be mistaken for something to edit. */
+async function writeReference(file, solution) {
+  await mkdir(dirname(file), { recursive: true });
+  try { await chmod(file, 0o644); } catch (error) { if (error.code !== "ENOENT") throw error; }
+  await writeFile(file, solution.endsWith("\n") ? solution : `${solution}\n`);
+  await chmod(file, 0o444);
 }
 
 /** A review attempt gets its own blank file, so the saved answer stays untouched. */
@@ -129,6 +158,8 @@ export async function command(root, action, value) {
     const runner = await loadLanguageRunner(language.id);
     findExercise(state.exerciseId);
     const exercise = findExercise(state.exerciseId);
+    /** @type {{ answerFile: string, referenceFile: string, same: boolean } | null} */
+    let compare = null;
     // Choosing an exercise or a language ends a review first, restoring where you were.
     if (state.review && ["select", "language", "review-end"].includes(action)) endReview(state);
     // Scratch mode swaps the editable file for a free-form one. Choosing an exercise leaves it.
@@ -150,6 +181,14 @@ export async function command(root, action, value) {
         startReviewItem(state);
         await ensureExercise(base, findExercise(state.exerciseId), language, runner, { review: true, fresh: true });
       }
+    } else if (action === "compare") {
+      // Only after a pass: comparing is for learning another approach, not for finding the answer.
+      if (!state.result?.passed) throw new Error("Pass the exercise first. Then you can compare your answer with the reference.");
+      const answerFile = await ensureExercise(base, exercise, language, runner, { review: Boolean(state.review) });
+      const answer = (await readFile(answerFile, "utf8")).replaceAll("\r\n", "\n");
+      const file = referenceFile(base, exercise.id, language);
+      await writeReference(file, exercise.solution);
+      compare = { answerFile, referenceFile: file, same: sameAnswer(answer, exercise.solution, language.codeFence) };
     } else if (action === "send-to-scratch") {
       if (!runner.runScratch) throw new Error(`Scratch isn't available for ${language.name} yet.`);
       const answer = (await readFile(await ensureExercise(base, exercise, language, runner, { review: Boolean(state.review) }), "utf8")).replaceAll("\r\n", "\n");
@@ -245,7 +284,7 @@ export async function command(root, action, value) {
     // Counted fresh each time, from the topic you're on outside the review.
     const pathTopic = findExercise(state.review?.returnTo.exerciseId ?? state.exerciseId).topicId;
     const reviewReady = readyForReview(catalogFor(language), state.progress, pathTopic, Date.now()).length;
-    return { ...state, file, folder: dirname(file), root: base, runtimeVersion: runtime.version, stale: Boolean(stale), sourceHash, reviewReady };
+    return { ...state, file, folder: dirname(file), root: base, runtimeVersion: runtime.version, stale: Boolean(stale), sourceHash, reviewReady, compare };
   } finally {
     await handle.close();
     await unlink(lock);
@@ -257,7 +296,7 @@ export async function command(root, action, value) {
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   const [root, action = "status", value] = process.argv.slice(2);
   try {
-    if (!root) throw new Error("Usage: node runner.mjs <practice-directory> <status|select|next|hint|answer|repeat|check|language|scratch|practice|send-to-scratch|review-start|review-end> [exercise-id|language-id]");
+    if (!root) throw new Error("Usage: node runner.mjs <practice-directory> <status|select|next|hint|answer|repeat|check|language|scratch|practice|send-to-scratch|review-start|review-end|compare> [exercise-id|language-id]");
     console.log(JSON.stringify(await command(root, action, value)));
   } catch (error) { console.log(JSON.stringify({ error: error.message })); process.exitCode = 1; }
 }

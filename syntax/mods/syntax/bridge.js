@@ -55,6 +55,20 @@ export async function openVSCode(folder, file) {
   if (result.code !== 0) throw new Error(result.stderr || "Could not open VS Code. Install its code command or use the displayed file path.");
 }
 
+/** VS Code's own diff view: your answer on the left, the reference on the right. @param {string} answer @param {string} reference */
+export async function openVSCodeDiff(answer, reference) {
+  const result = await exec("code", ["--reuse-window", "--diff", answer, reference]);
+  if (result.code !== 0) throw new Error(result.stderr || "Could not open VS Code. Install its code command or open the files yourself.");
+}
+
+/** Open the diff in a running Neovim. False when it isn't reachable. @param {string} server @param {string} expression */
+export async function neovimDiff(server, expression) {
+  try {
+    const result = await exec("nvim", ["--server", server, "--remote-expr", expression]);
+    return result.code === 0;
+  } catch { return false; }
+}
+
 /** @param {string} server @param {string} file */
 export async function reuseNeovim(server, file) {
   try {

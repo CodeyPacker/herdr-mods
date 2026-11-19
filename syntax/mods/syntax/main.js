@@ -7,8 +7,8 @@ import { keyButton, spinner, textInput } from "./kit/controls.js";
 import { listRow, rowText, listNote } from "./kit/list.js";
 import { catalogFor } from "./catalog.js";
 import { topicProgress, filteredTopics, visibleHints, savedExercise } from "./practice.js";
-import { practiceCommand, appCommand, openVSCode, reuseNeovim, configuredEditor, saveEditorPreference, setupStatus, checkSetupRequirements, completeSetup, configuredTutor, saveTutorPreference, checkTutorProvider, askTutorQuestion, cancelTutorRequest } from "./bridge.js";
-import { findPracticePane } from "./editor-pane.js";
+import { practiceCommand, appCommand, openVSCode, openVSCodeDiff, neovimDiff, reuseNeovim, configuredEditor, saveEditorPreference, setupStatus, checkSetupRequirements, completeSetup, configuredTutor, saveTutorPreference, checkTutorProvider, askTutorQuestion, cancelTutorRequest } from "./bridge.js";
+import { findPracticePane, neovimDiffCommands, neovimDiffExpression } from "./editor-pane.js";
 import { defaultLanguage, findLanguage, languages } from "./languages/index.js";
 import { setupPanel } from "./setup-panel.js";
 import { languagePanel } from "./language-panel.js";
@@ -69,6 +69,8 @@ export default class Syntax extends View {
     this.confirmRepeat = false;
     /** Shows the summary of a review that just ended, until the next action. */
     this.showReviewSummary = false;
+    /** Shown in the result after comparing, when the answers only differ in formatting. */
+    this.compareNote = "";
     /** @type {Record<string, string>} */
     this.recent = savedRecent(this.language);
     /** @type {"neovim" | "vscode" | null} */
@@ -328,6 +330,9 @@ export default class Syntax extends View {
   perform(action, value, cx) {
     if (this.busy || this.practicePending) return;
     this.practicePending = true;
+    this.compareNote = "";
+    /** @type {{ answerFile: string, referenceFile: string } | null} */
+    let diff = null;
     const quiet = action === "hint" || action === "answer";
     const running = ["check", "check-saved"].includes(action) ? (this.state?.scratch ? `Running ${this.language.name}…` : `Checking ${this.language.name}…`) : "";
     this.busy = quiet ? "" : running || (action === "status" ? "Preparing practice…" : action === "scratch" ? "Opening scratch…"
@@ -377,10 +382,18 @@ export default class Syntax extends View {
           this.screen = action;
           this.automaticEditorStarted = false;
         }
+        if (action === "compare" && state.compare) {
+          if (state.compare.same) this.compareNote = "Same as the reference answer, apart from formatting and comments.";
+          else {
+            diff = state.compare;
+            if (this.editor === "neovim") this.compareNote = "Opened in a new Neovim tab: yours on the left, the reference on the right. :tabclose returns to your file.";
+          }
+        }
         if (!this.watching) this.watchAnswers(cx);
       } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
       finally { this.practicePending = false; this.busy = ""; cx.notify(); }
-      this.startAutomaticEditor(cx);
+      if (diff) this.openEditor(cx, diff);
+      else this.startAutomaticEditor(cx);
     });
   }
 
@@ -480,6 +493,7 @@ export default class Syntax extends View {
     }
     if (action === "next") { this.perform("next", null, cx); return; }
     if (action === "send-to-scratch") { this.perform("send-to-scratch", null, cx); return; }
+    if (action === "compare" && this.state.result?.passed && !this.state.stale) { this.perform("compare", null, cx); return; }
     if (action === "review-end" && this.state.review) { this.perform("review-end", null, cx); return; }
     if (action === "open") this.openEditor(cx);
   }
@@ -554,8 +568,12 @@ export default class Syntax extends View {
     return panes().find(pane => pane.pane === this.panelPane);
   }
 
-  /** @param {Context} cx */
-  openEditor(cx) {
+  /**
+   * Open the current file, or with `diff`, your answer beside the read-only reference in the
+   * editor's own diff view (a new Neovim tab, or VS Code's diff editor).
+   * @param {Context} cx @param {{ answerFile: string, referenceFile: string } | null} [diff]
+   */
+  openEditor(cx, diff = null) {
     if (["setup", "languages"].includes(this.screen) || !this.state || !this.editor || this.offerEditorDefault || this.busy || this.practicePending) return;
     if (!props()?.practiceTab) {
       run("tab.new", { name: "Practice Range", mod: "syntax", props: { practiceTab: true } });
@@ -565,15 +583,16 @@ export default class Syntax extends View {
     if (!panel) { this.error = "Could not find this practice tab. Reopen Practice Range from its shortcut."; cx.notify(); return; }
     const file = this.state.file;
     this.automaticEditorStarted = true;
-    this.busy = `Opening ${this.editor === "neovim" ? "Neovim" : "VS Code"}…`;
+    this.busy = `${diff ? "Comparing in" : "Opening"} ${this.editor === "neovim" ? "Neovim" : "VS Code"}…`;
     this.error = "";
     cx.notify();
     cx.spawn(async cx => {
       try {
-        if (this.editor === "vscode") await openVSCode(this.state.folder, file);
+        if (this.editor === "vscode") await (diff ? openVSCodeDiff(diff.answerFile, diff.referenceFile) : openVSCode(this.state.folder, file));
         else {
           const existing = panes().find(pane => pane.terminal === this.editorTerminal && pane.tab === panel.tab);
-          if (existing && this.server && await reuseNeovim(this.server, file)) {
+          const reused = existing && this.server && await (diff ? neovimDiff(this.server, neovimDiffExpression(diff.answerFile, diff.referenceFile)) : reuseNeovim(this.server, file));
+          if (reused) {
             run("pane.focus", { pane: existing.pane });
           } else {
             // Loopback works on macOS, Linux, and Windows without socket path limits.
@@ -582,7 +601,8 @@ export default class Syntax extends View {
             // A new native split divides the sole practice pane equally. Target its ID
             // explicitly, so a changed keyboard focus cannot split another tab.
             const opened = await appCommand("pane.split", {
-              pane: panel.pane, direction: "right", argv: ["nvim", "--listen", server, file],
+              pane: panel.pane, direction: "right",
+              argv: ["nvim", "--listen", server, file, ...(diff ? neovimDiffCommands(diff.answerFile, diff.referenceFile).flatMap(command => ["-c", command]) : [])],
             });
             this.server = server;
             this.editorTerminal = opened.terminal;
@@ -711,7 +731,7 @@ export default class Syntax extends View {
       cx.stop_propagation(); cx.notify(); return;
     }
     /** @type {Record<string, string>} */
-    const actions = { u: "tutor", l: "languages", h: "hint", a: "answer", c: "check", n: "next", r: "repeat", t: "topics", e: "exercises", o: "open", x: "scratch", s: "send-to-scratch",
+    const actions = { u: "tutor", l: "languages", h: "hint", a: "answer", c: "check", n: "next", r: "repeat", t: "topics", e: "exercises", o: "open", x: "scratch", s: "send-to-scratch", d: "compare",
       v: this.screen === "practice" && this.state?.review ? "review-end" : "review" };
     if (actions[key]) { this.action(actions[key], cx); cx.stop_propagation(); }
   }
@@ -823,7 +843,10 @@ export default class Syntax extends View {
       .when(Boolean(result), element => element.child(v_flex().gap(7).p(12).rounded(8).bg(t.raised)
         .child(div().font_semibold().text_color(this.state.stale ? t.muted : result?.passed ? t.done : t.blocked).child(this.state.stale ? "Saved code changed. Check again." : result?.title ?? ""))
         .when(Boolean(result?.assisted), element => element.child(div().text_size(11).text_color(t.dim).child("Checked after viewing the answer.")))
-        .children((result?.details ?? []).map((detail, index) => this.markdown(`result-${result?.at}-${index}`, `\`\`\`text\n${detail}\n\`\`\``)))))
+        .children((result?.details ?? []).map((detail, index) => this.markdown(`result-${result?.at}-${index}`, `\`\`\`text\n${detail}\n\`\`\``)))
+        .when(Boolean(result?.passed) && !this.state.stale, element => element.child(h_flex().gap(8).items_center().flex_wrap()
+          .child(keyButton(t, "compare", "d", "Compare with reference", !this.busy && Boolean(this.editor), cx => this.action("compare", cx)))
+          .when(Boolean(this.compareNote), element => element.child(div().text_size(12).text_color(t.done).child(this.compareNote)))))))
       .when(this.tutor.enabled, element => element.child(v_flex().border_t_1().border_color(t.border).pt(12)
         .child(tutorChat(t, {
           messages: this.tutorThreads[this.tutorKey()] ?? [], busy: this.tutorBusy, error: this.tutorError,

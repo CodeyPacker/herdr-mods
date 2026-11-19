@@ -116,6 +116,7 @@ Every check shows what your code produced: what it printed, the value a failed c
 
 - **Scratch** (`x`): a free-form file per language. Save it to run it. Nothing is checked, and runs don't count toward progress. `x` or `esc` returns to your exercise.
 - **Send to scratch** (`s`): copies your current answer into scratch, with any tables or types the exercise supplies, and runs it, so you can experiment without touching your saved attempt.
+- **Compare** (`d` after a pass): opens your answer beside the read-only reference in your editor's diff view (a new Neovim tab, or VS Code's diff editor). If they differ only in formatting or comments, the panel says so instead.
 - **Review** (`v` on the Topics screen): optional. Up to eight exercises from topics you've practiced, weakest and longest unseen first, no more than three per topic, each from a blank file. Your saved answers stay untouched. A clean first try waits longer before coming back; one you needed help with returns sooner. The Topics screen shows how many are ready.
 
 ### Updating an existing install

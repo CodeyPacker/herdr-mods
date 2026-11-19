@@ -17,6 +17,7 @@
  * @typedef {{ version: number, languageId: string, exerciseId: string, hintCount: number, answerShown: boolean,
  *   progress: Record<string, Progress>, result: CheckResult | null, scratch?: boolean, scratchResult?: CheckResult | null,
  *   review?: Review | null, lastReview?: ReviewSummary | null, reviewReady?: number,
+ *   compare?: { answerFile: string, referenceFile: string, same: boolean } | null,
  *   file: string, folder: string, root: string, runtimeVersion: string, stale: boolean, sourceHash: string }} Session
  */
 export {};
