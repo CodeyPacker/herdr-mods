@@ -95,6 +95,11 @@ test("type errors, wrong results, and hardcoded answers are reported separately"
   const wrongResult = await checkAnswer(root, add, "function add(a: number, b: number): number {\n  return a - b;\n}");
   assert.equal(wrongResult.kind, "result");
   assert.match(wrongResult.details[0], /^Check 1 failed: add\(2, 3\) === 5$/);
+  assert.equal(wrongResult.details[1], "Your code returned: -1", "A failed comparison shows what the answer produced");
+  const printed = await checkAnswer(root, findExercise("loops/countdown"), "function countdown(start: number): number[] {\n  const values: number[] = [];\n  for (let i = start; i > 1; i--) values.push(i);\n  console.log(\"values\", values);\n  return values;\n}");
+  assert.match(printed.details[0], /^Check 1 failed: same\(countdown\(3\), \[3, 2, 1\]\)$/);
+  assert.equal(printed.details[1], "Your code returned: [3, 2]");
+  assert.equal(printed.details.at(-1), "Your code printed:\nvalues [ 3, 2 ]", "Printed output is shown on failure too");
   const hardcoded = await checkAnswer(root, findExercise("strings/upper"), "function shout(text: string): string {\n  text.toUpperCase();\n  return \"HI\";\n}");
   assert.equal(hardcoded.kind, "result", "A hardcoded value fails checks with other inputs");
   const level = await checkAnswer(root, findExercise("primitives/numeric-literal-union"), "let level: 1 | 2 | 3 | 4 = 1;");

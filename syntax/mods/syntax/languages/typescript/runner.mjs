@@ -47,8 +47,11 @@ process.stdout.write("\\n" + token + "\\n");
 /** Turn a source-mapped stack into the learner's message and line. */
 function runtimeDetails(output, segments) {
   const lines = output.split("\n").map(line => line.trimEnd()).filter(Boolean);
-  const failure = lines.find(line => !line.trimStart().startsWith("at ") && !line.startsWith("file:")) ?? "The code threw an error.";
+  const start = lines.findIndex(line => !line.trimStart().startsWith("at ") && !line.startsWith("file:"));
+  const failure = start < 0 ? "The code threw an error." : lines[start];
   const details = [failure.replace(/^Error: (Check \d+ failed)/, "$1")];
+  // A failed check's message continues with the value the answer produced.
+  for (let index = start + 1; start >= 0 && index < lines.length && /^Your code returned: /.test(lines[index]); index++) details.push(lines[index]);
   for (const line of lines) {
     const answerFrame = /Exercise\.ts:(\d+):(\d+)/.exec(line);
     const checkFrame = /check\.ts:(\d+):(\d+)/.exec(line);
@@ -59,6 +62,36 @@ function runtimeDetails(output, segments) {
     }
   }
   return details;
+}
+
+const comparisons = new Set(["===", "!==", "==", "!=", "<", "<=", ">", ">="]);
+const literalKinds = ["NumericLiteral", "StringLiteral", "NoSubstitutionTemplateLiteral", "TrueKeyword", "FalseKeyword", "NullKeyword", "BigIntLiteral"];
+
+/**
+ * For each check, the side whose value the answer produced, so a failure can show it. Only a
+ * plain comparison or __same(actual, expected) qualifies; anything else keeps its original form.
+ */
+export function checkCaptures(ts, checks) {
+  const literal = node => literalKinds.some(kind => node.kind === ts.SyntaxKind[kind])
+    || (ts.isIdentifier(node) && node.text === "undefined")
+    || (ts.isPrefixUnaryExpression(node) && ts.isNumericLiteral(node.operand));
+  return checks.map(check => {
+    const file = ts.createSourceFile("check.ts", check, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    if (file.statements.length !== 1 || !ts.isExpressionStatement(file.statements[0])) return null;
+    let expression = file.statements[0].expression;
+    const text = node => check.slice(node.getStart(file), node.getEnd());
+    if (ts.isBinaryExpression(expression)) {
+      const operator = expression.operatorToken.getText(file);
+      if (!comparisons.has(operator)) return null;
+      const { left, right } = expression;
+      if (literal(left) && literal(right)) return null;
+      return literal(left) ? { left: text(right), operator, right: text(left), swapped: true } : { left: text(left), operator, right: text(right) };
+    }
+    if (ts.isCallExpression(expression) && ts.isIdentifier(expression.expression) && expression.expression.text === "__same" && expression.arguments.length === 2) {
+      return { actual: text(expression.arguments[0]), expected: text(expression.arguments[1]) };
+    }
+    return null;
+  });
 }
 
 /** Type-check a fresh snapshot, check its syntax, then run the trusted checks in another process. */
@@ -72,7 +105,7 @@ export async function checkAnswer(root, exercise, answer, { timeout = 5000 } = {
   const directory = join(root, "checks", randomUUID());
   await mkdir(directory, { recursive: true });
   try {
-    const { files, segments } = checkingFiles(exercise, answer);
+    const { files, segments } = checkingFiles(exercise, answer, checkCaptures(ts, exercise.checks ?? []));
     for (const [name, content] of Object.entries(files)) await writeFile(join(directory, name), content);
     const compiled = typeCheck(ts, directory, exercise, segments);
     if (compiled.internal.length) throw new Error(`The TypeScript checker could not prepare this exercise.\n${compiled.internal.join("\n")}`);
@@ -93,10 +126,11 @@ export async function checkAnswer(root, exercise, answer, { timeout = 5000 } = {
     const finished = executed.code === 0 && executed.stdout.trimEnd().endsWith(token);
     if (!finished) {
       const details = executed.stderr.trim() ? runtimeDetails(executed.stderr, segments) : ["The code stopped before the checks finished."];
-      return { passed: false, kind: "result", title: "The result needs a correction", details };
+      const printed = executed.stdout.trim();
+      return { passed: false, kind: "result", title: "The result needs a correction", details: printed ? [...details, `Your code printed:\n${printed}`] : details };
     }
     const output = executed.stdout.trimEnd().slice(0, -token.length).trim();
-    return { passed: true, kind: "passed", title: "Correct. Stay here or try another exercise.", details: output ? [output] : [] };
+    return { passed: true, kind: "passed", title: "Correct. Stay here or try another exercise.", details: output ? [`Your code printed:\n${output}`] : [] };
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

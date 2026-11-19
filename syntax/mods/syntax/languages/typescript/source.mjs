@@ -44,8 +44,34 @@ export async function __rejects(promise: Promise<unknown>): Promise<boolean> {
   try { await promise; return false; } catch { return true; }
 }
 
-export function __fail(index: number, text: string): never {
-  throw new Error(\`Check \${index} failed: \${text}\`);
+/** A value as readable text for check feedback: strings quoted, Maps and Sets expanded. */
+export function __show(value: unknown): string {
+  const seen = new WeakSet<object>();
+  const text = (item: unknown): string => {
+    if (typeof item === "string") return JSON.stringify(item);
+    if (typeof item === "bigint") return \`\${item}n\`;
+    if (typeof item === "function") return \`[Function \${item.name || "anonymous"}]\`;
+    if (typeof item === "number") return Object.is(item, -0) ? "-0" : String(item);
+    if (item === null || typeof item !== "object") return String(item);
+    if (seen.has(item)) return "[Circular]";
+    seen.add(item);
+    if (item instanceof Promise) return "Promise { pending or settled: use await }";
+    if (item instanceof Date) return \`Date(\${Number.isNaN(item.getTime()) ? "Invalid" : item.toISOString()})\`;
+    if (item instanceof Error) return \`\${item.name}: \${item.message}\`;
+    if (item instanceof Map) return \`Map(\${item.size}) { \${[...item].map(([key, entry]) => \`\${text(key)} => \${text(entry)}\`).join(", ")} }\`;
+    if (item instanceof Set) return \`Set(\${item.size}) { \${[...item].map(text).join(", ")} }\`;
+    if (Array.isArray(item)) return \`[\${item.map(text).join(", ")}]\`;
+    const entries = Object.entries(item).map(([key, entry]) => \`\${/^[A-Za-z_$][\\w$]*$/.test(key) ? key : JSON.stringify(key)}: \${text(entry)}\`);
+    const type = (item as { constructor?: { name?: string } }).constructor;
+    const name = type && type !== Object && type.name ? \`\${type.name} \` : "";
+    return entries.length ? \`\${name}{ \${entries.join(", ")} }\` : \`\${name}{}\`;
+  };
+  const shown = text(value);
+  return shown.length > 300 ? \`\${shown.slice(0, 297)}...\` : shown;
+}
+
+export function __fail(index: number, text: string, actual?: string): never {
+  throw new Error(\`Check \${index} failed: \${text}\` + (actual === undefined ? "" : \`\\nYour code returned: \${actual}\`));
 }
 
 export type __Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
@@ -53,7 +79,7 @@ export type __Extends<A, B> = [A] extends [B] ? true : false;
 export type __Assert<T extends true> = T;
 `;
 
-const helperNames = ["__logs", "__same", "__throws", "__rejects", "__fail", "type __Equal", "type __Extends", "type __Assert"];
+const helperNames = ["__logs", "__same", "__show", "__throws", "__rejects", "__fail", "type __Equal", "type __Extends", "type __Assert"];
 const importHelpers = `import { ${helperNames.join(", ")} } from "./harness.js";`;
 
 /** Check text shown to learners, without the helper prefix. */
@@ -73,7 +99,7 @@ function lineCount(text) { return text.split("\n").length; }
  * Script exercises place the answer inside check.ts. Module exercises keep the answer in
  * Exercise.ts, and the checks import it as `answer`.
  */
-export function checkingFiles(exercise, answer) {
+export function checkingFiles(exercise, answer, captures = []) {
   const segments = [];
   let line = 0;
   const add = (kind, text, index) => {
@@ -92,13 +118,28 @@ export function checkingFiles(exercise, answer) {
   }
   if (exercise.mode !== "module") parts.push(add("answer", answer.replace(/\n$/, "")));
   (exercise.checks ?? []).forEach((check, index) =>
-    parts.push(add("check", `if (!(${check})) __fail(${index + 1}, ${JSON.stringify(displayCheck(check))});`, index + 1)));
+    parts.push(add("check", checkStatement(check, index + 1, captures[index]), index + 1)));
   (exercise.rejects ?? []).forEach((code, index) =>
     parts.push(add("reject", `function __rejected${index + 1}() {\n// @ts-expect-error\n${code};\n}`, index + 1)));
   parts.push(add("setup", "export {};"));
   const files = { "globals.d.ts": globals, "harness.ts": harness, "check.ts": parts.join("\n") + "\n", ...exercise.modules };
   if (exercise.mode === "module") files["Exercise.ts"] = answer;
   return { files, segments };
+}
+
+/**
+ * One check as a statement. With a capture, the value the answer produced is computed once,
+ * compared, and shown on failure: `{ left, operator, right }` for a comparison where `left`
+ * is the answer's side, or `{ actual, expected }` for __same(actual, expected).
+ */
+function checkStatement(check, index, capture) {
+  const text = JSON.stringify(displayCheck(check));
+  if (capture?.operator) {
+    const test = capture.swapped ? `(${capture.right}) ${capture.operator} __actual` : `__actual ${capture.operator} (${capture.right})`;
+    return `{ const __actual = (${capture.left}); if (!(${test})) __fail(${index}, ${text}, __show(__actual)); }`;
+  }
+  if (capture?.expected) return `{ const __actual = (${capture.actual}); if (!__same(__actual, ${capture.expected})) __fail(${index}, ${text}, __show(__actual)); }`;
+  return `if (!(${check})) __fail(${index}, ${text});`;
 }
 
 /** Locate a 0-based check.ts line. Answer lines become 1-based Exercise.ts lines. */

@@ -66,19 +66,40 @@ export async function buildChecker(root) {
   return { assembly, sdk, target };
 }
 
+/**
+ * The message of an unhandled exception, without .NET's prefix. A failed check keeps its
+ * "Your code returned" line. Other exceptions add the first stack frame in Exercise.cs.
+ */
+export function exceptionDetails(stderr) {
+  const lines = stderr.split("\n").map(line => line.trimEnd()).filter(line => line.trim());
+  const start = lines.findIndex(line => line.startsWith("Unhandled exception."));
+  if (start < 0) return lines.slice(0, 8);
+  const stack = lines.findIndex((line, index) => index > start && /^\s+at /.test(line));
+  const message = lines.slice(start, stack < 0 ? undefined : stack).slice(0, 6);
+  message[0] = message[0].replace(/^Unhandled exception\. /, "").replace(/^System\.Exception: (?=Check \d+ failed)/, "");
+  const frame = stack < 0 ? undefined : lines.slice(stack).find(line => line.includes("Exercise.cs"));
+  return frame && !/^Check \d+ failed/.test(message[0]) ? [...message, frame.trim()] : message;
+}
+
 /** Compile a fresh snapshot, check its syntax, then execute assertions in another process. */
 export async function checkAnswer(root, exercise, answer, checker, { timeout = 5000 } = {}) {
   const directory = join(root, "checks", randomUUID());
   await mkdir(directory, { recursive: true });
   try {
-    const generated = checkingSource(exercise, answer);
     const file = join(directory, "Exercise.cs");
     const output = join(directory, "Attempt.dll");
-    await writeFile(file, generated.source);
-    await writeJson(join(directory, "request.json"), { file, output, start: generated.start, end: generated.end, rules: exercise.rules });
-    const compiled = await runDotnetProcess("dotnet", [checker.assembly, join(directory, "request.json")], { timeout: 20000 });
-    if (compiled.code !== 0) throw new Error(`The checker could not run. ${compiled.problem || compiled.stdout || compiled.stderr}`);
-    const compilation = JSON.parse(compiled.stdout);
+    const compile = async report => {
+      const generated = checkingSource(exercise, answer, { report });
+      await writeFile(file, generated.source);
+      await writeJson(join(directory, "request.json"), { file, output, start: generated.start, end: generated.end, rules: exercise.rules });
+      const compiled = await runDotnetProcess("dotnet", [checker.assembly, join(directory, "request.json")], { timeout: 20000 });
+      if (compiled.code !== 0) throw new Error(`The checker could not run. ${compiled.problem || compiled.stdout || compiled.stderr}`);
+      return JSON.parse(compiled.stdout);
+    };
+    // Checks that report values capture operands in lambdas, which a few types (spans, ref
+    // locals) can't allow. If that version doesn't compile, the plain checks decide.
+    let compilation = await compile(true);
+    if (!compilation.compiled) compilation = await compile(false);
     if (!compilation.compiled) return { passed: false, kind: "compile", title: "Fix the compilation errors", details: compilation.errors };
     if (compilation.failures.length) return { passed: false, kind: "syntax", title: "Use the requested syntax", details: compilation.failures };
     await writeJson(join(directory, "Attempt.runtimeconfig.json"), {
@@ -86,11 +107,9 @@ export async function checkAnswer(root, exercise, answer, checker, { timeout = 5
     });
     const executed = await runDotnetProcess("dotnet", [output], { cwd: directory, timeout });
     if (executed.problem) return { passed: false, kind: "runtime", title: "The code could not finish", details: [executed.problem] };
-    if (executed.code !== 0) {
-      const details = (executed.stderr || executed.stdout).split("\n").filter(line => line.trim()).slice(0, 8);
-      return { passed: false, kind: "result", title: "The result needs a correction", details };
-    }
-    return { passed: true, kind: "passed", title: "Correct. Stay here or try another exercise.", details: executed.stdout.trim() ? [executed.stdout.trim()] : [] };
+    const printed = executed.stdout.trim() ? [`Your code printed:\n${executed.stdout.trim()}`] : [];
+    if (executed.code !== 0) return { passed: false, kind: "result", title: "The result needs a correction", details: [...exceptionDetails(executed.stderr || executed.stdout), ...printed] };
+    return { passed: true, kind: "passed", title: "Correct. Stay here or try another exercise.", details: printed };
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
