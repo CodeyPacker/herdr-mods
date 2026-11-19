@@ -96,9 +96,10 @@ Built and tested on Windows. The macOS sign-in helper has not been run yet: if i
 
 ## Practice Range
 
-C# and TypeScript syntax repetition in its own tab, with an automatic 50/50 Neovim split or VS Code as your editor.
+C#, TypeScript, and SQL repetition in its own tab, with an automatic 50/50 Neovim split or VS Code as your editor.
 Choose a language and topic, write a short exercise, save, and check it. Each language has 800 exercises across
 20 topics, from variables and loops to generics, async, and advanced patterns or mapped and conditional types.
+SQL runs on real PostgreSQL, from SELECT and joins to window functions, recursive CTEs, JSON, and MERGE.
 Each hint adds a little more help. Another exercise stays in the same topic until you choose to switch.
 
 ```sh
@@ -106,7 +107,8 @@ herdr-app do tab.new '{"name":"Practice Range","mod":"syntax","props":{"practice
 ```
 
 Needs Node.js 20 or newer, plus a .NET SDK 8 or newer for C#, or the pack's pinned TypeScript compiler
-(`npm ci` in `languages/typescript`) for TypeScript. Setup and controls are explained in the app.
+(`npm ci` in `languages/typescript`) for TypeScript, or the pack's pinned PGlite (`npm ci` in `languages/sql`) for SQL.
+PGlite is PostgreSQL compiled to WebAssembly, so there's no database server to install. Setup and controls are explained in the app.
 
 Copy or symlink `syntax/mods/syntax` into your Herdr `mods` folder. The setup screen guides you through language requirements, your editor, and the optional AI tutor.
 

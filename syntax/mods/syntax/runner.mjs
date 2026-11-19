@@ -53,7 +53,7 @@ async function ensureExercise(root, exercise, language, runner) {
     await writeFile(file, migrated);
   }
   const declarations = exercise.declarations ? `\n${exercise.declarations}` : "";
-  await writeIfChanged(join(dirname(file), "README.md"), `# ${exercise.title}\n\n${exercise.prompt}\n\nWrite your answer in ${language.answerFile}. You can replace the entire file. Saving checks your code automatically while the Practice Range tab is open. Imports, surrounding code, and supplied types are added when checking.${declarations ? `\n\nSupplied types:\n\n\`\`\`${language.codeFence}\n${declarations.trim()}\n\`\`\`` : ""}\n`);
+  await writeIfChanged(join(dirname(file), "README.md"), `# ${exercise.title}\n\n${exercise.prompt}\n\nWrite your answer in ${language.answerFile}. You can replace the entire file. Saving checks your code automatically while the Practice Range tab is open. ${language.checkNote ?? "Imports, surrounding code, and supplied types are added when checking."}${declarations ? `\n\n${language.suppliedLabel ?? "Supplied types"}:\n\n\`\`\`${language.codeFence}\n${declarations.trim()}\n\`\`\`` : ""}\n`);
   return file;
 }
 

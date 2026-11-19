@@ -1,8 +1,9 @@
 import csharp from "./csharp/index.js";
 import typescript from "./typescript/index.js";
+import sql from "./sql/index.js";
 
 // Bundled packs, in the order setup lists them. C# stays the default for older data.
-export const languages = [csharp, typescript];
+export const languages = [csharp, typescript, sql];
 export const defaultLanguage = csharp;
 
 /** @param {string} id */

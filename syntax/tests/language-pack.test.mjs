@@ -7,7 +7,7 @@ import { filteredTopics, savedExercise, topicProgress } from "../mods/syntax/pra
 
 // Exercise the public boundary between the base mod and a bundled pack.
 test("the bundled C# pack exposes metadata and a separately loaded runner", async () => {
-  assert.deepEqual(languages.map(language => language.id), ["csharp", "typescript"]);
+  assert.deepEqual(languages.map(language => language.id), ["csharp", "typescript", "sql"]);
   assert.equal(defaultLanguage.name, "C#");
   assert.equal(defaultLanguage.answerFile, "Exercise.cs");
   assert.equal(defaultLanguage.runtime, ".NET SDK 8 or newer");
@@ -56,14 +56,39 @@ test("the bundled TypeScript pack registers UI-safe metadata and its own runner"
   assert.match((await runner.environment()).version, /^TypeScript 6\.0\.3$/);
 });
 
+test("the bundled SQL pack registers UI-safe metadata and its own runner", async () => {
+  const sql = findLanguage("sql");
+  assert.equal(sql.name, "SQL");
+  assert.equal(sql.answerFile, "Exercise.sql");
+  assert.equal(sql.fileExtension, ".sql");
+  assert.equal(sql.codeFence, "sql");
+  assert.equal(sql.dataDirectory, "languages/sql");
+  assert.equal(sql.suppliedLabel, "Tables");
+  assert.match(sql.runtime, /PGlite 0\.5\.16/);
+  assert.match(sql.setupInstructions, /npm ci/);
+  assert.equal(sql.topics.length, 20);
+  assert.equal(sql.exercises.length, 800);
+  const runner = await loadLanguageRunner("sql");
+  for (const method of ["environment", "createAnswer", "migrateAnswer", "prepareWorkspace", "check"]) {
+    assert.equal(typeof runner[method], "function", method);
+  }
+  const first = sql.exercises[0];
+  assert.equal(runner.createAnswer(first), "-- Write your SQL here. Save to check.\n");
+  assert.equal(runner.migrateAnswer(first, "SELECT 1;\n"), null, "SQL answers are never rewritten");
+  assert.match((await runner.environment()).version, /^PGlite 0\.5\.16 \(PostgreSQL 18\)$/);
+});
+
 test("the UI imports neither compiler nor Node modules through pack metadata", async () => {
   const { readFile, readdir } = await import("node:fs/promises");
-  const pack = new URL("../mods/syntax/languages/typescript/", import.meta.url);
-  const files = ["index.js", "catalog.js", ...(await readdir(new URL("content/", pack))).map(name => `content/${name}`)];
-  for (const file of files) {
-    const text = await readFile(new URL(file, pack), "utf8");
-    const imports = [...text.matchAll(/^import .* from "([^"]+)";$/gm)].map(match => match[1]);
-    assert.ok(imports.every(path => path.startsWith("./") || path.startsWith("../")), `${file}: ${imports}`);
-    assert.ok(imports.every(path => path.endsWith(".js")), `${file} must not import .mjs runner code: ${imports}`);
+  for (const id of ["typescript", "sql"]) {
+    const pack = new URL(`../mods/syntax/languages/${id}/`, import.meta.url);
+    const files = ["index.js", "catalog.js", ...(await readdir(new URL("content/", pack))).map(name => `content/${name}`)];
+    if (id === "sql") files.push("dataset.js", "lexer.js", "compare.js");
+    for (const file of files) {
+      const text = await readFile(new URL(file, pack), "utf8");
+      const imports = [...text.matchAll(/^import .* from "([^"]+)";$/gm)].map(match => match[1]);
+      assert.ok(imports.every(path => path.startsWith("./") || path.startsWith("../")), `${id}/${file}: ${imports}`);
+      assert.ok(imports.every(path => path.endsWith(".js")), `${id}/${file} must not import .mjs runner code: ${imports}`);
+    }
   }
 });

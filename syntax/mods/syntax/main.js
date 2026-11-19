@@ -742,7 +742,7 @@ export default class Syntax extends View {
         .child(div().text_size(11).text_color(t.muted).child("Write your answer in the file. You can replace everything. Save to check automatically."))
         .child(this.markdown("exercise-path", `\`${this.state.file}\``))
         .child(this.editorControls(t))))
-      .when(Boolean(exercise.declarations), element => element.child(this.markdown(`setup-${exercise.id}`, `Supplied types:\n\n\`\`\`${this.language.codeFence}\n${exercise.declarations}\n\`\`\``)))
+      .when(Boolean(exercise.declarations), element => element.child(this.markdown(`setup-${exercise.id}`, `${this.language.suppliedLabel ?? "Supplied types"}:\n\n\`\`\`${this.language.codeFence}\n${exercise.declarations}\n\`\`\``)))
       .child(h_flex().items_center().flex_wrap().gap(8)
         .child(keyButton(t, "more-hint", "h", "Hint", !this.busy && hints.length < exercise.hints.length, cx => this.action("hint", cx)))
         .child(div().text_size(12).text_color(t.muted).child(`${hints.length}/${exercise.hints.length}`)))
