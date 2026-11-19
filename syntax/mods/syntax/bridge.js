@@ -1,6 +1,7 @@
 import { appHome, exec, props, readTextFile, writeTextFile } from "herdr";
 import { parseEditorConfig, saveEditorConfig } from "./editor-config.js";
 import { parseTutorConfig, saveTutorConfig } from "./tutor/config.js";
+import { neovimCloseDiffsExpression } from "./editor-pane.js";
 
 export async function configuredEditor() {
   return parseEditorConfig(await readTextFile(`${appHome()}/syntax.json`));
@@ -69,9 +70,14 @@ export async function neovimDiff(server, expression) {
   } catch { return false; }
 }
 
-/** @param {string} server @param {string} file */
+/**
+ * Show another file in the running Neovim. Comparison tabs close first, so the file never
+ * opens inside a diff window.
+ * @param {string} server @param {string} file
+ */
 export async function reuseNeovim(server, file) {
   try {
+    await exec("nvim", ["--server", server, "--remote-expr", neovimCloseDiffsExpression()]);
     const result = await exec("nvim", ["--server", server, "--remote", file]);
     return result.code === 0;
   } catch { return false; }

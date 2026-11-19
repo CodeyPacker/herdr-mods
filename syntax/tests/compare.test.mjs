@@ -7,7 +7,7 @@ import { spawn, execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { command, sameAnswer } from "../mods/syntax/runner.mjs";
 import { completeSetup } from "../mods/syntax/setup.mjs";
-import { neovimDiffCommands, neovimDiffExpression } from "../mods/syntax/editor-pane.js";
+import { neovimDiffCommands, neovimDiffExpression, neovimCloseDiffsExpression } from "../mods/syntax/editor-pane.js";
 
 const installed = { run: async () => ({ code: 0, stdout: "test", stderr: "", problem: "" }) };
 const run = promisify(execFile);
@@ -67,6 +67,19 @@ test("Neovim opens the diff in a new tab with the reference read-only", { timeou
     assert.equal(await ask("expand('%:p')"), answer, `${mode}: the cursor is in your answer`);
     assert.equal(await ask("join(map(tabpagebuflist(), {_, b -> fnamemodify(bufname(b), ':t') . (getbufvar(b, '&modifiable') ? '' : ' [read-only]')}), ' | ')"), "Exercise.ts | Reference.ts [read-only]", mode);
     assert.equal(await ask("len(filter(range(1, winnr('$')), {_, w -> getwinvar(w, '&diff')}))"), "2", `${mode}: both windows diff`);
+    // Comparing again replaces the earlier comparison instead of stacking tabs.
+    await ask(neovimDiffExpression(answer, reference));
+    assert.equal(await ask("tabpagenr('$')"), "2", `${mode}: one comparison tab at a time`);
+    // Switching files, as the panel does for another exercise, closes the comparison first.
+    const next = join(root, "Next.ts");
+    await writeFile(next, "let y = 2;\n");
+    await ask(neovimCloseDiffsExpression());
+    await run("nvim", ["--server", server, "--remote", next]);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    assert.equal(await ask("tabpagenr('$')"), "1", `${mode}: the comparison tab is gone`);
+    assert.equal(await ask("expand('%:p')"), next);
+    assert.equal(await ask("&diff"), "0", `${mode}: the new file isn't in diff mode`);
+    assert.equal(await ask(`bufloaded('${answer.replaceAll("'", "''")}')`), "1", "Your answer's buffer stays loaded");
     nvim.kill();
   }
 });

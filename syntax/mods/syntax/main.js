@@ -386,7 +386,7 @@ export default class Syntax extends View {
           if (state.compare.same) this.compareNote = "Same as the reference answer, apart from formatting and comments.";
           else {
             diff = state.compare;
-            if (this.editor === "neovim") this.compareNote = "Opened in a new Neovim tab: yours on the left, the reference on the right. :tabclose returns to your file.";
+            if (this.editor === "neovim") this.compareNote = "Opened in a new Neovim tab: yours on the left, the reference on the right. It closes when you move on.";
           }
         }
         if (!this.watching) this.watchAnswers(cx);

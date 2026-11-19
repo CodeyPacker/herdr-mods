@@ -17,6 +17,9 @@ export function findPracticePane(all, known, focus, explicit) {
 /** A Vim string literal: single-quoted, with quotes doubled. @param {string} text */
 function vimString(text) { return `'${text.replaceAll("'", "''")}'`; }
 
+/** Tabs opened for a comparison carry this tab-local variable, so the panel can close them. */
+const diffMarker = "practice_range_diff";
+
 /**
  * Ex commands that open a new tab with your answer on the left and the read-only reference on
  * the right in diff mode, then return the cursor to your answer. Closing the tab ends the diff.
@@ -25,13 +28,22 @@ function vimString(text) { return `'${text.replaceAll("'", "''")}'`; }
 export function neovimDiffCommands(answer, reference) {
   return [
     `execute 'tabedit ' . fnameescape(${vimString(answer)})`,
+    `let t:${diffMarker} = 1`,
     `execute 'rightbelow vertical diffsplit ' . fnameescape(${vimString(reference)})`,
     "setlocal readonly nomodifiable",
     "wincmd p",
   ];
 }
 
-/** The same commands as one expression for `nvim --remote-expr`. @param {string} answer @param {string} reference */
+/**
+ * An expression that closes every comparison tab, last first so tab numbers stay valid. Your
+ * buffers stay loaded, so nothing unsaved is lost.
+ */
+export function neovimCloseDiffsExpression() {
+  return `execute(map(reverse(filter(range(1, tabpagenr('$')), {_, tab -> gettabvar(tab, '${diffMarker}', 0)})), {_, tab -> 'silent! tabclose ' . tab}))`;
+}
+
+/** Close earlier comparisons, then open this one, for `nvim --remote-expr`. @param {string} answer @param {string} reference */
 export function neovimDiffExpression(answer, reference) {
-  return `execute([${neovimDiffCommands(answer, reference).map(vimString).join(", ")}])`;
+  return `${neovimCloseDiffsExpression()} . execute([${neovimDiffCommands(answer, reference).map(vimString).join(", ")}])`;
 }
