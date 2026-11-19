@@ -70,6 +70,21 @@ export function scratchStarter() {
   return "// Scratch: write any C# and save to run it. Nothing is checked.\n// Top-level statements run first. Declare classes and records below them.\nvar greeting = \"Hello from scratch\";\nConsole.WriteLine(greeting);\n";
 }
 
+/**
+ * An exercise answer as scratch code. Scratch runs top-level statements, which must come before
+ * type declarations, so members are wrapped in their Practice class and types get a statement to start from.
+ */
+export function scratchFromAnswer(exercise, answer) {
+  const body = answer.trimEnd();
+  const supplied = exercise.declarations ? `\n\n// Supplied by the exercise:\n${exercise.declarations.trimEnd()}` : "";
+  if (exercise.mode === "members") {
+    const indented = body.split("\n").map(line => line ? `    ${line}` : line).join("\n");
+    return `// Your members are in the Practice class below. Call them here to try them out.\nConsole.WriteLine("Call your Practice members above this line.");\n\npublic static class Practice\n{\n${indented}\n}${supplied}\n`;
+  }
+  if (exercise.mode === "types") return `// Your types are below. Create and use them here to try them out.\nConsole.WriteLine("Use your types above this line.");\n\n${body}${supplied}\n`;
+  return `${body}${supplied}\n`;
+}
+
 /** Compile free-form C# as top-level statements, run it, and report what it printed. */
 export async function runScratch(root, code, { timeout = 5000 } = {}) {
   const checker = await buildChecker(root);

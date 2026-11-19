@@ -35,3 +35,13 @@ test(".NET exception output becomes short feedback", () => {
   assert.deepEqual(exceptionDetails("Unhandled exception. System.DivideByZeroException: Attempted to divide by zero.\n   at Practice.Run() in Exercise.cs:line 3\n   at EntryPoint.Main()\n"),
     ["System.DivideByZeroException: Attempted to divide by zero.", "at Practice.Run() in Exercise.cs:line 3"]);
 });
+
+test("C# answers sent to scratch become top-level programs", async () => {
+  const { scratchFromAnswer } = await import("../mods/syntax/languages/csharp/runner.mjs");
+  assert.equal(scratchFromAnswer({}, "int total = 2 + 3;\nConsole.WriteLine(total);\n"), "int total = 2 + 3;\nConsole.WriteLine(total);\n");
+  const members = scratchFromAnswer({ mode: "members" }, "public static int Twice(int n) => n * 2;");
+  assert.match(members, /^\/\/ Your members[^\n]*\nConsole\.WriteLine\([^\n]*\);\n\npublic static class Practice\n\{\n    public static int Twice\(int n\) => n \* 2;\n\}\n$/);
+  const types = scratchFromAnswer({ mode: "types", declarations: "public interface IShape {}" }, "public class Box : IShape {}");
+  assert.ok(types.indexOf("Console.WriteLine") < types.indexOf("public class Box"), "Statements come before type declarations");
+  assert.match(types, /\/\/ Supplied by the exercise:\npublic interface IShape \{\}\n$/);
+});

@@ -112,6 +112,20 @@ PGlite is PostgreSQL compiled to WebAssembly, so there's no database server to i
 
 Copy or symlink `syntax/mods/syntax` into your Herdr `mods` folder. The setup screen guides you through language requirements, your editor, and the optional AI tutor.
 
+Every check shows what your code produced: what it printed, the value a failed check got, or for SQL the rows your query returned.
+
+- **Scratch** (`x`): a free-form file per language. Save it to run it. Nothing is checked, and runs don't count toward progress. `x` or `esc` returns to your exercise.
+- **Send to scratch** (`s`): copies your current answer into scratch, with any tables or types the exercise supplies, and runs it, so you can experiment without touching your saved attempt.
+- **Review** (`v` on the Topics screen): optional. Up to eight exercises from topics you've practiced, weakest and longest unseen first, no more than three per topic, each from a blank file. Your saved answers stay untouched. A clean first try waits longer before coming back; one you needed help with returns sooner. The Topics screen shows how many are ready.
+
+### Updating an existing install
+
+1. Pull the latest `main`, or apply the patch.
+2. If the installed mod is a copy rather than a symlink, copy `syntax/mods/syntax` over it again.
+3. For SQL, install its engine once: `npm ci --prefix ~/.config/herdr-app/mods/syntax/languages/sql`. TypeScript's `npm ci` is only needed again if its `package.json` changed.
+4. Run `herdr-app check ~/.config/herdr-app/mods/syntax`, then reopen the Practice Range tab.
+5. To add SQL, open Languages and choose it. Your C# and TypeScript progress, answers, and editor settings carry over.
+
 ## Install
 
 ### Tell your agent

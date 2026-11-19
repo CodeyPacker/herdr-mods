@@ -37,6 +37,13 @@ export function scratchStarter() {
   return "// Scratch: write any TypeScript and save to run it. Nothing is checked.\nconst greeting: string = \"Hello from scratch\";\nconsole.log(greeting);\n";
 }
 
+/** An exercise answer as scratch code. Supplied code comes first, so the answer's references resolve. */
+export function scratchFromAnswer(exercise, answer) {
+  const supplied = exercise.declarations ? `// Supplied by the exercise:\n${exercise.declarations.trimEnd()}\n\n` : "";
+  const fixtures = exercise.mode === "module" || exercise.modules ? "// This exercise imports local modules, which scratch doesn't have. Inline what you need.\n" : "";
+  return `${fixtures}${supplied}${answer.trimEnd()}\n\n// Try it out:\n`;
+}
+
 /** Type-check and run free-form code with no checks, and report what it printed. */
 export async function runScratch(root, source) {
   const checked = await checkAnswer(root, { id: "scratch", checks: [], rules: [], mode: "script" }, source);

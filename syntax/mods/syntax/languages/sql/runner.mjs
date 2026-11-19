@@ -70,6 +70,12 @@ export function scratchStarter() {
   return "-- Scratch: write any SQL and save to run it against the practice database.\n-- Each run starts from a fresh copy, so nothing you change is kept. schema.sql has every table.\nSELECT * FROM customers LIMIT 5;\n";
 }
 
+/** An exercise answer as scratch SQL. Tables the exercise adds come first. */
+export function scratchFromAnswer(exercise, answer) {
+  const setup = exercise.setup ? `-- Added by the exercise:\n${exercise.setup.trim()}\n\n` : "";
+  return `${setup}${answer.trimEnd()}\n`;
+}
+
 /** Run free-form SQL on a fresh copy of the dataset and show what each statement did. */
 export async function runScratch(root, source, { timeout } = {}) {
   if (isBlank(source)) return { passed: true, kind: "output", title: "Nothing to run", details: ["Scratch.sql has no SQL yet. Write a query and save."] };

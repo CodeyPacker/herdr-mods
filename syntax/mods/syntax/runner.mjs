@@ -8,6 +8,7 @@ import { catalogFor } from "./catalog.js";
 import { defaultLanguage, findLanguage } from "./languages/index.js";
 import { loadLanguageRunner } from "./languages/runner.mjs";
 import { setupStatus, checkRequirements, completeSetup, selectLanguage } from "./setup.mjs";
+import { readyForReview, reviewSet } from "./review.js";
 
 async function readJson(path, fallback) {
   try { return JSON.parse(await readFile(path, "utf8")); }
@@ -40,12 +41,19 @@ export function exerciseFile(root, id, language = defaultLanguage) {
   return join(root, "answers", id, language.answerFile);
 }
 
-async function ensureExercise(root, exercise, language, runner) {
-  const file = exerciseFile(root, exercise.id, language);
+/** A review attempt gets its own blank file, so the saved answer stays untouched. */
+export function reviewFile(root, id, language = defaultLanguage) {
+  catalogFor(language).findExercise(id);
+  return join(root, "answers", "_review", id, language.answerFile);
+}
+
+async function ensureExercise(root, exercise, language, runner, { review = false, fresh = false } = {}) {
+  const file = review ? reviewFile(root, exercise.id, language) : exerciseFile(root, exercise.id, language);
   await mkdir(dirname(file), { recursive: true });
+  if (fresh) await writeFile(file, runner.createAnswer(exercise));
   try { await writeFile(file, runner.createAnswer(exercise), { flag: "wx" }); } catch (error) { if (error.code !== "EEXIST") throw error; }
   const existing = await readFile(file, "utf8");
-  const migrated = runner.migrateAnswer(exercise, existing);
+  const migrated = review ? null : runner.migrateAnswer(exercise, existing);
   if (migrated !== null) {
     const backup = join(root, "history", exercise.id);
     await mkdir(backup, { recursive: true });
@@ -67,6 +75,24 @@ async function ensureScratch(root, language, runner) {
   await mkdir(dirname(file), { recursive: true });
   try { await writeFile(file, runner.scratchStarter(), { flag: "wx" }); } catch (error) { if (error.code !== "EEXIST") throw error; }
   return file;
+}
+
+/** Show the next review exercise with no hints, no answer, and no earlier result. */
+function startReviewItem(state) {
+  state.exerciseId = state.review.ids[state.review.index];
+  state.hintCount = 0; state.answerShown = false; state.result = null;
+}
+
+/** Leave a review: summarize it and go back to the exercise you were on. */
+function endReview(state) {
+  const { ids, outcomes, returnTo } = state.review;
+  const results = ids.map(id => outcomes[id]);
+  state.lastReview = {
+    at: Date.now(), total: ids.length, clean: results.filter(item => item?.clean).length,
+    retried: results.filter(item => item?.passed && !item.clean).length, missed: results.filter(item => !item?.passed).length,
+  };
+  Object.assign(state, returnTo);
+  state.review = null;
 }
 
 /** One command holds an exclusive lock so two panels cannot overwrite each other's progress. */
@@ -103,9 +129,42 @@ export async function command(root, action, value) {
     const runner = await loadLanguageRunner(language.id);
     findExercise(state.exerciseId);
     const exercise = findExercise(state.exerciseId);
+    // Choosing an exercise or a language ends a review first, restoring where you were.
+    if (state.review && ["select", "language", "review-end"].includes(action)) endReview(state);
     // Scratch mode swaps the editable file for a free-form one. Choosing an exercise leaves it.
-    if (["select", "next", "language", "practice"].includes(action)) state.scratch = false;
-    if (action === "scratch") {
+    if (["select", "next", "language", "practice", "review-start", "review-end"].includes(action)) state.scratch = false;
+    if (action === "review-start") {
+      const ready = readyForReview(catalogFor(language), state.progress, exercise.topicId, Date.now());
+      const ids = reviewSet(ready);
+      if (!ids.length) throw new Error("Nothing is ready for review yet. Review uses topics you've practiced, other than the one you're on.");
+      state.review = { ids, index: 0, outcomes: {}, returnTo: { exerciseId: state.exerciseId, hintCount: state.hintCount, answerShown: state.answerShown, result: state.result } };
+      state.lastReview = null;
+      startReviewItem(state);
+      await ensureExercise(base, findExercise(state.exerciseId), language, runner, { review: true, fresh: true });
+    } else if (action === "review-end") {
+      // endReview already restored the exercise.
+    } else if (action === "next" && state.review) {
+      state.review.index++;
+      if (state.review.index >= state.review.ids.length) endReview(state);
+      else {
+        startReviewItem(state);
+        await ensureExercise(base, findExercise(state.exerciseId), language, runner, { review: true, fresh: true });
+      }
+    } else if (action === "send-to-scratch") {
+      if (!runner.runScratch) throw new Error(`Scratch isn't available for ${language.name} yet.`);
+      const answer = (await readFile(await ensureExercise(base, exercise, language, runner, { review: Boolean(state.review) }), "utf8")).replaceAll("\r\n", "\n");
+      const file = await ensureScratch(base, language, runner);
+      const previous = await readFile(file, "utf8");
+      if (previous !== runner.scratchStarter()) {
+        const backup = join(base, "history", "_scratch");
+        await mkdir(backup, { recursive: true });
+        await copyFile(file, join(backup, `${Date.now()}-${randomUUID()}${language.fileExtension}`));
+      }
+      const submitted = runner.scratchFromAnswer ? runner.scratchFromAnswer(exercise, answer) : answer;
+      await writeFile(file, submitted);
+      state.scratch = true;
+      state.scratchResult = { ...await runner.runScratch(base, submitted), at: Date.now(), sourceHash: createHash("sha256").update(submitted).digest("hex") };
+    } else if (action === "scratch") {
       if (!runner.runScratch) throw new Error(`Scratch isn't available for ${language.name} yet.`);
       state.scratch = true;
     } else if (action === "practice") {
@@ -130,6 +189,9 @@ export async function command(root, action, value) {
       state.hintCount = Math.min(exercise.hints.length, state.hintCount + 1);
     } else if (action === "answer") {
       state.answerShown = true;
+    } else if (action === "repeat" && state.review) {
+      await ensureExercise(base, exercise, language, runner, { review: true, fresh: true });
+      state.hintCount = 0; state.answerShown = false; state.result = null;
     } else if (action === "repeat") {
       const file = await ensureExercise(base, exercise, language, runner);
       const backup = join(base, "history", exercise.id);
@@ -139,7 +201,7 @@ export async function command(root, action, value) {
       state.hintCount = 0; state.answerShown = false; state.result = null;
     } else if (action === "check" || action === "check-saved") {
       const saved = action === "check-saved" ? JSON.parse(value) : null;
-      const file = await ensureExercise(base, exercise, language, runner);
+      const file = await ensureExercise(base, exercise, language, runner, { review: Boolean(state.review) });
       const submitted = (await readFile(file, "utf8")).replaceAll("\r\n", "\n");
       const sourceHash = createHash("sha256").update(submitted).digest("hex");
       // Ignore duplicate notifications, generated starter files, and saves for a previous exercise.
@@ -149,15 +211,29 @@ export async function command(root, action, value) {
         const result = await runner.check(base, exercise, submitted);
         state.result = { ...result, at: Date.now(), sourceHash, assisted: state.answerShown };
         const progress = state.progress[exercise.id] ?? { attempts: 0, passes: 0, independentPasses: 0 };
+        const checksBefore = state.review?.outcomes[exercise.id]?.checks ?? 0;
         progress.attempts++;
+        progress.last = Date.now();
         if (result.passed) { progress.passes++; if (!state.answerShown) progress.independentPasses++; }
+        if (state.review) {
+          // Only a first-try pass without hints or the answer counts as remembered.
+          const clean = result.passed && checksBefore === 0 && state.hintCount === 0 && !state.answerShown;
+          const outcome = state.review.outcomes[exercise.id] ?? { checks: 0, passed: false, clean: false };
+          outcome.checks++;
+          if (result.passed && !outcome.passed) {
+            outcome.passed = true;
+            outcome.clean = clean;
+            progress.review = { streak: clean ? (progress.review?.streak ?? 0) + 1 : 0, at: Date.now() };
+          } else if (!result.passed && checksBefore === 0) progress.review = { streak: 0, at: Date.now() };
+          state.review.outcomes[exercise.id] = outcome;
+        } else if (result.passed && state.hintCount > 0) progress.hinted = true;
         state.progress[exercise.id] = progress;
       }
     } else if (action !== "status" && action !== "language") throw new Error(`Unknown action: ${action}`);
     if (state.scratch && !runner.runScratch) state.scratch = false;
     const current = findExercise(state.exerciseId);
-    await ensureExercise(base, current, language, runner);
-    const file = state.scratch ? await ensureScratch(base, language, runner) : exerciseFile(base, current.id, language);
+    const answer = await ensureExercise(base, current, language, runner, { review: Boolean(state.review) });
+    const file = state.scratch ? await ensureScratch(base, language, runner) : answer;
     const runtime = await runner.environment();
     // Scratch code gets the editor files of an exercise that supplies nothing.
     await runner.prepareWorkspace(file, runtime, state.scratch ? { id: "scratch", checks: [], rules: [] } : current);
@@ -166,7 +242,10 @@ export async function command(root, action, value) {
     const shown = state.scratch ? state.scratchResult : state.result;
     const stale = shown && shown.sourceHash !== sourceHash;
     await writeJson(join(base, "session.json"), state);
-    return { ...state, file, folder: dirname(file), root: base, runtimeVersion: runtime.version, stale: Boolean(stale), sourceHash };
+    // Counted fresh each time, from the topic you're on outside the review.
+    const pathTopic = findExercise(state.review?.returnTo.exerciseId ?? state.exerciseId).topicId;
+    const reviewReady = readyForReview(catalogFor(language), state.progress, pathTopic, Date.now()).length;
+    return { ...state, file, folder: dirname(file), root: base, runtimeVersion: runtime.version, stale: Boolean(stale), sourceHash, reviewReady };
   } finally {
     await handle.close();
     await unlink(lock);
@@ -178,7 +257,7 @@ export async function command(root, action, value) {
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   const [root, action = "status", value] = process.argv.slice(2);
   try {
-    if (!root) throw new Error("Usage: node runner.mjs <practice-directory> <status|select|next|hint|answer|repeat|check|language|scratch|practice> [exercise-id|language-id]");
+    if (!root) throw new Error("Usage: node runner.mjs <practice-directory> <status|select|next|hint|answer|repeat|check|language|scratch|practice|send-to-scratch|review-start|review-end> [exercise-id|language-id]");
     console.log(JSON.stringify(await command(root, action, value)));
   } catch (error) { console.log(JSON.stringify({ error: error.message })); process.exitCode = 1; }
 }

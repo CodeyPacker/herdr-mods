@@ -25,6 +25,14 @@ function saved(key, fallback) {
 /** @param {string} path */
 function normalizePath(path) { return path.replaceAll("\\", "/"); }
 
+/** @param {import("./types.js").ReviewSummary} summary */
+function reviewSummary(summary) {
+  const parts = [`${summary.clean} of ${summary.total} remembered`];
+  if (summary.retried) parts.push(`${summary.retried} after a retry or help`);
+  if (summary.missed) parts.push(`${summary.missed} not passed`);
+  return parts.join(" · ");
+}
+
 /** Recent exercises per topic, per language. C# keeps reading the key it used before packs. @param {import("./languages/types.js").LanguagePack} language */
 function savedRecent(language) {
   return saved(`recent-${language.id}`, language === defaultLanguage ? saved("recent", {}) : {});
@@ -59,6 +67,8 @@ export default class Syntax extends View {
     this.revealSelection = true;
     this.typing = false;
     this.confirmRepeat = false;
+    /** Shows the summary of a review that just ended, until the next action. */
+    this.showReviewSummary = false;
     /** @type {Record<string, string>} */
     this.recent = savedRecent(this.language);
     /** @type {"neovim" | "vscode" | null} */
@@ -320,7 +330,8 @@ export default class Syntax extends View {
     this.practicePending = true;
     const quiet = action === "hint" || action === "answer";
     const running = ["check", "check-saved"].includes(action) ? (this.state?.scratch ? `Running ${this.language.name}…` : `Checking ${this.language.name}…`) : "";
-    this.busy = quiet ? "" : running || (action === "status" ? "Preparing practice…" : action === "scratch" ? "Opening scratch…" : "Updating…");
+    this.busy = quiet ? "" : running || (action === "status" ? "Preparing practice…" : action === "scratch" ? "Opening scratch…"
+      : action === "send-to-scratch" ? `Running ${this.language.name}…` : action === "review-start" ? "Choosing review exercises…" : "Updating…");
     this.error = "";
     if (!quiet) cx.notify();
     cx.spawn(async cx => {
@@ -332,12 +343,17 @@ export default class Syntax extends View {
         }
         const state = await practiceCommand(action, value);
         if (this.state && (this.state.languageId !== state.languageId || this.state.exerciseId !== state.exerciseId)) this.cancelTutor(cx);
+        const reviewEnded = Boolean(this.state?.review) && !state.review && Boolean(state.lastReview);
+        this.showReviewSummary = reviewEnded || (this.showReviewSummary && ["status", "check-saved"].includes(action));
         this.useLanguage(findLanguage(state.languageId));
         this.state = state;
-        if (["select", "next", "repeat"].includes(action)) this.pendingSaveCheck = null;
+        if (["select", "next", "repeat", "review-start", "review-end"].includes(action)) this.pendingSaveCheck = null;
         const exercise = this.catalog.findExercise(state.exerciseId);
-        this.recent[exercise.topicId] = exercise.id;
-        localStorage.setItem(`recent-${this.language.id}`, JSON.stringify(this.recent));
+        // Review jumps around the catalog. Only your own path updates where each topic resumes.
+        if (!state.review) {
+          this.recent[exercise.topicId] = exercise.id;
+          localStorage.setItem(`recent-${this.language.id}`, JSON.stringify(this.recent));
+        }
         if (action === "language") {
           this.screen = "topics";
           this.query = "";
@@ -348,6 +364,13 @@ export default class Syntax extends View {
         } else if (action === "next" || action === "select") {
           this.screen = "practice";
           this.pickerTopicId = exercise.topicId;
+          this.automaticEditorStarted = false;
+        } else if (["review-start", "review-end"].includes(action) || reviewEnded) {
+          this.screen = "practice";
+          this.pickerTopicId = exercise.topicId;
+          this.automaticEditorStarted = false;
+        } else if (action === "send-to-scratch") {
+          this.screen = "scratch";
           this.automaticEditorStarted = false;
         } else if (action === "scratch" || action === "practice") {
           // The editor follows the file switch: Neovim reuses its buffer list, VS Code opens on demand.
@@ -430,6 +453,12 @@ export default class Syntax extends View {
       else if (action === "open") this.openEditor(cx);
       return;
     }
+    if (action === "review" && this.state && ["practice", "topics", "exercises"].includes(this.screen)) {
+      // Resuming needs no command: the session already points at the review exercise.
+      if (this.state.review) { this.screen = "practice"; this.automaticEditorStarted = false; cx.notify(); this.startAutomaticEditor(cx); }
+      else if (this.state.reviewReady) this.perform("review-start", null, cx);
+      return;
+    }
     if (action === "scratch" && this.state && ["practice", "topics", "exercises"].includes(this.screen)) {
       this.confirmRepeat = false;
       this.perform("scratch", null, cx);
@@ -450,6 +479,8 @@ export default class Syntax extends View {
       return;
     }
     if (action === "next") { this.perform("next", null, cx); return; }
+    if (action === "send-to-scratch") { this.perform("send-to-scratch", null, cx); return; }
+    if (action === "review-end" && this.state.review) { this.perform("review-end", null, cx); return; }
     if (action === "open") this.openEditor(cx);
   }
 
@@ -680,7 +711,8 @@ export default class Syntax extends View {
       cx.stop_propagation(); cx.notify(); return;
     }
     /** @type {Record<string, string>} */
-    const actions = { u: "tutor", l: "languages", h: "hint", a: "answer", c: "check", n: "next", r: "repeat", t: "topics", e: "exercises", o: "open", x: "scratch" };
+    const actions = { u: "tutor", l: "languages", h: "hint", a: "answer", c: "check", n: "next", r: "repeat", t: "topics", e: "exercises", o: "open", x: "scratch", s: "send-to-scratch",
+      v: this.screen === "practice" && this.state?.review ? "review-end" : "review" };
     if (actions[key]) { this.action(actions[key], cx); cx.stop_propagation(); }
   }
 
@@ -714,6 +746,7 @@ export default class Syntax extends View {
     const topic = this.catalog.topics.find(topic => topic.id === this.pickerTopicId);
     if (this.revealSelection && items.length) { this.pickerScroll.scroll_to_item(this.selected); this.revealSelection = false; }
     return v_flex().flex_1().min_h(0).gap(8).px(SIZE.panePad).py(12)
+      .when(this.screen === "topics" && Boolean(this.state), element => element.child(this.reviewEntry(t)))
       .child(this.screen === "topics" ? textInput(t, this.search, this.typing) : h_flex().gap(8).items_center().flex_wrap()
         .child(div().flex_1().text_color(t.muted).child(`${topic?.title ?? "Exercises"} · Choose an exercise to practice.`))
         .child(keyButton(t, "shuffle-exercise", "s", "Shuffle", !this.busy && items.length > 0, cx => this.action("shuffle", cx))))
@@ -733,6 +766,18 @@ export default class Syntax extends View {
       .child(div().text_size(11).text_color(t.dim).child("j/k move · enter choose · esc back"));
   }
 
+  /** Opt-in review, offered only here: a count of what's ready, or the review in progress. @param {Theme} t */
+  reviewEntry(t) {
+    const review = this.state?.review;
+    const ready = this.state?.reviewReady ?? 0;
+    const label = review ? `Resume review · ${review.index + 1} of ${review.ids.length}` : ready ? `Review · ${ready} ready` : "Review · nothing ready yet";
+    return v_flex().gap(4)
+      .child(h_flex().gap(8).items_center().flex_wrap()
+        .child(keyButton(t, "start-review", "v", label, !this.busy && (Boolean(review) || ready > 0), cx => this.action("review", cx)))
+        .child(div().text_size(11).text_color(t.dim).child(review ? "Fresh files. Your saved answers stay untouched." : "Up to 8 exercises from topics you've practiced, from a blank file.")))
+      .when(!review && Boolean(this.state?.lastReview), element => element.child(div().text_size(11).text_color(t.muted).child(`Last review: ${reviewSummary(this.state.lastReview)}`)));
+  }
+
   /** @param {Theme} t */
   practice(t) {
     if (!this.state) return v_flex().flex_1().p(18).gap(12)
@@ -748,9 +793,12 @@ export default class Syntax extends View {
     return v_flex().id("syntax-practice").flex_1().min_h(0).overflow_y_scrollbar().px(SIZE.panePad).py(14).gap(12)
       .child(h_flex().gap(8).items_center().flex_wrap()
         .child(tag(t, this.language.name))
+        .when(Boolean(this.state.review), element => element.child(tag(t, `Review ${(this.state.review?.index ?? 0) + 1} of ${this.state.review?.ids.length ?? 0}`)))
         .when(topic.level === "advanced", element => element.child(tag(t, "Advanced")))
         .child(div().text_size(12).text_color(t.muted).child(topic.title))
-        .child(div().text_size(11).text_color(t.dim).child(`${index + 1} of ${items.length}`)))
+        .when(!this.state.review, element => element.child(div().text_size(11).text_color(t.dim).child(`${index + 1} of ${items.length}`))))
+      .when(this.showReviewSummary && Boolean(this.state.lastReview), element => element.child(banner(t, `Review finished: ${reviewSummary(this.state.lastReview)}. Back where you left off.`)))
+      .when(Boolean(this.state.review), element => element.child(div().text_size(12).text_color(t.muted).child("Review: write it from memory in a blank file. Your earlier answer is hidden and kept as it was.")))
       .child(div().text_size(20).font_semibold().child(exercise.title))
       .child(v_flex().p(12).rounded(8).bg(t.raised)
         .child(this.markdown(`prompt-${exercise.id}`, exercise.prompt)))
@@ -801,6 +849,12 @@ export default class Syntax extends View {
         .children((result?.details ?? []).map((detail, index) => this.markdown(`scratch-${result?.at}-${index}`, `\`\`\`text\n${detail}\n\`\`\``)))));
   }
 
+  nextLabel() {
+    const review = this.state?.review;
+    if (!review) return "Another exercise";
+    return review.index + 1 >= review.ids.length ? "Finish review" : "Next in review";
+  }
+
   /** @param {Context} cx */
   render(cx) {
     const t = colors();
@@ -838,7 +892,9 @@ export default class Syntax extends View {
         .when(this.tutor.enabled, element => element.child(keyButton(t, "ask-tutor", "u", "Ask tutor", !this.busy, cx => this.action("tutor", cx))))
         .when(this.editorDefaultSet, element => element.child(keyButton(t, "open-editor", "o", "Open editor", !this.busy && Boolean(this.state), cx => this.action("open", cx))))
         .child(keyButton(t, "check", "c", "Check saved code", !this.busy && Boolean(this.state), cx => this.action("check", cx)))
+        .child(keyButton(t, "send-to-scratch", "s", "Send to scratch", !this.busy && Boolean(this.state), cx => this.action("send-to-scratch", cx)))
         .child(keyButton(t, "repeat", "r", "Repeat", !this.busy && Boolean(this.state), cx => this.action("repeat", cx)))
-        .child(keyButton(t, "next", "n", "Another exercise", !this.busy && Boolean(this.state), cx => this.action("next", cx)))));
+        .child(keyButton(t, "next", "n", this.nextLabel(), !this.busy && Boolean(this.state), cx => this.action("next", cx)))
+        .when(Boolean(this.state?.review), element => element.child(keyButton(t, "end-review", "v", "End review", !this.busy, cx => this.action("review-end", cx))))));
   }
 }
