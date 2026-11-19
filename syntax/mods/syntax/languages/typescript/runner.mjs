@@ -33,6 +33,19 @@ export async function check(root, exercise, answer) {
   return checkAnswer(root, exercise, answer);
 }
 
+export function scratchStarter() {
+  return "// Scratch: write any TypeScript and save to run it. Nothing is checked.\nconst greeting: string = \"Hello from scratch\";\nconsole.log(greeting);\n";
+}
+
+/** Type-check and run free-form code with no checks, and report what it printed. */
+export async function runScratch(root, source) {
+  const checked = await checkAnswer(root, { id: "scratch", checks: [], rules: [], mode: "script" }, source);
+  const result = { ...checked, details: checked.details.map(detail => detail.replaceAll("Exercise.ts", "Scratch.ts")) };
+  if (result.passed) return { passed: true, kind: "output", title: "Ran your code", details: result.details.length ? result.details : ["Your code printed nothing. Use console.log to see values."] };
+  if (result.kind === "result") return { ...result, title: "Your code threw an error" };
+  return result;
+}
+
 // The launcher is trusted. It prints a fresh token only after every check has finished.
 const launcher = `const token = process.env.SYNTAX_CHECK_TOKEN;
 delete process.env.SYNTAX_CHECK_TOKEN;

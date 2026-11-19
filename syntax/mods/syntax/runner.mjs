@@ -57,6 +57,18 @@ async function ensureExercise(root, exercise, language, runner) {
   return file;
 }
 
+/** The scratch file sits beside the answers, so the editor and save watcher treat it like one. */
+export function scratchFile(root, language = defaultLanguage) {
+  return join(root, "answers", "_scratch", `Scratch${language.fileExtension}`);
+}
+
+async function ensureScratch(root, language, runner) {
+  const file = scratchFile(root, language);
+  await mkdir(dirname(file), { recursive: true });
+  try { await writeFile(file, runner.scratchStarter(), { flag: "wx" }); } catch (error) { if (error.code !== "EEXIST") throw error; }
+  return file;
+}
+
 /** One command holds an exclusive lock so two panels cannot overwrite each other's progress. */
 export async function command(root, action, value) {
   root = resolve(root);
@@ -91,7 +103,22 @@ export async function command(root, action, value) {
     const runner = await loadLanguageRunner(language.id);
     findExercise(state.exerciseId);
     const exercise = findExercise(state.exerciseId);
-    if (action === "select") {
+    // Scratch mode swaps the editable file for a free-form one. Choosing an exercise leaves it.
+    if (["select", "next", "language", "practice"].includes(action)) state.scratch = false;
+    if (action === "scratch") {
+      if (!runner.runScratch) throw new Error(`Scratch isn't available for ${language.name} yet.`);
+      state.scratch = true;
+    } else if (action === "practice") {
+      // Back to the current exercise. The scratch file and its last run are kept.
+    } else if (state.scratch && (action === "check" || action === "check-saved")) {
+      const file = await ensureScratch(base, language, runner);
+      const submitted = (await readFile(file, "utf8")).replaceAll("\r\n", "\n");
+      const sourceHash = createHash("sha256").update(submitted).digest("hex");
+      // Run on an explicit request, or on a save that changed the file. Runs never count as attempts.
+      if (action === "check" || sourceHash !== (state.scratchResult?.sourceHash ?? JSON.parse(value).sourceHash)) {
+        state.scratchResult = { ...await runner.runScratch(base, submitted), at: Date.now(), sourceHash };
+      }
+    } else if (action === "select") {
       const next = findExercise(value);
       state.exerciseId = next.id;
       state.hintCount = 0; state.answerShown = false; state.result = null;
@@ -127,13 +154,17 @@ export async function command(root, action, value) {
         state.progress[exercise.id] = progress;
       }
     } else if (action !== "status" && action !== "language") throw new Error(`Unknown action: ${action}`);
+    if (state.scratch && !runner.runScratch) state.scratch = false;
     const current = findExercise(state.exerciseId);
-    const file = await ensureExercise(base, current, language, runner);
+    await ensureExercise(base, current, language, runner);
+    const file = state.scratch ? await ensureScratch(base, language, runner) : exerciseFile(base, current.id, language);
     const runtime = await runner.environment();
-    await runner.prepareWorkspace(file, runtime, current);
+    // Scratch code gets the editor files of an exercise that supplies nothing.
+    await runner.prepareWorkspace(file, runtime, state.scratch ? { id: "scratch", checks: [], rules: [] } : current);
     const source = (await readFile(file, "utf8")).replaceAll("\r\n", "\n");
     const sourceHash = createHash("sha256").update(source).digest("hex");
-    const stale = state.result && state.result.sourceHash !== sourceHash;
+    const shown = state.scratch ? state.scratchResult : state.result;
+    const stale = shown && shown.sourceHash !== sourceHash;
     await writeJson(join(base, "session.json"), state);
     return { ...state, file, folder: dirname(file), root: base, runtimeVersion: runtime.version, stale: Boolean(stale), sourceHash };
   } finally {
@@ -147,7 +178,7 @@ export async function command(root, action, value) {
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   const [root, action = "status", value] = process.argv.slice(2);
   try {
-    if (!root) throw new Error("Usage: node runner.mjs <practice-directory> <status|select|next|hint|answer|repeat|check|language> [exercise-id|language-id]");
+    if (!root) throw new Error("Usage: node runner.mjs <practice-directory> <status|select|next|hint|answer|repeat|check|language|scratch|practice> [exercise-id|language-id]");
     console.log(JSON.stringify(await command(root, action, value)));
   } catch (error) { console.log(JSON.stringify({ error: error.message })); process.exitCode = 1; }
 }

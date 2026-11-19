@@ -1,12 +1,13 @@
 // The check process. The runner starts it with a job file, a token, and a time limit.
 import { readFile } from "node:fs/promises";
-import { runCheck, snapshot } from "./check.mjs";
+import { runCheck, runScratch, snapshot } from "./check.mjs";
 
 const token = process.env.SYNTAX_CHECK_TOKEN;
 delete process.env.SYNTAX_CHECK_TOKEN;
 try {
   const job = JSON.parse(await readFile(process.argv[2], "utf8"));
-  const outcome = await runCheck(job, await snapshot(job.snapshot));
+  const blob = await snapshot(job.snapshot);
+  const outcome = job.scratch ? await runScratch(job.answer, blob) : await runCheck(job, blob);
   process.stdout.write(`${JSON.stringify(outcome)}\n${token}\n`);
   process.exit(0);
 } catch (error) {

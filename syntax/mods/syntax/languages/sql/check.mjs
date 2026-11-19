@@ -130,3 +130,28 @@ export async function runCheck(job, blob) {
   await learner.close();
   return problems.length ? { status: "mismatch", details: problems, output } : { status: "passed", details: [], output };
 }
+
+/**
+ * Run free-form SQL on a fresh copy of the dataset and describe each statement's outcome:
+ * the rows it returned as a table, or how many rows it changed.
+ * @param {string} source @param {Blob} blob
+ */
+export async function runScratch(source, blob) {
+  const db = await open(blob, "");
+  try {
+    let results;
+    try { results = await db.exec(source, { rowMode: "array" }); }
+    catch (error) { return { status: "error", details: describe(error, source) }; }
+    const several = results.length > 1;
+    const details = [];
+    results.slice(0, 10).forEach((result, index) => {
+      const label = several ? `Statement ${index + 1}` : "Your query";
+      if (result.fields.length) {
+        const rows = result.rows.length > maxRows ? result.rows.slice(0, maxRows) : result.rows;
+        details.push(`${label} returned:\n${formatTable({ columns: result.fields.map(field => field.name), types: result.fields.map(field => field.dataTypeID), rows })}`);
+      } else if (result.affectedRows) details.push(`${several ? label : "Your statement"} changed ${result.affectedRows} row${result.affectedRows === 1 ? "" : "s"}.`);
+    });
+    if (results.length > 10) details.push(`${results.length - 10} more statements ran. Results are shown for the first 10.`);
+    return { status: "passed", details: details.length ? details : ["Your SQL ran. It returned no rows and changed none."] };
+  } finally { await db.close(); }
+}

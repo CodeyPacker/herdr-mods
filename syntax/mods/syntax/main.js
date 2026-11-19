@@ -319,7 +319,8 @@ export default class Syntax extends View {
     if (this.busy || this.practicePending) return;
     this.practicePending = true;
     const quiet = action === "hint" || action === "answer";
-    this.busy = quiet ? "" : ["check", "check-saved"].includes(action) ? `Checking ${this.language.name}…` : action === "status" ? "Preparing practice…" : "Updating…";
+    const running = ["check", "check-saved"].includes(action) ? (this.state?.scratch ? `Running ${this.language.name}…` : `Checking ${this.language.name}…`) : "";
+    this.busy = quiet ? "" : running || (action === "status" ? "Preparing practice…" : action === "scratch" ? "Opening scratch…" : "Updating…");
     this.error = "";
     if (!quiet) cx.notify();
     cx.spawn(async cx => {
@@ -348,6 +349,10 @@ export default class Syntax extends View {
           this.screen = "practice";
           this.pickerTopicId = exercise.topicId;
           this.automaticEditorStarted = false;
+        } else if (action === "scratch" || action === "practice") {
+          // The editor follows the file switch: Neovim reuses its buffer list, VS Code opens on demand.
+          this.screen = action;
+          this.automaticEditorStarted = false;
         }
         if (!this.watching) this.watchAnswers(cx);
       } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
@@ -375,7 +380,7 @@ export default class Syntax extends View {
   /** Coalesce save events and wait for an in-flight action without losing newer saves. @param {Context} cx */
   checkSavedAnswer(cx) {
     if (["setup", "languages"].includes(this.screen) || !this.state) return;
-    if (this.state.result) this.state.stale = true;
+    if (this.state.scratch ? this.state.scratchResult : this.state.result) this.state.stale = true;
     this.pendingSaveCheck ??= { languageId: this.state.languageId, exerciseId: this.state.exerciseId, sourceHash: this.state.sourceHash };
     cx.notify();
     if (this.saveCheckRunning) return;
@@ -419,6 +424,17 @@ export default class Syntax extends View {
     if (action === "save-editor-default") { this.saveEditorDefault(cx); return; }
     if (action === "skip-editor-default") { this.finishEditorChoice(cx); return; }
     if (action === "shuffle" && this.screen === "exercises") { this.shuffleExercise(cx); return; }
+    if (this.screen === "scratch" && this.state) {
+      if (action === "check") this.perform("check", null, cx);
+      else if (action === "scratch" || action === "practice") this.perform("practice", null, cx);
+      else if (action === "open") this.openEditor(cx);
+      return;
+    }
+    if (action === "scratch" && this.state && ["practice", "topics", "exercises"].includes(this.screen)) {
+      this.confirmRepeat = false;
+      this.perform("scratch", null, cx);
+      return;
+    }
     if (this.screen !== "practice" || !this.state) return;
     if (action === "tutor" && this.tutor.enabled) {
       this.tutorInput.focus();
@@ -498,7 +514,7 @@ export default class Syntax extends View {
 
   /** @param {Context} cx */
   startAutomaticEditor(cx) {
-    if (this.setupCompleted && this.screen === "practice" && this.laidOut && this.state && !this.busy && !this.practicePending && !this.error && !this.offerEditorDefault && props()?.practiceTab
+    if (this.setupCompleted && ["practice", "scratch"].includes(this.screen) && this.laidOut && this.state && !this.busy && !this.practicePending && !this.error && !this.offerEditorDefault && props()?.practiceTab
         && !this.automaticEditorStarted && this.editor === "neovim") this.openEditor(cx);
   }
 
@@ -642,6 +658,7 @@ export default class Syntax extends View {
       this.action(key === "1" ? "choose-neovim" : key === "2" ? "choose-vscode" : key === "d" ? "save-editor-default" : "skip-editor-default", cx);
       cx.stop_propagation(); return;
     }
+    if (key === "escape" && this.screen === "scratch") { this.action("practice", cx); cx.stop_propagation(); return; }
     if (key === "escape") {
       this.confirmRepeat = false;
       if (this.screen === "topics") this.showLanguages(cx);
@@ -653,7 +670,7 @@ export default class Syntax extends View {
       if (key === "enter") this.action("confirm-repeat", cx);
       cx.stop_propagation(); return;
     }
-    if (this.screen !== "practice" && ["j", "k", "up", "down", "enter"].includes(key)) {
+    if (!["practice", "scratch"].includes(this.screen) && ["j", "k", "up", "down", "enter"].includes(key)) {
       const items = this.items();
       if (key === "enter" && items[this.selected]) {
         const item = items[this.selected];
@@ -663,7 +680,7 @@ export default class Syntax extends View {
       cx.stop_propagation(); cx.notify(); return;
     }
     /** @type {Record<string, string>} */
-    const actions = { u: "tutor", l: "languages", h: "hint", a: "answer", c: "check", n: "next", r: "repeat", t: "topics", e: "exercises", o: "open" };
+    const actions = { u: "tutor", l: "languages", h: "hint", a: "answer", c: "check", n: "next", r: "repeat", t: "topics", e: "exercises", o: "open", x: "scratch" };
     if (actions[key]) { this.action(actions[key], cx); cx.stop_propagation(); }
   }
 
@@ -766,6 +783,24 @@ export default class Syntax extends View {
         }))));
   }
 
+  /** Free-form code: save to run it. Nothing is checked. @param {Theme} t */
+  scratch(t) {
+    const result = this.state?.scratchResult;
+    return v_flex().id("syntax-scratch").flex_1().min_h(0).overflow_y_scrollbar().px(SIZE.panePad).py(14).gap(12)
+      .child(h_flex().gap(8).items_center().flex_wrap()
+        .child(tag(t, this.language.name))
+        .child(tag(t, "Scratch")))
+      .child(div().text_size(20).font_semibold().child(`${this.language.name} scratch`))
+      .child(div().text_color(t.muted).child(`Write anything in ${this.language.answerFile.replace("Exercise", "Scratch")} and save to run it. Nothing is checked, and runs don't count toward progress.`))
+      .when(Boolean(this.language.scratchNote), element => element.child(div().text_size(12).text_color(t.muted).child(this.language.scratchNote ?? "")))
+      .child(this.markdown("scratch-path", `\`${this.state?.file ?? ""}\``))
+      .when(!this.editorDefaultSet, element => element.child(this.editorControls(t)))
+      .when(!result, element => element.child(div().text_size(12).text_color(t.dim).child("Save the file to run it. Press c to run the saved file again.")))
+      .when(Boolean(result), element => element.child(v_flex().gap(7).p(12).rounded(8).bg(t.raised)
+        .child(div().font_semibold().text_color(this.state?.stale ? t.muted : result?.passed ? t.done : t.blocked).child(this.state?.stale ? "Saved code changed. Run it again." : result?.title ?? ""))
+        .children((result?.details ?? []).map((detail, index) => this.markdown(`scratch-${result?.at}-${index}`, `\`\`\`text\n${detail}\n\`\`\``)))));
+  }
+
   /** @param {Context} cx */
   render(cx) {
     const t = colors();
@@ -774,11 +809,12 @@ export default class Syntax extends View {
       .track_focus(this.handle).on_key_down((event, cx) => this.key(event, cx))
       .child(paneHeader(t).flex_wrap()
         .child(paneTitle(t, "Practice Range"))
-        .child(paneDetail(t, this.screen === "setup" ? "Getting started" : this.screen === "languages" ? "Languages" : `${this.language.name} repetition`))
+        .child(paneDetail(t, this.screen === "setup" ? "Getting started" : this.screen === "languages" ? "Languages" : this.screen === "scratch" ? `${this.language.name} scratch` : `${this.language.name} repetition`))
         .child(keyButton(t, "choose-languages", "l", "Languages", !this.busy && this.setupCompleted, cx => this.action("languages", cx)))
         .child(keyButton(t, "open-setup", "?", "Setup", !this.busy, cx => this.action("setup", cx)))
         .child(keyButton(t, "choose-topics", "t", "Topics", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state), cx => this.action("topics", cx)))
-        .child(keyButton(t, "choose-exercises", "e", "Exercises", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state) && (Boolean(this.pickerTopicId) || this.screen === "practice"), cx => this.action("exercises", cx))))
+        .child(keyButton(t, "choose-exercises", "e", "Exercises", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state) && (Boolean(this.pickerTopicId) || this.screen === "practice"), cx => this.action("exercises", cx)))
+        .child(keyButton(t, "toggle-scratch", "x", this.screen === "scratch" ? "Back to exercise" : "Scratch", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state), cx => this.action("scratch", cx))))
       .when(Boolean(this.error), element => element.child(v_flex().flex_none().px(SIZE.panePad).py(8).gap(8)
         .child(banner(t, this.error, t.blocked))
         .child(keyButton(t, "retry", "", "Retry", !this.busy, cx => this.action("retry", cx)))))
@@ -788,12 +824,16 @@ export default class Syntax extends View {
         editor: this.editor, offerDefault: this.offerEditorDefault, language: this.setupLanguage, activeLanguageId: this.language.id,
         enabled: this.enabledLanguages, completed: this.setupCompleted, tutorContent: () => tutorSettings(t, { config: this.tutor, busy: this.tutorSettingBusy, error: this.tutorSettingsError, change: (provider, cx) => this.changeTutor(provider, cx) }), editorContent: () => this.editorControls(t), action: (action, cx) => this.action(action, cx) })
         : this.screen === "languages" ? languagePanel(t, { enabled: this.enabledLanguages, selected: this.selected, busy: Boolean(this.busy), choose: (id, cx) => this.chooseLanguage(id, cx) })
-        : this.screen === "practice" ? this.practice(t) : this.topicList(t, cx))
+        : this.screen === "practice" ? this.practice(t) : this.screen === "scratch" ? this.scratch(t) : this.topicList(t, cx))
       .when(this.confirmRepeat, element => element.child(v_flex().flex_none().px(SIZE.panePad).py(10).gap(8)
         .child(banner(t, "Start this exercise fresh? The saved answer is backed up. Save any editor changes first, then reload the file in your editor."))
         .child(h_flex().gap(6)
           .child(keyButton(t, "confirm-repeat", "enter", "Start fresh", !this.busy, cx => this.action("confirm-repeat", cx)))
           .child(keyButton(t, "cancel-repeat", "esc", "Keep working", true, cx => { this.confirmRepeat = false; cx.notify(); })))))
+      .when(this.screen === "scratch", element => element.child(paneBar(t)
+        .when(this.editorDefaultSet, element => element.child(keyButton(t, "open-scratch-editor", "o", "Open editor", !this.busy && Boolean(this.state), cx => this.action("open", cx))))
+        .child(keyButton(t, "run-scratch", "c", "Run saved code", !this.busy && Boolean(this.state), cx => this.action("check", cx)))
+        .child(keyButton(t, "leave-scratch", "esc", "Back to exercise", !this.busy && Boolean(this.state), cx => this.action("practice", cx)))))
       .when(this.screen === "practice", element => element.child(paneBar(t)
         .when(this.tutor.enabled, element => element.child(keyButton(t, "ask-tutor", "u", "Ask tutor", !this.busy, cx => this.action("tutor", cx))))
         .when(this.editorDefaultSet, element => element.child(keyButton(t, "open-editor", "o", "Open editor", !this.busy && Boolean(this.state), cx => this.action("open", cx))))

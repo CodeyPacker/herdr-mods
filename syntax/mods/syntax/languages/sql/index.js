@@ -13,6 +13,7 @@ const sql = {
   runnerModule: "./sql/runner.mjs",
   dataDirectory: "languages/sql",
   suppliedLabel: "Tables",
+  scratchNote: "Each run starts from a fresh copy of the practice database, so nothing you change is kept. schema.sql beside the file has every table and row.",
   checkNote: "Every check starts from a fresh copy of the practice database, so you can insert, update, and drop freely. schema.sql beside this file has every table and row.",
   topics,
   exercises,

@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash, randomUUID } from "node:crypto";
 import { runProcess } from "../../process.mjs";
-import { exerciseSource, legacyAnswer, checkingSource } from "./source.mjs";
+import { exerciseSource, legacyAnswer, checkingSource, scratchSource } from "./source.mjs";
 
 const packDirectory = dirname(fileURLToPath(import.meta.url));
 const processEnvironment = { DOTNET_CLI_TELEMETRY_OPTOUT: "1", DOTNET_NOLOGO: "1", DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1" };
@@ -66,6 +66,38 @@ export async function buildChecker(root) {
   return { assembly, sdk, target };
 }
 
+export function scratchStarter() {
+  return "// Scratch: write any C# and save to run it. Nothing is checked.\n// Top-level statements run first. Declare classes and records below them.\nvar greeting = \"Hello from scratch\";\nConsole.WriteLine(greeting);\n";
+}
+
+/** Compile free-form C# as top-level statements, run it, and report what it printed. */
+export async function runScratch(root, code, { timeout = 5000 } = {}) {
+  const checker = await buildChecker(root);
+  const directory = join(root, "checks", randomUUID());
+  await mkdir(directory, { recursive: true });
+  try {
+    const generated = scratchSource(code);
+    const file = join(directory, "Scratch.cs");
+    const output = join(directory, "Attempt.dll");
+    await writeFile(file, generated.source);
+    await writeJson(join(directory, "request.json"), { file, output, start: generated.start, end: generated.end, rules: [] });
+    const compiled = await runDotnetProcess("dotnet", [checker.assembly, join(directory, "request.json")], { timeout: 20000 });
+    if (compiled.code !== 0) throw new Error(`The checker could not run. ${compiled.problem || compiled.stdout || compiled.stderr}`);
+    const compilation = JSON.parse(compiled.stdout);
+    if (!compilation.compiled) return { passed: false, kind: "compile", title: "Fix the compilation errors", details: compilation.errors };
+    await writeJson(join(directory, "Attempt.runtimeconfig.json"), {
+      runtimeOptions: { tfm: checker.target, framework: { name: "Microsoft.NETCore.App", version: `${checker.sdk.major}.0.0` }, rollForward: "LatestPatch" },
+    });
+    const executed = await runDotnetProcess("dotnet", [output], { cwd: directory, timeout });
+    if (executed.problem) return { passed: false, kind: "runtime", title: "The code could not finish", details: [executed.problem] };
+    const printed = executed.stdout.trim() ? [`Your code printed:\n${executed.stdout.trim()}`] : [];
+    if (executed.code !== 0) return { passed: false, kind: "result", title: "Your code threw an exception", details: [...exceptionDetails(executed.stderr || executed.stdout).map(line => line.replaceAll("Exercise.cs", "Scratch.cs")), ...printed] };
+    return { passed: true, kind: "output", title: "Ran your code", details: printed.length ? printed : ["Your code printed nothing. Use Console.WriteLine to see values."] };
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}
+
 /**
  * The message of an unhandled exception, without .NET's prefix. A failed check keeps its
  * "Your code returned" line. Other exceptions add the first stack frame in Exercise.cs.
@@ -77,7 +109,7 @@ export function exceptionDetails(stderr) {
   const stack = lines.findIndex((line, index) => index > start && /^\s+at /.test(line));
   const message = lines.slice(start, stack < 0 ? undefined : stack).slice(0, 6);
   message[0] = message[0].replace(/^Unhandled exception\. /, "").replace(/^System\.Exception: (?=Check \d+ failed)/, "");
-  const frame = stack < 0 ? undefined : lines.slice(stack).find(line => line.includes("Exercise.cs"));
+  const frame = stack < 0 ? undefined : lines.slice(stack).find(line => /(Exercise|Scratch)\.cs/.test(line));
   return frame && !/^Check \d+ failed/.test(message[0]) ? [...message, frame.trim()] : message;
 }
 

@@ -10,7 +10,7 @@
  * @typedef {{ passed: boolean, kind: string, title: string, details: string[],
  *   at?: number, sourceHash?: string, assisted?: boolean }} CheckResult
  * @typedef {{ version: number, languageId: string, exerciseId: string, hintCount: number, answerShown: boolean,
- *   progress: Record<string, Progress>, result: CheckResult | null,
+ *   progress: Record<string, Progress>, result: CheckResult | null, scratch?: boolean, scratchResult?: CheckResult | null,
  *   file: string, folder: string, root: string, runtimeVersion: string, stale: boolean, sourceHash: string }} Session
  */
 export {};

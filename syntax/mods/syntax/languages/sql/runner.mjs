@@ -66,38 +66,58 @@ async function snapshotPath(root) {
   return join(root, "cache", `dataset-${hash}.tar`);
 }
 
+export function scratchStarter() {
+  return "-- Scratch: write any SQL and save to run it against the practice database.\n-- Each run starts from a fresh copy, so nothing you change is kept. schema.sql has every table.\nSELECT * FROM customers LIMIT 5;\n";
+}
+
+/** Run free-form SQL on a fresh copy of the dataset and show what each statement did. */
+export async function runScratch(root, source, { timeout } = {}) {
+  if (isBlank(source)) return { passed: true, kind: "output", title: "Nothing to run", details: ["Scratch.sql has no SQL yet. Write a query and save."] };
+  const outcome = await runJob(root, { scratch: true, answer: source }, timeout);
+  if (outcome.problem) return { passed: false, kind: "runtime", title: "The query could not finish", details: [outcome.problem] };
+  const details = outcome.details.map(detail => detail.replaceAll("Exercise.sql", "Scratch.sql"));
+  if (outcome.status === "error") return { passed: false, kind: "compile", title: "Fix the SQL error", details };
+  return { passed: true, kind: "output", title: "Ran your SQL", details };
+}
+
 /** Run the reference answer and the learner's answer on fresh copies of the dataset, in another process. */
 export async function checkAnswer(root, exercise, answer, { timeout } = {}) {
   if (isBlank(answer)) return { passed: false, kind: "syntax", title: "Write your SQL", details: [`Exercise.sql has no SQL yet. Write your answer below the comment and save.`] };
+  const outcome = await runJob(root, {
+    setup: exercise.setup ?? "", solution: exercise.solution, answer,
+    verify: exercise.verify ?? "", rejects: exercise.rejects ?? [], ordered: Boolean(exercise.ordered),
+    compareResult: exercise.result ?? !exercise.verify,
+  }, timeout);
+  if (outcome.problem) return { passed: false, kind: "runtime", title: "The query could not finish", details: [outcome.problem] };
+  if (outcome.status === "error") return { passed: false, kind: "compile", title: "Fix the SQL error", details: outcome.details };
+  const missing = ruleFailures(answer, exercise.rules);
+  // What the answer returned goes last, so the explanation of what to fix stays on top.
+  const shown = outcome.output ? [outcome.output] : [];
+  if (missing.length) return { passed: false, kind: "syntax", title: "Use the requested syntax", details: [...missing, ...shown] };
+  if (outcome.status === "mismatch") return { passed: false, kind: "result", title: "The result needs a correction", details: [...outcome.details, ...shown] };
+  return { passed: true, kind: "passed", title: "Correct. Stay here or try another exercise.", details: shown };
+}
+
+/** Run one job in the engine process. Returns its outcome, or `{ problem }` when it timed out. */
+async function runJob(root, fields, timeout) {
   const version = await pinnedVersion();
   if (await installedVersion() !== version) throw new Error(installMessage(version));
   const directory = join(root, "checks", randomUUID());
   await mkdir(directory, { recursive: true });
   try {
     const snapshot = await snapshotPath(root);
-    const job = {
-      snapshot, setup: exercise.setup ?? "", solution: exercise.solution, answer,
-      verify: exercise.verify ?? "", rejects: exercise.rejects ?? [], ordered: Boolean(exercise.ordered),
-      compareResult: exercise.result ?? !exercise.verify,
-    };
+    const job = { snapshot, ...fields };
     await writeFile(join(directory, "job.json"), JSON.stringify(job));
     const token = randomUUID();
     // The first check builds the dataset snapshot, which takes a few seconds longer.
     const limit = timeout ?? (await exists(snapshot) ? 8000 : 30000);
     const executed = await runProcess(process.execPath, [engine, join(directory, "job.json")], { cwd: directory, timeout: limit, env: { SYNTAX_CHECK_TOKEN: token } });
-    if (executed.problem) return { passed: false, kind: "runtime", title: "The query could not finish", details: [executed.problem.replace("The code", "The query").replace("an infinite loop or waiting input", "a recursive query without a stopping condition, or a huge join")] };
+    if (executed.problem) return { problem: executed.problem.replace("The code", "The query").replace("an infinite loop or waiting input", "a recursive query without a stopping condition, or a huge join") };
     const output = executed.stdout.trimEnd();
     if (executed.code !== 0 || !output.endsWith(token)) {
       throw new Error(`The SQL checker stopped unexpectedly.\n${executed.stderr.trim().split("\n").slice(0, 6).join("\n")}`);
     }
-    const outcome = JSON.parse(output.slice(0, -token.length).trim());
-    if (outcome.status === "error") return { passed: false, kind: "compile", title: "Fix the SQL error", details: outcome.details };
-    const missing = ruleFailures(answer, exercise.rules);
-    // What the answer returned goes last, so the explanation of what to fix stays on top.
-    const shown = outcome.output ? [outcome.output] : [];
-    if (missing.length) return { passed: false, kind: "syntax", title: "Use the requested syntax", details: [...missing, ...shown] };
-    if (outcome.status === "mismatch") return { passed: false, kind: "result", title: "The result needs a correction", details: [...outcome.details, ...shown] };
-    return { passed: true, kind: "passed", title: "Correct. Stay here or try another exercise.", details: shown };
+    return JSON.parse(output.slice(0, -token.length).trim());
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
