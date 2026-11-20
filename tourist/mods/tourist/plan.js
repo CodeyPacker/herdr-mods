@@ -4,7 +4,7 @@ import { DEPTHS } from "./constants.js";
 /** What to tour, in words the agent can act on. */
 export function subject(scope, repo, feature) {
   const g = repo;
-  if (scope === "branch") return `The changes on branch "${g.branch}" compared with ${g.base} (merge base ${g.mergeBase}), including uncommitted edits. Changed files:\n${g.changed.join("\n")}\nRead the changes with \`git diff ${g.mergeBase} -- <file>\` and the surrounding code as needed. Point the stops at the changed code.`;
+  if (scope === "branch") return `The changes on branch "${g.branch}" compared with ${g.base} (merge base ${g.mergeBase}), including uncommitted edits. Changed files:\n${g.changed.join("\n")}\nRead the changes with \`git diff ${g.mergeBase} -- <file>\` and the surrounding code as needed.${g.untracked?.length ? ` These files are new and not yet added to git, so that diff is empty for them. Read them whole from disk, every line is new:\n${g.untracked.join("\n")}\n` : ""} Point the stops at the changed code.`;
   if (scope === "commit") return `The most recent commit (${g.head}). Read it with \`git show HEAD\` and the surrounding code as needed. Point the stops at the changed code.`;
   if (scope === "feature") return `A feature the reader described in their own words: "${feature}". Find the code that implements it with Grep and Glob. Start the tour where the feature begins (a key, route, command or call) and follow it to where the work happens. If nothing matches, return one stop at the closest code and say so in its body.`;
   return "The whole repository. Start from the README, the manifests and the entry points.";

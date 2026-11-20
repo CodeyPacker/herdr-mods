@@ -25,7 +25,14 @@ function row(r, i, id, t, onRow, mark = {}) {
     .child(div().w(36).flex_none().text_right().when(Boolean(stop), e => e.bg(t.raised).font_semibold())
       .text_color(stop ? t.accent : t.dim).child(number === undefined ? "" : String(number)))
     .child(div().w(10).flex_none().text_color(kind === "+" ? t.ansi2 : kind === "-" ? t.ansi1 : t.dim).child(kind.trim()))
-    .child(div().flex_none().pr(12).whitespace_nowrap().child(text.replace(/\t/g, "    ")));
+    .child(r.spans
+      ? h_flex().flex_none().pr(12).whitespace_nowrap().children(r.spans.map(s => div().flex_none().text_color(syntaxColor(t, s.kind)).child(s.text)))
+      : div().flex_none().pr(12).whitespace_nowrap().child(text.replace(/\t/g, "    ")));
+}
+
+/** The theme color for a highlighted span (see highlight.js). Plain text keeps the row's color. */
+function syntaxColor(t, kind) {
+  return { keyword: t.ansi5, string: t.ansi2, comment: t.dim, function: t.ansi4, type: t.ansi3, number: t.ansi1, constant: t.ansi6 }[kind] ?? t.foreground;
 }
 
 // Roughly one monospace character at 11.5 px, used to size the scroll area to the longest line.
