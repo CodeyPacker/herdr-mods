@@ -17,6 +17,8 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/CodeyP
 ---
 ### [Git Good](git-good/)
 
+[<img src="git-good/preview.png" width="720" alt="Git Good">](git-good/)
+
 A dialog for everyday git work: the changed files with their diff beside them, staging by file or by hunk, commits with a message Claude can write, pull, push, stash and branches.
 
 ```text
