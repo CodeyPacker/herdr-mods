@@ -23,3 +23,5 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/CodeyP
 ```
 
 By hand: copy `mods/git-good` (or symlink it) into `~/.config/herdr-app/mods/`, then add the key from [`keys.json`](keys.json) to your `~/.config/herdr-app/keys.json`.
+
+[`RECIPE.md`](RECIPE.md) has the full details, including what it runs on your machine.
