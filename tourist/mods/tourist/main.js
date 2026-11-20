@@ -13,19 +13,21 @@
 //   views/        the setup, tour, planning and error screens
 import { View } from "gpui-kit";
 import { v_flex, InputState, ScrollHandle } from "gpui-base";
-import { nextCommand, props, run } from "herdr";
-import { colors } from "./kit/theme.js";
-import { SCOPES, DEPTHS, PASSES, SPLIT_WIDTH } from "./constants.js";
-import { startFolder, readRepo, git } from "./git.js";
+import { nextCommand, panes, props, run } from "herdr";
+import { colors, SIZE } from "./kit/theme.js";
+import { SCOPES, DEPTHS, PASSES, SPLIT_WIDTH, SHORTCUTS } from "./constants.js";
+import { Shortcuts } from "./kit/shortcuts.js";
+import { startFolder, readRepo, git, newFileDiff } from "./git.js";
 import { AgentSession, agentName, findAgents, rememberAgent } from "./agent.js";
 import { subject, planPrompt, prSubject, prPlanPrompt, followUpPrompt, filePrompt, checkPrompt, fixPrompt, fixReplyPrompt, parsePlan } from "./plan.js";
-import { readExcerpt, codeState, openInEditor, openUrl } from "./code.js";
+import { readExcerpt, openInEditor, openUrl } from "./code.js";
 import { listPRs, loadPR, prFileDiff, prFileStats, listThreads, replyToThread, setThreadResolved } from "./pr.js";
 import { lastReviewed, saveReviewed, haveCommit, changesSince } from "./since.js";
 import { listChecks, failedLog } from "./checks.js";
 import { groupFiles } from "./files.js";
-import { diffRows, splitDiff, markOutsidePR, rowsFor, nearestRow, windowRows } from "./diff.js";
+import { diffRows, plainRows, splitDiff, markOutsidePR, rowsFor, nearestRow, windowRows } from "./diff.js";
 import { linkify, readLink, resolver } from "./links.js";
+import { highlightRows } from "./highlight.js";
 import { openWorktree, worktreeDiff, pushFix, removeWorktree } from "./worktree.js";
 import { commentKey, loadComments, saveComments, loadViewed, saveViewed, sideOf, rangeOf } from "./comments.js";
 import { planKey, loadSavedPlan, savePlan, dropSavedPlan } from "./saved.js";
@@ -40,23 +42,28 @@ import { mergeView } from "./views/merge.js";
 import { checksView } from "./views/checks.js";
 import { confirmDialog, pendingConfirm } from "./views/confirm.js";
 
+/** How many lines a scroll key moves the code. */
+const CODE_SCROLL_LINES = 3;
+
 export default class Tourist extends View {
   init(_props, cx) {
     const start = startFolder();
     this.cwd = props()?.folder ?? start.cwd; this.on = start.on;
     this.phase = "setup"; this.scope = "branch"; this.depth = "normal";
-    this.git = { root: null, branch: "", base: null, mergeBase: null, changed: [], head: "" };
-    this.plan = null; this.idx = 0; this.code = null; this.codeError = null;
+    this.git = { root: null, branch: "", base: null, mergeBase: null, changed: [], untracked: [], head: "" };
+    this.plan = null; this.idx = 0; this.codeError = null;
     this.session = null;  // the AgentSession of the tour in progress
     this.busy = null; this.error = null;
     this.agents = []; this.agent = null; // installed agent ids, and the one tours use
     this.step = "scope"; // setup step: "scope" what to tour, "pr" which pull request, "depth" how deep
     this.prs = null; this.prsError = null; // the open PRs, loaded when the PR step opens (again after a failure)
     this.prNumber = null; this.pr = null;  // the picked PR, and its details once the tour starts
-    this.diff = null;     // the stop's file's whole diff rows, on PR tours
+    this.diff = null;     // the rows the code panel shows: the stop's file's diff, or its lines from disk
     this.diffMarks = null; // { stops: [{ index, title, row, current }], stopRows: [first, last] | null } for the shown diff
     this.linkRows = null;  // [first, last] rows a clicked file:line link points at
     this.diffScroll = ScrollHandle.new(); // the diff's scroll position, moved to a stop or a link
+    this.codeTop = 0;   // the code row the scroll keys believe is at the top. A wheel scroll does not update it.
+    this.codeFits = 20; // how many code rows fit in the code pane, set when it is laid out
     this.scrollReq = null; // { handle, row, step } while the diff is being scrolled (views/diff.js)
     this.repoFiles = new Set(); // every file in the repo (at the PR's head on PR tours), for resolving links
     this.planNote = null; // what planning is waiting on before the agent starts
@@ -88,6 +95,7 @@ export default class Tourist extends View {
     this.cursor = 0;      // highlighted row in the current step
     this.split = null;    // null: split when the pane is wide enough. true or false: the s key chose
     this.width = 0;       // the pane width, from on_size_change
+    this.height = 0;      // the pane height, for how tall the settings panel can be
     this.asking = false;  // the ask box only exists while asking, so it can't take tour keys
     this.typing = null;   // "ask" | "feature" while a text box has the keyboard
     this.explainScroll = ScrollHandle.new(); // the explanation's scroll position, moved to the bottom after asking
@@ -97,11 +105,23 @@ export default class Tourist extends View {
     this.summaryInput = this.textBox("summary", "Optional", () => this.leaveBox());
     this.replyInput = this.textBox("reply", "Reply to the agent, then press enter", cx => this.replyFix(cx));
     this.threadInput = this.textBox("thread", "Reply on GitHub, then press enter to post", cx => this.postThreadReply(cx));
+    // The settings panel: whether Tourist opens filling its tab, and a switch per shortcut key.
+    // Opening it takes the keyboard from a text box.
+    this.shortcuts = new Shortcuts({ mod: "tourist", keys: SHORTCUTS, rebind: true, options: [{ id: "full", label: "Open in full screen" }], onOpen: () => this.leaveBox() });
     this.handle = cx.focus_handle();
     // The pane isn't drawn yet, so focus again once it is.
     this.handle.focus();
     cx.timer.after(50, () => { if (!this.typing) this.handle.focus(); });
     cx.timer.after(400, () => { if (!this.typing) this.handle.focus(); });
+    // "Open in full screen": once the pane is there, zoom it to fill its tab (z zooms back). Zoom is
+    // a switch, so a pane that is already zoomed is left alone.
+    // A pane mod is not told which pane it is, so its pane is found by name: the Tourist pane that
+    // has the keyboard, which a newly opened one does, else the only Tourist pane there is.
+    if (this.shortcuts.option("full")) cx.timer.after(400, () => {
+      const all = panes().filter(p => p.mod === "tourist");
+      const mine = all.find(p => p.pane === props()?.pane) ?? all.find(p => p.focused) ?? (all.length === 1 ? all[0] : null);
+      if (mine && !mine.zoomed) run("pane.zoom", { pane: mine.pane });
+    });
     cx.spawn(async cx => { for (;;) { this.command(await nextCommand(), cx); cx.notify(); } });
     cx.spawn(async cx => { await this.detect(); cx.notify(); });
   }
@@ -127,13 +147,14 @@ export default class Tourist extends View {
   }
 
   async close() {
-    this.code?.release(); this.explainScroll.release(); this.diffScroll.release(); this.input.release(); this.featureInput.release(); this.commentInput.release(); this.summaryInput.release(); this.replyInput.release(); this.threadInput.release();
+    this.explainScroll.release(); this.diffScroll.release(); this.input.release(); this.featureInput.release(); this.commentInput.release(); this.summaryInput.release(); this.replyInput.release(); this.threadInput.release();
     await this.session?.stop(); await this.fixSession?.stop();
   }
 
-  /** `tourist.<name>` commands: focus, start, next, prev, deeper, technical, open, reset, agent, scope-<id>, depth-<id>. */
+  /** `tourist.<name>` commands: focus, start, next, prev, deeper, technical, open, reset, agent, settings, scope-<id>, depth-<id>. */
   command(c, cx) {
     if (c === "focus") this.handle.focus();
+    else if (this.shortcuts.command(c)) { /* the settings panel took it */ }
     else if (c.startsWith("scope-")) { this.scope = c.slice(6); this.goStep("scope"); }
     else if (c.startsWith("depth-")) { this.depth = c.slice(6); this.goStep("depth"); }
     else if (c.startsWith("pass-")) { this.pass = c.slice(5); if (this.steps().includes("pass")) this.goStep("pass"); }
@@ -176,7 +197,11 @@ export default class Tourist extends View {
     if (!this.agent) { this.fail("Tourist needs the claude or codex CLI on PATH, signed in."); return; }
     this.git = repo;
     if (repo.changed.length === 0) this.scope = repo.head ? "commit" : "repo";
-    this.goStep("scope");
+    // Opened with a scope already chosen (Git Good's Tour button asks for "branch"): skip that
+    // question. A branch with no changes still gets the question, since there is nothing to tour.
+    const asked = props()?.scope;
+    if (asked === "branch" && repo.changed.length > 0) { this.scope = "branch"; this.goStep("depth"); }
+    else this.goStep("scope");
   }
 
   /** Switches to the next installed agent and remembers it. */
@@ -187,6 +212,9 @@ export default class Tourist extends View {
   }
 
   agentName() { return agentName(this.agent); }
+
+  /** A key for a button or a hint to show: empty when the user turned that shortcut off. @param {string} id @param {string} key */
+  keyOf(id, key) { return this.shortcuts.shown(id, key); }
 
   fail(message) { this.phase = "error"; this.error = message; this.busy = null; }
 
@@ -248,14 +276,15 @@ export default class Tourist extends View {
 
   /**
    * Shows stop i. On a PR tour the code panel holds the file's whole diff, scrolled to the stop,
-   * with every stop on the file labelled. `focus` ({ a, b }, new-file lines) highlights and
+   * with every stop on the file labelled. Branch and last-commit tours do the same when the diff
+   * holds the stop's lines. Otherwise it shows the stop's lines from disk, numbered. `focus` ({ a, b }, new-file lines) highlights and
    * scrolls to those lines instead, for a file:line link.
    */
   show(i, cx, focus = null) {
     if (!this.plan) return;
     this.idx = Math.max(0, Math.min(i, this.plan.stops.length - 1));
     this.other = null;
-    this.code?.release(); this.code = null; this.codeError = null; this.diff = null; this.diffMarks = null; this.linkRows = null;
+    this.codeError = null; this.diff = null; this.diffMarks = null; this.linkRows = null;
     if (this.commenting) this.leaveBox();
     const s = this.plan.stops[this.idx], idx = this.idx;
     cx.spawn(async cx => {
@@ -271,13 +300,39 @@ export default class Tourist extends View {
         this.focusDiff(focus, cx);
         return;
       }
+      const all = await this.localDiff(s.file);
+      if (this.idx !== idx) return;
+      const range = all ? rowsFor(all, Number(s.start) || 1, Number(s.end) || Infinity) : null;
+      if (range) {
+        const rows = windowRows(all, range[0]);
+        this.diff = rows;
+        this.diffMarks = { stops: this.stopsOn(s.file, rows), stopRows: rowsFor(rows, Number(s.start) || 1, Number(s.end) || Infinity) };
+        this.focusDiff(focus, cx);
+        return;
+      }
       const excerpt = await readExcerpt(this.git.root, s, this.on);
       if (this.idx !== idx) return;
       if (!excerpt) { this.codeError = `Cannot read ${s.file}`; cx.notify(); return; }
       s.start = excerpt.start; s.end = excerpt.end;
-      this.code = codeState(s.file, excerpt.text);
-      cx.notify();
+      this.diff = highlightRows(plainRows(excerpt.text, excerpt.start), s.file);
+      this.focusDiff(focus, cx);
     });
+  }
+
+  /**
+   * One file's diff rows on a branch tour (merge base to the files on disk, so uncommitted edits
+   * count) or a last-commit tour (HEAD's change). Null on other tours or when git has none.
+   */
+  async localDiff(file) {
+    // A new file git does not know yet has no diff against the merge base: all of it is new.
+    if (this.scope === "branch" && this.git.untracked?.includes(file)) {
+      const added = await newFileDiff(file, { cwd: this.git.root, on: this.on });
+      return added ? highlightRows(diffRows(added), file) : null;
+    }
+    const args = this.scope === "branch" && this.git.mergeBase ? ["diff", "--no-color", "--unified=3", this.git.mergeBase, "--", file]
+      : this.scope === "commit" ? ["show", "--no-color", "--format=", "--unified=3", "HEAD", "--", file] : null;
+    const text = args ? await git(args, { cwd: this.git.root, on: this.on }) : null;
+    return text ? highlightRows(diffRows(text), file) : null;
   }
 
   /** The tour's stops on `file`, each with the first row of its lines in `rows`. Stops whose lines aren't shown are left out. */
@@ -307,11 +362,28 @@ export default class Tourist extends View {
    * view the shortest way, so it first jumps to the end and then scrolls back up to the row.
    */
   scrollTo(row, cx) {
+    this.codeTop = row;
     const req = this.scrollReq = { handle: this.diffScroll, row, step: 1 };
     cx.notify();
     // Each timer uses the cx it is handed: a click's cx is gone by the time the timer runs.
     cx.timer.after(40, cx => { if (this.scrollReq === req) { req.step = 2; cx.notify(); } });
     cx.timer.after(300, cx => { if (this.scrollReq === req) { this.scrollReq = null; cx.notify(); } });
+  }
+
+  /**
+   * Scrolls the code a few lines. The scroll handle can only bring a row into view the shortest
+   * way, so down asks for the row just under the pane and up for the row just above it.
+   * @param {number} dir 1 for down, -1 for up
+   */
+  scrollCode(dir, cx) {
+    const rows = this.diff?.length ?? 0;
+    if (!rows) return;
+    const last = Math.max(0, rows - this.codeFits);
+    this.codeTop = Math.max(0, Math.min(last, this.codeTop + dir * CODE_SCROLL_LINES));
+    const row = dir > 0 ? Math.min(rows - 1, this.codeTop + this.codeFits - 1) : this.codeTop;
+    const req = this.scrollReq = { handle: this.diffScroll, row, step: 2 };
+    cx.notify();
+    cx.timer.after(200, cx => { if (this.scrollReq === req) { this.scrollReq = null; cx.notify(); } });
   }
 
   /** Every file in the repo, or in the PR's head commit, so the agent's file:line references can be resolved. */
@@ -356,6 +428,7 @@ export default class Tourist extends View {
       return;
     }
     if (holding && holding.i !== this.idx) this.show(holding.i, cx);
+    else if (file === this.currentFile() && this.diff && rowsFor(this.diff, a, b)) this.focusDiff({ a, b }, cx);
     else openInEditor(`${this.git.root}/${file}`, a);
   }
 
@@ -370,6 +443,7 @@ export default class Tourist extends View {
       pr.sinceOid ? prFileDiff(this.git.root, this.on, pr, file, true) : null,
     ]);
     const rows = text ? diffRows(text) : [];
+    highlightRows(rows, file);
     return pr.sinceOid ? markOutsidePR(rows, whole ? diffRows(whole) : null) : rows;
   }
 
@@ -414,7 +488,7 @@ export default class Tourist extends View {
     if (f.stop !== undefined) { this.show(f.stop, cx, focus); return; }
     if (!this.pr) return;
     this.other = f.file;
-    this.code?.release(); this.code = null; this.codeError = null; this.diff = null; this.diffMarks = null; this.linkRows = null;
+    this.codeError = null; this.diff = null; this.diffMarks = null; this.linkRows = null;
     if (this.commenting) this.leaveBox();
     const file = f.file;
     cx.spawn(async cx => {
@@ -572,7 +646,7 @@ export default class Tourist extends View {
     if (!this.savedKey || this.busy || this.phase !== "tour") return;
     const key = this.savedKey;
     this.session?.stop();
-    this.code?.release(); this.code = null; this.diff = null;
+    this.diff = null;
     this.plan = null; this.files = null; this.other = null; this.phase = "setup"; this.step = "depth";
     cx.spawn(async cx => { await dropSavedPlan(key); this.start(cx); cx.notify(); });
   }
@@ -980,7 +1054,6 @@ export default class Tourist extends View {
     this.review = null; this.merge = null; this.checks = null; this.since = null; this.sinceLoading = false;
     this.threadBusy = null; this.threadError = null; this.openResolved = new Set();
     this.leaveBox();
-    this.code?.release(); this.code = null;
     this.plan = null; this.busy = null; this.error = null;
     this.pr = null; this.prNumber = null; this.prs = null; this.diff = null; this.planNote = null; this.comments = []; this.threads = []; this.savedKey = null; this.viewed = {};
     this.files = null; this.other = null; this.diffMarks = null; this.linkRows = null; this.scrollReq = null; this.repoFiles = new Set();
@@ -996,9 +1069,16 @@ export default class Tourist extends View {
       if (k === "escape" || k === "tab") { this.leaveBox(); cx.stop_propagation(); cx.notify(); }
       return;
     }
-    if (e.modifiers?.control || e.modifiers?.alt || e.modifiers?.platform) return;
+    // The settings panel is open: it takes every key.
+    if (this.shortcuts.open) { this.shortcuts.key(e, cx); return; }
+    // A press with ctrl, alt or cmd is ignored, unless the user put a shortcut on that key.
+    if ((e.modifiers?.control || e.modifiers?.alt || e.modifiers?.platform) && !this.shortcuts.idFor(e.keystroke)) return;
+    // A key that is turned off in the settings does nothing. Its button still works.
+    const on = (/** @type {string} */ id) => !this.shortcuts.isOff(id);
+    // True when this press is the key that shortcut is on now: the user can change keys in the settings.
+    const is = (/** @type {string} */ id) => this.shortcuts.matches(id, e.keystroke);
     // z zooms this pane to fill the tab and back, on every screen (Herdr's pane.zoom, ctrl-shift-z).
-    if (k === "z") { run("pane.zoom"); cx.stop_propagation(); return; }
+    if (is("zoom")) { run("pane.zoom"); cx.stop_propagation(); return; }
     let handled = true;
     // The confirm dialog is open (push, post or merge): y goes ahead, n or esc cancels, other keys wait.
     const asking = pendingConfirm(this);
@@ -1008,6 +1088,8 @@ export default class Tourist extends View {
       cx.stop_propagation(); cx.notify();
       return;
     }
+    // , opens the settings, on every screen.
+    if (this.shortcuts.key(e, cx)) return;
     if (this.phase === "setup" && !this.git.root) {
       handled = false; // still finding the repo; see pick()
     } else if (this.phase === "setup") {
@@ -1021,41 +1103,43 @@ export default class Tourist extends View {
       else if (k === "enter") this.pick(cx);
       else if (k === "tab" && onFeature) this.focusBox(this.featureInput, cx);
       else if (k === "escape" && this.step !== "scope") this.back();
-      else if (k === "a" && this.agents.length > 1) this.switchAgent();
+      else if (is("agent") && this.agents.length > 1) this.switchAgent();
       else handled = false;
     } else if (this.phase === "planning") {
       if (k === "escape" || k === "q") this.reset(cx);
       else handled = false;
     } else if (this.phase === "tour") {
-      if (k === "j" || k === "down") this.move(1, cx);
-      else if (k === "k" || k === "up") this.move(-1, cx);
-      else if (k === "d") this.deeper(cx);
-      else if (k === "t") this.technical(cx);
-      else if (k === "a" || k === "/") this.startAsking(cx);
-      else if (k === "o") this.openInEditor();
-      else if (k === "s") this.toggleSplit();
-      else if (k === "b" && this.pr) this.showFiles = !this.showFiles;
-      else if (k === "e" && this.other) this.explainFile(cx);
-      else if (k === "v" && this.pr) this.toggleViewed(this.currentFile(), cx);
-      else if (k === "m" && this.pr?.mine) this.startMerge(cx);
+      if (is("next") || k === "down") this.move(1, cx);
+      else if (is("prev") || k === "up") this.move(-1, cx);
+      else if (is("scroll-down")) this.scrollCode(1, cx);
+      else if (is("scroll-up")) this.scrollCode(-1, cx);
+      else if (is("deeper")) this.deeper(cx);
+      else if (is("technical")) this.technical(cx);
+      else if ((k === "a" || k === "/") && on("ask")) this.startAsking(cx);
+      else if (is("open")) this.openInEditor();
+      else if (is("split")) this.toggleSplit();
+      else if (is("files") && this.pr) this.showFiles = !this.showFiles;
+      else if (is("explain") && this.other) this.explainFile(cx);
+      else if (is("viewed") && this.pr) this.toggleViewed(this.currentFile(), cx);
+      else if (is("merge") && this.pr?.mine) this.startMerge(cx);
       else if (k === "escape" && this.commenting) this.leaveBox();
-      else if (k === "f" && this.pr?.mine) this.startFix(cx);
-      else if (k === "p" && this.pr) this.startReview(cx);
-      else if (k === "c" && this.pr) this.openChecks(cx);
-      else if (k === "r" && this.savedKey) this.replan(cx);
+      else if (is("fix") && this.pr?.mine) this.startFix(cx);
+      else if (is("review") && this.pr) this.startReview(cx);
+      else if (is("checks") && this.pr) this.openChecks(cx);
+      else if (is("replan") && this.savedKey) this.replan(cx);
       else if (k === "q") this.reset(cx);
       else handled = false;
     } else if (this.phase === "fix") {
       if (k === "b" || k === "escape") this.closeFix();
-      else if (k === "p") this.pushFix(cx);
-      else if (k === "x") this.discardFix(cx);
-      else if (k === "r" || k === "a" || k === "/") this.startReply(cx);
+      else if (is("push")) this.pushFix(cx);
+      else if (is("discard")) this.discardFix(cx);
+      else if ((k === "r" || k === "a" || k === "/") && on("reply")) this.startReply(cx);
       else handled = false;
     } else if (this.phase === "merge") {
       const m = this.merge, n = /^[1-3]$/.test(k) ? +k - 1 : -1;
       if (k === "b" || k === "escape") this.closeMerge();
-      else if (k === "m" || k === "enter") this.doMerge(cx);
-      else if (k === "o" && m?.phase === "merged") this.openPR();
+      else if ((is("merge")) || k === "enter") this.doMerge(cx);
+      else if (is("open") && m?.phase === "merged") this.openPR();
       else if (k === "q" && m?.phase === "merged") this.reset(cx);
       else if (n >= 0 && n < (m?.methods?.length ?? 0)) this.moveMethod(n);
       else if (k === "j" || k === "down") this.moveMethod((m?.cursor ?? 0) + 1);
@@ -1064,9 +1148,9 @@ export default class Tourist extends View {
     } else if (this.phase === "checks") {
       const n = /^[1-9]$/.test(k) ? +k - 1 : -1;
       if (k === "b" || k === "escape") this.closeChecks();
-      else if (k === "e" || k === "enter") this.explainCheck(cx);
-      else if (k === "o") this.openCheck();
-      else if (k === "r") this.loadChecks(cx);
+      else if ((is("explain")) || k === "enter") this.explainCheck(cx);
+      else if (is("open")) this.openCheck();
+      else if (is("refresh")) this.loadChecks(cx);
       else if (n >= 0 && n < (this.checks?.list?.length ?? 0)) this.checks.cursor = n;
       else if (k === "j" || k === "down") this.moveCheck((this.checks?.cursor ?? 0) + 1);
       else if (k === "k" || k === "up") this.moveCheck((this.checks?.cursor ?? 0) - 1);
@@ -1074,8 +1158,8 @@ export default class Tourist extends View {
     } else if (this.phase === "review") {
       const r = this.review, verdict = /^[1-3]$/.test(k) ? +k - 1 : -1;
       if (k === "b" || k === "escape") this.closeReview();
-      else if (k === "p" || k === "enter") this.postReview(cx);
-      else if (k === "o") this.openReview();
+      else if ((is("review")) || k === "enter") this.postReview(cx);
+      else if (is("open")) this.openReview();
       else if (k === "tab" && r?.phase === "editing") this.focusBox(this.summaryInput, cx);
       else if (verdict >= 0 && this.pr && verdict < eventsFor(this.pr).length) this.moveVerdict(verdict);
       else if (k === "j" || k === "down") this.moveVerdict((r?.cursor ?? 0) + 1);
@@ -1095,16 +1179,19 @@ export default class Tourist extends View {
       // once the click is over, unless it landed in a text box.
       .on_mouse_up("left", (_e, cx) => { cx.timer.after(30, () => { if (!this.typing) this.handle.focus(); }); })
       .size_full().min_h(0).text_color(t.foreground).text_size(13)
-      .on_size_change((size, cx) => { if (size.width !== this.width) { this.width = size.width; cx.notify(); } }); // no fill: the pane's own background shows, like a terminal
-    if (this.phase === "setup") return root.child(setupView(this, t));
-    if (this.phase === "planning") return root.child(planningView(this, t));
-    if (this.phase === "error") return root.child(errorView(this, t));
+      .on_size_change((size, cx) => { if (size.width !== this.width || size.height !== this.height) { this.width = size.width; this.height = size.height; cx.notify(); } }); // no fill: the pane's own background shows, like a terminal
+    // The settings panel sits over any screen, under the gear at the top right. A short pane gets a shorter panel.
+    const settings = (/** @type {typeof root} */ el) => el.when(this.shortcuts.open, (/** @type {typeof root} */ el) => el.child(this.shortcuts.panel(t,
+      { top: 52, right: SIZE.panePad, maxHeight: Math.max(120, Math.min(420, (this.height || 600) - 130)) })));
+    if (this.phase === "setup") return settings(root.child(setupView(this, t)));
+    if (this.phase === "planning") return settings(root.child(planningView(this, t)));
+    if (this.phase === "error") return settings(root.child(errorView(this, t)));
     // Push, post and merge ask first, in a dialog over the screen.
     const dialog = confirmDialog(this, t);
-    if (this.phase === "fix" && this.fix && this.pr) return root.child(fixView(this, t)).when(Boolean(dialog), el => el.child(dialog));
-    if (this.phase === "review" && this.review && this.pr) return root.child(reviewView(this, t)).when(Boolean(dialog), el => el.child(dialog));
-    if (this.phase === "merge" && this.merge && this.pr) return root.child(mergeView(this, t)).when(Boolean(dialog), el => el.child(dialog));
-    if (this.phase === "checks" && this.checks && this.pr) return root.child(checksView(this, t));
-    return root.child(tourView(this, t));
+    if (this.phase === "fix" && this.fix && this.pr) return settings(root.child(fixView(this, t)).when(Boolean(dialog), el => el.child(dialog)));
+    if (this.phase === "review" && this.review && this.pr) return settings(root.child(reviewView(this, t)).when(Boolean(dialog), el => el.child(dialog)));
+    if (this.phase === "merge" && this.merge && this.pr) return settings(root.child(mergeView(this, t)).when(Boolean(dialog), el => el.child(dialog)));
+    if (this.phase === "checks" && this.checks && this.pr) return settings(root.child(checksView(this, t)));
+    return settings(root.child(tourView(this, t)));
   }
 }

@@ -18,7 +18,8 @@ export function checksView(v, t) {
   const header = paneHeader(t)
     .child(paneTitle(t, `Checks on PR #${pr.number}`))
     .child(paneDetail(t, c.list ? `${n.fail} failing · ${n.pending} running · ${n.pass} passed · at ${pr.headOid.slice(0, 7)}` : ""))
-    .when(c.loading, el => el.child(spinner(t)));
+    .when(c.loading, el => el.child(spinner(t)))
+    .child(v.shortcuts.button(t));
   const cur = v.currentCheck();
   const rows = list.map((x, i) => {
     const on = c.cursor === i;
@@ -38,15 +39,17 @@ export function checksView(v, t) {
     .when(Boolean(c.list) && list.length === 0, el => el.child(empty("This PR has no checks.")))
     .children(rows)
     .when(Boolean(failed) && notes.length === 0 && !v.busy, el => el.child(div().pt(8).text_size(12).text_color(t.dim)
-      .child(actionsJob(cur.check.link) ? "e asks why it failed: the agent reads the end of its log." : "This check doesn't run on GitHub Actions. o opens it.")))
+      .child(actionsJob(cur.check.link) ? `${v.keyOf("explain", "e") || "enter"} asks why it failed: the agent reads the end of its log.` : `This check doesn't run on GitHub Actions.${v.keyOf("open", "o") ? ` ${v.keyOf("open", "o")} opens it.` : ""}`)))
     .when(notes.length > 0, el => el.child(v_flex().pt(8).gap(10).children(notes)))
     .when(Boolean(v.busy), el => el.child(h_flex().pt(8).gap(8).items_center().text_color(t.dim)
       .child(spinner(t)).child(div().text_size(12).child(`${v.busy}…`))));
   const body = v_flex().id("checks-body").flex_1().min_h(0).overflow_y_scrollbar().px(14).py(12).child(content);
   const bar = paneBar(t)
     .child(button(t, "checks-back", "Back to tour", "b", true, (_e, cx) => { v.closeChecks(); cx.notify(); }))
-    .child(button(t, "checks-explain", "Why it failed", "e", Boolean(failed) && !v.busy && Boolean(actionsJob(cur?.check.link)), (_e, cx) => { v.explainCheck(cx); cx.notify(); }))
-    .child(button(t, "checks-open", "Open", "o", Boolean(cur?.check.link), (_e, cx) => { v.openCheck(); cx.notify(); }))
-    .child(button(t, "checks-refresh", "Refresh", "r", !c.loading, (_e, cx) => { v.loadChecks(cx); cx.notify(); }));
-  return v_flex().flex_1().min_h(0).child(header).child(body).child(bar);
+    .child(button(t, "checks-explain", "Why it failed", v.keyOf("explain", "e"), Boolean(failed) && !v.busy && Boolean(actionsJob(cur?.check.link)), (_e, cx) => { v.explainCheck(cx); cx.notify(); }))
+    .child(button(t, "checks-open", "Open", v.keyOf("open", "o"), Boolean(cur?.check.link), (_e, cx) => { v.openCheck(); cx.notify(); }))
+    .child(button(t, "checks-refresh", "Refresh", v.keyOf("refresh", "r"), !c.loading, (_e, cx) => { v.loadChecks(cx); cx.notify(); }));
+  return v_flex().flex_1().min_h(0).child(header).child(body)
+    // The bar of key buttons is a key hint: it goes when key hints are hidden. The keys still work.
+    .when(v.shortcuts.showHints, el => el.child(bar));
 }

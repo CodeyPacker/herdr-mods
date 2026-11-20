@@ -28,21 +28,36 @@ const SLIDER_GAP = 12;
 /** Each tab's icon and name. @type {Record<Tab, [string, string]>} */
 const TAB_LABELS = { queue: ["queue", "Queue"], playlists: ["playlists", "Playlists"], search: ["search", "Search"], devices: ["devices", "Devices"] };
 
+/** The key a shortcut is on now, or "" when it is turned off or has no key. @param {Browser} b @param {string} id */
+function keyOf(b, id) {
+  return b.dialog.shortcuts.isOff(id) ? "" : b.dialog.shortcuts.keyFor(id);
+}
+
 /** The hints that depend on what the list shows. Kept short: all hints share one line. @param {Browser} b @returns {Hint[]} */
 function listHints(b) {
-  if (b.tab === "search") return [["s", "search"], ["a", "queue it"]];
-  if (b.tab === "playlists") return b.playlist ? [["a", "queue it"], ["backspace", "back"]] : [];
+  // A shortcut that is turned off or has no key is not listed.
+  /** @type {Hint[]} */
+  const add = keyOf(b, "add") ? [[keyOf(b, "add"), "queue it"]] : [];
+  if (b.tab === "search") return keyOf(b, "search") ? [[keyOf(b, "search"), "search"], ...add] : add;
+  if (b.tab === "playlists") return b.playlist ? [...add, ["backspace", "back"]] : [];
   return [];
 }
 
 /** The hints that are always there. @type {Hint[]} */
 const MOVE_HINTS = [["j/k", "move"], ["h/l", "tab"]];
 
-/** Playback keys show their button's icon in place of a word. @returns {Hint[]} */
-function playbackHints() {
+/**
+ * Playback keys show their button's icon in place of a word. A shortcut that is turned off or has
+ * no key is not listed. Seek and volume each show their two keys as a pair, or the one that is left.
+ * @param {Browser} b @returns {Hint[]}
+ */
+function playbackHints(b) {
   const icon = (/** @type {string} */ name) => ({ icon: iconPath(name) });
-  return [["space", icon("play")], ["n", icon("next")], ["b", icon("previous")], ["[ ]", "seek"], ["- =", icon("volume")],
-    ["z", icon("shuffle")], ["r", icon("repeat")], ["shift-x", "sign out"], ["q", "close"]];
+  const pair = (/** @type {string} */ first, /** @type {string} */ second) => [keyOf(b, first), keyOf(b, second)].filter(Boolean).join(" ");
+  /** Each hint: the key or keys it shows, then what they do. @type {Hint[]} */
+  const hints = [[keyOf(b, "play"), icon("play")], [keyOf(b, "next"), icon("next")], [keyOf(b, "previous"), icon("previous")], [pair("seek-back", "seek-ahead"), "seek"],
+    [pair("volume-down", "volume-up"), icon("volume")], [keyOf(b, "shuffle"), icon("shuffle")], [keyOf(b, "repeat"), icon("repeat")], [keyOf(b, "sign-out"), "sign out"]];
+  return [...hints.filter(([key]) => key), [",", "settings"], ["q", "close"]];
 }
 
 /**
@@ -121,7 +136,7 @@ function rowCells(row, playing, t) {
 function emptyText(b) {
   if (b.tab === "queue") return "Nothing is queued.";
   if (b.tab === "devices") return "No devices. Open Spotify on this computer, your phone or the web player.";
-  if (b.tab === "search") return b.query ? `No songs match "${b.query}".` : "Press s and type a search.";
+  if (b.tab === "search") return b.query ? `No songs match "${b.query}".` : keyOf(b, "search") ? `Press ${keyOf(b, "search")} and type a search.` : "Click Search and type a search.";
   return b.playlist ? "This playlist has no tracks." : "You have no playlists.";
 }
 
@@ -153,7 +168,7 @@ export function browserView(b, t) {
     .child(p.kind === "track"
       ? header(b, p, t)
       : div().flex_none().py(8).text_size(13).text_color(t.dim)
-        .child(p.kind === "idle" ? "Nothing playing. Start something from a list below, or press d to pick a device." : restingText(p)))
+        .child(p.kind === "idle" ? `Nothing playing. Start something from a list below, or ${keyOf(b, "devices") ? `press ${keyOf(b, "devices")}` : "open Devices"} to pick a device.` : restingText(p)))
     .child(divider(t))
     .child(tabs(b, t))
     .when(b.tab === "search", (el) => el.child(textInput(t, b.searchInput, b.typing)))
@@ -163,6 +178,6 @@ export function browserView(b, t) {
     .child(listArea(b, t))
     .when(Boolean(notice), (el) => el.child(div().flex_none().text_size(11.5).text_color(notice?.bad ? t.ansi1 : t.ansi2).child(notice?.text ?? "")))
     // A line above the key hints, so they do not read as more list rows.
-    .child(divider(t))
-    .child(legend(t, b.typing ? [["enter", "search"], ["esc", "back to the list"]] : [...MOVE_HINTS, ...listHints(b), ...playbackHints()]));
+    .when(b.dialog.shortcuts.showHints, (el) => el.child(divider(t)))
+    .when(b.dialog.shortcuts.showHints, (el) => el.child(legend(t, b.typing ? [["enter", "search"], ["esc", "back to the list"]] : [...MOVE_HINTS, ...listHints(b), ...playbackHints(b)])));
 }

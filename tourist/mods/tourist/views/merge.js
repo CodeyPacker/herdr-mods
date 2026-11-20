@@ -10,7 +10,8 @@ export function mergeView(v, t) {
   const m = v.merge, pr = v.pr, methods = m.methods ?? [];
   const header = paneHeader(t)
     .child(paneTitle(t, `Merge PR #${pr.number}`))
-    .child(paneDetail(t, `${pr.head} into ${pr.base}`));
+    .child(paneDetail(t, `${pr.head} into ${pr.base}`))
+    .child(v.shortcuts.button(t));
   const pick = i => (_e, cx) => { v.moveMethod(i); cx.notify(); };
   let body;
   if (m.phase === "loading" || m.phase === "merging") {
@@ -20,7 +21,7 @@ export function mergeView(v, t) {
   } else {
     const content = v_flex().gap(6).max_w(720)
       .when(Boolean(m.error), el => el.child(banner(t, m.error, t.ansi1)))
-      .when(m.phase === "merged", el => el.child(banner(t, `Merged into ${pr.base}. o opens the PR.`, t.ansi2)))
+      .when(m.phase === "merged", el => el.child(banner(t, `Merged into ${pr.base}.${v.keyOf("open", "o") ? ` ${v.keyOf("open", "o")} opens the PR.` : ""}`, t.ansi2)))
       .when(m.phase === "picking", el => el
         .child(div().pb(4).text_size(11.5).text_color(t.dim).child("How to merge (only the methods this repo allows) · enter merges"))
         .children(methods.map((x, i) => option(t, `merge-${x.id}`, x.key, x.label, x.hint, m.cursor === i, pick(i))))
@@ -31,9 +32,11 @@ export function mergeView(v, t) {
   const method = methods[m.cursor];
   const bar = paneBar(t)
     .child(button(t, "merge-back", "Back to tour", "b", m.phase !== "merging", (_e, cx) => { v.closeMerge(); cx.notify(); }))
-    .when(m.phase === "merged", el => el.child(button(t, "merge-open", "Open on GitHub", "o", true, (_e, cx) => { v.openPR(); cx.notify(); })))
+    .when(m.phase === "merged", el => el.child(button(t, "merge-open", "Open on GitHub", v.keyOf("open", "o"), true, (_e, cx) => { v.openPR(); cx.notify(); })))
     .when(m.phase === "picking", el => el.child(button(t, "merge-go",
       method?.label ?? "Merge",
-      "m", Boolean(method), (_e, cx) => { v.doMerge(cx); cx.notify(); })));
-  return v_flex().flex_1().min_h(0).child(header).child(body).child(bar);
+      v.keyOf("merge", "m"), Boolean(method), (_e, cx) => { v.doMerge(cx); cx.notify(); })));
+  return v_flex().flex_1().min_h(0).child(header).child(body)
+    // The bar of key buttons is a key hint: it goes when key hints are hidden. The keys still work.
+    .when(v.shortcuts.showHints, el => el.child(bar));
 }

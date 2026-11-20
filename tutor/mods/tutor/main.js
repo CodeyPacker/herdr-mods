@@ -38,12 +38,50 @@ import { homeView } from "./views/home.js";
 import { lessonView } from "./views/lesson.js";
 import { quizView, resultView } from "./views/quiz.js";
 import { practiceView } from "./views/practice.js";
+import { Shortcuts } from "./kit/shortcuts.js";
+
+/**
+ * The keys a user can turn off or change in the settings. A key that means something else on
+ * another screen has its own entry there. A shortcut on two screens has one key for both. The
+ * keys that move (j, k, arrows, the module list's letters), enter, esc, y, a quiz's a b c d and ,
+ * always work, and so does every button and command. A row marked `fixed` stands for several
+ * keys, so its keys cannot be changed.
+ * @type {import("./kit/shortcuts.js").Shortcut[]}
+ */
+const SHORTCUTS = [
+  { id: "setup-folder", key: "e b", what: "edit or browse the folder (setup)", fixed: true },
+  { id: "setup-known", key: "w", what: "what you know (setup)" },
+  { id: "setup-choices", key: "l v a", what: "language, editor, agent (setup)", fixed: true },
+  { id: "new-course", key: "n", what: "new course (modules)" },
+  { id: "reset-progress", key: "r", what: "reset progress (modules)" },
+  { id: "practice", key: "p", what: "practice (modules, lesson)" },
+  { id: "practice-range", key: "g", what: "Practice Range (modules, result)" },
+  { id: "ask", key: "a", what: "ask (lesson, practice)" },
+  { id: "deeper", key: "d", what: "deeper (lesson)" },
+  { id: "compare", key: "t", what: "compare to what you know (lesson)" },
+  { id: "quiz", key: "q", what: "quiz (lesson)" },
+  { id: "open-file", key: "o", what: "open the file (lesson, practice)" },
+  { id: "split", key: "s", what: "split or stacked (lesson)" },
+  { id: "retry", key: "r", what: "retry the quiz (result)" },
+  { id: "modules", key: "m", what: "modules (result)" },
+  { id: "missed", key: "1-9", what: "go to a missed stop (result)", fixed: true },
+  { id: "practice-edit", key: "e", what: "edit (practice)" },
+  { id: "practice-run", key: "r", what: "run (practice)" },
+  { id: "practice-hint", key: "h", what: "hint (practice)" },
+  { id: "practice-solution", key: "x", what: "solution (practice)" },
+  { id: "practice-reset", key: "c", what: "reset (practice)" },
+];
+/** The shortcuts of the home screen. The module list never hands out the letters they are on. */
+const HOME_SHORTCUTS = ["new-course", "reset-progress", "practice", "practice-range"];
+/** What a command does while the settings panel is open. @type {Record<string, string>} */
+const PANEL_COMMAND = { next: "down", prev: "up", continue: "toggle" };
 
 export default class Tutor extends View {
   init(_props, cx) {
     this.phase = "loading";   // "loading" | "setup" | "build" | "home" | "lesson" | "quiz" | "result" | "practice"
     this.slug = null; this.lang = null;
     this.course = null; this.courseError = null; this.repoError = null;
+    this.courseGone = false;  // the course's file is missing: the home screen says how to start a new one
     this.mods = {}; this.modErrors = {}; // module files by id (null: not written yet), and the ones that would not load
     this.exercises = {};      // practice exercises by module id (null: not written yet, []: none)
     this.lines = new Map();   // file lines at a commit, by "commit:path", for writing and checking
@@ -67,7 +105,11 @@ export default class Tutor extends View {
     this.agentOk = null;      // true or false once the agent's CLI is looked up
     this.asking = false; this.typing = false;
     this.quiz = { i: 0, picks: [] }; this.result = null;
-    this.split = null; this.width = 0;
+    this.split = null; this.width = 0; this.height = 0;
+    // The settings panel: a switch per shortcut key, and a key the user can change. Tutor's own
+    // settings stay in settings.js. Opening it takes the keyboard from a text box, so its keys
+    // arrive as keys. A changed key can free or take a letter of the module list.
+    this.shortcuts = new Shortcuts({ mod: "tutor", keys: SHORTCUTS, rebind: true, saved: "shortcuts", onOpen: () => this.leaveBox(), onChange: () => this.setLetters() });
     // Scroll handles and the text boxes are made here, never in render.
     this.homeScroll = ScrollHandle.new();
     this.explainScroll = ScrollHandle.new();
@@ -154,7 +196,7 @@ export default class Tutor extends View {
   /** Loads course `slug`, makes it the one Tutor opens with, and shows its home. */
   async openCourse(slug, cx) {
     this.leaveModule();
-    this.slug = slug; this.course = null; this.courseError = null; this.repoError = null; this.lang = null;
+    this.slug = slug; this.course = null; this.courseError = null; this.courseGone = false; this.repoError = null; this.lang = null;
     this.mods = {}; this.modErrors = {}; this.exercises = {}; this.flash = null; this.rangeTopics = null;
     this.progress = fresh(); this.loaded = false; this.nav = { at: 0, typed: "" }; this.confirmReset = false;
     this.phase = "home";
@@ -173,11 +215,11 @@ export default class Tutor extends View {
     const slug = this.slug;
     try { this.course = await loadCourse(slug); }
     catch (e) { this.courseError = `Could not read the course: ${e?.message ?? e}`; return; }
-    if (!this.course) { this.courseError = "The course is gone. Press n to start a new one."; return; }
+    if (!this.course) { this.courseError = "The course is gone."; this.courseGone = true; return; }
     this.lang = languageOf(this.course);
     if (!this.lang) { this.courseError = `This course is in ${this.course.language}, which Tutor does not have.`; return; }
     const list = this.course.modules ?? [];
-    this.letters = assignLetters(list.length, RESERVED);
+    this.setLetters();
     await Promise.all([
       ...list.map(async m => {
         try { this.mods[m.id] = await loadModule(slug, m.id); }
@@ -193,6 +235,16 @@ export default class Tutor extends View {
   }
 
   progressPath() { return `${courseDir(this.slug)}/progress.json`; }
+
+  /**
+   * Gives each module row its letter. The keys the home screen's shortcuts are on now are left
+   * out, so a row's letter is never also a shortcut's key there.
+   */
+  setLetters() {
+    const keys = HOME_SHORTCUTS.map(id => this.shortcuts.keyFor(id)).filter(key => /^[a-z]$/.test(key)).join("");
+    this.letters = assignLetters(this.course?.modules?.length ?? 0, RESERVED + keys);
+    this.nav.typed = "";
+  }
 
   /** A file's lines at `repo`'s commit (the course's by default), read once. */
   linesAt(path, repo = this.course) {
@@ -538,7 +590,7 @@ export default class Tutor extends View {
     });
   }
 
-  /** w on the setup screen: type what you already know. */
+  /** "You know" on the setup screen: type what you already know. */
   editKnown(cx) {
     this.knownInput.set_value(this.setupKnown().join(", "));
     this.setup.editingKnown = true;
@@ -971,6 +1023,7 @@ export default class Tutor extends View {
   command(c, cx) {
     const p = this.phase;
     if (c === "focus") this.handle.focus();
+    else if (this.shortcuts.command(this.shortcuts.open ? PANEL_COMMAND[c] ?? c : c)) { /* the settings panel took it */ }
     else if (c === "home") { if (this.course) this.goHome(cx); }
     else if (c === "new-course") this.openSetup(cx);
     else if (c === "build" && p === "setup") this.setupEnter(cx);
@@ -989,8 +1042,8 @@ export default class Tutor extends View {
     else if (c === "retry" && p === "result") this.startQuiz(cx);
     else if (c === "split") this.toggleSplit();
     else if (c === "reset-progress" && this.course) this.resetProgress(cx);
-    else if (c === "practice") this.press("p", cx);
-    else if (c === "practice-range") this.press("g", cx);
+    else if (c === "practice") this.pressShortcut("practice", cx);
+    else if (c === "practice-range") this.pressShortcut("practice-range", cx);
     else if (c.startsWith("practice-") && p === "practice") {
       const what = c.slice(9);
       if (what === "edit") this.practiceEdit(cx);
@@ -1006,32 +1059,67 @@ export default class Tutor extends View {
     }
   }
 
-  /** Runs a plain key as if it were pressed. */
+  /**
+   * The key to show for shortcut `id`: the key it is on now, or "" when the user turned it off or
+   * hid key hints. `key` is shown for a `fixed` shortcut, which stands for several keys.
+   */
+  shown(id, key) { return this.shortcuts.shown(id, key); }
+
+  /**
+   * Runs a key that is not a shortcut (j, k, enter) as if it were pressed. It does what that key
+   * does by itself, even when the user gave the key to a shortcut.
+   */
   press(key, cx) {
     this.key(/** @type {any} */ ({ key, modifiers: {}, keystroke: key }), /** @type {any} */ ({ stop_propagation() {}, notify() {} }), cx);
   }
 
-  /** `kx` is the key event's context; `cxOverride` stands in for it when a command presses a key. */
+  /**
+   * Runs shortcut `id` on the screen that is showing, as if its key were pressed. It works
+   * whatever key the shortcut is on, and when it is turned off in the settings.
+   */
+  pressShortcut(id, cx) {
+    this.key(/** @type {any} */ ({ key: "", modifiers: {}, keystroke: "", shortcut: id }), /** @type {any} */ ({ stop_propagation() {}, notify() {} }), cx);
+  }
+
+  /**
+   * `kx` is the key event's context; `cxOverride` stands in for it when a command presses a key.
+   * On every screen the shortcuts are looked at first, so a key the user gave to a shortcut wins
+   * over what the key does otherwise (j, a module's letter, enter).
+   */
   key(e, kx, cxOverride = null) {
     const cx = cxOverride ?? kx;
-    const k = e.key;
     // A text box has the keyboard: it gets every key except esc and tab, which hand keys back.
     if (this.typing) {
-      if (k === "escape" || k === "tab") { this.leaveBox(); kx.stop_propagation(); kx.notify(); }
+      if (e.key === "escape" || e.key === "tab") { this.leaveBox(); kx.stop_propagation(); kx.notify(); }
       return;
     }
-    if (e.modifiers?.control || e.modifiers?.alt || e.modifiers?.platform) return;
+    // A real key press, not one a command pressed (see press and pressShortcut).
+    const real = !cxOverride;
+    // A yes or no question takes the next key, whatever it is.
+    const asking = this.phase === "home" ? this.confirmReset : this.phase === "practice" && Boolean(this.pr?.confirm);
+    // Only a real key press is the settings panel's. Open, the panel takes every key.
+    if (real && (this.shortcuts.open || !asking) && this.shortcuts.key(e, kx)) return;
+    // With ctrl, alt or cmd held, a press does something only when the user put a shortcut on it.
+    const held = Boolean(e.modifiers?.control || e.modifiers?.alt || e.modifiers?.platform);
+    if (held && (asking || !real || !this.shortcuts.idFor(e.keystroke))) return;
+    // The key, for the keys that are not shortcuts. None with ctrl, alt or cmd held.
+    const k = held ? "" : e.key;
+    // True when this press means shortcut `id`. A real press is asked of the settings: the key the
+    // shortcut is on now, and it is on. A command names the shortcut, so it works whatever its key.
+    const is = id => real ? this.shortcuts.matches(id, e.keystroke) : e.shortcut === id;
+    // For a `fixed` shortcut, which is matched by its own keys: false when the user turned it off.
+    const on = id => !real || !this.shortcuts.isOff(id);
     let handled = true;
     if (this.phase === "setup") {
-      if (k === "j" || k === "down") this.setupMove(1);
+      if (is("setup-known")) this.editKnown(cx);
+      else if (k === "j" || k === "down") this.setupMove(1);
       else if (k === "k" || k === "up") this.setupMove(-1);
       else if (k === "enter") this.setupEnter(cx);
-      else if (k === "e") this.editPath(cx);
-      else if (k === "b") this.browse(cx);
-      else if (k === "l") this.nextLanguage();
-      else if (k === "w") this.editKnown(cx);
-      else if (k === "v") this.nextEditor();
-      else if (k === "a") this.nextAgent(cx);
+      else if (k === "e" && on("setup-folder")) this.editPath(cx);
+      else if (k === "b" && on("setup-folder")) this.browse(cx);
+      else if (k === "l" && on("setup-choices")) this.nextLanguage();
+      else if (k === "v" && on("setup-choices")) this.nextEditor();
+      else if (k === "a" && on("setup-choices")) this.nextAgent(cx);
       else if (k === "escape" && this.course) this.goHome(cx);
       else handled = false;
     } else if (this.phase === "build") {
@@ -1040,27 +1128,28 @@ export default class Tutor extends View {
       else handled = false;
     } else if (this.phase === "home") {
       if (this.confirmReset) { if (k === "y") this.resetProgress(cx); else this.confirmReset = false; }
-      else if (k === "r" && this.course) this.confirmReset = true;
-      else if (k === "n") this.openSetup(cx);
-      else if (k === "g" && this.canRange(this.course?.modules[this.nav.at]?.id)) this.goRange(this.course.modules[this.nav.at].id, cx);
-      else if (k === "p") { const m = this.course?.modules[this.nav.at]; if (m) this.openPractice(m.id, cx, "home"); }
+      else if (is("reset-progress") && this.course) this.confirmReset = true;
+      else if (is("new-course")) this.openSetup(cx);
+      else if (is("practice-range") && this.canRange(this.course?.modules[this.nav.at]?.id)) this.goRange(this.course.modules[this.nav.at].id, cx);
+      else if (is("practice")) { const m = this.course?.modules[this.nav.at]; if (m) this.openPractice(m.id, cx, "home"); }
       else {
+        // The rows' letters are never a key of this screen's shortcuts: see setLetters.
         const items = this.letters.map(hint => ({ hint }));
-        const r = items.length ? navigateByLetter(this.nav, e, items) : null;
+        const r = k && items.length ? navigateByLetter(this.nav, e, items) : null;
         if (r === "act") this.openAt(cx);
         else if (r === "done" || r === "hit") this.homeScroll.scroll_to_item(this.rowChild[this.nav.at] ?? 0);
         else handled = false;
       }
     } else if (this.phase === "lesson") {
-      if (k === "j" || k === "down") this.move(1, cx);
+      if (is("ask")) this.startAsking(cx);
+      else if (is("deeper")) this.deeper(cx);
+      else if (is("compare")) this.likeKnown(cx);
+      else if (is("quiz")) this.startQuiz(cx);
+      else if (is("practice")) this.openPractice(this.modId, cx, "lesson");
+      else if (is("open-file")) this.openEditor(cx);
+      else if (is("split")) this.toggleSplit();
+      else if (k === "j" || k === "down") this.move(1, cx);
       else if (k === "k" || k === "up") this.move(-1, cx);
-      else if (k === "a") this.startAsking(cx);
-      else if (k === "d") this.deeper(cx);
-      else if (k === "t") this.likeKnown(cx);
-      else if (k === "q") this.startQuiz(cx);
-      else if (k === "p") this.openPractice(this.modId, cx, "lesson");
-      else if (k === "o") this.openEditor(cx);
-      else if (k === "s") this.toggleSplit();
       else if (k === "escape") { if (this.busy) this.stopAsking(); else this.goHome(cx); }
       else handled = false;
     } else if (this.phase === "quiz") {
@@ -1070,23 +1159,24 @@ export default class Tutor extends View {
       else if (k === "escape") this.leaveQuiz(cx);
       else handled = false;
     } else if (this.phase === "result") {
-      if (k === "r") this.startQuiz(cx);
+      if (is("retry")) this.startQuiz(cx);
+      else if (is("modules")) this.goHome(cx);
+      else if (is("practice-range") && this.canRange(this.modId)) this.goRange(this.modId, cx);
       else if (k === "enter") this.afterResult(cx);
-      else if (k === "m" || k === "escape") this.goHome(cx);
-      else if (k === "g" && this.canRange(this.modId)) this.goRange(this.modId, cx);
-      else if (/^[1-9]$/.test(k)) this.jumpToMissed(+k - 1, cx);
+      else if (k === "escape") this.goHome(cx);
+      else if (/^[1-9]$/.test(k) && on("missed")) this.jumpToMissed(+k - 1, cx);
       else handled = false;
     } else if (this.phase === "practice" && this.pr) {
       if (this.pr.confirm) this.practiceConfirm(k, cx);
-      else if (k === "e") this.practiceEdit(cx);
-      else if (k === "r") this.practiceRun(cx);
-      else if (k === "h") this.practiceHint(cx);
-      else if (k === "a") this.startAsking(cx);
-      else if (k === "x") this.pr.confirm = "solution";
-      else if (k === "c") this.pr.confirm = "reset";
+      else if (is("practice-edit")) this.practiceEdit(cx);
+      else if (is("practice-run")) this.practiceRun(cx);
+      else if (is("practice-hint")) this.practiceHint(cx);
+      else if (is("ask")) this.startAsking(cx);
+      else if (is("practice-solution")) this.pr.confirm = "solution";
+      else if (is("practice-reset")) this.pr.confirm = "reset";
+      else if (is("open-file")) this.openPracticeSource(cx);
       else if (k === "j" || k === "down") this.practiceMove(1, cx);
       else if (k === "k" || k === "up") this.practiceMove(-1, cx);
-      else if (k === "o") this.openPracticeSource(cx);
       else if (k === "escape") this.practiceBack(cx);
       else handled = false;
     } else handled = false;
@@ -1100,13 +1190,20 @@ export default class Tutor extends View {
       // once the click is over, unless it landed in a text box.
       .on_mouse_up("left", (_e, cx) => { cx.timer.after(30, () => { if (!this.typing) this.handle.focus(); }); })
       .size_full().min_h(0).text_color(t.foreground).text_size(13)
-      .on_size_change((size, cx) => { if (size.width !== this.width) { this.width = size.width; cx.notify(); } });
-    if (this.phase === "setup") return root.child(setupView(this, t));
-    if (this.phase === "build" && this.job) return root.child(buildView(this, t));
-    if (this.phase === "lesson" && this.mod) return root.child(lessonView(this, t));
-    if (this.phase === "quiz" && this.mod) return root.child(quizView(this, t));
-    if (this.phase === "result" && this.mod && this.result) return root.child(resultView(this, t));
-    if (this.phase === "practice" && this.mod && this.pr) return root.child(practiceView(this, t));
-    return root.child(homeView(this, t));
+      .on_size_change((size, cx) => { if (size.width !== this.width || size.height !== this.height) { this.width = size.width; this.height = size.height; cx.notify(); } });
+    return root.child(this.screen(t))
+      // The settings panel sits under the gear in the header, and is never taller than the pane.
+      .when(this.shortcuts.open, el => el.child(this.shortcuts.panel(t, { top: 50, right: 12, maxHeight: Math.max(120, Math.min(420, (this.height || 560) - 140)) })));
+  }
+
+  /** The screen for the phase Tutor is in. */
+  screen(t) {
+    if (this.phase === "setup") return setupView(this, t);
+    if (this.phase === "build" && this.job) return buildView(this, t);
+    if (this.phase === "lesson" && this.mod) return lessonView(this, t);
+    if (this.phase === "quiz" && this.mod) return quizView(this, t);
+    if (this.phase === "result" && this.mod && this.result) return resultView(this, t);
+    if (this.phase === "practice" && this.mod && this.pr) return practiceView(this, t);
+    return homeView(this, t);
   }
 }

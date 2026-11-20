@@ -21,7 +21,8 @@ import { browserView } from "./views/browser.js";
 export const TABS = ["queue", "playlists", "search", "devices"];
 
 /**
- * What each key does. Keys are spelled as Herdr reports them (`event.keystroke`).
+ * What the keys that are not shortcuts do: they always work, and the settings cannot change them.
+ * Keys are spelled as Herdr reports them (`event.keystroke`).
  * @type {Record<string, (b: Browser, cx: Context) => void>}
  */
 const KEYS = {
@@ -34,24 +35,52 @@ const KEYS = {
   k: (b, cx) => b.move(-1, cx),
   up: (b, cx) => b.move(-1, cx),
   enter: (b, cx) => b.activate(cx),
-  space: (b, cx) => b.now.toggle(cx),
-  n: (b, cx) => b.now.next(cx),
-  b: (b, cx) => b.now.previous(cx),
-  "[": (b, cx) => b.now.seekBy(-SEEK_STEP_MS, cx),
-  "]": (b, cx) => b.now.seekBy(SEEK_STEP_MS, cx),
-  "-": (b, cx) => b.now.volumeBy(-VOLUME_STEP, cx),
-  "=": (b, cx) => b.now.volumeBy(VOLUME_STEP, cx),
-  z: (b, cx) => b.now.toggleShuffle(cx),
-  r: (b, cx) => b.now.cycleRepeat(cx),
-  u: (b, cx) => b.showTab("queue", cx),
-  p: (b, cx) => b.showTab("playlists", cx, true),
-  s: (b, cx) => b.startSearch(cx),
-  d: (b, cx) => b.showTab("devices", cx),
-  a: (b, cx) => b.addSelectedToQueue(cx),
   backspace: (b, cx) => b.back(cx),
   escape: (b, cx) => b.back(cx),
   q: (b) => b.dialog.close(),
-  "shift-x": (b, cx) => b.dialog.signOut(cx),
+};
+
+/**
+ * The shortcuts: a user can turn each one off in the settings, or change its key. `key` is the
+ * key it starts with, spelled as Herdr reports it. The keys that move around (j, k, h, l and the
+ * arrows), enter, backspace, esc, q and , always work, and so does every button.
+ * @type {import("./kit/shortcuts.js").Shortcut[]}
+ */
+export const SHORTCUTS = [
+  { id: "play", key: "space", what: "play or pause" },
+  { id: "next", key: "n", what: "next track" },
+  { id: "previous", key: "b", what: "previous track" },
+  { id: "seek-back", key: "[", what: "seek back" },
+  { id: "seek-ahead", key: "]", what: "seek ahead" },
+  { id: "volume-down", key: "-", what: "volume down" },
+  { id: "volume-up", key: "=", what: "volume up" },
+  { id: "shuffle", key: "z", what: "shuffle" },
+  { id: "repeat", key: "r", what: "repeat" },
+  { id: "queue", key: "u", what: "queue tab" },
+  { id: "playlists", key: "p", what: "playlists tab" },
+  { id: "search", key: "s", what: "search" },
+  { id: "devices", key: "d", what: "devices tab" },
+  { id: "add", key: "a", what: "add to queue" },
+  { id: "sign-out", key: "shift-x", what: "sign out" },
+];
+
+/** What each shortcut does, by its id. @type {Record<string, (b: Browser, cx: Context) => void>} */
+const SHORTCUT_OF = {
+  play: (b, cx) => b.now.toggle(cx),
+  next: (b, cx) => b.now.next(cx),
+  previous: (b, cx) => b.now.previous(cx),
+  "seek-back": (b, cx) => b.now.seekBy(-SEEK_STEP_MS, cx),
+  "seek-ahead": (b, cx) => b.now.seekBy(SEEK_STEP_MS, cx),
+  "volume-down": (b, cx) => b.now.volumeBy(-VOLUME_STEP, cx),
+  "volume-up": (b, cx) => b.now.volumeBy(VOLUME_STEP, cx),
+  shuffle: (b, cx) => b.now.toggleShuffle(cx),
+  repeat: (b, cx) => b.now.cycleRepeat(cx),
+  queue: (b, cx) => b.showTab("queue", cx),
+  playlists: (b, cx) => b.showTab("playlists", cx, true),
+  search: (b, cx) => b.startSearch(cx),
+  devices: (b, cx) => b.showTab("devices", cx),
+  add: (b, cx) => b.addSelectedToQueue(cx),
+  "sign-out": (b, cx) => b.dialog.signOut(cx),
 };
 
 export class Browser {
@@ -249,7 +278,12 @@ export class Browser {
       if (e.key === "escape" || e.key === "tab") { this.stopTyping(); cx.notify(); cx.stop_propagation(); }
       return;
     }
-    const action = KEYS[e.keystroke];
+    // The settings panel: its opening key, and every key while it is open.
+    if (this.dialog.shortcuts.key(e, cx)) return;
+    // The settings say which key each shortcut is on, and a shortcut that is turned off has no
+    // key. A key the user gave to a shortcut wins over the keys that are not shortcuts.
+    const id = this.dialog.shortcuts.idFor(e.keystroke);
+    const action = id ? SHORTCUT_OF[id] : KEYS[e.keystroke];
     if (!action) return;
     action(this, cx);
     cx.stop_propagation();

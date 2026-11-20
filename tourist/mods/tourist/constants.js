@@ -17,6 +17,38 @@ export const PASSES = [
   { key: "s", id: "since", label: "Changes since your last review" },
   { key: "w", id: "whole", label: "The whole PR", hint: "every change, as on a first review" },
 ];
+/**
+ * The keys a user can turn off or change in the settings. A letter that does different things on
+ * different screens has an entry per thing. The arrows, the letters and numbers that pick a row,
+ * enter, tab, esc, b for back, q, y and n always work, and so does every button. A row marked
+ * `fixed` stands for several keys, so its keys cannot be changed.
+ * @type {import("./kit/shortcuts.js").Shortcut[]}
+ */
+export const SHORTCUTS = [
+  { id: "next", key: "j", what: "next stop" },
+  { id: "prev", key: "k", what: "previous stop" },
+  { id: "scroll-down", key: "shift-j", what: "scroll the code down" },
+  { id: "scroll-up", key: "shift-k", what: "scroll the code up" },
+  { id: "deeper", key: "d", what: "go deeper on this stop" },
+  { id: "technical", key: "t", what: "explain more technically" },
+  { id: "ask", key: "a  /", what: "ask about this stop", fixed: true },
+  { id: "explain", key: "e", what: "explain this file, or why a check failed" },
+  { id: "open", key: "o", what: "open the file, PR, check or review" },
+  { id: "split", key: "s", what: "code beside or above the text" },
+  { id: "files", key: "b", what: "show or hide the file list (PR tour)" },
+  { id: "viewed", key: "v", what: "mark the file viewed" },
+  { id: "review", key: "p", what: "review the PR, and post the review" },
+  { id: "fix", key: "f", what: "fix your comments" },
+  { id: "checks", key: "c", what: "open the checks" },
+  { id: "merge", key: "m", what: "merge screen, and merge there" },
+  { id: "replan", key: "r", what: "plan a saved tour again" },
+  { id: "refresh", key: "r", what: "refresh the checks" },
+  { id: "reply", key: "r a /", what: "reply to the fix agent", fixed: true },
+  { id: "push", key: "p", what: "push the fix" },
+  { id: "discard", key: "x", what: "discard the fix" },
+  { id: "agent", key: "a", what: "switch agent (setup)" },
+  { id: "zoom", key: "z", what: "zoom this pane" },
+];
 // Read-only tools. Claude can look at the repo but never change it.
 export const TOOLS = ["--allowedTools", "Read", "Grep", "Glob", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(git status:*)"];
 // A fix run may also edit files. It runs in its own worktree, and still can't run other commands.

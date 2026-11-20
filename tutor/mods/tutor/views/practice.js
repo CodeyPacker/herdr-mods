@@ -56,7 +56,10 @@ export function practiceView(v, t) {
   const header = paneHeader(t)
     .child(div().flex_none().text_size(11.5).text_color(t.dim).child(`Practice ${pr.i + 1} / ${pr.exs.length}`))
     .child(div().flex_1().min_w(0).truncate().font_semibold().child(ex.title))
-    .child(div().max_w(240).truncate().text_size(11.5).text_color(t.dim).child(mod.title));
+    .child(div().max_w(240).truncate().text_size(11.5).text_color(t.dim).child(mod.title))
+    .child(v.shortcuts.button(t));
+  // The key that opens the file, or the button's name when its key is turned off.
+  const edit = v.shown("practice-edit", "e") || "Edit";
   const passed = Boolean(pr.result?.passed);
   const hints = pr.hints.map((h, i) => v_flex().gap(4).pt(6).border_t_1().border_color(t.border)
     .child(noteLabel(t, h.label)).child(TextView.markdown(`hint-${key}-${i}`, h.text).selectable()));
@@ -65,8 +68,8 @@ export function practiceView(v, t) {
     .child(TextView.markdown(`prompt-${key}`, String(ex.prompt)).selectable())
     .child(div().text_size(11.5).text_color(t.dim)
       .child(v.settings.editor === "vscode"
-        ? `e opens ${file} in VS Code. Each save runs it.`
-        : `e opens ${file} in Neovim on the right. Each save runs it. Keys reach Tutor only when its pane has the keyboard: move between panes with Herdr's pane keys.`))
+        ? `${edit} opens ${file} in VS Code. Each save runs it.`
+        : `${edit} opens ${file} in Neovim on the right. Each save runs it. Keys reach Tutor only when its pane has the keyboard: move between panes with Herdr's pane keys.`))
     .child(div().text_size(13).font_semibold().child(status(v, t)))
     .child(results(v, t))
     .children(hints)
@@ -81,7 +84,7 @@ export function practiceView(v, t) {
       .child(banner(t, `Passed. Here is how ${repo} writes ${ex.concept}.`, t.ansi2))
       .child(h_flex().id("source-file").gap(8).cursor_pointer().hover(st => st.bg(t.hover)).on_click(() => v.openPracticeSource())
         .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.accent).font_family(mono()).child(lg.file))
-        .child(div().flex_none().text_size(11.5).text_color(t.dim).child(`lines ${lg.start}–${lg.end}  ·  o opens`)))
+        .child(div().flex_none().text_size(11.5).text_color(t.dim).child(`lines ${lg.start}–${lg.end}  ·  ${v.shown("open-file", "o") || "click"} opens`)))
       .child(pr.source ? editorBox(t, pr.source, lg.end - lg.start + 1)
         : div().text_size(12).text_color(pr.sourceError ? t.ansi1 : t.dim).child(pr.sourceError ?? "Loading…"))
       .child(div().text_size(12).text_color(t.dim).child(`Compare: what does ${repo} add or do differently from your version, and why?`))));
@@ -98,15 +101,15 @@ export function practiceView(v, t) {
       .child(button(t, "confirm-no", "Cancel", "any key", true, cx => { pr.confirm = null; cx.notify(); }));
   } else {
     const hint = v.canAsk();
-    bar.child(button(t, "pedit", "Edit", "e", true, cx => { v.practiceEdit(cx); cx.notify(); }))
-      .child(button(t, "prun", "Run", "r", true, cx => { v.practiceRun(cx); cx.notify(); }))
-      .child(button(t, "phint", "Hint", "h", hint, cx => { v.practiceHint(cx); cx.notify(); }))
-      .child(button(t, "pask", "Ask", "a", hint, cx => { v.startAsking(cx); cx.notify(); }))
-      .child(button(t, "psol", "Solution", "x", true, cx => { pr.confirm = "solution"; cx.notify(); }))
-      .child(button(t, "preset", "Reset", "c", true, cx => { pr.confirm = "reset"; cx.notify(); }))
+    bar.child(button(t, "pedit", "Edit", v.shown("practice-edit", "e"), true, cx => { v.practiceEdit(cx); cx.notify(); }))
+      .child(button(t, "prun", "Run", v.shown("practice-run", "r"), true, cx => { v.practiceRun(cx); cx.notify(); }))
+      .child(button(t, "phint", "Hint", v.shown("practice-hint", "h"), hint, cx => { v.practiceHint(cx); cx.notify(); }))
+      .child(button(t, "pask", "Ask", v.shown("ask", "a"), hint, cx => { v.startAsking(cx); cx.notify(); }))
+      .child(button(t, "psol", "Solution", v.shown("practice-solution", "x"), true, cx => { pr.confirm = "solution"; cx.notify(); }))
+      .child(button(t, "preset", "Reset", v.shown("practice-reset", "c"), true, cx => { pr.confirm = "reset"; cx.notify(); }))
       .child(button(t, "pprev", "Previous", "k", pr.i > 0, cx => { v.practiceMove(-1, cx); cx.notify(); }))
       .child(button(t, "pnext", "Next", "j", pr.i < pr.exs.length - 1, cx => { v.practiceMove(1, cx); cx.notify(); }))
-      .child(button(t, "psource", `Open in ${repo}`, "o", passed, cx => v.openPracticeSource(cx)))
+      .child(button(t, "psource", `Open in ${repo}`, v.shown("open-file", "o"), passed, cx => v.openPracticeSource(cx)))
       .child(button(t, "pback", "Back", "esc", true, cx => { v.practiceBack(cx); cx.notify(); }));
   }
   // The ask box is only drawn while asking, so practice keys can never land in it.

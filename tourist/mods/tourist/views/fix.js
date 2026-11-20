@@ -14,7 +14,8 @@ export function fixView(v, t) {
   const f = v.fix, pr = v.pr;
   const header = paneHeader(t)
     .child(paneTitle(t, `Fix for PR #${pr.number}`))
-    .child(paneDetail(t, `${f.count} comment${f.count === 1 ? "" : "s"} · worktree ${f.path ?? "…"}`));
+    .child(paneDetail(t, `${f.count} comment${f.count === 1 ? "" : "s"} · worktree ${f.path ?? "…"}`))
+    .child(v.shortcuts.button(t));
   let body;
   if (f.phase === "running" && !f.summary) {
     body = v_flex().flex_1().items_center().justify_center().gap(8).p(24)
@@ -47,8 +48,10 @@ export function fixView(v, t) {
   const reply = div().px(14).pb(8).child(textInput(t, v.replyInput, true));
   const bar = paneBar(t)
     .child(button(t, "fix-back", "Back to tour", "b", true, (_e, cx) => { v.closeFix(); cx.notify(); }))
-    .child(button(t, "fix-reply", "Reply to the agent", "r", canReply, (_e, cx) => { v.startReply(cx); cx.notify(); }))
-    .child(button(t, "fix-push", `Push to ${pr.head}`, "p", canPush, (_e, cx) => { v.pushFix(cx); cx.notify(); }))
-    .child(button(t, "fix-discard", "Discard fix", "x", canDiscard, (_e, cx) => { v.discardFix(cx); cx.notify(); }));
-  return v_flex().flex_1().min_h(0).child(header).child(body).when(v.replying, el => el.child(reply)).child(bar);
+    .child(button(t, "fix-reply", "Reply to the agent", v.keyOf("reply", "r"), canReply, (_e, cx) => { v.startReply(cx); cx.notify(); }))
+    .child(button(t, "fix-push", `Push to ${pr.head}`, v.keyOf("push", "p"), canPush, (_e, cx) => { v.pushFix(cx); cx.notify(); }))
+    .child(button(t, "fix-discard", "Discard fix", v.keyOf("discard", "x"), canDiscard, (_e, cx) => { v.discardFix(cx); cx.notify(); }));
+  return v_flex().flex_1().min_h(0).child(header).child(body).when(v.replying, el => el.child(reply))
+    // The bar of key buttons is a key hint: it goes when key hints are hidden. The keys still work.
+    .when(v.shortcuts.showHints, el => el.child(bar));
 }

@@ -42,7 +42,7 @@ export function confirmDialog(v, t) {
     return card(t, `Merged into ${v.pr.base}`, `PR #${v.pr.number}, ${method ? method.label.toLowerCase() : "merged"}.`, [
       button(t, "merged-back", "Back to tour", "b", true, (_e, cx) => { v.closeMerge(); cx.notify(); }),
       button(t, "merged-new", "New tour", "q", true, (_e, cx) => { v.reset(cx); cx.notify(); }),
-      button(t, "merged-open", "Open PR", "o", true, (_e, cx) => { v.openPR(); cx.notify(); }),
+      button(t, "merged-open", "Open PR", v.keyOf("open", "o"), true, (_e, cx) => { v.openPR(); cx.notify(); }),
     ]);
   }
   const c = pendingConfirm(v);

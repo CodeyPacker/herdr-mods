@@ -1,6 +1,7 @@
 // The Spotify dialog's shell. It draws the frame, owns the keyboard, and shows one of two
 // parts: the sign-in screens (signin.js) or the player with its lists (browser.js).
 import { div } from "gpui-kit";
+import { h_flex } from "gpui-base";
 import { props, closeOverlay } from "herdr";
 import { freshAuth, signOut } from "./auth.js";
 import { loadAuth } from "./store.js";
@@ -8,9 +9,10 @@ import { markAuthChanged, markDialogOpened } from "./signals.js";
 import { colors, SIZE } from "./kit/theme.js";
 import { frame } from "./kit/frame.js";
 import { iconPath } from "./ui.js";
-import { SPOTIFY_GREEN } from "./constants.js";
+import { MOD, SPOTIFY_GREEN } from "./constants.js";
 import { SignIn } from "./signin.js";
-import { Browser } from "./browser.js";
+import { Browser, SHORTCUTS } from "./browser.js";
+import { Shortcuts } from "./kit/shortcuts.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 
@@ -23,6 +25,8 @@ export class Dialog {
     this.width = 860;
     this.handle = cx.focus_handle();
     this.handle.focus();
+    /** The settings panel: a switch per shortcut key of the player, and each key can be changed. It opens with the keyboard out of the search box. */
+    this.shortcuts = new Shortcuts({ mod: MOD, keys: SHORTCUTS, rebind: true, onOpen: () => { if (this.part instanceof Browser) this.part.stopTyping(); } });
     markDialogOpened();
     cx.spawn(async (cx) => { await this.load(cx); cx.notify(); });
   }
@@ -49,6 +53,7 @@ export class Dialog {
   /** @param {Context} cx @param {string} clientId @param {string | null} error */
   showSignIn(cx, clientId, error) {
     if (this.part instanceof Browser) this.part.stop();
+    this.shortcuts.hide();
     this.part = new SignIn(this);
     this.part.init(cx, clientId, error);
   }
@@ -83,6 +88,8 @@ export class Dialog {
   render(_cx) {
     const t = colors();
     const body = this.part ? this.part.render(t) : div().text_size(12.5).text_color(t.dim).child("Loading…");
+    // The settings are the player's: the sign-in screens have no shortcut keys.
+    const player = this.part instanceof Browser;
     return frame(t, {
       id: "spotify",
       title: "Spotify",
@@ -92,6 +99,8 @@ export class Dialog {
       fill: true,
       onKey: (e, cx) => this.part?.key(e, cx),
       onResize: (width, cx) => { if (width !== this.width) { this.width = width; cx.notify(); } },
-    }).child(body);
+      details: player ? h_flex().flex_1().justify_end().child(this.shortcuts.button(t)) : undefined,
+    }).child(body)
+      .when(player && this.shortcuts.open, (el) => this.shortcuts.guard(el).child(this.shortcuts.panel(t)));
   }
 }

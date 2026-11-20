@@ -4,13 +4,13 @@ import { keyButton } from "./kit/controls.js";
 import { tag } from "./kit/pane.js";
 import { languages } from "./languages/index.js";
 
-/** @param {import("./languages/types.js").LanguagePack} language @param {boolean} switching */
-function pages(language, switching) {
+/** @param {import("./languages/types.js").LanguagePack} language @param {boolean} switching @param {string} open the key that opens the editor, "" for none */
+function pages(language, switching, open) {
   return [
     { title: "Practice in your own editor", intro: "Set up your languages and editor. Then choose a language, topic, and exercise to practice.", next: "Get started" },
     { title: "Set up your languages", intro: "You can keep several languages ready to use. Adding one keeps your other languages and progress saved.", next: switching ? "Back to languages" : `Set up ${language.name}` },
     { title: "Prepare this computer", intro: `Node.js runs the practice engine. ${language.name} also needs software that you install yourself. These checks inspect your computer without installing anything.`, next: "Set up editor" },
-    { title: "Connect your editor", intro: "Neovim opens automatically beside practice in a 50/50 split. VS Code opens when you press o. Choose once, then decide whether to save it as your default.", next: "Check editor" },
+    { title: "Connect your editor", intro: `Neovim opens automatically beside practice in a 50/50 split. VS Code opens when you ${open ? `press ${open}` : "choose Open editor"}. Choose once, then decide whether to save it as your default.`, next: "Check editor" },
     { title: "Your first repetition", intro: "You are ready to practice. Here is how the editor and practice panel work together.", next: "Start practicing" },
   ];
 }
@@ -26,13 +26,17 @@ function requirement(t, name, result) {
  * @param {import("./kit/theme.js").Theme} t
  * @param {{ step: number, busy: boolean, requirements: import("./types.js").SetupRequirements | null,
  *   editor: "neovim" | "vscode" | null, offerDefault: boolean, language: import("./languages/types.js").LanguagePack,
- *   activeLanguageId: string, enabled: string[], completed: boolean,
+ *   activeLanguageId: string, enabled: string[], completed: boolean, keyOf: (id: string) => string,
  *   tutorContent: () => ReturnType<typeof v_flex>, editorContent: () => ReturnType<typeof v_flex>, action: (action: string, cx: import("gpui-kit").Context) => void }} options
+ *   `keyOf`: the key a shortcut is on now, "" when it is off or has none
  */
 export function setupPanel(t, options) {
   const { step, busy, requirements, editor, offerDefault, language, action } = options;
   const switching = options.completed && options.enabled.includes(language.id);
-  const all = pages(language, switching);
+  const keyOf = options.keyOf;
+  // How a sentence names a control: by its key, or by its button when the key is off.
+  const press = (/** @type {string} */ id, /** @type {string} */ button) => keyOf(id) ? `Press ${keyOf(id)}` : `Choose ${button}`;
+  const all = pages(language, switching, keyOf("open"));
   const page = all[step];
   const requirementsReady = requirements?.node.ready && requirements?.language.ready;
   const canContinue = !busy && (step !== 2 || requirementsReady) && (step !== 3 || (editor && !offerDefault));
@@ -40,7 +44,7 @@ export function setupPanel(t, options) {
     .child(div().text_size(11).text_color(t.accent).child(`SETUP · ${step + 1} OF ${all.length}`))
     .child(div().text_size(22).font_semibold().child(page.title))
     .child(div().text_color(t.muted).child(page.intro))
-    .when(step === 0, element => element.child(div().child("Use l Languages to choose what to practice or add another language. Return here anytime with ? Setup.")))
+    .when(step === 0, element => element.child(div().child(`Use ${keyOf("languages") ? `${keyOf("languages")} ` : ""}Languages to choose what to practice or add another language. Return here anytime with ${keyOf("setup") ? `${keyOf("setup")} ` : ""}Setup.`)))
     .when(step === 0, element => element.child(options.tutorContent()))
     .when(step === 1, element => element.children(languages.map((pack, index) => {
       const chosen = pack.id === language.id;
@@ -69,9 +73,9 @@ export function setupPanel(t, options) {
     .when(step === 4, element => element.child(v_flex().p(12).gap(10).rounded(8).bg(t.raised)
       .child(div().child("1. Choose a language, then a topic and exercise. Use j/k to move and Enter to choose."))
       .child(div().child(`2. Write only your answer in ${language.answerFile}. You can replace the entire file.`))
-      .child(div().child("3. Save in your editor. Your code runs automatically and results appear in the practice panel. Use o to reopen the editor."))
-      .child(div().child("4. Press h for progressively stronger hints. Press a to reveal an answer."))
-      .child(div().child("5. Press n for another exercise in the same topic, or r to repeat. Nothing advances you to another topic automatically."))))
+      .child(div().child(`3. Save in your editor. Your code runs automatically and results appear in the practice panel. Use ${keyOf("open") || "Open editor"} to reopen the editor.`))
+      .child(div().child(`4. ${press("hint", "Hint")} for progressively stronger hints. ${press("answer", "Show answer")} to reveal an answer.`))
+      .child(div().child(`5. ${press("next", "Another exercise")} for another exercise in the same topic, or ${keyOf("repeat") || "Repeat"} to repeat. Nothing advances you to another topic automatically.`))))
     .child(h_flex().gap(8).flex_wrap()
       .when(step > 0, element => element.child(keyButton(t, "setup-back", "b", "Back", !busy, cx => action("setup-back", cx))))
       .child(keyButton(t, "setup-next", "enter", page.next, Boolean(canContinue), cx => action("setup-next", cx))));

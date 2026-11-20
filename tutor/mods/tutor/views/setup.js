@@ -16,7 +16,12 @@ export function setupView(v, t) {
   const knownText = me.known.length ? me.known.join(", ") : "nothing yet";
   const compareText = me.compare ? `lessons compare to ${me.compare}` : me.known.length ? `you know ${lang.name} already` : "lessons start from scratch";
   const header = paneHeader(t).child(paneTitle(t, "Tutor"))
-    .child(paneDetail(t, "Learn a language from a codebase you pick"));
+    .child(paneDetail(t, "Learn a language from a codebase you pick"))
+    .child(v.shortcuts.button(t));
+  // The hints here name keys, so each shows only while its key is on.
+  const folder = !v.shortcuts.isHidden("setup-folder"), choices = !v.shortcuts.isHidden("setup-choices");
+  // The keys "You know" and Practice are on now. "" when turned off or hidden.
+  const known = v.shown("setup-known"), practice = v.shown("practice");
   const field = (label, value, keys) => h_flex().gap(10).px(12).py(2).items_center().text_size(12.5)
     .child(div().flex_none().w(80).text_color(t.dim).child(label))
     .child(div().flex_1().min_w(0).truncate().child(value))
@@ -25,16 +30,16 @@ export function setupView(v, t) {
   const body = v_flex().w_full().px(10).pb(10).gap(2)
     .child(sectionLabel(t, "New course").px(12))
     .child(listRow(t, { id: "setup-new", on: s.at === 0, tall: true, click: cx => { s.at = 0; v.setupEnter(cx); cx.notify(); } })
-      .child(rowText(t, `Build a ${lang.name} course`, s.path ? `from ${s.path}` : "Pick a folder first: e types one, b browses")))
-    .child(field("Codebase", s.path || "none yet", "e edit  ·  b browse"))
+      .child(rowText(t, `Build a ${lang.name} course`, s.path ? `from ${s.path}` : folder ? "Pick a folder first: e types one, b browses" : "Pick a folder first")))
+    .child(field("Codebase", s.path || "none yet", folder ? "e edit  ·  b browse" : ""))
     .when(s.editing, el => el.child(div().px(12).py(4).child(textInput(t, v.pathInput, true))))
-    .child(field("Language", lang.name, many ? "l changes" : "more later"))
-    .child(field("You know", `${knownText}  ·  ${compareText}`, "w edit"))
+    .child(field("Language", lang.name, !many ? "more later" : choices ? "l changes" : ""))
+    .child(field("You know", `${knownText}  ·  ${compareText}`, known ? `${known} edit` : ""))
     .when(s.editingKnown, el => el.child(div().px(12).py(4).child(textInput(t, v.knownInput, true))))
-    .child(field("Editor", EDITORS[v.settings.editor], "v changes"))
-    .child(field("Agent", `${AGENTS[v.settings.agent]}${v.agentOk === false ? "  ·  not found on PATH" : ""}`, "a changes"))
+    .child(field("Editor", EDITORS[v.settings.editor], choices ? "v changes" : ""))
+    .child(field("Agent", `${AGENTS[v.settings.agent]}${v.agentOk === false ? "  ·  not found on PATH" : ""}`, choices ? "a changes" : ""))
     .child(div().px(12).pt(6).text_size(11.5).text_color(t.dim)
-      .child(`${AGENTS[v.settings.agent]} reads the repo and plans 10 to 20 modules, pinned to its current commit. Each module is written the first time you open it, and its practice the first time you press p. Nothing in the repo is changed. What you know is kept with each course; the editor and agent are shared by all of them.`));
+      .child(`${AGENTS[v.settings.agent]} reads the repo and plans 10 to 20 modules, pinned to its current commit. Each module is written the first time you open it, and its practice the first time you ${practice ? `press ${practice}` : "open its practice"}. Nothing in the repo is changed. What you know is kept with each course; the editor and agent are shared by all of them.`));
   if (s.courses.length) {
     body.child(sectionLabel(t, "Your courses").px(12));
     s.courses.forEach((c, i) => {
@@ -46,12 +51,12 @@ export function setupView(v, t) {
   }
   const bar = paneBar(t)
     .child(button(t, "setup-go", s.at === 0 ? "Build" : "Open", "enter", s.at > 0 || Boolean(s.path), cx => { v.setupEnter(cx); cx.notify(); }))
-    .child(button(t, "setup-edit", "Edit folder", "e", true, cx => { v.editPath(cx); cx.notify(); }))
-    .child(button(t, "setup-browse", "Browse", "b", true, cx => { v.browse(cx); cx.notify(); }))
-    .child(button(t, "setup-lang", "Language", "l", many, cx => { v.nextLanguage(); cx.notify(); }))
-    .child(button(t, "setup-known", "You know", "w", true, cx => { v.editKnown(cx); cx.notify(); }))
-    .child(button(t, "setup-editor", "Editor", "v", true, cx => { v.nextEditor(); cx.notify(); }))
-    .child(button(t, "setup-agent", "Agent", "a", true, cx => { v.nextAgent(cx); cx.notify(); }))
+    .child(button(t, "setup-edit", "Edit folder", folder ? "e" : "", true, cx => { v.editPath(cx); cx.notify(); }))
+    .child(button(t, "setup-browse", "Browse", folder ? "b" : "", true, cx => { v.browse(cx); cx.notify(); }))
+    .child(button(t, "setup-lang", "Language", choices ? "l" : "", many, cx => { v.nextLanguage(); cx.notify(); }))
+    .child(button(t, "setup-known", "You know", known, true, cx => { v.editKnown(cx); cx.notify(); }))
+    .child(button(t, "setup-editor", "Editor", choices ? "v" : "", true, cx => { v.nextEditor(); cx.notify(); }))
+    .child(button(t, "setup-agent", "Agent", choices ? "a" : "", true, cx => { v.nextAgent(cx); cx.notify(); }))
     .child(button(t, "setup-move", "Move", "j k", s.courses.length > 0, () => {}))
     .child(button(t, "setup-back", "Back", "esc", Boolean(v.course), cx => { v.goHome(cx); cx.notify(); }));
   return v_flex().size_full().min_h(0).child(header).child(body).child(div().flex_1()).child(bar);
