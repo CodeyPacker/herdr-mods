@@ -424,7 +424,11 @@ export default class GitGood extends View {
   scrollDiff(row) {
     const fits = Math.max(1, Math.floor(this.diffHeight / LINE_H));
     this.diffTop = Math.max(0, Math.min(row, this.rows.length - fits));
-    if (this.rows.length) this.diffScroll.scroll_to_item(Math.min(this.diffTop + Math.floor(fits / 2), this.rows.length - 1), "center");
+    if (!this.rows.length) return;
+    // The very top is asked for by its own row: centering a row further down left the first
+    // hunk's heading, which is taller than a line, half out of sight.
+    if (this.diffTop === 0) this.diffScroll.scroll_to_item(0, "top");
+    else this.diffScroll.scroll_to_item(Math.min(this.diffTop + Math.floor(fits / 2), this.rows.length - 1), "center");
   }
 
   /** Selects a file row and shows its diff. @param {number} i @param {Context | AsyncContext} cx */
