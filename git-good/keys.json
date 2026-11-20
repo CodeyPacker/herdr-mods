@@ -1,0 +1,5 @@
+{
+  "global": {
+    "ctrl-a g": "mod.open:git-good"
+  }
+}
