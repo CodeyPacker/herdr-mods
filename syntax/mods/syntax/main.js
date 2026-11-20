@@ -13,6 +13,7 @@ import { defaultLanguage, findLanguage, languages } from "./languages/index.js";
 import { setupPanel } from "./setup-panel.js";
 import { languagePanel } from "./language-panel.js";
 import { tutorSettings, tutorChat } from "./tutor/panel.js";
+import { startTopic } from "./start-topic.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("./kit/theme.js").Theme} Theme */
@@ -103,6 +104,8 @@ export default class Syntax extends View {
     /** @type {string | null} */
     this.server = null;
     this.automaticEditorStarted = false;
+    /** @type {string | null} the topic another mod asked to open, until its language loads */
+    this.pendingTopic = null;
     this.laidOut = false;
     this.watching = false;
     /** @type {import("herdr").FolderWatch | null} */
@@ -239,6 +242,8 @@ export default class Syntax extends View {
     if (this.busy) return;
     this.busy = "Loading setup…";
     this.error = "";
+    /** @type {{ languageId: string, topicId: string } | null} */
+    let start = null;
     cx.spawn(async cx => {
       try {
         this.editor = await configuredEditor();
@@ -250,6 +255,7 @@ export default class Syntax extends View {
           this.tutorSettingsError = error instanceof Error ? error.message : String(error);
         }
         const status = await setupStatus();
+        start = startTopic(props()?.startTopic, status);
         this.setupCompleted = status.completed;
         this.enabledLanguages = status.enabled;
         this.useLanguage(findLanguage(status.languageId));
@@ -258,6 +264,8 @@ export default class Syntax extends View {
       } catch (error) {
         this.error = `Could not load setup: ${error instanceof Error ? error.message : String(error)}. If node cannot start, install Node.js 20 or newer and restart Herdr.`;
       } finally { this.busy = ""; cx.notify(); }
+      // Opened by another mod at a topic: switch to its language, then show the topic's exercises.
+      if (start && !this.error) { this.pendingTopic = start.topicId; this.perform("language", start.languageId, cx); }
 
     });
   }
@@ -394,6 +402,11 @@ export default class Syntax extends View {
       finally { this.practicePending = false; this.busy = ""; cx.notify(); }
       if (diff) this.openEditor(cx, diff);
       else this.startAutomaticEditor(cx);
+      if (action === "language" && this.pendingTopic) {
+        const topic = this.pendingTopic;
+        this.pendingTopic = null;
+        if (!this.error && this.screen === "topics") this.chooseTopic(topic, cx);
+      }
     });
   }
 
