@@ -284,7 +284,7 @@ export default class Tutor extends View {
         job.detail = `${info.root} at ${info.commit.slice(0, 7)}`;
         job.session = this.newSession(info.root);
         const course = await writeOutline(this.io(job, info), info, lang, known);
-        // With Practice Range installed, match modules to its topics now, while Claude has the
+        // With Practice Range installed, match modules to its topics now, while the agent has the
         // plan in mind. A failure here only means the match is made later, when first asked for.
         const topics = await practiceRangeTopics(lang.id).catch(() => null);
         if (topics) course.practiceRange = await writeMatches(this.io(job, info), course, topics, lang).catch(() => undefined);
