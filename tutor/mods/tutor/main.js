@@ -7,22 +7,26 @@
 //   course.js     where courses live, and reading the repo
 //   build.js      writing the plan, modules and exercises with Claude (validate.js checks them)
 //   progress.js   loading and saving a course's progress.json
-//   code.js       a stop's lines at the pinned commit, its editor, opening VS Code
+//   settings.js   the editor, agent and default "what I know" shared by every course
+//   learner.js    what the learner knows, and what lessons compare to
+//   code.js       a stop's lines at the pinned commit, its editor, opening files in an editor
 //   agent.js      the claude CLI
 //   prompts.js    every prompt
 //   practice.js   the practice files and runs
 //   views/        the setup, build, home, lesson, quiz, result and practice screens
 import { View } from "gpui-kit";
 import { InputState, ScrollHandle, v_flex } from "gpui-base";
-import { nextCommand, run, panes, focused, pickFolder, spaces, watchFolder } from "herdr";
+import { nextCommand, run, exec, panes, focused, pickFolder, spaces, watchFolder } from "herdr";
 import { colors } from "./kit/theme.js";
 import { assignLetters, navigateByLetter } from "./kit/letters.js";
-import { SPLIT_WIDTH, PASS_SHARE, RESERVED, DEEPER, LIKE_KNOWN, COMPARE } from "./constants.js";
+import { SPLIT_WIDTH, PASS_SHARE, RESERVED, DEEPER } from "./constants.js";
+import { learnerOf, likeKnownQuestion, parseKnown } from "./learner.js";
+import { EDITORS, loadSettings, saveSettings, cleanSettings, nextOf } from "./settings.js";
 import { LANGUAGES, DEFAULT_LANGUAGE, languageOf } from "./languages.js";
 import { currentSlug, setCurrent, slugFor, loadCourse, saveCourse, loadModule, saveModule, loadExercises, saveExercises, listCourses, repoInfo, checkRepo, courseDir } from "./course.js";
 import { writeOutline, writeModule, writeExercises } from "./build.js";
 import { fresh, loadProgress, saveProgress, merge } from "./progress.js";
-import { fileAt, codeState, liveLine, openInEditor } from "./code.js";
+import { fileAt, codeState, liveLine, openInVSCode, neovimOpenExpression } from "./code.js";
 import { AgentSession, haveClaude } from "./agent.js";
 import { framePrompt, stopPrompt, hintPrompt, practiceQuestionPrompt } from "./prompts.js";
 import { ensureWork, resetWork, readWork, runExercise, runSource, haveTool, workDir, workFile, editorPipe, reloadEditor } from "./practice.js";
@@ -42,10 +46,11 @@ export default class Tutor extends View {
     this.exercises = {};      // practice exercises by module id (null: not written yet, []: none)
     this.lines = new Map();   // file lines at a commit, by "commit:path", for writing and checking
     this.flash = null;        // one line of news under the home and lesson keys
-    this.setup = { path: "", lang: DEFAULT_LANGUAGE, at: 0, courses: [], editing: false };
+    this.setup = { path: "", lang: DEFAULT_LANGUAGE, at: 0, courses: [], editing: false, editingKnown: false, known: null };
+    this.settings = cleanSettings(null); // editor, agent and the default "what I know"
     this.job = null;          // the writing job the build screen shows
     this.pr = null; this.prGen = 0; this.practiceFrom = "home"; // the exercise shown, and where esc goes
-    this.editors = {};        // the Neovim terminal opened per exercise
+    this.editors = {};        // the Neovim terminal opened per exercise, and per course for reading ("<slug>/read")
     this.letters = [];        // the home list's letter per module
     this.nav = { at: 0, typed: "" };  // the home list's cursor and typed letters
     this.rowChild = [];       // the home list's child index per module, set by the view
@@ -67,12 +72,14 @@ export default class Tutor extends View {
     this.practiceScroll = ScrollHandle.new();
     this.input = InputState.new({ placeholder: "Ask about this code, then press enter" });
     this.pathInput = InputState.new({ placeholder: "The folder of a git repo, then press enter" });
-    for (const box of [this.input, this.pathInput]) {
+    this.knownInput = InputState.new({ placeholder: "Languages you know, first one to compare to: TypeScript, some SQL" });
+    for (const box of [this.input, this.pathInput, this.knownInput]) {
       box.on("focus", (_e, cx) => { this.typing = true; cx.notify(); });
       box.on("blur", (_e, cx) => { this.typing = false; cx.notify(); });
     }
     this.input.on("submit", (_e, cx) => { this.ask(cx); cx.notify(); });
     this.pathInput.on("submit", (_e, cx) => { this.setup.path = this.pathInput.value().trim(); this.setup.at = 0; this.leaveBox(); cx.notify(); });
+    this.knownInput.on("submit", (_e, cx) => { this.setup.known = parseKnown(this.knownInput.value()); this.setup.at = 0; this.leaveBox(); cx.notify(); });
     this.handle = cx.focus_handle();
     // The pane isn't drawn yet, so focus again once it is.
     this.handle.focus();
@@ -80,6 +87,7 @@ export default class Tutor extends View {
     cx.timer.after(400, () => { if (!this.typing) this.handle.focus(); });
     cx.spawn(async cx => { for (;;) { this.command(await nextCommand(), cx); cx.notify(); } });
     cx.spawn(async cx => {
+      this.settings = await loadSettings();
       const slug = await currentSlug();
       if (slug && await loadCourse(slug).catch(() => null)) await this.openCourse(slug, cx);
       else await this.openSetup(cx);
@@ -101,7 +109,7 @@ export default class Tutor extends View {
     this.cancelJob();
     this.leavePractice();
     this.code?.release(); this.homeScroll.release(); this.explainScroll.release(); this.quizScroll.release(); this.practiceScroll.release();
-    this.input.release(); this.pathInput.release();
+    this.input.release(); this.pathInput.release(); this.knownInput.release();
     await this.session?.stop();
     await hints?.stop();
   }
@@ -238,7 +246,9 @@ export default class Tutor extends View {
   setupEnter(cx) {
     const s = this.setup;
     if (s.at > 0) { const c = s.courses[s.at - 1]; if (c) this.openCourse(c.slug, cx); return; }
-    const lang = LANGUAGES[s.lang], path = s.path;
+    const lang = LANGUAGES[s.lang], path = s.path, known = this.setupKnown();
+    // What you know now is the default for the next course too.
+    if (JSON.stringify(known) !== JSON.stringify(this.settings.known)) this.changeSettings({ known });
     this.runJob({
       title: `Planning a ${lang.name} course`, detail: path,
       wait: "Claude reads the repo and plans 10 to 20 modules. This takes a few minutes. Modules are written later, one at a time, when you open them.",
@@ -251,7 +261,7 @@ export default class Tutor extends View {
         if (await loadCourse(slug).catch(() => null)) return slug;
         job.detail = `${info.root} at ${info.commit.slice(0, 7)}`;
         job.session = new AgentSession(info.root);
-        const course = await writeOutline(this.io(job, info), info, lang);
+        const course = await writeOutline(this.io(job, info), info, lang, known);
         await saveCourse(slug, course);
         return slug;
       },
@@ -428,13 +438,55 @@ export default class Tutor extends View {
   isSplit() { return this.split ?? this.width >= SPLIT_WIDTH; }
   toggleSplit() { this.split = !this.isSplit(); }
 
-  /** Opens the live file in VS Code at the line its anchor is on now. */
-  openEditor() {
+  /** Opens the live file in the editor at the line its anchor is on now. */
+  openEditor(cx) {
     const s = this.mod?.stops[this.idx];
     if (!s || this.phase !== "lesson") return;
     const root = this.course.root;
-    liveLine(root, s).then(line => openInEditor(`${root}/${s.file}`, line)).catch(() => {});
+    liveLine(root, s).then(line => this.openFileAt(`${root}/${s.file}`, line, cx)).catch(() => {});
   }
+
+  /**
+   * Opens a repo file at `line` to read. VS Code opens it in its window. Neovim opens it read-only
+   * in a pane to the right, and later files go to that same pane while it is open.
+   */
+  openFileAt(path, line, cx) {
+    if (this.settings.editor === "vscode") { openInVSCode(path, line); return; }
+    const key = `${this.slug}/read`, pipe = editorPipe(this.slug, "read");
+    if (this.editorOpen(key)) {
+      exec("nvim", ["--headless", "--server", pipe, "--remote-expr", neovimOpenExpression(path, line)], { timeout: 5000 }).catch(() => {});
+      run("pane.focus", { terminal: this.editors[key] });
+      return;
+    }
+    this.splitEditor(key, ["nvim", "--listen", pipe, "-R", `+${line}`, path], cx);
+  }
+
+  /** True when the editor pane remembered under `key` is still open. */
+  editorOpen(key) {
+    const term = this.editors[key];
+    return Boolean(term && panes().some(p => p.terminal === term));
+  }
+
+  /** Runs `argv` in a new pane to the right and remembers its terminal under `key`. */
+  splitEditor(key, argv, cx) {
+    const before = new Set(panes().map(p => p.pane));
+    run("pane.split", { direction: "right", argv });
+    // pane.split returns nothing, so find the new pane to know later whether it is still open.
+    const find = () => { const p = panes().find(p => !before.has(p.pane) && p.terminal); if (p) this.editors[key] = p.terminal; return Boolean(p); };
+    cx.timer.after(200, () => { if (!find()) cx.timer.after(800, find); });
+  }
+
+  /** Saves a change to the shared settings. A failed save keeps the change for this session. */
+  changeSettings(change) {
+    this.settings = cleanSettings({ ...this.settings, ...change });
+    saveSettings(this.settings).catch(e => { this.flash = `Could not save settings: ${e?.message ?? e}`; });
+  }
+
+  /** What you know, for the next course: what you typed on the setup screen, else the saved default. */
+  setupKnown() { return this.setup.known ?? this.settings.known; }
+
+  /** The learner this course is for. */
+  me() { return learnerOf(this.course, this.lang); }
 
   // ---- setup --------------------------------------------------------------------------------
 
@@ -460,6 +512,17 @@ export default class Tutor extends View {
     });
   }
 
+  /** w on the setup screen: type what you already know. */
+  editKnown(cx) {
+    this.knownInput.set_value(this.setupKnown().join(", "));
+    this.setup.editingKnown = true;
+    this.knownInput.focus();
+    cx.timer.after(50, () => this.knownInput.focus());
+  }
+
+  /** v on the setup screen: the next editor. */
+  nextEditor() { this.changeSettings({ editor: nextOf(EDITORS, this.settings.editor) }); }
+
   /** l on the setup screen: the next language. */
   nextLanguage() {
     const ids = Object.keys(LANGUAGES);
@@ -479,7 +542,7 @@ export default class Tutor extends View {
 
   /** Takes the keyboard back from the ask box and the folder box. */
   leaveBox() {
-    this.typing = false; this.asking = false; this.setup.editing = false;
+    this.typing = false; this.asking = false; this.setup.editing = false; this.setup.editingKnown = false;
     this.handle.focus();
   }
 
@@ -493,7 +556,10 @@ export default class Tutor extends View {
   }
 
   deeper(cx) { this.followUp("Deeper", DEEPER, cx); }
-  likeKnown(cx) { this.followUp(`Like ${COMPARE}`, LIKE_KNOWN, cx); }
+  likeKnown(cx) {
+    const compare = this.me().compare;
+    if (compare) this.followUp(`Like ${compare}`, likeKnownQuestion(compare), cx);
+  }
 
   /** Sends a question about the current stop and adds the answer under its explanation. */
   followUp(label, question, cx) {
@@ -508,7 +574,7 @@ export default class Tutor extends View {
     cx.timer.after(50, cx => { this.explainScroll.scroll_to_item(2); cx.notify(); });
     cx.spawn(async cx => {
       let prompt = stopPrompt(s, idx, question);
-      if (!session.id) prompt = `${framePrompt(this.course, this.mod, number, this.lang)}\n\n${prompt}`;
+      if (!session.id) prompt = `${framePrompt(this.course, this.mod, number, this.lang, this.me())}\n\n${prompt}`;
       let note;
       try { note = { label, text: await session.ask(prompt) }; }
       catch (e) { note = { label: `${label} (failed)`, text: String(e?.message ?? e) }; }
@@ -714,17 +780,18 @@ export default class Tutor extends View {
     });
   }
 
-  /** Opens the learner's file in Neovim in a pane to the right, unless this exercise's editor is open. */
+  /**
+   * Opens the learner's file in the editor. Neovim opens in a pane to the right, unless this
+   * exercise's editor is open. VS Code opens it in its window; saving there runs it too.
+   */
   practiceEdit(cx) {
     const ex = this.pr?.ex;
     if (!ex) return;
-    const all = panes(), key = `${this.slug}/${ex.id}`, term = this.editors[key];
-    if (term && all.some(p => p.terminal === term)) { run("pane.focus", { terminal: term }); return; }
-    const before = new Set(all.map(p => p.pane));
-    run("pane.split", { direction: "right", argv: ["nvim", "--listen", editorPipe(this.slug, ex.id), workFile(this.slug, ex.id, this.lang)] });
-    // pane.split returns nothing, so find the new pane to know later whether it is still open.
-    const find = () => { const p = panes().find(p => !before.has(p.pane) && p.terminal); if (p) this.editors[key] = p.terminal; return Boolean(p); };
-    cx.timer.after(200, () => { if (!find()) cx.timer.after(800, find); });
+    const file = workFile(this.slug, ex.id, this.lang);
+    if (this.settings.editor === "vscode") { openInVSCode(file, 1); return; }
+    const key = `${this.slug}/${ex.id}`;
+    if (this.editorOpen(key)) { run("pane.focus", { terminal: this.editors[key] }); return; }
+    this.splitEditor(key, ["nvim", "--listen", editorPipe(this.slug, ex.id), file], cx);
   }
 
   /** The next hint. The first three step up; every later one gives one more piece. */
@@ -732,7 +799,7 @@ export default class Tutor extends View {
     const pr = this.pr;
     if (!pr || pr.hinting || this.claude !== true) return;
     const n = pr.level + 1;
-    this.practiceChat(`Hint ${n}`, "Getting a hint", source => hintPrompt(pr.ex, source, pr.result, n, this.lang), cx, () => {
+    this.practiceChat(`Hint ${n}`, "Getting a hint", source => hintPrompt(pr.ex, source, pr.result, n, this.lang, this.me()), cx, () => {
       pr.level = n;
       this.recordPractice(pr.modId, pr.ex.id, p => { p.hints = Math.max(p.hints ?? 0, n); }, cx);
     });
@@ -742,7 +809,7 @@ export default class Tutor extends View {
   practiceAsk(q, cx) {
     const pr = this.pr;
     if (!pr || pr.hinting || this.claude !== true) return;
-    this.practiceChat(`You asked: ${q}`, "Asking", source => practiceQuestionPrompt(pr.ex, source, pr.result, q, this.lang), cx);
+    this.practiceChat(`You asked: ${q}`, "Asking", source => practiceQuestionPrompt(pr.ex, source, pr.result, q, this.lang, this.me()), cx);
   }
 
   /**
@@ -817,11 +884,11 @@ export default class Tutor extends View {
     else this.goHome(cx);
   }
 
-  openPracticeSource() {
+  openPracticeSource(cx) {
     const src = this.pr?.ex.source;
     if (!src || !this.pr.result?.passed) return;
     const root = this.course.root;
-    liveLine(root, src).then(line => openInEditor(`${root}/${src.file}`, line)).catch(() => {});
+    liveLine(root, src).then(line => this.openFileAt(`${root}/${src.file}`, line, cx)).catch(() => {});
   }
 
   // ---- keys and commands --------------------------------------------------------------------
@@ -835,7 +902,7 @@ export default class Tutor extends View {
     else if (c === "build" && p === "setup") this.setupEnter(cx);
     else if (c === "cancel" && p === "build") this.leaveJob(cx);
     else if (c === "retry-build" && p === "build") this.retryJob(cx);
-    else if (c === "open-editor") this.openEditor();
+    else if (c === "open-editor") this.openEditor(cx);
     else if (c.startsWith("open-")) { if (this.course) this.openModule(c.slice(5), cx); }
     else if (c === "next") this.press("j", cx);
     else if (c === "prev") this.press("k", cx);
@@ -859,7 +926,7 @@ export default class Tutor extends View {
       else if (what === "reset") this.practiceReset(cx);
       else if (what === "next") this.practiceMove(1, cx);
       else if (what === "prev") this.practiceMove(-1, cx);
-      else if (what === "open-source") this.openPracticeSource();
+      else if (what === "open-source") this.openPracticeSource(cx);
       else if (what === "back") this.practiceBack(cx);
     }
   }
@@ -887,6 +954,8 @@ export default class Tutor extends View {
       else if (k === "e") this.editPath(cx);
       else if (k === "b") this.browse(cx);
       else if (k === "l") this.nextLanguage();
+      else if (k === "w") this.editKnown(cx);
+      else if (k === "v") this.nextEditor();
       else if (k === "escape" && this.course) this.goHome(cx);
       else handled = false;
     } else if (this.phase === "build") {
@@ -913,7 +982,7 @@ export default class Tutor extends View {
       else if (k === "t") this.likeKnown(cx);
       else if (k === "q") this.startQuiz(cx);
       else if (k === "p") this.openPractice(this.modId, cx, "lesson");
-      else if (k === "o") this.openEditor();
+      else if (k === "o") this.openEditor(cx);
       else if (k === "s") this.toggleSplit();
       else if (k === "escape") { if (this.busy) this.stopAsking(); else this.goHome(cx); }
       else handled = false;
@@ -939,7 +1008,7 @@ export default class Tutor extends View {
       else if (k === "c") this.pr.confirm = "reset";
       else if (k === "j" || k === "down") this.practiceMove(1, cx);
       else if (k === "k" || k === "up") this.practiceMove(-1, cx);
-      else if (k === "o") this.openPracticeSource();
+      else if (k === "o") this.openPracticeSource(cx);
       else if (k === "escape") this.practiceBack(cx);
       else handled = false;
     } else handled = false;

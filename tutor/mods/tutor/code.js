@@ -1,4 +1,4 @@
-// Reading a stop's lines at the pinned commit, showing them, and opening the live file in VS Code.
+// Reading a stop's lines at the pinned commit, showing them, and opening the live file in an editor.
 import { EditorState } from "gpui-base";
 import { exec, readTextFile, settings, window } from "herdr";
 import { colors } from "./kit/theme.js";
@@ -27,8 +27,20 @@ export async function liveLine(root, stop) {
 }
 
 /** Opens `path` at `line` in VS Code. Needs `code` on PATH. */
-export function openInEditor(path, line) {
+export function openInVSCode(path, line) {
   const target = `${path}:${line}`;
   const win = window()?.platform === "windows";
   exec(win ? "cmd" : "code", win ? ["/c", "code", "-g", target] : ["-g", target]).catch(() => {});
+}
+
+/** A Vim string literal: single quotes, with each quote doubled. */
+const vimString = text => `'${String(text).replace(/'/g, "''")}'`;
+
+/**
+ * A --remote-expr that makes a running Neovim show `path` read-only at `line`. fnameescape keeps
+ * spaces and other special characters in the path safe. execute() returns the command's messages, which are empty here.
+ */
+export function neovimOpenExpression(path, line) {
+  const n = Math.max(1, Math.floor(Number(line) || 1));
+  return `execute('view +${n} ' . fnameescape(${vimString(path)}))`;
 }

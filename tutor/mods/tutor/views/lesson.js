@@ -6,7 +6,6 @@ import { settings } from "herdr";
 import { spinner, textInput } from "../kit/controls.js";
 import { paneHeader, paneBar } from "../kit/pane.js";
 import { button, noteLabel } from "../ui.js";
-import { COMPARE } from "../constants.js";
 
 /** `v` is the Tutor view: its state is read here and its methods run on clicks. */
 export function lessonView(v, t) {
@@ -45,17 +44,17 @@ export function lessonView(v, t) {
     .child(Scrollbar.vertical(explainId).absolute().inset_0());
   // The ask box is only drawn while asking, so lesson keys can never land in it.
   const ask = div().px(14).pb(8).child(textInput(t, v.input, true));
-  const chat = v.canAsk();
+  const chat = v.canAsk(), compare = v.me().compare;
   const last = v.idx === mod.stops.length - 1;
   const bar = paneBar(t)
     .child(button(t, "prev", "Previous", "k", v.idx > 0, cx => { v.move(-1, cx); cx.notify(); }))
     .child(button(t, "next", last ? "Quiz" : "Next", "j", true, cx => { v.move(1, cx); cx.notify(); }))
     .child(button(t, "askbtn", "Ask", "a", chat, cx => { v.startAsking(cx); cx.notify(); }))
     .child(button(t, "deeper", "Deeper", "d", chat, cx => { v.deeper(cx); cx.notify(); }))
-    .child(button(t, "compare", `Like ${COMPARE}`, "t", chat, cx => { v.likeKnown(cx); cx.notify(); }))
+    .when(Boolean(compare), el => el.child(button(t, "compare", `Like ${compare}`, "t", chat, cx => { v.likeKnown(cx); cx.notify(); })))
     .child(button(t, "quiz", "Quiz", "q", true, cx => { v.startQuiz(cx); cx.notify(); }))
     .child(button(t, "practice", "Practice", "p", v.canPractice(mod.id), cx => { v.openPractice(mod.id, cx, "lesson"); cx.notify(); }))
-    .child(button(t, "openfile", "Open", "o", true, () => v.openEditor()))
+    .child(button(t, "openfile", "Open", "o", true, cx => v.openEditor(cx)))
     .child(button(t, "layout", v.isSplit() ? "Stacked" : "Split", "s", true, cx => { v.toggleSplit(); cx.notify(); }))
     .child(button(t, "home", "Modules", "esc", true, cx => { v.goHome(cx); cx.notify(); }))
     .when(Boolean(v.flash), el => el.child(div().text_size(11.5).text_color(t.dim).child(v.flash)));

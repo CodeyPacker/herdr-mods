@@ -1,8 +1,9 @@
 // Every prompt Tutor sends to Claude: writing the course, and the chat in lessons and practice.
 // Plain JavaScript with no Herdr imports, so scripts can use it too.
-import { KNOWN, COMPARE } from "./constants.js";
+// `me` in every prompt is learnerOf(course, lang) from learner.js: { known, compare, who }.
 
-const learner = lang => `The learner knows ${KNOWN} well and is new to ${lang.name}.`;
+/** "Compare to X when it helps." or nothing, when the learner knows no other language. */
+const compareNote = me => me.compare ? ` Compare to ${me.compare} when it helps.` : "";
 const readAt = commit => `Read code at commit ${commit} with \`git show ${commit}:<path>\`, so line numbers match what the learner sees. \`git ls-files\` lists the files. The working tree may differ. Never change any file.`;
 const onlyJson = "Reply with only the JSON, no other text.";
 const courseList = course => course.modules.map((m, i) => `${i + 1}. ${m.title}: ${m.summary}`).join("\n");
@@ -10,9 +11,9 @@ const courseList = course => course.modules.map((m, i) => `${i + 1}. ${m.title}:
 // ---- writing the course -------------------------------------------------------------------
 
 /** Plans the course: parts and modules. `info` is { name, commit, count }. */
-export function outlinePrompt(info, lang) {
+export function outlinePrompt(info, lang, me) {
   return [
-    `You are planning a ${lang.name} course for one learner. ${learner(lang)}`,
+    `You are planning a ${lang.name} course for one learner. ${me.who}`,
     `The course teaches ${lang.name} from the real code in this repo, "${info.name}", which has ${info.count} ${lang.name} files.`,
     readAt(info.commit),
     ``,
@@ -35,9 +36,9 @@ export function outlinePrompt(info, lang) {
 }
 
 /** Writes one module: its intro, stops and quiz. */
-export function modulePrompt(course, entry, number, lang) {
+export function modulePrompt(course, entry, number, lang, me) {
   return [
-    `You are writing module ${number} of a ${lang.name} course taught from this repo, "${course.name}". ${learner(lang)}`,
+    `You are writing module ${number} of a ${lang.name} course taught from this repo, "${course.name}". ${me.who}`,
     `The repo: ${course.about ?? ""}`,
     readAt(course.commit),
     ``,
@@ -55,17 +56,17 @@ export function modulePrompt(course, entry, number, lang) {
     `- intro: two or three sentences on what the module covers and why this repo needs it.`,
     `- 4 to 7 stops. Each is one excerpt of 10 to 45 lines from one file. start and end are 1-based line numbers at the commit, both included. Check every range with git show before you answer.`,
     `- anchor: a short piece of text copied exactly from one line inside start..end.`,
-    `- body: 60 to 160 words. What the code does, then the ${lang.name} feature it shows, then how ${COMPARE} would do it. Plain words. Point to another module by number when it teaches a feature in depth.`,
-    `- Exactly 5 quiz questions, exactly 4 choices each. They test the ${lang.name} feature using this repo's code, not trivia about the repo. Wrong choices are what a ${COMPARE} developer would plausibly guess. Spread the right answers across all four positions. answer is the right choice's index, 0 to 3. stop is the index of the stop the question comes from. why is one or two sentences on why that choice is right and the tempting one is wrong.`,
+    `- body: 60 to 160 words. What the code does, then the ${lang.name} feature it shows${me.compare ? `, then how ${me.compare} would do it` : ""}. Plain words. Point to another module by number when it teaches a feature in depth.`,
+    `- Exactly 5 quiz questions, exactly 4 choices each. They test the ${lang.name} feature using this repo's code, not trivia about the repo. Wrong choices are what ${me.compare ? `a ${me.compare} developer` : "a learner"} would plausibly guess. Spread the right answers across all four positions. answer is the right choice's index, 0 to 3. stop is the index of the stop the question comes from. why is one or two sentences on why that choice is right and the tempting one is wrong.`,
     onlyJson,
   ].join("\n");
 }
 
 /** Writes a module's practice exercises. */
-export function exercisesPrompt(course, mod, entry, number, lang) {
+export function exercisesPrompt(course, mod, entry, number, lang, me) {
   const prefix = entry.id.slice(0, 2);
   return [
-    `You are writing practice exercises for module ${number}, "${entry.title}", of a ${lang.name} course taught from this repo, "${course.name}". ${learner(lang)}`,
+    `You are writing practice exercises for module ${number}, "${entry.title}", of a ${lang.name} course taught from this repo, "${course.name}". ${me.who}`,
     readAt(course.commit),
     ``,
     `The module's stops:`,
@@ -99,11 +100,11 @@ export function fixPrompt(problems) {
 // ---- lesson chat --------------------------------------------------------------------------
 
 /** The frame for a new lesson chat: who the learner is and how to answer. */
-export function framePrompt(course, mod, number, lang) {
+export function framePrompt(course, mod, number, lang, me) {
   return [
-    `You are helping someone learn ${lang.name}. ${learner(lang)}`,
+    `You are helping someone learn ${lang.name}. ${me.who}`,
     `This is module ${number}, "${mod.title}", of a ${lang.name} course taught from this repo, "${course.name}".`,
-    `Answer in simple words, in under 150 words unless asked for more. Compare to ${COMPARE} when it helps. Quote only short code.`,
+    `Answer in simple words, in under 150 words unless asked for more.${compareNote(me)} Quote only short code.`,
     readAt(course.commit),
   ].join("\n");
 }
@@ -142,9 +143,9 @@ function runState(ex, result) {
 }
 
 /** What the learner is working on: the exercise, their file and the last run. Never the solution. */
-function practiceContext(ex, source, result, lang) {
+function practiceContext(ex, source, result, lang, me) {
   return [
-    `You are helping someone learn ${lang.name}. ${learner(lang)}`,
+    `You are helping someone learn ${lang.name}. ${me.who}`,
     `They are doing a practice exercise in a file named ${lang.practice.file}. Do not read or change any file.`,
     `Exercise: ${ex.title}`,
     ex.prompt,
@@ -160,20 +161,20 @@ function practiceContext(ex, source, result, lang) {
 }
 
 /** Hint number `n` for a practice exercise. The first three step up. Every later one gives one more piece. */
-export function hintPrompt(ex, source, result, n, lang) {
+export function hintPrompt(ex, source, result, n, lang, me) {
   return [
-    ...practiceContext(ex, source, result, lang),
+    ...practiceContext(ex, source, result, lang, me),
     n <= 3 ? `Give hint level ${n} of 3. ${LEVELS[n - 1]}` : `Give hint ${n}. ${MORE}`,
-    `Under 60 words. Never give the whole answer. Compare to ${COMPARE} when it helps. Plain text or short markdown.`,
+    `Under 60 words. Never give the whole answer.${compareNote(me)} Plain text or short markdown.`,
   ].join("\n");
 }
 
 /** The learner's own question about a practice exercise. */
-export function practiceQuestionPrompt(ex, source, result, question, lang) {
+export function practiceQuestionPrompt(ex, source, result, question, lang, me) {
   return [
-    ...practiceContext(ex, source, result, lang),
+    ...practiceContext(ex, source, result, lang, me),
     `Their question: ${question}`,
-    `Answer it in simple words, under 150 words. Compare to ${COMPARE} when it helps. Quote only short code.`,
+    `Answer it in simple words, under 150 words.${compareNote(me)} Quote only short code.`,
     `Do not write the whole solution. If they ask for it, say the x key shows it.`,
   ].join("\n");
 }

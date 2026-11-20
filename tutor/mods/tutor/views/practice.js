@@ -64,7 +64,9 @@ export function practiceView(v, t) {
   const body = v_flex().w_full().max_w(720).gap(10)
     .child(TextView.markdown(`prompt-${key}`, String(ex.prompt)).selectable())
     .child(div().text_size(11.5).text_color(t.dim)
-      .child(`e opens ${file} in Neovim on the right. Each save runs it. Keys reach Tutor only when its pane has the keyboard: move between panes with Herdr's pane keys.`))
+      .child(v.settings.editor === "vscode"
+        ? `e opens ${file} in VS Code. Each save runs it.`
+        : `e opens ${file} in Neovim on the right. Each save runs it. Keys reach Tutor only when its pane has the keyboard: move between panes with Herdr's pane keys.`))
     .child(div().text_size(13).font_semibold().child(status(v, t)))
     .child(results(v, t))
     .children(hints)
@@ -104,7 +106,7 @@ export function practiceView(v, t) {
       .child(button(t, "preset", "Reset", "c", true, cx => { pr.confirm = "reset"; cx.notify(); }))
       .child(button(t, "pprev", "Previous", "k", pr.i > 0, cx => { v.practiceMove(-1, cx); cx.notify(); }))
       .child(button(t, "pnext", "Next", "j", pr.i < pr.exs.length - 1, cx => { v.practiceMove(1, cx); cx.notify(); }))
-      .child(button(t, "psource", `Open in ${repo}`, "o", passed, () => v.openPracticeSource()))
+      .child(button(t, "psource", `Open in ${repo}`, "o", passed, cx => v.openPracticeSource(cx)))
       .child(button(t, "pback", "Back", "esc", true, cx => { v.practiceBack(cx); cx.notify(); }));
   }
   // The ask box is only drawn while asking, so practice keys can never land in it.

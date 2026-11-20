@@ -5,11 +5,16 @@ import { paneHeader, paneTitle, paneDetail, paneBar, sectionLabel } from "../kit
 import { listRow, rowText } from "../kit/list.js";
 import { textInput } from "../kit/controls.js";
 import { LANGUAGES } from "../languages.js";
+import { EDITORS } from "../settings.js";
+import { learnerOf } from "../learner.js";
 import { button } from "../ui.js";
 
 /** `v` is the Tutor view: its state is read here and its methods run on clicks. */
 export function setupView(v, t) {
   const s = v.setup, lang = LANGUAGES[s.lang], many = Object.keys(LANGUAGES).length > 1;
+  const me = learnerOf({ known: v.setupKnown() }, lang);
+  const knownText = me.known.length ? me.known.join(", ") : "nothing yet";
+  const compareText = me.compare ? `lessons compare to ${me.compare}` : me.known.length ? `you know ${lang.name} already` : "lessons start from scratch";
   const header = paneHeader(t).child(paneTitle(t, "Tutor"))
     .child(paneDetail(t, "Learn a language from a codebase you pick"));
   const field = (label, value, keys) => h_flex().gap(10).px(12).py(2).items_center().text_size(12.5)
@@ -24,8 +29,11 @@ export function setupView(v, t) {
     .child(field("Codebase", s.path || "none yet", "e edit  ·  b browse"))
     .when(s.editing, el => el.child(div().px(12).py(4).child(textInput(t, v.pathInput, true))))
     .child(field("Language", lang.name, many ? "l changes" : "more later"))
+    .child(field("You know", `${knownText}  ·  ${compareText}`, "w edit"))
+    .when(s.editingKnown, el => el.child(div().px(12).py(4).child(textInput(t, v.knownInput, true))))
+    .child(field("Editor", EDITORS[v.settings.editor], "v changes"))
     .child(div().px(12).pt(6).text_size(11.5).text_color(t.dim)
-      .child("Claude reads the repo and plans 10 to 20 modules, pinned to its current commit. Each module is written the first time you open it, and its practice the first time you press p. Nothing in the repo is changed."));
+      .child("Claude reads the repo and plans 10 to 20 modules, pinned to its current commit. Each module is written the first time you open it, and its practice the first time you press p. Nothing in the repo is changed. What you know is kept with each course; the editor is shared by all of them."));
   if (s.courses.length) {
     body.child(sectionLabel(t, "Your courses").px(12));
     s.courses.forEach((c, i) => {
@@ -40,6 +48,8 @@ export function setupView(v, t) {
     .child(button(t, "setup-edit", "Edit folder", "e", true, cx => { v.editPath(cx); cx.notify(); }))
     .child(button(t, "setup-browse", "Browse", "b", true, cx => { v.browse(cx); cx.notify(); }))
     .child(button(t, "setup-lang", "Language", "l", many, cx => { v.nextLanguage(); cx.notify(); }))
+    .child(button(t, "setup-known", "You know", "w", true, cx => { v.editKnown(cx); cx.notify(); }))
+    .child(button(t, "setup-editor", "Editor", "v", true, cx => { v.nextEditor(); cx.notify(); }))
     .child(button(t, "setup-move", "Move", "j k", s.courses.length > 0, () => {}))
     .child(button(t, "setup-back", "Back", "esc", Boolean(v.course), cx => { v.goHome(cx); cx.notify(); }));
   return v_flex().size_full().min_h(0).child(header).child(body).child(div().flex_1()).child(bar);

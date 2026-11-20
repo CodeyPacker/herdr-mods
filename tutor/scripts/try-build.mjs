@@ -7,6 +7,7 @@ import { join, basename } from "node:path";
 import { TOOLS } from "../mods/tutor/constants.js";
 import { csharp as lang } from "../mods/tutor/lang/csharp.js";
 import { writeOutline, writeModule, writeExercises } from "../mods/tutor/build.js";
+import { parseKnown } from "../mods/tutor/learner.js";
 
 const [repoArg, out, numArg] = process.argv.slice(2);
 if (!repoArg || !out) { console.error("usage: node scripts/try-build.mjs <repo> <out> [module number]"); process.exit(2); }
@@ -68,7 +69,8 @@ let course;
 const coursePath = join(out, "course.json");
 if (existsSync(coursePath)) { course = JSON.parse(readFileSync(coursePath, "utf8")); log("course.json already there, reusing it"); }
 else {
-  course = await writeOutline(io(session()), info, lang);
+  // TUTOR_KNOWN="Go, some SQL" plans for a different learner. Unset: the TypeScript default.
+  course = await writeOutline(io(session()), info, lang, process.env.TUTOR_KNOWN === undefined ? undefined : parseKnown(process.env.TUTOR_KNOWN));
   save("course.json", course);
   log(`plan: ${course.modules.length} modules in ${course.parts.length} parts`);
   for (const m of course.modules) console.log(`   ${m.id} [${m.part}] ${m.title}: ${m.summary}`);

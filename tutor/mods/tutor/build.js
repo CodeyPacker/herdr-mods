@@ -8,6 +8,7 @@
 import { FIX_ROUNDS } from "./constants.js";
 import { parseReply, outlineProblems, moduleProblems, exerciseProblems } from "./validate.js";
 import { outlinePrompt, modulePrompt, exercisesPrompt, fixPrompt } from "./prompts.js";
+import { learnerOf } from "./learner.js";
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 const str = v => (typeof v === "string" ? v : "");
@@ -31,12 +32,16 @@ async function writeChecked(io, first, check, what) {
   }
 }
 
-/** The course plan. `info` is { root, name, commit, count } from course.js. */
-export async function writeOutline(io, info, lang) {
+/**
+ * The course plan. `info` is { root, name, commit, count } from course.js. `known` is what the
+ * learner already knows (learner.js), kept in the course.
+ */
+export async function writeOutline(io, info, lang, known) {
   io.say(`Reading ${info.name} and planning the modules`);
-  const o = await writeChecked(io, outlinePrompt(info, lang), o => outlineProblems(o, io.linesAt), "plan");
+  const me = learnerOf({ known }, lang);
+  const o = await writeChecked(io, outlinePrompt(info, lang, me), o => outlineProblems(o, io.linesAt), "plan");
   return {
-    version: 1, name: info.name, root: info.root, commit: info.commit, language: lang.id,
+    version: 1, name: info.name, root: info.root, commit: info.commit, language: lang.id, known: me.known,
     about: str(o.about), createdAt: new Date().toISOString(),
     parts: o.parts.map(p => ({ id: p.id, title: p.title })),
     modules: o.modules.map(m => ({ id: m.id, part: m.part, title: m.title, summary: m.summary, teaches: str(m.teaches),
@@ -47,7 +52,7 @@ export async function writeOutline(io, info, lang) {
 /** One module: intro, stops and quiz. `entry` is its line in course.json, `number` counts from 1. */
 export async function writeModule(io, course, entry, number, lang) {
   io.say(`Reading the code for "${entry.title}" and writing the lessons`);
-  const m = await writeChecked(io, modulePrompt(course, entry, number, lang), m => moduleProblems(m, io.linesAt), "module");
+  const m = await writeChecked(io, modulePrompt(course, entry, number, lang, learnerOf(course, lang)), m => moduleProblems(m, io.linesAt), "module");
   return { id: entry.id, title: entry.title, intro: str(m.intro), stops: m.stops, quiz: m.quiz };
 }
 
@@ -67,7 +72,7 @@ function why(ex, out) {
 export async function writeExercises(io, course, mod, entry, number, lang) {
   const prefix = entry.id.slice(0, 2), p = lang.practice;
   io.say(`Writing practice exercises for "${entry.title}"`);
-  let prompt = exercisesPrompt(course, mod, entry, number, lang);
+  let prompt = exercisesPrompt(course, mod, entry, number, lang, learnerOf(course, lang));
   for (let round = 0; ; round++) {
     const reply = await io.ask(prompt);
     const problems = [], good = [];
