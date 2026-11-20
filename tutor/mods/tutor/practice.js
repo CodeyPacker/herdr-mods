@@ -1,6 +1,6 @@
 // Practice files and runs: the learner's exercise file, the composed file next to it, and running it
 // with the language's tool. Every function takes the course's slug, so courses never share files.
-import { exec, readTextFile, writeTextFile, window } from "herdr";
+import { appHome, exec, readTextFile, writeTextFile, window } from "herdr";
 import * as fs from "fs/promises";
 import { dataDir } from "./course.js";
 
@@ -45,9 +45,13 @@ export async function reloadEditor(slug, id) {
 /** The learner's file as it is now. */
 export const readWork = (slug, id, lang) => readTextFile(workFile(slug, id, lang)).then(t => t ?? "").catch(() => "");
 
-/** True when the language's run tool (dotnet for C#) can start. */
+/** Where a language's commands find Tutor's own files and other mods: { modDir, appHome }. */
+const runContext = () => { const home = appHome().replace(/\\/g, "/"); return { modDir: `${home}/mods/tutor`, appHome: home }; };
+
+/** True when practice can run: the language's probe passes, else its tool (dotnet for C#) starts. */
 export async function haveTool(lang) {
-  const r = await exec(lang.practice.tool, ["--version"], { timeout: 20000 }).catch(() => null);
+  const p = lang.practice, probe = p.probe ? p.probe(runContext()) : { exe: p.tool, args: ["--version"] };
+  const r = await exec(probe.exe, probe.args, { timeout: 20000 }).catch(() => null);
   return r?.code === 0;
 }
 
@@ -61,7 +65,7 @@ export async function runSource(ex, source, lang, tag) {
   await fs.mkdir(runDir(), { recursive: true });
   const path = `${runDir()}/${name}.${p.file.split(".").pop()}`;
   await fs.writeFile(path, p.compose(ex, source));
-  const { exe, args } = p.command(path);
+  const { exe, args } = p.command(path, runContext());
   const started = Date.now();
   let r;
   try { r = await exec(exe, args, { timeout: RUN_TIMEOUT }); }
@@ -72,7 +76,7 @@ export async function runSource(ex, source, lang, tag) {
   const timedOut = Date.now() - started >= RUN_TIMEOUT - 1000;
   if (timedOut) {
     const stop = p.stop(name, window()?.platform === "windows");
-    await exec(stop.exe, stop.args).catch(() => {});
+    if (stop) await exec(stop.exe, stop.args).catch(() => {});
   }
   return p.parseRun(ex, { ...r, timedOut });
 }

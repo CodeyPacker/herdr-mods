@@ -1,15 +1,20 @@
 // Runs Tutor's writing pipeline outside Herdr, to check the prompts and checks against a real repo.
 // Run from tutor/: node scripts/try-build.mjs <repo folder> <out folder> [module number, default 2]
-// Writes course.json, then that module and its exercises, into the out folder. Needs claude, git and dotnet.
+// Writes course.json, then that module and its exercises, into the out folder. Needs claude, git and
+// the language's tool (dotnet for C#, Node for TypeScript). TUTOR_LANG=typescript picks the language.
 import { spawn, execFileSync, execFile } from "node:child_process";
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
-import { join, basename } from "node:path";
+import { join, basename, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { TOOLS } from "../mods/tutor/constants.js";
-import { csharp as lang } from "../mods/tutor/lang/csharp.js";
+import { LANGUAGES } from "../mods/tutor/languages.js";
 import { writeOutline, writeModule, writeExercises } from "../mods/tutor/build.js";
 import { parseKnown } from "../mods/tutor/learner.js";
 
 const [repoArg, out, numArg] = process.argv.slice(2);
+const lang = LANGUAGES[process.env.TUTOR_LANG ?? "csharp"];
+if (!lang) { console.error(`TUTOR_LANG must be one of ${Object.keys(LANGUAGES).join(", ")}`); process.exit(2); }
+const modDir = join(dirname(fileURLToPath(import.meta.url)), "../mods/tutor").replace(/\\/g, "/");
 if (!repoArg || !out) { console.error("usage: node scripts/try-build.mjs <repo> <out> [module number]"); process.exit(2); }
 mkdirSync(out, { recursive: true });
 const root = execFileSync("git", ["-C", repoArg, "rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
@@ -55,9 +60,10 @@ const runDir = join(out, "run");
 mkdirSync(runDir, { recursive: true });
 let runs = 0;
 const run = (ex, source) => new Promise(resolve => {
-  const path = join(runDir, `${ex.id}.${++runs}.cs`);
+  const path = join(runDir, `${ex.id}.${++runs}.${lang.practice.file.split(".").pop()}`);
   writeFileSync(path, lang.practice.compose(ex, source));
-  execFile("dotnet", ["run", path], { timeout: 60000, maxBuffer: 8 << 20, windowsHide: true }, (err, stdout, stderr) => {
+  const { exe, args } = lang.practice.command(path, { modDir, appHome: null });
+  execFile(exe, args, { timeout: 60000, maxBuffer: 8 << 20, windowsHide: true }, (err, stdout, stderr) => {
     resolve(lang.practice.parseRun(ex, { code: err ? (typeof err.code === "number" ? err.code : 1) : 0, stdout, stderr, timedOut: Boolean(err?.killed) }));
   });
 });

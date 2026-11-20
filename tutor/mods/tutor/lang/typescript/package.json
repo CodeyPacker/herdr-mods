@@ -1,0 +1,9 @@
+{
+  "name": "herdr-tutor-typescript",
+  "private": true,
+  "description": "Pinned TypeScript compiler that type-checks Tutor's TypeScript practice. Install with npm ci in this folder.",
+  "type": "module",
+  "dependencies": {
+    "typescript": "6.0.3"
+  }
+}

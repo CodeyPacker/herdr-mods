@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { learnerOf, parseKnown, listText, DEFAULT_KNOWN, likeKnownQuestion } from "../mods/tutor/learner.js";
 import { csharp } from "../mods/tutor/lang/csharp.js";
+import { typescript } from "../mods/tutor/lang/typescript.js";
 import { outlinePrompt, modulePrompt, hintPrompt, framePrompt } from "../mods/tutor/prompts.js";
 
 test("parseKnown splits on commas, semicolons and new lines", () => {
@@ -17,9 +18,12 @@ test("courses from before the setting keep the TypeScript learner", () => {
   assert.match(me.who, /knows TypeScript and JavaScript and is new to C#/);
 });
 
-test("lessons compare to the first language that is not the course's own", () => {
-  assert.equal(learnerOf({ known: ["C#", "Python"] }, csharp).compare, "Python");
-  assert.equal(learnerOf({ known: ["some C#", "Go"] }, csharp).compare, "Go");
+test("lessons compare to the first language, unless the learner knows the course's own", () => {
+  assert.equal(learnerOf({ known: ["C#", "Python"] }, csharp).compare, null, "knows the course's own language");
+  assert.equal(learnerOf({ known: ["Python", "Go"] }, csharp).compare, "Python");
+  assert.equal(learnerOf({ known: ["TypeScript", "JavaScript"] }, typescript).compare, null);
+  assert.equal(learnerOf({ known: ["C#"] }, typescript).compare, "C#");
+  assert.equal(learnerOf({ known: ["some C#", "Go"] }, csharp).compare, null);
   const self = learnerOf({ known: ["C#"] }, csharp);
   assert.equal(self.compare, null);
   assert.match(self.who, /already knows C#/);
