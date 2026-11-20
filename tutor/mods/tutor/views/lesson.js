@@ -33,8 +33,8 @@ export function lessonView(v, t) {
     .children(notes)
     .when(Boolean(v.busy), el => el.child(h_flex().gap(8).items_center().text_color(t.dim)
       .child(spinner(t)).child(div().text_size(12).child(`${v.busy}…  esc stops`))))
-    .when(v.claude === false, el => el.child(div().text_size(11.5).text_color(t.dim)
-      .child("Chat is off: the claude CLI is not on PATH. Lessons and quizzes still work.")));
+    .when(v.agentOk === false, el => el.child(div().text_size(11.5).text_color(t.dim)
+      .child(`Chat is off: the ${v.settings.agent} CLI is not on PATH. Lessons and quizzes still work.`)));
   // A plain scroll area driven by v.explainScroll, with empty markers first and last:
   // showing a stop reveals the first, asking reveals the last.
   const explainId = `explain-${key}`;

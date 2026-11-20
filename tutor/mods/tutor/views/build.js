@@ -1,4 +1,4 @@
-// The build screen: what Claude is writing now, how long it has taken, and any error.
+// The build screen: what the agent is writing now, how long it has taken, and any error.
 import { div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { paneHeader, paneTitle, paneDetail, paneBar, banner } from "../kit/pane.js";
@@ -22,8 +22,8 @@ export function buildView(v, t) {
     .when(failed, el => el
       .child(banner(t, job.error, t.ansi1))
       .child(div().text_size(12).text_color(t.dim).child("enter tries again. esc goes back.")))
-    .when(v.claude === false, el => el.child(div().text_size(12).text_color(t.ansi1)
-      .child("The claude CLI is not on PATH, so Tutor cannot write lessons. Install it, then try again.")));
+    .when(v.agentOk === false, el => el.child(div().text_size(12).text_color(t.ansi1)
+      .child(`The ${v.agentName()} CLI (${v.settings.agent}) is not on PATH, so Tutor cannot write lessons. Install it and sign in, or pick the other agent on the setup screen (a).`)));
   const bar = paneBar(t)
     .when(failed, el => el.child(button(t, "build-retry", "Try again", "enter", true, cx => { v.retryJob(cx); cx.notify(); })))
     .child(button(t, "build-back", failed ? "Back" : "Stop", "esc", true, cx => { v.leaveJob(cx); cx.notify(); }));

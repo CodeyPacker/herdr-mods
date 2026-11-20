@@ -22,14 +22,14 @@ import { colors } from "./kit/theme.js";
 import { assignLetters, navigateByLetter } from "./kit/letters.js";
 import { SPLIT_WIDTH, PASS_SHARE, RESERVED, DEEPER } from "./constants.js";
 import { learnerOf, likeKnownQuestion, parseKnown } from "./learner.js";
-import { EDITORS, loadSettings, saveSettings, cleanSettings, nextOf } from "./settings.js";
+import { EDITORS, AGENTS, loadSettings, saveSettings, cleanSettings, nextOf } from "./settings.js";
 import { LANGUAGES, DEFAULT_LANGUAGE, languageOf } from "./languages.js";
 import { currentSlug, setCurrent, slugFor, loadCourse, saveCourse, loadModule, saveModule, loadExercises, saveExercises, listCourses, repoInfo, checkRepo, courseDir } from "./course.js";
 import { writeOutline, writeModule, writeExercises, writeMatches } from "./build.js";
 import { practiceRangeTopics, openPracticeRange } from "./practice-range.js";
 import { fresh, loadProgress, saveProgress, merge } from "./progress.js";
 import { fileAt, codeState, liveLine, openInVSCode, neovimOpenExpression } from "./code.js";
-import { AgentSession, haveClaude } from "./agent.js";
+import { AgentSession, haveAgent } from "./agent.js";
 import { framePrompt, stopPrompt, hintPrompt, practiceQuestionPrompt } from "./prompts.js";
 import { ensureWork, resetWork, readWork, runExercise, runSource, haveTool, workDir, workFile, editorPipe, reloadEditor } from "./practice.js";
 import { setupView } from "./views/setup.js";
@@ -64,7 +64,7 @@ export default class Tutor extends View {
     this.code = null; this.codeError = null; this.files = new Map(); // file lines at the commit, per module visit
     this.notes = {};          // chat answers per stop index, for this module visit only
     this.session = null; this.busy = null; this.gen = 0;
-    this.claude = null;       // true or false once looked up
+    this.agentOk = null;      // true or false once the agent's CLI is looked up
     this.asking = false; this.typing = false;
     this.quiz = { i: 0, picks: [] }; this.result = null;
     this.split = null; this.width = 0;
@@ -91,21 +91,38 @@ export default class Tutor extends View {
     cx.spawn(async cx => { for (;;) { this.command(await nextCommand(), cx); cx.notify(); } });
     cx.spawn(async cx => {
       this.settings = await loadSettings();
+      this.lookUpAgent(cx);
       const slug = await currentSlug();
       if (slug && await loadCourse(slug).catch(() => null)) await this.openCourse(slug, cx);
       else await this.openSetup(cx);
       cx.notify();
     });
-    // The lookup can fail right after Herdr starts, so try again before turning chat off.
+  }
+
+  /**
+   * Looks for the agent's CLI on PATH. The lookup can fail right after Herdr starts, so it tries
+   * again before turning chat off. A newer lookup (the agent changed) makes older ones stop.
+   */
+  lookUpAgent(cx) {
+    const agent = this.settings.agent, gen = this.agentGen = (this.agentGen ?? 0) + 1;
+    this.agentOk = null;
     cx.spawn(async cx => {
       for (const wait of [0, 2000, 5000, 10000]) {
         if (wait) await new Promise(done => cx.timer.after(wait, () => done(null)));
-        if (await haveClaude().catch(() => false)) { this.claude = true; cx.notify(); return; }
+        if (this.agentGen !== gen) return;
+        if (await haveAgent(agent).catch(() => false)) { if (this.agentGen === gen) { this.agentOk = true; cx.notify(); } return; }
       }
-      this.claude = false;
+      if (this.agentGen !== gen) return;
+      this.agentOk = false;
       cx.notify();
     });
   }
+
+  /** The agent's name for the screens: Claude or Codex. */
+  agentName() { return AGENTS[this.settings.agent]; }
+
+  /** A new read-only conversation with the agent from settings, in folder `cwd`. */
+  newSession(cwd) { return new AgentSession(cwd, this.settings.agent); }
 
   async close() {
     const hints = this.pr?.session;
@@ -256,7 +273,7 @@ export default class Tutor extends View {
     if (JSON.stringify(known) !== JSON.stringify(this.settings.known)) this.changeSettings({ known });
     this.runJob({
       title: `Planning a ${lang.name} course`, detail: path,
-      wait: "Claude reads the repo and plans 10 to 20 modules. This takes a few minutes. Modules are written later, one at a time, when you open them.",
+      wait: `${this.agentName()} reads the repo and plans 10 to 20 modules. This takes a few minutes. Modules are written later, one at a time, when you open them.`,
       back: cx => { this.phase = "setup"; cx.notify(); },
       work: async job => {
         job.say("Looking at the repo");
@@ -265,7 +282,7 @@ export default class Tutor extends View {
         // A course for this repo and language is already there: open it instead.
         if (await loadCourse(slug).catch(() => null)) return slug;
         job.detail = `${info.root} at ${info.commit.slice(0, 7)}`;
-        job.session = new AgentSession(info.root);
+        job.session = this.newSession(info.root);
         const course = await writeOutline(this.io(job, info), info, lang, known);
         // With Practice Range installed, match modules to its topics now, while Claude has the
         // plan in mind. A failure here only means the match is made later, when first asked for.
@@ -285,10 +302,10 @@ export default class Tutor extends View {
     if (this.repoError) { this.flash = this.repoError; return; }
     this.runJob({
       title: `Writing module ${i + 1}`, detail: entry.title,
-      wait: "Claude reads the code and writes the lessons and quiz, then every line range is checked. This takes a few minutes, once per module.",
+      wait: `${this.agentName()} reads the code and writes the lessons and quiz, then every line range is checked. This takes a few minutes, once per module.`,
       back: cx => this.goHome(cx),
       work: async job => {
-        job.session = new AgentSession(course.root);
+        job.session = this.newSession(course.root);
         const mod = await writeModule(this.io(job, course), course, entry, i + 1, this.lang);
         await saveModule(this.slug, id, mod);
         return mod;
@@ -304,11 +321,11 @@ export default class Tutor extends View {
     const lang = this.lang, idx = this.idx;
     this.runJob({
       title: `Writing practice for module ${i + 1}`, detail: entry.title,
-      wait: `Claude writes the exercises, then each solution and starter is run with ${lang.practice.tool}. This takes a few minutes, once per module.`,
+      wait: `${this.agentName()} writes the exercises, then each solution and starter is run with ${lang.practice.tool}. This takes a few minutes, once per module.`,
       back: cx => this.leavePracticeJob(id, from, idx, cx),
       work: async job => {
         if (!(await haveTool(lang))) throw new Error(lang.practice.needs);
-        job.session = new AgentSession(course.root);
+        job.session = this.newSession(course.root);
         const list = await writeExercises(this.io(job, course), course, mod, entry, i + 1, lang);
         await saveExercises(this.slug, id, list);
         return list;
@@ -529,6 +546,12 @@ export default class Tutor extends View {
     cx.timer.after(50, () => this.knownInput.focus());
   }
 
+  /** a on the setup screen: the next agent. Chats already open keep the agent they started with. */
+  nextAgent(cx) {
+    this.changeSettings({ agent: nextOf(AGENTS, this.settings.agent) });
+    this.lookUpAgent(cx);
+  }
+
   /** v on the setup screen: the next editor. */
   nextEditor() { this.changeSettings({ editor: nextOf(EDITORS, this.settings.editor) }); }
 
@@ -540,7 +563,7 @@ export default class Tutor extends View {
 
   // ---- chat ---------------------------------------------------------------------------------
 
-  canAsk() { return this.claude === true && (this.phase === "practice" ? Boolean(this.pr) && !this.pr.hinting : !this.busy); }
+  canAsk() { return this.agentOk === true && (this.phase === "practice" ? Boolean(this.pr) && !this.pr.hinting : !this.busy); }
 
   startAsking(cx) {
     if (!this.canAsk()) return;
@@ -575,7 +598,7 @@ export default class Tutor extends View {
     if (!this.canAsk() || this.phase !== "lesson") return;
     const s = this.mod.stops[this.idx], idx = this.idx, gen = this.gen;
     const number = this.course.modules.findIndex(m => m.id === this.modId) + 1;
-    const session = this.session ??= new AgentSession(this.course.root);
+    const session = this.session ??= this.newSession(this.course.root);
     const notes = this.notes[idx] ??= [];
     this.busy = "Asking";
     // Reveal the end marker once the question is drawn, so the answer appears in view.
@@ -688,14 +711,14 @@ export default class Tutor extends View {
     const topic = this.rangeTopic(id), n = this.course.modules.findIndex(m => m.id === id) + 1;
     const open = t => { openPracticeRange(this.lang.id, t.id); this.flash = `Opened Practice Range at "${t.title}".`; };
     if (topic) { open(topic); return; }
-    if (this.claude !== true) { this.flash = "Finding the Practice Range topic needs the claude CLI."; return; }
+    if (this.agentOk !== true) { this.flash = `Finding the Practice Range topic needs the ${this.agentName()} CLI.`; return; }
     const course = this.course, slug = this.slug, topics = this.rangeTopics, lang = this.lang;
     this.runJob({
       title: "Finding the Practice Range topic", detail: course.modules[n - 1].title,
-      wait: "Claude matches every module of this course to a Practice Range topic, once. This takes about a minute.",
+      wait: `${this.agentName()} matches every module of this course to a Practice Range topic, once. This takes about a minute.`,
       back: cx => this.goHome(cx),
       work: async job => {
-        job.session = new AgentSession(course.root);
+        job.session = this.newSession(course.root);
         course.practiceRange = await writeMatches(this.io(job, course), course, topics, lang);
         await saveCourse(slug, course);
       },
@@ -848,7 +871,7 @@ export default class Tutor extends View {
   /** The next hint. The first three step up; every later one gives one more piece. */
   practiceHint(cx) {
     const pr = this.pr;
-    if (!pr || pr.hinting || this.claude !== true) return;
+    if (!pr || pr.hinting || this.agentOk !== true) return;
     const n = pr.level + 1;
     this.practiceChat(`Hint ${n}`, "Getting a hint", source => hintPrompt(pr.ex, source, pr.result, n, this.lang, this.me()), cx, () => {
       pr.level = n;
@@ -859,7 +882,7 @@ export default class Tutor extends View {
   /** The learner's own question about this exercise, from the ask box. */
   practiceAsk(q, cx) {
     const pr = this.pr;
-    if (!pr || pr.hinting || this.claude !== true) return;
+    if (!pr || pr.hinting || this.agentOk !== true) return;
     this.practiceChat(`You asked: ${q}`, "Asking", source => practiceQuestionPrompt(pr.ex, source, pr.result, q, this.lang, this.me()), cx);
   }
 
@@ -869,7 +892,7 @@ export default class Tutor extends View {
    */
   practiceChat(label, busy, prompt, cx, done = null) {
     const pr = this.pr, ex = pr.ex, gen = this.prGen, chat = pr.chatGen, slug = this.slug, lang = this.lang;
-    const session = pr.session ??= new AgentSession(workDir(slug, ex.id));
+    const session = pr.session ??= this.newSession(workDir(slug, ex.id));
     pr.hinting = busy;
     this.scrollPractice(2, cx);
     cx.spawn(async cx => {
@@ -1008,6 +1031,7 @@ export default class Tutor extends View {
       else if (k === "l") this.nextLanguage();
       else if (k === "w") this.editKnown(cx);
       else if (k === "v") this.nextEditor();
+      else if (k === "a") this.nextAgent(cx);
       else if (k === "escape" && this.course) this.goHome(cx);
       else handled = false;
     } else if (this.phase === "build") {

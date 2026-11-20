@@ -5,7 +5,7 @@ import { paneHeader, paneTitle, paneDetail, paneBar, sectionLabel } from "../kit
 import { listRow, rowText } from "../kit/list.js";
 import { textInput } from "../kit/controls.js";
 import { LANGUAGES } from "../languages.js";
-import { EDITORS } from "../settings.js";
+import { EDITORS, AGENTS } from "../settings.js";
 import { learnerOf } from "../learner.js";
 import { button } from "../ui.js";
 
@@ -32,8 +32,9 @@ export function setupView(v, t) {
     .child(field("You know", `${knownText}  ·  ${compareText}`, "w edit"))
     .when(s.editingKnown, el => el.child(div().px(12).py(4).child(textInput(t, v.knownInput, true))))
     .child(field("Editor", EDITORS[v.settings.editor], "v changes"))
+    .child(field("Agent", `${AGENTS[v.settings.agent]}${v.agentOk === false ? "  ·  not found on PATH" : ""}`, "a changes"))
     .child(div().px(12).pt(6).text_size(11.5).text_color(t.dim)
-      .child("Claude reads the repo and plans 10 to 20 modules, pinned to its current commit. Each module is written the first time you open it, and its practice the first time you press p. Nothing in the repo is changed. What you know is kept with each course; the editor is shared by all of them."));
+      .child(`${AGENTS[v.settings.agent]} reads the repo and plans 10 to 20 modules, pinned to its current commit. Each module is written the first time you open it, and its practice the first time you press p. Nothing in the repo is changed. What you know is kept with each course; the editor and agent are shared by all of them.`));
   if (s.courses.length) {
     body.child(sectionLabel(t, "Your courses").px(12));
     s.courses.forEach((c, i) => {
@@ -50,6 +51,7 @@ export function setupView(v, t) {
     .child(button(t, "setup-lang", "Language", "l", many, cx => { v.nextLanguage(); cx.notify(); }))
     .child(button(t, "setup-known", "You know", "w", true, cx => { v.editKnown(cx); cx.notify(); }))
     .child(button(t, "setup-editor", "Editor", "v", true, cx => { v.nextEditor(); cx.notify(); }))
+    .child(button(t, "setup-agent", "Agent", "a", true, cx => { v.nextAgent(cx); cx.notify(); }))
     .child(button(t, "setup-move", "Move", "j k", s.courses.length > 0, () => {}))
     .child(button(t, "setup-back", "Back", "esc", Boolean(v.course), cx => { v.goHome(cx); cx.notify(); }));
   return v_flex().size_full().min_h(0).child(header).child(body).child(div().flex_1()).child(bar);
