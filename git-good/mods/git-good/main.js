@@ -805,11 +805,13 @@ export default class GitGood extends View {
   /**
    * Wraps a text box so esc in it steps back (see BOX_CONTEXT) and does not close the dialog.
    * @param {any} box the text box's element
+   * @param {any} [over] an element drawn over the box, placed by itself (absolute)
    */
-  escBox(box) {
-    return v_flex().flex_none().key_context(BOX_CONTEXT)
+  escBox(box, over) {
+    return v_flex().flex_none().relative().key_context(BOX_CONTEXT)
       .on_action(BACK_ACTION, (_e, cx) => { this.command("cancel", cx); cx.notify(); })
-      .child(box);
+      .child(box)
+      .when(Boolean(over), (el) => el.child(over));
   }
 
   /** The font the diff is drawn in. */
@@ -916,18 +918,39 @@ export default class GitGood extends View {
   commitBox(t) {
     const ready = this.hasMessage && (this.staged.length > 0 || this.amend) && !this.busy && !this.pending && !this.writing;
     return v_flex().flex_none().gap(8)
-      .child(this.escBox(Textarea.new(this.message).h(96).px(10).py(8).rounded(8).border_1().border_color(this.typing ? focusEdge(t.accent) : t.input).bg(t.background).text_size(12.5).text_color(t.foreground)))
+      .child(this.escBox(Textarea.new(this.message).h(96).px(10).py(8).rounded(8).border_1().border_color(this.typing ? focusEdge(t.accent) : t.input).bg(t.background).text_size(12.5).text_color(t.foreground),
+        // The box's keys, over its bottom right corner while it has the keyboard. Drawn over the box so nothing moves.
+        this.typing && this.shortcuts.showHints
+          ? h_flex().absolute().bottom(6).right(10).gap(10).text_size(SIZE.small).child(hint(t, ["ctrl-enter", "commit"])).child(hint(t, ["esc", "back"]))
+          : undefined))
       .child(h_flex().flex_none().gap(8).items_center()
         .child(this.writing
           ? this.button(t, "gg-stop", "Stop waiting for the message", "stop").h(32).child(spinner(t).flex_none()).child("Stop")
           : this.button(t, "gg-generate", "Claude writes a message from the staged changes (g)", "generate").h(32)
             .child(svg(ICON.sparkle).size(13).flex_none().text_color(t.accent)).child(this.hasMessage ? "Regenerate" : "Generate"))
-        .child(chip(t, { id: "gg-amend", label: "Amend", on: this.amend, click: (cx) => this.command("amend", cx) }))
+        .child(this.amendSwitch(t))
         .child(div().flex_1())
         .child(h_flex().id("gg-commit").flex_none().h(32).px(14).items_center().rounded(8).text_size(12.5).font_semibold()
           .bg(ready ? t.solid : t.raised).text_color(ready ? t.solid_foreground : t.dim)
           .when(ready, (el) => el.cursor_pointer().on_click((_e, cx) => this.command("commit", cx)))
           .child(this.amend ? "Amend commit" : `Commit ${count(this.staged.length, "file")}`)));
+  }
+
+  /**
+   * The Amend switch: off, the commit button makes a new commit. On, it replaces the last one.
+   * Drawn as a switch with a knob, so it reads as a mode and not as a second commit button.
+   * @param {Theme} t
+   */
+  amendSwitch(t) {
+    const on = this.amend;
+    return h_flex().id("gg-amend").flex_none().h(32).gap(7).items_center().cursor_pointer()
+      .tooltip(on ? "On: the commit button replaces the last commit (m)" : "Off: the commit button makes a new commit (m)")
+      .on_click((_e, cx) => this.command("amend", cx))
+      .child(h_flex().flex_none().w(30).h(17).px(2).items_center().rounded(9).border_1()
+        .border_color(on ? t.accent : t.border).bg(on ? t.accent : t.raised)
+        .when(on, (el) => el.justify_end())
+        .child(div().flex_none().size(11).rounded(6).bg(on ? t.background : t.muted)))
+      .child(div().flex_none().text_size(11.5).text_color(on ? t.foreground : t.muted).child("Amend"));
   }
 
   /** A diff line's number column. @param {Theme} t @param {number | null} n */
@@ -1074,13 +1097,13 @@ export default class GitGood extends View {
     const t = colors();
     const note = this.noteLine(t);
     /** @type {import("./kit/legend.js").Hint[]} */
-    const hints = this.typing
-      ? [["ctrl-enter", "commit"], ["esc", "back to the list"]]
-      : [["?", "hide keys"], ["j/k", this.focus === "diff" ? "scroll" : "move"], ["ctrl-h", "files"], ["ctrl-l", "diff"],
+    // The list stays the same while the commit box has the keyboard: a footer that appeared or
+    // changed height then moved everything above it, under the pointer.
+    const hints = [["?", "hide keys"], ["j/k", this.focus === "diff" ? "scroll" : "move"], ["ctrl-h", "files"], ["ctrl-l", "diff"],
         // A key that is turned off is not listed.
         ...this.shortcuts.keys.filter((k) => !this.shortcuts.isOff(k.id) && this.shortcuts.keyFor(k.id)).map((k) => /** @type {[string, string]} */ (
           [this.shortcuts.keyFor(k.id), k.id === "view" ? (this.split ? "unified" : "split") : k.id === "full" ? (this.full ? "leave full screen" : "full screen") : k.what])),
-        [",", "settings"], ["esc", "close"]];
+      [",", "settings"], ["esc", "close"]];
     const panel = frame(t, { id: "git-good", title: "Git Good", handle: this.handle, onKey: (e, cx) => this.key(e, cx), fill: true, details: this.details(t) })
       .child(div().flex().flex_row().flex_1().min_h(0).gap(SIZE.frameGap)
         .child(v_flex().w(this.full ? FILES_W_FULL : FILES_W).flex_none().min_h(0).gap(SIZE.frameGap)
@@ -1089,7 +1112,7 @@ export default class GitGood extends View {
           .child(this.commitBox(t)))
         .child(this.diffPane(t)))
       .when(Boolean(note), (el) => el.child(note))
-      .when(this.shortcuts.showHints || this.typing, (el) => el.child(divider(t)).child(legend(t, hints)))
+      .when(this.shortcuts.showHints, (el) => el.child(divider(t)).child(legend(t, hints)))
       // Esc with something open steps back from it. Without this the app closes the whole dialog (see BOX_CONTEXT).
       .when(Boolean(this.asking) || this.branching || this.typing || this.shortcuts.open, (el) => el.key_context(BOX_CONTEXT)
         .on_action(BACK_ACTION, (_e, cx) => { this.command("cancel", cx); cx.notify(); }))
