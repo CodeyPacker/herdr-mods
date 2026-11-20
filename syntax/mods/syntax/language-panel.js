@@ -6,10 +6,11 @@ import { languages } from "./languages/index.js";
 
 /**
  * @param {import("./kit/theme.js").Theme} t
- * @param {{ enabled: string[], selected: number, busy: boolean,
+ * @param {{ enabled: string[], selected: number, busy: boolean, languagesKey: string,
  *   choose: (id: string, cx: import("gpui-kit").Context) => void }} options
+ *   `languagesKey`: the key the languages shortcut is on now, "" when it is off or has none
  */
-export function languagePanel(t, { enabled, selected, busy, choose }) {
+export function languagePanel(t, { enabled, selected, busy, languagesKey, choose }) {
   return v_flex().id("syntax-languages").flex_1().min_h(0).p(18).gap(12)
     .child(div().text_size(22).font_semibold().child("What do you want to practice?"))
     .child(div().text_color(t.muted).child("Choose a language, then a topic and exercise. You can keep several languages ready to use."))
@@ -25,5 +26,5 @@ export function languagePanel(t, { enabled, selected, busy, choose }) {
     .child(div().text_size(12).text_color(t.muted).child(languages.some(language => !enabled.includes(language.id))
       ? "Choose Set up to add a language. Your other languages and progress stay saved."
       : "Choose any language. Each keeps its own answers and progress."))
-    .child(div().text_size(11).text_color(t.dim).child("j/k move · enter choose · l languages"));
+    .child(div().text_size(11).text_color(t.dim).child(`j/k move · enter choose${languagesKey ? ` · ${languagesKey} languages` : ""}`));
 }

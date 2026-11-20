@@ -18,19 +18,33 @@ export async function git(args, { cwd, on }) {
 }
 
 /**
+ * The diff of a file git does not know yet: every line added. Null when it cannot be read.
+ * Git ends this command with code 1 because the two sides differ, so that is not a failure here.
+ */
+export async function newFileDiff(file, { cwd, on }) {
+  try {
+    const r = await exec("git", ["diff", "--no-color", "--unified=3", "--no-index", "--", "/dev/null", file], { cwd: cwd ?? undefined, on });
+    return r.code <= 1 && r.stdout.trim() ? r.stdout.trim() : null;
+  } catch { return null; }
+}
+
+/**
  * The repo around `cwd`: root, branch, last commit, base branch, merge base and the
- * files changed since the merge base (uncommitted edits included). Null outside a repo.
+ * files changed since the merge base (uncommitted edits included, and new files not yet added
+ * to git, which are also listed alone in `untracked`). Null outside a repo.
  */
 export async function readRepo(cwd, on) {
   const root = await git(["rev-parse", "--show-toplevel"], { cwd, on });
   if (!root) return null;
   const run = args => git(args, { cwd: root, on });
-  const repo = { root, branch: "", head: "", base: null, mergeBase: null, changed: [] };
+  const repo = { root, branch: "", head: "", base: null, mergeBase: null, changed: [], untracked: [] };
   // Each git call costs a few hundred ms on Windows, so the independent ones run together.
-  const [branch, head, originHead, main, master] = await Promise.all([
+  const [branch, head, originHead, main, master, others] = await Promise.all([
     run(["branch", "--show-current"]), run(["log", "-1", "--format=%h %s"]),
     run(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"]),
     run(["rev-parse", "--verify", "--quiet", "main"]), run(["rev-parse", "--verify", "--quiet", "master"]),
+    // New files git does not know yet. A diff leaves them out, so they are asked for by name.
+    run(["ls-files", "--others", "--exclude-standard"]),
   ]);
   repo.branch = branch || "detached HEAD";
   repo.head = head || "";
@@ -40,6 +54,10 @@ export async function readRepo(cwd, on) {
     repo.mergeBase = await run(["merge-base", "HEAD", base]);
     const files = repo.mergeBase ? await run(["diff", "--name-only", repo.mergeBase]) : null;
     repo.changed = files ? files.split("\n").filter(Boolean) : [];
+    if (repo.mergeBase) {
+      repo.untracked = others ? others.split("\n").map(f => f.trim()).filter(Boolean) : [];
+      repo.changed = [...repo.changed, ...repo.untracked.filter(f => !repo.changed.includes(f))];
+    }
   }
   return repo;
 }

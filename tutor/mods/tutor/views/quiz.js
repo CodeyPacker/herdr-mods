@@ -20,7 +20,7 @@ function scrollArea(id, handle, body) {
 export function quizView(v, t) {
   const mod = v.mod, quiz = mod.quiz, i = v.quiz.i, q = quiz[i], pick = v.quiz.picks[i];
   const locked = pick !== undefined;
-  const header = paneHeader(t).child(paneTitle(t, `Question ${i + 1} of ${quiz.length}`)).child(paneDetail(t, mod.title));
+  const header = paneHeader(t).child(paneTitle(t, `Question ${i + 1} of ${quiz.length}`)).child(paneDetail(t, mod.title)).child(v.shortcuts.button(t));
   const rows = q.choices.map((c, n) => {
     const right = locked && n === q.answer, wrong = locked && n === pick && n !== q.answer;
     const color = right ? t.ansi2 : wrong ? t.ansi1 : null;
@@ -51,13 +51,15 @@ export function quizView(v, t) {
 /** The score, pass or not, and what was missed. `v` is the Tutor view. */
 export function resultView(v, t) {
   const mod = v.mod, r = v.result;
-  const header = paneHeader(t).child(paneTitle(t, "Quiz result")).child(paneDetail(t, mod.title));
+  const header = paneHeader(t).child(paneTitle(t, "Quiz result")).child(paneDetail(t, mod.title)).child(v.shortcuts.button(t));
+  // The numbers that jump to a missed stop show only while their key is on.
+  const jump = !v.shortcuts.isHidden("missed");
   const missed = r.missed.map((id, k) => {
     const q = mod.quiz.find(x => x.id === id);
     const from = Number.isInteger(q.stop) ? mod.stops[q.stop] : null;
     return v_flex().gap(4).pt(8).border_t_1().border_color(t.border)
       .child(h_flex().gap(8).items_start()
-        .child(div().flex_none().w(18).text_color(from && k < 9 ? t.accent : t.dim).font_semibold().child(from && k < 9 ? String(k + 1) : "·"))
+        .child(div().flex_none().w(18).text_color(from && k < 9 && jump ? t.accent : t.dim).font_semibold().child(from && k < 9 && jump ? String(k + 1) : "·"))
         .child(div().flex_1().min_w(0).child(TextView.markdown(`missed-${mod.id}-${id}`, String(q.prompt)))))
       .child(div().pl(26).text_size(12).text_color(t.ansi2).child(TextView.markdown(`missed-a-${mod.id}-${id}`, `Answer: ${q.choices[q.answer]}`)))
       .when(Boolean(from), el => el.child(div().pl(26).text_size(11.5).text_color(t.dim).child(`from stop ${q.stop + 1}: ${from?.title}`)));
@@ -68,10 +70,10 @@ export function resultView(v, t) {
     .when(r.missed.length > 0, el => el.child(noteLabel(t, "Missed")).children(missed));
   const nextLabel = v.nextModuleId() ? "Next module" : "Modules";
   const bar = paneBar(t)
-    .child(button(t, "retry", "Retry", "r", true, cx => { v.startQuiz(cx); cx.notify(); }))
+    .child(button(t, "retry", "Retry", v.shown("retry", "r"), true, cx => { v.startQuiz(cx); cx.notify(); }))
     .child(button(t, "nextmod", nextLabel, "enter", true, cx => { v.afterResult(cx); cx.notify(); }))
-    .child(button(t, "modules", "Modules", "m", true, cx => { v.goHome(cx); cx.notify(); }))
-    .when(v.canRange(v.modId), el => el.child(button(t, "range", "Practice Range", "g", true, cx => { v.goRange(v.modId, cx); cx.notify(); })))
-    .when(r.missed.length > 0, el => el.child(button(t, "jump", "Go to a missed stop", "1–9", true, () => {})));
+    .child(button(t, "modules", "Modules", v.shown("modules", "m"), true, cx => { v.goHome(cx); cx.notify(); }))
+    .when(v.canRange(v.modId), el => el.child(button(t, "range", "Practice Range", v.shown("practice-range", "g"), true, cx => { v.goRange(v.modId, cx); cx.notify(); })))
+    .when(r.missed.length > 0 && jump, el => el.child(button(t, "jump", "Go to a missed stop", "1–9", true, () => {})));
   return v_flex().size_full().min_h(0).child(header).child(scrollArea(`result-${mod.id}`, v.quizScroll, body)).child(bar);
 }

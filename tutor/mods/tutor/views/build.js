@@ -10,7 +10,7 @@ const clock = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 
 /** `v` is the Tutor view: its state is read here and its methods run on clicks. */
 export function buildView(v, t) {
   const job = v.job, failed = Boolean(job.error);
-  const header = paneHeader(t).child(paneTitle(t, job.title)).child(paneDetail(t, job.detail ?? ""));
+  const header = paneHeader(t).child(paneTitle(t, job.title)).child(paneDetail(t, job.detail ?? "")).child(v.shortcuts.button(t));
   // Sized to its content, so it also draws in a dialog. The spacer below pushes the keys down in a pane.
   const body = v_flex().w_full().px(24).py(20).gap(12).max_w(720)
     .when(!failed, el => el
@@ -23,7 +23,7 @@ export function buildView(v, t) {
       .child(banner(t, job.error, t.ansi1))
       .child(div().text_size(12).text_color(t.dim).child("enter tries again. esc goes back.")))
     .when(v.agentOk === false, el => el.child(div().text_size(12).text_color(t.ansi1)
-      .child(`The ${v.agentName()} CLI (${v.settings.agent}) is not on PATH, so Tutor cannot write lessons. Install it and sign in, or pick the other agent on the setup screen (a).`)));
+      .child(`The ${v.agentName()} CLI (${v.settings.agent}) is not on PATH, so Tutor cannot write lessons. Install it and sign in, or pick the other agent on the setup screen${v.shown("setup-choices", " (a)")}.`)));
   const bar = paneBar(t)
     .when(failed, el => el.child(button(t, "build-retry", "Try again", "enter", true, cx => { v.retryJob(cx); cx.notify(); })))
     .child(button(t, "build-back", failed ? "Back" : "Stop", "esc", true, cx => { v.leaveJob(cx); cx.notify(); }));

@@ -14,9 +14,28 @@ import { setupPanel } from "./setup-panel.js";
 import { languagePanel } from "./language-panel.js";
 import { tutorSettings, tutorChat } from "./tutor/panel.js";
 import { startTopic } from "./start-topic.js";
+import { Shortcuts } from "./kit/shortcuts.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("./kit/theme.js").Theme} Theme */
+
+/**
+ * The keys a user can turn off or change in the settings. Each id is the action its key runs,
+ * and each key is the one the shortcut starts with. "?" cannot be changed. The keys that move
+ * (j, k, arrows), enter, esc, "," and the keys that answer a setup or editor question always
+ * work, and so does every button.
+ * @type {import("./kit/shortcuts.js").Shortcut[]}
+ */
+const SHORTCUTS = [
+  { id: "languages", key: "l", what: "languages" }, { id: "setup", key: "?", what: "setup", fixed: true },
+  { id: "topics", key: "t", what: "topics" }, { id: "exercises", key: "e", what: "exercises" },
+  { id: "scratch", key: "x", what: "scratch, and back" }, { id: "shuffle", key: "s", what: "shuffle, in the exercise list" },
+  { id: "review", key: "v", what: "review, or end it" }, { id: "hint", key: "h", what: "hint" },
+  { id: "answer", key: "a", what: "show answer" }, { id: "check", key: "c", what: "check or run saved code" },
+  { id: "compare", key: "d", what: "compare with reference" }, { id: "send-to-scratch", key: "s", what: "send to scratch" },
+  { id: "repeat", key: "r", what: "repeat" }, { id: "next", key: "n", what: "next exercise" },
+  { id: "open", key: "o", what: "open editor" }, { id: "tutor", key: "u", what: "ask tutor" },
+];
 
 /** @template T @param {string} key @param {T} fallback @returns {T} */
 function saved(key, fallback) {
@@ -118,6 +137,8 @@ export default class Syntax extends View {
     this.search.on("focus", () => { this.typing = true; });
     this.search.on("blur", () => { this.typing = false; });
     this.search.on("submit", (_event, cx) => { this.handle.focus(); cx.notify(); });
+    /** The settings panel: a switch per shortcut key. Opening it takes the keyboard out of a text box. */
+    this.shortcuts = new Shortcuts({ mod: "syntax", keys: SHORTCUTS, rebind: true, onOpen: () => this.handle.focus() });
     this.handle.focus();
     if (checking()) return;
     this.loadSetup(cx);
@@ -126,6 +147,7 @@ export default class Syntax extends View {
       for (;;) {
         const command = await nextCommand();
         if (command === "focus") this.handle.focus();
+        else if (this.shortcuts.command(command)) { /* the settings panel took it */ }
         else this.action(command, cx);
         cx.notify();
       }
@@ -691,14 +713,22 @@ export default class Syntax extends View {
 
   /** @param {import("gpui-kit").KeyEvent} event @param {Context} cx */
   key(event, cx) {
+    // While the settings panel is open, every key is its own.
+    if (this.shortcuts.open) { this.shortcuts.key(event, cx); return; }
     if (this.typing) {
       if (event.key === "escape") { this.handle.focus(); cx.stop_propagation(); }
       return;
     }
-    if (event.modifiers.control || event.modifiers.platform || event.modifiers.alt) return;
-    const key = event.key;
-    if (key === "s" && this.screen === "exercises") { this.action("shuffle", cx); cx.stop_propagation(); return; }
-    if (key === "?") { this.action("setup", cx); cx.stop_propagation(); return; }
+    // With ctrl, alt or cmd held, a press is ours only when the user put a shortcut on it.
+    const held = event.modifiers.control || event.modifiers.platform || event.modifiers.alt;
+    if (held && !this.shortcutFor(event.keystroke)) return;
+    if (this.shortcuts.key(event, cx)) return;
+    // The keys that are not shortcuts are plain keys.
+    const key = held ? "" : event.key;
+    if (this.screen === "exercises" && this.shortcuts.matches("shuffle", event.keystroke)) {
+      this.action("shuffle", cx); cx.stop_propagation(); return;
+    }
+    if (key === "?" && !this.shortcuts.isOff("setup")) { this.action("setup", cx); cx.stop_propagation(); return; }
     if (this.screen === "setup") {
       if (key === "enter") this.setupAction("setup-next", cx);
       else if (key === "b") this.setupAction("setup-back", cx);
@@ -734,6 +764,14 @@ export default class Syntax extends View {
       if (key === "enter") this.action("confirm-repeat", cx);
       cx.stop_propagation(); return;
     }
+    // The settings say which key each shortcut is on. A key that is turned off, or that its
+    // shortcut was moved away from, does nothing. A key the user gave to a shortcut wins over
+    // the keys that move in a list. One switch and one key start and end a review.
+    const id = this.shortcutFor(event.keystroke);
+    if (id) {
+      this.action(id === "review" && this.screen === "practice" && this.state?.review ? "review-end" : id, cx);
+      cx.stop_propagation(); return;
+    }
     if (!["practice", "scratch"].includes(this.screen) && ["j", "k", "up", "down", "enter"].includes(key)) {
       const items = this.items();
       if (key === "enter" && items[this.selected]) {
@@ -743,10 +781,28 @@ export default class Syntax extends View {
       } else this.moveSelection(["j", "down"].includes(key) ? 1 : -1, cx);
       cx.stop_propagation(); cx.notify(); return;
     }
-    /** @type {Record<string, string>} */
-    const actions = { u: "tutor", l: "languages", h: "hint", a: "answer", c: "check", n: "next", r: "repeat", t: "topics", e: "exercises", o: "open", x: "scratch", s: "send-to-scratch", d: "compare",
-      v: this.screen === "practice" && this.state?.review ? "review-end" : "review" };
-    if (actions[key]) { this.action(actions[key], cx); cx.stop_propagation(); }
+  }
+
+  /**
+   * The shortcut a key press means on this screen, or "" when it is none that is on. The setup
+   * and language screens have no shortcuts but "?". The exercise list has shuffle where the
+   * other screens have send to scratch: both start on "s".
+   * @param {string} keystroke as the event spells it
+   */
+  shortcutFor(keystroke) {
+    if (["setup", "languages"].includes(this.screen)) return "";
+    const other = this.screen === "exercises" ? "send-to-scratch" : "shuffle";
+    return SHORTCUTS.find(s => !s.fixed && s.id !== other && this.shortcuts.matches(s.id, keystroke))?.id ?? "";
+  }
+
+  /** The key shown on a button: the one the shortcut is on now, or nothing when the user turned it off. @param {string} id a SHORTCUTS id @param {string} key shown for "?", which cannot be changed */
+  shown(id, key) {
+    return this.shortcuts.shown(id, key);
+  }
+
+  /** The key to name in a sentence: the one the shortcut is on now, or "" when it is off or has none. @param {string} id a SHORTCUTS id */
+  keyOf(id) {
+    return this.shortcuts.isOff(id) ? "" : this.shortcuts.keyFor(id);
   }
 
   /** @param {string} id @param {string} text */
@@ -765,7 +821,7 @@ export default class Syntax extends View {
     return v_flex().gap(8)
       .child(h_flex().gap(6).flex_wrap()
         .child(tag(t, name))
-        .when(this.screen !== "setup", element => element.child(keyButton(t, "open-editor", "o", "Open editor", !this.busy && !this.offerEditorDefault, cx => this.action("open", cx)))))
+        .when(this.screen !== "setup", element => element.child(keyButton(t, "open-editor", this.shown("open", "o"), "Open editor", !this.busy && !this.offerEditorDefault, cx => this.action("open", cx)))))
       .when(this.offerEditorDefault, element => element.child(v_flex().gap(8)
         .child(div().text_size(12).child(`Set ${name} as your default editor?`))
         .child(h_flex().gap(6).flex_wrap()
@@ -782,7 +838,7 @@ export default class Syntax extends View {
       .when(this.screen === "topics" && Boolean(this.state), element => element.child(this.reviewEntry(t)))
       .child(this.screen === "topics" ? textInput(t, this.search, this.typing) : h_flex().gap(8).items_center().flex_wrap()
         .child(div().flex_1().text_color(t.muted).child(`${topic?.title ?? "Exercises"} · Choose an exercise to practice.`))
-        .child(keyButton(t, "shuffle-exercise", "s", "Shuffle", !this.busy && items.length > 0, cx => this.action("shuffle", cx))))
+        .child(keyButton(t, "shuffle-exercise", this.shown("shuffle", "s"), "Shuffle", !this.busy && items.length > 0, cx => this.action("shuffle", cx))))
       .child(v_flex().id("syntax-picker").flex_1().min_h(0).overflow_y_scrollbar().track_scroll(this.pickerScroll).gap(3)
         .when(items.length === 0, element => element.child(listNote(t, "No matching topics.")))
         .children(items.map((item, index) => {
@@ -796,7 +852,7 @@ export default class Syntax extends View {
             .child(rowText(t, item.title, "description" in item ? `${item.level === "advanced" ? "Advanced · " : ""}${item.description}` : item.prompt, true))
             .when(isTopic, element => element.child(tag(t, `${progress?.passed ?? 0}/${progress?.total ?? 0}`)));
         })))
-      .child(div().text_size(11).text_color(t.dim).child("j/k move · enter choose · esc back"));
+      .child(div().text_size(11).text_color(t.dim).child("j/k move · enter choose · , settings · esc back"));
   }
 
   /** Opt-in review, offered only here: a count of what's ready, or the review in progress. @param {Theme} t */
@@ -806,7 +862,7 @@ export default class Syntax extends View {
     const label = review ? `Resume review · ${review.index + 1} of ${review.ids.length}` : ready ? `Review · ${ready} ready` : "Review · nothing ready yet";
     return v_flex().gap(4)
       .child(h_flex().gap(8).items_center().flex_wrap()
-        .child(keyButton(t, "start-review", "v", label, !this.busy && (Boolean(review) || ready > 0), cx => this.action("review", cx)))
+        .child(keyButton(t, "start-review", this.shown("review", "v"), label, !this.busy && (Boolean(review) || ready > 0), cx => this.action("review", cx)))
         .child(div().text_size(11).text_color(t.dim).child(review ? "Fresh files. Your saved answers stay untouched." : "Up to 8 exercises from topics you've practiced, from a blank file.")))
       .when(!review && Boolean(this.state?.lastReview), element => element.child(div().text_size(11).text_color(t.muted).child(`Last review: ${reviewSummary(this.state.lastReview)}`)));
   }
@@ -842,7 +898,7 @@ export default class Syntax extends View {
         .child(this.editorControls(t))))
       .when(Boolean(exercise.declarations), element => element.child(this.markdown(`setup-${exercise.id}`, `${this.language.suppliedLabel ?? "Supplied types"}:\n\n\`\`\`${this.language.codeFence}\n${exercise.declarations}\n\`\`\``)))
       .child(h_flex().items_center().flex_wrap().gap(8)
-        .child(keyButton(t, "more-hint", "h", "Hint", !this.busy && hints.length < exercise.hints.length, cx => this.action("hint", cx)))
+        .child(keyButton(t, "more-hint", this.shown("hint", "h"), "Hint", !this.busy && hints.length < exercise.hints.length, cx => this.action("hint", cx)))
         .child(div().text_size(12).text_color(t.muted).child(`${hints.length}/${exercise.hints.length}`)))
       .when(hints.length === 0, element => element.child(div().text_size(12).text_color(t.dim).child("Each press reveals a little more. The answer stays separate.")))
       .children(hints.map((hint, index) => v_flex().gap(6).p(10).rounded(8).bg(t.raised)
@@ -852,13 +908,13 @@ export default class Syntax extends View {
         .child(sectionLabel(t, "One valid answer"))
         .child(this.markdown(`answer-${exercise.id}`, `\`\`\`${this.language.codeFence}\n${exercise.solution}\n\`\`\``))))
       .when(!this.state.answerShown, element => element.child(h_flex()
-        .child(keyButton(t, "show-answer", "a", "Show answer", !this.busy, cx => this.action("answer", cx)))))
+        .child(keyButton(t, "show-answer", this.shown("answer", "a"), "Show answer", !this.busy, cx => this.action("answer", cx)))))
       .when(Boolean(result), element => element.child(v_flex().gap(7).p(12).rounded(8).bg(t.raised)
         .child(div().font_semibold().text_color(this.state.stale ? t.muted : result?.passed ? t.done : t.blocked).child(this.state.stale ? "Saved code changed. Check again." : result?.title ?? ""))
         .when(Boolean(result?.assisted), element => element.child(div().text_size(11).text_color(t.dim).child("Checked after viewing the answer.")))
         .children((result?.details ?? []).map((detail, index) => this.markdown(`result-${result?.at}-${index}`, `\`\`\`text\n${detail}\n\`\`\``)))
         .when(Boolean(result?.passed) && !this.state.stale, element => element.child(h_flex().gap(8).items_center().flex_wrap()
-          .child(keyButton(t, "compare", "d", "Compare with reference", !this.busy && Boolean(this.editor), cx => this.action("compare", cx)))
+          .child(keyButton(t, "compare", this.shown("compare", "d"), "Compare with reference", !this.busy && Boolean(this.editor), cx => this.action("compare", cx)))
           .when(Boolean(this.compareNote), element => element.child(div().text_size(12).text_color(t.done).child(this.compareNote)))))))
       .when(this.tutor.enabled, element => element.child(v_flex().border_t_1().border_color(t.border).pt(12)
         .child(tutorChat(t, {
@@ -879,7 +935,7 @@ export default class Syntax extends View {
       .when(Boolean(this.language.scratchNote), element => element.child(div().text_size(12).text_color(t.muted).child(this.language.scratchNote ?? "")))
       .child(this.markdown("scratch-path", `\`${this.state?.file ?? ""}\``))
       .when(!this.editorDefaultSet, element => element.child(this.editorControls(t)))
-      .when(!result, element => element.child(div().text_size(12).text_color(t.dim).child("Save the file to run it. Press c to run the saved file again.")))
+      .when(!result, element => element.child(div().text_size(12).text_color(t.dim).child(this.keyOf("check") ? `Save the file to run it. Press ${this.keyOf("check")} to run the saved file again.` : "Save the file to run it.")))
       .when(Boolean(result), element => element.child(v_flex().gap(7).p(12).rounded(8).bg(t.raised)
         .child(div().font_semibold().text_color(this.state?.stale ? t.muted : result?.passed ? t.done : t.blocked).child(this.state?.stale ? "Saved code changed. Run it again." : result?.title ?? ""))
         .children((result?.details ?? []).map((detail, index) => this.markdown(`scratch-${result?.at}-${index}`, `\`\`\`text\n${detail}\n\`\`\``)))));
@@ -894,17 +950,18 @@ export default class Syntax extends View {
   /** @param {Context} cx */
   render(cx) {
     const t = colors();
-    return v_flex().id("syntax").size_full().min_w(0).min_h(0).bg(t.surface).text_color(t.foreground).text_size(13)
+    return v_flex().id("syntax").relative().size_full().min_w(0).min_h(0).bg(t.surface).text_color(t.foreground).text_size(13)
       .on_size_change((_size, cx) => this.bindPane(cx))
       .track_focus(this.handle).on_key_down((event, cx) => this.key(event, cx))
       .child(paneHeader(t).flex_wrap()
         .child(paneTitle(t, "Practice Range"))
         .child(paneDetail(t, this.screen === "setup" ? "Getting started" : this.screen === "languages" ? "Languages" : this.screen === "scratch" ? `${this.language.name} scratch` : `${this.language.name} repetition`))
-        .child(keyButton(t, "choose-languages", "l", "Languages", !this.busy && this.setupCompleted, cx => this.action("languages", cx)))
-        .child(keyButton(t, "open-setup", "?", "Setup", !this.busy, cx => this.action("setup", cx)))
-        .child(keyButton(t, "choose-topics", "t", "Topics", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state), cx => this.action("topics", cx)))
-        .child(keyButton(t, "choose-exercises", "e", "Exercises", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state) && (Boolean(this.pickerTopicId) || this.screen === "practice"), cx => this.action("exercises", cx)))
-        .child(keyButton(t, "toggle-scratch", "x", this.screen === "scratch" ? "Back to exercise" : "Scratch", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state), cx => this.action("scratch", cx))))
+        .child(keyButton(t, "choose-languages", this.shown("languages", "l"), "Languages", !this.busy && this.setupCompleted, cx => this.action("languages", cx)))
+        .child(keyButton(t, "open-setup", this.shown("setup", "?"), "Setup", !this.busy, cx => this.action("setup", cx)))
+        .child(keyButton(t, "choose-topics", this.shown("topics", "t"), "Topics", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state), cx => this.action("topics", cx)))
+        .child(keyButton(t, "choose-exercises", this.shown("exercises", "e"), "Exercises", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state) && (Boolean(this.pickerTopicId) || this.screen === "practice"), cx => this.action("exercises", cx)))
+        .child(keyButton(t, "toggle-scratch", this.shown("scratch", "x"), this.screen === "scratch" ? "Back to exercise" : "Scratch", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state), cx => this.action("scratch", cx)))
+        .child(this.shortcuts.button(t)))
       .when(Boolean(this.error), element => element.child(v_flex().flex_none().px(SIZE.panePad).py(8).gap(8)
         .child(banner(t, this.error, t.blocked))
         .child(keyButton(t, "retry", "", "Retry", !this.busy, cx => this.action("retry", cx)))))
@@ -912,8 +969,8 @@ export default class Syntax extends View {
         .child(spinner(t)).child(div().text_color(t.muted).child(this.busy))))
       .child(this.screen === "setup" ? setupPanel(t, { step: this.setupStep, busy: Boolean(this.busy), requirements: this.requirements,
         editor: this.editor, offerDefault: this.offerEditorDefault, language: this.setupLanguage, activeLanguageId: this.language.id,
-        enabled: this.enabledLanguages, completed: this.setupCompleted, tutorContent: () => tutorSettings(t, { config: this.tutor, busy: this.tutorSettingBusy, error: this.tutorSettingsError, change: (provider, cx) => this.changeTutor(provider, cx) }), editorContent: () => this.editorControls(t), action: (action, cx) => this.action(action, cx) })
-        : this.screen === "languages" ? languagePanel(t, { enabled: this.enabledLanguages, selected: this.selected, busy: Boolean(this.busy), choose: (id, cx) => this.chooseLanguage(id, cx) })
+        enabled: this.enabledLanguages, completed: this.setupCompleted, keyOf: id => this.keyOf(id), tutorContent: () => tutorSettings(t, { config: this.tutor, busy: this.tutorSettingBusy, error: this.tutorSettingsError, change: (provider, cx) => this.changeTutor(provider, cx) }), editorContent: () => this.editorControls(t), action: (action, cx) => this.action(action, cx) })
+        : this.screen === "languages" ? languagePanel(t, { enabled: this.enabledLanguages, selected: this.selected, busy: Boolean(this.busy), languagesKey: this.keyOf("languages"), choose: (id, cx) => this.chooseLanguage(id, cx) })
         : this.screen === "practice" ? this.practice(t) : this.screen === "scratch" ? this.scratch(t) : this.topicList(t, cx))
       .when(this.confirmRepeat, element => element.child(v_flex().flex_none().px(SIZE.panePad).py(10).gap(8)
         .child(banner(t, "Start this exercise fresh? The saved answer is backed up. Save any editor changes first, then reload the file in your editor."))
@@ -921,16 +978,18 @@ export default class Syntax extends View {
           .child(keyButton(t, "confirm-repeat", "enter", "Start fresh", !this.busy, cx => this.action("confirm-repeat", cx)))
           .child(keyButton(t, "cancel-repeat", "esc", "Keep working", true, cx => { this.confirmRepeat = false; cx.notify(); })))))
       .when(this.screen === "scratch", element => element.child(paneBar(t)
-        .when(this.editorDefaultSet, element => element.child(keyButton(t, "open-scratch-editor", "o", "Open editor", !this.busy && Boolean(this.state), cx => this.action("open", cx))))
-        .child(keyButton(t, "run-scratch", "c", "Run saved code", !this.busy && Boolean(this.state), cx => this.action("check", cx)))
+        .when(this.editorDefaultSet, element => element.child(keyButton(t, "open-scratch-editor", this.shown("open", "o"), "Open editor", !this.busy && Boolean(this.state), cx => this.action("open", cx))))
+        .child(keyButton(t, "run-scratch", this.shown("check", "c"), "Run saved code", !this.busy && Boolean(this.state), cx => this.action("check", cx)))
         .child(keyButton(t, "leave-scratch", "esc", "Back to exercise", !this.busy && Boolean(this.state), cx => this.action("practice", cx)))))
       .when(this.screen === "practice", element => element.child(paneBar(t)
-        .when(this.tutor.enabled, element => element.child(keyButton(t, "ask-tutor", "u", "Ask tutor", !this.busy, cx => this.action("tutor", cx))))
-        .when(this.editorDefaultSet, element => element.child(keyButton(t, "open-editor", "o", "Open editor", !this.busy && Boolean(this.state), cx => this.action("open", cx))))
-        .child(keyButton(t, "check", "c", "Check saved code", !this.busy && Boolean(this.state), cx => this.action("check", cx)))
-        .child(keyButton(t, "send-to-scratch", "s", "Send to scratch", !this.busy && Boolean(this.state), cx => this.action("send-to-scratch", cx)))
-        .child(keyButton(t, "repeat", "r", "Repeat", !this.busy && Boolean(this.state), cx => this.action("repeat", cx)))
-        .child(keyButton(t, "next", "n", this.nextLabel(), !this.busy && Boolean(this.state), cx => this.action("next", cx)))
-        .when(Boolean(this.state?.review), element => element.child(keyButton(t, "end-review", "v", "End review", !this.busy, cx => this.action("review-end", cx))))));
+        .when(this.tutor.enabled, element => element.child(keyButton(t, "ask-tutor", this.shown("tutor", "u"), "Ask tutor", !this.busy, cx => this.action("tutor", cx))))
+        .when(this.editorDefaultSet, element => element.child(keyButton(t, "open-editor", this.shown("open", "o"), "Open editor", !this.busy && Boolean(this.state), cx => this.action("open", cx))))
+        .child(keyButton(t, "check", this.shown("check", "c"), "Check saved code", !this.busy && Boolean(this.state), cx => this.action("check", cx)))
+        .child(keyButton(t, "send-to-scratch", this.shown("send-to-scratch", "s"), "Send to scratch", !this.busy && Boolean(this.state), cx => this.action("send-to-scratch", cx)))
+        .child(keyButton(t, "repeat", this.shown("repeat", "r"), "Repeat", !this.busy && Boolean(this.state), cx => this.action("repeat", cx)))
+        .child(keyButton(t, "next", this.shown("next", "n"), this.nextLabel(), !this.busy && Boolean(this.state), cx => this.action("next", cx)))
+        .when(Boolean(this.state?.review), element => element.child(keyButton(t, "end-review", this.shown("review", "v"), "End review", !this.busy, cx => this.action("review-end", cx))))))
+      // Under the header, which is one line tall until it wraps.
+      .when(this.shortcuts.open, element => element.child(this.shortcuts.panel(t, { top: 52, right: SIZE.panePad, maxHeight: 360 })));
   }
 }

@@ -7,6 +7,7 @@ import { textInput } from "./kit/controls.js";
 import { hint } from "./kit/legend.js";
 import { assignLetters, letterRow, navigateByLetter, readLetterConfig, configColor, LETTERS_FILE } from "./kit/letters.js";
 import { statusDot, spaceNote } from "./kit/spaces.js";
+import { Shortcuts } from "./kit/shortcuts.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("gpui-kit").KeyEvent} KeyEvent */
@@ -18,11 +19,26 @@ import { statusDot, spaceNote } from "./kit/spaces.js";
 /** @typedef {{ kind: "space", s: SpaceInfo, hint?: string, pinned?: boolean }} SpaceItem */
 /** @typedef {{ kind: "tab", s: SpaceInfo, tab: TabInfo, who: string, status: string | null, hint?: string, pinned?: boolean }} TabItem */
 /** @typedef {{ kind: "agent", s: SpaceInfo, agent: AgentInfo, hint?: string, pinned?: boolean }} AgentItem */
-/** @typedef {{ kind: "new-tab" | "new-space", hint: string, pinned?: boolean }} NewItem */
+/** @typedef {{ kind: "new-tab" | "new-space", hint?: string, pinned?: boolean }} NewItem */
 /** @typedef {SpaceItem | TabItem | AgentItem | NewItem} Item */
 
-// These do things, so they can't be hints. Capitals are letters of their own, typed with shift: R sets a row's letter.
-const RESERVED = "tnqjkxrR";
+// j and k move, so no row gets them as its letter. The letters the shortcuts are on are kept from rows too (see reservedLetters).
+const MOVE_LETTERS = "jk";
+/**
+ * The keys a user can turn off or change in the settings. `key` is the keystroke each one starts
+ * with. The letters that jump to a row, the keys that move (j, k, the arrows, ctrl-h, ctrl-l),
+ * enter, esc and , always work, and so does every button.
+ * @type {import("./kit/shortcuts.js").Shortcut[]}
+ */
+const SHORTCUTS = [
+  { id: "close-tab", key: "x", what: "close tab" }, { id: "rename", key: "r", what: "rename" },
+  { id: "rekey", key: "shift-r", what: "set key" }, { id: "new-tab", key: "t", what: "new tab" },
+  { id: "new-space", key: "n", what: "new space" }, { id: "close", key: "q", what: "close jump" },
+];
+/** The shortcuts the legend lists. New tab and new space are its buttons, and q is not listed. */
+const LEGEND_KEYS = ["close-tab", "rename", "rekey"];
+/** With the settings open the list is at least this tall, so the panel fits in the popup. */
+const SETTINGS_LIST_H = 280;
 /** A "Tabs" or "Agents" label's height, and the margin above and below the line between spaces. */
 const LABEL_H = 22;
 const SPACE_GAP = 6;
@@ -49,10 +65,21 @@ const CARD_WASH = "18";
 /** The card look starts with this many columns, and adds more when the cards would not fit the window's height. */
 const START_COLS = 2;
 
-/** A chosen letter, or null when it is not letters or uses a reserved one. "C" and "c" are different letters. @param {unknown} v */
-function validLetters(v) {
+/**
+ * The letter a keystroke types, or "" when it is not one letter: "x" is x, "shift-r" is R.
+ * Capitals are letters of their own, typed with shift.
+ * @param {string} keystroke
+ */
+function letterOf(keystroke) {
+  if (/^[a-z]$/.test(keystroke)) return keystroke;
+  const capital = /^shift-([a-z])$/.exec(keystroke);
+  return capital ? capital[1].toUpperCase() : "";
+}
+
+/** A chosen letter, or null when it is not letters or uses a reserved one. "C" and "c" are different letters. @param {unknown} v @param {string} reserved */
+function validLetters(v, reserved) {
   const p = String(v ?? "").trim();
-  return /^[a-zA-Z]+$/.test(p) && ![...p].some((c) => RESERVED.includes(c)) ? p : null;
+  return /^[a-zA-Z]+$/.test(p) && ![...p].some((c) => reserved.includes(c)) ? p : null;
 }
 
 /** The name of the tab a row stands for. @param {TabItem | AgentItem} it */
@@ -123,6 +150,8 @@ export default class Jump extends View {
     this.scroll = ScrollHandle.new();
     /** True after the selection moves, until the next render scrolls to it. */
     this.reveal = true;
+    /** The settings panel: a switch per shortcut key, and its key can be changed. Opening it closes the name box, so the panel has the keyboard. */
+    this.shortcuts = new Shortcuts({ mod: "jump", keys: SHORTCUTS, rebind: true, onOpen: () => { this.renaming = null; this.handle.focus(); } });
   }
 
   close() {
@@ -132,6 +161,16 @@ export default class Jump extends View {
   /** Whether the config asks for the card look: a card per space, in columns. */
   cards() {
     return this.hintConfig.jumpLayout === "cards";
+  }
+
+  /**
+   * The letters no row can have: j and k, and the letter of every shortcut's key as it is now.
+   * A shortcut on a key that is not one letter ("ctrl-t") keeps no letter from the rows, and a
+   * letter a shortcut was moved away from is free for rows again. A shortcut that is turned off
+   * still keeps its letter.
+   */
+  reservedLetters() {
+    return MOVE_LETTERS + SHORTCUTS.map((k) => letterOf(this.shortcuts.keyFor(k.id))).join("");
   }
 
   /** Each space, its tabs and agents, then the two new rows. @returns {Item[]} */
@@ -156,19 +195,21 @@ export default class Jump extends View {
     }
     const cfg = this.hintConfig;
     // Chosen letters may repeat: every space's "Code" tab can be "c". An agent uses its tab's letter.
+    const reserved = this.reservedLetters();
     const chosen = out.map((it) => {
-      if (it.kind === "space") return validLetters(cfg.spaces[it.s.name.toLowerCase()]);
+      if (it.kind === "space") return validLetters(cfg.spaces[it.s.name.toLowerCase()], reserved);
       if (it.kind !== "tab" && it.kind !== "agent") return null;
       const name = String(tabNameOf(it)).toLowerCase();
-      return validLetters(cfg.tabs[`${it.s.name.toLowerCase()}/${name}`] ?? cfg.tabs[name]);
+      return validLetters(cfg.tabs[`${it.s.name.toLowerCase()}/${name}`] ?? cfg.tabs[name], reserved);
     });
     // The other rows get one letter each that no chosen letter starts with.
     const used = [...new Set(chosen.map((h) => h?.[0] ?? ""))].join("");
-    const rest = assignLetters(chosen.filter((h) => !h).length, RESERVED + used);
+    const rest = assignLetters(chosen.filter((h) => !h).length, reserved + used);
     let next = 0;
     out.forEach((it, i) => { it.hint = chosen[i] ?? rest[next++]; it.pinned = !!chosen[i]; });
-    out.push({ kind: "new-tab", hint: "t" });
-    out.push({ kind: "new-space", hint: "n" });
+    // The two new rows have no letter: their keys are shortcuts.
+    out.push({ kind: "new-tab" });
+    out.push({ kind: "new-space" });
     return out;
   }
 
@@ -200,9 +241,10 @@ export default class Jump extends View {
     this.note = "";
     if (key && save) {
       // A letter that cannot be used keeps the box open and says why, so it never fails without a word.
-      const bad = [...input.value().trim()].find((c) => !/[a-zA-Z]/.test(c) || RESERVED.includes(c));
+      const reserved = this.reservedLetters();
+      const bad = [...input.value().trim()].find((c) => !/[a-zA-Z]/.test(c) || reserved.includes(c));
       if (bad) {
-        this.note = /[a-zA-Z]/.test(bad) ? `"${bad}" is one of jump's own keys: ${[...RESERVED].join(" ")}` : "Letters only";
+        this.note = /[a-zA-Z]/.test(bad) ? `"${bad}" is one of jump's own keys: ${[...new Set(reserved)].join(" ")}` : "Letters only";
         cx.notify();
         return;
       }
@@ -241,7 +283,7 @@ export default class Jump extends View {
    */
   saveLetter(it, value, cx) {
     const letters = value.trim();
-    if (letters && !validLetters(letters)) return;
+    if (letters && !validLetters(letters, this.reservedLetters())) return;
     const group = it.kind === "space" ? "spaces" : "tabs";
     const name = it.kind === "space" ? it.s.name : `${it.s.name}/${tabNameOf(it)}`;
     cx.spawn(async (cx) => {
@@ -285,7 +327,6 @@ export default class Jump extends View {
     if (hits.length === 0) { this.typed = more ? typed : ""; return more; }
     this.typed = "";
     const it = items[hits[0]];
-    if (hits.length === 1 && (it.kind === "new-tab" || it.kind === "new-space")) { this.go(it, cx); return true; }
     const from = this.at ?? 0;
     this.at = hits.length === 1 ? hits[0] : hits.find((i) => i > from) ?? hits[0];
     this.reveal = true;
@@ -330,7 +371,17 @@ export default class Jump extends View {
       if (e.key === "escape") { this.finishRename(false, cx); cx.stop_propagation(); }
       return;
     }
+    // The settings panel: "," opens it, and while it is open every key is its own.
+    if (this.shortcuts.key(e, cx)) return;
     this.note = "";
+    // A shortcut's key comes first, whatever key the user gave it. No row has a shortcut's letter.
+    const id = this.shortcuts.idFor(e.keystroke);
+    if (id) {
+      this.typed = "";
+      this.scope = null;
+      this.runShortcut(id, this.items(), cx);
+      return;
+    }
     // Ctrl with h and l moves between columns, so the letters stay free for rows, capitals too. The arrows do the same.
     const side = e.keystroke === "ctrl-h" || e.keystroke === "left" ? -1 : e.keystroke === "ctrl-l" || e.keystroke === "right" ? 1 : 0;
     if (side) { if (this.moveColumn(side)) cx.notify(); cx.stop_propagation(); return; }
@@ -347,8 +398,9 @@ export default class Jump extends View {
     // which is a letter of its own. Plain j and k move, below.
     const letter = noMods && /^[a-z]$/i.test(e.key) ? (e.modifiers.shift ? e.key.toUpperCase() : e.key.toLowerCase()) : "";
     if (letter && letter !== "j" && letter !== "k") {
-      if (this.letter(letter, items, cx)) { cx.stop_propagation(); cx.notify(); return; }
-      return this.actionKey(e, items, cx);
+      // A letter no row has does nothing: the letter of a shortcut that is turned off, for one.
+      if (this.letter(letter, items, cx)) { cx.stop_propagation(); cx.notify(); }
+      return;
     }
     this.scope = null;
     /** @type {import("./kit/letters.js").NavState} */
@@ -369,20 +421,24 @@ export default class Jump extends View {
     this.typed = state.typed;
     if (r === "close") { this.close(); cx.stop_propagation(); return; }
     if (r === "hit" || r === "act") this.go(items[this.at], cx);
-    if (r) { cx.stop_propagation(); cx.notify(); return; }
-    this.actionKey(e, items, cx);
+    if (r) { cx.stop_propagation(); cx.notify(); }
   }
 
-  /** The keys that act on the selected row. @param {KeyEvent} e @param {Item[]} items @param {Context} cx */
-  actionKey(e, items, cx) {
+  /**
+   * Does what a shortcut's key asks. Most act on the selected row. The id comes from the settings
+   * panel, which gives none for a shortcut that is turned off.
+   * @param {string} id a shortcut's id @param {Item[]} items @param {Context} cx
+   */
+  runShortcut(id, items, cx) {
     const it = items[this.at ?? 0];
-    if (e.keystroke === "shift-r" && (it?.kind === "tab" || it?.kind === "space" || it?.kind === "agent")) this.startRekey(it, cx);
-    else if (e.keystroke === "x" && it?.kind === "tab") {
+    if (id === "new-tab" || id === "new-space") { this.go(items.find((x) => x.kind === id), cx); cx.notify(); }
+    else if (id === "rekey" && (it?.kind === "tab" || it?.kind === "space" || it?.kind === "agent")) this.startRekey(it, cx);
+    else if (id === "close-tab" && it?.kind === "tab") {
       // Stay open: the row drops out when the live data changes. Closing the active tab can move focus, so take it back.
       run("tab.close", { id: it.tab.id, confirmed: true });
       cx.timer.after(150, () => this.handle.focus());
-    } else if (e.keystroke === "r" && (it?.kind === "tab" || it?.kind === "space" || it?.kind === "agent")) this.startRename(it, cx);
-    else if (e.keystroke === "q") this.close();
+    } else if (id === "rename" && (it?.kind === "tab" || it?.kind === "space" || it?.kind === "agent")) this.startRename(it, cx);
+    else if (id === "close") this.close();
     else return;
     cx.stop_propagation();
   }
@@ -448,7 +504,8 @@ export default class Jump extends View {
             .child(statusDot(t, it.agent.status)),
         });
       } else {
-        extras.push(hint(t, [it.hint, it.kind === "new-tab" ? "new tab" : "new space"], { id: `j-${it.kind}`, click: (cx) => this.go(it, cx) }));
+        // With its key turned off the row is still a button, shown without the key.
+        extras.push(hint(t, [this.shortcuts.shown(it.kind), it.kind === "new-tab" ? "new tab" : "new space"], { id: `j-${it.kind}`, click: (cx) => this.go(it, cx) }));
       }
     });
     // A section label lines up with the text after the letter badge: the row's padding, the badge, the gap.
@@ -499,6 +556,7 @@ export default class Jump extends View {
       const used = Math.max(1, split.columns.length);
       width = used * CARD_W + (used - 1) * CARD_GAP + chrome;
       listH = Math.min(maxListH, split.height);
+      if (this.shortcuts.open) listH = Math.max(listH, Math.min(maxListH, SETTINGS_LIST_H));
       // Remember where each row is drawn, for moving between columns.
       /** @type {Map<number, { col: number, y: number }>} */
       const cells = new Map();
@@ -526,11 +584,12 @@ export default class Jump extends View {
       // Every child is followed by the list's 2 px gap, and a line between spaces has its margin above and below.
       const est = rowCount * (SIZE.compactRow + 2) + labelCount * (LABEL_H + 2) + Math.max(0, blocks.length - 1) * (SPACE_GAP * 2 + 3);
       listH = Math.min(maxListH, est);
+      if (this.shortcuts.open) listH = Math.max(listH, Math.min(maxListH, SETTINGS_LIST_H));
       list = v_flex().id("jump-list").h(listH).flex_none().overflow_y_scrollbar().track_scroll(this.scroll).gap(2).children(kids);
     }
 
     // The overlay is wider than the frame, so the frame sits centered in it at the width its look needs.
-    return h_flex().w_full().justify_center().items_start().child(div().flex_none().w(width).child(frame(t, { id: "jump", title: "Jump to…", handle: this.handle, onKey: (e, cx) => this.key(e, cx) })
+    return h_flex().w_full().justify_center().items_start().child(div().flex_none().w(width).child(frame(t, { id: "jump", title: "Jump to…", handle: this.handle, onKey: (e, cx) => this.key(e, cx), details: h_flex().flex_1().justify_end().child(this.shortcuts.button(t)) })
       .when(!!this.renaming, (el) => el.child(
         h_flex().items_center().gap(10)
           .child(div().flex_none().text_size(SIZE.small).text_color(t.dim).child(this.renaming?.key ? (this.renaming.it.kind === "space" ? "Key for space" : "Key for tab") : this.renaming?.it.kind === "new-space" ? "New space" : this.renaming?.it.kind === "new-tab" ? "New tab" : this.renaming?.it.kind === "space" ? "Rename space" : "Rename tab"))
@@ -538,9 +597,14 @@ export default class Jump extends View {
       ))
       .when(!!this.note, (el) => el.child(div().flex_none().text_size(SIZE.small).text_color(t.blocked ?? t.accent).child(this.note)))
       .child(list)
-      .child(divider(t))
-      .child(h_flex().flex_none().flex_wrap().items_center().gap(12).text_size(SIZE.small)
-        .child(hint(t, ["j/k", "move"])).when(cards, (el) => el.child(hint(t, ["ctrl-h/l", "column"]))).child(hint(t, ["x", "close tab"])).child(hint(t, ["r", "rename"])).child(hint(t, ["R", "set key"]))
-        .children(extras))));
+      // The whole hint row, with "new tab" and "new space", goes when key hints are hidden. The keys still work.
+      .when(this.shortcuts.showHints, (el) => el.child(divider(t))
+        .child(h_flex().flex_none().flex_wrap().items_center().gap(12).text_size(SIZE.small)
+          .child(hint(t, ["j/k", "move"])).when(cards, (el) => el.child(hint(t, ["ctrl-h/l", "column"])))
+          // A key that is turned off is not listed. Each is drawn with the key it is on now.
+          .children(SHORTCUTS.filter((k) => LEGEND_KEYS.includes(k.id) && this.shortcuts.shown(k.id)).map((k) => hint(t, [this.shortcuts.shown(k.id), k.what])))
+          .children(extras).child(hint(t, [",", "settings"]))))
+      // The panel sits under the title row, and is short enough to stay inside the popup.
+      .when(this.shortcuts.open, (el) => this.shortcuts.guard(el).child(this.shortcuts.panel(t, { top: 52, maxHeight: listH - 40 })))));
   }
 }

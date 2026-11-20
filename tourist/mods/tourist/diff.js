@@ -1,4 +1,5 @@
 // Turning a unified diff into numbered rows, and keeping the part a stop is about.
+import { highlightRows } from "./highlight.js";
 
 const MAX_ROWS = 600;
 
@@ -23,11 +24,17 @@ export function diffRows(text) {
   });
 }
 
+/** Numbered rows for lines read from a file, the first one being line `start`. Shown like unchanged diff lines. */
+export function plainRows(text, start) {
+  return String(text).replace(/\r/g, "").split("\n").map((line, i) => ({ kind: " ", number: start + i, text: line || " " }));
+}
+
 /** A multi-file diff split into one `{ file, rows }` per file. */
 export function splitDiff(text) {
   return String(text ?? "").replace(/\r/g, "").split(/^diff --git /m).slice(1).map(part => {
     const head = part.split("\n")[0], m = / b\/(.+)$/.exec(head);
-    return { file: m ? m[1] : head, rows: diffRows(part) };
+    const file = m ? m[1] : head;
+    return { file, rows: highlightRows(diffRows(part), file) };
   });
 }
 
@@ -79,8 +86,12 @@ export function nearestRow(rows, line) {
   return best;
 }
 
-/** At most `max` rows, around row `at` when the file's diff is longer. */
-export function windowRows(rows, at, max = 2000) {
+/**
+ * At most `max` rows, around row `at` when the file's diff is longer. The diff view draws every
+ * row it is given on each frame, so a whole long file (a new file is all diff) is too much: the
+ * app gives up on the frame and shows "could not be re-rendered".
+ */
+export function windowRows(rows, at, max = 400) {
   if (rows.length <= max) return rows;
   const start = Math.max(0, Math.min(rows.length - max, at - Math.floor(max / 2)));
   return rows.slice(start, start + max);

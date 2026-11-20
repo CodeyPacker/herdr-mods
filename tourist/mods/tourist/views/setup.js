@@ -16,12 +16,12 @@ export function setupView(v, t) {
   const noChanges = g.changed.length === 0;
   const note = (text) => listNote(t, text);
   const head = v_flex()
-    .child(div().text_size(SIZE.title).font_semibold().child("Tourist"))
+    .child(h_flex().items_center().child(div().flex_1().text_size(SIZE.title).font_semibold().child("Tourist")).child(v.shortcuts.button(t)))
     .when(Boolean(g.root), el => el.child(div().pt(2).text_size(SIZE.small).text_color(t.dim).child(`${g.root} · ${g.branch}`)))
     .when(Boolean(v.agent), el => el.child(h_flex().id("agent").pt(2).gap(4).text_size(SIZE.small).text_color(t.dim)
       .when(v.agents.length > 1, el => el.cursor_pointer().on_click((_e, cx) => { v.switchAgent(); cx.notify(); }))
       .child(`Tour by ${v.agentName()}`)
-      .when(v.agents.length > 1, el => el.child(div().text_color(t.accent).child("· a switches")))));
+      .when(v.agents.length > 1 && Boolean(v.keyOf("agent", "a")), el => el.child(div().text_color(t.accent).child(`· ${v.keyOf("agent", "a")} switches`)))));
   // Nothing can be picked until the repo and the agents are found (a second or two).
   if (!g.root) return v_flex().id("setup").flex_1().min_h(0).p(SIZE.framePad).child(head)
     .child(h_flex().pt(18).gap(10).items_center().text_size(12.5).text_color(t.muted)
@@ -72,9 +72,10 @@ export function setupView(v, t) {
       .child(`Touring: ${s?.label ?? ""}${v.scope === "feature" ? ` · "${v.featureInput.value().trim()}"` : ""}${pr ? ` · #${pr.number} ${pr.title}` : ""}${v.steps().includes("pass") && v.pass === "since" ? " · changes since your last review" : ""}`));
     help = [["j/k", "move"], ["enter", "start the tour"], ["esc", "back"]];
   }
+  if (!v.typing) help.push([",", "settings"]);
   return v_flex().id("setup").flex_1().min_h(0).overflow_y_scrollbar().p(SIZE.framePad)
     .child(head)
     .child(sectionLabel(t, title))
     .children(rows)
-    .child(div().pt(SIZE.frameGap).child(legend(t, help)));
+    .when(v.shortcuts.showHints, (el) => el.child(div().pt(SIZE.frameGap).child(legend(t, help))));
 }

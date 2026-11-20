@@ -11,9 +11,9 @@ export const FIX_ROUNDS = 2;
 export const SPLIT_WIDTH = 1100;
 // A quiz passes at this share of right answers.
 export const PASS_SHARE = 0.8;
-// Letters the home list never hands out: j and k move, r resets, y confirms, p practices, n starts a
-// new course, g opens Practice Range.
-export const RESERVED = "jkrypng";
+// Letters the home list never hands out: j and k move, y confirms. The keys the home screen's
+// shortcuts are on (reset, practice, new course, Practice Range) are left out too: see setLetters.
+export const RESERVED = "jky";
 // The canned questions behind the d and t keys.
 export const DEEPER = "Go deeper on this code: what else here matters?";
 export const LIKE_KNOWN = `Show the closest ${COMPARE} version of this code and name what differs.`;

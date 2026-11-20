@@ -4,6 +4,7 @@
 // Keys: j/k move, space expands, enter opens a port in the browser, f favorites it,
 // n adds a favorite by number, e sets a port's URL, x ends a process, c / shift-c copy,
 // t/u/m/a toggle filters, / and p type a filter, s / shift-s sort, r refresh, esc closes.
+// The gear or , opens the settings, where each of those action keys can be turned off or moved to another key.
 // Settings in mod.json, overridden by ~/.config/herdr-app/portal.json: "refresh" (seconds, default 5)
 // and "star" (a theme color name or hex for every star, default "accent").
 
@@ -15,6 +16,7 @@ import { frame, divider } from "./kit/frame.js";
 import { chip, toolButton } from "./kit/controls.js";
 import { legend } from "./kit/legend.js";
 import { listRow } from "./kit/list.js";
+import { Shortcuts } from "./kit/shortcuts.js";
 import { scan, identity, currentIdentity, signal, probe, hostFor, urlFor, validUrl, endName, killName } from "./scan.js";
 
 /** @typedef {import("gpui-kit").Color} Color */
@@ -55,6 +57,22 @@ const PROBES_AT_ONCE = 4;
 const SPIN = "mods/workspace-chrome/spinner.svg";
 // Row heights by kind. The virtual list needs each one up front. Rows that can be selected use the kit's compact row.
 const H = { head: 28, fav: SIZE.compactRow, proc: SIZE.compactRow, detail: 22, bind: SIZE.compactRow, empty: 34 };
+/**
+ * The keys a user can turn off or change in the settings. `key` is the keystroke each one starts
+ * with. The keys that move around or expand (j, k, h, l, space), enter, esc, q, the answers to
+ * the "end process" question and , always work, and so does every button.
+ * @type {import("./kit/shortcuts.js").Shortcut[]}
+ */
+const SHORTCUTS = [
+  { id: "open", key: "o", what: "open in the browser" }, { id: "favorite", key: "f", what: "favorite the port" },
+  { id: "add-favorite", key: "n", what: "add a favorite by number" }, { id: "url", key: "e", what: "set the port's URL" },
+  { id: "end", key: "x", what: "end the process" }, { id: "copy", key: "c", what: "copy pid, address or port" },
+  { id: "copy-more", key: "shift-c", what: "copy details or URL" }, { id: "tcp", key: "t", what: "show TCP" },
+  { id: "udp", key: "u", what: "show UDP" }, { id: "favorites-only", key: "m", what: "favorites only" },
+  { id: "address", key: "a", what: "next address filter" }, { id: "search", key: "/", what: "search processes" },
+  { id: "ports", key: "p", what: "filter by port range" }, { id: "sort", key: "s", what: "next sort" },
+  { id: "sort-direction", key: "shift-s", what: "flip the sort direction" }, { id: "refresh", key: "r", what: "refresh" },
+];
 
 /** @param {string} key @param {any} fallback */
 function load(key, fallback) {
@@ -150,6 +168,8 @@ export default class Portal extends View {
     /** @type {ReturnType<typeof InputState.new> | null} */
     this.editIn = null;
     this.scroll = VirtualListScrollHandle.new();
+    // The settings panel: a switch per shortcut key, and each key can be changed there. Its j, k and space need the keyboard out of the text boxes.
+    this.shortcuts = new Shortcuts({ mod: "portal", keys: SHORTCUTS, rebind: true, onOpen: () => this.handle.focus() });
 
     this.handle.focus();
     cx.timer.after(600, () => { if (!this.typing) this.handle.focus(); });
@@ -164,7 +184,8 @@ export default class Portal extends View {
   box(name, placeholder, set) {
     const s = InputState.new({ placeholder });
     s.on("change", (_e, cx) => { set(s.value()); cx.notify(); });
-    s.on("focus", (_e, cx) => { this.typing = name; cx.notify(); });
+    // A text box that takes the keyboard closes the settings panel.
+    s.on("focus", (_e, cx) => { this.typing = name; this.shortcuts.hide(); cx.notify(); });
     s.on("blur", (_e, cx) => { if (this.typing === name) this.typing = null; cx.notify(); });
     s.on("submit", (_e, cx) => { this.handle.focus(); cx.notify(); });
     return s;
@@ -406,6 +427,12 @@ export default class Portal extends View {
 
   // Actions
 
+  /** " Press e to set a URL." with the key the shortcut is on now. Empty when the shortcut is off or has no key. @param {string} id @param {string} what */
+  press(id, what) {
+    const key = this.shortcuts.isOff(id) ? "" : this.shortcuts.keyFor(id);
+    return key ? ` Press ${key} ${what}.` : "";
+  }
+
   /** @param {string} text @param {boolean} [bad] */
   say(text, bad = false) { this.note = { text, bad }; }
 
@@ -434,7 +461,7 @@ export default class Portal extends View {
     const url = this.urlOf(b);
     if (!url) {
       const p = this.probes[this.probeKey(b)];
-      this.say(p === "pending" ? "Still checking for HTTP. Try again in a second." : `${where(b)} didn't answer as HTTP. Press e to set a URL.`, true);
+      this.say(p === "pending" ? "Still checking for HTTP. Try again in a second." : `${where(b)} didn't answer as HTTP.${this.press("url", "to set a URL")}`, true);
       return;
     }
     cx.open_url(url);
@@ -454,7 +481,7 @@ export default class Portal extends View {
     const value = what.kind === "url" ? this.urls[`${what.b.port}|${what.b.addr}`] ?? this.urlOf(what.b) ?? urlFor(what.b, "http") : "";
     const s = InputState.new({ value, placeholder: what.kind === "url" ? "http://127.0.0.1:3000 (empty clears it)" : "Port number" });
     s.set_selected_range({ start: 0, end: value.length });
-    s.on("focus", (_e, cx) => { this.typing = "edit"; cx.notify(); });
+    s.on("focus", (_e, cx) => { this.typing = "edit"; this.shortcuts.hide(); cx.notify(); });
     s.on("blur", (_e, cx) => { if (this.typing === "edit") this.typing = null; cx.notify(); });
     s.on("submit", (_e, cx) => { this.finishEdit(true); cx.notify(); });
     this.editIn = s;
@@ -562,12 +589,20 @@ export default class Portal extends View {
       }
       return;
     }
-    if (e.modifiers.control || e.modifiers.alt || e.modifiers.platform) return;
+    // Open, the settings panel takes every key.
+    if (this.shortcuts.open) { this.shortcuts.key(e, cx); return; }
+    const kill = this.kill;
+    const asking = Boolean(kill && kill.phase !== "term" && kill.phase !== "force");
+    // The shortcut this press means, from the settings: the user can change each key there. A
+    // shortcut that is off, or was moved to another key, is not found. None while a question is up.
+    let id = asking ? "" : this.shortcuts.idFor(k);
+    // Some keyboards report / with another keystroke. That counts while search is still on /.
+    if (!id && !asking && e.key === "/" && this.shortcuts.matches("search", "/")) id = "search";
+    if (!id && (e.modifiers.control || e.modifiers.alt || e.modifiers.platform)) return;
     const { items, groups } = this.build();
     const at = this.selection(items);
     const it = items[at];
-    const kill = this.kill;
-    if (kill && kill.phase !== "term" && kill.phase !== "force") {
+    if (kill && asking) {
       if (e.key === "escape") this.kill = null;
       else if (k === "enter" && kill.phase === "ask") cx.spawn((cx) => this.end(cx, false));
       else if (k === "enter" && kill.phase === "askForce") cx.spawn((cx) => this.end(cx, true));
@@ -576,8 +611,47 @@ export default class Portal extends View {
       cx.notify();
       return;
     }
+    if (this.shortcuts.key(e, cx)) return;
     this.note = null;
-    if (e.key === "escape" || k === "q") { this.close(); cx.stop_propagation(); return; }
+    // A shortcut first: a key the user gave to one wins over the keys further down.
+    if (id === "open") this.open(cx, this.bindingOf(it));
+    else if (id === "favorite") {
+      if (it?.kind === "fav") this.toggleFav(it.port);
+      else if (it?.kind === "bind") this.toggleFav(it.b.port);
+      else this.say(`Select a port to favorite it.${this.press("add-favorite", "to add one by number")}`, true);
+    }
+    else if (id === "add-favorite") this.edit({ kind: "fav" }, cx);
+    else if (id === "url") {
+      const b = this.bindingOf(it);
+      if (b) this.edit({ kind: "url", b }, cx);
+      else this.say("Select a port that something is listening on", true);
+    }
+    else if (id === "end") this.askKill(this.groupOf(it, groups));
+    else if (id === "copy") {
+      if (it?.kind === "proc" && it.g.pid) this.copy(cx, String(it.g.pid), `pid ${it.g.pid}`);
+      else if (it?.kind === "bind") this.copy(cx, where(it.b), where(it.b));
+      else if (it?.kind === "fav") this.copy(cx, String(it.port), `port ${it.port}`);
+    }
+    else if (id === "copy-more") {
+      const b = this.bindingOf(it);
+      if (it?.kind === "proc") this.copy(cx, this.details(it.g), `details of ${it.g.name}`);
+      else if (b) {
+        const url = this.urlOf(b);
+        if (url) this.copy(cx, url, url);
+        else this.say(`No URL for this port yet.${this.press("url", "to set one")}`, true);
+      }
+    }
+    else if (id === "refresh") this.refresh(cx);
+    else if (id === "sort") this.setSort(SORTS[(SORTS.indexOf(this.sort.by) + 1) % SORTS.length], this.sort.desc);
+    else if (id === "sort-direction") this.setSort(this.sort.by, !this.sort.desc);
+    else if (id === "tcp") this.filter.tcp = !this.filter.tcp;
+    else if (id === "udp") this.filter.udp = !this.filter.udp;
+    else if (id === "favorites-only") this.filter.favOnly = !this.filter.favOnly;
+    else if (id === "address") this.filter.addr = ADDRS[(ADDRS.indexOf(this.filter.addr) + 1) % ADDRS.length];
+    else if (id === "search") { this.textIn.focus(); }
+    else if (id === "ports") { this.rangeIn.focus(); }
+    // The keys that are not shortcuts.
+    else if (e.key === "escape" || k === "q") { this.close(); cx.stop_propagation(); return; }
     else if (k === "j" || k === "down") this.move(items, at, 1);
     else if (k === "k" || k === "up") this.move(items, at, -1);
     else if ((k === "l" || k === "right") && it?.kind === "proc") this.expanded.add(it.g.key);
@@ -588,42 +662,7 @@ export default class Portal extends View {
     else if (k === "space" || (k === "enter" && it?.kind === "proc")) {
       if (it?.kind === "proc") { if (this.expanded.has(it.g.key)) this.expanded.delete(it.g.key); else this.expanded.add(it.g.key); }
     }
-    else if (k === "enter" || k === "o") this.open(cx, this.bindingOf(it));
-    else if (k === "f") {
-      if (it?.kind === "fav") this.toggleFav(it.port);
-      else if (it?.kind === "bind") this.toggleFav(it.b.port);
-      else this.say("Select a port to favorite it, or press n to add one by number", true);
-    }
-    else if (k === "n") this.edit({ kind: "fav" }, cx);
-    else if (k === "e") {
-      const b = this.bindingOf(it);
-      if (b) this.edit({ kind: "url", b }, cx);
-      else this.say("Select a port that something is listening on", true);
-    }
-    else if (k === "x") this.askKill(this.groupOf(it, groups));
-    else if (k === "c") {
-      if (it?.kind === "proc" && it.g.pid) this.copy(cx, String(it.g.pid), `pid ${it.g.pid}`);
-      else if (it?.kind === "bind") this.copy(cx, where(it.b), where(it.b));
-      else if (it?.kind === "fav") this.copy(cx, String(it.port), `port ${it.port}`);
-    }
-    else if (k === "shift-c") {
-      const b = this.bindingOf(it);
-      if (it?.kind === "proc") this.copy(cx, this.details(it.g), `details of ${it.g.name}`);
-      else if (b) {
-        const url = this.urlOf(b);
-        if (url) this.copy(cx, url, url);
-        else this.say("No URL for this port yet. Press e to set one.", true);
-      }
-    }
-    else if (k === "r") this.refresh(cx);
-    else if (k === "s") this.setSort(SORTS[(SORTS.indexOf(this.sort.by) + 1) % SORTS.length], this.sort.desc);
-    else if (k === "shift-s") this.setSort(this.sort.by, !this.sort.desc);
-    else if (k === "t") this.filter.tcp = !this.filter.tcp;
-    else if (k === "u") this.filter.udp = !this.filter.udp;
-    else if (k === "m") this.filter.favOnly = !this.filter.favOnly;
-    else if (k === "a") this.filter.addr = ADDRS[(ADDRS.indexOf(this.filter.addr) + 1) % ADDRS.length];
-    else if (k === "/" || e.key === "/") { this.textIn.focus(); }
-    else if (k === "p") { this.rangeIn.focus(); }
+    else if (k === "enter") this.open(cx, this.bindingOf(it));
     else return;
     cx.stop_propagation();
     cx.notify();
@@ -822,11 +861,21 @@ export default class Portal extends View {
     } else if (this.lastOk) status = `Updated ${clock(this.lastOk)}`;
 
     const strip = this.strip(t);
+    // The key hints, with the key each shortcut is on now. A shortcut that is off or has no key is not listed.
+    const keyOf = (/** @type {string} */ id) => this.shortcuts.shown(id);
+    const filters = ["tcp", "udp", "favorites-only", "address"].map(keyOf).filter(Boolean).join("/");
+    /** @type {import("./kit/legend.js").Hint[]} */
+    const hints = [["j/k", "move"], ["space", "expand"], ["enter", "open"]];
+    for (const [id, what] of [["favorite", "favorite"], ["add-favorite", "add"], ["url", "URL"], ["end", "end"], ["copy", "copy"]]) if (keyOf(id)) hints.push([keyOf(id), what]);
+    if (filters) hints.push([filters, "filters"]);
+    for (const [id, what] of [["search", "search"], ["ports", "ports"], ["sort", "sort"], ["refresh", "refresh"]]) if (keyOf(id)) hints.push([keyOf(id), what]);
+    hints.push([",", "settings"]);
     // Between the title and "Esc": the counts, then when the list was last read.
     const details = h_flex().flex_1().min_w(0).items_center().gap(10)
       .child(div().flex_none().text_size(11.5).text_color(t.dim).child(counts))
       .child(div().flex_1())
-      .child(div().flex_none().max_w(320).truncate().text_size(SIZE.small).text_color(statusColor).child(status));
+      .child(div().flex_none().max_w(320).truncate().text_size(SIZE.small).text_color(statusColor).child(status))
+      .child(this.shortcuts.button(t));
     return frame(t, { id: "portal", title: "Portal", handle: this.handle, fill: true, onKey: (e, cx) => this.key(e, cx), details })
       .child(h_flex().flex_none().items_center().gap(6)
         .child(this.field(t, "f-text", this.textIn, this.typing === "text", false, null))
@@ -854,8 +903,8 @@ export default class Portal extends View {
         .child(Scrollbar.vertical("portal-list").viewport_from_layout().absolute().inset_0()))
       .when(!!strip, (el) => el.child(/** @type {any} */ (strip)))
       // A line above the key hints, so they do not read as more list rows.
-      .child(divider(t))
-      .child(legend(t, [["j/k", "move"], ["space", "expand"], ["enter", "open"], ["f", "favorite"], ["n", "add"], ["e", "URL"], ["x", "end"],
-        ["c", "copy"], ["t/u/m/a", "filters"], ["/", "search"], ["p", "ports"], ["s", "sort"], ["r", "refresh"]]));
+      .when(this.shortcuts.showHints, (el) => el.child(divider(t)))
+      .when(this.shortcuts.showHints, (el) => el.child(legend(t, hints)))
+      .when(this.shortcuts.open, (el) => this.shortcuts.guard(el).child(this.shortcuts.panel(t)));
   }
 }

@@ -6,6 +6,8 @@
 // new branch from it, ctrl-r renames it, ctrl-d deletes it (asks first). ctrl-f fetches all
 // remotes, ctrl-l pulls the current branch, ctrl-p pushes the selected local branch.
 // ctrl-s stashes the uncommitted changes, ctrl-o pops the newest stash. esc closes the name box or question, then clears the filter, then closes.
+// ctrl-, or the gear opens the settings, where each of the ctrl keys above can be turned off or
+// moved to another key. The keys named here are the ones they start with.
 //
 // Remote branches are listed under the local ones. Enter on one switches to its local branch,
 // making one that tracks it when there is none. The mod never renames or deletes on a remote.
@@ -21,6 +23,7 @@ import { sectionLabel } from "./kit/pane.js";
 import { textInput, spinner } from "./kit/controls.js";
 import { repoOf, loadBranches, switchTo, trackBranch, createBranch, renameBranch, deleteBranch, fetchAll, pull, push, status, stash, stashPop } from "./git.js";
 import { filterBranches } from "./parse.js";
+import { Shortcuts } from "./kit/shortcuts.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("gpui-kit").KeyEvent} KeyEvent */
@@ -47,6 +50,18 @@ const SUBJECT_MAX_W = 260;
 const ROW_GAP = 2;
 /** The filter box is focused again this long after the dialog opens, once the app has put the keyboard on it. */
 const REFOCUS_MS = 600;
+/**
+ * The keys a user can turn off or change in the settings. Each id is the command its key runs,
+ * and each `key` is the keystroke it starts with. The keys
+ * that move, enter, esc and ctrl-, always work, and so does every `herdr-app do branch.<command>`.
+ * @type {import("./kit/shortcuts.js").Shortcut[]}
+ */
+const SHORTCUTS = [
+  { id: "new", key: "ctrl-n", what: "new" }, { id: "rename", key: "ctrl-r", what: "rename" },
+  { id: "delete", key: "ctrl-d", what: "delete" }, { id: "fetch", key: "ctrl-f", what: "fetch" },
+  { id: "pull", key: "ctrl-l", what: "pull" }, { id: "push", key: "ctrl-p", what: "push" },
+  { id: "stash", key: "ctrl-s", what: "stash" }, { id: "pop", key: "ctrl-o", what: "pop" },
+];
 
 /**
  * Where the space is right now: the folder of the pane you're in (the focused
@@ -96,9 +111,16 @@ export default class Branch extends View {
     this.filter = InputState.new({ value: String(props()?.filter ?? ""), placeholder: "Filter branches" });
     this.filter.on("change", (_e, cx) => { this.select(0); cx.notify(); });
     // Enter in the filter box. While a question is open the filter box still has the keyboard, so enter means yes.
-    this.filter.on("submit", (_e, cx) => this.command(this.asking ? "yes" : "switch", cx));
+    // A click can put the keyboard back in the box while the settings are open: enter then switches the selected setting.
+    this.filter.on("submit", (_e, cx) => this.command(this.shortcuts.open ? "toggle" : this.asking ? "yes" : "switch", cx));
     this.filter.focus();
-    cx.timer.after(REFOCUS_MS, () => this.filter.focus());
+    cx.timer.after(REFOCUS_MS, () => { if (!this.shortcuts.open) this.filter.focus(); });
+    /** The settings panel: a switch per shortcut key. While it is open the frame has the keyboard, so j, k and space reach it. */
+    this.shortcuts = new Shortcuts({
+      mod: "branch", keys: SHORTCUTS, rebind: true, openKey: "ctrl-,",
+      onOpen: () => this.handle.focus(),
+      onClose: () => (this.asking?.input ?? this.filter).focus(),
+    });
     /** The list's scroll position, so the selected row stays in view. */
     this.scroll = ScrollHandle.new();
     /** True after the selection moves, until the next render scrolls to it. */
@@ -107,7 +129,7 @@ export default class Branch extends View {
     cx.spawn(async (cx) => {
       for (;;) {
         const c = await nextCommand();
-        if (c === "focus") this.filter.focus();
+        if (c === "focus") (this.shortcuts.open ? this.handle : this.filter).focus();
         else if (c) this.command(c, cx);
         cx.notify();
       }
@@ -166,8 +188,9 @@ export default class Branch extends View {
     if (count) this.select((this.at + by + count) % count);
   }
 
-  /** Closes the name box or question when one is open, else clears the filter when it has text, else closes the dialog. */
+  /** Stops the settings' "press a key" step or closes them when they are open, else the name box or question, else clears the filter when it has text, else closes the dialog. */
   cancel() {
+    if (this.shortcuts.open) return this.shortcuts.back();
     if (this.asking) {
       this.asking = null;
       this.filter.focus();
@@ -193,6 +216,7 @@ export default class Branch extends View {
     if (this.busy) return;
     this.note = null;
     if (c === "cancel") this.cancel();
+    else if (this.shortcuts.command(c)) { /* the settings panel took it */ }
     else if (this.asking) { if (c === "yes") this.yes(cx); }
     else if (c === "up") this.move(-1);
     else if (c === "down") this.move(1);
@@ -225,7 +249,7 @@ export default class Branch extends View {
   ask(kind, branch, value, selectAll) {
     const input = InputState.new({ value, placeholder: "Branch name" });
     if (selectAll) input.set_selected_range({ start: 0, end: value.length });
-    input.on("submit", (_e, cx) => this.command("yes", cx));
+    input.on("submit", (_e, cx) => this.command(this.shortcuts.open ? "toggle" : "yes", cx));
     input.focus();
     this.asking = { kind, branch, input };
   }
@@ -370,28 +394,29 @@ export default class Branch extends View {
     });
   }
 
-  /** The command a key stands for, or "" when it has none. Enter is not here: it arrives as an input's "submit". @param {string} k a keystroke */
+  /**
+   * The command a key that is not a shortcut stands for, or "" when it has none. The shortcuts
+   * are asked of the settings, since the user can change their keys. Enter is not here: it
+   * arrives as an input's "submit".
+   * @param {string} k a keystroke
+   */
   commandOf(k) {
     if (k === "up" || k === "ctrl-k") return "up";
     if (k === "down" || k === "ctrl-j") return "down";
     if (k === "escape") return "cancel";
-    if (k === "ctrl-n") return "new";
-    if (k === "ctrl-r") return "rename";
-    if (k === "ctrl-d") return "delete";
-    if (k === "ctrl-f") return "fetch";
-    if (k === "ctrl-l") return "pull";
-    if (k === "ctrl-p") return "push";
-    if (k === "ctrl-s") return "stash";
-    if (k === "ctrl-o") return "pop";
     return "";
   }
 
   /** @param {KeyEvent} e @param {Context} cx */
   key(e, cx) {
+    // The settings panel takes its opening key, and every key while it is open.
+    if (this.shortcuts.key(e, cx)) return;
     // Ctrl with j or k is read from the key and its modifiers, so it moves however the app spells the keystroke.
     const m = e.modifiers;
     const ctrlOnly = m.control && !m.shift && !m.alt && !m.platform;
-    const c = ctrlOnly && e.key === "j" ? "down" : ctrlOnly && e.key === "k" ? "up" : this.commandOf(e.keystroke);
+    // A shortcut's key comes first, so a key the user gave to a shortcut runs it. A shortcut that
+    // is turned off, or the key it was moved away from, is none of them.
+    const c = this.shortcuts.idFor(e.keystroke) || (ctrlOnly && e.key === "j" ? "down" : ctrlOnly && e.key === "k" ? "up" : this.commandOf(e.keystroke));
     // Any other key clears the note too. Enter's own command clears it.
     if (!c) {
       if (this.note && !this.busy && e.keystroke !== "enter") { this.note = null; cx.notify(); }
@@ -452,7 +477,10 @@ export default class Branch extends View {
     const note = this.noteText(rows.length);
     const details = h_flex().flex_1().min_w(0).gap(8).items_center().text_size(SIZE.small).text_color(t.dim)
       .child(div().min_w(0).truncate().child(this.repo ? [this.repo.name, this.head, this.changed ? `${this.changed} changed` : "", this.stashes ? `${this.stashes} stashed` : ""].filter(Boolean).join(" · ") : ""))
-      .when(this.busy, (el) => el.child(spinner(t).flex_none()));
+      .when(this.busy, (el) => el.child(spinner(t).flex_none()))
+      // The gear sits at the right, beside "Esc".
+      .child(div().flex_1())
+      .child(this.shortcuts.button(t));
     const asking = this.asking;
     const question = this.question();
     // Elements are single-use, so each row is built once per render.
@@ -476,7 +504,9 @@ export default class Branch extends View {
           .child(div().flex_none().max_w(SUBJECT_MAX_W).truncate().text_size(SIZE.small).text_color(t.dim).child(b.subject)),
       ])))
       .when(!!note, (el) => el.child(div().flex_none().text_size(SIZE.small).text_color(note?.bad ? t.blocked : t.dim).child(note?.text ?? "")))
-      .child(divider(t))
-      .child(legend(t, [["↑/↓", "move"], ["ctrl-j/k", "move"], ["enter", "switch"], ["ctrl-n", "new"], ["ctrl-r", "rename"], ["ctrl-d", "delete"], ["ctrl-f", "fetch"], ["ctrl-l", "pull"], ["ctrl-p", "push"], ["ctrl-s", "stash"], ["ctrl-o", "pop"], ["esc", "close"]]));
+      .when(this.shortcuts.showHints, (el) => el.child(divider(t)))
+      // A key that is turned off is not listed.
+      .when(this.shortcuts.showHints, (el) => el.child(legend(t, [["↑/↓", "move"], ["ctrl-j/k", "move"], ["enter", "switch"], ...this.shortcuts.hints(), ["ctrl-,", "settings"], ["esc", "close"]])))
+      .when(this.shortcuts.open, (el) => this.shortcuts.guard(el).child(this.shortcuts.panel(t)));
   }
 }

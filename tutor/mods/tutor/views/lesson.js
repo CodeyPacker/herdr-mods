@@ -13,11 +13,12 @@ export function lessonView(v, t) {
   const header = paneHeader(t)
     .child(div().flex_none().text_size(11.5).text_color(t.dim).child(`${v.idx + 1} / ${mod.stops.length}`))
     .child(div().flex_1().min_w(0).truncate().font_semibold().child(s.title))
-    .child(div().max_w(240).truncate().text_size(11.5).text_color(t.dim).child(mod.title));
+    .child(div().max_w(240).truncate().text_size(11.5).text_color(t.dim).child(mod.title))
+    .child(v.shortcuts.button(t));
   const fileLine = h_flex().id("file").px(14).py(6).gap(8).items_center().cursor_pointer()
     .hover(st => st.bg(t.hover)).on_click(() => v.openEditor())
     .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.accent).font_family(String(settings().font_family ?? "")).child(s.file))
-    .child(div().flex_shrink_1().min_w(0).truncate().text_size(11.5).text_color(t.dim).child(`lines ${s.start}–${s.end}  ·  o opens`));
+    .child(div().flex_shrink_1().min_w(0).truncate().text_size(11.5).text_color(t.dim).child(`lines ${s.start}–${s.end}  ·  ${v.shown("open-file", "o") || "click"} opens`));
   const code = div().flex_1().min_h(0).mx(14).mb(4).rounded(8).border_1().border_color(t.border).bg(t.background).overflow_hidden()
     .child(v.code ? Editor.new(v.code).size_full()
       : div().p(10).text_size(12).text_color(v.codeError ? t.ansi1 : t.dim).child(v.codeError ?? "Loading…"));
@@ -49,13 +50,13 @@ export function lessonView(v, t) {
   const bar = paneBar(t)
     .child(button(t, "prev", "Previous", "k", v.idx > 0, cx => { v.move(-1, cx); cx.notify(); }))
     .child(button(t, "next", last ? "Quiz" : "Next", "j", true, cx => { v.move(1, cx); cx.notify(); }))
-    .child(button(t, "askbtn", "Ask", "a", chat, cx => { v.startAsking(cx); cx.notify(); }))
-    .child(button(t, "deeper", "Deeper", "d", chat, cx => { v.deeper(cx); cx.notify(); }))
-    .when(Boolean(compare), el => el.child(button(t, "compare", `Like ${compare}`, "t", chat, cx => { v.likeKnown(cx); cx.notify(); })))
-    .child(button(t, "quiz", "Quiz", "q", true, cx => { v.startQuiz(cx); cx.notify(); }))
-    .child(button(t, "practice", "Practice", "p", v.canPractice(mod.id), cx => { v.openPractice(mod.id, cx, "lesson"); cx.notify(); }))
-    .child(button(t, "openfile", "Open", "o", true, cx => v.openEditor(cx)))
-    .child(button(t, "layout", v.isSplit() ? "Stacked" : "Split", "s", true, cx => { v.toggleSplit(); cx.notify(); }))
+    .child(button(t, "askbtn", "Ask", v.shown("ask", "a"), chat, cx => { v.startAsking(cx); cx.notify(); }))
+    .child(button(t, "deeper", "Deeper", v.shown("deeper", "d"), chat, cx => { v.deeper(cx); cx.notify(); }))
+    .when(Boolean(compare), el => el.child(button(t, "compare", `Like ${compare}`, v.shown("compare", "t"), chat, cx => { v.likeKnown(cx); cx.notify(); })))
+    .child(button(t, "quiz", "Quiz", v.shown("quiz", "q"), true, cx => { v.startQuiz(cx); cx.notify(); }))
+    .child(button(t, "practice", "Practice", v.shown("practice", "p"), v.canPractice(mod.id), cx => { v.openPractice(mod.id, cx, "lesson"); cx.notify(); }))
+    .child(button(t, "openfile", "Open", v.shown("open-file", "o"), true, cx => v.openEditor(cx)))
+    .child(button(t, "layout", v.isSplit() ? "Stacked" : "Split", v.shown("split", "s"), true, cx => { v.toggleSplit(); cx.notify(); }))
     .child(button(t, "home", "Modules", "esc", true, cx => { v.goHome(cx); cx.notify(); }))
     .when(Boolean(v.flash), el => el.child(div().text_size(11.5).text_color(t.dim).child(v.flash)));
   const codeSide = v_flex().size_full().min_h(0).min_w(0).overflow_hidden().child(fileLine).child(code);

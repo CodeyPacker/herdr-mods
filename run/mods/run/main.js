@@ -11,7 +11,8 @@
 //
 // Keys: hint letter picks a row, j/k move. s start, x stop, r restart, u start
 // all the autostart ones, shift-x stop everything in the space, enter peeks
-// at output, o turns it into a tab, a toggles every space, esc closes.
+// at output, o turns it into a tab, a toggles every space, esc closes. "," opens
+// the settings, where each of these keys can be turned off or changed.
 
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
@@ -21,6 +22,7 @@ import { frame, divider } from "./kit/frame.js";
 import { legend } from "./kit/legend.js";
 import { assignLetters, letterRow, navigateByLetter, readLetterConfig } from "./kit/letters.js";
 import { statusDot, spaceNote, spaceColor, avatar, spaceName } from "./kit/spaces.js";
+import { Shortcuts } from "./kit/shortcuts.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("gpui-kit").KeyEvent} KeyEvent */
@@ -43,8 +45,8 @@ const FILE = "herdr.procs.json";
 const LABEL_SPACE = "run.space";
 const LABEL_ROOT = "run.root";
 const LABEL_NAME = "run.name";
-// These do things, so they can't be hints.
-const RESERVED = "sxruoaqjk";
+// These do things, so they can't be hints. Each shortcut's own letter is kept out too (see `reserved`).
+const RESERVED = "qjk";
 const STOP_WAIT_MS = 10000;
 /** The space between one space's rows and the next space's. */
 const BLOCK_GAP = 8;
@@ -54,6 +56,23 @@ const BLOCK_GAP = 8;
  * screen in a window as short as 800 px.
  */
 const MAX_LIST_H = 470;
+/**
+ * The keys a user can turn off or change in the settings. `key` is the keystroke each one
+ * comes with. The keys that move around (j, k, the hint letters), enter, esc, q and "," always
+ * work, unless the user gives one of them to a shortcut. The bar over a peeked terminal has only
+ * the "keep" shortcut.
+ * @type {import("./kit/shortcuts.js").Shortcut[]}
+ */
+const SHORTCUTS = [
+  { id: "start", key: "s", what: "start" }, { id: "stop", key: "x", what: "stop" },
+  { id: "restart", key: "r", what: "restart" }, { id: "up", key: "u", what: "start all the autostart ones" },
+  { id: "stopall", key: "shift-x", what: "stop everything in the space" }, { id: "keep", key: "o", what: "keep as a tab" },
+  { id: "all", key: "a", what: "show every space, or only this one" },
+];
+/** Where the settings panel sits in the popup, and how tall its list of keys may be. */
+const PANEL = { top: 50, right: SIZE.framePad, width: 340, maxHeight: 240 };
+/** The list is at least this tall while the settings are open, so the popup has room for the panel. */
+const PANEL_LIST_H = 250;
 
 /**
  * Where the space is right now: the folder of the pane you're in (the focused
@@ -184,6 +203,8 @@ export default class Procs extends View {
   init(_props, cx) {
     /** @type {FocusHandle} */
     this.handle = cx.focus_handle();
+    /** The settings panel: a switch per shortcut key, and which key it is on. The bar reads it too, for its "keep" key. */
+    this.shortcuts = new Shortcuts({ mod: "run", keys: SHORTCUTS, rebind: true });
     // If we were opened as the bar above a peeked terminal, that's all we are. No timers, no sweeps.
     /** @type {Peek | null} */
     this.peeked = props()?.peek ?? null;
@@ -227,7 +248,8 @@ export default class Procs extends View {
     cx.spawn(async (cx) => {
       for (;;) {
         const c = await nextCommand();
-        if (c === "stopall") await this.stopAll(cx);
+        if (this.shortcuts.command(c)) { /* the settings panel took it */ }
+        else if (c === "stopall") await this.stopAll(cx);
         else if (c === "up") await this.up(cx);
         else if (c === "peek") this.peek(this.items()[this.at ?? 0]);
         else if (c === "all") { this.all = !this.all; localStorage.setItem("all", this.all ? "1" : "0"); this.at = null; this.reload(cx); }
@@ -385,6 +407,14 @@ export default class Procs extends View {
     return f ? { address, ...f } : null;
   }
 
+  /**
+   * The letters no row gets as its hint: q, j and k, and the key each shortcut is on now when
+   * that key is one plain letter. A letter the user moved a shortcut away from is free for rows.
+   */
+  reserved() {
+    return RESERVED + SHORTCUTS.map((k) => this.shortcuts.keyFor(k.id)).filter((k) => /^[a-z]$/.test(k)).join("");
+  }
+
   /** Every hinted thing in order: a header per space, then its rows. @returns {Item[]} */
   items() {
     /** @type {Item[]} */
@@ -416,7 +446,7 @@ export default class Procs extends View {
       }
     }
     const wanted = out.map((it) => (it.kind === "space" ? this.hintConfig.spaces[it.s.name] : it.kind === "proc" ? it.p.key : null));
-    const hs = assignLetters(out.length, RESERVED, wanted);
+    const hs = assignLetters(out.length, this.reserved(), wanted);
     out.forEach((it, i) => { it.hint = hs[i]; it.pinned = !!wanted[i] && hs[i] === String(wanted[i]).toLowerCase(); });
     return out;
   }
@@ -526,12 +556,13 @@ export default class Procs extends View {
   barKey(e, cx) {
     const k = e.keystroke;
     const p = this.peeked;
-    if (k === "escape" || k === "q") closeOverlay(props().overlay);
-    else if (k === "o") {
+    // The settings say which key "keep" is on. It comes first, so a key the user gave it wins.
+    if (this.shortcuts.matches("keep", k)) {
       closeOverlay(props().overlay);
       if (focused()?.space !== p.space) run("space.select", { id: p.space });
       run("terminal.keep", { terminal: p.address, place: "tab" });
-    } else if (k === "b") {
+    } else if (k === "escape" || k === "q") closeOverlay(props().overlay);
+    else if (k === "b") {
       closeOverlay(props().overlay);
       run("mod.open", { name: "run" });
     } else return;
@@ -542,6 +573,7 @@ export default class Procs extends View {
     const t = colors();
     const p = this.peeked;
     const live = /** @type {Term[]} */ (terminals()).find((x) => x.address === p.address);
+    const keepKey = this.shortcuts.shown("keep");
     const state = live?.state === "live" ? `running · pid ${live.pid ?? "?"}` : "ended";
     return h_flex()
       .id("run-bar")
@@ -561,7 +593,8 @@ export default class Procs extends View {
       .child(div().flex_none().font_semibold().text_color(t.foreground).child(p.name))
       .child(div().flex_none().text_color(t.dim).child(`${p.spaceName} · ${state}`))
       .child(div().flex_1())
-      .child(legend(t, [["esc", "close"], ["o", "keep as tab"], ["b", "back to list"]]))
+      // A key that is turned off is not listed.
+      .when(this.shortcuts.showHints, (el) => el.child(legend(t, [["esc", "close"], ...(keepKey ? [/** @type {[string, string]} */ ([keepKey, "keep as tab"])] : []), ["b", "back to list"]])))
       .child(div().flex_none().text_size(11).text_color(t.dim).child("click the output to type in it, the bar to get these keys back"));
   }
 
@@ -575,12 +608,17 @@ export default class Procs extends View {
 
   /** @param {KeyEvent} e @param {Context} cx */
   key(e, cx) {
+    // The settings key, and every key while the settings are open.
+    if (this.shortcuts.key(e, cx)) return;
     const items = this.items();
     /** @type {import("./kit/letters.js").NavState} */
     const state = { at: this.at ?? 0, typed: this.typed };
-    const r = navigateByLetter(state, e, items);
+    // The settings say which key each shortcut is on. A shortcut's key comes first, so a key the
+    // user gave it wins over the keys that move around. A key that is turned off is no shortcut.
+    const c = this.shortcuts.idFor(e.keystroke);
+    const r = c ? null : navigateByLetter(state, e, items);
     this.at = state.at;
-    this.typed = state.typed;
+    this.typed = c ? "" : state.typed;
     this.note = "";
     if (r === "close") { this.close(); cx.stop_propagation(); return; }
     if (r === "hit" && (items[this.at]?.kind === "space" || items[this.at]?.kind === "repo")) {
@@ -590,24 +628,26 @@ export default class Procs extends View {
     }
     if (r === "act") this.peek(items[this.at]);
     if (r) { cx.stop_propagation(); cx.notify(); return; }
-    if (e.modifiers.control || e.modifiers.alt || e.modifiers.platform) return;
     const it = items[this.at];
     const proc = it?.kind === "proc" ? it : null;
-    const k = e.keystroke;
-    if (k === "a") { this.all = !this.all; localStorage.setItem("all", this.all ? "1" : "0"); this.at = null; this.reload(cx); }
-    else if (k === "u") cx.spawn((cx) => this.up(cx));
-    else if (k === "q") this.close();
-    else if (k === "shift-x") {
+    if (!c) {
+      // No shortcut's key: only q is left, and it closes.
+      if (e.keystroke !== "q" || e.modifiers.control || e.modifiers.alt || e.modifiers.platform) return;
+      this.close();
+    }
+    else if (c === "all") { this.all = !this.all; localStorage.setItem("all", this.all ? "1" : "0"); this.at = null; this.reload(cx); }
+    else if (c === "up") cx.spawn((cx) => this.up(cx));
+    else if (c === "stopall") {
       const s = it?.s;
       const n = items.filter((x) => x.kind === "proc" && x.s === s && x.state === "running").length;
       if (s && n) openOverlay({ mod: "confirm", kind: "dialog", width: 380, props: { title: `Stop ${n} process${n > 1 ? "es" : ""} in ${s.name}?`, detail: "Each one is killed. Their output stays until started again.", command: { name: "run.stopall", args: {} } } });
     }
     else if (!proc) return;
-    // Ignore s/x/r while something's already happening to that row.
-    else if (k === "s") { if (proc.state !== "running" && !proc.busy) cx.spawn((cx) => this.start(cx, proc)); }
-    else if (k === "x") { if (!proc.busy) cx.spawn((cx) => this.stop(cx, proc)); }
-    else if (k === "r") { if (!proc.busy) cx.spawn((cx) => this.restart(cx, proc)); }
-    else if (k === "o") this.keep(proc);
+    // Ignore start, stop and restart while something's already happening to that row.
+    else if (c === "start") { if (proc.state !== "running" && !proc.busy) cx.spawn((cx) => this.start(cx, proc)); }
+    else if (c === "stop") { if (!proc.busy) cx.spawn((cx) => this.stop(cx, proc)); }
+    else if (c === "restart") { if (!proc.busy) cx.spawn((cx) => this.restart(cx, proc)); }
+    else if (c === "keep") this.keep(proc);
     else return;
     cx.stop_propagation();
     cx.notify();
@@ -628,6 +668,8 @@ export default class Procs extends View {
     if (this.at !== null) this.at = at;
     const space = /** @type {Record<string, string> | undefined} */ (shared("space.colors"));
     const all = spaces();
+    // The key that starts the autostart ones, for the note on a space with nothing running. "" when it is off or has no key.
+    const upKey = this.shortcuts.isOff("up") ? "" : this.shortcuts.keyFor("up");
     // gpui elements are single-use, so collect each space's rows first and build the block after.
     /**
      * A row's shell: its letter badge first.
@@ -649,7 +691,7 @@ export default class Procs extends View {
         /** @type {string | null} */
         let empty = null;
         if (cfg && !cfg.procs) empty = cfg.error ?? `no ${FILE} in ${cfg.root ?? "this space"}`;
-        else if (cfg?.procs && !running && auto) empty = `nothing running · u starts ${auto}`;
+        else if (cfg?.procs && !running && auto) empty = upKey ? `nothing running · ${upKey} starts ${auto}` : "nothing running";
         else if (cfg?.procs?.length === 0) empty = `${FILE} declares no procs`;
         blocks.push([
           shell(`h-${it.s.id}`, it, on, selectUnder(i))
@@ -689,12 +731,21 @@ export default class Procs extends View {
     // The popup sizes to content, so the scrollable list needs an explicit height or it collapses.
     // Each row is followed by its block's 2 px gap, and each block by the list's gap.
     const est = rowCount * (SIZE.compactRow + 2) + blocks.length * BLOCK_GAP || 24;
-    const listH = Math.min(MAX_LIST_H, est);
+    const listH = Math.max(Math.min(MAX_LIST_H, est), this.shortcuts.open ? PANEL_LIST_H : 0);
+    /**
+     * A shortcut's legend entry, with the key it is on now. None when the key is off or it has no key.
+     * @param {string} id @param {string} what @returns {import("./kit/legend.js").Hint[]}
+     */
+    const hint = (id, what) => (this.shortcuts.shown(id) ? [[this.shortcuts.shown(id), what]] : []);
 
-    return frame(t, { id: "run", title: this.all ? "Run · every space" : "Run", handle: this.handle, onKey: (e, cx) => this.key(e, cx) })
+    return frame(t, { id: "run", title: this.all ? "Run · every space" : "Run", handle: this.handle, onKey: (e, cx) => this.key(e, cx),
+      details: h_flex().flex_1().justify_end().child(this.shortcuts.button(t)) })
       .child(v_flex().id("run-list").h(listH).flex_none().overflow_y_scrollbar().gap(BLOCK_GAP).children(sections))
       .when(!!this.note, (el) => el.child(div().text_size(SIZE.small).text_color(t.blocked).child(this.note)))
-      .child(divider(t))
-      .child(legend(t, [["j/k", "move"], ["s", "start"], ["x", "stop"], ["r", "restart"], ["u", "up all"], ["enter", "peek"], ["a", this.all ? "this space" : "all spaces"]]));
+      .when(this.shortcuts.showHints, (el) => el.child(divider(t)))
+      // A key that is turned off is not listed.
+      .when(this.shortcuts.showHints, (el) => el.child(legend(t, [["j/k", "move"], ...hint("start", "start"), ...hint("stop", "stop"), ...hint("restart", "restart"), ...hint("up", "up all"), ["enter", "peek"],
+        ...hint("all", this.all ? "this space" : "all spaces"), [",", "settings"]])))
+      .when(this.shortcuts.open, (el) => this.shortcuts.guard(el).child(this.shortcuts.panel(t, PANEL)));
   }
 }
