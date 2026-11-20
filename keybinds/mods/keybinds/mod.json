@@ -1,0 +1,5 @@
+{
+  "place": "none",
+  "title": "Keybinds",
+  "overlay": { "kind": "dialog", "width": 640, "height": 0.8, "frame": "none" }
+}

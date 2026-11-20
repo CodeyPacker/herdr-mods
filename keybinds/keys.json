@@ -1,0 +1,6 @@
+{
+  "global": {
+    "ctrl-a ?": "mod.open:keybinds",
+    "ctrl-a shift-/": "mod.open:keybinds"
+  }
+}
