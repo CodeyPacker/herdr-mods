@@ -87,6 +87,22 @@ export function exercisesPrompt(course, mod, entry, number, lang, me) {
   ].join("\n");
 }
 
+/** Matches each module to a Practice Range topic, for the "practise this" link. */
+export function matchPrompt(course, topics, lang) {
+  return [
+    `This ${lang.name} course has these modules:`,
+    course.modules.map(m => `- ${m.id}: ${m.title}. ${m.summary}${m.teaches ? ` Teaches: ${m.teaches}` : ""}`).join("\n"),
+    ``,
+    `A separate drill app has these ${lang.name} topics, each a set of small syntax exercises:`,
+    topics.map(t => `- ${t.id}: ${t.title}${t.description ? `. ${t.description}` : ""}`).join("\n"),
+    ``,
+    `For each module, pick the one topic whose exercises drill what the module teaches, or null when none fits well. Modules about this repo's own architecture, project setup or tools usually have none. Use topic ids exactly as written. Do not read any files.`,
+    ``,
+    `The JSON: { "matches": { "01-project-shape": null, "02-types": "variables" } }`,
+    onlyJson,
+  ].join("\n");
+}
+
 /** Sends problems back, in the same chat, for a corrected reply. */
 export function fixPrompt(problems) {
   return [

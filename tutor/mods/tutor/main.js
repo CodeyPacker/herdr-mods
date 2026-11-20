@@ -13,6 +13,7 @@
 //   agent.js      the claude CLI
 //   prompts.js    every prompt
 //   practice.js   the practice files and runs
+//   practice-range.js  the optional link to Practice Range, when it is installed
 //   views/        the setup, build, home, lesson, quiz, result and practice screens
 import { View } from "gpui-kit";
 import { InputState, ScrollHandle, v_flex } from "gpui-base";
@@ -24,7 +25,8 @@ import { learnerOf, likeKnownQuestion, parseKnown } from "./learner.js";
 import { EDITORS, loadSettings, saveSettings, cleanSettings, nextOf } from "./settings.js";
 import { LANGUAGES, DEFAULT_LANGUAGE, languageOf } from "./languages.js";
 import { currentSlug, setCurrent, slugFor, loadCourse, saveCourse, loadModule, saveModule, loadExercises, saveExercises, listCourses, repoInfo, checkRepo, courseDir } from "./course.js";
-import { writeOutline, writeModule, writeExercises } from "./build.js";
+import { writeOutline, writeModule, writeExercises, writeMatches } from "./build.js";
+import { practiceRangeTopics, openPracticeRange } from "./practice-range.js";
 import { fresh, loadProgress, saveProgress, merge } from "./progress.js";
 import { fileAt, codeState, liveLine, openInVSCode, neovimOpenExpression } from "./code.js";
 import { AgentSession, haveClaude } from "./agent.js";
@@ -52,6 +54,7 @@ export default class Tutor extends View {
     this.pr = null; this.prGen = 0; this.practiceFrom = "home"; // the exercise shown, and where esc goes
     this.editors = {};        // the Neovim terminal opened per exercise, and per course for reading ("<slug>/read")
     this.letters = [];        // the home list's letter per module
+    this.rangeTopics = null;  // Practice Range's topics for this course's language, or null without it
     this.nav = { at: 0, typed: "" };  // the home list's cursor and typed letters
     this.rowChild = [];       // the home list's child index per module, set by the view
     this.confirmReset = false;
@@ -135,13 +138,15 @@ export default class Tutor extends View {
   async openCourse(slug, cx) {
     this.leaveModule();
     this.slug = slug; this.course = null; this.courseError = null; this.repoError = null; this.lang = null;
-    this.mods = {}; this.modErrors = {}; this.exercises = {}; this.flash = null;
+    this.mods = {}; this.modErrors = {}; this.exercises = {}; this.flash = null; this.rangeTopics = null;
     this.progress = fresh(); this.loaded = false; this.nav = { at: 0, typed: "" }; this.confirmReset = false;
     this.phase = "home";
     cx.notify();
     await setCurrent(slug).catch(() => {});
     await this.load();
     cx.notify();
+    // Practice Range is optional: without it, rangeTopics stays null and no link shows.
+    if (this.lang) practiceRangeTopics(this.lang.id).then(topics => { if (this.slug === slug) { this.rangeTopics = topics; cx.notify(); } }).catch(() => {});
     // The list's rows exist only after this render, so scroll to the cursor after it.
     cx.timer.after(50, () => this.homeScroll.scroll_to_item(this.rowChild[this.nav.at] ?? 0));
   }
@@ -262,6 +267,10 @@ export default class Tutor extends View {
         job.detail = `${info.root} at ${info.commit.slice(0, 7)}`;
         job.session = new AgentSession(info.root);
         const course = await writeOutline(this.io(job, info), info, lang, known);
+        // With Practice Range installed, match modules to its topics now, while Claude has the
+        // plan in mind. A failure here only means the match is made later, when first asked for.
+        const topics = await practiceRangeTopics(lang.id).catch(() => null);
+        if (topics) course.practiceRange = await writeMatches(this.io(job, info), course, topics, lang).catch(() => undefined);
         await saveCourse(slug, course);
         return slug;
       },
@@ -656,6 +665,48 @@ export default class Tutor extends View {
     else this.goHome(cx);
   }
 
+  // ---- Practice Range -----------------------------------------------------------------------
+
+  /**
+   * Module `id`'s Practice Range topic: the topic, null when none fits, or undefined when there
+   * is no Practice Range or the course's modules are not matched to its topics yet.
+   */
+  rangeTopic(id) {
+    const pr = this.course?.practiceRange;
+    if (!this.rangeTopics || !pr || pr.language !== this.lang?.id || !pr.matches || !(id in pr.matches)) return undefined;
+    return this.rangeTopics.find(t => t.id === pr.matches[id]) ?? null;
+  }
+
+  /** A done module links to Practice Range unless its match is known to be none. */
+  canRange(id) {
+    return Boolean(id && this.rangeTopics && this.isDone(id) && this.rangeTopic(id) !== null);
+  }
+
+  /** g: opens Practice Range at module `id`'s topic. Matches every module first if that is not done yet. */
+  goRange(id, cx) {
+    if (!this.canRange(id)) return;
+    const topic = this.rangeTopic(id), n = this.course.modules.findIndex(m => m.id === id) + 1;
+    const open = t => { openPracticeRange(this.lang.id, t.id); this.flash = `Opened Practice Range at "${t.title}".`; };
+    if (topic) { open(topic); return; }
+    if (this.claude !== true) { this.flash = "Finding the Practice Range topic needs the claude CLI."; return; }
+    const course = this.course, slug = this.slug, topics = this.rangeTopics, lang = this.lang;
+    this.runJob({
+      title: "Finding the Practice Range topic", detail: course.modules[n - 1].title,
+      wait: "Claude matches every module of this course to a Practice Range topic, once. This takes about a minute.",
+      back: cx => this.goHome(cx),
+      work: async job => {
+        job.session = new AgentSession(course.root);
+        course.practiceRange = await writeMatches(this.io(job, course), course, topics, lang);
+        await saveCourse(slug, course);
+      },
+      done: (_out, cx) => {
+        this.goHome(cx);
+        const t = this.rangeTopic(id);
+        if (t) open(t); else this.flash = `No Practice Range topic fits module ${n}.`;
+      },
+    }, cx);
+  }
+
   /** 1 to 9 on the result: the stop the nth missed question came from. */
   jumpToMissed(k, cx) {
     const id = this.result?.missed[k];
@@ -916,6 +967,7 @@ export default class Tutor extends View {
     else if (c === "split") this.toggleSplit();
     else if (c === "reset-progress" && this.course) this.resetProgress(cx);
     else if (c === "practice") this.press("p", cx);
+    else if (c === "practice-range") this.press("g", cx);
     else if (c.startsWith("practice-") && p === "practice") {
       const what = c.slice(9);
       if (what === "edit") this.practiceEdit(cx);
@@ -966,6 +1018,7 @@ export default class Tutor extends View {
       if (this.confirmReset) { if (k === "y") this.resetProgress(cx); else this.confirmReset = false; }
       else if (k === "r" && this.course) this.confirmReset = true;
       else if (k === "n") this.openSetup(cx);
+      else if (k === "g" && this.canRange(this.course?.modules[this.nav.at]?.id)) this.goRange(this.course.modules[this.nav.at].id, cx);
       else if (k === "p") { const m = this.course?.modules[this.nav.at]; if (m) this.openPractice(m.id, cx, "home"); }
       else {
         const items = this.letters.map(hint => ({ hint }));
@@ -996,6 +1049,7 @@ export default class Tutor extends View {
       if (k === "r") this.startQuiz(cx);
       else if (k === "enter") this.afterResult(cx);
       else if (k === "m" || k === "escape") this.goHome(cx);
+      else if (k === "g" && this.canRange(this.modId)) this.goRange(this.modId, cx);
       else if (/^[1-9]$/.test(k)) this.jumpToMissed(+k - 1, cx);
       else handled = false;
     } else if (this.phase === "practice" && this.pr) {

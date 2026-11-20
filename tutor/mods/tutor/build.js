@@ -6,8 +6,8 @@
 //   linesAt(path)    resolves a file's lines at the pinned commit, or null.
 //   run(ex, source)  runs a practice file and resolves the language's parseRun result.
 import { FIX_ROUNDS } from "./constants.js";
-import { parseReply, outlineProblems, moduleProblems, exerciseProblems } from "./validate.js";
-import { outlinePrompt, modulePrompt, exercisesPrompt, fixPrompt } from "./prompts.js";
+import { parseReply, outlineProblems, moduleProblems, exerciseProblems, cleanMatches } from "./validate.js";
+import { outlinePrompt, modulePrompt, exercisesPrompt, fixPrompt, matchPrompt } from "./prompts.js";
 import { learnerOf } from "./learner.js";
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -105,4 +105,15 @@ export async function writeExercises(io, course, mod, entry, number, lang) {
     io.say(`Fixing ${plural(problems.length, "problem")} in the exercises`);
     prompt = fixPrompt(problems);
   }
+}
+
+/**
+ * Which Practice Range topic drills each module: { language, matches: { moduleId: topicId | null }, at }.
+ * Claude picks; a pick that is not one of `topics` is thrown out (null), so a link never goes nowhere.
+ */
+export async function writeMatches(io, course, topics, lang) {
+  io.say("Matching modules to Practice Range topics");
+  const reply = await writeChecked(io, matchPrompt(course, topics, lang),
+    o => ({ hard: o.matches && typeof o.matches === "object" ? [] : [`the reply has no "matches" object`], soft: [] }), "topic matches");
+  return { language: lang.id, matches: cleanMatches(reply, course, topics), at: new Date().toISOString() };
 }

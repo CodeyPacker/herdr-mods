@@ -71,6 +71,7 @@ export function resultView(v, t) {
     .child(button(t, "retry", "Retry", "r", true, cx => { v.startQuiz(cx); cx.notify(); }))
     .child(button(t, "nextmod", nextLabel, "enter", true, cx => { v.afterResult(cx); cx.notify(); }))
     .child(button(t, "modules", "Modules", "m", true, cx => { v.goHome(cx); cx.notify(); }))
+    .when(v.canRange(v.modId), el => el.child(button(t, "range", "Practice Range", "g", true, cx => { v.goRange(v.modId, cx); cx.notify(); })))
     .when(r.missed.length > 0, el => el.child(button(t, "jump", "Go to a missed stop", "1–9", true, () => {})));
   return v_flex().size_full().min_h(0).child(header).child(scrollArea(`result-${mod.id}`, v.quizScroll, body)).child(bar);
 }

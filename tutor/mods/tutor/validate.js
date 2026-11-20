@@ -115,3 +115,13 @@ export async function exerciseProblems(ex, prefix, check, linesAt) {
   else { const r = await rangeProblems(ex.source, linesAt, 1, 1000); out.push(...r.hard.map(p => `source: ${p}`)); }
   return out;
 }
+
+/**
+ * Module id → topic id or null, from Claude's reply `{ "matches": { "<module id>": "<topic id>" | null } }`.
+ * A topic that is not one of `topics` becomes null, and every module gets an entry.
+ */
+export function cleanMatches(reply, course, topics) {
+  const ids = new Set(topics.map(t => t.id));
+  const raw = reply && typeof reply.matches === "object" && reply.matches ? reply.matches : {};
+  return Object.fromEntries(course.modules.map(m => [m.id, ids.has(raw[m.id]) ? raw[m.id] : null]));
+}

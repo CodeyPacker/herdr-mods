@@ -41,6 +41,8 @@ export function homeView(v, t) {
   else bar.child(button(t, "open", "Open", "enter", list.length > 0, cx => { v.openAt(cx); cx.notify(); }))
     .child(button(t, "practice", "Practice", "p", v.canPractice(list[v.nav.at]?.id), cx => {
       const m = list[v.nav.at]; if (m) v.openPractice(m.id, cx, "home"); cx.notify(); }))
+    .when(v.canRange(list[v.nav.at]?.id), el => el.child(button(t, "range", "Practice Range", "g", true, cx => {
+      const m = list[v.nav.at]; if (m) v.goRange(m.id, cx); cx.notify(); })))
     .child(button(t, "move", "Move", "j k", true, () => {}))
     .child(button(t, "reset", "Reset progress", "r", Boolean(course), cx => { v.confirmReset = true; cx.notify(); }))
     .child(button(t, "newcourse", "New course", "n", true, cx => { v.openSetup(cx); cx.notify(); }));
