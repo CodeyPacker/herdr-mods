@@ -2,7 +2,7 @@
 
 mprocs inside Herdr: list a repo's processes in `herdr.procs.json`, then start, stop, restart and watch them from one popup.
 
-![run](preview.png)
+![run](preview.png?v=0891229aa3b0)
 
 mprocs, but inside Herdr. Drop a `herdr.procs.json` in your repo:
 

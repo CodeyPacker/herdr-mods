@@ -2,7 +2,7 @@
 
 VS Code's zen mode for Herdr: one key hides everything but your panes, and the same key brings it all back.
 
-![zen](preview.png)
+![zen](preview.png?v=b844c19e2c5d)
 
 VS Code's zen mode for Herdr. Press `ctrl-shift-enter` (`cmd-shift-enter` on macOS) and everything but your panes goes away: sidebar, tab bar, status bars, side panels. Press it again and it all comes back. Works in any layout.
 

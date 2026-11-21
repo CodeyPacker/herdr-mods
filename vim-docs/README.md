@@ -2,7 +2,7 @@
 
 A small window of Vim commands to keep open while you work, with search and a starred list.
 
-![Vim Docs](preview.png)
+![Vim Docs](preview.png?v=5bc3d4074bbd)
 
 Open it with `ctrl-shift-d` (`cmd-shift-d` on macOS). Drag it by any empty spot and it opens there next time. The search box always has the keyboard. `up`/`down` or `ctrl-j`/`ctrl-k` move, `enter` stars or unstars a row, `tab` switches between All and Starred, `esc` clears the search, then closes.
 

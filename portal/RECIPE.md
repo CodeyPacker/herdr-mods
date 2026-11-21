@@ -5,7 +5,7 @@ grouped by the process that owns it. Favorite the ports you care about, open
 a local web app in the browser, copy a pid or address, and end the process
 holding a port. macOS and Windows.
 
-![Portal](preview.png)
+![Portal](preview.png?v=a8cf8c175af2)
 
 ## What you see
 

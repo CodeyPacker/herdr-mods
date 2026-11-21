@@ -2,7 +2,7 @@
 
 Spotify in Herdr: a now-playing slot for your bar, a hover card with the controls, and a dialog you drive from the keyboard.
 
-![spotify](preview.png)
+![spotify](preview.png?v=a7f0b43c8f6a)
 
 Spotify in Herdr. A now-playing slot for your bar, a hover card with the controls, and a dialog you drive from the keyboard. Press `ctrl-shift-m` (`cmd-shift-m` on macOS).
 

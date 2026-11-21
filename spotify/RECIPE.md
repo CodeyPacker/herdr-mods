@@ -5,7 +5,7 @@ card with the playback controls, and a keyboard-driven dialog for the queue,
 playlists, search and devices. It plays nothing itself. It remote-controls a
 Spotify app that is open on some device, through the Spotify Web API.
 
-![Spotify](preview.png)
+![Spotify](preview.png?v=a7f0b43c8f6a)
 
 ## What you see
 

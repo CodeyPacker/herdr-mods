@@ -7,7 +7,7 @@ graphite, paper, or any `themes/*.json` you have. Six small
 mod clones round off the shipped bars and lists so nothing pokes out of a
 card, and turn the tab bar's controls into pills.
 
-![Islands](preview.png)
+![Islands](preview.png?v=605c9c8f679e)
 
 ## What you see
 

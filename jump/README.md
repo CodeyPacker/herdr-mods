@@ -2,7 +2,7 @@
 
 tmux's `prefix+w` with vimium-style letters: press a key, type a letter, and you are on that tab.
 
-![jump](preview.png)
+![jump](preview.png?v=1ba145764264)
 
 tmux's `prefix+w`, with vimium-style letters. Press `ctrl-shift-k`, type a letter, you're on that tab.
 

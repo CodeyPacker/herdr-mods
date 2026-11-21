@@ -5,7 +5,7 @@ a command does or by its keys, browse by category, and star the ones you
 are learning. Rows show the description on the left and the keys as
 keycaps on the right.
 
-![Vim Docs](preview.png)
+![Vim Docs](preview.png?v=5bc3d4074bbd)
 
 ## What you see
 

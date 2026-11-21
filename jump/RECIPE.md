@@ -3,7 +3,7 @@
 A popup that lists every space with its tabs and jumps to one when you type
 its letter. tmux's prefix+w with vimium's hints, in place of the built-in picker.
 
-![Jump](preview.png)
+![Jump](preview.png?v=1ba145764264)
 
 ## What you see
 

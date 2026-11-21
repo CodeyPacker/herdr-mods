@@ -28,7 +28,7 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/CodeyP
 ---
 ### [islands](islands/)
 
-[<img src="islands/preview.png" width="720" alt="islands">](islands/)
+[<img src="islands/preview.png?v=605c9c8f679e" width="720" alt="islands">](islands/)
 
 Herdr with every panel as its own rounded card on the canvas, in whatever theme you pick.
 
@@ -39,7 +39,7 @@ Read ~/.config/herdr-app/AGENTS.md, then add this layout: https://github.com/Cod
 ---
 ### [jump](jump/)
 
-[<img src="jump/preview.png" width="720" alt="jump">](jump/)
+[<img src="jump/preview.png?v=1ba145764264" width="720" alt="jump">](jump/)
 
 tmux's `prefix+w` with vimium-style letters: press a key, type a letter, and you are on that tab.
 
@@ -59,7 +59,7 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/CodeyP
 ---
 ### [Portal](portal/)
 
-[<img src="portal/preview.png" width="720" alt="Portal">](portal/)
+[<img src="portal/preview.png?v=a8cf8c175af2" width="720" alt="Portal">](portal/)
 
 Every local TCP listener and UDP socket, grouped by the process that owns it. Favorite ports, open them in the browser, and end the process holding one.
 
@@ -79,7 +79,7 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/CodeyP
 ---
 ### [run](run/)
 
-[<img src="run/preview.png" width="720" alt="run">](run/)
+[<img src="run/preview.png?v=0891229aa3b0" width="720" alt="run">](run/)
 
 mprocs inside Herdr: list a repo's processes in `herdr.procs.json`, then start, stop, restart and watch them from one popup.
 
@@ -90,7 +90,7 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/CodeyP
 ---
 ### [spotify](spotify/)
 
-[<img src="spotify/preview.png" width="720" alt="spotify">](spotify/)
+[<img src="spotify/preview.png?v=a7f0b43c8f6a" width="720" alt="spotify">](spotify/)
 
 Spotify in Herdr: a now-playing slot for your bar, a hover card with the controls, and a dialog you drive from the keyboard.
 
@@ -101,7 +101,7 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/CodeyP
 ---
 ### [tourist](tourist/)
 
-[<img src="tourist/preview.png" width="720" alt="tourist">](tourist/)
+[<img src="tourist/preview.png?v=68814ec14e94" width="720" alt="tourist">](tourist/)
 
 Claude or Codex gives you a guided tour of your code: branch changes, the last commit, a pull request, the whole repo, or a feature you describe.
 
@@ -121,7 +121,7 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/CodeyP
 ---
 ### [Vim Docs](vim-docs/)
 
-[<img src="vim-docs/preview.png" width="720" alt="Vim Docs">](vim-docs/)
+[<img src="vim-docs/preview.png?v=5bc3d4074bbd" width="720" alt="Vim Docs">](vim-docs/)
 
 A small window of Vim commands to keep open while you work, with search and a starred list.
 
@@ -132,7 +132,7 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/CodeyP
 ---
 ### [zen](zen/)
 
-[<img src="zen/preview.png" width="720" alt="zen">](zen/)
+[<img src="zen/preview.png?v=b844c19e2c5d" width="720" alt="zen">](zen/)
 
 VS Code's zen mode for Herdr: one key hides everything but your panes, and the same key brings it all back.
 

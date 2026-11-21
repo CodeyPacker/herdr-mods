@@ -5,7 +5,7 @@ changes, the last commit, an open pull request, the whole repo, or a feature you
 picks the stops and their order. You pick the depth, then go deeper, more technical or ask at
 any stop.
 
-![Tourist](preview.png)
+![Tourist](preview.png?v=68814ec14e94)
 
 ## What you see
 

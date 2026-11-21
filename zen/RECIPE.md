@@ -4,7 +4,7 @@ One key hides everything in the window except the panes of the tab you're on:
 the sidebar, the tab bar, status bars, side panels. The same key brings them
 back. Works in any layout.
 
-![Zen](preview.png)
+![Zen](preview.png?v=b844c19e2c5d)
 
 ## What you see
 
