@@ -32,7 +32,20 @@ function transform(corners) {
   return matrix.map(row => row[8]);
 }
 
-for (const crop of config.screenshots) {
+const selected = process.argv[2];
+for (const crop of config.screenshots.filter(crop => !selected || crop.id === selected)) {
+  if (crop.capture) {
+    const original = await fs.readFile(path.join(root, crop.capture));
+    const { left, top, width, height, radius } = crop.dialog;
+    const mask = Buffer.from(`<svg width="${width}" height="${height}"><rect width="${width}" height="${height}" rx="${radius}" fill="white"/></svg>`);
+    const dialog = await sharp(original).extract({ left, top, width, height }).ensureAlpha()
+      .composite([{ input: mask, blend: 'dest-in' }]).png().toBuffer();
+    const blurred = await sharp(original).blur(crop.blur).png().toBuffer();
+    const full = await sharp(blurred).composite([{ input: dialog, left, top }]).png().toBuffer();
+    await sharp(full).extract(crop.crop).png().toFile(path.join(root, 'gallery/sources', `${crop.id}.png`));
+    console.log(`${crop.id}: supplied screenshot, blurred background, original dialog pixels`);
+    continue;
+  }
   const original = execFileSync('git', ['show', `${config.commit}:${crop.file}`], { cwd: root, maxBuffer: 20_000_000 });
   const { data, info } = await sharp(original).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   const scale = info.width / config.coordinateWidth;

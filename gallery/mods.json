@@ -19,10 +19,10 @@
     "previous": [
       "run/preview.png"
     ],
-    "state": "Running project processes from old preview",
+    "state": "Supplied Run screenshot with surrounding editor lightly blurred",
     "screenshotSource": {
-      "commit": "90949f0",
-      "file": "run/preview.png"
+      "file": "gallery/sources/run-capture.png",
+      "treatment": "8 px background blur, original dialog preserved, tight crop"
     }
   },
   {

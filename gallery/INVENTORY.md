@@ -6,7 +6,7 @@ The supplied approved reference is preserved as `reference.jpg`. Branch and Git 
 | --- | --- | --- |
 | Branch | `branch/preview.png`, `branch/thumbnail.png` | Already approved. Unchanged. |
 | Jump | `jump/preview.png` | UI crop from the old preview |
-| Run | `run/preview.png` | UI crop from the old preview, showing running processes |
+| Run | `run/preview.png` | Supplied Run screenshot, with the surrounding editor lightly blurred |
 | Islands | `islands/preview.png` | UI crop from the old preview, showing cards and code |
 | Tourist | `tourist/preview.png` | UI crop from the old preview, showing review scope and depth |
 | Zen | `zen/preview.png`, `zen/thumbnail-v6.png` | UI crop from the old Zen thumbnail, showing the focused editor |
@@ -21,7 +21,7 @@ Every updated mod has a matching `preview.png` and `thumbnail.png` at 1280 × 72
 
 This branch is based on main. Tickets is present in the user's work branch, so only its gallery assets are added here. Its implementation stays on that work branch. Existing untracked thumbnail experiments in the original checkout are untouched.
 
-Eight screenshots reuse the UI panels from the old images at commit `90949f0`. Their crop coordinates are in `screenshot-crops.json`. Perspective is straightened by resampling the existing pixels. No UI is generated or redrawn. Outer promotional artwork and glowing frames are cropped away. Practice Range, Tutor, and Tickets have no older image in Git history, so their native captures remain unchanged. UI key legends and control icons remain inside the screenshots. No promotional branding, badges, icons, key callouts, or slogans were added.
+Seven screenshots reuse the UI panels from the old images at commit `90949f0`. Run uses the supplied screenshot with an 8 px background blur and the original dialog pixels preserved. Crop coordinates and blur settings are in `screenshot-crops.json`. Perspective is straightened by resampling the existing pixels. No UI is generated or redrawn. Outer promotional artwork and glowing frames are cropped away. Practice Range, Tutor, and Tickets have no older image in Git history, so their native captures remain unchanged. UI key legends and control icons remain inside the screenshots. No promotional branding, badges, icons, key callouts, or slogans were added.
 
 The shared composition is in `template.html`. Titles, descriptions, prior assets, and screen states are in `mods.json`. To reproduce with Playwright and Chrome installed:
 
@@ -31,4 +31,4 @@ node scripts/render-thumbnails.mjs
 
 An existing installation can be selected with `PLAYWRIGHT_MODULE`. `BROWSER_CHANNEL` defaults to `chrome`. Open `index.html` for every full-size preview, or `preview.png` for the contact sheet.
 
-To extract the eight old UI panels again, install `sharp` and run `node scripts/extract-thumbnail-screenshots.mjs` before rendering. `SHARP_MODULE` can select an existing installation.
+To prepare the screenshots again, install `sharp` and run `node scripts/extract-thumbnail-screenshots.mjs` before rendering. `SHARP_MODULE` can select an existing installation.

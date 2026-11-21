@@ -12,7 +12,9 @@ const template = await fs.readFile(path.join(root, 'gallery/template.html'), 'ut
 const browser = await chromium.launch({ headless: true, channel: process.env.BROWSER_CHANNEL || 'chrome' });
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
-  for (const mod of mods) {
+  const selected = process.argv[2];
+  if (selected && !mods.some(mod => mod.id === selected)) throw new Error(`Unknown mod: ${selected}`);
+  for (const mod of mods.filter(mod => !selected || mod.id === selected)) {
     await page.setContent(template);
     const source = await fs.readFile(path.join(root, 'gallery/sources', `${mod.id}.png`));
     await page.evaluate(({ mod, src }) => {

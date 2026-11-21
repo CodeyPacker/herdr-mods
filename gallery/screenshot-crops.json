@@ -3,7 +3,7 @@
   "coordinateWidth": 640,
   "screenshots": [
     {"id":"jump","file":"jump/preview.png","corners":[[326,79],[615,60],[595,299],[280,290]],"width":850,"height":650},
-    {"id":"run","file":"run/preview.png","corners":[[318,83],[610,62],[595,290],[280,284]],"width":850,"height":600},
+    {"id":"run","capture":"gallery/sources/run-capture.png","blur":8,"dialog":{"left":1168,"top":80,"width":1120,"height":738,"radius":32},"crop":{"left":1040,"top":0,"width":1376,"height":896}},
     {"id":"islands","file":"islands/preview.png","corners":[[202,71],[616,71],[616,298],[202,298]],"width":1100,"height":603},
     {"id":"tourist","file":"tourist/preview.png","corners":[[303,87],[620,62],[606,300],[260,292]],"width":850,"height":620},
     {"id":"zen","file":"zen/thumbnail-v6.png","corners":[[338,155],[614,155],[614,304],[338,304]],"width":900,"height":486},
