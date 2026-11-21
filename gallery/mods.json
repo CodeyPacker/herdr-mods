@@ -1,0 +1,100 @@
+[
+  {
+    "id": "jump",
+    "title": "Jump",
+    "description": "Switch between spaces and tabs.",
+    "previous": [
+      "jump/preview.png"
+    ],
+    "state": "Space and tab picker"
+  },
+  {
+    "id": "run",
+    "title": "Run",
+    "description": "Start, stop, and monitor project processes.",
+    "previous": [
+      "run/preview.png"
+    ],
+    "state": "Process list"
+  },
+  {
+    "id": "islands",
+    "title": "Islands",
+    "description": "Arrange panels as rounded cards.",
+    "previous": [
+      "islands/preview.png"
+    ],
+    "state": "Native Islands layout"
+  },
+  {
+    "id": "tourist",
+    "title": "Tourist",
+    "description": "Explore code and review changes with guided tours.",
+    "previous": [
+      "tourist/preview.png"
+    ],
+    "state": "Tour setup"
+  },
+  {
+    "id": "zen",
+    "title": "Zen",
+    "description": "Hide surrounding panels and focus on your panes.",
+    "previous": [
+      "zen/preview.png",
+      "zen/thumbnail-v6.png"
+    ],
+    "state": "Native layout with Zen enabled"
+  },
+  {
+    "id": "spotify",
+    "title": "Spotify",
+    "description": "Control playback, playlists, and devices.",
+    "previous": [
+      "spotify/preview.png",
+      "spotify/thumbnail.png"
+    ],
+    "state": "Sign-in setup, no account connected"
+  },
+  {
+    "id": "portal",
+    "title": "Portal",
+    "description": "Inspect listening ports and open local apps.",
+    "previous": [
+      "portal/preview.png",
+      "portal/thumbnail.png"
+    ],
+    "state": "Live local listener list"
+  },
+  {
+    "id": "syntax",
+    "title": "Practice\nRange",
+    "description": "Practice C# and TypeScript with checked exercises.",
+    "previous": [],
+    "state": "Practice setup"
+  },
+  {
+    "id": "tutor",
+    "title": "Tutor",
+    "description": "Learn C# through lessons built from a codebase.",
+    "previous": [],
+    "state": "Course setup, no course generated"
+  },
+  {
+    "id": "vim-docs",
+    "title": "Vim Docs",
+    "description": "Search Vim commands and save favorites.",
+    "previous": [
+      "vim-docs/preview.png",
+      "vim-docs/thumbnail.png"
+    ],
+    "state": "Command reference"
+  },
+  {
+    "id": "tickets",
+    "title": "Tickets",
+    "description": "Track tasks, agent work, and reviews.",
+    "previous": [],
+    "state": "Empty task board from tickets-tourist-wip",
+    "implementationBranch": "tickets-tourist-wip"
+  }
+]
