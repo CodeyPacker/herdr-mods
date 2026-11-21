@@ -1,0 +1,134 @@
+[
+  {
+    "id": "jump",
+    "title": "Jump",
+    "description": "Switch between spaces and tabs.",
+    "previous": [
+      "jump/preview.png"
+    ],
+    "state": "Supplied Jump screenshot showing the space and tab cards",
+    "screenshotSource": {
+      "file": "gallery/sources/jump-capture.png",
+      "treatment": "8 px background blur, original dialog preserved, tight crop"
+    }
+  },
+  {
+    "id": "run",
+    "title": "Run",
+    "description": "Start, stop, and monitor project processes.",
+    "previous": [
+      "run/preview.png"
+    ],
+    "state": "Supplied Run screenshot with surrounding editor lightly blurred",
+    "screenshotSource": {
+      "file": "gallery/sources/run-capture.png",
+      "treatment": "8 px background blur, original dialog preserved, tight crop"
+    }
+  },
+  {
+    "id": "islands",
+    "title": "Islands",
+    "description": "Arrange panels as rounded cards.",
+    "previous": [
+      "islands/preview.png"
+    ],
+    "state": "Card layout with code from old preview",
+    "screenshotSource": {
+      "commit": "90949f0",
+      "file": "islands/preview.png"
+    }
+  },
+  {
+    "id": "tourist",
+    "title": "Tourist",
+    "description": "Explore code and review changes with guided tours.",
+    "previous": [
+      "tourist/preview.png"
+    ],
+    "state": "Supplied Tourist screenshot showing an active guided tour with code and explanation",
+    "screenshotSource": {
+      "file": "gallery/sources/tourist-capture.png",
+      "treatment": "Third supplied screenshot, full tour view, original pixels preserved, no blur"
+    },
+    "screenshotRadius": 8
+  },
+  {
+    "id": "zen",
+    "title": "Zen",
+    "description": "Hide surrounding panels and focus on your panes.",
+    "previous": [
+      "zen/preview.png",
+      "zen/thumbnail-v6.png"
+    ],
+    "state": "Supplied Zen screenshot showing the focused editor without surrounding panels",
+    "screenshotSource": {
+      "file": "gallery/sources/zen-capture.png",
+      "treatment": "Full editor view, original pixels preserved, no blur"
+    },
+    "screenshotRadius": 8
+  },
+  {
+    "id": "spotify",
+    "title": "Spotify",
+    "description": "Control playback, playlists, and devices.",
+    "previous": [
+      "spotify/preview.png",
+      "spotify/thumbnail.png"
+    ],
+    "state": "Supplied Spotify screenshot showing playback controls and playlists",
+    "screenshotSource": {
+      "file": "gallery/sources/spotify-capture.png",
+      "treatment": "8 px background blur, original dialog preserved, crop to playback and playlist controls"
+    }
+  },
+  {
+    "id": "portal",
+    "title": "Portal",
+    "description": "Inspect listening ports and open local apps.",
+    "previous": [
+      "portal/preview.png",
+      "portal/thumbnail.png"
+    ],
+    "state": "Supplied Portal screenshot showing favorites, filters, and listening processes",
+    "screenshotSource": {
+      "file": "gallery/sources/portal-capture.png",
+      "treatment": "8 px background blur, original dialog preserved, tight crop"
+    }
+  },
+  {
+    "id": "syntax",
+    "title": "Practice\nRange",
+    "description": "Practice C# and TypeScript with checked exercises.",
+    "previous": [],
+    "state": "Practice setup"
+  },
+  {
+    "id": "tutor",
+    "title": "Tutor",
+    "description": "Learn C# through lessons built from a codebase.",
+    "previous": [],
+    "state": "Course setup, no course generated"
+  },
+  {
+    "id": "vim-docs",
+    "title": "Vim Docs",
+    "description": "Search Vim commands and save favorites.",
+    "previous": [
+      "vim-docs/preview.png",
+      "vim-docs/thumbnail.png"
+    ],
+    "state": "Command reference and favorites from old preview",
+    "screenshotSource": {
+      "commit": "90949f0",
+      "file": "vim-docs/preview.png"
+    }
+  },
+  {
+    "id": "tickets",
+    "title": "Tickets",
+    "description": "Track tasks, agent work, and reviews.",
+    "previous": [],
+    "state": "Empty task board from tickets-tourist-wip",
+    "implementationBranch": "tickets-tourist-wip"
+  }
+]
