@@ -49,7 +49,8 @@
     "screenshotSource": {
       "file": "gallery/sources/tourist-capture.png",
       "treatment": "Third supplied screenshot, full tour view, original pixels preserved, no blur"
-    }
+    },
+    "screenshotRadius": 8
   },
   {
     "id": "zen",
@@ -63,7 +64,8 @@
     "screenshotSource": {
       "file": "gallery/sources/zen-capture.png",
       "treatment": "Full editor view, original pixels preserved, no blur"
-    }
+    },
+    "screenshotRadius": 8
   },
   {
     "id": "spotify",

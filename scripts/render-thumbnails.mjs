@@ -21,6 +21,7 @@ try {
       document.querySelector('#title').innerText = mod.title;
       document.querySelector('#description').innerText = mod.description;
       document.querySelector('.shot').src = src;
+      if (mod.screenshotRadius !== undefined) document.querySelector('.shot').style.borderRadius = `${mod.screenshotRadius}px`;
     }, { mod, src: `data:image/png;base64,${source.toString('base64')}` });
     await page.locator('.shot').evaluate(image => image.decode());
     await page.evaluate(() => document.fonts.ready);
