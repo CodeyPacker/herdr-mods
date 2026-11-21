@@ -910,7 +910,7 @@ export default class Syntax extends View {
       .when(!this.state.answerShown, element => element.child(h_flex()
         .child(keyButton(t, "show-answer", this.shown("answer", "a"), "Show answer", !this.busy, cx => this.action("answer", cx)))))
       .when(Boolean(result), element => element.child(v_flex().gap(7).p(12).rounded(8).bg(t.raised)
-        .child(div().font_semibold().text_color(this.state.stale ? t.muted : result?.passed ? t.done : t.blocked).child(this.state.stale ? "Saved code changed. Check again." : result?.title ?? ""))
+        .child(div().font_semibold().text_color(this.state.stale ? t.muted : result?.passed ? t.ansi2 : t.blocked).child(this.state.stale ? "Saved code changed. Check again." : result?.title ?? ""))
         .when(Boolean(result?.assisted), element => element.child(div().text_size(11).text_color(t.dim).child("Checked after viewing the answer.")))
         .children((result?.details ?? []).map((detail, index) => this.markdown(`result-${result?.at}-${index}`, `\`\`\`text\n${detail}\n\`\`\``)))
         .when(Boolean(result?.passed) && !this.state.stale, element => element.child(h_flex().gap(8).items_center().flex_wrap()
@@ -937,7 +937,7 @@ export default class Syntax extends View {
       .when(!this.editorDefaultSet, element => element.child(this.editorControls(t)))
       .when(!result, element => element.child(div().text_size(12).text_color(t.dim).child(this.keyOf("check") ? `Save the file to run it. Press ${this.keyOf("check")} to run the saved file again.` : "Save the file to run it.")))
       .when(Boolean(result), element => element.child(v_flex().gap(7).p(12).rounded(8).bg(t.raised)
-        .child(div().font_semibold().text_color(this.state?.stale ? t.muted : result?.passed ? t.done : t.blocked).child(this.state?.stale ? "Saved code changed. Run it again." : result?.title ?? ""))
+        .child(div().font_semibold().text_color(this.state?.stale ? t.muted : result?.passed ? t.ansi2 : t.blocked).child(this.state?.stale ? "Saved code changed. Run it again." : result?.title ?? ""))
         .children((result?.details ?? []).map((detail, index) => this.markdown(`scratch-${result?.at}-${index}`, `\`\`\`text\n${detail}\n\`\`\``)))));
   }
 
