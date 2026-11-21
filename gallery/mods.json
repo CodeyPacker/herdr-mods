@@ -6,7 +6,11 @@
     "previous": [
       "jump/preview.png"
     ],
-    "state": "Space and tab picker"
+    "state": "Space and tab picker from old preview",
+    "screenshotSource": {
+      "commit": "90949f0",
+      "file": "jump/preview.png"
+    }
   },
   {
     "id": "run",
@@ -15,7 +19,11 @@
     "previous": [
       "run/preview.png"
     ],
-    "state": "Process list"
+    "state": "Running project processes from old preview",
+    "screenshotSource": {
+      "commit": "90949f0",
+      "file": "run/preview.png"
+    }
   },
   {
     "id": "islands",
@@ -24,7 +32,11 @@
     "previous": [
       "islands/preview.png"
     ],
-    "state": "Native Islands layout"
+    "state": "Card layout with code from old preview",
+    "screenshotSource": {
+      "commit": "90949f0",
+      "file": "islands/preview.png"
+    }
   },
   {
     "id": "tourist",
@@ -33,7 +45,11 @@
     "previous": [
       "tourist/preview.png"
     ],
-    "state": "Tour setup"
+    "state": "Review scope and depth from old preview",
+    "screenshotSource": {
+      "commit": "90949f0",
+      "file": "tourist/preview.png"
+    }
   },
   {
     "id": "zen",
@@ -43,7 +59,11 @@
       "zen/preview.png",
       "zen/thumbnail-v6.png"
     ],
-    "state": "Native layout with Zen enabled"
+    "state": "Focused editor from old Zen thumbnail",
+    "screenshotSource": {
+      "commit": "90949f0",
+      "file": "zen/thumbnail-v6.png"
+    }
   },
   {
     "id": "spotify",
@@ -53,7 +73,11 @@
       "spotify/preview.png",
       "spotify/thumbnail.png"
     ],
-    "state": "Sign-in setup, no account connected"
+    "state": "Playback controls and queue from old preview",
+    "screenshotSource": {
+      "commit": "90949f0",
+      "file": "spotify/preview.png"
+    }
   },
   {
     "id": "portal",
@@ -63,7 +87,11 @@
       "portal/preview.png",
       "portal/thumbnail.png"
     ],
-    "state": "Live local listener list"
+    "state": "Favorite ports and listening processes from old preview",
+    "screenshotSource": {
+      "commit": "90949f0",
+      "file": "portal/preview.png"
+    }
   },
   {
     "id": "syntax",
@@ -87,7 +115,11 @@
       "vim-docs/preview.png",
       "vim-docs/thumbnail.png"
     ],
-    "state": "Command reference"
+    "state": "Command reference and favorites from old preview",
+    "screenshotSource": {
+      "commit": "90949f0",
+      "file": "vim-docs/preview.png"
+    }
   },
   {
     "id": "tickets",

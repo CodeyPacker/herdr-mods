@@ -1,0 +1,14 @@
+{
+  "commit": "90949f0",
+  "coordinateWidth": 640,
+  "screenshots": [
+    {"id":"jump","file":"jump/preview.png","corners":[[326,79],[615,60],[595,299],[280,290]],"width":850,"height":650},
+    {"id":"run","file":"run/preview.png","corners":[[318,83],[610,62],[595,290],[280,284]],"width":850,"height":600},
+    {"id":"islands","file":"islands/preview.png","corners":[[202,71],[616,71],[616,298],[202,298]],"width":1100,"height":603},
+    {"id":"tourist","file":"tourist/preview.png","corners":[[303,87],[620,62],[606,300],[260,292]],"width":850,"height":620},
+    {"id":"zen","file":"zen/thumbnail-v6.png","corners":[[338,155],[614,155],[614,304],[338,304]],"width":900,"height":486},
+    {"id":"spotify","file":"spotify/preview.png","corners":[[337,83],[639,61],[639,322],[307,316]],"width":850,"height":650},
+    {"id":"portal","file":"portal/preview.png","corners":[[325,63],[607,42],[595,305],[300,297]],"width":780,"height":660},
+    {"id":"vim-docs","file":"vim-docs/preview.png","corners":[[367,29],[597,29],[597,309],[367,309]],"width":680,"height":828}
+  ]
+}
