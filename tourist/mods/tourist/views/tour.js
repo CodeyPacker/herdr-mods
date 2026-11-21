@@ -61,6 +61,13 @@ export function tourView(v, t) {
   const tips = [v.keyOf("explain", "e") && `${v.keyOf("explain", "e")} for a short explanation`, v.keyOf("ask", "a") && "a to ask about this file"].filter(Boolean);
   // Cap the line length so long explanations stay readable in wide panes.
   const body = v_flex().w_full().max_w(680).gap(10)
+    .when(Boolean(v.ticketPendingSubmission && v.ticketPendingSubmission !== v.ticketSubmission), el => el.child(div().p(10).rounded(8).bg(t.raised).text_color(t.accent)
+      .child("A new submission is available. Finish the current action and send or remove draft comments to refresh this review.")))
+    .when(Boolean(v.ticketWaiting) && !v.ticketPendingSubmission, el => el.child(div().p(10).rounded(8).bg(t.raised).text_color(t.accent)
+      .child("Changes requested. This review will refresh when the ticket is submitted again.")))
+    .when(!other && v.idx === 0 && Boolean(v.ticketPreviousFeedback), el => el.child(v_flex().p(10).gap(4).rounded(8).bg(t.raised)
+      .child(div().text_size(11.5).font_semibold().text_color(t.accent).child("Previous review feedback"))
+      .child(md(v, "ticket-feedback", v.ticketPreviousFeedback))))
     .when(!other && v.idx === 0 && Boolean(plan.summary), el => el.child(v_flex().p(10).gap(4).rounded(8).bg(t.raised)
       .child(div().text_size(11.5).font_semibold().text_color(t.accent).child("Tour summary"))
       .child(md(v, "summary", String(plan.summary)))))
@@ -90,7 +97,10 @@ export function tourView(v, t) {
     .child(button(t, "askbtn", "Ask", v.keyOf("ask", "a"), free, (_e, cx) => { v.startAsking(cx); cx.notify(); }))
     .when(Boolean(v.pr), el => el.child(button(t, "review", v.comments.length ? `Post review (${v.comments.length})` : "Review", v.keyOf("review", "p"),
       v.comments.length > 0 || !v.pr.mine, (_e, cx) => { v.startReview(cx); cx.notify(); })))
-    .when(Boolean(v.pr?.mine), el => el.child(button(t, "fix",
+    // A ticket's tour sends the comments to the ticket's agent instead of fixing them here.
+    .when(Boolean(v.ticketTour()), el => el.child(button(t, "changes", `Request changes (${v.comments.length})`, "g",
+      v.comments.length > 0 && free && !v.ticketWaiting, (_e, cx) => { v.requestChanges(cx); cx.notify(); })))
+    .when(Boolean(v.pr?.mine) && !v.ticketTour(), el => el.child(button(t, "fix",
       v.fix?.phase === "running" ? "Fixing…" : v.fix && v.fix.phase !== "pushed" ? "View fix" : `Fix ${v.comments.length} comment${v.comments.length === 1 ? "" : "s"}`,
       v.keyOf("fix", "f"), Boolean(v.fix && v.fix.phase !== "pushed") || (v.comments.length > 0 && free), (_e, cx) => { v.startFix(cx); cx.notify(); })))
     .when(Boolean(v.pr), el => el.child(button(t, "checks", "Checks", v.keyOf("checks", "c"), true, (_e, cx) => { v.openChecks(cx); cx.notify(); })))
