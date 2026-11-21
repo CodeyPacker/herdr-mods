@@ -117,11 +117,12 @@
       "vim-docs/preview.png",
       "vim-docs/thumbnail.png"
     ],
-    "state": "Command reference and favorites from old preview",
+    "state": "Supplied Vim Docs screenshot showing searchable movement commands",
     "screenshotSource": {
-      "commit": "90949f0",
-      "file": "vim-docs/preview.png"
-    }
+      "file": "gallery/sources/vim-docs-capture.png",
+      "treatment": "8 px background blur, original panel preserved, tight crop"
+    },
+    "screenshotRadius": 8
   },
   {
     "id": "tickets",
