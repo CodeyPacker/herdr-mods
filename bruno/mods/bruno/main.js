@@ -22,6 +22,7 @@ import { listRow, listNote } from "./kit/list.js";
 import { sectionLabel } from "./kit/pane.js";
 import { chip, toolButton, textInput } from "./kit/controls.js";
 import { Shortcuts } from "./kit/shortcuts.js";
+import { isLauncher, launch, toggleDialog, dialogClosed, closeTab, sharedStorage, openAsOption, onOpenAsChange } from "./kit/open-as.js";
 import * as sources from "./sources.js";
 import * as machine from "./machine.js";
 import * as store from "./store.js";
@@ -42,6 +43,12 @@ import { Response, methodBadge } from "./response.js";
 
 /** The mod's folder name: its icons live there. */
 const MOD = "bruno";
+/** How Bruno opens: as a tab, or as a dialog that fills the window (kit/open-as.js). */
+const HOW = {
+  name: "Bruno",
+  tab: { tab: true },
+  dialog: () => toggleDialog(MOD, { mod: MOD, props: { dialog: true }, kind: "dialog", width: 1, height: 1, frame: "none" }),
+};
 const ICON = (/** @type {string} */ name) => `mods/${MOD}/icons/${name}.svg`;
 /**
  * The dialog's size when it does not fill the window. Its overlay always covers the window
@@ -65,6 +72,7 @@ const KEYS = {
   r: "run", p: "vars", e: "env", o: "file", y: "url", b: "app", f: "full", "ctrl-r": "reload",
   "1": "part-1", "2": "part-2", "3": "part-3", "4": "part-4", "/": "search",
   "ctrl-h": "focus-tree", "ctrl-l": "focus-response", escape: "cancel", "?": "keys", "shift-/": "keys", ",": "settings",
+  "ctrl-x": "close-tab",
 };
 /**
  * The keys a user can turn off or change in the settings. Each id is the command its key runs.
@@ -94,10 +102,18 @@ const machineKey = (/** @type {string | null | undefined} */ m) => m ?? "";
 export default class Bruno extends View {
   /** @param {unknown} _props @param {Context} cx */
   init(_props, cx) {
+    // The key (mod.open:bruno) opens a tiny overlay that opens Bruno as a tab or a full-window
+    // dialog, as the settings say, then closes (kit/open-as.js). Nothing else starts in it.
+    this.launcher = isLauncher();
+    if (this.launcher) {
+      if (!checking()) launch(MOD, HOW, cx);
+      return;
+    }
     const p = props() ?? {};
     this.handle = cx.focus_handle();
     cx.bind_keys([{ keystroke: "escape", action: BACK_ACTION, context: BOX_CONTEXT }]);
-    this.saved = new store.Saved(localStorage);
+    // Shared by every copy: each dialog and each tab is a new copy with its own localStorage.
+    this.saved = new store.Saved(sharedStorage(MOD));
     /** @type {any} sources.discover's result */
     this.found = null;
     /** @type {Map<string, any>} Collection key -> { collection?, error?, loading? } */
@@ -129,8 +145,12 @@ export default class Bruno extends View {
     this.width = DIALOG.width;
     /** @type {number} when esc last stepped back from something, as Date.now() */
     this.steppedBack = 0;
-    /** The settings panel: whether the dialog opens filling the window, and a switch per shortcut key. */
-    this.shortcuts = new Shortcuts({ mod: MOD, keys: SHORTCUTS, rebind: true, options: [{ id: "full", label: "Open in full screen" }] });
+    /** The settings panel: a tab or a dialog, whether the dialog opens filling the window, and a switch per shortcut key. */
+    this.shortcuts = new Shortcuts({
+      mod: MOD, keys: SHORTCUTS, rebind: true, storage: sharedStorage(MOD),
+      options: [openAsOption(MOD), { id: "full", label: "Open the dialog in full screen" }],
+      onChange: (id, on) => onOpenAsChange(MOD, id, on, HOW),
+    });
     /** @type {boolean} the dialog fills the window */
     this.full = Boolean(p.full ?? (p.overlay !== undefined && this.shortcuts.option("full")));
     this.response = new Response();
@@ -154,6 +174,8 @@ export default class Bruno extends View {
 
   /** The app calls this when the dialog goes. A Run in progress cannot report back to a closed dialog. */
   async close() {
+    if (this.launcher) return;
+    dialogClosed(MOD);
     for (const w of this.watches?.values() ?? []) w?.cancel();
     this.watches?.clear();
     if (store.running()) store.finishRun({ ok: false, message: "Bruno was closed before the Run finished.", summary: { requests: 0, passed: 0, failed: 0, skipped: 0, duration: 0 }, responses: [] });
@@ -319,6 +341,8 @@ export default class Bruno extends View {
     }
     else if (c === "keys") this.shortcuts.setOption("hints", !this.shortcuts.showHints);
     else if (c === "full") this.toggleFull();
+    // In a tab: close it and go back to the tab you came from. A dialog closes with esc.
+    else if (c === "close-tab") { if (props()?.overlay === undefined) closeTab(MOD); }
     else if (c === "reload") cx.spawn((cx) => this.reload(cx));
     else if (c === "search") { if (this.response.many) { this.focus = "response"; this.response.filterInput.focus(); } }
     else if (c.startsWith("part-")) this.response.setPart(Number(c.slice(5)) - 1);
@@ -782,6 +806,7 @@ export default class Bruno extends View {
 
   /** @param {Context} _cx */
   render(_cx) {
+    if (this.launcher) return div();
     const t = colors();
     this.buildRows();
     const treeW = this.full ? TREE_W_FULL : TREE_W;
