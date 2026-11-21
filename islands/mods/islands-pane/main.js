@@ -6,14 +6,39 @@
 
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
-import { panes, props, run, theme, home, shared } from "herdr";
+import { panes, props, run, theme, home, shared, layout } from "herdr";
 
 // The header at "main_opacity" in islands-workspace-chrome/settings.json (1 when unset), like the pane under it.
+// Over a background picture with see-through terminals, at the terminals' opacity instead.
 const mainFill = (c) => {
+  const see = seeThroughOpacity();
+  if (see !== null && /^#[0-9a-f]{6}$/i.test(c)) return c + Math.round(see * 255).toString(16).padStart(2, "0");
   const o = shared("islands.mainOpacity");
   if (typeof o !== "number" || o >= 1 || !/^#[0-9a-f]{6}$/i.test(c)) return c;
   return c + Math.round(Math.max(0, o) * 255).toString(16).padStart(2, "0");
 };
+
+// The panes' opacity when the background picker made them see-through on the shown layout: it
+// records { layout, opacity } in shared state, clears the terminals and gives the pane frame the
+// theme's background at that opacity. Null otherwise, so other setups look as they always have.
+// Same as seeThroughOpacity in the mods' kit/theme.js.
+function seeThroughOpacity() {
+  const s = shared("backgrounds.seeThrough");
+  if (!s || typeof s !== "object" || s.layout !== shared("layout")) return null;
+  const root = layout();
+  if (!root || typeof root.background !== "object" || typeof root.background?.image !== "string") return null;
+  const o = Number(s.opacity);
+  return Number.isFinite(o) && o < 1 ? Math.max(0, o) : null;
+}
+
+function find(node, id) {
+  if (node?.id === id) return node;
+  for (const child of node?.children ?? []) {
+    const found = find(child, id);
+    if (found) return found;
+  }
+  return null;
+}
 
 function icon(p, size, color) {
   if (!p?.icon) return null;
