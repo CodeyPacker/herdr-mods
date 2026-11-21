@@ -73,10 +73,10 @@
       "spotify/preview.png",
       "spotify/thumbnail.png"
     ],
-    "state": "Playback controls and queue from old preview",
+    "state": "Supplied Spotify screenshot showing playback controls and playlists",
     "screenshotSource": {
-      "commit": "90949f0",
-      "file": "spotify/preview.png"
+      "file": "gallery/sources/spotify-capture.png",
+      "treatment": "8 px background blur, original dialog preserved, crop to playback and playlist controls"
     }
   },
   {
