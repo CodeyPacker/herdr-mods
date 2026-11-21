@@ -24,6 +24,10 @@ plain `border` color.
 
 ## 2. Project tree
 
+- **Recent** sits at the top: the two chats with the newest messages, from any
+  project. Each row is the same as a chat row below, with the project name
+  added to the preview line ("herdr-mods · You: ..."). A chat in Recent also
+  stays in its project.
 - One row per project folder: a chevron, a folder icon, the folder's name and
   its chat count. Clicking the row opens or closes it. Hovering shows a **+**
   that starts a new chat in that folder.
@@ -59,7 +63,8 @@ with the project path, and search and details buttons.
 - Back-to-back messages from the same sender form a group: 2 px apart, with
   5 px corners on the joined side and 18 px elsewhere. Groups are 14 px apart.
 - Hovering a message shows reply and copy buttons.
-- Your last message shows "Delivered", then "Read" once the agent starts.
+- Your last message shows "Delivered" until the agent starts working on it,
+  then "Read <time>" (D3).
 - Agent text renders markdown (bold, lists, inline code, links). `path:line`
   links open the file, as in Tourist.
 - The list scrolls to the bottom on a new message.
@@ -131,25 +136,55 @@ see-through panes:
 - These are mod keys (`on_key_down` in the view), not `keys.json` bindings,
   so they only act while Hey, chat has the keyboard. Inside the text input,
   `ctrl-h` and `ctrl-k` would normally delete text. The mod takes them first.
-- A `keys.json` global key opens and closes the pane, as Tourist does (Q2).
+- `ctrl-a c` (your `ctrl-a` prefix, free today) opens and closes the pane, as
+  `ctrl-a t` does for Tourist (D2). It goes in `hey-chat/keys.json` as
+  `"ctrl-a c": "mod.open:hey-chat"`.
 
 ## 8. Running the agents
 
-Same pattern as Tourist (`tourist/mods/tourist/agent.js`):
+Both agents run through their own CLIs, signed in with your subscription
+(`claude` with your Claude account, `codex` with your ChatGPT account). No API
+keys.
 
-- Find `claude` and `codex` with one `command -v` call. Hide the switch for a
-  missing one. With neither, the pane says the CLI is needed.
-- `exec` stops anything over 30 s, so each turn runs in a hidden terminal with
-  `hc run --bg --no-parent --outlive-parent --cwd <project>`. The prompt goes
-  in through a file in `<appHome>/data/hey-chat/`.
-- **Claude:** `claude -p --output-format stream-json --verbose`, plus
-  `--resume <session_id>` after the first turn.
-- **Codex:** `codex exec --json -`, then `codex exec resume <thread_id> --json -`.
-- Read the output file while it grows, so text, tool calls and code show up as
-  they arrive (streaming), not only at the end. Each event becomes one message
-  kind from section 3.
+- Find `claude` and `codex` with one `command -v` call, as Tourist does
+  (`tourist/mods/tourist/agent.js`). Hide the switch for a missing one. With
+  neither, the pane says the CLI is needed.
+- `exec` stops anything over 30 s, and a turn that waits on your permission
+  can take much longer. So each chat gets a small Node program, `bridge.mjs`,
+  started in a hidden terminal with `hc run --bg --no-parent --outlive-parent
+  --cwd <project>`. The bridge runs the agent, keeps it alive between turns,
+  and talks to the mod over a local socket (the `net` module, as Portal uses).
+  It ends when the chat closes or after 30 minutes idle.
+- **Claude:** `claude -p --input-format stream-json --output-format
+  stream-json --verbose --permission-prompt-tool mcp__heychat__approve
+  --mcp-config <file>`, plus `--resume <session_id>` for an existing chat. The
+  MCP config points at the bridge itself as a stdio MCP server with one tool,
+  `approve`.
+- **Codex:** `codex app-server` (JSON-RPC over stdio, the protocol Codex's own
+  apps use). `codex exec` can't ask for permission, so it isn't used. The
+  app-server is marked experimental, so pin the tested Codex version in the
+  README and fail with a clear message on a protocol error.
+- Stream: each event becomes one message kind from section 3 as it arrives
+  (text, tool call, code), not only at the end.
 - Stop: a stop button replaces send while the agent runs, and `ctrl-c` in the
-  message box stops it (`hc rm`).
+  message box stops the turn. The chat stays open.
+
+**Permissions (D1):** the agent works with your normal settings for that
+folder (`.claude/settings.json` allow rules, Codex's `config.toml`). Anything
+those don't allow becomes a permission card in the chat:
+
+- An agent-side card with the tool and what it wants, for example "Run `git
+  push origin staging`" or "Edit `tourist/mods/tourist/main.js`" with a
+  collapsed diff.
+- Buttons **Allow once**, **Always allow** (Claude: this command pattern for
+  the folder; Codex: this session) and **Deny**, with keys `y`, `a` and `n`
+  while the card is the newest message.
+- The status line reads "Waiting for you" in the `blocked` color, the tree
+  row shows the same, and Herdr's attention sound plays if the pane isn't
+  focused.
+- The bridge holds the agent until you answer. Claude's `approve` tool returns
+  `{"behavior":"allow"}` or `{"behavior":"deny","message":...}`. Codex gets
+  the matching app-server approval reply.
 
 **Existing sessions:** list Claude's from `~/.claude/projects/<folder>/*.jsonl`
 and Codex's from `~/.codex/sessions/**/rollout-*.jsonl` (the folder is in the
@@ -171,7 +206,8 @@ Follows the repo's mod layout:
 - `hey-chat/README.md`, `RECIPE.md`, `keys.json`, `preview.png`,
   `thumbnail.png`
 - `hey-chat/mods/hey-chat/`: `mod.json`, `main.js` (view, state, keys),
-  `agent.js` (find, run, stream), `sessions.js` (existing sessions),
+  `agent.js` (find the CLIs, talk to the bridge), `bridge.mjs` (runs one
+  chat's agent, the `approve` MCP tool and the socket), `sessions.js` (existing sessions),
   `messages.js` (events to message kinds), `pictures.js` (agent and built-in
   pictures), `views/` (tree, chat, settings), and `kit/` from
   `node scripts/sync-kit.mjs`.
@@ -189,17 +225,15 @@ Follows the repo's mod layout:
 1. **A1:** Pane, layout and opacity rules with sample data, matching the design.
 2. **A2:** Keys and focus.
 3. **A3:** Settings and profile pictures.
-4. **A4:** Claude: run, stream, resume, stop.
-5. **A5:** Codex: the same.
-6. **A6:** Existing sessions in the tree, and search.
+4. **A4:** The bridge and Claude: run, stream, resume, stop, permission cards.
+5. **A5:** Codex through `codex app-server`: the same.
+6. **A6:** Existing sessions in the tree, Recent, and search.
 7. **A7:** README, RECIPE, preview images, root README entry.
 
-## 13. Open questions
+## 13. Decisions
 
-- **Q1:** What can the agent do without asking? `claude -p` can't show a
-  permission prompt, so it needs a fixed tool list. Options are read-only
-  (like Tourist), read plus edits (`--permission-mode acceptEdits`), or a
-  per-chat switch in the header.
-- **Q2:** Which global key opens the pane? Tourist uses `ctrl-shift-g`.
-- **Q3:** Should "Read" mean the agent started, or drop the receipt for agents?
-- **Q4:** Should a pinned or recent section sit above the projects?
+- **D1:** The agent does whatever your settings allow and asks in the chat
+  for the rest (section 8). It works with both subscription logins.
+- **D2:** `ctrl-a c` opens and closes the pane.
+- **D3:** "Read" means the agent started working on your message.
+- **D4:** A Recent section with the last two chats sits above the projects.
