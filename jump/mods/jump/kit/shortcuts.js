@@ -44,6 +44,9 @@ import { toolButton } from "./controls.js";
  * @property {string} [openKey] the keystroke that opens the settings. Defaults to ",". Give a
  *   ctrl key such as "ctrl-," when the mod's keyboard is in a text box.
  * @property {string} [saved] the name the settings are saved under in the mod's storage. Defaults to "settings".
+ * @property {{ getItem: (key: string) => string | null, setItem: (key: string, value: string) => void }} [storage]
+ *   where they are saved. Defaults to localStorage, which is this copy's own. A mod that opens
+ *   as a new copy each time (a dialog, a tab) passes open-as.js's sharedStorage.
  * @property {() => void} [onOpen] runs when the panel opens. A mod whose keyboard is in a text
  *   box moves it to its frame here, so the panel's j, k and space arrive as keys.
  * @property {() => void} [onClose] runs when the panel closes, to give the keyboard back
@@ -78,6 +81,7 @@ export class Shortcuts {
     this.bound = false;
     this.openKey = spec.openKey ?? ",";
     this.saved = spec.saved ?? "settings";
+    this.storage = spec.storage ?? localStorage;
     /** @type {boolean} the panel is open */
     this.open = false;
     /** @type {number} the selected row: the options first, then the keys */
@@ -93,7 +97,7 @@ export class Shortcuts {
     /** @type {Record<string, boolean>} each option's value */
     this.values = Object.fromEntries(this.options.map((o) => [o.id, Boolean(o.on)]));
     try {
-      const saved = JSON.parse(localStorage.getItem(this.saved) ?? "{}") ?? {};
+      const saved = JSON.parse(this.storage.getItem(this.saved) ?? "{}") ?? {};
       if (Array.isArray(saved.off)) for (const id of saved.off) if (this.keys.some((k) => k.id === id)) this.off.add(id);
       for (const o of this.options) if (typeof saved[o.id] === "boolean") this.values[o.id] = saved[o.id];
       if (spec.rebind && saved.keys && typeof saved.keys === "object") {
@@ -268,7 +272,7 @@ export class Shortcuts {
 
   /** Writes every setting to the mod's storage. */
   save() {
-    localStorage.setItem(this.saved, JSON.stringify({ ...this.values, off: [...this.off], keys: this.bindings }));
+    this.storage.setItem(this.saved, JSON.stringify({ ...this.values, off: [...this.off], keys: this.bindings }));
   }
 
   /** Switches one row and saves everything. @param {number} i a row: the options first, then the keys */
