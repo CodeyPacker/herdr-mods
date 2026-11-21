@@ -10,10 +10,11 @@
 //   since.js      the commit you last reviewed a PR at, for re-reviews
 //   checks.js     the PR's CI checks and failed logs
 //   links.js      file:line references in the agent's text, as links that move the code
+//   ticket.js     tours the tickets mod opens on a ticket's PR, and sending the review back to it
 //   views/        the setup, tour, planning and error screens
 import { View } from "gpui-kit";
 import { v_flex, InputState, ScrollHandle } from "gpui-base";
-import { nextCommand, panes, props, run } from "herdr";
+import { nextCommand, panes, props, run, notify, shared } from "herdr";
 import { colors, SIZE } from "./kit/theme.js";
 import { SCOPES, DEPTHS, PASSES, SPLIT_WIDTH, SHORTCUTS } from "./constants.js";
 import { Shortcuts } from "./kit/shortcuts.js";
@@ -41,6 +42,7 @@ import { mergeMethods, mergePR } from "./merge.js";
 import { mergeView } from "./views/merge.js";
 import { checksView } from "./views/checks.js";
 import { confirmDialog, pendingConfirm } from "./views/confirm.js";
+import { ticketCommand, changesText, closeOwnTab, ownPane, ticketReviewKey, publishTicketReview } from "./ticket.js";
 
 /** How many lines a scroll key moves the code. */
 const CODE_SCROLL_LINES = 3;
@@ -48,7 +50,18 @@ const CODE_SCROLL_LINES = 3;
 export default class Tourist extends View {
   init(_props, cx) {
     const start = startFolder();
-    this.cwd = props()?.folder ?? start.cwd; this.on = start.on;
+    // Opened by the tickets mod on a ticket's PR: props { folder, pr, ticket: { number, root, title } }.
+    // That repo is on this computer, whichever space is shown.
+    this.ticket = props()?.ticket ?? null; this.ticketPR = Number(props()?.pr) || null;
+    this.reviewTicket = null; // the full ticket used to plan this review, loaded when the tour starts
+    this.ticketReviewActive = Boolean(this.ticket?.reviewId);
+    this.ticketSubmission = this.ticket?.submission ?? "";
+    this.ticketRequestSeen = this.ticketSubmission; this.ticketPendingSubmission = null;
+    this.ticketWaiting = false; this.ticketRefreshing = false; this.ticketPolling = false;
+    this.ticketDone = false;
+    this.ticketPreviousFeedback = "";
+    this.handBack = null; // sending the comments to the ticket's agent: { confirm, error }
+    this.cwd = props()?.folder ?? start.cwd; this.on = this.ticket ? null : start.on;
     this.phase = "setup"; this.scope = "branch"; this.depth = "normal";
     this.git = { root: null, branch: "", base: null, mergeBase: null, changed: [], untracked: [], head: "" };
     this.plan = null; this.idx = 0; this.codeError = null;
@@ -70,6 +83,7 @@ export default class Tourist extends View {
     this.comments = [];   // line comments on the PR, saved by comments.js
     this.commenting = null; // { file, line, side, code, anchor, editId? } while the comment box is open
     this.threads = [];      // comment threads already on the PR on GitHub (pr.js listThreads)
+    this.threadsLoaded = false; this.threadsError = null; this.threadsLoading = false;
     this.threadReply = null;  // the thread id whose reply box is open
     this.threadBusy = null;   // { id, note } while a reply or resolve is going to GitHub
     this.threadError = null;  // { id, text, draft } when GitHub refused one
@@ -90,7 +104,8 @@ export default class Tourist extends View {
     this.replying = false; // the fix screen's reply box only exists while replying
     // Posting the comments to GitHub: { phase: "editing" | "posting" | "posted", cursor, confirm, url, error }.
     this.review = null;
-    // Merging your own PR: { phase: "loading" | "picking" | "merging" | "merged", methods, cursor, confirm, error }.
+    // Merging your own PR: { phase: "loading" | "picking" | "merging" | "merged", methods, cursor, confirm, error,
+    // approve }. approve, on a ticket's tour: { phase: "approving" | "approved" | "failed", error } once merged.
     this.merge = null;
     this.cursor = 0;      // highlighted row in the current step
     this.split = null;    // null: split when the pane is wide enough. true or false: the s key chose
@@ -123,7 +138,12 @@ export default class Tourist extends View {
       if (mine && !mine.zoomed) run("pane.zoom", { pane: mine.pane });
     });
     cx.spawn(async cx => { for (;;) { this.command(await nextCommand(), cx); cx.notify(); } });
-    cx.spawn(async cx => { await this.detect(); cx.notify(); });
+    cx.spawn(async cx => { await this.detect(cx); cx.notify(); });
+    if (this.ticketReviewActive) {
+      // The ticket file can change while this tab is in the background or the board is closed.
+      cx.timer.every(10000, cx => this.pollTicket(cx));
+      cx.timer.every(30000, cx => { if (this.ticketReviewActive && this.ticketTour()) { this.loadChecks(cx); this.loadThreads(cx); } });
+    }
   }
 
   textBox(name, placeholder, submit) {
@@ -147,6 +167,7 @@ export default class Tourist extends View {
   }
 
   async close() {
+    publishTicketReview(this, true);
     this.explainScroll.release(); this.diffScroll.release(); this.input.release(); this.featureInput.release(); this.commentInput.release(); this.summaryInput.release(); this.replyInput.release(); this.threadInput.release();
     await this.session?.stop(); await this.fixSession?.stop();
   }
@@ -179,6 +200,7 @@ export default class Tourist extends View {
     else if (c === "review-back") this.closeReview();
     else if (c === "merge") this.startMerge(cx);
     else if (c === "merge-back") this.closeMerge();
+    else if (c === "changes") this.requestChanges(cx);
     else if (c === "explain") this.explainFile(cx);
     else if (c === "viewed") this.toggleViewed(this.currentFile(), cx);
     else if (c.startsWith("file-") && this.files) {
@@ -188,7 +210,8 @@ export default class Tourist extends View {
     }
   }
 
-  async detect() {
+  /** Finds the repo and the agents. Given `cx` (the first time only), a PR in the props is opened too. */
+  async detect(cx = null) {
     if (!this.cwd) { this.fail("No folder to tour. Open Tourist from a terminal inside a repo."); return; }
     // Both take a moment on Windows and don't depend on each other.
     const [repo, found] = await Promise.all([readRepo(this.cwd, this.on), findAgents(this.on)]);
@@ -202,6 +225,85 @@ export default class Tourist extends View {
     const asked = props()?.scope;
     if (asked === "branch" && repo.changed.length > 0) { this.scope = "branch"; this.goStep("depth"); }
     else this.goStep("scope");
+    if (cx && this.ticketPR) await this.openPropPR(cx);
+  }
+
+  /**
+   * Picks the PR named in the props, the same way enter on the PR step does: the re-review lookup
+   * runs, and the tour lands on "What to review" or "How deep".
+   */
+  async openPropPR(cx) {
+    const number = this.ticketPR;
+    this.scope = "pr"; this.goStep("pr");
+    this.prsLoading = true; this.prsError = null; cx.notify();
+    try { this.prs = await listPRs(this.git.root, this.on); }
+    catch (e) { this.prsLoading = false; this.fail(`Could not list the open pull requests to find PR #${number}: ${String(e?.message ?? e)}`); return; }
+    this.prsLoading = false;
+    if (this.step !== "pr") return; // the reader went back meanwhile
+    const i = this.prs.findIndex(p => p.number === number);
+    if (i < 0) { this.fail(`PR #${number}${this.ticket ? ` of ticket #${this.ticket.number}` : ""} is not open on GitHub. It may be merged or closed already.`); return; }
+    this.cursor = i;
+    this.pick(cx);
+  }
+
+  /** The ticket this tour reviews, when it is on that ticket's PR. Null for every other tour. */
+  ticketTour() { return this.ticket && this.pr && this.pr.number === this.ticketPR ? this.ticket : null; }
+
+  /** React to an opener's request without taking focus from another tab. */
+  syncTicketReview(cx) {
+    if (!this.ticketReviewActive) return;
+    const request = shared(`${ticketReviewKey(this.ticket, this.ticketPR)}.request`);
+    if (request?.id === this.ticket.reviewId && request.submission !== this.ticketRequestSeen) {
+      this.ticketRequestSeen = request.submission;
+      this.ticketPendingSubmission = request.submission;
+    }
+    if (this.ticketPendingSubmission === this.ticketSubmission) this.ticketPendingSubmission = null;
+    if (this.ticketPendingSubmission !== null && this.ticketPendingSubmission !== undefined)
+      this.refreshTicket(this.ticketPendingSubmission, cx);
+    publishTicketReview(this);
+  }
+
+  pollTicket(cx) {
+    if (!this.ticketReviewActive || this.ticketPolling || this.ticketRefreshing) return;
+    this.ticketPolling = true;
+    cx.spawn(async cx => {
+      try {
+        const ticket = await ticketCommand(this.ticket, ["show", String(this.ticket.number)]);
+        if (ticket.status === "review") this.refreshTicket(ticket.submitted ?? ticket.updated ?? "", cx);
+        if (ticket.status === "doing" && ticket.feedback) {
+          this.ticketWaiting = true;
+          this.ticketPreviousFeedback ||= ticket.feedback;
+        }
+        if (ticket.status === "done") { this.ticketWaiting = false; this.ticketDone = true; }
+      } catch { /* A temporary CLI failure leaves the existing review available. */ }
+      this.ticketPolling = false; cx.notify();
+    });
+  }
+
+  /** Refresh only between edits and actions. Draft comments stay on the commit they describe. */
+  refreshTicket(submission, cx) {
+    if (!this.ticketReviewActive || !submission || submission === this.ticketSubmission) return;
+    this.ticketPendingSubmission = submission;
+    if (!this.git.root || !this.agent || this.ticketRefreshing
+      || this.typing || this.commenting || this.busy || this.comments.length || this.threadBusy
+      || this.phase === "planning" || this.phase === "merge" || this.phase === "review") return;
+    this.ticketRefreshing = true;
+    this.ticketSubmission = submission;
+    if (this.ticketPendingSubmission === submission) this.ticketPendingSubmission = null;
+    cx.spawn(async cx => {
+      try {
+        await this.session?.stop();
+        this.reset(cx, true);
+        this.scope = "pr"; this.prNumber = this.ticketPR; this.pass = "since";
+        const gen = this.gen;
+        const pr = await loadPR(this.git.root, this.on, this.ticketPR);
+        const last = await lastReviewed(this.git.root, this.on, commentKey(this.git.root, pr.number), pr.number, pr.headOid).catch(() => null);
+        if (gen !== this.gen || !this.ticketReviewActive) return;
+        this.since = last ? { number: pr.number, ...last } : null;
+        this.start(cx, false);
+      } catch (error) { this.fail(String(error?.message ?? error)); }
+      finally { this.ticketRefreshing = false; cx.notify(); }
+    });
   }
 
   /** Switches to the next installed agent and remembers it. */
@@ -218,12 +320,12 @@ export default class Tourist extends View {
 
   fail(message) { this.phase = "error"; this.error = message; this.busy = null; }
 
-  start(cx) {
+  start(cx, focus = true) {
     if (this.phase !== "setup" || !this.git.root) return;
     if (this.scope === "branch" && this.git.changed.length === 0) return;
     if (this.scope === "feature" && !this.featureInput.value().trim()) { this.focusBox(this.featureInput, cx); return; }
     if (this.scope === "pr" && !this.prNumber) return;
-    this.leaveBox();
+    if (focus) this.leaveBox();
     this.phase = "planning";
     const session = this.session = new AgentSession(this.agent, this.git.root);
     const gen = this.gen = (this.gen ?? 0) + 1;
@@ -249,9 +351,20 @@ export default class Tourist extends View {
           this.pr = pr; this.planNote = null; head = pr.headOid;
           this.comments = await loadComments(commentKey(this.git.root, pr.number));
           this.viewed = await loadViewed(commentKey(this.git.root, pr.number));
-          this.threads = []; this.loadThreads(cx); this.loadChecks(cx);
+          this.threads = []; this.threadsLoaded = false; this.threadsError = null;
+          this.loadThreads(cx); this.loadChecks(cx);
           cx.notify();
-          prompt = prPlanPrompt(prSubject(pr), this.depth);
+          const ticket = this.ticketTour();
+          if (ticket) {
+            this.planNote = `Reading ticket #${ticket.number}`; cx.notify();
+            const details = await ticketCommand(ticket, ["show", String(ticket.number)]);
+            if (gen !== this.gen) return;
+            this.reviewTicket = details;
+            if (this.ticketPreviousFeedback) this.reviewTicket.reviewFeedback = this.ticketPreviousFeedback;
+            if (details.submitted) this.ticketSubmission = details.submitted;
+            this.planNote = null;
+          } else this.reviewTicket = null;
+          prompt = prPlanPrompt(prSubject(pr, this.reviewTicket), this.depth, this.reviewTicket);
         } else {
           // HEAD now, not when Tourist opened, so a commit made since then plans again.
           head = await git(["rev-parse", "HEAD"], { cwd: this.git.root, on: this.on });
@@ -259,7 +372,7 @@ export default class Tourist extends View {
         }
         // The same tour of the same commit at the same depth was planned before: reuse it,
         // and its agent session when the agent matches.
-        this.savedKey = planKey({ root: this.git.root, scope: this.scope, depth: this.depth, head, pr: this.pr, feature });
+        this.savedKey = planKey({ root: this.git.root, scope: this.scope, depth: this.depth, head, pr: this.pr, feature, ticket: this.reviewTicket });
         const saved = this.savedKey ? await loadSavedPlan(this.savedKey) : null;
         if (gen !== this.gen) return;
         if (saved) { plan = saved.plan; plan.savedAt = saved.saved; if (saved.agent === session.agent) session.id = saved.session; }
@@ -457,7 +570,7 @@ export default class Tourist extends View {
       const comments = this.comments.filter(c => c.file === file);
       let prompt = other ? filePrompt(question, other, this.pr, comments) : followUpPrompt(question, s, this.idx + 1, comments);
       // A reused tour whose agent session couldn't be kept starts fresh, so say what it's about.
-      if (!session.id) prompt = `This is part of a guided tour. Subject: ${this.pr ? prSubject(this.pr) : subject(this.scope, this.git, this.featureInput.value().trim())}\n\n${prompt}`;
+      if (!session.id) prompt = `This is part of a guided tour. Subject: ${this.pr ? prSubject(this.pr, this.reviewTicket) : subject(this.scope, this.git, this.featureInput.value().trim())}\n\n${prompt}`;
       try { notes.push({ label, text: await session.ask(prompt) }); this.storePlan(); }
       catch (e) { notes.push({ label: "Error", text: String(e?.message ?? e) }); }
       this.busy = null; cx.notify();
@@ -531,9 +644,15 @@ export default class Tourist extends View {
   /** Loads the comment threads already on the PR from GitHub. A failure just shows none. */
   loadThreads(cx) {
     const pr = this.pr;
+    if (!pr || this.threadsLoading === pr) return;
+    this.threadsLoading = pr;
     cx.spawn(async cx => {
-      const threads = await listThreads(pr, this.git.root, this.on).catch(() => []);
-      if (this.pr === pr) { this.threads = threads; cx.notify(); }
+      try {
+        const threads = await listThreads(pr, this.git.root, this.on);
+        if (this.pr === pr) { this.threads = threads; this.threadsLoaded = true; this.threadsError = null; }
+      } catch (error) { if (this.pr === pr) this.threadsError = String(error?.message ?? error); }
+      if (this.threadsLoading === pr) this.threadsLoading = false;
+      cx.notify();
     });
   }
 
@@ -590,7 +709,7 @@ export default class Tourist extends View {
     cx.spawn(async cx => {
       try { c.list = await listChecks(this.git.root, this.on, pr); c.cursor = Math.min(c.cursor, Math.max(0, c.list.length - 1)); }
       catch (e) { c.error = String(e?.message ?? e); }
-      c.loading = false; cx.notify();
+      c.checkedAt = Date.now(); c.loading = false; cx.notify();
     });
   }
 
@@ -625,7 +744,7 @@ export default class Tourist extends View {
         const log = await failedLog(this.git.root, this.on, pr, cur.check);
         this.busy = `${this.agentName()} is reading the failure`; cx.notify();
         let prompt = checkPrompt(cur.check, log);
-        if (!session.id) prompt = `This is part of a guided review. Subject: ${prSubject(pr)}\n\n${prompt}`;
+        if (!session.id) prompt = `This is part of a guided review. Subject: ${prSubject(pr, this.reviewTicket)}\n\n${prompt}`;
         notes.push({ label: "Why it failed", text: await session.ask(prompt) });
       } catch (e) { notes.push({ label: "Error", text: String(e?.message ?? e) }); }
       this.busy = null; cx.notify();
@@ -749,7 +868,7 @@ export default class Tourist extends View {
    * saved comment in a worktree on the PR's commit. Later, it shows that run's result.
    */
   startFix(cx) {
-    if (!this.pr?.mine) return; // never edit someone else's PR
+    if (!this.pr?.mine || this.ticketTour()) return; // never edit someone else's PR, nor a ticket's, which its agent works on
     if (this.fix && this.fix.phase !== "pushed") { this.leaveBox(); this.phase = "fix"; return; }
     if (this.comments.length === 0 || this.busy) return;
     this.leaveBox();
@@ -768,6 +887,41 @@ export default class Tourist extends View {
       cx.notify();
     });
   }
+
+  /**
+   * On a ticket's tour: sends every saved comment to the ticket as requested changes, which also
+   * reaches its agent when one runs. This head counts as reviewed, so the next tour of the PR can
+   * offer only what changed since. The tab stays open while its agent makes the changes.
+   * The first press only asks for a second one.
+   */
+  requestChanges(cx) {
+    const ticket = this.ticketTour(), pr = this.pr;
+    if (!ticket || this.comments.length === 0 || this.busy || this.ticketWaiting) return;
+    if (!this.handBack?.confirm) { this.handBack = { confirm: true, error: null }; this.leaveBox(); return; }
+    const comments = [...this.comments], key = commentKey(this.git.root, pr.number);
+    this.handBack = null;
+    this.busy = `Sending ${comments.length} comment${comments.length === 1 ? "" : "s"} to ticket #${ticket.number}`;
+    cx.spawn(async cx => {
+      try {
+        const r = await ticketCommand(ticket, ["changes", String(ticket.number), changesText(pr, comments)]);
+        await saveReviewed(key, pr.headOid).catch(() => {});
+        this.comments = this.comments.filter(c => !comments.includes(c));
+        await saveComments(key, this.comments).catch(() => {});
+        this.ticketPreviousFeedback = changesText(pr, comments);
+        this.ticketWaiting = true;
+        this.busy = null;
+        notify({ title: `Changes requested on #${ticket.number}`,
+          body: r.forwarded ? `${comments.length} comment${comments.length === 1 ? "" : "s"} sent to its agent.`
+            : r.forwardError ? `Saved on the ticket, but they did not reach its agent: ${r.forwardError}`
+            : "Saved on the ticket. No agent is running on it. Start one from the tickets board.",
+          level: r.forwarded ? "success" : "warning" });
+      } catch (e) { this.busy = null; this.handBack = { confirm: true, error: String(e?.message ?? e) }; }
+      cx.notify();
+    });
+  }
+
+  /** Closes this tab, after a ticket's tour is done with. */
+  closeTab(cx) { if (!closeOwnTab(ownPane())) this.reset(cx); }
 
   /** Opens the reply box on the fix screen, once the agent has finished a run. */
   startReply(cx) {
@@ -830,7 +984,7 @@ export default class Tourist extends View {
     this.viewed = viewed;
     const key = commentKey(this.git.root, pr.number);
     cx.spawn(async () => { await saveViewed(key, viewed).catch(() => {}); });
-    this.savedKey = planKey({ root: this.git.root, scope: "pr", depth: this.depth, head, pr, feature: "" });
+    this.savedKey = planKey({ root: this.git.root, scope: "pr", depth: this.depth, head, pr, feature: "", ticket: this.reviewTicket });
     this.storePlan();
     // The fix changed the code: show the new diffs, file counts, threads and the checks the push started.
     if (this.other) { const f = this.laterFiles().find(x => x.file === this.other); if (f) this.openFile(f, cx); }
@@ -913,7 +1067,7 @@ export default class Tourist extends View {
     this.leaveBox();
     this.phase = "merge";
     if (this.merge && this.merge.phase !== "loading") { this.merge.confirm = false; return; }
-    const m = this.merge = { phase: "loading", methods: null, cursor: 0, confirm: false, error: null };
+    const m = this.merge = { phase: "loading", methods: null, cursor: 0, confirm: false, error: null, approve: null };
     cx.spawn(async cx => {
       try { m.methods = await mergeMethods(this.git.root, this.on, pr); m.phase = "picking"; }
       catch (e) { m.methods = []; m.phase = "picking"; m.error = `Could not read the repo's merge settings: ${String(e?.message ?? e)}`; }
@@ -940,9 +1094,16 @@ export default class Tourist extends View {
     if (!m || !pr?.mine || m.phase !== "picking" || !method) return;
     if (!m.confirm) { m.confirm = true; this.leaveBox(); return; }
     m.confirm = false; m.phase = "merging"; m.error = null;
+    const ticket = this.ticketTour();
     cx.spawn(async cx => {
       try { await mergePR(this.git.root, this.on, pr, method.id); m.phase = "merged"; }
-      catch (e) { m.phase = "picking"; m.error = `GitHub did not merge it: ${String(e?.message ?? e)}`; }
+      catch (e) { m.phase = "picking"; m.error = `GitHub did not merge it: ${String(e?.message ?? e)}`; cx.notify(); return; }
+      // A ticket's PR is its work, so merging it approves the ticket: done, its agent ended, its worktree removed.
+      if (ticket) {
+        m.approve = { phase: "approving", error: null }; cx.notify();
+        try { const r = await ticketCommand(ticket, ["approve", String(ticket.number)]); m.approve = { phase: "approved", error: (r.warnings ?? []).join(" ") || null }; }
+        catch (e) { m.approve = { phase: "failed", error: String(e?.message ?? e) }; }
+      }
       cx.notify();
     });
   }
@@ -1047,13 +1208,17 @@ export default class Tourist extends View {
     else openInEditor(`${this.git.root}/${s.file}`, s.start);
   }
 
-  reset(cx) {
+  reset(cx, keepTicket = false) {
+    if (!keepTicket) { publishTicketReview(this, true); this.ticketReviewActive = false; }
+    this.ticketWaiting = false;
     this.gen = (this.gen ?? 0) + 1;
     this.session?.stop(); this.session = null;
     this.fixSession?.stop(); this.fixSession = null; this.fix = null; // a fix's worktree stays and is reused next time
-    this.review = null; this.merge = null; this.checks = null; this.since = null; this.sinceLoading = false;
+    this.review = null; this.merge = null; this.checks = null; this.since = null; this.sinceLoading = false; this.handBack = null;
+    this.reviewTicket = null;
     this.threadBusy = null; this.threadError = null; this.openResolved = new Set();
-    this.leaveBox();
+    this.threadsLoaded = false; this.threadsError = null;
+    if (!keepTicket) this.leaveBox();
     this.plan = null; this.busy = null; this.error = null;
     this.pr = null; this.prNumber = null; this.prs = null; this.diff = null; this.planNote = null; this.comments = []; this.threads = []; this.savedKey = null; this.viewed = {};
     this.files = null; this.other = null; this.diffMarks = null; this.linkRows = null; this.scrollReq = null; this.repoFiles = new Set();
@@ -1124,6 +1289,7 @@ export default class Tourist extends View {
       else if (is("merge") && this.pr?.mine) this.startMerge(cx);
       else if (k === "escape" && this.commenting) this.leaveBox();
       else if (is("fix") && this.pr?.mine) this.startFix(cx);
+      else if (k === "g" && this.ticketTour()) this.requestChanges(cx);
       else if (is("review") && this.pr) this.startReview(cx);
       else if (is("checks") && this.pr) this.openChecks(cx);
       else if (is("replan") && this.savedKey) this.replan(cx);
@@ -1141,6 +1307,7 @@ export default class Tourist extends View {
       else if ((is("merge")) || k === "enter") this.doMerge(cx);
       else if (is("open") && m?.phase === "merged") this.openPR();
       else if (k === "q" && m?.phase === "merged") this.reset(cx);
+      else if (k === "c" && m?.phase === "merged" && this.ticketTour() && m.approve?.phase !== "approving") this.closeTab(cx);
       else if (n >= 0 && n < (m?.methods?.length ?? 0)) this.moveMethod(n);
       else if (k === "j" || k === "down") this.moveMethod((m?.cursor ?? 0) + 1);
       else if (k === "k" || k === "up") this.moveMethod((m?.cursor ?? 0) - 1);
@@ -1173,6 +1340,7 @@ export default class Tourist extends View {
   }
 
   render(cx) {
+    this.syncTicketReview(cx);
     const t = colors();
     const root = v_flex().id("tourist").relative().track_focus(this.handle).on_key_down((e, cx) => this.key(e, cx))
       // A click on the code, the text or a divider can take the keyboard away. Take it back
@@ -1192,6 +1360,6 @@ export default class Tourist extends View {
     if (this.phase === "review" && this.review && this.pr) return settings(root.child(reviewView(this, t)).when(Boolean(dialog), el => el.child(dialog)));
     if (this.phase === "merge" && this.merge && this.pr) return settings(root.child(mergeView(this, t)).when(Boolean(dialog), el => el.child(dialog)));
     if (this.phase === "checks" && this.checks && this.pr) return settings(root.child(checksView(this, t)));
-    return settings(root.child(tourView(this, t)));
+    return settings(root.child(tourView(this, t)).when(Boolean(dialog), el => el.child(dialog)));
   }
 }

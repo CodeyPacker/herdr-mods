@@ -20,9 +20,13 @@ function hash(text) {
  * tour is about: the PR's head for a PR, else the repo's HEAD. PR keys keep the shape they
  * had when only PRs were saved, so those saved plans still load.
  */
-export function planKey({ root, scope, depth, head, pr, feature }) {
+export function planKey({ root, scope, depth, head, pr, feature, ticket = null }) {
   if (!head) return null;
-  if (scope === "pr") return pr ? `${safe(`${root}#pr-${pr.number}`)}-${head.slice(0, 12)}${pr.sinceOid ? `-since-${pr.sinceOid.slice(0, 12)}` : ""}-${depth}` : null;
+  if (scope === "pr") {
+    // A ticket review must not reuse a generic PR tour, or one made for older requirements.
+    const context = ticket ? `-ticket-${ticket.number}-${hash(JSON.stringify([ticket.title, ticket.description ?? "", ticket.criteria ?? [], ticket.summary ?? "", ticket.reviewFeedback ?? ""]))}` : "";
+    return pr ? `${safe(`${root}#pr-${pr.number}`)}-${head.slice(0, 12)}${pr.sinceOid ? `-since-${pr.sinceOid.slice(0, 12)}` : ""}-${depth}${context}` : null;
+  }
   if (scope === "commit" || scope === "repo") return `${safe(root)}-${scope}-${head.slice(0, 12)}-${depth}`;
   if (scope === "feature") return `${safe(root)}-feature-${hash(feature.trim().toLowerCase())}-${head.slice(0, 12)}-${depth}`;
   return null;
