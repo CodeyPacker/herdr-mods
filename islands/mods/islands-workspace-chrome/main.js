@@ -115,7 +115,9 @@ export default class WorkspaceChrome extends View {
     }
     return h_flex().size_full().rounded(13).overflow_hidden().bg(islandFill(t.chrome)).when(collapsed, el => el.justify_center()).when(!collapsed, el => el.pl(14).pr(10)).gap(4).items_center().text_size(13.5)
       .when(window()?.platform === "macos" && !window()?.fullscreen && !collapsed, el => el.pl(76))
-      .when(!collapsed, el => el.child(h_flex().flex_1().min_w(0).gap(8).items_center().child(image("frame/welcome/herdr.png").size(20).flex_none().rounded(5)).child(div().min_w(0).truncate().font_semibold().text_color(t.foreground).child("Herdr"))))
+      .when(!collapsed, el => el.child(h_flex().flex_1().min_w(0).gap(8).items_center().child(image("frame/welcome/herdr.png").size(20).flex_none().rounded(5))))
+      // The macOS rail without traffic lights (full screen) has the row free: the logo alone.
+      .when(collapsed && window()?.platform === "macos" && Boolean(window()?.fullscreen), el => el.child(image("frame/welcome/herdr.png").size(20).flex_none().rounded(5)))
       .when(!collapsed, el => el.child(this.button("search", svg("mods/islands-workspace-chrome/search.svg").size(15), () => run("mod.open", { name: "picker" }))))
       // On the macOS rail the traffic lights fill the row; the agents list's » unfolds it.
       .when(!(collapsed && window()?.platform === "macos"), el => el.child(this.button("sidebar-toggle", svg("mods/islands-workspace-chrome/sidebar.svg").size(15), toggleSidebar)));
