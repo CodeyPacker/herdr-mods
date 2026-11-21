@@ -304,18 +304,18 @@ const timedOutError = (e) => /time(d)? ?out/i.test(String(e?.message ?? e));
  * One Run on the Collection's Machine. Plans it, runs `bru` with its output going to a progress
  * file, reads the report and the progress file and deletes both, whatever happened, then returns
  * `readRun`'s result. Never throws.
- * `run`: `{ machine, collection, target, environment, globalEnvironment, workspacePath, timer, onProgress }`.
+ * `run`: `{ machine, collection, target, environment, globalEnvironment, workspacePath, envVars, timer, onProgress }`.
  * With `timer` (a `cx.timer`) and `onProgress`, the progress file is read every PROGRESS_EVERY ms
  * while the CLI runs, and `onProgress(text)` gets its text each time it changed.
  */
-export async function runBru({ machine = null, collection, target, environment = null, globalEnvironment = null, workspacePath = null, timer = null, onProgress = null }) {
+export async function runBru({ machine = null, collection, target, environment = null, globalEnvironment = null, workspacePath = null, envVars = null, timer = null, onProgress = null }) {
   await sweepReports();
   let path = null;
   try { path = await reportPath(machine); } catch (e) {
     return readRun({ code: 1, stderr: `Cannot make a place for the report: ${e?.message ?? e}` });
   }
   const log = progressPath(path);
-  const plan = planRun({ collection, target, environment, globalEnvironment, workspacePath, reportPath: path });
+  const plan = planRun({ collection, target, environment, globalEnvironment, workspacePath, reportPath: path, envVars });
   const input = { reportText: null, code: null, stdout: "", stderr: "", timedOut: false };
   const watch = watchProgress(machine, log, timer, onProgress);
   let redirected = true;

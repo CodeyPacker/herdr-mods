@@ -136,3 +136,16 @@ export function confirmText(count, name, environment) {
 export function secretWarning(names) {
   return names?.length ? `Secret variables are empty in CLI Runs: ${names.join(", ")}. Move them to .env.` : null;
 }
+
+/**
+ * The {{variable}} names in a URL, once each, in order. `{{process.env.X}}` comes from `.env`,
+ * which a Run cannot replace, so it is left out.
+ * @param {string | null | undefined} url
+ */
+export function urlVariables(url) {
+  const out = [];
+  for (const m of String(url ?? "").matchAll(/\{\{\s*([^{}\s]+)\s*\}\}/g)) {
+    if (!m[1].startsWith("process.env.") && !out.includes(m[1])) out.push(m[1]);
+  }
+  return out;
+}

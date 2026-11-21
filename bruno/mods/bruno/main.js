@@ -5,7 +5,7 @@
 // The keyboard is on the tree or on the Response. ctrl-h puts it on the tree, ctrl-l on the
 // Response. j/k (or the arrows) move in the tree, and through a Run's Requests when it is there.
 // Keys: h/l fold and unfold, enter runs a Request or folds a folder, r runs the row (a folder or
-// Collection asks first), e picks the Environment, o opens the Request's file, y copies its URL,
+// Collection asks first), p runs a Request with other values for its URL's {{variables}}, e picks the Environment, o opens the Request's file, y copies its URL,
 // b opens Bruno desktop, 1-4 pick the Response's view, / searches a Run's Requests, f fills the
 // window, ctrl-r reads everything again, ? shows or hides the key list, esc closes.
 //
@@ -13,14 +13,14 @@
 // The Run logic, the parsers and the Response's views come from jbped's Brunr (MIT).
 
 import { View, div, svg } from "gpui-kit";
-import { v_flex, h_flex, ScrollHandle } from "gpui-base";
+import { v_flex, h_flex, ScrollHandle, InputState } from "gpui-base";
 import { checking, closeOverlay, nextCommand, props, settings } from "herdr";
 import { colors, SIZE } from "./kit/theme.js";
 import { frame, divider } from "./kit/frame.js";
 import { legend, hint } from "./kit/legend.js";
 import { listRow, listNote } from "./kit/list.js";
 import { sectionLabel } from "./kit/pane.js";
-import { chip, toolButton } from "./kit/controls.js";
+import { chip, toolButton, textInput } from "./kit/controls.js";
 import { Shortcuts } from "./kit/shortcuts.js";
 import * as sources from "./sources.js";
 import * as machine from "./machine.js";
@@ -35,6 +35,8 @@ import { Response, methodBadge } from "./response.js";
 /** @typedef {import("gpui-kit").KeyEvent} KeyEvent */
 /** @typedef {ReturnType<typeof colors>} Theme */
 /** A row of the tree, as tree.buildRows makes it. @typedef {any} Row */
+/** One {{variable}} of the "run with values" form. @typedef {{ name: string, known: boolean, secret: boolean, input: any }} VarField */
+/** The "run with values" form. @typedef {{ key: string, name: string, url: string, fields: VarField[], at: number }} VarsForm */
 /** One choice in a picker. `warn` is a dim line under it. @typedef {{ label: string, value: any, warn?: string | null }} Choice */
 /** A small list over the dialog: an Environment to pick, or a Run to confirm. @typedef {{ title: string, options: Choice[], at: number, current?: any, choose: (value: any, cx: Context | AsyncContext) => void }} Picker */
 
@@ -60,7 +62,7 @@ const ESC_GAP_MS = 300;
 /** The command each key stands for. @type {Record<string, string>} */
 const KEYS = {
   up: "up", k: "up", down: "down", j: "down", left: "left", h: "left", right: "right", l: "right", home: "home", end: "end", enter: "enter",
-  r: "run", e: "env", o: "file", y: "url", b: "app", f: "full", "ctrl-r": "reload",
+  r: "run", p: "vars", e: "env", o: "file", y: "url", b: "app", f: "full", "ctrl-r": "reload",
   "1": "part-1", "2": "part-2", "3": "part-3", "4": "part-4", "/": "search",
   "ctrl-h": "focus-tree", "ctrl-l": "focus-response", escape: "cancel", "?": "keys", "shift-/": "keys", ",": "settings",
 };
@@ -70,7 +72,7 @@ const KEYS = {
  * @type {import("./kit/shortcuts.js").Shortcut[]}
  */
 const SHORTCUTS = [
-  { id: "run", key: "r", what: "run" }, { id: "env", key: "e", what: "environment" },
+  { id: "run", key: "r", what: "run" }, { id: "vars", key: "p", what: "run with values" }, { id: "env", key: "e", what: "environment" },
   { id: "file", key: "o", what: "open file" }, { id: "url", key: "y", what: "copy URL" },
   { id: "app", key: "b", what: "open Bruno" }, { id: "full", key: "f", what: "full screen" },
   { id: "reload", key: "ctrl-r", what: "reload" },
@@ -117,6 +119,10 @@ export default class Bruno extends View {
     this.focus = "tree";
     /** @type {Picker | null} */
     this.picker = null;
+    /** @type {VarsForm | null} */
+    this.vars = null;
+    /** @type {Map<string, Record<string, string>>} Request key -> the values its last "run with values" used. Kept until the dialog closes, never saved. */
+    this.lastVars = new Map();
     /** @type {{ text: string, bad: boolean } | null} the line under the panes */
     this.note = null;
     /** @type {number} the frame's width in pixels, once it has been laid out */
@@ -152,6 +158,7 @@ export default class Bruno extends View {
     this.watches?.clear();
     if (store.running()) store.finishRun({ ok: false, message: "Bruno was closed before the Run finished.", summary: { requests: 0, passed: 0, failed: 0, skipped: 0, duration: 0 }, responses: [] });
     this.response?.release();
+    this.closeVars();
   }
 
   /** Closes the dialog. Placed as a layout block there is nothing to close. */
@@ -281,6 +288,7 @@ export default class Bruno extends View {
     const k = ctrlOnly && /^[a-z]$/.test(e.key) ? `ctrl-${e.key}` : e.keystroke;
     let c = "";
     if (this.picker) c = PICKER_KEYS[k] ?? "";
+    else if (this.vars) c = k === "escape" ? "cancel" : k === "tab" || k === "down" ? "vars-next" : k === "shift-tab" || k === "up" ? "vars-prev" : "";
     else if (this.shortcuts.open) { this.shortcuts.key(e, cx); return; }
     else if (this.response.typing) c = k === "escape" ? "cancel" : k === "enter" ? "focus-response" : "";
     else {
@@ -303,6 +311,7 @@ export default class Bruno extends View {
     this.note = null;
     if (c === "cancel") this.cancel(cx);
     else if (this.picker) this.pickerCommand(c, cx);
+    else if (this.vars) this.varsCommand(c, cx);
     else if (this.shortcuts.command(c)) { /* the settings panel took it */ }
     else if (c === "focus-tree" || c === "focus-response") {
       this.focus = c === "focus-tree" ? "tree" : "response";
@@ -314,6 +323,7 @@ export default class Bruno extends View {
     else if (c === "search") { if (this.response.many) { this.focus = "response"; this.response.filterInput.focus(); } }
     else if (c.startsWith("part-")) this.response.setPart(Number(c.slice(5)) - 1);
     else if (c === "url") this.copyUrl(cx);
+    else if (c === "vars") this.openVars();
     else if (this.focus === "response" && (c === "up" || c === "down")) this.response.move(c === "up" ? -1 : 1);
     else if (TREE_KEY[c]) {
       const at = Math.max(0, this.rows.findIndex((r) => r.key === this.sel));
@@ -326,6 +336,11 @@ export default class Bruno extends View {
   /** Esc: closes the picker, then the settings, then leaves the Search box, then closes the dialog. @param {Context | AsyncContext} cx */
   cancel(cx) {
     if (this.picker) { this.picker = null; this.steppedBack = Date.now(); }
+    else if (this.vars) {
+      this.closeVars();
+      this.steppedBack = Date.now();
+      cx.spawn(async (cx) => { this.steppedBack = Date.now(); this.handle.focus(); cx.notify(); });
+    }
     else if (this.shortcuts.open) this.shortcuts.back();
     else if (this.response.typing) {
       // The keyboard moves back after this key press is over, so the press is not handed on as a second esc.
@@ -414,10 +429,77 @@ export default class Bruno extends View {
     this.picker = { title: "Global environment", options, current: row.env, at: Math.max(0, options.findIndex((o) => o.value === row.env)), choose: (value) => this.saved.setGlobalEnv(row.wsPath, value) };
   }
 
+  // Run with values
+
+  /** Opens the form with one box per {{variable}} in the selected Request's URL. */
+  openVars() {
+    const row = this.selected();
+    if (row?.kind !== "request") return this.say("Select a Request to run it with other values");
+    const names = tree.urlVariables(row.url);
+    if (!names.length) return this.say("This Request's URL has no {{variables}}");
+    const entry = this.entry(row.ck), c = this.collection(row.ck);
+    if (!entry || !c) return;
+    const envName = this.envOf(entry, c).name;
+    const env = c.environments.find((/** @type {any} */ e) => e.name === envName);
+    const last = this.lastVars.get(row.key) ?? {};
+    this.closeVars();
+    // The boxes start empty, or with what the last "run with values" of this Request used. Environment values are never read.
+    const fields = names.map((name) => {
+      const v = env?.variables.find((/** @type {any} */ x) => x.name === name);
+      const input = InputState.new({ value: last[name] ?? "", placeholder: v ? `Empty keeps ${envName}'s value` : "Empty leaves it as it is" });
+      input.on("submit", (/** @type {unknown} */ _e, /** @type {Context} */ cx) => { this.runVars(cx); cx.notify(); });
+      return { name, known: Boolean(v), secret: Boolean(v?.secret), input };
+    });
+    this.vars = { key: row.key, name: row.name, url: row.url, fields, at: 0 };
+    fields[0].input.focus();
+  }
+
+  closeVars() {
+    for (const f of this.vars?.fields ?? []) f.input.release();
+    this.vars = null;
+  }
+
+  /** @param {string} c @param {Context | AsyncContext} cx */
+  varsCommand(c, cx) {
+    const v = this.vars;
+    if (!v) return;
+    if (c === "vars-next" || c === "vars-prev") {
+      v.at = (v.at + (c === "vars-prev" ? -1 : 1) + v.fields.length) % v.fields.length;
+      v.fields[v.at].input.focus();
+    } else if (c === "vars-run") this.runVars(cx);
+  }
+
+  /** Runs the form's Request with each changed box as an `--env-var`. Nothing is written to disk. @param {Context | AsyncContext} cx */
+  runVars(cx) {
+    const v = this.vars;
+    if (!v) return;
+    /** @type {Record<string, string>} */
+    const changed = {};
+    /** @type {Record<string, string>} */
+    const typed = {};
+    for (const f of v.fields) {
+      const value = f.input.value();
+      typed[f.name] = value;
+      if (value !== "") changed[f.name] = value;
+    }
+    this.lastVars.set(v.key, typed);
+    this.closeVars();
+    this.handle.focus();
+    this.runKey(cx, v.key, false, changed);
+    if (store.running()) {
+      const list = Object.entries(changed).map(([n, x]) => `${n}=${x}`).join(", ");
+      this.say(list ? `This Run only: ${list}` : "Nothing changed, so this Run uses the Environment's values", false);
+    }
+  }
+
   // Runs
 
-  /** Runs the row: a Request at once, a folder or Collection after a confirmation. @param {Context | AsyncContext} cx @param {string} key @param {boolean} confirmed */
-  runKey(cx, key, confirmed) {
+  /**
+   * Runs the row: a Request at once, a folder or Collection after a confirmation.
+   * `envVars` replaces those Environment variables for this Run only.
+   * @param {Context | AsyncContext} cx @param {string} key @param {boolean} confirmed @param {Record<string, string> | null} [envVars]
+   */
+  runKey(cx, key, confirmed, envVars = null) {
     const row = this.buildRows().find((r) => r.key === key);
     if (!row || !row.ck) return;
     if (store.running()) return this.say("A Run is in progress");
@@ -447,7 +529,7 @@ export default class Bruno extends View {
     this.response.sync();
     const onProgress = many ? (/** @type {string} */ text) => store.setProgress(progressOf({ planned, finished: parseProgress(text).finished })) : null;
     cx.spawn(async (cx) => {
-      const result = await machine.runBru({ machine: entry.machine ?? null, collection: c, target, environment, globalEnvironment, workspacePath: ws?.dir ?? null, timer: many ? cx.timer : null, onProgress });
+      const result = await machine.runBru({ machine: entry.machine ?? null, collection: c, target, environment, globalEnvironment, workspacePath: ws?.dir ?? null, envVars, timer: many ? cx.timer : null, onProgress });
       store.finishRun(result);
       this.response.sync();
       cx.notify();
@@ -665,6 +747,32 @@ export default class Bruno extends View {
       .child(panel);
   }
 
+  /** The "run with values" form, placed over the dialog. A press beside it closes it. @param {Theme} t @param {VarsForm} v */
+  varsPanel(t, v) {
+    const mono = this.mono();
+    const panel = v_flex().id("bruno-vars").absolute().top(60).left(SIZE.framePad).w(460).max_w("100%").p(12).gap(10)
+      .bg(t.popover).rounded(12).border_1().border_color(t.border).shadow_lg().text_size(SIZE.text)
+      .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
+      .on_click((_e, cx) => cx.stop_propagation())
+      .child(v_flex().px(4).gap(4)
+        .child(div().font_semibold().text_color(t.foreground).child(`Run ${v.name} with other values`))
+        .child(div().font_family(mono).text_size(SIZE.small).text_color(t.muted).child(v.url))
+        .child(div().text_size(SIZE.small).text_color(t.dim).child("For this Run only. Nothing is saved.")))
+      .children(v.fields.map((f, i) => v_flex().id(`bruno-var-${i}`).gap(4)
+        .on_mouse_down("left", (_e, cx) => { v.at = i; cx.notify(); })
+        .child(h_flex().gap(8).items_center().px(4)
+          .child(div().font_family(mono).text_size(SIZE.small).text_color(t.foreground).child(f.name))
+          .child(div().flex_1().min_w(0).truncate().text_size(SIZE.small).text_color(t.dim)
+            .child(f.secret ? "secret in the Environment" : f.known ? "from the Environment" : "not in the Environment")))
+        .child(textInput(t, f.input, i === v.at).w_full())))
+      .child(divider(t))
+      .child(legend(t, [["tab", "next"], ["enter", "run"], ["esc", "back"]]));
+    return div().id("bruno-vars-around").absolute().inset_0()
+      .on_mouse_down("left", (_e, cx) => { this.closeVars(); this.handle.focus(); cx.stop_propagation(); cx.notify(); })
+      .on_click((_e, cx) => cx.stop_propagation())
+      .child(panel);
+  }
+
   /** Wraps the Search box so esc in it steps back (see BOX_CONTEXT) and does not close the dialog. @param {any} box */
   escBox(box) {
     return v_flex().w_full().key_context(BOX_CONTEXT)
@@ -693,9 +801,10 @@ export default class Bruno extends View {
       .when(Boolean(this.note), (el) => el.child(div().flex_none().text_size(SIZE.small).text_color(this.note?.bad ? t.blocked : t.dim).child(this.note?.text ?? "")))
       .when(this.shortcuts.showHints, (el) => el.child(divider(t)).child(legend(t, hints)))
       // Esc with something open steps back from it. Without this the app closes the whole dialog (see BOX_CONTEXT).
-      .when(Boolean(picker) || this.shortcuts.open || this.response.typing, (el) => el.key_context(BOX_CONTEXT)
+      .when(Boolean(picker) || Boolean(this.vars) || this.shortcuts.open || this.response.typing, (el) => el.key_context(BOX_CONTEXT)
         .on_action(BACK_ACTION, (/** @type {unknown} */ _e, /** @type {Context} */ cx) => { this.command("cancel", cx); cx.notify(); }))
       .when(Boolean(picker), (el) => el.child(this.pickerPanel(t, /** @type {Picker} */ (picker))))
+      .when(Boolean(this.vars), (el) => el.child(this.varsPanel(t, /** @type {VarsForm} */ (this.vars))))
       .when(this.shortcuts.open, (el) => el.child(this.shortcuts.panel(t)));
     // Placed as a layout block, or in full screen, the panel fills its room.
     if (props()?.overlay === undefined || this.full) return panel;
