@@ -1,7 +1,8 @@
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, TextView, InputState, ScrollHandle } from "gpui-base";
-import { run, nextCommand, panes, props, watchFolder, focused, checking, appHome } from "herdr";
-import { colors, SIZE } from "./kit/theme.js";
+import { run, nextCommand, panes, props, watchFolder, focused, checking, appHome, closeOverlay, shared, setShared, exec } from "herdr";
+import { togglePractice, reopenPractice, openPractice, liveEditor, DIALOG_KEY } from "./toggle.js";
+import { colors, SIZE, paneBackground } from "./kit/theme.js";
 import { paneHeader, paneTitle, paneDetail, paneBar, tag, sectionLabel, banner } from "./kit/pane.js";
 import { keyButton, spinner, textInput } from "./kit/controls.js";
 import { listRow, rowText, listNote } from "./kit/list.js";
@@ -15,6 +16,7 @@ import { languagePanel } from "./language-panel.js";
 import { tutorSettings, tutorChat } from "./tutor/panel.js";
 import { startTopic } from "./start-topic.js";
 import { Shortcuts } from "./kit/shortcuts.js";
+import { closeTab, sharedStorage, openAsOption, onOpenAsChange } from "./kit/open-as.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("./kit/theme.js").Theme} Theme */
@@ -37,9 +39,28 @@ const SHORTCUTS = [
   { id: "open", key: "o", what: "open editor" }, { id: "tutor", key: "u", what: "ask tutor" },
 ];
 
+/** How Practice Range opens: as a tab, or as the dialog with Neovim beside it (toggle.js). */
+const HOW = { name: "Practice Range", tab: { practiceTab: true }, dialog: () => openPractice() };
+
+/** Esc in the dialog: the app would close it, so esc is this copy's own action in this key context. */
+const ESC_CONTEXT = "PracticeRangeDialog";
+const ESC_ACTION = "practice-range-escape";
+/** Esc as an action and as a key within this many ms is one press. */
+const ESC_GAP_MS = 150;
+
+/** Where the last dialog was, to show it again on the next open. @returns {{ languageId: string, screen: string, pickerTopicId: string | null } | null} */
+function savedSpot() {
+  // Shared, not localStorage: each dialog is a new copy, with its own storage.
+  const spot = /** @type {any} */ (shared("syntax.spot"));
+  return spot && typeof spot.languageId === "string" && typeof spot.screen === "string" ? spot : null;
+}
+
+/** Shared by every copy: each dialog and each tab is a new copy with its own localStorage. */
+const store = sharedStorage("syntax");
+
 /** @template T @param {string} key @param {T} fallback @returns {T} */
 function saved(key, fallback) {
-  try { return JSON.parse(localStorage.getItem(key) ?? "null") ?? fallback; } catch { return fallback; }
+  try { return JSON.parse(store.getItem(key) ?? "null") ?? fallback; } catch { return fallback; }
 }
 
 /** @param {string} path */
@@ -70,6 +91,41 @@ function lightGreen(t, alpha) {
 export default class Syntax extends View {
   /** @param {unknown} _props @param {Context} cx */
   init(_props, cx) {
+    // Opened by the toggle key (`mod.open:syntax`) as a tiny overlay: open or close the
+    // full-window dialog (toggle.js), then close. Nothing else starts.
+    const overlay = props()?.overlay;
+    this.toggleOnly = Boolean(overlay) && !props()?.dialog;
+    if (this.toggleOnly) {
+      cx.spawn(async () => { try { await togglePractice(); } catch {} finally { closeOverlay(overlay); } });
+      return;
+    }
+    /** Shown in the full-window dialog, with Neovim beside it (toggle.js). */
+    this.dialog = Boolean(props()?.dialog);
+    /** @type {{ languageId: string, screen: string, pickerTopicId: string | null } | null} where the last dialog was, until it is shown again */
+    this.restoreSpot = null;
+    /**
+     * True while the dialog finds its way back to the last spot. The screens it passes through
+     * (setup, languages, topics) are not drawn, so they don't flash. Ends after 10s at most.
+     */
+    this.restoring = this.dialog && !checking() && Boolean(savedSpot());
+    /** @type {string} the action whose end finishes restoring */
+    this.restoreEnd = "";
+    if (this.restoring) cx.timer.after(10000, cx => { if (this.restoring) { this.restoring = false; cx.notify(); } });
+    // In the dialog the app closes it on esc, so esc is bound to this copy's own action there.
+    if (this.dialog) cx.bind_keys([{ keystroke: "escape", action: ESC_ACTION, context: ESC_CONTEXT }]);
+    /** When esc was last handled, so one press is not handled twice (see escape()). */
+    this.lastEscape = 0;
+    /** @type {string} the last spot saved, so render writes only changes */
+    this.lastSpot = "";
+    // Neovim shown again in a new block keeps its old screen until something redraws it.
+    // The block attaches a moment after the dialog opens, so redraw a few times as it settles.
+    if (this.dialog && !checking()) cx.spawn(async cx => {
+      for (const wait of [500, 1000, 1500, 3000]) {
+        await cx.sleep(wait);
+        const editor = liveEditor();
+        if (editor) await exec("nvim", ["--server", editor.server, "--remote-expr", "execute('redraw!')"]).catch(() => {});
+      }
+    });
     this.handle = cx.focus_handle();
     /** @type {import("./types.js").Session | null} */
     this.state = null;
@@ -147,9 +203,18 @@ export default class Syntax extends View {
     this.search.on("blur", () => { this.typing = false; });
     this.search.on("submit", (_event, cx) => { this.handle.focus(); cx.notify(); });
     /** The settings panel: a switch per shortcut key. Opening it takes the keyboard out of a text box. */
-    this.shortcuts = new Shortcuts({ mod: "syntax", keys: SHORTCUTS, rebind: true, onOpen: () => this.handle.focus() });
+    // Saved in shared state: every dialog and every tab is a new copy with its own localStorage.
+    this.shortcuts = new Shortcuts({
+      mod: "syntax", keys: SHORTCUTS, rebind: true, storage: sharedStorage("syntax"),
+      options: [openAsOption("syntax")],
+      onOpen: () => this.handle.focus(),
+      onChange: (id, on) => onOpenAsChange("syntax", id, on, HOW),
+    });
     this.handle.focus();
     if (checking()) return;
+    // A new tab's pane isn't drawn yet, so the focus above is lost. Focus again once it is.
+    cx.timer.after(50, () => { if (!this.typing) this.handle.focus(); });
+    cx.timer.after(400, () => { if (!this.typing) this.handle.focus(); });
     this.loadSetup(cx);
     this.watchTutorPreferences(cx);
     cx.spawn(async cx => {
@@ -165,8 +230,22 @@ export default class Syntax extends View {
 
   tutorKey() { return this.state ? `${this.state.languageId}/${this.state.exerciseId}` : ""; }
 
+  /**
+   * The background. In a tab over a background picture with see-through terminals, it matches
+   * the terminals (kit/theme.js). Otherwise, and in the dialog, the surface color as always.
+   * @param {Theme} t
+   */
+  background(t) {
+    return this.dialog ? t.surface : paneBackground(t.surface);
+  }
+
   /** @param {Context} cx */
   close(cx) {
+    if (this.toggleOnly) return;
+    if (this.dialog) {
+      this.saveSpot();
+      if (shared(DIALOG_KEY) === props()?.overlay) setShared(DIALOG_KEY, null);
+    }
     this.cancelTutor(cx);
     this.answerWatch?.cancel();
     this.tutorWatchClosed = true;
@@ -297,6 +376,12 @@ export default class Syntax extends View {
       } finally { this.busy = ""; cx.notify(); }
       // Opened by another mod at a topic: switch to its language, then show the topic's exercises.
       if (start && !this.error) { this.pendingTopic = start.topicId; this.perform("language", start.languageId, cx); }
+      else if (this.dialog && !this.error && this.setupCompleted) {
+        // Back where the last dialog was: its language, then its screen (see perform).
+        const spot = savedSpot();
+        if (spot && this.enabledLanguages.includes(spot.languageId)) { this.restoreSpot = spot; this.perform("language", spot.languageId, cx); }
+      }
+      if (!this.restoreSpot && this.restoring) { this.restoring = false; cx.notify(); }
 
     });
   }
@@ -396,7 +481,7 @@ export default class Syntax extends View {
         // Review jumps around the catalog. Only your own path updates where each topic resumes.
         if (!state.review) {
           this.recent[exercise.topicId] = exercise.id;
-          localStorage.setItem(`recent-${this.language.id}`, JSON.stringify(this.recent));
+          store.setItem(`recent-${this.language.id}`, JSON.stringify(this.recent));
         }
         if (action === "language") {
           this.screen = "topics";
@@ -431,8 +516,20 @@ export default class Syntax extends View {
         if (!this.watching) this.watchAnswers(cx);
       } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
       finally { this.practicePending = false; this.busy = ""; cx.notify(); }
+      // Restoring ends with its last step, or at once when a step failed.
+      if (this.restoring && (this.error || action === this.restoreEnd)) { this.restoring = false; cx.notify(); }
       if (diff) this.openEditor(cx, diff);
       else this.startAutomaticEditor(cx);
+      if (action === "language" && this.restoreSpot) {
+        const spot = this.restoreSpot;
+        this.restoreSpot = null;
+        if (!this.error && this.state && (spot.screen === "practice" || spot.screen === "scratch")) { this.restoreEnd = spot.screen; this.perform(spot.screen, null, cx); }
+        else {
+          if (!this.error && this.state && spot.screen === "exercises" && spot.pickerTopicId) { this.pickerTopicId = spot.pickerTopicId; this.screen = "exercises"; this.selected = 0; this.revealSelection = true; }
+          this.restoring = false;
+          cx.notify();
+        }
+      }
       if (action === "language" && this.pendingTopic) {
         const topic = this.pendingTopic;
         this.pendingTopic = null;
@@ -603,7 +700,7 @@ export default class Syntax extends View {
 
   /** @param {Context} cx */
   startAutomaticEditor(cx) {
-    if (this.setupCompleted && ["practice", "scratch"].includes(this.screen) && this.laidOut && this.state && !this.busy && !this.practicePending && !this.error && !this.offerEditorDefault && props()?.practiceTab
+    if (this.setupCompleted && ["practice", "scratch"].includes(this.screen) && (this.laidOut || this.dialog) && this.state && !this.busy && !this.practicePending && !this.error && !this.offerEditorDefault && (props()?.practiceTab || this.dialog)
         && !this.automaticEditorStarted && this.editor === "neovim") this.openEditor(cx);
   }
 
@@ -619,6 +716,7 @@ export default class Syntax extends View {
    */
   openEditor(cx, diff = null) {
     if (["setup", "languages"].includes(this.screen) || !this.state || !this.editor || this.offerEditorDefault || this.busy || this.practicePending) return;
+    if (this.dialog) { this.openInDialog(cx, diff); return; }
     if (!props()?.practiceTab) {
       run("tab.new", { name: "Practice Range", mod: "syntax", props: { practiceTab: true } });
       return;
@@ -653,7 +751,7 @@ export default class Syntax extends View {
             /** @type {Record<string, { terminal: string, server: string }>} */
             const sessions = saved("editorSessions", {});
             sessions[panel.pane] = { terminal: this.editorTerminal, server: this.server };
-            localStorage.setItem("editorSessions", JSON.stringify(sessions));
+            store.setItem("editorSessions", JSON.stringify(sessions));
           }
         }
       } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
@@ -720,10 +818,67 @@ export default class Syntax extends View {
     return this.state ? this.catalog.topicExercises(this.pickerTopicId ?? this.catalog.findExercise(this.state.exerciseId).topicId) : [];
   }
 
+  /** Remembers the language and screen, so the next dialog opens here. Setup is not kept. */
+  saveSpot() {
+    if (!this.setupCompleted || this.restoreSpot || this.screen === "setup" || this.screen === "languages") return;
+    const spot = JSON.stringify({ languageId: this.language.id, screen: this.screen, pickerTopicId: this.pickerTopicId });
+    if (spot === this.lastSpot) return;
+    this.lastSpot = spot;
+    setShared("syntax.spot", JSON.parse(spot));
+  }
+
+  /** Esc in the dialog, from its key context: what esc does everywhere else. @param {Context} cx */
+  escape(cx) {
+    // One press can arrive both here and as a key: the second within ESC_GAP_MS is the same press.
+    if (Date.now() - this.lastEscape < ESC_GAP_MS) return;
+    this.lastEscape = Date.now();
+    // The settings panel first: esc stops waiting for a new key, else closes the panel.
+    if (this.shortcuts.open) { this.shortcuts.back(); cx.notify(); return; }
+    this.key(/** @type {any} */ ({ key: "escape", keystroke: "escape", modifiers: {}, fromAction: true }), cx);
+  }
+
+  /**
+   * Opens the file in the dialog's Neovim, or VS Code. When Neovim is not running, the dialog
+   * opens again with a new one beside it, back on this screen.
+   * @param {Context} cx @param {{ answerFile: string, referenceFile: string } | null} diff
+   */
+  openInDialog(cx, diff) {
+    if (!this.state || !this.editor) return;
+    const file = this.state.file;
+    const editor = this.editor === "neovim" ? liveEditor() : null;
+    this.automaticEditorStarted = true;
+    if (this.editor === "neovim" && !editor) {
+      this.saveSpot();
+      reopenPractice().catch(error => { this.error = error instanceof Error ? error.message : String(error); cx.notify(); });
+      return;
+    }
+    this.busy = `${diff ? "Comparing in" : "Opening"} ${this.editor === "neovim" ? "Neovim" : "VS Code"}…`;
+    this.error = "";
+    cx.notify();
+    cx.spawn(async cx => {
+      try {
+        if (this.editor === "vscode") await (diff ? openVSCodeDiff(diff.answerFile, diff.referenceFile) : openVSCode(this.state.folder, file));
+        else if (editor) {
+          const shown = await (diff ? neovimDiff(editor.server, neovimDiffExpression(diff.answerFile, diff.referenceFile)) : reuseNeovim(editor.server, file));
+          if (!shown) this.error = "Neovim beside Practice Range did not answer. Close it (:qa) and press the toggle key twice to start a new one.";
+        }
+      } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
+      finally { this.busy = ""; cx.notify(); }
+    });
+  }
+
   /** @param {import("gpui-kit").KeyEvent} event @param {Context} cx */
   key(event, cx) {
+    // In the dialog, esc comes through escape() (its key context), so the app does not close it.
+    // The settings panel takes esc from either path (see escape()).
+    if (this.dialog && event.key === "escape" && !(/** @type {any} */ (event).fromAction)) {
+      if (this.shortcuts.open) { this.escape(cx); cx.stop_propagation(); }
+      return;
+    }
     // While the settings panel is open, every key is its own.
     if (this.shortcuts.open) { this.shortcuts.key(event, cx); return; }
+    // ctrl-x in the Practice Range tab closes it and goes back to the tab you came from.
+    if (event.keystroke === "ctrl-x" && props()?.practiceTab) { closeTab("syntax"); cx.stop_propagation(); return; }
     if (this.typing) {
       if (event.key === "escape") { this.handle.focus(); cx.stop_propagation(); }
       return;
@@ -961,10 +1116,16 @@ export default class Syntax extends View {
 
   /** @param {Context} cx */
   render(cx) {
+    if (this.toggleOnly) return div();
+    // Finding the way back: nothing until the screen it ends on.
+    if (this.restoring) return v_flex().id("syntax").size_full().bg(this.background(colors())).track_focus(this.handle);
+    // Saved as it changes (only when it changed), so the next dialog opens here.
+    if (this.dialog) this.saveSpot();
     const t = colors();
-    return v_flex().id("syntax").relative().size_full().min_w(0).min_h(0).bg(t.surface).text_color(t.foreground).text_size(13)
+    return v_flex().id("syntax").relative().size_full().min_w(0).min_h(0).bg(this.background(t)).text_color(t.foreground).text_size(13)
       .on_size_change((_size, cx) => this.bindPane(cx))
       .track_focus(this.handle).on_key_down((event, cx) => this.key(event, cx))
+      .when(this.dialog, element => element.key_context(ESC_CONTEXT).on_action(ESC_ACTION, (_event, cx) => { this.escape(cx); cx.notify(); }))
       .child(paneHeader(t).flex_wrap()
         .child(paneTitle(t, "Practice Range"))
         .child(paneDetail(t, this.screen === "setup" ? "Getting started" : this.screen === "languages" ? "Languages" : this.screen === "scratch" ? `${this.language.name} scratch` : `${this.language.name} repetition`))
