@@ -36,6 +36,11 @@ const selected = process.argv[2];
 for (const crop of config.screenshots.filter(crop => !selected || crop.id === selected)) {
   if (crop.capture) {
     const original = await fs.readFile(path.join(root, crop.capture));
+    if (!crop.dialog) {
+      await sharp(original).extract(crop.crop).png().toFile(path.join(root, 'gallery/sources', `${crop.id}.png`));
+      console.log(`${crop.id}: supplied screenshot, original editor pixels`);
+      continue;
+    }
     const { left, top, width, height, radius } = crop.dialog;
     const mask = Buffer.from(`<svg width="${width}" height="${height}"><rect width="${width}" height="${height}" rx="${radius}" fill="white"/></svg>`);
     const dialog = await sharp(original).extract({ left, top, width, height }).ensureAlpha()

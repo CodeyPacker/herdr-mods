@@ -6,7 +6,7 @@
     {"id":"run","capture":"gallery/sources/run-capture.png","blur":8,"dialog":{"left":1168,"top":80,"width":1120,"height":738,"radius":32},"crop":{"left":1040,"top":0,"width":1376,"height":896}},
     {"id":"islands","file":"islands/preview.png","corners":[[202,71],[616,71],[616,298],[202,298]],"width":1100,"height":603},
     {"id":"tourist","file":"tourist/preview.png","corners":[[303,87],[620,62],[606,300],[260,292]],"width":850,"height":620},
-    {"id":"zen","file":"zen/thumbnail-v6.png","corners":[[338,155],[614,155],[614,304],[338,304]],"width":900,"height":486},
+    {"id":"zen","capture":"gallery/sources/zen-capture.png","crop":{"left":24,"top":24,"width":3408,"height":2120}},
     {"id":"spotify","capture":"gallery/sources/spotify-capture.png","blur":8,"dialog":{"left":868,"top":86,"width":1720,"height":1994,"radius":32},"crop":{"left":788,"top":6,"width":1880,"height":1296}},
     {"id":"portal","capture":"gallery/sources/portal-capture.png","blur":8,"dialog":{"left":868,"top":218,"width":1720,"height":1732,"radius":32},"crop":{"left":788,"top":138,"width":1880,"height":1892}},
     {"id":"vim-docs","file":"vim-docs/preview.png","corners":[[367,29],[597,29],[597,309],[367,309]],"width":680,"height":828}

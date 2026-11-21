@@ -59,10 +59,10 @@
       "zen/preview.png",
       "zen/thumbnail-v6.png"
     ],
-    "state": "Focused editor from old Zen thumbnail",
+    "state": "Supplied Zen screenshot showing the focused editor without surrounding panels",
     "screenshotSource": {
-      "commit": "90949f0",
-      "file": "zen/thumbnail-v6.png"
+      "file": "gallery/sources/zen-capture.png",
+      "treatment": "Full editor view, original pixels preserved, no blur"
     }
   },
   {
