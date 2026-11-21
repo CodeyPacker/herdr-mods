@@ -1,0 +1,22 @@
+info:
+  name: List Products
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/products?shop={{shopId}}"
+  headers:
+    - name: accept
+      value: application/json
+    - name: x-trace
+      value: fixture-list
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true

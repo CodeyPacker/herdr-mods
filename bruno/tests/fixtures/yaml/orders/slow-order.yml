@@ -1,0 +1,6 @@
+info:
+  type: http
+
+http:
+  method: GET
+  url: "{{baseUrl}}/slow"

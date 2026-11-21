@@ -1,0 +1,119 @@
+[
+  {
+    "iterationIndex": 0,
+    "results": [
+      {
+        "test": {
+          "filename": "Get Health.yml"
+        },
+        "request": {
+          "method": "GET",
+          "url": "http://127.0.0.1:47911/health",
+          "headers": {
+            "Accept": "application/json, text/plain, */*",
+            "User-Agent": "bruno-runtime/4.2.1",
+            "Accept-Encoding": "gzip, compress, deflate, br",
+            "Host": "127.0.0.1:47911",
+            "Connection": "keep-alive",
+            "content-type": null
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "x-shop": "fixture",
+            "date": "Tue, 17 Nov 2026 21:04:45 GMT",
+            "connection": "keep-alive",
+            "keep-alive": "timeout=5",
+            "transfer-encoding": "chunked"
+          },
+          "data": {
+            "ok": true,
+            "service": "shop"
+          },
+          "url": "http://127.0.0.1/health",
+          "responseTime": 11,
+          "duration": 11,
+          "size": 28
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [
+          {
+            "uid": "Sk5uU1ny53DyzRfLuoVu4",
+            "lhsExpr": "res.status",
+            "rhsExpr": "eq 200",
+            "rhsOperand": "200",
+            "operator": "eq",
+            "status": "pass"
+          }
+        ],
+        "testResults": [
+          {
+            "description": "says ok",
+            "status": "pass",
+            "uid": "Tnwirx69DeoafkxfWM5RX"
+          }
+        ],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.212106711,
+        "name": "Get Health",
+        "suitename": "/home/dev/Shop/Get Health",
+        "path": "Get Health.yml",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "Broken.yml"
+        },
+        "request": {
+          "method": null,
+          "url": null,
+          "headers": null,
+          "data": null
+        },
+        "response": {
+          "status": "skipped",
+          "statusText": "Implicit keys need to be on a single line at line 4, column 1:\n\n  type: http\nhttp\n^\n",
+          "data": null,
+          "responseTime": 0
+        },
+        "error": "Implicit keys need to be on a single line at line 4, column 1:\n\n  type: http\nhttp\n^\n",
+        "status": "skipped",
+        "skipped": true,
+        "assertionResults": [],
+        "testResults": [],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "runDuration": 0,
+        "suitename": "Broken",
+        "name": "Broken.yml",
+        "path": "Broken.yml"
+      }
+    ],
+    "summary": {
+      "totalRequests": 2,
+      "passedRequests": 1,
+      "failedRequests": 0,
+      "errorRequests": 0,
+      "skippedRequests": 1,
+      "skippedByBail": 0,
+      "totalAssertions": 1,
+      "passedAssertions": 1,
+      "failedAssertions": 0,
+      "totalTests": 1,
+      "passedTests": 1,
+      "failedTests": 0,
+      "totalPreRequestTests": 0,
+      "passedPreRequestTests": 0,
+      "failedPreRequestTests": 0,
+      "totalPostResponseTests": 0,
+      "passedPostResponseTests": 0,
+      "failedPostResponseTests": 0
+    }
+  }
+]

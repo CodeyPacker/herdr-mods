@@ -1,0 +1,52 @@
+Error parsing item: YAMLParseError: Implicit keys need to be on a single line at line 4, column 1:
+
+  type: http
+http
+^
+
+    at Composer.onError (/usr/local/lib/node_modules/[4m@usebruno/cli[24m/node_modules/[4myaml[24m/dist/compose/composer.js:69:34)
+    at Object.resolveBlockMap (/usr/local/lib/node_modules/[4m@usebruno/cli[24m/node_modules/[4myaml[24m/dist/compose/resolve-block-map.js:47:17)
+    at resolveCollection (/usr/local/lib/node_modules/[4m@usebruno/cli[24m/node_modules/[4myaml[24m/dist/compose/compose-collection.js:13:27)
+    at Object.composeCollection (/usr/local/lib/node_modules/[4m@usebruno/cli[24m/node_modules/[4myaml[24m/dist/compose/compose-collection.js:47:16)
+    at Object.composeNode (/usr/local/lib/node_modules/[4m@usebruno/cli[24m/node_modules/[4myaml[24m/dist/compose/compose-node.js:31:38)
+    at Object.composeDoc (/usr/local/lib/node_modules/[4m@usebruno/cli[24m/node_modules/[4myaml[24m/dist/compose/compose-doc.js:33:23)
+    at Composer.next (/usr/local/lib/node_modules/[4m@usebruno/cli[24m/node_modules/[4myaml[24m/dist/compose/composer.js:149:40)
+    at next (<anonymous>)
+    at Composer.compose (/usr/local/lib/node_modules/[4m@usebruno/cli[24m/node_modules/[4myaml[24m/dist/compose/composer.js:131:25)
+    at compose.next (<anonymous>) {
+  code: [32m'MULTILINE_IMPLICIT_KEY'[39m,
+  pos: [ [33m34[39m, [33m47[39m ],
+  linePos: [ { line: [33m4[39m, col: [33m1[39m }, { line: [33m5[39m, col: [33m9[39m } ]
+}
+[33mWarning: Skipping invalid file /home/dev/shop/Broken.yml[39m
+[33mError: Implicit keys need to be on a single line at line 4, column 1:[39m
+[33m[39m
+[33m  type: http[39m
+[33mhttp[39m
+[33m^[39m
+[33m[39m
+[32mproducts/top sellers/Best Sellers[39m[2m (200 OK) - 7 ms[22m
+[32mproducts/List Products[39m[2m (200 OK) - 3 ms[22m
+[2mAssertions[22m
+[32m   ✓ [39m[2mres.status: eq 200[22m
+[32mproducts/Product Page[39m[2m (200 OK) - 2 ms[22m
+[32mproducts/Missing Product[39m[2m (404 Not Found) - 2 ms[22m
+[2mAssertions[22m
+[31m   ✕ [39m[31mres.status: eq 200[39m
+[31m      expected 404 to equal 200[39m
+
+[1m📊 Execution Summary[22m
+┌───────────────┬───────────────────────────────────┐
+│ [1mMetric[22m        │              [1mResult[22m               │
+├───────────────┼───────────────────────────────────┤
+│ Status        │              [31m[1m✗ FAIL[22m[39m               │
+├───────────────┼───────────────────────────────────┤
+│ Requests      │ 5 ([32m3 Passed[39m, [31m1 Failed[39m, [35m1 Skipped[39m) │
+├───────────────┼───────────────────────────────────┤
+│ Tests         │                0/0                │
+├───────────────┼───────────────────────────────────┤
+│ Assertions    │                1/2                │
+├───────────────┼───────────────────────────────────┤
+│ Duration (ms) │                84                 │
+└───────────────┴───────────────────────────────────┘
+[2m[90mWrote json results to /tmp/c.json[39m[22m

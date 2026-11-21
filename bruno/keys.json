@@ -1,0 +1,5 @@
+{
+  "global": {
+    "ctrl-a b": "mod.open:bruno"
+  }
+}

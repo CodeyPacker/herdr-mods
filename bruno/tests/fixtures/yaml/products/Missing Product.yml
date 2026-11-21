@@ -1,0 +1,17 @@
+info:
+  name: Missing Product
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{baseUrl}}/products/999"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true

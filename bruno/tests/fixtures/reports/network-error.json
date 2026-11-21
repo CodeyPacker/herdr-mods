@@ -1,0 +1,94 @@
+[
+  {
+    "iterationIndex": 0,
+    "results": [
+      {
+        "test": {
+          "filename": "orders/Closed Port.yml"
+        },
+        "request": {
+          "method": "GET",
+          "url": "http://127.0.0.1:47912/orders",
+          "headers": {
+            "Accept": "application/json, text/plain, */*",
+            "User-Agent": "bruno-runtime/4.2.1",
+            "Accept-Encoding": "gzip, compress, deflate, br",
+            "Host": "127.0.0.1:47912",
+            "Connection": "keep-alive",
+            "content-type": null
+          }
+        },
+        "response": {
+          "status": "error",
+          "statusText": null,
+          "headers": null,
+          "data": null,
+          "url": null,
+          "responseTime": 0,
+          "duration": 0,
+          "size": 0
+        },
+        "error": "connect ECONNREFUSED 127.0.0.1:47912",
+        "status": "error",
+        "assertionResults": [],
+        "testResults": [],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.039169149,
+        "name": "Closed Port",
+        "suitename": "/home/dev/Shop/orders/Closed Port",
+        "path": "orders/Closed Port.yml",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "Broken.yml"
+        },
+        "request": {
+          "method": null,
+          "url": null,
+          "headers": null,
+          "data": null
+        },
+        "response": {
+          "status": "skipped",
+          "statusText": "Implicit keys need to be on a single line at line 4, column 1:\n\n  type: http\nhttp\n^\n",
+          "data": null,
+          "responseTime": 0
+        },
+        "error": "Implicit keys need to be on a single line at line 4, column 1:\n\n  type: http\nhttp\n^\n",
+        "status": "skipped",
+        "skipped": true,
+        "assertionResults": [],
+        "testResults": [],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "runDuration": 0,
+        "suitename": "Broken",
+        "name": "Broken.yml",
+        "path": "Broken.yml"
+      }
+    ],
+    "summary": {
+      "totalRequests": 2,
+      "passedRequests": 0,
+      "failedRequests": 0,
+      "errorRequests": 1,
+      "skippedRequests": 1,
+      "skippedByBail": 0,
+      "totalAssertions": 0,
+      "passedAssertions": 0,
+      "failedAssertions": 0,
+      "totalTests": 0,
+      "passedTests": 0,
+      "failedTests": 0,
+      "totalPreRequestTests": 0,
+      "passedPreRequestTests": 0,
+      "failedPreRequestTests": 0,
+      "totalPostResponseTests": 0,
+      "passedPostResponseTests": 0,
+      "failedPostResponseTests": 0
+    }
+  }
+]

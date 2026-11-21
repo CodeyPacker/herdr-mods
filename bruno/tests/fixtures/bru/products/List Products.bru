@@ -1,0 +1,24 @@
+meta {
+  name: List Products
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products?shop={{shopId}}
+  body: none
+  auth: none
+}
+
+params:query {
+  shop: {{shopId}}
+}
+
+headers {
+  accept: application/json
+  x-trace: fixture-list
+}
+
+assert {
+  res.status: eq 200
+}

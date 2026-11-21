@@ -1,0 +1,279 @@
+[
+  {
+    "iterationIndex": 0,
+    "results": [
+      {
+        "test": {
+          "filename": "products/top sellers/Best Sellers.yml"
+        },
+        "request": {
+          "method": "GET",
+          "url": "http://127.0.0.1:47911/products/top",
+          "headers": {
+            "Accept": "application/json, text/plain, */*",
+            "User-Agent": "bruno-runtime/4.2.1",
+            "Accept-Encoding": "gzip, compress, deflate, br",
+            "Host": "127.0.0.1:47911",
+            "Connection": "keep-alive",
+            "content-type": null
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "x-shop": "fixture",
+            "date": "Tue, 17 Nov 2026 21:04:48 GMT",
+            "connection": "keep-alive",
+            "keep-alive": "timeout=5",
+            "transfer-encoding": "chunked"
+          },
+          "data": [
+            {
+              "id": 1,
+              "name": "Teapot",
+              "price": 12.5
+            }
+          ],
+          "url": "http://127.0.0.1/products/top",
+          "responseTime": 10,
+          "duration": 10,
+          "size": 39
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [],
+        "testResults": [],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.051331784,
+        "name": "Best Sellers",
+        "suitename": "/home/dev/Shop/products/top sellers/Best Sellers",
+        "path": "products/top sellers/Best Sellers.yml",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "products/List Products.yml"
+        },
+        "request": {
+          "method": "GET",
+          "url": "http://127.0.0.1:47911/products?shop=1",
+          "headers": {
+            "User-Agent": "bruno-runtime/4.2.1",
+            "Accept-Encoding": "gzip, compress, deflate, br",
+            "Host": "127.0.0.1:47911",
+            "Connection": "keep-alive",
+            "accept": "application/json",
+            "x-trace": "fixture-list",
+            "content-type": null
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "x-shop": "fixture",
+            "date": "Tue, 17 Nov 2026 21:04:48 GMT",
+            "connection": "keep-alive",
+            "keep-alive": "timeout=5",
+            "transfer-encoding": "chunked"
+          },
+          "data": [
+            {
+              "id": 1,
+              "name": "Teapot",
+              "price": 12.5
+            },
+            {
+              "id": 2,
+              "name": "Kettle",
+              "price": 30
+            }
+          ],
+          "url": "http://127.0.0.1/products?shop=1",
+          "responseTime": 2,
+          "duration": 2,
+          "size": 75
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [
+          {
+            "uid": "qIiiUk7ztF5jYBWJDfy0v",
+            "lhsExpr": "res.status",
+            "rhsExpr": "eq 200",
+            "rhsOperand": "200",
+            "operator": "eq",
+            "status": "pass"
+          }
+        ],
+        "testResults": [],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.023595878,
+        "name": "List Products",
+        "suitename": "/home/dev/Shop/products/List Products",
+        "path": "products/List Products.yml",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "products/Product Page.yml"
+        },
+        "request": {
+          "method": "get",
+          "url": "http://127.0.0.1:47911/products/page",
+          "headers": {
+            "Accept": "application/json, text/plain, */*",
+            "User-Agent": "bruno-runtime/4.2.1",
+            "Accept-Encoding": "gzip, compress, deflate, br",
+            "Host": "127.0.0.1:47911",
+            "Connection": "keep-alive",
+            "content-type": null
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "headers": {
+            "content-type": "text/html; charset=utf-8",
+            "x-shop": "fixture",
+            "date": "Tue, 17 Nov 2026 21:04:48 GMT",
+            "connection": "keep-alive",
+            "keep-alive": "timeout=5",
+            "transfer-encoding": "chunked"
+          },
+          "data": "<!doctype html><html><body><h1>Products</h1></body></html>",
+          "url": "http://127.0.0.1/products/page",
+          "responseTime": 3,
+          "duration": 3,
+          "size": 58
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [],
+        "testResults": [],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.005317436,
+        "name": "Product Page",
+        "suitename": "/home/dev/Shop/products/Product Page",
+        "path": "products/Product Page.yml",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "products/Missing Product.yml"
+        },
+        "request": {
+          "method": "GET",
+          "url": "http://127.0.0.1:47911/products/999",
+          "headers": {
+            "Accept": "application/json, text/plain, */*",
+            "User-Agent": "bruno-runtime/4.2.1",
+            "Accept-Encoding": "gzip, compress, deflate, br",
+            "Host": "127.0.0.1:47911",
+            "Connection": "keep-alive",
+            "content-type": null
+          }
+        },
+        "response": {
+          "status": 404,
+          "statusText": "Not Found",
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "x-shop": "fixture",
+            "date": "Tue, 17 Nov 2026 21:04:48 GMT",
+            "connection": "keep-alive",
+            "keep-alive": "timeout=5",
+            "transfer-encoding": "chunked"
+          },
+          "data": {
+            "error": "not found",
+            "path": "/products/999"
+          },
+          "url": "http://127.0.0.1/products/999",
+          "responseTime": 3,
+          "duration": 3,
+          "size": 44
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [
+          {
+            "uid": "ysxvfACnafppdJQ3UIM6q",
+            "lhsExpr": "res.status",
+            "rhsExpr": "eq 200",
+            "rhsOperand": "200",
+            "operator": "eq",
+            "status": "fail",
+            "error": "expected 404 to equal 200"
+          }
+        ],
+        "testResults": [],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.01059566,
+        "name": "Missing Product",
+        "suitename": "/home/dev/Shop/products/Missing Product",
+        "path": "products/Missing Product.yml",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "Broken.yml"
+        },
+        "request": {
+          "method": null,
+          "url": null,
+          "headers": null,
+          "data": null
+        },
+        "response": {
+          "status": "skipped",
+          "statusText": "Implicit keys need to be on a single line at line 4, column 1:\n\n  type: http\nhttp\n^\n",
+          "data": null,
+          "responseTime": 0
+        },
+        "error": "Implicit keys need to be on a single line at line 4, column 1:\n\n  type: http\nhttp\n^\n",
+        "status": "skipped",
+        "skipped": true,
+        "assertionResults": [],
+        "testResults": [],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "runDuration": 0,
+        "suitename": "Broken",
+        "name": "Broken.yml",
+        "path": "Broken.yml"
+      }
+    ],
+    "summary": {
+      "totalRequests": 5,
+      "passedRequests": 3,
+      "failedRequests": 1,
+      "errorRequests": 0,
+      "skippedRequests": 1,
+      "skippedByBail": 0,
+      "totalAssertions": 2,
+      "passedAssertions": 1,
+      "failedAssertions": 1,
+      "totalTests": 0,
+      "passedTests": 0,
+      "failedTests": 0,
+      "totalPreRequestTests": 0,
+      "passedPreRequestTests": 0,
+      "failedPreRequestTests": 0,
+      "totalPostResponseTests": 0,
+      "passedPostResponseTests": 0,
+      "failedPostResponseTests": 0
+    }
+  }
+]
