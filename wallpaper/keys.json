@@ -1,0 +1,5 @@
+{
+  "global": {
+    "ctrl-a w": "mod.open:wallpaper"
+  }
+}
