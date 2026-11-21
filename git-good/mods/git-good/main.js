@@ -1082,13 +1082,30 @@ export default class GitGood extends View {
       .child(div().id("gg-get-tourist").flex_none().text_color(t.accent).cursor_pointer().on_click((_e, cx) => { openTouristPage(); cx.stop_propagation(); }).child("Get it"));
   }
 
-  /** The line under the panes: the open question, else the note. @param {Theme} t */
+  /**
+   * The discard question as a dialog over the mod, with yes and no buttons. A press beside the
+   * dialog cancels. @param {Theme} t @param {FileEntry} f
+   */
+  askDialog(t, f) {
+    const title = f.untracked ? `Delete ${f.path}?` : `Discard the changes to ${f.path}?`;
+    const body = `${f.untracked ? "Git does not have this file, so it is deleted. " : ""}This cannot be undone.`;
+    const yes = f.untracked ? "Delete" : "Discard";
+    const box = v_flex().id("gg-ask").w(420).max_w("90%").p(20).gap(12)
+      .bg(t.popover).rounded(12).border_1().border_color(t.border).shadow_lg()
+      .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
+      .child(div().text_size(SIZE.title).font_semibold().text_color(t.foreground).child(title))
+      .child(div().text_size(SIZE.text).text_color(t.muted).child(body))
+      .child(h_flex().gap(8).justify_end()
+        .child(this.button(t, "gg-ask-no", "Keep the file (esc)", "cancel").h(32).child("Cancel"))
+        .child(this.button(t, "gg-ask-yes", `${yes} (enter)`, "yes").h(32).text_color(t.blocked).child(yes)));
+    return div().id("gg-ask-around").absolute().inset_0().flex().items_center().justify_center().rounded(SIZE.frameRadius).bg("#00000033")
+      .on_mouse_down("left", (_e, cx) => { this.command("cancel", cx); cx.stop_propagation(); cx.notify(); })
+      .on_click((_e, cx) => cx.stop_propagation())
+      .child(box);
+  }
+
+  /** The line under the panes: the note. @param {Theme} t */
   noteLine(t) {
-    const f = this.asking;
-    if (f) {
-      const what = f.untracked ? `Delete ${f.path}? Git does not have this file` : `Discard the changes to ${f.path}?`;
-      return div().flex_none().text_size(SIZE.small).text_color(t.foreground).child(`${what}. This cannot be undone. enter does it, esc cancels`);
-    }
     return this.note ? div().flex_none().text_size(SIZE.small).text_color(this.note.bad ? t.blocked : t.dim).child(this.note.text) : null;
   }
 
@@ -1117,6 +1134,7 @@ export default class GitGood extends View {
       .when(Boolean(this.asking) || this.branching || this.typing || this.shortcuts.open, (el) => el.key_context(BOX_CONTEXT)
         .on_action(BACK_ACTION, (_e, cx) => { this.command("cancel", cx); cx.notify(); }))
       .when(this.branching, (el) => el.child(this.branchPanel(t)))
+      .when(Boolean(this.asking), (el) => el.child(this.askDialog(t, /** @type {FileEntry} */ (this.asking))))
       .when(this.shortcuts.open, (el) => el.child(this.shortcuts.panel(t, { note: this.tourist === false ? this.touristNote(t) : undefined })));
     // Placed as a layout block, or in full screen, the panel fills its room.
     if (props()?.overlay === undefined || this.full) return panel;
