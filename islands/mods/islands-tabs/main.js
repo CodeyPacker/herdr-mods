@@ -31,6 +31,17 @@ const edge = (t) => {
   return PICKER_BORDERS.includes(c) ? c : t.border;
 };
 
+// The hover fill: the theme's hover color laid over the tab's own color, then at the islands'
+// opacity like the tab. A hover color with its own alpha alone would show the picture through.
+const over = (base, top) => {
+  const m = /^#([0-9a-f]{6})([0-9a-f]{2})?$/i.exec(top), b = /^#([0-9a-f]{6})$/i.exec(base);
+  if (!m || !b) return top;
+  const a = m[2] ? parseInt(m[2], 16) / 255 : 1;
+  const ch = (h, i) => parseInt(h.slice(i, i + 2), 16);
+  return "#" + [0, 2, 4].map(i => Math.round(ch(m[1], i) * a + ch(b[1], i) * (1 - a)).toString(16).padStart(2, "0")).join("");
+};
+const hoverFill = (t) => islandFill(over(t.surface, t.hover));
+
 function find(node, id) {
   if (node?.id === id) return node;
   for (const child of node?.children ?? []) {
@@ -99,7 +110,7 @@ export default class Tabs extends View {
     const stop = (_e, cx) => cx.stop_propagation();
     const button = (id, label, action, pill = false) => div().id(id).size(26).flex_none().flex().items_center().justify_center().rounded(6).text_color(t.dim)
       .when(pill, el => el.bg(t.surface).border(1).border_color(edge(t))) // neutral pill, like a tab
-      .hover(s => s.bg(t.hover).text_color(t.foreground))
+      .hover(s => s.bg(hoverFill(t)).text_color(t.foreground))
       .on_mouse_down("left", stop).on_click(action).child(label);
     const info = (c) => {
       const program = panes().find(p => p.tab === c.id && p.program?.agent)?.program ?? panes().find(p => p.tab === c.id)?.program;
@@ -128,7 +139,7 @@ export default class Tabs extends View {
         // (the pill's 14 minus its 1 px border) to keep the hover color inside.
         .when(joined && first, el => el.rounded_l(13)).when(joined && last, el => el.rounded_r(13))
         .text_color(c.active ? t.ansi3 : t.muted) // the active one in the theme's yellow (ansi3), like the branch pill
-        .hover(s => s.bg(t.hover))
+        .hover(s => s.bg(hoverFill(t)))
         .on_mouse_down("left", (e, cx) => { cx.stop_propagation(); this.pressed = i; if (e.click_count === 2) run("tab.rename", { id: c.id }); })
         .on_mouse_up("left", () => {
           const from = this.pressed; this.pressed = null;
@@ -156,7 +167,7 @@ export default class Tabs extends View {
       const on = panel && !panel.hidden && body?.active === id;
       return h_flex().id(`panel-${id}`).size(26).flex_none().items_center().justify_center().rounded(6)
         .border(1).border_color(on ? t.accent : "#00000000").text_color(on ? t.accent : t.muted)
-        .hover(s => s.bg(t.hover)).on_mouse_down("left", stop)
+        .hover(s => s.bg(hoverFill(t))).on_mouse_down("left", stop)
         .on_click(() => {
           if (on) run("layout.hide", { id: "panel" });
           else { run("layout.select", { stack: "panel-body", child: id }); run("layout.show", { id: "panel" }); }
