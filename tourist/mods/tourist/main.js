@@ -14,8 +14,8 @@
 //   views/        the setup, tour, planning and error screens
 import { View } from "gpui-kit";
 import { v_flex, InputState, ScrollHandle } from "gpui-base";
-import { nextCommand, panes, props, run, notify, shared } from "herdr";
-import { colors, SIZE } from "./kit/theme.js";
+import { nextCommand, panes, props, run, notify, shared, setShared, focused, closeOverlay, checking } from "herdr";
+import { colors, SIZE, paneBackground, seeThroughOpacity } from "./kit/theme.js";
 import { SCOPES, DEPTHS, PASSES, SPLIT_WIDTH, SHORTCUTS } from "./constants.js";
 import { Shortcuts } from "./kit/shortcuts.js";
 import { startFolder, readRepo, git, newFileDiff } from "./git.js";
@@ -1347,7 +1347,9 @@ export default class Tourist extends View {
       // once the click is over, unless it landed in a text box.
       .on_mouse_up("left", (_e, cx) => { cx.timer.after(30, () => { if (!this.typing) this.handle.focus(); }); })
       .size_full().min_h(0).text_color(t.foreground).text_size(13)
-      .on_size_change((size, cx) => { if (size.width !== this.width || size.height !== this.height) { this.width = size.width; this.height = size.height; cx.notify(); } }); // no fill: the pane's own background shows, like a terminal
+      .on_size_change((size, cx) => { if (size.width !== this.width || size.height !== this.height) { this.width = size.width; this.height = size.height; cx.notify(); } }) // no fill: the pane's own background shows, like a terminal
+      // ...except over a background picture with see-through panes, which have none: the terminals' color at their opacity.
+      .when(seeThroughOpacity() !== null, (el) => el.bg(paneBackground(t.background)));
     // The settings panel sits over any screen, under the gear at the top right. A short pane gets a shorter panel.
     const settings = (/** @type {typeof root} */ el) => el.when(this.shortcuts.open, (/** @type {typeof root} */ el) => el.child(this.shortcuts.panel(t,
       { top: 52, right: SIZE.panePad, maxHeight: Math.max(120, Math.min(420, (this.height || 600) - 130)) })));
