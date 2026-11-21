@@ -26,6 +26,7 @@ import { frame, divider } from "./kit/frame.js";
 import { chip, spinner, textInput } from "./kit/controls.js";
 import { legend } from "./kit/legend.js";
 import { listNote } from "./kit/list.js";
+import { Shortcuts } from "./kit/shortcuts.js";
 import { tag, banner, sectionLabel } from "./kit/pane.js";
 import { statusDot } from "./kit/spaces.js";
 import { script, dataDir, folderOf, readBoard, onlyWorktrees } from "./data.js";
@@ -52,9 +53,27 @@ import { openReview, reviewLabels } from "./review.js";
 const RELOAD_MS = 10000;
 /** What each key does, by the command's name. The names are also what `tickets.<name>` takes. */
 const COMMANDS = ["left", "right", "up", "down", "open", "back", "start", "agent", "next-agent", "hide-agent", "approve", "reply", "new", "plan", "review", "auto", "tour", "all", "reload"];
-/** @type {Record<string, string>} keys by KeyEvent.key or keystroke -> command */
+/** @type {Record<string, string>} keys that move and open, by KeyEvent.key or keystroke -> command. They always work. */
 const KEYS = { h: "left", left: "left", l: "right", right: "right", k: "up", up: "up", j: "down", down: "down",
-  enter: "open", backspace: "back", s: "start", o: "agent", g: "next-agent", y: "approve", a: "reply", c: "reply", n: "new", p: "plan", t: "auto", u: "tour", w: "review", v: "all", r: "reload" };
+  enter: "open", backspace: "back" };
+/**
+ * The keys a user can turn off or change in the settings (","). `key` is the keystroke each one
+ * comes with. a and c both open the reply box: which one the ticket gets depends on its status.
+ * @type {import("./kit/shortcuts.js").Shortcut[]}
+ */
+const SHORTCUTS = [
+  { id: "new", key: "n", what: "new ticket" }, { id: "plan", key: "p", what: "plan a batch" },
+  { id: "start", key: "s", what: "start an agent" }, { id: "agent", key: "o", what: "go to the agent" },
+  { id: "next-agent", key: "g", what: "switch agent" }, { id: "approve", key: "y", what: "approve" },
+  { id: "answer", key: "a", what: "answer a blocked ticket" }, { id: "changes", key: "c", what: "request changes" },
+  { id: "auto", key: "t", what: "auto start on or off" }, { id: "tour", key: "u", what: "tour on or off" },
+  { id: "review", key: "w", what: "open review" }, { id: "all", key: "v", what: "this space or all spaces" },
+  { id: "reload", key: "r", what: "reload" },
+];
+/** The command a shortcut runs, where it is not the shortcut's own id. */
+const SHORTCUT_COMMANDS = { answer: "reply", changes: "reply" };
+/** Where the settings panel sits in the dialog. */
+const PANEL = { top: 50, width: 340, maxHeight: 360 };
 
 /** The text up to the end of its first sentence. @param {string} text */
 const firstSentence = (text) => /^.*?[.!?](?=\s|$)/s.exec(text.trim())?.[0] ?? text.trim();
@@ -64,6 +83,8 @@ export class Board {
   init(cx) {
     /** @type {FocusHandle} */
     this.handle = cx.focus_handle();
+    /** The settings: which keys work, what they are, and whether key hints show. */
+    this.shortcuts = new Shortcuts({ mod: "tickets", keys: SHORTCUTS, rebind: true });
     /** True: every project's tickets. False: only the shown space's project. Kept across opens. */
     this.all = localStorage.getItem("all") === "true";
     /** @type {BoardData | null} null until the first load finishes */
@@ -132,7 +153,9 @@ export class Board {
         const command = await nextCommand();
         // A ticket's dialog sends "focus" as it closes, so the board has the keyboard again.
         if (command === "focus") { this.covered = false; this.handle.focus(); }
-        else if (!this.covered) { this.say(""); this.act(command, cx); }
+        else if (this.covered) { /* the ticket's dialog over the board takes commands */ }
+        else if (this.shortcuts.command(command)) { /* the settings panel took it */ }
+        else { this.say(""); this.act(command, cx); }
         cx.notify();
       }
     });
@@ -246,12 +269,12 @@ export class Board {
     const starter = this.starter();
     if (this.starting) return;
     if (!starter) {
-      this.say(this.checking ? "Still checking which agents are installed. Press s again in a moment."
+      this.say(this.checking ? `Still checking which agents are installed. Press ${this.keyName("start")} again in a moment.`
         : "No agent to start. Install Claude Code or Codex, or add one to programs.json.");
       return;
     }
     if (card.ticket.status === "done") { this.say(`#${card.ticket.number} is done. Move it back before starting it again.`); return; }
-    if (this.agentOf(card.ticket)) { this.say(`#${card.ticket.number} already has an agent. Press o to look at it.`); return; }
+    if (this.agentOf(card.ticket)) { this.say(`#${card.ticket.number} already has an agent. Press ${this.keyName("agent")} to look at it.`); return; }
     this.starting = true;
     this.message = "";
     cx.spawn(async (cx) => {
@@ -261,7 +284,7 @@ export class Board {
         hideAgent(await startAgent(card.p, card.ticket, starter));
         if (shown?.tab) run("tab.select", { id: shown.tab });
         this.starting = false;
-        this.say(`${starter.name} is on #${card.ticket.number}, without a tab. Press o to look at it.`, false);
+        this.say(`${starter.name} is on #${card.ticket.number}, without a tab. Press ${this.keyName("agent")} to look at it.`, false);
         await this.load();
         cx.notify();
       } catch (e) {
@@ -310,7 +333,7 @@ export class Board {
     else if (name === "reply") this.openReply(at.card, cx);
     else if (name === "agent") {
       const agent = this.agentOf(at.card.ticket);
-      if (!agent) { this.say(`#${at.card.ticket.number} has no running agent. Press s to start one.`); return; }
+      if (!agent) { this.say(`#${at.card.ticket.number} has no running agent. Press ${this.keyName("start")} to start one.`); return; }
       showAgent(agent);
       this.closeAll();
     }
@@ -334,6 +357,8 @@ export class Board {
       cx.notify();
       return;
     }
+    // The settings key, and every key while the settings are open.
+    if (this.shortcuts.key(e, cx)) return;
     cx.stop_propagation();
     // Esc leaves a ticket first, then the board.
     if (e.key === "escape" || e.keystroke === "q") {
@@ -341,11 +366,19 @@ export class Board {
       cx.notify();
       return;
     }
-    const command = KEYS[e.keystroke] ?? KEYS[e.key];
-    if (!command || e.modifiers.control || e.modifiers.alt || e.modifiers.platform) return;
+    // A shortcut's key comes first, so a key the user gave it wins over the keys that move.
+    const id = this.shortcuts.idFor(e.keystroke);
+    const moving = e.modifiers.control || e.modifiers.alt || e.modifiers.platform ? undefined : KEYS[e.keystroke] ?? KEYS[e.key];
+    const command = id ? SHORTCUT_COMMANDS[id] ?? id : moving;
+    if (!command) return;
     this.say("");
     this.act(command, cx);
     cx.notify();
+  }
+
+  /** A shortcut's key now, for a message that names it. @param {string} id */
+  keyName(id) {
+    return this.shortcuts.keyFor(id) || "its key (none set)";
   }
 
   /** Sets the line above the key hints. @param {string} text @param {boolean} [failed] false for a plain report */
@@ -394,7 +427,7 @@ export class Board {
   openReply(card, cx) {
     const status = card.ticket.status;
     if (status !== "blocked" && status !== "review") {
-      this.say(`#${card.ticket.number} has nothing to reply to. a answers a blocked ticket, and c asks for changes on one in review.`);
+      this.say(`#${card.ticket.number} has nothing to reply to. ${this.keyName("answer")} answers a blocked ticket, and ${this.keyName("changes")} asks for changes on one in review.`);
       return;
     }
     const kind = status === "blocked" ? "answer" : "changes";
@@ -421,7 +454,7 @@ export class Board {
         const sent = JSON.parse(await this.change(card, [kind, String(n), text, "--json"]));
         if (sent.forwarded) this.say(`Saved on #${n} and sent to its agent.`, false);
         else if (sent.forwardError) this.say(`Saved on #${n}, but it did not reach the agent: ${sent.forwardError}`);
-        else this.say(`Saved on #${n}. No agent is running on it. Press s to start one with your reply.`, false);
+        else this.say(`Saved on #${n}. No agent is running on it. Press ${this.keyName("start")} to start one with your reply.`, false);
       } catch (e) {
         this.say(`Could not save: ${e instanceof Error ? e.message : String(e)}`);
       }
@@ -490,7 +523,7 @@ export class Board {
   openPlan(cx) {
     const space = spaces().find((s) => s.active);
     if (!space || space.machine) { this.say("A plan needs a space on this computer."); return; }
-    if (!this.starter()) { this.say(this.checking ? "Still checking which agents are installed. Press p again in a moment." : "No agent to plan with. Install Claude Code or Codex."); return; }
+    if (!this.starter()) { this.say(this.checking ? `Still checking which agents are installed. Press ${this.keyName("plan")} again in a moment.` : "No agent to plan with. Install Claude Code or Codex."); return; }
     this.plan = { folder: folderOf(space), input: this.box("What should be built?", (cx) => this.sendPlan(cx), cx) };
   }
 
@@ -667,20 +700,27 @@ export class Board {
     const details = h_flex().flex_1().min_w(0).items_center().gap(10)
       .when(!this.only, (el) => el.child(div().flex_none().text_size(11.5).text_color(t.dim).child(`${where} · ${count} ${count === 1 ? "ticket" : "tickets"}`)))
       .child(div().flex_1())
-      .when(Boolean(this.error), (el) => el.child(div().flex_none().max_w(360).truncate().text_size(SIZE.small).text_color(t.blocked).child(this.error)));
+      .when(Boolean(this.error), (el) => el.child(div().flex_none().max_w(360).truncate().text_size(SIZE.small).text_color(t.blocked).child(this.error)))
+      .child(this.shortcuts.button(t));
 
+    /**
+     * A shortcut's legend entry, with the key it is on now. None when the key is turned off or has no key.
+     * @param {string} id @param {string} what @returns {Hint[]}
+     */
+    const hint = (id, what) => (this.shortcuts.shown(id) ? [[this.shortcuts.shown(id), what]] : []);
     const starter = this.starter();
-    const start = /** @type {Hint} */ (["s", starter ? `start ${starter.name}` : "start"]);
-    const look = /** @type {Hint} */ (["o", "go to agent"]);
+    const start = hint("start", starter ? `start ${starter.name}` : "start");
+    const look = hint("agent", "go to agent");
+    const switcher = hint("next-agent", "switch agent");
     // The review keys show only on a ticket they work on.
     const status = at?.card.ticket.status;
     /** @type {Hint[]} */
-    const review = status === "review" ? [["y", "approve"], ["c", "request changes"]] : status === "blocked" ? [["a", "answer"]] : [];
-    if (at?.card.ticket.pr) review.push(["w", "open review"]);
+    const review = status === "review" ? [...hint("approve", "approve"), ...hint("changes", "request changes")] : status === "blocked" ? hint("answer", "answer") : [];
+    if (at?.card.ticket.pr) review.push(...hint("review", "open review"));
     /** @type {Hint[]} */
-    const auto = status === "todo" ? [["t", at?.card.ticket.auto ? "auto off" : "auto on"]] : [];
+    const auto = status === "todo" ? hint("auto", at?.card.ticket.auto ? "auto off" : "auto on") : [];
     /** @type {Hint[]} */
-    const tour = status && status !== "done" ? [["u", at?.card.ticket.tour ? "tour off" : "tour on"]] : [];
+    const tour = status && status !== "done" ? hint("tour", at?.card.ticket.tour ? "tour off" : "tour on") : [];
     const reply = this.reply;
     const draft = this.draft;
     const plan = this.plan;
@@ -693,14 +733,17 @@ export class Board {
     /** @type {Hint[]} */
     const hints = entry ? [["enter", entry.enter], ["esc", "cancel"]]
       : this.opened && at
-      ? [["esc", "close"], ...review, ...auto, ...tour, start, look, ["g", "switch agent"]]
-      : [["h/j/k/l", "move"], ["enter", "open"], ["n", "new"], ["p", "plan"], ...review, ...auto, ...tour, start, look, ["g", "switch agent"], ["v", this.all ? "this space" : "all spaces"], ["r", "reload"], ["esc", "close"]];
+      ? [["esc", "close"], ...review, ...auto, ...tour, ...start, ...look, ...switcher, [",", "settings"]]
+      : [["h/j/k/l", "move"], ["enter", "open"], ...hint("new", "new"), ...hint("plan", "plan"), ...review, ...auto, ...tour, ...start, ...look, ...switcher,
+        ...hint("all", this.all ? "this space" : "all spaces"), ...hint("reload", "reload"), [",", "settings"], ["esc", "close"]];
+    // Hidden key hints hide the list of keys. The enter and esc of an open text box still show.
+    const showLegend = this.shortcuts.showHints || Boolean(entry);
     const body = this.opened && at ? this.detail(t, at.card, board.statuses)
       : this.only ? v_flex().flex_1().min_h(0).child(listNote(t, "This ticket is gone."))
       : count ? h_flex().flex_1().min_h(0).gap(10).children(board.statuses.map((s, i) => this.column(t, s, cols[i], at?.card.id ?? null)))
       : v_flex().flex_1().min_h(0).child(listNote(t, this.all
-        ? "No tickets yet. Press n to make one for this space's repo."
-        : "No tickets for this space's repo yet. Press n to make one, or v to see every space."));
+        ? `No tickets yet. Press ${this.keyName("new")} to make one for this space's repo.`
+        : `No tickets for this space's repo yet. Press ${this.keyName("new")} to make one, or ${this.keyName("all")} to see every space.`));
 
     return frame(t, { ...base, details })
       .when(!this.only, (el) => el.child(h_flex().flex_none().gap(6)
@@ -712,7 +755,8 @@ export class Board {
       .when(Boolean(entry), (el) => el.child(h_flex().flex_none().gap(10).items_center()
         .child(div().flex_none().max_w(360).truncate().text_size(12).text_color(t.muted).child(entry?.label ?? ""))
         .child(div().flex_1().min_w(0).child(textInput(t, entry?.input)))))
-      .child(divider(t))
-      .child(legend(t, hints));
+      .when(showLegend, (el) => el.child(divider(t)))
+      .when(showLegend, (el) => el.child(legend(t, hints)))
+      .when(this.shortcuts.open, (el) => this.shortcuts.guard(el).child(this.shortcuts.panel(t, PANEL)));
   }
 }
