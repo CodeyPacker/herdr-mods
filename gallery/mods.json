@@ -32,8 +32,8 @@
     "previous": [
       "islands/preview.png"
     ],
-    "state": "Card layout with code from old preview",
-    "screenshotSource": {
+    "state": "Original Islands artwork restored at user request",
+    "originalArtwork": {
       "commit": "90949f0",
       "file": "islands/preview.png"
     }

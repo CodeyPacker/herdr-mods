@@ -28,7 +28,7 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/CodeyP
 ---
 ### [islands](islands/)
 
-[<img src="islands/preview.png?v=605c9c8f679e" width="720" alt="islands">](islands/)
+[<img src="islands/preview.png?v=83ffc6ede6af" width="720" alt="islands">](islands/)
 
 Herdr with every panel as its own rounded card on the canvas, in whatever theme you pick.
 

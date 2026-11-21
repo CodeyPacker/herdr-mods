@@ -2,7 +2,7 @@
 
 Herdr with every panel as its own rounded card on the canvas, in whatever theme you pick.
 
-![islands](preview.png?v=605c9c8f679e)
+![islands](preview.png?v=83ffc6ede6af)
 
 Herdr, but every panel is its own rounded card on the canvas. IntelliJ Islands, basically. Takes whatever theme you pick.
 
