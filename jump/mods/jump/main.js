@@ -60,8 +60,8 @@ const LIST_W = 560;
 const CARD_W = 400;
 const CARD_PAD = 6;
 const CARD_GAP = 12;
-/** How strong the text color is in a card's background, as the last two digits of a hex color: 18 is 9%. */
-const CARD_WASH = "18";
+/** How strong the text color is in a card's background, as the last two digits of a hex color: 0d is 5%. */
+const CARD_WASH = "0d";
 /** The card look starts with this many columns, and adds more when the cards would not fit the window's height. */
 const START_COLS = 2;
 
