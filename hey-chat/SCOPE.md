@@ -1,0 +1,205 @@
+# Hey, chat: scope
+
+A Herdr pane for chatting with Claude Code or Codex in a Messenger-style
+conversation instead of a terminal. Chats are grouped by project folder, each
+agent has its own profile picture, and you can set yours.
+
+Design: [Hey, chat on claude.ai](https://claude.ai/artifact/Dro245hBgKy5FC98g9WrC2).
+It is a working prototype: press Play on the artboard to try the keys, tree
+and settings. Where this file and the design disagree, this file wins.
+
+## 1. Layout
+
+Two cards side by side inside one mod pane, 12 px apart, each with 14 px
+corners and a 1 px `border`.
+
+- **Sidebar (left, 320 px):** title "Hey, chat" with a new-chat button, a
+  search box, the project tree, and a bottom row with your picture and a
+  settings gear.
+- **Chat (right, fills the rest):** a header, the message list, and the
+  message box.
+
+The card with the keyboard gets a light accent border. The other keeps the
+plain `border` color.
+
+## 2. Project tree
+
+- One row per project folder: a chevron, a folder icon, the folder's name and
+  its chat count. Clicking the row opens or closes it. Hovering shows a **+**
+  that starts a new chat in that folder.
+- Under an open project, one row per chat, newest first: the agent's picture
+  (34 px), the chat title, the time of the last message, a one-line preview
+  and an unread dot.
+- The preview reads "You: ..." for your last message, the tool title for a
+  tool call, "Sent a code snippet" for code, and "Thinking..." in the
+  `working` color while the agent runs.
+- The open chat's row has the `selected` fill.
+- A project is a folder an agent has worked in. The list comes from Hey,
+  chat's own chats plus the existing Claude and Codex sessions on this machine
+  (section 8).
+- Search filters chats by title and message text across every project.
+
+## 3. Chat view
+
+**Header:** the agent's picture (40 px) with a status dot, the chat title,
+"Claude · Active now" (or "Thinking..." in `working` while it runs), a chip
+with the project path, and search and details buttons.
+
+**Messages:**
+
+| Kind | Looks like |
+|---|---|
+| Your message | Accent-filled bubble on the right, white text, your picture at the end of a group |
+| Agent text | `raised` bubble on the left, agent picture at the end of a group |
+| Code | `raised` card with a language label, a copy button and a monospace block |
+| Tool call | Card with an icon (read, edit, run), a title like "Read 2 files" or "Edited main.js +14 −3", and a chevron. Clicking shows the files or command |
+| Day divider | Centered dim text, "Today 9:41 AM" |
+| Typing | Agent bubble with three bouncing dots while the agent runs |
+
+- Back-to-back messages from the same sender form a group: 2 px apart, with
+  5 px corners on the joined side and 18 px elsewhere. Groups are 14 px apart.
+- Hovering a message shows reply and copy buttons.
+- Your last message shows "Delivered", then "Read" once the agent starts.
+- Agent text renders markdown (bold, lists, inline code, links). `path:line`
+  links open the file, as in Tourist.
+- The list scrolls to the bottom on a new message.
+
+**Message box:** a + button (attach a file, later), a rounded text input with
+the placeholder "Message Claude" and a `⌃j ⌃k scroll` hint, and a round send
+button that is accent-filled only when there is text. Enter sends.
+
+**New chat:** an empty screen with the agent's picture, "New chat in
+<project>", and a Claude / Codex switch. The first message picks the title
+(its first 32 characters) and locks the agent for that chat.
+
+## 4. Profile pictures
+
+- **Claude:** a `#D97757` circle with a white 12-ray starburst.
+- **Codex:** a near-black circle with a faint ring and a white `>_` prompt.
+  It must not copy OpenAI's logo.
+- **You:** set in Settings. Upload a photo (cropped to a square, saved at
+  192 px), pick one of six built-in pictures (sunset, mountains, waves, orbit,
+  bloom, blocks), or use one or two initials on one of six colors. The default
+  is "Me" on violet.
+
+## 5. Settings
+
+Opened by the bottom row of the sidebar (your picture and a gear icon). A
+solid `popover` card above the row with:
+
+1. Your picture: preview, Upload photo, Remove photo.
+2. "Or pick one": the six built-in pictures.
+3. Initials and initials color.
+
+Saved in `localStorage` (the photo as a small JPEG data URL).
+
+## 6. Opacity rules
+
+Follow the kit (`kit/theme.js`), so the pane matches the background picker's
+see-through panes:
+
+- The mod's own background is `paneBackground(...)`: clear when the panes are
+  see-through, because the pane frame already draws the theme background at
+  the panes' opacity.
+- Fills come from `colors()`, so `background`, `raised`, `hover`,
+  `selected` and `input` (bubbles, cards, rows, the message box) fade with the
+  panes.
+- `accent` (your bubbles, the send button), `border` and `popover` (the
+  settings card) stay solid.
+- No blur. Herdr can't draw one.
+- Theme colors only, no hard-coded hex, except the two agent pictures and the
+  built-in pictures.
+
+## 7. Keys
+
+| Key | Where | Does |
+|---|---|---|
+| `ctrl-h` | anywhere | Focus the tree |
+| `ctrl-l` | anywhere | Focus the message box |
+| `ctrl-j` / `ctrl-k` | anywhere | Scroll the chat down / up. Holding repeats. The message box keeps focus |
+| `j` / `k`, arrows | tree | Move the cursor |
+| `l`, `enter`, right | tree | Open the chat (focuses the message box) or open the project |
+| `h`, left | tree | Close the project the cursor is in |
+| `g` / `G` | tree | First / last row |
+| `esc` | tree | Back to the message box |
+| `enter` | message box | Send |
+
+- The message box is focused when the pane opens, when a chat opens and when
+  a new chat starts.
+- With the tree focused, the cursor row gets an accent outline and a key hint
+  strip shows above the bottom row (the kit's legend).
+- These are mod keys (`on_key_down` in the view), not `keys.json` bindings,
+  so they only act while Hey, chat has the keyboard. Inside the text input,
+  `ctrl-h` and `ctrl-k` would normally delete text. The mod takes them first.
+- A `keys.json` global key opens and closes the pane, as Tourist does (Q2).
+
+## 8. Running the agents
+
+Same pattern as Tourist (`tourist/mods/tourist/agent.js`):
+
+- Find `claude` and `codex` with one `command -v` call. Hide the switch for a
+  missing one. With neither, the pane says the CLI is needed.
+- `exec` stops anything over 30 s, so each turn runs in a hidden terminal with
+  `hc run --bg --no-parent --outlive-parent --cwd <project>`. The prompt goes
+  in through a file in `<appHome>/data/hey-chat/`.
+- **Claude:** `claude -p --output-format stream-json --verbose`, plus
+  `--resume <session_id>` after the first turn.
+- **Codex:** `codex exec --json -`, then `codex exec resume <thread_id> --json -`.
+- Read the output file while it grows, so text, tool calls and code show up as
+  they arrive (streaming), not only at the end. Each event becomes one message
+  kind from section 3.
+- Stop: a stop button replaces send while the agent runs, and `ctrl-c` in the
+  message box stops it (`hc rm`).
+
+**Existing sessions:** list Claude's from `~/.claude/projects/<folder>/*.jsonl`
+and Codex's from `~/.codex/sessions/**/rollout-*.jsonl` (the folder is in the
+`session_meta` line). Opening one shows its history and resumes it on send.
+
+## 9. Saved data
+
+- `<appHome>/data/hey-chat/chats.json`: per chat, the id, project folder,
+  agent, title, agent session id, unread flag and last-message time.
+- Messages are not copied. They are read back from the agent's own session
+  file.
+- `localStorage`: your picture, initials, color, and the open/closed state of
+  each project.
+
+## 10. Files
+
+Follows the repo's mod layout:
+
+- `hey-chat/README.md`, `RECIPE.md`, `keys.json`, `preview.png`,
+  `thumbnail.png`
+- `hey-chat/mods/hey-chat/`: `mod.json`, `main.js` (view, state, keys),
+  `agent.js` (find, run, stream), `sessions.js` (existing sessions),
+  `messages.js` (events to message kinds), `pictures.js` (agent and built-in
+  pictures), `views/` (tree, chat, settings), and `kit/` from
+  `node scripts/sync-kit.mjs`.
+
+## 11. Not in this scope
+
+- Attaching files and images (the + button stays, disabled).
+- Reactions, replies to a single message, editing or deleting messages.
+- Chats with more than one agent.
+- Light-theme tuning beyond what theme colors give.
+- Syncing chats between machines.
+
+## 12. Build order
+
+1. **A1:** Pane, layout and opacity rules with sample data, matching the design.
+2. **A2:** Keys and focus.
+3. **A3:** Settings and profile pictures.
+4. **A4:** Claude: run, stream, resume, stop.
+5. **A5:** Codex: the same.
+6. **A6:** Existing sessions in the tree, and search.
+7. **A7:** README, RECIPE, preview images, root README entry.
+
+## 13. Open questions
+
+- **Q1:** What can the agent do without asking? `claude -p` can't show a
+  permission prompt, so it needs a fixed tool list. Options are read-only
+  (like Tourist), read plus edits (`--permission-mode acceptEdits`), or a
+  per-chat switch in the header.
+- **Q2:** Which global key opens the pane? Tourist uses `ctrl-shift-g`.
+- **Q3:** Should "Read" mean the agent started, or drop the receipt for agents?
+- **Q4:** Should a pinned or recent section sit above the projects?
