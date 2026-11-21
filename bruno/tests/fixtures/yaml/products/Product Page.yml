@@ -1,0 +1,8 @@
+# No seq: sorts after the items that have one.
+info:
+  name: Product Page
+  type: http
+
+http:
+  method: get
+  url: "{{baseUrl}}/products/page"

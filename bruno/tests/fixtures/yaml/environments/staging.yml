@@ -1,0 +1,6 @@
+name: staging
+variables:
+  - name: baseUrl
+    value: https://shop.example.test
+  - name: shopId
+    value: "2"

@@ -1,0 +1,10 @@
+name: local
+variables:
+  - name: baseUrl
+    value: http://127.0.0.1:47911
+    description: the fixture server
+  - name: shopId
+    value: "1"
+  - secret: true
+    name: apiKey
+    description: a secret has no value key

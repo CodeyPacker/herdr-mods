@@ -1,0 +1,118 @@
+[
+  {
+    "iterationIndex": 0,
+    "results": [
+      {
+        "test": {
+          "filename": "orders/Create Order.yml"
+        },
+        "request": {
+          "method": "POST",
+          "url": "http://127.0.0.1:47911/orders",
+          "headers": {
+            "Accept": "application/json, text/plain, */*",
+            "User-Agent": "bruno-runtime/4.2.1",
+            "Content-Length": "37",
+            "Accept-Encoding": "gzip, compress, deflate, br",
+            "Host": "127.0.0.1:47911",
+            "Connection": "keep-alive",
+            "content-type": "application/json"
+          },
+          "data": "{\n  \"productId\": 1,\n  \"quantity\": 2\n}"
+        },
+        "response": {
+          "status": 201,
+          "statusText": "Created",
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "x-shop": "fixture",
+            "date": "Tue, 17 Nov 2026 21:05:18 GMT",
+            "connection": "keep-alive",
+            "keep-alive": "timeout=5",
+            "transfer-encoding": "chunked"
+          },
+          "data": {
+            "id": 7,
+            "received": {
+              "productId": 1,
+              "quantity": 2
+            }
+          },
+          "url": "http://127.0.0.1/orders",
+          "responseTime": 11,
+          "duration": 11,
+          "size": 48
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [
+          {
+            "uid": "il9iG5jRHjPA_DyvdvW92",
+            "lhsExpr": "res.status",
+            "rhsExpr": "eq 201",
+            "rhsOperand": "201",
+            "operator": "eq",
+            "status": "pass"
+          }
+        ],
+        "testResults": [],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.065381257,
+        "name": "Create Order",
+        "suitename": "/home/dev/Shop/orders/Create Order",
+        "path": "orders/Create Order.yml",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "Broken.yml"
+        },
+        "request": {
+          "method": null,
+          "url": null,
+          "headers": null,
+          "data": null
+        },
+        "response": {
+          "status": "skipped",
+          "statusText": "Implicit keys need to be on a single line at line 4, column 1:\n\n  type: http\nhttp\n^\n",
+          "data": null,
+          "responseTime": 0
+        },
+        "error": "Implicit keys need to be on a single line at line 4, column 1:\n\n  type: http\nhttp\n^\n",
+        "status": "skipped",
+        "skipped": true,
+        "assertionResults": [],
+        "testResults": [],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "runDuration": 0,
+        "suitename": "Broken",
+        "name": "Broken.yml",
+        "path": "Broken.yml"
+      }
+    ],
+    "summary": {
+      "totalRequests": 2,
+      "passedRequests": 1,
+      "failedRequests": 0,
+      "errorRequests": 0,
+      "skippedRequests": 1,
+      "skippedByBail": 0,
+      "totalAssertions": 1,
+      "passedAssertions": 1,
+      "failedAssertions": 0,
+      "totalTests": 0,
+      "passedTests": 0,
+      "failedTests": 0,
+      "totalPreRequestTests": 0,
+      "passedPreRequestTests": 0,
+      "failedPreRequestTests": 0,
+      "totalPostResponseTests": 0,
+      "passedPostResponseTests": 0,
+      "failedPostResponseTests": 0
+    }
+  }
+]

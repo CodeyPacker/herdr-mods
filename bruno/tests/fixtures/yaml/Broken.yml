@@ -1,0 +1,5 @@
+info:
+  name: Broken
+  type: http
+http
+  method: GET

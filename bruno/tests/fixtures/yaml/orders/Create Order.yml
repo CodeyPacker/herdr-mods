@@ -1,0 +1,31 @@
+info:
+  name: Create Order
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/orders"
+  headers:
+    - name: content-type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "productId": 1,
+        "quantity": 2
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+docs: >
+  Creates an order. Folded text: with a colon,
+  and a second line.
+
+settings:
+  encodeUrl: true

@@ -1,0 +1,62 @@
+Error parsing item: YAMLParseError: Implicit keys need to be on a single line at line 4, column 1:
+
+  type: http
+http
+^
+
+    at Composer.onError (/usr/local/lib/node_modules/@usebruno/cli/node_modules/yaml/dist/compose/composer.js:69:34)
+    at Object.resolveBlockMap (/usr/local/lib/node_modules/@usebruno/cli/node_modules/yaml/dist/compose/resolve-block-map.js:47:17)
+    at resolveCollection (/usr/local/lib/node_modules/@usebruno/cli/node_modules/yaml/dist/compose/compose-collection.js:13:27)
+    at Object.composeCollection (/usr/local/lib/node_modules/@usebruno/cli/node_modules/yaml/dist/compose/compose-collection.js:47:16)
+    at Object.composeNode (/usr/local/lib/node_modules/@usebruno/cli/node_modules/yaml/dist/compose/compose-node.js:31:38)
+    at Object.composeDoc (/usr/local/lib/node_modules/@usebruno/cli/node_modules/yaml/dist/compose/compose-doc.js:33:23)
+    at Composer.next (/usr/local/lib/node_modules/@usebruno/cli/node_modules/yaml/dist/compose/composer.js:149:40)
+    at next (<anonymous>)
+    at Composer.compose (/usr/local/lib/node_modules/@usebruno/cli/node_modules/yaml/dist/compose/composer.js:131:25)
+    at compose.next (<anonymous>) {
+  code: 'MULTILINE_IMPLICIT_KEY',
+  pos: [ 34, 47 ],
+  linePos: [ { line: 4, col: 1 }, { line: 5, col: 9 } ]
+}
+Warning: Skipping invalid file /home/dev/shop/Broken.yml
+Error: Implicit keys need to be on a single line at line 4, column 1:
+
+  type: http
+http
+^
+
+products/top sellers/Best Sellers (200 OK) - 12 ms
+products/List Products (200 OK) - 12 ms
+Assertions
+   ✓ res.status: eq 200
+products/Product Page (200 OK) - 2 ms
+products/Missing Product (404 Not Found) - 2 ms
+Assertions
+   ✕ res.status: eq 200
+      expected 404 to equal 200
+orders/Create Order (201 Created) - 3 ms
+Assertions
+   ✓ res.status: eq 201
+orders/slow-order (200 OK) - 405 ms
+orders/Closed Port (connect ECONNREFUSED 127.0.0.1:47912)
+Get Health (200 OK) - 4 ms
+Tests
+   ✓ says ok
+Assertions
+   ✓ res.status: eq 200
+
+📊 Execution Summary
+┌───────────────┬───────────────────────────────────┐
+│ Metric        │              Result               │
+├───────────────┼───────────────────────────────────┤
+│ Status        │              ✗ FAIL               │
+├───────────────┼───────────────────────────────────┤
+│ Requests      │ 9 (6 Passed, 2 Failed, 1 Skipped) │
+├───────────────┼───────────────────────────────────┤
+│ Tests         │                1/1                │
+├───────────────┼───────────────────────────────────┤
+│ Assertions    │                3/4                │
+├───────────────┼───────────────────────────────────┤
+│ Duration (ms) │                687                │
+└───────────────┴───────────────────────────────────┘
+Wrote json results to /tmp/yaml-coll.json

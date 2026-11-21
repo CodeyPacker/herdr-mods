@@ -1,0 +1,9 @@
+{
+  "place": "none",
+  "title": "Bruno",
+  "overlay": { "kind": "dialog", "width": 1, "height": 1, "frame": "none" },
+  "palette": [
+    { "title": "Bruno: Open", "command": "mod.open", "args": { "name": "bruno" }, "about": "Your Bruno Collections in a dialog: run a Request and read its Response. Again closes it" },
+    { "title": "Bruno: Reload", "command": "bruno.reload", "about": "Read bruno.json, the Bruno workspace, every Collection and the Bruno CLI check again" }
+  ]
+}

@@ -1,0 +1,5 @@
+info:
+  name: Products
+  type: folder
+  seq: 2
+  description: "Catalogue calls: list, page and lookups."

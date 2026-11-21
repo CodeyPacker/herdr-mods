@@ -1,0 +1,114 @@
+[
+  {
+    "iterationIndex": 0,
+    "results": [
+      {
+        "test": {
+          "filename": "products/Missing Product.yml"
+        },
+        "request": {
+          "method": "GET",
+          "url": "http://127.0.0.1:47911/products/999",
+          "headers": {
+            "Accept": "application/json, text/plain, */*",
+            "User-Agent": "bruno-runtime/4.2.1",
+            "Accept-Encoding": "gzip, compress, deflate, br",
+            "Host": "127.0.0.1:47911",
+            "Connection": "keep-alive",
+            "content-type": null
+          }
+        },
+        "response": {
+          "status": 404,
+          "statusText": "Not Found",
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "x-shop": "fixture",
+            "date": "Tue, 17 Nov 2026 21:04:55 GMT",
+            "connection": "keep-alive",
+            "keep-alive": "timeout=5",
+            "transfer-encoding": "chunked"
+          },
+          "data": {
+            "error": "not found",
+            "path": "/products/999"
+          },
+          "url": "http://127.0.0.1/products/999",
+          "responseTime": 14,
+          "duration": 14,
+          "size": 44
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [
+          {
+            "uid": "6g38h196-BhIfiM94XD3c",
+            "lhsExpr": "res.status",
+            "rhsExpr": "eq 200",
+            "rhsOperand": "200",
+            "operator": "eq",
+            "status": "fail",
+            "error": "expected 404 to equal 200"
+          }
+        ],
+        "testResults": [],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.075383572,
+        "name": "Missing Product",
+        "suitename": "/home/dev/Shop/products/Missing Product",
+        "path": "products/Missing Product.yml",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "Broken.yml"
+        },
+        "request": {
+          "method": null,
+          "url": null,
+          "headers": null,
+          "data": null
+        },
+        "response": {
+          "status": "skipped",
+          "statusText": "Implicit keys need to be on a single line at line 4, column 1:\n\n  type: http\nhttp\n^\n",
+          "data": null,
+          "responseTime": 0
+        },
+        "error": "Implicit keys need to be on a single line at line 4, column 1:\n\n  type: http\nhttp\n^\n",
+        "status": "skipped",
+        "skipped": true,
+        "assertionResults": [],
+        "testResults": [],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "runDuration": 0,
+        "suitename": "Broken",
+        "name": "Broken.yml",
+        "path": "Broken.yml"
+      }
+    ],
+    "summary": {
+      "totalRequests": 2,
+      "passedRequests": 0,
+      "failedRequests": 1,
+      "errorRequests": 0,
+      "skippedRequests": 1,
+      "skippedByBail": 0,
+      "totalAssertions": 1,
+      "passedAssertions": 0,
+      "failedAssertions": 1,
+      "totalTests": 0,
+      "passedTests": 0,
+      "failedTests": 0,
+      "totalPreRequestTests": 0,
+      "passedPreRequestTests": 0,
+      "failedPreRequestTests": 0,
+      "totalPostResponseTests": 0,
+      "passedPostResponseTests": 0,
+      "failedPostResponseTests": 0
+    }
+  }
+]

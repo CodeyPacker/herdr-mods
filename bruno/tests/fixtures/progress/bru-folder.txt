@@ -1,0 +1,48 @@
+parseBruRequest error Error: Line 5, col 5:
+  4 | 
+> 5 | get {
+          ^
+  6 |   url: {{baseUrl}}/broken
+Expected ":"
+    at Object.parser [as bruToJsonV2] (/usr/local/lib/node_modules/@usebruno/cli/node_modules/@usebruno/lang/v2/src/bruToJson.js:1315:11)
+    at /usr/local/lib/node_modules/@usebruno/cli/node_modules/@usebruno/filestore/dist/cjs/index.js:1:61981
+    at exports.parseRequest (/usr/local/lib/node_modules/@usebruno/cli/node_modules/@usebruno/filestore/dist/cjs/index.js:1:64065)
+    at traverse (/usr/local/lib/node_modules/@usebruno/cli/src/utils/collection.js:75:31)
+    at createCollectionJsonFromPathname (/usr/local/lib/node_modules/@usebruno/cli/src/utils/collection.js:95:12)
+    at Object.handler (/usr/local/lib/node_modules/@usebruno/cli/src/commands/run.js:680:24)
+    at /usr/local/lib/node_modules/@usebruno/cli/node_modules/yargs/build/index.cjs:1:8992
+    at j (/usr/local/lib/node_modules/@usebruno/cli/node_modules/yargs/build/index.cjs:1:4978)
+    at _.handleValidationAndGetResult (/usr/local/lib/node_modules/@usebruno/cli/node_modules/yargs/build/index.cjs:1:8962)
+    at _.applyMiddlewareAndGetResult (/usr/local/lib/node_modules/@usebruno/cli/node_modules/yargs/build/index.cjs:1:9596)
+Warning: Skipping invalid file /home/dev/shop/Broken.bru
+Error: Line 5, col 5:
+  4 | 
+> 5 | get {
+          ^
+  6 |   url: {{baseUrl}}/broken
+Expected ":"
+products/top sellers/Best Sellers (200 OK) - 10 ms
+products/List Products (200 OK) - 4 ms
+Assertions
+   ✓ res.status: eq 200
+products/Product Page (200 OK) - 4 ms
+products/Missing Product (404 Not Found) - 4 ms
+Assertions
+   ✕ res.status: eq 200
+      expected 404 to equal 200
+
+📊 Execution Summary
+┌───────────────┬───────────────────────────────────┐
+│ Metric        │              Result               │
+├───────────────┼───────────────────────────────────┤
+│ Status        │              ✗ FAIL               │
+├───────────────┼───────────────────────────────────┤
+│ Requests      │ 5 (3 Passed, 1 Failed, 1 Skipped) │
+├───────────────┼───────────────────────────────────┤
+│ Tests         │                0/0                │
+├───────────────┼───────────────────────────────────┤
+│ Assertions    │                1/2                │
+├───────────────┼───────────────────────────────────┤
+│ Duration (ms) │                115                │
+└───────────────┴───────────────────────────────────┘
+Wrote json results to /tmp/bru-folder.json
