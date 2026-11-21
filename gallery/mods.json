@@ -87,10 +87,10 @@
       "portal/preview.png",
       "portal/thumbnail.png"
     ],
-    "state": "Favorite ports and listening processes from old preview",
+    "state": "Supplied Portal screenshot showing favorites, filters, and listening processes",
     "screenshotSource": {
-      "commit": "90949f0",
-      "file": "portal/preview.png"
+      "file": "gallery/sources/portal-capture.png",
+      "treatment": "8 px background blur, original dialog preserved, tight crop"
     }
   },
   {

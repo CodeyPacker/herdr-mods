@@ -8,7 +8,7 @@
     {"id":"tourist","file":"tourist/preview.png","corners":[[303,87],[620,62],[606,300],[260,292]],"width":850,"height":620},
     {"id":"zen","file":"zen/thumbnail-v6.png","corners":[[338,155],[614,155],[614,304],[338,304]],"width":900,"height":486},
     {"id":"spotify","capture":"gallery/sources/spotify-capture.png","blur":8,"dialog":{"left":868,"top":86,"width":1720,"height":1994,"radius":32},"crop":{"left":788,"top":6,"width":1880,"height":1296}},
-    {"id":"portal","file":"portal/preview.png","corners":[[325,63],[607,42],[595,305],[300,297]],"width":780,"height":660},
+    {"id":"portal","capture":"gallery/sources/portal-capture.png","blur":8,"dialog":{"left":868,"top":218,"width":1720,"height":1732,"radius":32},"crop":{"left":788,"top":138,"width":1880,"height":1892}},
     {"id":"vim-docs","file":"vim-docs/preview.png","corners":[[367,29],[597,29],[597,309],[367,309]],"width":680,"height":828}
   ]
 }

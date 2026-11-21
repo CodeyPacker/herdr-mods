@@ -11,7 +11,7 @@ The supplied approved reference is preserved as `reference.jpg`. Branch and Git 
 | Tourist | `tourist/preview.png` | UI crop from the old preview, showing review scope and depth |
 | Zen | `zen/preview.png`, `zen/thumbnail-v6.png` | UI crop from the old Zen thumbnail, showing the focused editor |
 | Spotify | `spotify/preview.png`, `spotify/thumbnail.png` | Supplied Spotify screenshot, showing playback and playlists with surrounding editor blurred |
-| Portal | `portal/preview.png`, `portal/thumbnail.png` | UI crop from the old preview, showing favorite ports and processes |
+| Portal | `portal/preview.png`, `portal/thumbnail.png` | Supplied Portal screenshot, showing favorites, filters, and listening processes with surrounding editor blurred |
 | Practice Range | None | Native initial setup |
 | Tutor | None | Native course setup. No course generated. |
 | Vim Docs | `vim-docs/preview.png`, `vim-docs/thumbnail.png` | UI crop from the old preview, showing commands and favorites |
@@ -21,7 +21,7 @@ Every updated mod has a matching `preview.png` and `thumbnail.png` at 2560 × 14
 
 This branch is based on main. Tickets is present in the user's work branch, so only its gallery assets are added here. Its implementation stays on that work branch. Existing untracked thumbnail experiments in the original checkout are untouched.
 
-Five screenshots reuse the UI panels from the old images at commit `90949f0`. Jump, Run, and Spotify use the supplied screenshots with an 8 px background blur and the original dialog pixels preserved. Spotify is cropped to playback controls and the first playlist rows for legibility. Crop coordinates and blur settings are in `screenshot-crops.json`. Perspective is straightened by resampling the existing pixels. No UI is generated or redrawn. Outer promotional artwork and glowing frames are cropped away. Practice Range, Tutor, and Tickets have no older image in Git history, so their native captures remain unchanged. UI key legends and control icons remain inside the screenshots. No promotional branding, badges, icons, key callouts, or slogans were added.
+Four screenshots reuse the UI panels from the old images at commit `90949f0`. Jump, Run, Spotify, and Portal use the supplied screenshots with an 8 px background blur and the original dialog pixels preserved. Spotify is cropped to playback controls and the first playlist rows for legibility. Crop coordinates and blur settings are in `screenshot-crops.json`. Perspective is straightened by resampling the existing pixels. No UI is generated or redrawn. Outer promotional artwork and glowing frames are cropped away. Practice Range, Tutor, and Tickets have no older image in Git history, so their native captures remain unchanged. UI key legends and control icons remain inside the screenshots. No promotional branding, badges, icons, key callouts, or slogans were added.
 
 The shared composition is in `template.html`, designed at 1280 × 720 and exported at 2× resolution for sharp text on Retina displays. Titles, descriptions, prior assets, and screen states are in `mods.json`. To reproduce with Playwright and Chrome installed:
 
