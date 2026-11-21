@@ -71,8 +71,8 @@ const SHORTCUTS = [
 ];
 /** Where the settings panel sits in the popup, and how tall its list of keys may be. */
 const PANEL = { top: 50, right: SIZE.framePad, width: 340, maxHeight: 240 };
-/** The list is at least this tall while the settings are open, so the popup has room for the panel. */
-const PANEL_LIST_H = 250;
+/** Leave room for the settings list and its footer even when the popup's key hints are hidden. */
+const PANEL_LIST_H = 310;
 
 /**
  * Where the space is right now: the folder of the pane you're in (the focused
