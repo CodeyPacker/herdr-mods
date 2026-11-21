@@ -1,1 +1,1 @@
-{ "place": "none", "focusable": true, "title": "Tourist" }
+{"place": "none", "focusable": true, "title": "Tourist", "overlay": {"kind": "popup", "width": 1, "height": 1, "frame": "none"}}

@@ -47,8 +47,38 @@ import { ticketCommand, changesText, closeOwnTab, ownPane, ticketReviewKey, publ
 /** How many lines a scroll key moves the code. */
 const CODE_SCROLL_LINES = 3;
 
+/**
+ * What the key (mod.open:tourist) does, in a tiny overlay copy that closes after: closes the
+ * Tourist pane in the shown tab when there is one, otherwise opens one beside the focused pane.
+ */
+async function toggle(cx) {
+  const tab = focused()?.tab;
+  const open = panes().find((p) => p.mod === "tourist" && p.tab === tab);
+  if (open) { run("pane.close", { pane: open.pane }); return; }
+  run("pane.split", { direction: "right", mod: "tourist" });
+  // "Open in full screen": zoom the new pane as soon as it exists, so the split barely shows.
+  // A command applies after run returns, so the pane is looked for each frame (up to half a second).
+  // The setting is shared by the panes (FULL), since this copy can't read their storage.
+  if (shared(FULL) !== true) return;
+  for (let i = 0; i < 30; i++) {
+    const made = panes().find((p) => p.mod === "tourist" && p.tab === tab);
+    if (made) { if (!made.zoomed) run("pane.zoom", { pane: made.pane }); return; }
+    await new Promise((done) => cx.timer.after(16, done));
+  }
+}
+
+/** The panes' "Open in full screen" setting, shared so the key's copy can read it. */
+const FULL = "tourist.full";
+
 export default class Tourist extends View {
   init(_props, cx) {
+    // The key's copy: an overlay. Panes Tourist runs in have no overlay.
+    this.launcher = props()?.overlay !== undefined;
+    if (this.launcher) {
+      const overlay = props()?.overlay;
+      cx.spawn(async (cx) => { try { await toggle(cx); } finally { closeOverlay(overlay); } });
+      return;
+    }
     const start = startFolder();
     // Opened by the tickets mod on a ticket's PR: props { folder, pr, ticket: { number, root, title } }.
     // That repo is on this computer, whichever space is shown.
@@ -122,7 +152,9 @@ export default class Tourist extends View {
     this.threadInput = this.textBox("thread", "Reply on GitHub, then press enter to post", cx => this.postThreadReply(cx));
     // The settings panel: whether Tourist opens filling its tab, and a switch per shortcut key.
     // Opening it takes the keyboard from a text box.
-    this.shortcuts = new Shortcuts({ mod: "tourist", keys: SHORTCUTS, rebind: true, options: [{ id: "full", label: "Open in full screen" }], onOpen: () => this.leaveBox() });
+    this.shortcuts = new Shortcuts({ mod: "tourist", keys: SHORTCUTS, rebind: true, options: [{ id: "full", label: "Open in full screen" }], onOpen: () => this.leaveBox(),
+      onChange: (id, on) => { if (id === "full") setShared(FULL, on); } });
+    if (!checking() && shared(FULL) !== this.shortcuts.option("full")) setShared(FULL, this.shortcuts.option("full"));
     this.handle = cx.focus_handle();
     // The pane isn't drawn yet, so focus again once it is.
     this.handle.focus();
@@ -167,6 +199,7 @@ export default class Tourist extends View {
   }
 
   async close() {
+    if (this.launcher) return;
     publishTicketReview(this, true);
     this.explainScroll.release(); this.diffScroll.release(); this.input.release(); this.featureInput.release(); this.commentInput.release(); this.summaryInput.release(); this.replyInput.release(); this.threadInput.release();
     await this.session?.stop(); await this.fixSession?.stop();
@@ -1340,6 +1373,7 @@ export default class Tourist extends View {
   }
 
   render(cx) {
+    if (this.launcher) return v_flex();
     this.syncTicketReview(cx);
     const t = colors();
     const root = v_flex().id("tourist").relative().track_focus(this.handle).on_key_down((e, cx) => this.key(e, cx))
