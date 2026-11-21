@@ -7,7 +7,7 @@
 // diff. j/k (or the arrows) move the selection in the list, and scroll the diff when it is there.
 // Keys: space or enter stages or unstages the selected file, a stages all, u unstages all,
 // d discards (asks first), c writes in the commit box, g asks Claude for a message, m amends,
-// b opens the branches, l pulls, p pushes, s stashes, o pops, v switches the diff between one
+// b opens the branches, l pulls, p pushes, s stashes (asks first), o pops, v switches the diff between one
 // column and two, f fills the window, r reads everything again, ? shows or hides the key list, esc closes.
 // In the commit box: ctrl-enter commits, esc goes back to the list.
 
@@ -43,6 +43,7 @@ import { languageOf, colorRows } from "./syntax.js";
 /** @typedef {import("./git.js").GitResult} GitResult */
 /** @typedef {ReturnType<typeof colors>} Theme */
 /** The line under the panes. `bad` is true for an error, false for plain news. @typedef {{ text: string, bad: boolean }} Note */
+/** A question in a dialog. `yes` names the button that does it, `run` does it, `danger` colors the button for a change that cannot be undone. @typedef {{ title: string, body: string, yes: string, no: string, danger: boolean, run: (cx: Context | AsyncContext) => void }} Question */
 
 /** The mod's folder name: its icons live there. */
 const MOD = "git-good";
@@ -197,7 +198,7 @@ export default class GitGood extends View {
     this.diffTop = 0;
     /** @type {Note | null} */
     this.note = null;
-    /** @type {FileEntry | null} the file a discard question is about */
+    /** @type {Question | null} the open question: a discard or a stash */
     this.asking = null;
     /** @type {boolean} true while a git command runs */
     this.busy = false;
@@ -504,7 +505,14 @@ export default class GitGood extends View {
     else if (c === "discard") {
       const f = this.selected();
       if (f?.staged) this.say("Unstage the file first. Discard only throws away changes that are not staged");
-      else if (f) this.asking = f;
+      else if (f) this.asking = {
+        title: f.untracked ? `Delete ${f.path}?` : `Discard the changes to ${f.path}?`,
+        body: `${f.untracked ? "Git does not have this file, so it is deleted. " : ""}This cannot be undone.`,
+        yes: f.untracked ? "Delete" : "Discard",
+        no: "Keep the file",
+        danger: true,
+        run: (cx) => this.act(cx, (repo) => discard(repo, this.on, f), () => `Discarded the changes to ${f.path}`, true),
+      };
     }
     else if (c === "message") this.message.focus();
     else if (c === "commit") this.commit(cx);
@@ -515,7 +523,17 @@ export default class GitGood extends View {
     else if (c === "push") this.push(cx);
     else if (c === "stash") {
       if (!this.items().length) this.say("Nothing to stash");
-      else this.act(cx, (repo) => stash(repo, this.on), () => "Stashed the changes", true);
+      else {
+        const n = this.items().length;
+        this.asking = {
+          title: `Stash ${n === 1 ? "1 changed file" : `${n} changed files`}?`,
+          body: "Every change, staged or not, and files git does not have yet are put aside. o brings them back.",
+          yes: "Stash",
+          no: "Keep the changes",
+          danger: false,
+          run: (cx) => this.act(cx, (repo) => stash(repo, this.on), () => "Stashed the changes", true),
+        };
+      }
     }
     else if (c === "pop") {
       if (!this.stashes) this.say("No stash to pop");
@@ -623,11 +641,11 @@ export default class GitGood extends View {
     return row;
   }
 
-  /** Yes to the discard question. @param {Context | AsyncContext} cx */
+  /** Yes to the open question. @param {Context | AsyncContext} cx */
   yes(cx) {
-    const f = this.asking;
+    const q = this.asking;
     this.asking = null;
-    if (f) this.act(cx, (repo) => discard(repo, this.on, f), () => `Discarded the changes to ${f.path}`, true);
+    if (q) q.run(cx);
   }
 
   /** Stages one hunk of the shown diff, or takes it back out when the row is staged. @param {number} i @param {Context | AsyncContext} cx */
@@ -1083,21 +1101,18 @@ export default class GitGood extends View {
   }
 
   /**
-   * The discard question as a dialog over the mod, with yes and no buttons. A press beside the
-   * dialog cancels. @param {Theme} t @param {FileEntry} f
+   * The open question as a dialog over the mod, with yes and no buttons. A press beside the
+   * dialog cancels. @param {Theme} t @param {Question} q
    */
-  askDialog(t, f) {
-    const title = f.untracked ? `Delete ${f.path}?` : `Discard the changes to ${f.path}?`;
-    const body = `${f.untracked ? "Git does not have this file, so it is deleted. " : ""}This cannot be undone.`;
-    const yes = f.untracked ? "Delete" : "Discard";
+  askDialog(t, q) {
     const box = v_flex().id("gg-ask").w(420).max_w("90%").p(20).gap(12)
       .bg(t.popover).rounded(12).border_1().border_color(t.border).shadow_lg()
       .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
-      .child(div().text_size(SIZE.title).font_semibold().text_color(t.foreground).child(title))
-      .child(div().text_size(SIZE.text).text_color(t.muted).child(body))
+      .child(div().text_size(SIZE.title).font_semibold().text_color(t.foreground).child(q.title))
+      .child(div().text_size(SIZE.text).text_color(t.muted).child(q.body))
       .child(h_flex().gap(8).justify_end()
-        .child(this.button(t, "gg-ask-no", "Keep the file (esc)", "cancel").h(32).child("Cancel"))
-        .child(this.button(t, "gg-ask-yes", `${yes} (enter)`, "yes").h(32).text_color(t.blocked).child(yes)));
+        .child(this.button(t, "gg-ask-no", `${q.no} (esc)`, "cancel").h(32).child("Cancel"))
+        .child(this.button(t, "gg-ask-yes", `${q.yes} (enter)`, "yes").h(32).text_color(q.danger ? t.blocked : t.accent).child(q.yes)));
     return div().id("gg-ask-around").absolute().inset_0().flex().items_center().justify_center().rounded(SIZE.frameRadius).bg("#00000033")
       .on_mouse_down("left", (_e, cx) => { this.command("cancel", cx); cx.stop_propagation(); cx.notify(); })
       .on_click((_e, cx) => cx.stop_propagation())
@@ -1134,7 +1149,7 @@ export default class GitGood extends View {
       .when(Boolean(this.asking) || this.branching || this.typing || this.shortcuts.open, (el) => el.key_context(BOX_CONTEXT)
         .on_action(BACK_ACTION, (_e, cx) => { this.command("cancel", cx); cx.notify(); }))
       .when(this.branching, (el) => el.child(this.branchPanel(t)))
-      .when(Boolean(this.asking), (el) => el.child(this.askDialog(t, /** @type {FileEntry} */ (this.asking))))
+      .when(Boolean(this.asking), (el) => el.child(this.askDialog(t, /** @type {Question} */ (this.asking))))
       .when(this.shortcuts.open, (el) => el.child(this.shortcuts.panel(t, { note: this.tourist === false ? this.touristNote(t) : undefined })));
     // Placed as a layout block, or in full screen, the panel fills its room.
     if (props()?.overlay === undefined || this.full) return panel;
