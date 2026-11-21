@@ -7,8 +7,10 @@ import { state, calls, reads } from "./herdr-shim.mjs";
 import { FIXTURES } from "./helpers.mjs";
 import { collectionKey, configPath, defaultWorkspacePath, discover, loadCollection, parseConfig, readConfig } from "../mods/bruno/sources.js";
 
-const fx = FIXTURES.replace(/\/+$/, "");
-const scratch = () => mkdtempSync(join(tmpdir(), "bruno-src-"));
+// The mod gives every path with forward slashes, so the test paths use them too, on Windows as well.
+const slashes = (p) => p.replace(/\\/g, "/");
+const fx = slashes(FIXTURES).replace(/\/+$/, "");
+const scratch = () => slashes(mkdtempSync(join(tmpdir(), "bruno-src-")));
 const reset = (extra = {}) => { Object.assign(state, { appHome: "/nonexistent", home: "/nonexistent", platform: "linux", path: null, maxTimeout: Infinity }, extra); calls.length = 0; reads.length = 0; };
 
 test("default workspace path per platform", () => {
