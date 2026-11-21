@@ -2,7 +2,8 @@
 // Use it with "frame": "none" in mod.json, so Herdr draws no frame of its own around it.
 import { div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { SIZE } from "./theme.js";
+import { props } from "herdr";
+import { SIZE, paneBackground, seeThroughOpacity } from "./theme.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("gpui-kit").KeyEvent} KeyEvent */
@@ -29,6 +30,8 @@ import { SIZE } from "./theme.js";
  * @param {FrameOptions} o
  */
 export function frame(t, o) {
+  // A dialog keeps its solid fill. In a tab over a see-through layout, the terminals' color at their opacity.
+  const fill = props()?.overlay === undefined && seeThroughOpacity() !== null ? paneBackground(t.popover) : t.popover;
   const root = v_flex()
     .id(o.id)
     .track_focus(o.handle)
@@ -37,7 +40,7 @@ export function frame(t, o) {
     .min_h(0)
     .p(SIZE.framePad)
     .gap(SIZE.frameGap)
-    .bg(t.popover)
+    .bg(fill)
     .rounded(SIZE.frameRadius).overflow_hidden().border_1().border_color(t.border)
     .text_size(13)
     .when(Boolean(o.fill), (el) => el.h_full())
