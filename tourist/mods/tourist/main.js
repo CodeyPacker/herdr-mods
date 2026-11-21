@@ -70,6 +70,24 @@ async function toggle(cx) {
 /** The panes' "Open in full screen" setting, shared so the key's copy can read it. */
 const FULL = "tourist.full";
 
+// The tour that was open when its pane closed, per repo root, so opening Tourist there again
+// picks it up at the same stop: { [root]: { scope, depth, prNumber, pass, since, feature, agent, session, plan, idx } }.
+const RESUME = "tourist.resume";
+
+/** The saved tour for a repo root, or null. @param {string} root */
+function resumeFor(root) {
+  const all = shared(RESUME);
+  const r = all && typeof all === "object" ? all[root] : null;
+  return r && Array.isArray(r.plan?.stops) ? r : null;
+}
+
+/** Saves (or with null, forgets) the tour for a repo root. @param {string} root @param {any} r */
+function setResume(root, r) {
+  const all = { ...(shared(RESUME) ?? {}) };
+  if (r) all[root] = r; else delete all[root];
+  setShared(RESUME, all);
+}
+
 export default class Tourist extends View {
   init(_props, cx) {
     // The key's copy: an overlay. Panes Tourist runs in have no overlay.
@@ -200,6 +218,7 @@ export default class Tourist extends View {
 
   async close() {
     if (this.launcher) return;
+    this.saveResume();
     publishTicketReview(this, true);
     this.explainScroll.release(); this.diffScroll.release(); this.input.release(); this.featureInput.release(); this.commentInput.release(); this.summaryInput.release(); this.replyInput.release(); this.threadInput.release();
     await this.session?.stop(); await this.fixSession?.stop();
@@ -243,6 +262,32 @@ export default class Tourist extends View {
     }
   }
 
+  /**
+   * Keeps the open tour for next time this repo opens Tourist, or forgets it when the reader went
+   * back to the start. A ticket's review isn't kept: the ticket reopens it.
+   */
+  saveResume() {
+    const root = this.git.root;
+    if (!root || this.ticket) return;
+    if (!this.plan || this.phase === "setup" || this.phase === "planning" || this.phase === "error") { setResume(root, null); return; }
+    setResume(root, {
+      savedKey: this.savedKey ?? null,
+      scope: this.scope, depth: this.depth, prNumber: this.prNumber, pass: this.pass, since: this.since,
+      feature: this.featureInput.value(), agent: this.session?.agent ?? this.agent, session: this.session?.id ?? null,
+      plan: this.plan, idx: this.idx,
+    });
+  }
+
+  /** Opens the tour saved when Tourist last closed in this repo, at the stop it was on. @param {any} r @param {any} cx */
+  resumeTour(r, cx) {
+    this.scope = r.scope; this.depth = r.depth; this.prNumber = r.prNumber ?? null; this.pass = r.pass ?? "since"; this.since = r.since ?? null;
+    if (r.feature) this.featureInput.set_value(r.feature);
+    if (r.agent && this.agents.includes(r.agent)) this.agent = r.agent;
+    this.resuming = r;
+    this.phase = "setup";
+    this.start(cx, false);
+  }
+
   /** Finds the repo and the agents. Given `cx` (the first time only), a PR in the props is opened too. */
   async detect(cx = null) {
     if (!this.cwd) { this.fail("No folder to tour. Open Tourist from a terminal inside a repo."); return; }
@@ -259,6 +304,11 @@ export default class Tourist extends View {
     if (asked === "branch" && repo.changed.length > 0) { this.scope = "branch"; this.goStep("depth"); }
     else this.goStep("scope");
     if (cx && this.ticketPR) await this.openPropPR(cx);
+    // Opened plainly (not for a ticket or a scope): the tour that was open when Tourist closed here.
+    else if (cx && !this.ticket && !asked) {
+      const r = resumeFor(repo.root);
+      if (r) this.resumeTour(r, cx);
+    }
   }
 
   /**
@@ -355,7 +405,10 @@ export default class Tourist extends View {
 
   start(cx, focus = true) {
     if (this.phase !== "setup" || !this.git.root) return;
-    if (this.scope === "branch" && this.git.changed.length === 0) return;
+    // A resumed tour uses its saved plan. One that can't start any more (the branch's changes
+    // are gone) is forgotten, and Tourist starts at the first step.
+    const resume = this.resuming; this.resuming = null;
+    if (this.scope === "branch" && this.git.changed.length === 0) { if (resume) setResume(this.git.root, null); return; }
     if (this.scope === "feature" && !this.featureInput.value().trim()) { this.focusBox(this.featureInput, cx); return; }
     if (this.scope === "pr" && !this.prNumber) return;
     if (focus) this.leaveBox();
@@ -408,10 +461,12 @@ export default class Tourist extends View {
         this.savedKey = planKey({ root: this.git.root, scope: this.scope, depth: this.depth, head, pr: this.pr, feature, ticket: this.reviewTicket });
         const saved = this.savedKey ? await loadSavedPlan(this.savedKey) : null;
         if (gen !== this.gen) return;
-        if (saved) { plan = saved.plan; plan.savedAt = saved.saved; if (saved.agent === session.agent) session.id = saved.session; }
+        // A tour of a commit or PR that moved since (its saved-plan key changed) plans again instead.
+        if (resume && (resume.savedKey ?? null) === (this.savedKey ?? null)) { plan = resume.plan; if (resume.agent === session.agent) session.id = resume.session; }
+        else if (saved) { plan = saved.plan; plan.savedAt = saved.saved; if (saved.agent === session.agent) session.id = saved.session; }
         if (!plan) plan = parsePlan(await session.ask(prompt));
         if (gen !== this.gen) return;
-        this.plan = plan; this.phase = "tour"; this.show(0, cx);
+        this.plan = plan; this.phase = "tour"; this.show(resume ? Number(resume.idx) || 0 : 0, cx);
         this.loadRepoFiles(cx);
         if (this.pr) this.loadFiles(cx);
         if (!plan.savedAt) this.storePlan();
