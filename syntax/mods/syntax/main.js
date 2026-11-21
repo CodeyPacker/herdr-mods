@@ -58,6 +58,15 @@ function savedRecent(language) {
   return saved(`recent-${language.id}`, language === defaultLanguage ? saved("recent", {}) : {});
 }
 
+/**
+ * The theme's green at low opacity, for a finished topic's row in light and dark themes.
+ * @param {Theme} t @param {string} alpha two hex digits
+ */
+function lightGreen(t, alpha) {
+  const green = String(t.ansi2 ?? "").slice(0, 7);
+  return /** @type {any} */ (`${/^#[0-9a-f]{6}$/i.test(green) ? green : "#22c55e"}${alpha}`);
+}
+
 export default class Syntax extends View {
   /** @param {unknown} _props @param {Context} cx */
   init(_props, cx) {
@@ -846,8 +855,11 @@ export default class Syntax extends View {
           const progress = isTopic ? topicProgress(this.state, item.id, this.catalog) : null;
           const current = isTopic ? this.state?.exerciseId?.startsWith(`${item.id}/`) : this.state?.exerciseId === item.id;
           const passed = !isTopic && this.state?.progress?.[item.id]?.passes > 0;
+          // A finished topic (every exercise passed) gets a light green row. The selected row keeps its own color.
+          const finished = isTopic && Boolean(progress?.total) && progress?.passed === progress?.total;
           return listRow(t, { id: `choose-${item.id}`, on: index === this.selected, tall: true,
             click: cx => { if (isTopic) this.chooseTopic(item.id, cx); else this.selectExercise(item.id, cx); } })
+            .when(finished && index !== this.selected, element => element.bg(lightGreen(t, "26")).hover(style => style.bg(lightGreen(t, "40"))))
             .child(div().w(18).flex_none().text_color(current ? t.accent : passed ? t.done : t.dim).child(current ? "›" : passed ? "✓" : String(index + 1)))
             .child(rowText(t, item.title, "description" in item ? `${item.level === "advanced" ? "Advanced · " : ""}${item.description}` : item.prompt, true))
             .when(isTopic, element => element.child(tag(t, `${progress?.passed ?? 0}/${progress?.total ?? 0}`)));
