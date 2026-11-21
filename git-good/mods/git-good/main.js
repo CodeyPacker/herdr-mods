@@ -669,7 +669,26 @@ export default class GitGood extends View {
     const message = this.message.value().trim();
     if (!message) return this.say("Write a commit message first");
     if (!this.staged.length && !this.amend) return this.say("Stage the files to commit first");
-    const amend = this.amend;
+    // The last commit is on the remote when the branch has an upstream and no commits it lacks.
+    const b = this.current();
+    if (this.amend && b?.upstream && !b.gone && b.ahead === 0) {
+      this.asking = {
+        title: "Amend a commit you already pushed?",
+        body: `${b.upstream} has the last commit. Amending rewrites it, so the next push is refused until you force-push outside Git Good.`,
+        yes: "Amend",
+        no: "Keep the commit",
+        danger: true,
+        run: (cx) => this.runCommit(cx, message, true),
+      };
+      // The question takes enter and esc, so the keyboard leaves the commit box.
+      this.handle.focus();
+      return;
+    }
+    this.runCommit(cx, message, this.amend);
+  }
+
+  /** Commits, or amends the last commit, with `message`. @param {Context | AsyncContext} cx @param {string} message @param {boolean} amend */
+  runCommit(cx, message, amend) {
     this.act(cx, async (repo) => {
       const r = await commit(repo, this.on, message, amend);
       if (r.ok) {
