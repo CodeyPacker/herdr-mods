@@ -6,10 +6,10 @@
     "previous": [
       "jump/preview.png"
     ],
-    "state": "Space and tab picker from old preview",
+    "state": "Supplied Jump screenshot showing the space and tab cards",
     "screenshotSource": {
-      "commit": "90949f0",
-      "file": "jump/preview.png"
+      "file": "gallery/sources/jump-capture.png",
+      "treatment": "8 px background blur, original dialog preserved, tight crop"
     }
   },
   {

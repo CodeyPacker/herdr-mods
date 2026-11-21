@@ -2,7 +2,7 @@
   "commit": "90949f0",
   "coordinateWidth": 640,
   "screenshots": [
-    {"id":"jump","file":"jump/preview.png","corners":[[326,79],[615,60],[595,299],[280,290]],"width":850,"height":650},
+    {"id":"jump","capture":"gallery/sources/jump-capture.png","blur":8,"dialog":{"left":869,"top":80,"width":1716,"height":678,"radius":32},"crop":{"left":789,"top":0,"width":1876,"height":838}},
     {"id":"run","capture":"gallery/sources/run-capture.png","blur":8,"dialog":{"left":1168,"top":80,"width":1120,"height":738,"radius":32},"crop":{"left":1040,"top":0,"width":1376,"height":896}},
     {"id":"islands","file":"islands/preview.png","corners":[[202,71],[616,71],[616,298],[202,298]],"width":1100,"height":603},
     {"id":"tourist","file":"tourist/preview.png","corners":[[303,87],[620,62],[606,300],[260,292]],"width":850,"height":620},
