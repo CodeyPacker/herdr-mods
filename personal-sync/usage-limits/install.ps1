@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 
 $syncDir = $PSScriptRoot
 $appDir = Join-Path $HOME '.config/herdr-app'
-$revision = '048dbe911ee957f42d465d950a5ce04d61fed904'
+$revision = '19fda912acc4f0212e5958d03ccd35081fe4395d'
 
 foreach ($tool in 'git', 'herdr-app') {
   if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) { throw "Required command not found: $tool" }

@@ -4,7 +4,7 @@ set -eu
 
 sync_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 app_dir="$HOME/.config/herdr-app"
-revision=048dbe911ee957f42d465d950a5ce04d61fed904
+revision=19fda912acc4f0212e5958d03ccd35081fe4395d
 
 for tool in git herdr-app; do
     command -v "$tool" >/dev/null 2>&1 || {
