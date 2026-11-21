@@ -45,10 +45,10 @@
     "previous": [
       "tourist/preview.png"
     ],
-    "state": "Review scope and depth from old preview",
+    "state": "Supplied Tourist screenshot showing an active guided tour with code and explanation",
     "screenshotSource": {
-      "commit": "90949f0",
-      "file": "tourist/preview.png"
+      "file": "gallery/sources/tourist-capture.png",
+      "treatment": "Third supplied screenshot, full tour view, original pixels preserved, no blur"
     }
   },
   {
