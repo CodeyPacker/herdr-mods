@@ -26,6 +26,15 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/CodeyP
 ```
 
 ---
+### [Hey, chat](hey-chat/)
+
+Chat with Claude Code or Codex in a Messenger-style pane, with your existing sessions grouped by folder, permission prompts you answer in the chat, and your own profile picture.
+
+```text
+Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/CodeyPacker/herdr-mods/tree/main/hey-chat
+```
+
+---
 ### [islands](islands/)
 
 [<img src="https://raw.githubusercontent.com/CodeyPacker/herdr-mods/5d814b4b45219d5dfb65feffbb5d58ff826c9cb5/islands/preview.png" width="720" alt="islands">](islands/)
