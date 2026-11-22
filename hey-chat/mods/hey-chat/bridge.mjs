@@ -22,7 +22,7 @@
 //                     permission, question, decided, answered, turn_end, error.
 //   { role: "mcp" }   the approve tool. It sends { type: "ask", tool, input } and gets one
 //                     { behavior, ... } line back: the answer Claude expects.
-import { spawn } from "node:child_process";
+import { spawnAgent as spawn } from "./process.mjs";
 import { createServer, connect } from "node:net";
 import { mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join, dirname } from "node:path";

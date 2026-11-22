@@ -17,11 +17,12 @@ import { nextCommand, panes, spaces, props, run, focused, closeOverlay, theme, w
 import { loadMe, saveMe, pickPhoto, importPhoto, dropPhoto } from "./me.js";
 import { colors, paneBackground } from "./kit/theme.js";
 import { AGENTS } from "./pictures.js";
-import { Bridge, findAgents, listSessions, readSession, deleteSession, pasteImage, listSkills, imageFile, listModels } from "./agent.js";
+import { Bridge, checkSetup, listSessions, readSession, deleteSession, pasteImage, listSkills, imageFile, listModels } from "./agent.js";
 import { applyEvent, resetThread, pendingAsk, pendingQuestion, clock, shortWhen, visibleMessages } from "./messages.js";
 import { loadStore, saveStore, expand, tilde } from "./store.js";
 import { pickProject } from "./folders.js";
 import { treeView, TREE_WIDTH } from "./views/tree.js";
+import { setupView } from "./views/setup.js";
 import { chatView, imageViewer } from "./views/chat.js";
 import { handleKey, treeItems as treeItemsOf, LIST_PAD_TOP, LIST_PAD_BOTTOM } from "./keys.js";
 
@@ -47,7 +48,7 @@ async function toggle(cx, folder) {
     if (back) run("tab.select", { id: back.id });
     return;
   }
-  folder = expand(folder ?? f?.cwd ?? space.folder ?? home()).replace(/\/$/, "") || "/";
+  folder = expand(folder ?? f?.cwd ?? space.folder ?? home()).replace(/\\/g, "/").replace(/\/$/, "") || "/";
   const tab = space.tabs.find(t => saved[t.id]?.folder === folder && all.some(p => p.tab === t.id && p.mod === "hey-chat"));
   if (tab) {
     if (current !== tab.id) {
@@ -119,6 +120,10 @@ export default class HeyChat extends View {
     this.bridges = new Map();
     /** @type {Map<string, Promise<Bridge | null>>} Connections still opening. */
     this.links = new Map();
+    this.setupOpen = Boolean(props()?.setup);
+    this.setupAgent = "codex";
+    this.setupChecking = false;
+    this.setupState = null;
     this.agents = null;            // the CLIs on PATH, once found: ["node", "claude", ...]
     this.me = loadMe();
     // Settings: whether the card is open, a photo being copied in, and why the last one failed.
@@ -188,7 +193,7 @@ export default class HeyChat extends View {
     // A new chat in the folder the pane was opened from, ready to type into. Your sessions fill
     // the tree around it once they're listed.
     const start = checking() ? home() : (props()?.folder ?? focused()?.cwd ?? home());
-    this.folder = expand(start).replace(/\/$/, "") || "/";
+    this.folder = expand(start).replace(/\\/g, "/").replace(/\/$/, "") || "/";
     const own = panes().find(p => p.pane === props()?.pane);
     if (own && !checking()) {
       const tabs = shared(CHAT_TABS) ?? {};
@@ -206,7 +211,7 @@ export default class HeyChat extends View {
     // Your sessions, the chats made here (reconnected to their bridges where those still run),
     // and the CLIs on PATH.
     cx.spawn(async (cx) => { await this.loadChats(cx); cx.notify(); });
-    cx.spawn(async (cx) => { this.agents = await findAgents(); cx.notify(); });
+    this.refreshSetup(cx, true);
   }
 
   async close() {
@@ -262,12 +267,14 @@ export default class HeyChat extends View {
       if (p.made) { const made = this.project(id); if (made) made.made = true; }
     }
     for (const c of s.chats) {
+      if (c?.cwd) c.cwd = c.cwd.replace(/\\/g, "/");
       if ((this.folder && c.cwd !== this.folder) || !c?.id || !c.session || this.chats.some((x) => x.id === c.id)) continue;
       const chat = { ...c, cwd: String(c.cwd ?? ""), project: this.addProject(String(c.cwd ?? ""), c.project), real: true, thread: [] };
       resetThread(chat);
       this.chats.push(chat);
     }
     for (const x of sessions) {
+      x.cwd = x.cwd.replace(/\\/g, "/");
       if (this.folder && x.cwd !== this.folder) continue;
       const known = this.chats.find((c) => c.session === x.session);
       const facts = { file: x.file, model: x.model ?? known?.model ?? null, last: x.last, lastFrom: x.lastFrom, stamp: Math.max(known?.stamp ?? 0, x.updatedAt), time: shortWhen(x.updatedAt) };
@@ -899,9 +906,29 @@ export default class HeyChat extends View {
   }
 
   /** Why a chat's agent can't run here, or null. @param {string} agent */
+  /** @param {any} cx @param {boolean} [automatic] */
+  refreshSetup(cx, automatic = false) {
+    if (this.setupChecking) return;
+    this.setupChecking = true;
+    cx.spawn(async cx => {
+      const previous = this.setupState;
+      try {
+        this.setupState = await checkSetup();
+        const state = this.setupState;
+        this.agents = [...(state.node ? ["node"] : []), ...Object.keys(state.agents).filter(a => state.agents[a].installed)];
+        const ready = Object.keys(state.agents).find(a => state.agents[a].auth === "ready");
+        if (automatic && !this.chat(this.chatId)?.session && !this.chat(this.chatId)?.thread.length) {
+          if (ready) this.chat(this.chatId).agent = ready;
+          else this.setupOpen = true;
+        }
+        if (previous?.node === false && state.node) await this.loadChats(cx);
+      } finally { this.setupChecking = false; cx.notify(); }
+    });
+  }
+
   missingCli(agent) {
-    if (window().platform === "windows") return "Hey, chat can't run agents on Windows yet.";
     if (!this.agents) return null;
+    if (!this.agents.includes("node") || !this.agents.includes(agent)) { this.setupOpen = true; this.setupAgent = agent; }
     if (!this.agents.includes("node")) return "Hey, chat needs node on your PATH to run the agent.";
     if (!this.agents.includes(agent)) return `Hey, chat can't find the ${agent} command. Install it and sign in, then try again.`;
     return null;
@@ -1186,6 +1213,10 @@ export default class HeyChat extends View {
   render(_cx) {
     if (this.launcher) return h_flex();
     const t = colors();
+    if (this.setupOpen) return h_flex().size_full().p(GAP).bg(paneBackground(theme().background))
+      .track_focus(this.handle)
+      .on_key_down((e, cx) => { if (e.keystroke === "escape") { this.setupOpen = false; this.focusInput(); cx.notify(); } })
+      .child(setupView(this, t));
     const chatWidth = Math.max(0, this.width - (this.sidebarHidden ? GAP * 2 : TREE_WIDTH + GAP * 3));
     return h_flex().id("root").relative().size_full().p(GAP).gap(GAP).bg(paneBackground(theme().background))
       .track_focus(this.handle)

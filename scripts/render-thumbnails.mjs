@@ -27,6 +27,21 @@ try {
     await page.evaluate(({ mod, src }) => {
       document.querySelector('#title').innerText = mod.title;
       document.querySelector('#description').innerText = mod.description;
+      for (const text of mod.badges ?? []) { const badge = document.createElement('span'); badge.className = 'badge'; badge.textContent = text; document.querySelector('#badges').append(badge); }
+      if (mod.platforms?.length) {
+        const row = document.createElement('span'); row.className = 'badge platforms';
+        const logos = {
+          macos: ['macOS', '<path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.77 3.08.83 1.18-.24 2.31-.96 3.57-.87 1.51.12 2.64.72 3.39 1.8-3.1 1.86-2.36 5.95.48 7.1-.57 1.5-1.31 2.99-2.53 4.12l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.35 4.5-3.74 4.25z"/>'],
+          windows: ['Windows', '<path d="M2 2h9v9H2zm11 0h9v9h-9zM2 13h9v9H2zm11 0h9v9h-9z"/>'],
+        };
+        for (const platform of mod.platforms) {
+          const [label, path] = logos[platform];
+          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', label);
+          svg.innerHTML = path; row.append(svg);
+        }
+        document.querySelector('#badges').append(row);
+      }
       document.querySelector('.shot').src = src;
       if (mod.screenshotRadius !== undefined) document.querySelector('.shot').style.borderRadius = `${mod.screenshotRadius}px`;
     }, { mod, src: `data:image/png;base64,${source.toString('base64')}` });

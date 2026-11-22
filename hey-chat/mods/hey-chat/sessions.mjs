@@ -19,7 +19,7 @@
 //       folder beside it, only inside ~/.claude/projects. Codex: `codex delete --force <id>`.
 import { readdirSync, statSync, openSync, readSync, closeSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { join, dirname, basename, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
+import { runAgent as spawnSync } from "./process.mjs";
 import { homedir, tmpdir } from "node:os";
 import { keepFile, keepBase64, keepDataUrl, pathsIn, REL } from "./images.mjs";
 

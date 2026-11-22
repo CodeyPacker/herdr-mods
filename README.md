@@ -28,6 +28,8 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/CodeyP
 ---
 ### [Hey, chat](hey-chat/)
 
+[<img src="hey-chat/preview.png" width="720" alt="Hey, chat with Claude Code and Codex on macOS and Windows">](hey-chat/)
+
 Chat with Claude Code or Codex in a Messenger-style pane, with your existing sessions grouped by folder, permission prompts you answer in the chat, and your own profile picture.
 
 ```text

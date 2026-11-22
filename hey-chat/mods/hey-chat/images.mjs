@@ -164,6 +164,10 @@ function pasteData(dir) {
       ].join("\n");
       spawnSync("osascript", ["-e", script], { stdio: "ignore" });
       if (existsSync(tmp)) shrink(tmp);
+    } else if (process.platform === "win32") {
+      const script = `$path = '${tmp.replace(/'/g, "''")}'; Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $image = [Windows.Forms.Clipboard]::GetImage(); if ($image) { try { $image.Save($path, [Drawing.Imaging.ImageFormat]::Png) } finally { $image.Dispose() } }`;
+      // Encode the script and quote the path as a literal for spaces and apostrophes.
+      spawnSync("powershell.exe", ["-NoProfile", "-STA", "-EncodedCommand", Buffer.from(script, "utf16le").toString("base64")], { windowsHide: true });
     } else {
       const r = spawnSync("sh", ["-c", "wl-paste --type image/png 2>/dev/null || xclip -selection clipboard -t image/png -o 2>/dev/null"], { maxBuffer: MAX_BYTES });
       if (r.stdout?.length) writeFileSync(tmp, r.stdout);

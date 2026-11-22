@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Reads the agent's model options without opening a conversation or claiming its writer.
-import { spawn } from "node:child_process";
+import { spawnAgent as spawn } from "./process.mjs";
 import { createInterface } from "node:readline";
 
 const [agent, cwd] = process.argv.slice(2);

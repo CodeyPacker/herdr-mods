@@ -8,6 +8,9 @@
 import { exec, hc, readTextFile, appHome, window } from "herdr";
 import net from "net";
 
+// Use the detected absolute runtime when the core predates a Node.js installation.
+let nodeRuntime = "node";
+
 /** The bridges' folder. */
 export function bridgeDir() {
   return `${appHome().replace(/\\/g, "/")}/data/hey-chat/bridges`;
@@ -15,9 +18,18 @@ export function bridgeDir() {
 
 /** Which agent CLIs are on PATH, in the shell the bridges run in. @returns {Promise<string[]>} */
 export async function findAgents() {
-  if (window().platform === "windows") return [];
-  const r = await exec("sh", ["-c", 'for a in node claude codex; do command -v "$a" >/dev/null 2>&1 && echo "$a"; done']).catch(() => null);
-  return (r?.stdout ?? "").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  const result = await checkSetup();
+  return [...(result.node ? ["node"] : []), ...Object.keys(result.agents).filter(a => result.agents[a].installed)];
+}
+
+/** Checks the runtime and each agent's sign-in without starting a conversation. */
+export async function checkSetup() {
+  const script = `${appHome().replace(/\\/g, "/")}/mods/hey-chat/setup.mjs`;
+  try {
+    const r = await exec("node", [script], { timeout: 15000 });
+    if (r.code === 0) { const result = JSON.parse(r.stdout); nodeRuntime = result.executable || "node"; return result; }
+  } catch { /* Node is missing or cannot run. */ }
+  return { node: false, agents: {} };
 }
 
 /**
@@ -180,10 +192,9 @@ export class Bridge {
   /** Starts the bridge in a hidden terminal and waits for its port. @param {any} cx */
   async launch(cx) {
     const self = `${appHome().replace(/\\/g, "/")}/mods/hey-chat/bridge.mjs`;
-    const q = (/** @type {string} */ s) => `'${s.replace(/'/g, `'\\''`)}'`;
     const args = ["serve", "--chat", this.chat, "--agent", this.agent, "--cwd", this.cwd, "--state", bridgeDir(), ...(this.session ? ["--resume", this.session] : []), ...(this.model ? ["--model", this.model] : [])];
     const r = await hc(["run", "--bg", "--no-parent", "--outlive-parent", "--cwd", this.cwd, "--label", "hey-chat=bridge", "--json", "--",
-      "sh", "-c", `exec node ${q(self)} ${args.map(q).join(" ")}`]);
+      nodeRuntime, self, ...args]);
     if (r.code !== 0) throw new Error(r.stderr.trim() || "Couldn't start the bridge.");
     for (let i = 0; i < 50; i++) {
       await new Promise((done) => cx.timer.after(100, done));

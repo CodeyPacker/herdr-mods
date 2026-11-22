@@ -131,5 +131,24 @@
     "previous": [],
     "state": "Empty task board from tickets-tourist-wip",
     "implementationBranch": "tickets-tourist-wip"
+  },
+  {
+    "id": "hey-chat",
+    "title": "Hey, chat",
+    "description": "Your project chats,\nall in one place.",
+    "badges": [
+      "Claude Code \u00b7 Codex"
+    ],
+    "previous": [],
+    "state": "Fictional sample-app project with Codex conversation and Claude Code chats, captured using the actual mod renderer",
+    "screenshotSource": {
+      "file": "gallery/sources/hey-chat-capture.png",
+      "treatment": "Isolated Herdr capture with fictional conversations, cropped to the chat pane"
+    },
+    "screenshotRadius": 14,
+    "platforms": [
+      "macos",
+      "windows"
+    ]
   }
 ]

@@ -72,7 +72,10 @@ export function settingsView(v, t) {
       .child(v_flex().gap(2)
         .child(div().text_size(13).text_color(t.foreground).child("Show key hints"))
         .child(div().text_size(11.5).text_color(t.dim).child("The keys on buttons and in the sidebar.")))
-      .child(toggle(t, v.keyHints)));
+      .child(toggle(t, v.keyHints)))
+    .child(div().id("open-setup").py(6).text_size(13).text_color(t.foreground).cursor_pointer()
+      .hover(s => s.text_color(t.accent))
+      .on_click((_e, cx) => { v.closeSettings(); v.setupOpen = true; v.refreshSetup(cx); cx.notify(); }).child("Agent setup"));
 }
 
 /** An on/off switch: a track that fills with the accent when on, and a round knob. @param {Theme} t @param {boolean} on */
