@@ -13,7 +13,7 @@
 //   views/        the sidebar (tree.js), the chat (chat.js) and the Settings card (settings.js)
 import { View } from "gpui-kit";
 import { h_flex, InputState, TextareaState, ScrollHandle } from "gpui-base";
-import { nextCommand, panes, props, run, focused, closeOverlay, theme, window, playSound, checking, shared, setShared, home } from "herdr";
+import { nextCommand, panes, spaces, props, run, focused, closeOverlay, theme, window, playSound, checking, shared, setShared, home } from "herdr";
 import { loadMe, saveMe, pickPhoto, importPhoto, dropPhoto } from "./me.js";
 import { colors, paneBackground } from "./kit/theme.js";
 import { AGENTS } from "./pictures.js";
@@ -28,23 +28,45 @@ import { handleKey, treeItems as treeItemsOf, LIST_PAD_TOP, LIST_PAD_BOTTOM } fr
 /** The space around and between the two cards. */
 const GAP = 10;
 
-/**
- * What the key (mod.open:hey-chat) does, in a tiny overlay copy that closes after: closes the
- * Hey, chat pane in the shown tab when there is one, otherwise opens one beside the focused pane
- * and zooms it to fill the tab (pane.zoom, so ctrl-shift-z gives the split back). The new pane
- * gets the focused terminal's folder, so that folder is a project in the tree.
- * @param {any} cx
- */
+/** The chat tab and the tab to return to, by workspace. */
+const CHAT_TABS = "hey-chat.tabs";
+
+/** Switches to a persistent chat tab, or back to the previous tab. @param {any} cx */
 async function toggle(cx) {
   const f = focused();
-  const tab = f?.tab;
-  const open = panes().find((p) => p.mod === "hey-chat" && p.tab === tab);
-  if (open) { run("pane.close", { pane: open.pane }); return; }
-  run("pane.split", { direction: "right", mod: "hey-chat", props: f?.cwd ? { folder: f.cwd } : {} });
-  // A command applies after run returns, so the new pane is looked for each frame (up to half a second).
+  const space = spaces().find(s => s.id === f?.space) ?? spaces().find(s => s.active);
+  if (!space) return;
+  const current = f?.tab ?? space.tabs.find(t => t.active)?.id;
+  const saved = shared(CHAT_TABS) ?? {};
+  const state = saved[space.id] ?? {};
+  const all = panes().slice();
+  const chatPane = (tab) => {
+    const rows = all.filter(p => p.tab === tab.id);
+    return rows.length === 1 && rows[0].mod === "hey-chat" ? rows[0] : null;
+  };
+  const tab = space.tabs.find(t => t.id === state.chat && chatPane(t)) ?? space.tabs.find(t => chatPane(t));
+  if (tab) {
+    if (current === tab.id) {
+      const back = space.tabs.find(t => t.id === state.previous && t.id !== tab.id)
+        ?? space.tabs.find(t => t.id !== tab.id && !t.settled)
+        ?? space.tabs.find(t => t.id !== tab.id);
+      if (back) run("tab.select", { id: back.id });
+    } else {
+      setShared(CHAT_TABS, { ...saved, [space.id]: { chat: tab.id, previous: current } });
+      run("tab.select", { id: tab.id });
+    }
+    return;
+  }
+  // Replace the old zoomed chat pane without closing its terminal tab or stopping the agent.
+  const legacy = all.find(p => p.mod === "hey-chat" && p.tab === current);
+  run("tab.new", { name: "Hey, chat", space: space.id, mod: "hey-chat", props: f?.cwd ? { folder: f.cwd } : {} });
   for (let i = 0; i < 30; i++) {
-    const made = panes().find((p) => p.mod === "hey-chat" && p.tab === tab);
-    if (made) { if (!made.zoomed) run("pane.zoom", { pane: made.pane }); return; }
+    const made = panes().find(p => p.mod === "hey-chat" && !all.some(old => old.pane === p.pane));
+    if (made) {
+      setShared(CHAT_TABS, { ...saved, [space.id]: { chat: made.tab, previous: current } });
+      if (legacy) run("pane.close", { pane: legacy.pane });
+      return;
+    }
     await new Promise((done) => cx.timer.after(16, done));
   }
 }
