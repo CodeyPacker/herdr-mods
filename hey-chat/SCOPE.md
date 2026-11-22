@@ -42,6 +42,9 @@ plain `border` color.
   chat's own chats plus the existing Claude and Codex sessions on this machine
   (section 8).
 - Search filters chats by title and message text across every project.
+- `d` on a chat (or the trash button in its header) asks "Delete …?" with
+  `y` / `n`. Deleting removes the session for good: Claude's session file and
+  folder, or `codex delete --force` (D5).
 
 ## 3. Chat view
 
@@ -239,3 +242,5 @@ Follows the repo's mod layout:
   tab (`pane.zoom`, so `ctrl-shift-z` gives the split back).
 - **D3:** "Read" means the agent started working on your message.
 - **D4:** A Recent section with the last two chats sits above the projects.
+- **D5:** Deleting a chat removes its Claude or Codex session for good, after a
+  y/n question.

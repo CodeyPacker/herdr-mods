@@ -1,12 +1,12 @@
 // Keys (scope section 7): ctrl-h and ctrl-l move between the tree and the message box, ctrl-j and
 // ctrl-k scroll the chat from anywhere, the tree moves with j, k, h, l, g and G, a permission bar
-// takes y, a and n, and ctrl-c stops a turn.
+// takes y, a and n, d asks to delete a chat, and ctrl-c stops a turn.
 
 /** The messages' padding above the first row and below the last, as views/chat.js draws it. */
 export const LIST_PAD_TOP = 16, LIST_PAD_BOTTOM = 10;
 
 /** The key hints the tree shows while it has the keyboard. */
-export const TREE_HINTS = [["j k", "move"], ["l", "open"], ["h", "close"], ["⌃l", "chat"]];
+export const TREE_HINTS = [["j k", "move"], ["l", "open"], ["h", "close"], ["d", "delete"], ["⌃l", "chat"]];
 
 /**
  * The tree's rows in screen order, as cursor keys: `r:<chat>` in Recent, then `p:<project>` and,
@@ -63,6 +63,13 @@ export function scrollChat(v, dir) {
 export function handleKey(v, e, cx) {
   const ks = e.keystroke;
   const done = () => { cx.stop_propagation(); cx.notify(); };
+  // The delete question: enter (Delete has the focus) or y deletes, n or esc puts it away. Other keys wait.
+  if (v.zone === "confirm") {
+    if (ks === "enter" || ks === "y") v.confirmDelete(cx);
+    else if (ks === "n" || ks === "escape") v.cancelDelete();
+    done();
+    return;
+  }
   // Settings is open: esc closes it, wherever the keyboard is.
   if (v.settingsOpen && ks === "escape") { v.closeSettings(); done(); return; }
   if (v.zone === "settings") {
@@ -105,6 +112,9 @@ export function handleKey(v, e, cx) {
     const project = isProject ? id : v.chat(id).project;
     v.setCollapsed(project, true);
     v.cursor = `p:${project}`;
+  } else if (ks === "d") {
+    if (isProject) return;
+    v.askDelete(id);
   } else if (ks === "escape") v.focusInput();
   else return;
   v.revealCursor();

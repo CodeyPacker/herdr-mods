@@ -84,6 +84,30 @@ function projectRow(v, t, p, count) {
     .child(roundButton(t, `new-${p.id}`, `${ICONS}/plus.svg`, 28, (cx) => { v.newChat(p.id, cx); cx.notify(); }));
 }
 
+/** "Delete … ?" with y and n, for the chat v.deleting names. @param {any} v @param {Theme} t */
+function deleteCard(v, t) {
+  const d = v.deleting;
+  const chat = v.chats.find((/** @type {any} */ c) => c.id === d.id);
+  const what = !chat?.session ? "This chat has no messages yet."
+    : chat.agent === "codex" ? "Its Codex session is deleted for good." : "Its Claude session is deleted for good.";
+  return v_flex().flex_none().mx(10).mt(8).p(12).gap(10).rounded(12).bg(t.raised).border_1().border_color(t.blocked)
+    .child(v_flex().gap(4)
+      .child(div().text_size(13.5).font_semibold().text_color(t.foreground).child(`Delete \u201c${chat?.title ?? "this chat"}\u201d?`))
+      .child(div().text_size(12).text_color(t.muted).child(d.busy ? "Deleting\u2026" : what)))
+    .when(Boolean(d.error), (el) => el.child(div().text_size(12).text_color(t.blocked).child(d.error ?? "")))
+    .child(h_flex().gap(8)
+      // Delete has the focus, drawn with a ring: enter presses it.
+      .child(h_flex().id("delete-yes").h(30).px(12).gap(6).items_center().rounded_full().cursor_pointer().bg(t.blocked)
+        .border_2().border_color(t.foreground)
+        .text_size(12.5).font_medium().text_color("#ffffff")
+        .on_click((_e, cx) => { v.confirmDelete(cx); cx.notify(); })
+        .child(div().font_semibold().opacity(0.75).child("\u21b5")).child("Delete"))
+      .child(h_flex().id("delete-no").h(30).px(12).gap(6).items_center().rounded_full().cursor_pointer().bg(t.background)
+        .border_1().border_color(t.border).text_size(12.5).font_medium().text_color(t.foreground).hover((s) => s.bg(t.hover))
+        .on_click((_e, cx) => { v.cancelDelete(); cx.notify(); })
+        .child(div().font_semibold().opacity(0.75).child("n")).child("Cancel")));
+}
+
 /** The whole sidebar card. @param {any} v @param {Theme} t */
 export function treeView(v, t) {
   // Every row is a direct child of the scrolling list, so the list overflows (and scrolls) instead
@@ -126,6 +150,8 @@ export function treeView(v, t) {
     // Recent (except while searching), then the projects.
     .child(v_flex().id("tree-scroll").flex_1().min_h(0).overflow_y_scrollbar().track_scroll(v.treeScroll).px(8).pb(8).gap(2)
       .children(rows))
+    // The delete question, above the bottom row.
+    .when(Boolean(v.deleting), (el) => el.child(deleteCard(v, t)))
     // The tree's keys, while it has the keyboard.
     .when(v.zone === "tree", (el) => el.child(div().flex_none().px(16).pt(8).pb(4).child(legend(t, TREE_HINTS))))
     // Your picture and the settings gear: a click opens or closes Settings.

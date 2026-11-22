@@ -13,8 +13,12 @@
 //       tool, tool_done, turn_end), so the pane builds the chat with the same code. `--before` keeps
 //       what came before a time (a running bridge replays the rest). `--max` keeps the last n user
 //       turns (default 40).
-import { readdirSync, statSync, openSync, readSync, closeSync, readFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
+//   node sessions.mjs delete --agent claude|codex --session <id> [--file <path>]
+//       Removes a session for good and prints { ok, message }. Claude: its <id>.jsonl and the <id>/
+//       folder beside it, only inside ~/.claude/projects. Codex: `codex delete --force <id>`.
+import { readdirSync, statSync, openSync, readSync, closeSync, readFileSync, existsSync, rmSync } from "node:fs";
+import { join, dirname, basename, resolve } from "node:path";
+import { spawnSync } from "node:child_process";
 import { homedir, tmpdir } from "node:os";
 
 const HOME = homedir();
@@ -289,6 +293,31 @@ function lastTurns(events, max) {
   return events;
 }
 
+/**
+ * Removes a session for good. @param {string} agent @param {string} session @param {string} file
+ * @returns {{ ok: boolean, message: string }}
+ */
+function removeSession(agent, session, file) {
+  if (!/^[0-9a-f-]{20,}$/i.test(session)) return { ok: false, message: "That isn't a session id." };
+  if (agent === "codex") {
+    const r = spawnSync("codex", ["delete", "--force", session], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    if (r.error) return { ok: false, message: `Couldn't run codex: ${r.error.message}` };
+    const out = `${r.stdout ?? ""}${r.stderr ?? ""}`.trim();
+    return r.status === 0 && !/^error/im.test(out) ? { ok: true, message: out } : { ok: false, message: out || "codex didn't delete it." };
+  }
+  // Claude: only <id>.jsonl inside ~/.claude/projects/<folder>/, and the <id>/ folder beside it.
+  const root = join(HOME, ".claude", "projects");
+  const path = resolve(file ?? "");
+  if (dirname(dirname(path)) !== root || basename(path) !== `${session}.jsonl`) return { ok: false, message: "That file isn't a Claude session." };
+  try {
+    rmSync(path, { force: true });
+    rmSync(join(dirname(path), session), { recursive: true, force: true });
+    return { ok: true, message: "" };
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 const [mode, ...rest] = process.argv.slice(2);
 const opts = flags(rest);
 if (mode === "list") {
@@ -297,7 +326,9 @@ if (mode === "list") {
 } else if (mode === "read") {
   const before = Number(opts.before) || 0, max = Number(opts.max) || 40;
   process.stdout.write(JSON.stringify(opts.agent === "codex" ? readCodex(opts.file, before, max) : readClaude(opts.file, before, max)));
+} else if (mode === "delete") {
+  process.stdout.write(JSON.stringify(removeSession(opts.agent, opts.session, opts.file)));
 } else {
-  process.stderr.write("usage: sessions.mjs list | read --agent claude|codex --file <path> [--before <ms>] [--max <n>]\n");
+  process.stderr.write("usage: sessions.mjs list | read --agent claude|codex --file <path> [--before <ms>] [--max <n>] | delete --agent claude|codex --session <id> [--file <path>]\n");
   process.exit(2);
 }

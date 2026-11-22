@@ -81,6 +81,16 @@ export async function readSession(agent, file, before, max = 40) {
   try { return r?.code === 0 ? JSON.parse(r.stdout) : []; } catch { return []; }
 }
 
+/**
+ * Removes a session for good (sessions.mjs delete): Claude's file and folder, or `codex delete --force`.
+ * @param {string} agent @param {string} session @param {string | null} file
+ * @returns {Promise<{ ok: boolean, message: string }>}
+ */
+export async function deleteSession(agent, session, file) {
+  const r = await exec("node", [sessionsScript(), "delete", "--agent", agent, "--session", session, ...(file ? ["--file", file] : [])]).catch((e) => ({ code: 1, stdout: "", stderr: String(e) }));
+  try { return JSON.parse(r.stdout); } catch { return { ok: false, message: (r.stderr || "Couldn't delete it.").trim() }; }
+}
+
 /** True when a bridge answers on that port. @param {number} port */
 async function reachable(port) {
   try { const s = await net.connect("127.0.0.1", port); s.close(); return true; } catch { return false; }
@@ -161,6 +171,9 @@ export class Bridge {
   stop() { return this.write({ type: "stop" }); }
   /** @param {string} id @param {"allow" | "deny"} behavior @param {boolean} always */
   decide(id, behavior, always) { return this.write({ type: "decide", id, behavior, always }); }
+
+  /** Ends the bridge (and its agent) for good. */
+  quit() { return this.write({ type: "quit" }).catch(() => null); }
 
   /** Drops the link. The bridge keeps running for a later pane. */
   close() {

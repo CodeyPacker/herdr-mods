@@ -213,7 +213,8 @@ export function chatView(v, t, width) {
       .text_size(12).font_family(mono()).text_color(t.muted)
       .child(svg(`${ICONS}/folder.svg`).size(13)).child(project?.path ?? chat.project))
     .child(roundButton(t, "chat-search", `${ICONS}/search.svg`, 36, () => {}))
-    .child(roundButton(t, "chat-info", `${ICONS}/info.svg`, 36, () => {}));
+    .child(roundButton(t, "chat-info", `${ICONS}/info.svg`, 36, () => {}))
+    .child(roundButton(t, "chat-delete", `${ICONS}/trash.svg`, 36, () => v.askDelete(chat.id)));
 
   const body = list.length === 0 && (chat.session || chat.loading)
     ? v_flex().flex_1().items_center().justify_center().child(div().text_size(13).text_color(t.dim).child(chat.loading ? "Loading\u2026" : "No messages to show."))

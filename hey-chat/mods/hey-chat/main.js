@@ -17,7 +17,7 @@ import { nextCommand, panes, props, run, focused, closeOverlay, theme, window, p
 import { loadMe, saveMe, pickPhoto, importPhoto, dropPhoto } from "./me.js";
 import { colors, paneBackground } from "./kit/theme.js";
 import { AGENTS } from "./pictures.js";
-import { Bridge, findAgents, listSessions, readSession } from "./agent.js";
+import { Bridge, findAgents, listSessions, readSession, deleteSession } from "./agent.js";
 import { applyEvent, resetThread, pendingAsk, clock, shortWhen } from "./messages.js";
 import { loadStore, saveStore, expand, tilde } from "./store.js";
 import { treeView, TREE_WIDTH } from "./views/tree.js";
@@ -78,6 +78,9 @@ export default class HeyChat extends View {
     const saved = /** @type {any} */ (shared(COLLAPSED));
     this.collapsed = saved && typeof saved === "object" ? { ...saved } : {};
     this.query = "";               // the search box's text, lower case
+    // Deleting a chat: { id, back, busy, error } while its y/n question shows. `back` is where the
+    // keyboard was, to return it on n.
+    this.deleting = null;
     this.loaded = false;           // the sessions have been listed
     this.openTools = new Set();    // tool cards shown open
     /** @type {Map<string, Bridge>} each real chat's link to its bridge */
@@ -100,7 +103,8 @@ export default class HeyChat extends View {
     });
     this.width = 0;
     // Where the keyboard is: "chat" (the message box), "tree", "search" (the tree's search box),
-    // "settings" (the initials box) or "ask" (a permission bar is waiting on y, a or n).
+    // "settings" (the initials box), "ask" (a permission bar is waiting on y, a or n) or
+    // "confirm" (the delete question is waiting on y or n).
     this.zone = "chat";
     this.cursor = "";              // the tree row j and k are on (keys.js treeItems)
     // For ctrl-j and ctrl-k (keys.js scrollChat): each message row's height by its id, the
@@ -446,6 +450,54 @@ export default class HeyChat extends View {
     this.bridges.get(chat.id)?.decide(card.ask, behavior, always).catch(() => null);
     this.focusInput();
     cx.notify();
+  }
+
+  // --- Deleting ----------------------------------------------------------------------------------
+
+  /** Asks whether to delete a chat (y / n). @param {string} id */
+  askDelete(id) {
+    if (!this.chats.some((c) => c.id === id)) return;
+    this.deleting = { id, back: this.zone === "tree" ? "tree" : "chat", busy: false, error: null };
+    this.zone = "confirm";
+    this.handle.focus();
+  }
+
+  /** Puts the question away. */
+  cancelDelete() {
+    const back = this.deleting?.back;
+    this.deleting = null;
+    if (back === "tree") { this.zone = "tree"; this.handle.focus(); } else this.focusInput();
+  }
+
+  /**
+   * Deletes the chat the question is about: ends its bridge, removes its session for good
+   * (sessions.mjs delete), and opens the next chat in its folder, or a new one there.
+   * @param {any} cx
+   */
+  confirmDelete(cx) {
+    const d = this.deleting;
+    if (!d || d.busy) return;
+    const chat = this.chats.find((c) => c.id === d.id);
+    if (!chat) { this.cancelDelete(); return; }
+    d.busy = true; d.error = null;
+    cx.spawn(async (cx) => {
+      const bridge = this.bridges.get(chat.id);
+      if (bridge) { await bridge.quit(); bridge.close(); this.bridges.delete(chat.id); }
+      if (chat.session) {
+        const r = await deleteSession(chat.agent, chat.session, chat.file ?? null);
+        if (!r.ok) { d.busy = false; d.error = r.message || "Couldn't delete it."; cx.notify(); return; }
+      }
+      this.chats = this.chats.filter((c) => c.id !== chat.id);
+      this.saveChats();
+      const back = d.back;
+      this.deleting = null;
+      if (this.chatId === chat.id) {
+        const next = this.chatsIn(chat.project)[0];
+        if (next) this.openChat(next.id, cx); else this.newChat(chat.project, cx);
+      }
+      if (back === "tree") this.focusTree(); else this.focusInput();
+      cx.notify();
+    });
   }
 
   // --- Settings ----------------------------------------------------------------------------------
