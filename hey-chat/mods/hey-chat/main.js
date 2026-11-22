@@ -28,42 +28,40 @@ import { handleKey, treeItems as treeItemsOf, LIST_PAD_TOP, LIST_PAD_BOTTOM } fr
 /** The space around and between the two cards. */
 const GAP = 10;
 
-/** The chat tab and the tab to return to, by workspace. */
-const CHAT_TABS = "hey-chat.tabs";
+/** Project folders and return tabs for dedicated chat tabs. */
+const CHAT_TABS = "hey-chat.projectTabs";
 
-/** Switches to a persistent chat tab, or back to the previous tab. @param {any} cx */
-async function toggle(cx) {
+/** @param {any} cx @param {string} [folder] */
+async function toggle(cx, folder) {
   const f = focused();
   const space = spaces().find(s => s.id === f?.space) ?? spaces().find(s => s.active);
   if (!space) return;
   const current = f?.tab ?? space.tabs.find(t => t.active)?.id;
   const saved = shared(CHAT_TABS) ?? {};
-  const state = saved[space.id] ?? {};
   const all = panes().slice();
-  const chatPane = (tab) => {
-    const rows = all.filter(p => p.tab === tab.id);
-    return rows.length === 1 && rows[0].mod === "hey-chat" ? rows[0] : null;
-  };
-  const tab = space.tabs.find(t => t.id === state.chat && chatPane(t)) ?? space.tabs.find(t => chatPane(t));
+  const currentChat = saved[current];
+  if (!folder && currentChat && all.some(p => p.tab === current && p.mod === "hey-chat")) {
+    const back = space.tabs.find(t => t.id === currentChat.previous)
+      ?? space.tabs.find(t => t.id !== current && !t.settled)
+      ?? space.tabs.find(t => t.id !== current);
+    if (back) run("tab.select", { id: back.id });
+    return;
+  }
+  folder = expand(folder ?? f?.cwd ?? space.folder ?? home()).replace(/\/$/, "") || "/";
+  const tab = space.tabs.find(t => saved[t.id]?.folder === folder && all.some(p => p.tab === t.id && p.mod === "hey-chat"));
   if (tab) {
-    if (current === tab.id) {
-      const back = space.tabs.find(t => t.id === state.previous && t.id !== tab.id)
-        ?? space.tabs.find(t => t.id !== tab.id && !t.settled)
-        ?? space.tabs.find(t => t.id !== tab.id);
-      if (back) run("tab.select", { id: back.id });
-    } else {
-      setShared(CHAT_TABS, { ...saved, [space.id]: { chat: tab.id, previous: current } });
+    if (current !== tab.id) {
+      setShared(CHAT_TABS, { ...saved, [tab.id]: { folder, previous: current } });
       run("tab.select", { id: tab.id });
     }
     return;
   }
-  // Replace the old zoomed chat pane without closing its terminal tab or stopping the agent.
-  const legacy = all.find(p => p.mod === "hey-chat" && p.tab === current);
-  run("tab.new", { name: "Hey, chat", space: space.id, mod: "hey-chat", props: f?.cwd ? { folder: f.cwd } : {} });
+  const legacy = all.find(p => p.mod === "hey-chat" && p.tab === current && all.some(other => other.tab === current && other.mod !== "hey-chat"));
+  run("tab.new", { name: `Hey, chat · ${folderName(folder)}`, space: space.id, mod: "hey-chat", props: { folder } });
   for (let i = 0; i < 30; i++) {
     const made = panes().find(p => p.mod === "hey-chat" && !all.some(old => old.pane === p.pane));
     if (made) {
-      setShared(CHAT_TABS, { ...saved, [space.id]: { chat: made.tab, previous: current } });
+      setShared(CHAT_TABS, { ...(shared(CHAT_TABS) ?? {}), [made.tab]: { folder, previous: current } });
       if (legacy) run("pane.close", { pane: legacy.pane });
       return;
     }
@@ -190,7 +188,14 @@ export default class HeyChat extends View {
     // A new chat in the folder the pane was opened from, ready to type into. Your sessions fill
     // the tree around it once they're listed.
     const start = checking() ? home() : (props()?.folder ?? focused()?.cwd ?? home());
-    const startId = this.addProject(start);
+    this.folder = expand(start).replace(/\/$/, "") || "/";
+    const own = panes().find(p => p.pane === props()?.pane);
+    if (own && !checking()) {
+      const tabs = shared(CHAT_TABS) ?? {};
+      setShared(CHAT_TABS, { ...tabs, [own.tab]: { ...tabs[own.tab], folder: this.folder } });
+      run("tab.rename", { id: own.tab, name: `Hey, chat · ${folderName(this.folder)}` });
+    }
+    const startId = this.addProject(this.folder);
     this.collapsed = { ...this.collapsed, [startId]: false };
     this.newChat(startId, cx);
     // The message box has the keyboard when the pane opens. The pane isn't drawn yet, so again once it is.
@@ -252,17 +257,18 @@ export default class HeyChat extends View {
     const initialChat = this.chatId;
     const [s, sessions] = await Promise.all([loadStore(), listSessions()]);
     for (const p of s.projects) {
-      if (!p?.path) continue;
+      if (!p?.path || (this.folder && expand(p.path) !== this.folder)) continue;
       const id = this.addProject(expand(p.path), p.id);
       if (p.made) { const made = this.project(id); if (made) made.made = true; }
     }
     for (const c of s.chats) {
-      if (!c?.id || !c.session || this.chats.some((x) => x.id === c.id)) continue;
+      if ((this.folder && c.cwd !== this.folder) || !c?.id || !c.session || this.chats.some((x) => x.id === c.id)) continue;
       const chat = { ...c, cwd: String(c.cwd ?? ""), project: this.addProject(String(c.cwd ?? ""), c.project), real: true, thread: [] };
       resetThread(chat);
       this.chats.push(chat);
     }
     for (const x of sessions) {
+      if (this.folder && x.cwd !== this.folder) continue;
       const known = this.chats.find((c) => c.session === x.session);
       const facts = { file: x.file, model: x.model ?? known?.model ?? null, last: x.last, lastFrom: x.lastFrom, stamp: Math.max(known?.stamp ?? 0, x.updatedAt), time: shortWhen(x.updatedAt) };
       if (known) { Object.assign(known, facts); continue; }
@@ -271,10 +277,11 @@ export default class HeyChat extends View {
       resetThread(chat);
       this.chats.push(chat);
     }
+    const active = s.activeChats?.[this.folder] ?? s.activeChat;
     // Do not replace a conversation the user chose while sessions were loading.
-    if (this.chatId === initialChat && !this.busy(this.chat(initialChat)) && !this.chat(initialChat)?.session && !this.chat(initialChat)?.thread.length && this.chats.some(c => c.id === s.activeChat)) {
-      this.restoring = { id: s.activeChat, pending: true, version: 0 };
-      this.openChat(s.activeChat, cx);
+    if (this.chatId === initialChat && !this.busy(this.chat(initialChat)) && !this.chat(initialChat)?.session && !this.chat(initialChat)?.thread.length && this.chats.some(c => c.id === active)) {
+      this.restoring = { id: active, pending: true, version: 0 };
+      this.openChat(active, cx);
       const restored = this.chat(this.chatId);
       this.setCollapsed(restored.project, false);
     }
@@ -302,7 +309,7 @@ export default class HeyChat extends View {
   }
 
   /** Saves the real chats. */
-  saveChats() { return saveStore(this.chats, this.projects, this.chatId).catch(e => console.error("Hey, chat couldn't save its conversations:", e)); }
+  saveChats() { return saveStore(this.chats, this.projects, this.chatId, this.folder).catch(e => console.error("Hey, chat couldn't save its conversations:", e)); }
 
   /** @param {string} id */
   chat(id) { return this.chats.find((c) => c.id === id) ?? this.chats[0]; }
@@ -316,7 +323,7 @@ export default class HeyChat extends View {
 
   /** The two chats with the newest messages, from any project. */
   recentIds() {
-    return this.chats.slice().sort((a, b) => b.stamp - a.stamp).slice(0, 2).map((c) => c.id);
+    return this.folder ? [] : this.chats.slice().sort((a, b) => b.stamp - a.stamp).slice(0, 2).map((c) => c.id);
   }
 
   /** True while a chat's agent works on your message: the typing dots and "Thinking…". @param {any} chat */
@@ -505,21 +512,14 @@ export default class HeyChat extends View {
   }
 
   /**
-   * Makes a project: asks for its folder (an existing one or a new one) and its name, then opens
-   * a new chat in it. A folder that already is a project just gets the new chat.
+   * Opens a folder in its own chat tab, or focuses that project’s existing tab.
    * @param {any} cx
    */
   newProject(cx) {
     cx.spawn(async (cx) => {
       const picked = await pickProject();
       if (!picked) return;
-      const known = this.projects.find((p) => p.cwd === picked.cwd);
-      const id = known ? known.id : this.addProject(picked.cwd, picked.name);
-      const project = this.project(id);
-      if (project) project.made = true;
-      this.saveChats();
-      this.newChat(id, cx);
-      this.focusInput();
+      await toggle(cx, picked.cwd);
       cx.notify();
     });
   }
@@ -1104,7 +1104,7 @@ export default class HeyChat extends View {
       if (!this.chats.some((c) => c.id === this.chatId)) {
         const next = this.chats.slice().sort((a, b) => b.stamp - a.stamp)[0];
         if (next) this.openChat(next.id, cx);
-        else { const id = this.addProject(home()); this.newChat(id, cx); }
+        else { const id = this.addProject(this.folder ?? home()); this.newChat(id, cx); }
       }
       if (back === "tree") this.focusTree(); else this.focusInput();
       cx.notify();

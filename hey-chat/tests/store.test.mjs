@@ -36,3 +36,34 @@ test('saving an existing store preserves the bridge id and latest session on reo
   assert.equal(reopened.selectedModel, 'chosen-model');
   assert.equal(reopened.title, 'Latest title');
 });
+
+
+test('independent project saves merge, retry conflicts, and preserve project selections', async t => {
+  const root = await fs.mkdtemp(join(tmpdir(), 'hey-chat-projects-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const code = (await fs.readFile(new URL('../mods/hey-chat/store.js', import.meta.url), 'utf8'))
+    .replace(/^import .*;\n/gm, '').replace(/export /g, '');
+  let text = null;
+  let conflict = true;
+  const read = async () => text;
+  const write = async (_file, next, expected) => {
+    if (conflict) {
+      conflict = false;
+      text = JSON.stringify({ chats: [{ id: 'foreign', cwd: '/b', session: 'b' }], projects: [], activeChats: { '/b': 'foreign' } });
+      throw new Error('stale snapshot');
+    }
+    if (text !== expected) throw new Error('stale snapshot');
+    text = next;
+  };
+  const make = () => new Function('fs', 'readTextFile', 'writeTextFile', 'appHome', 'home', 'checking', `${code}\nreturn {saveStore, loadStore};`)(
+    { mkdir: fs.mkdir }, read, write, () => root, () => root, () => false);
+  const a = make(), b = make();
+  const chat = (id, cwd) => ({ id, cwd, session: id, project: id });
+  await a.saveStore([chat('a', '/a')], [], 'a', '/a');
+  assert.deepEqual((await a.loadStore()).chats.map(c => c.id).sort(), ['a', 'foreign']);
+  await Promise.all([a.saveStore([chat('a', '/a')], [], 'a', '/a'), b.saveStore([chat('b', '/b')], [], 'b', '/b')]);
+  await a.saveStore([], [], '', '/a');
+  const stored = await b.loadStore();
+  assert.deepEqual(stored.chats.map(c => c.id), ['b']);
+  assert.equal(stored.activeChats['/b'], 'b');
+});

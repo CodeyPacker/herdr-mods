@@ -129,3 +129,20 @@ test('a layout correction after the final scroll stays covered until the correct
   timers.shift().fn(cx);
   assert.equal(v.restoring, null);
 });
+
+
+test('project tabs load and link only their own chats and restore their own selection', async () => {
+  const store = stored('other');
+  store.chats.push({ id: 'foreign', session: 'foreign-session', cwd: '/elsewhere', agent: 'codex' });
+  store.projects.push({ id: 'foreign-project', path: '/elsewhere' });
+  store.activeChats = { '/tmp': 'last', '/elsewhere': 'foreign' };
+  const { v, cx, jobs } = pane(store);
+  v.folder = '/tmp';
+  const linked = [];
+  v.link = async chat => { linked.push(chat.id); };
+  await v.loadChats(cx);
+  await Promise.all(jobs);
+  assert.equal(v.chatId, 'last');
+  assert.equal(v.chats.some(c => c.id === 'foreign'), false);
+  assert.deepEqual([...new Set(linked)].sort(), ['last', 'other']);
+});

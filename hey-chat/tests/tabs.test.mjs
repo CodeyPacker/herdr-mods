@@ -24,22 +24,22 @@ function setup({ legacy = false, otherSpace = false } = {}) {
       panes.push({ pane: 'chat-pane', tab: 'chat', mod: args.mod });
       focus = { space: 'work', tab: 'chat', cwd: null };
     };
-    if (name === 'tab.select') focus = { ...focus, tab: args.id };
+    if (name === 'tab.select') focus = { ...focus, tab: args.id, cwd: args.id === 'chat' ? null : '/project' };
     if (name === 'pane.close') panes.splice(panes.findIndex(p => p.pane === args.pane), 1);
   };
-  const toggle = new Function('focused', 'spaces', 'panes', 'shared', 'setShared', 'run', source + '\nreturn toggle;')(
-    () => focus, () => spaces, () => panes, () => saved, (_key, value) => { saved = value; }, run);
+  const toggle = new Function('focused', 'spaces', 'panes', 'shared', 'setShared', 'run', 'expand', 'home', 'folderName', source + '\nreturn toggle;')(
+    () => focus, () => spaces, () => panes, () => saved, (_key, value) => { saved = value; }, run, x => x, () => '/home', x => x.split('/').pop());
   const cx = { timer: { after(_ms, done) { pending?.(); pending = null; done(); } } };
-  return { toggle: () => toggle(cx), commands, panes, work, focus: () => focus,
-    setFocus: id => { focus = { ...focus, tab: id }; }, saved: () => saved,
+  return { toggle: folder => toggle(cx, folder), commands, panes, work, focus: () => focus,
+    setFocus: id => { focus = { ...focus, tab: id, cwd: id === 'chat' ? null : '/project' }; }, saved: () => saved,
     setSaved: value => { saved = value; } };
 }
 
 test('shortcut creates one dedicated chat tab and switches back without destroying it', async () => {
   const s = setup();
   await s.toggle();
-  assert.deepEqual(s.commands[0], { name: 'tab.new', args: { name: 'Hey, chat', space: 'work', mod: 'hey-chat', props: { folder: '/project' } } });
-  assert.deepEqual(s.saved(), { work: { chat: 'chat', previous: 'terminal' } });
+  assert.deepEqual(s.commands[0], { name: 'tab.new', args: { name: 'Hey, chat · project', space: 'work', mod: 'hey-chat', props: { folder: '/project' } } });
+  assert.deepEqual(s.saved(), { chat: { folder: '/project', previous: 'terminal' } });
   const chatPane = s.panes.find(p => p.mod === 'hey-chat');
   await s.toggle();
   assert.equal(s.focus().tab, 'terminal');
@@ -75,7 +75,7 @@ test('chat tabs stay in their workspace and stale return ids fall back to an exi
   const s = setup({ otherSpace: true });
   await s.toggle();
   assert.equal(s.commands[0].name, 'tab.new');
-  s.setSaved({ work: { chat: 'deleted-chat-id', previous: 'deleted-tab' } });
+  s.setSaved({ chat: { folder: '/project', previous: 'deleted-tab' } });
   await s.toggle();
   assert.equal(s.focus().tab, 'terminal');
   assert.equal(s.commands.filter(c => c.name === 'tab.new').length, 1, 'find the existing chat pane even if renamed or its saved id is stale');
@@ -89,4 +89,15 @@ test('a chat that is the only tab remains open', async () => {
   await s.toggle();
   assert.equal(s.commands.length, count);
   assert.equal(s.focus().tab, 'chat');
+});
+
+
+test('opening the same project focuses its tab and a different project creates another', async () => {
+  const s = setup();
+  await s.toggle('/project');
+  await s.toggle('/project');
+  assert.equal(s.commands.filter(c => c.name === 'tab.new').length, 1);
+  await s.toggle('/other');
+  assert.equal(s.commands.filter(c => c.name === 'tab.new').length, 2);
+  assert.equal(s.commands.filter(c => c.name === 'tab.new').at(-1).args.props.folder, '/other');
 });

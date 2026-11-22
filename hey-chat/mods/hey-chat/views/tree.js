@@ -163,8 +163,11 @@ export function treeView(v, t) {
       .child(h_flex().flex_1().min_w(0).h(36).px(12).gap(8).items_center().rounded_full().bg(t.raised).border_1().border_color(t.border)
         .child(svg(`${ICONS}/search.svg`).size(15).flex_none().text_color(t.dim))
         .child(Input.new(v.searchInput).flex_1().text_size(13.5).text_color(t.foreground)))
-      .child(roundButton(t, "new-project", `${ICONS}/folder-plus.svg`, 36, (cx) => { v.newProject(cx); cx.notify(); }))
       .child(roundButton(t, "new-here", `${ICONS}/pencil.svg`, 36, (cx) => { v.newChat(v.chat(v.chatId).project, cx); cx.notify(); })))
+    .child(h_flex().id("open-project").flex_none().mx(14).mb(8).h(28).gap(6).items_center().cursor_pointer().text_size(12.5).text_color(t.muted)
+      .hover(s => s.text_color(t.foreground))
+      .on_click((_e, cx) => { v.newProject(cx); cx.notify(); })
+      .child(svg(`${ICONS}/folder-plus.svg`).size(14)).child("Open project"))
     // Recent, then the projects.
     // Recent (except while searching), then the projects.
     .child(v_flex().id("tree-scroll").flex_1().min_h(0).overflow_y_scrollbar().track_scroll(v.treeScroll).px(8).pb(8).gap(2)

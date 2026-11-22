@@ -7,7 +7,7 @@
 export const LIST_PAD_TOP = 16, LIST_PAD_BOTTOM = 10;
 
 /** The key hints the tree shows while it has the keyboard. */
-export const TREE_HINTS = [["j k", "move"], ["v", "select"], ["l", "open"], ["h", "close"], ["d", "delete"], ["n", "new chat"], ["N", "new project"], ["⌃l", "chat"]];
+export const TREE_HINTS = [["j k", "move"], ["v", "select"], ["l", "open"], ["h", "close"], ["d", "delete"], ["n", "new chat"], ["N", "open project"], ["⌃l", "chat"]];
 
 /** The key hints while a selection is going. */
 export const SELECT_HINTS = [["j k", "extend"], ["d", "delete"], ["esc", "cancel"]];
