@@ -34,16 +34,16 @@ export async function loadStore() {
 }
 
 /**
- * Saves the real chats (not the samples) and the folders they're in.
+ * Saves the chats that have a session (a new chat you never wrote in has none) and the folders they're in.
  * @param {any[]} chats @param {Project[]} projects
  */
 export async function saveStore(chats, projects) {
   if (checking()) return;
-  const real = chats.filter((c) => c.real).map((c) => ({
+  const real = chats.filter((c) => c.session).map((c) => ({
     id: c.id, project: c.project, cwd: c.cwd, agent: c.agent, title: c.title, session: c.session ?? null, stamp: c.stamp, time: c.time,
   }));
   const used = new Set(real.map((c) => c.project));
-  const folders = projects.filter((p) => p.saved || used.has(p.id)).map((p) => ({ id: p.id, path: p.path }));
+  const folders = projects.filter((p) => used.has(p.id)).map((p) => ({ id: p.id, path: p.path }));
   await fs.mkdir(file().replace(/\/[^/]+$/, ""), { recursive: true }).catch(() => null);
   await writeTextFile(file(), `${JSON.stringify({ chats: real, projects: folders }, null, 2)}\n`, null).catch(() => null);
 }

@@ -7,7 +7,7 @@ import { roundButton, focusBorder } from "./tree.js";
 import { LIST_PAD_TOP, LIST_PAD_BOTTOM } from "../keys.js";
 
 /** @typedef {import("../kit/theme.js").Theme} Theme */
-/** @typedef {import("../sample.js").Message} Message */
+/** @typedef {import("../messages.js").Message} Message */
 
 const ICONS = "mods/hey-chat/icons";
 
@@ -196,7 +196,7 @@ export function chatView(v, t, width) {
   const ask = v.waiting(chat);
   const typingHere = v.busy(chat) && !ask;
   const statusColor = ask ? t.blocked : typingHere ? t.working : t.done;
-  const status = ask ? "Waiting for you" : typingHere ? "Thinking\u2026" : chat.real ? "Ready" : "Sample chat";
+  const status = ask ? "Waiting for you" : typingHere ? "Thinking\u2026" : chat.loading ? "Loading\u2026" : "Ready";
   const max = Math.max(240, Math.round((width - 40) * 0.62));
   const list = chat.thread;
   const input = v.inputFor(chat.agent);
@@ -215,7 +215,9 @@ export function chatView(v, t, width) {
     .child(roundButton(t, "chat-search", `${ICONS}/search.svg`, 36, () => {}))
     .child(roundButton(t, "chat-info", `${ICONS}/info.svg`, 36, () => {}));
 
-  const body = list.length === 0
+  const body = list.length === 0 && (chat.session || chat.loading)
+    ? v_flex().flex_1().items_center().justify_center().child(div().text_size(13).text_color(t.dim).child(chat.loading ? "Loading\u2026" : "No messages to show."))
+    : list.length === 0
     ? emptyChat(v, t)
     : v_flex().id("messages").flex_1().min_h(0).overflow_y_scrollbar().track_scroll(v.scroll)
       .px(20).pt(LIST_PAD_TOP).pb(LIST_PAD_BOTTOM)

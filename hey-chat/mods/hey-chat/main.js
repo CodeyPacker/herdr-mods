@@ -1,11 +1,11 @@
 // Hey, chat: a Messenger-style chat with Claude Code or Codex, grouped by project folder.
 // Scope and design: ../../SCOPE.md. Built so far: A1 (the pane, its layout and the opacity rules),
-// A2 (keys and focus), A3 (Settings and your picture), A4 (Claude through the bridge) and A5 (Codex).
-// The sample chats stay until existing sessions fill the tree (A6). The pieces:
-//   sample.js     the sample projects and chats
-//   store.js      the real chats and their folders, kept in <appHome>/data/hey-chat/chats.json
-//   agent.js      finding the CLIs, and each chat's link to its bridge
+// A2 (keys and focus), A3 (Settings and your picture), A4 (Claude through the bridge), A5 (Codex)
+// and A6 (your existing sessions, and search). The pieces:
+//   store.js      the chats made here and their folders, kept in <appHome>/data/hey-chat/chats.json
+//   agent.js      finding the CLIs, listing and reading sessions, and each chat's link to its bridge
 //   bridge.mjs    the Node program that runs a chat's agent (started by agent.js)
+//   sessions.mjs  the Node program that lists your Claude and Codex sessions and reads their history
 //   messages.js   bridge events to messages, tool cards and permission cards
 //   pictures.js   Claude's, Codex's and your profile pictures
 //   me.js         your initials, color and picture, and copying a photo in
@@ -13,13 +13,12 @@
 //   views/        the sidebar (tree.js), the chat (chat.js) and the Settings card (settings.js)
 import { View } from "gpui-kit";
 import { h_flex, InputState, ScrollHandle } from "gpui-base";
-import { nextCommand, panes, props, run, focused, closeOverlay, theme, window, playSound, checking } from "herdr";
+import { nextCommand, panes, props, run, focused, closeOverlay, theme, window, playSound, checking, shared, setShared, home } from "herdr";
 import { loadMe, saveMe, pickPhoto, importPhoto, dropPhoto } from "./me.js";
 import { colors, paneBackground } from "./kit/theme.js";
-import { PROJECTS, sampleChats } from "./sample.js";
 import { AGENTS } from "./pictures.js";
-import { Bridge, findAgents } from "./agent.js";
-import { applyEvent, resetThread, pendingAsk, clock } from "./messages.js";
+import { Bridge, findAgents, listSessions, readSession } from "./agent.js";
+import { applyEvent, resetThread, pendingAsk, clock, shortWhen } from "./messages.js";
 import { loadStore, saveStore, expand, tilde } from "./store.js";
 import { treeView, TREE_WIDTH } from "./views/tree.js";
 import { chatView } from "./views/chat.js";
@@ -49,6 +48,9 @@ async function toggle(cx) {
   }
 }
 
+/** Which projects are closed in the tree, kept across panes and restarts: { [project]: true }. */
+const COLLAPSED = "hey-chat.collapsed";
+
 /** A folder's last part. @param {string} path */
 function folderName(path) {
   return path.split(/[\\/]/).filter(Boolean).pop() ?? path;
@@ -63,15 +65,21 @@ export default class HeyChat extends View {
       cx.spawn(async (cx) => { try { await toggle(cx); } finally { closeOverlay(overlay); } });
       return;
     }
-    /** @type {any[]} every chat: the samples, and real ones ({ real: true, cwd, session, working, ... }) */
-    this.chats = sampleChats();
+    /**
+     * Every chat: { id, project, cwd, agent, title, time, stamp, session, file, last, lastFrom,
+     * thread, working, ... }. `file` is its session file, once the agent has one.
+     * @type {any[]}
+     */
+    this.chats = [];
     /** @type {import("./store.js").Project[]} */
-    this.projects = PROJECTS.map((p) => ({ ...p, cwd: expand(p.path) }));
-    this.chatId = "tour";
-    this.typing = "tour";          // the sample chat showing the typing dots, or null
-    this.unread = { sync: true, readme: true };
-    this.collapsed = { dotfiles: true };
-    this.openTools = new Set(["c4"]); // tool cards shown open
+    this.projects = [];
+    this.chatId = "";
+    this.unread = {};
+    const saved = /** @type {any} */ (shared(COLLAPSED));
+    this.collapsed = saved && typeof saved === "object" ? { ...saved } : {};
+    this.query = "";               // the search box's text, lower case
+    this.loaded = false;           // the sessions have been listed
+    this.openTools = new Set();    // tool cards shown open
     /** @type {Map<string, Bridge>} each real chat's link to its bridge */
     this.bridges = new Map();
     this.agents = null;            // the CLIs on PATH, once found: ["node", "claude", ...]
@@ -94,14 +102,17 @@ export default class HeyChat extends View {
     // Where the keyboard is: "chat" (the message box), "tree", "search" (the tree's search box),
     // "settings" (the initials box) or "ask" (a permission bar is waiting on y, a or n).
     this.zone = "chat";
-    this.cursor = "c:tour";        // the tree row j and k are on (keys.js treeItems)
+    this.cursor = "";              // the tree row j and k are on (keys.js treeItems)
     // For ctrl-j and ctrl-k (keys.js scrollChat): each message row's height by its id, the
     // messages area's height, the scroll position the keys believe in, and whether it is at the end.
     this.rowHeights = new Map();
     this.viewH = 0; this.top = 0; this.atBottom = true;
     this.scroll = ScrollHandle.new();
+    this.treeScroll = ScrollHandle.new(); // the sidebar list, scrolled to the j/k cursor
+    this.treeKeys = [];            // the sidebar list's rows by cursor key, as views/tree.js drew them
     this.searchInput = InputState.new({ placeholder: "Search" });
     this.searchInput.on("focus", (_e, cx) => { this.zone = "search"; cx.notify(); });
+    this.searchInput.on("change", (_e, cx) => { this.query = this.searchInput.value().trim().toLowerCase(); cx.notify(); });
     // The message box, one per agent so its placeholder names who you're talking to.
     this.inputs = {};
     for (const [id, a] of Object.entries(AGENTS)) {
@@ -113,16 +124,19 @@ export default class HeyChat extends View {
     }
     this.handle = cx.focus_handle();
     cx.spawn(async (cx) => { for (;;) { this.command(await nextCommand(), cx); cx.notify(); } });
-    this.scrollDown();
+    // A new chat in the folder the pane was opened from, ready to type into. Your sessions fill
+    // the tree around it once they're listed.
+    const start = checking() ? home() : (props()?.folder ?? focused()?.cwd ?? home());
+    const startId = this.addProject(start);
+    this.collapsed = { ...this.collapsed, [startId]: false };
+    this.newChat(startId, cx);
     // The message box has the keyboard when the pane opens. The pane isn't drawn yet, so again once it is.
     this.focusInput();
     cx.timer.after(50, () => { if (this.zone === "chat") this.focusInput(); });
     cx.timer.after(400, () => { if (this.zone === "chat") this.focusInput(); });
     if (checking()) return;
-    // The folder the pane was opened from is a project. Then the saved chats, reconnected to
-    // their bridges where those still run, and the CLIs on PATH.
-    const start = props()?.folder ?? focused()?.cwd ?? null;
-    if (start) { const id = this.addProject(start); this.collapsed = { ...this.collapsed, [id]: false }; }
+    // Your sessions, the chats made here (reconnected to their bridges where those still run),
+    // and the CLIs on PATH.
     cx.spawn(async (cx) => { await this.loadChats(cx); cx.notify(); });
     cx.spawn(async (cx) => { this.agents = await findAgents(); cx.notify(); });
   }
@@ -130,7 +144,7 @@ export default class HeyChat extends View {
   async close() {
     if (this.launcher) return;
     for (const b of this.bridges.values()) b.close();
-    this.scroll.release(); this.searchInput.release(); this.initialsInput.release();
+    this.scroll.release(); this.treeScroll.release(); this.searchInput.release(); this.initialsInput.release();
     for (const box of Object.values(this.inputs)) box.release();
   }
 
@@ -147,25 +161,66 @@ export default class HeyChat extends View {
     if (found) return found.id;
     let name = id ?? folderName(cwd);
     if (this.projects.some((p) => p.id === name)) name = `${name} (${folderName(cwd.replace(/[\\/][^\\/]*$/, ""))})`;
-    this.projects.unshift({ id: name, path: tilde(cwd), cwd, saved: true });
+    this.projects.push({ id: name, path: tilde(cwd), cwd, saved: true });
+    // A project you haven't opened or closed starts closed.
+    if (this.collapsed[name] === undefined) this.collapsed = { ...this.collapsed, [name]: true };
     return name;
   }
+
+  /** The projects the tree shows, the one with the newest chat first. While searching, only those with a match. */
+  visibleProjects() {
+    const newest = (/** @type {string} */ id) => Math.max(0, ...this.chatsIn(id).map((c) => c.stamp ?? 0));
+    return this.projects.filter((p) => !this.query || this.chatsIn(p.id).length > 0)
+      .sort((a, b) => newest(b.id) - newest(a.id));
+  }
+
+  /** True when a project shows its chats: opened, or holding a search match. @param {string} id */
+  isOpen(id) { return Boolean(this.query) || !this.collapsed[id]; }
 
   /** @param {string} id */
   project(id) { return this.projects.find((p) => p.id === id) ?? null; }
 
-  /** Loads the saved chats and links each one whose bridge still runs. @param {any} cx */
+  /**
+   * Fills the tree: the chats made here (chats.json), then every Claude and Codex session on this
+   * computer (sessions.mjs), one chat per session. Chats whose bridge still runs are linked again.
+   * @param {any} cx
+   */
   async loadChats(cx) {
-    const s = await loadStore();
+    const [s, sessions] = await Promise.all([loadStore(), listSessions()]);
     for (const p of s.projects) if (p?.path) this.addProject(expand(p.path), p.id);
     for (const c of s.chats) {
-      if (!c?.id || this.chats.some((x) => x.id === c.id)) continue;
-      const cwd = String(c.cwd ?? "");
-      const chat = { ...c, project: this.addProject(cwd, c.project), real: true, thread: [] };
+      if (!c?.id || !c.session || this.chats.some((x) => x.id === c.id)) continue;
+      const chat = { ...c, cwd: String(c.cwd ?? ""), project: this.addProject(String(c.cwd ?? ""), c.project), real: true, thread: [] };
       resetThread(chat);
       this.chats.push(chat);
-      this.link(chat, cx, false);
     }
+    for (const x of sessions) {
+      const known = this.chats.find((c) => c.session === x.session);
+      const facts = { file: x.file, last: x.last, lastFrom: x.lastFrom, stamp: Math.max(known?.stamp ?? 0, x.updatedAt), time: shortWhen(x.updatedAt) };
+      if (known) { Object.assign(known, facts); continue; }
+      const chat = { id: `${x.agent}-${x.session}`, project: this.addProject(x.cwd), cwd: x.cwd, agent: x.agent, title: x.title,
+        session: x.session, real: true, thread: [], ...facts };
+      resetThread(chat);
+      this.chats.push(chat);
+    }
+    this.loaded = true;
+    for (const c of this.chats) if (c.session) this.link(c, cx, false);
+    cx.notify();
+  }
+
+  /**
+   * Shows a chat's history from its session file: what came before `before` (when a bridge
+   * replays the rest), or its last turns.
+   * @param {any} chat @param {number} before @param {any} cx
+   */
+  async loadHistory(chat, before, cx) {
+    if (!chat.file) return;
+    chat.loading = true; cx.notify();
+    const events = await readSession(chat.agent, chat.file, before);
+    for (const ev of events) applyEvent(chat, ev);
+    chat.working = false;
+    chat.loading = false;
+    if (chat.id === this.chatId) this.scrollDown();
     cx.notify();
   }
 
@@ -175,9 +230,11 @@ export default class HeyChat extends View {
   /** @param {string} id */
   chat(id) { return this.chats.find((c) => c.id === id) ?? this.chats[0]; }
 
-  /** A project's chats, newest first. @param {string} project */
+  /** A project's chats, newest first. While searching, only those whose title, last message or folder match. @param {string} project */
   chatsIn(project) {
-    return this.chats.filter((c) => c.project === project).sort((a, b) => b.stamp - a.stamp);
+    const q = this.query;
+    return this.chats.filter((c) => c.project === project && (!q || `${c.title} ${c.last ?? ""} ${c.project}`.toLowerCase().includes(q)))
+      .sort((a, b) => b.stamp - a.stamp);
   }
 
   /** The two chats with the newest messages, from any project. */
@@ -187,12 +244,12 @@ export default class HeyChat extends View {
 
   /** True while a chat's agent works on your message: the typing dots and "Thinking…". @param {any} chat */
   busy(chat) {
-    return chat.real ? Boolean(chat.working || chat.connecting) : this.typing === chat.id;
+    return Boolean(chat?.working || chat?.connecting);
   }
 
   /** The permission card a chat is waiting on you for, or null. @param {any} chat */
   waiting(chat) {
-    return chat.real ? pendingAsk(chat) : null;
+    return chat ? pendingAsk(chat) : null;
   }
 
   /** The open chat's agent's name. */
@@ -216,6 +273,13 @@ export default class HeyChat extends View {
     this.cursor = this.collapsed[project] ? `p:${project}` : `c:${this.chatId}`;
     this.zone = "tree";
     this.handle.focus();
+    this.revealCursor();
+  }
+
+  /** Scrolls the sidebar so the cursor's row shows. */
+  revealCursor() {
+    const i = this.treeKeys.indexOf(this.cursor);
+    if (i >= 0) this.treeScroll.scroll_to_item(i);
   }
 
   /** The open chat's message rows in order, by id, as the keys see them. */
@@ -235,28 +299,43 @@ export default class HeyChat extends View {
 
   /** Opens a chat and gives its message box the keyboard. @param {string} id @param {any} cx */
   openChat(id, cx) {
+    // A new chat you never wrote in goes away when you leave it.
+    this.chats = this.chats.filter((c) => c.id === id || c.session || c.thread.length > 0);
     this.chatId = id;
     this.cursor = `c:${id}`;
     this.unread = { ...this.unread, [id]: false };
     const chat = this.chat(id);
-    if (chat.real && !this.bridges.has(id)) this.link(chat, cx, false);
+    if (!this.bridges.has(id) && chat.session) {
+      // A running bridge replays its part (link reads the file for the rest). Otherwise the
+      // history comes from the session file.
+      cx.spawn(async (cx) => {
+        const bridge = await this.link(chat, cx, false);
+        if (!bridge && chat.thread.length === 0 && !chat.loading) await this.loadHistory(chat, 0, cx);
+      });
+    }
     this.scrollDown();
     this.focusInput();
   }
 
   /** @param {string} project */
   toggleProject(project) {
-    this.collapsed = { ...this.collapsed, [project]: !this.collapsed[project] };
+    this.setCollapsed(project, !this.collapsed[project]);
+  }
+
+  /** Opens or closes a project, and remembers it. @param {string} project @param {boolean} closed */
+  setCollapsed(project, closed) {
+    this.collapsed = { ...this.collapsed, [project]: closed };
+    if (!checking()) setShared(COLLAPSED, this.collapsed);
   }
 
   /** Starts an empty chat in a project, with the agent of the chat that is open. @param {string} project @param {any} cx */
   newChat(project, cx) {
     const p = this.project(project);
     const id = `c${Date.now().toString(36)}`;
-    const chat = { id, project, cwd: p?.cwd ?? "", agent: this.chat(this.chatId).agent, title: "New chat", time: "Now", stamp: Date.now(), real: true, session: null, thread: [] };
+    const chat = { id, project, cwd: p?.cwd ?? "", agent: this.chats.find((c) => c.id === this.chatId)?.agent ?? "claude", title: "New chat", time: "Now", stamp: Date.now(), real: true, session: null, thread: [] };
     resetThread(chat);
     this.chats.push(chat);
-    this.collapsed = { ...this.collapsed, [project]: false };
+    if (this.collapsed[project]) this.setCollapsed(project, false);
     this.openChat(id, cx);
   }
 
@@ -283,7 +362,7 @@ export default class HeyChat extends View {
           // has what comes next, so what the chat already shows stays.
           const running = await bridge.running();
           if (!launch && !running) { this.bridges.delete(chat.id); resolve(null); return; }
-          if (running) resetThread(chat);
+          if (running) { resetThread(chat); await this.loadHistory(chat, bridge.startedAt, cx); }
           const opened = bridge.open(cx);
           // open() reads until the link drops; it is linked once the socket exists.
           for (let i = 0; i < 100 && !bridge.sock && this.bridges.get(chat.id) === bridge; i++) await new Promise((d) => cx.timer.after(50, d));
@@ -319,8 +398,7 @@ export default class HeyChat extends View {
   }
 
   /**
-   * Sends the message box's text. A real chat goes to its agent through the bridge. A sample
-   * chat gets a sample reply.
+   * Sends the message box's text to the chat's agent through its bridge.
    * @param {any} cx
    */
   send(cx) {
@@ -329,8 +407,7 @@ export default class HeyChat extends View {
     const text = box.value().trim();
     if (!text || this.busy(chat)) return;
     box.set_value("");
-    if (!chat.real) { this.sampleReply(chat, text, cx); return; }
-    if (chat.thread.length === 0) chat.title = text.length > 32 ? `${text.slice(0, 31)}…` : text;
+    if (chat.thread.length === 0 && !chat.session) chat.title = text.length > 32 ? `${text.slice(0, 31)}…` : text;
     chat.stamp = Date.now(); chat.time = clock(Date.now());
     this.saveChats();
     const missing = this.missingCli(chat.agent);
@@ -369,22 +446,6 @@ export default class HeyChat extends View {
     this.bridges.get(chat.id)?.decide(card.ask, behavior, always).catch(() => null);
     this.focusInput();
     cx.notify();
-  }
-
-  /** A sample chat's reply, until existing sessions replace the samples (A6). @param {any} chat @param {string} text @param {any} cx */
-  sampleReply(chat, text, cx) {
-    const time = clock(Date.now());
-    chat.thread.push({ id: `m${Date.now()}`, kind: "text", from: "me", text, time });
-    chat.time = time; chat.stamp = Date.now();
-    this.typing = chat.id;
-    this.scrollDown();
-    cx.timer.after(1600, (cx) => {
-      chat.thread.push({ id: `r${Date.now()}`, kind: "text", from: "agent", text: "This is a sample chat. Start a new chat to talk to Claude or Codex." });
-      if (this.typing === chat.id) this.typing = null;
-      if (this.chatId !== chat.id) this.unread = { ...this.unread, [chat.id]: true };
-      else this.scrollDown();
-      cx.notify();
-    });
   }
 
   // --- Settings ----------------------------------------------------------------------------------

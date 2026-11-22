@@ -14,10 +14,10 @@ export const TREE_HINTS = [["j k", "move"], ["l", "open"], ["h", "close"], ["⌃
  * @param {any} v the view @returns {string[]}
  */
 export function treeItems(v) {
-  const items = v.recentIds().map((/** @type {string} */ id) => `r:${id}`);
-  for (const p of v.projects) {
+  const items = v.query ? [] : v.recentIds().map((/** @type {string} */ id) => `r:${id}`);
+  for (const p of v.visibleProjects()) {
     items.push(`p:${p.id}`);
-    if (!v.collapsed[p.id]) for (const c of v.chatsIn(p.id)) items.push(`c:${c.id}`);
+    if (v.isOpen(p.id)) for (const c of v.chatsIn(p.id)) items.push(`c:${c.id}`);
   }
   return items;
 }
@@ -98,14 +98,15 @@ export function handleKey(v, e, cx) {
   else if (ks === "shift-g" || e.key === "G") v.cursor = items[items.length - 1];
   else if (ks === "l" || ks === "enter" || ks === "right") {
     if (!isProject) v.openChat(id, cx);
-    else if (v.collapsed[id]) v.collapsed = { ...v.collapsed, [id]: false };
-    else if (ks === "enter") v.collapsed = { ...v.collapsed, [id]: true };
+    else if (v.collapsed[id]) v.setCollapsed(id, false);
+    else if (ks === "enter") v.setCollapsed(id, true);
   } else if (ks === "h" || ks === "left") {
     if (cur.startsWith("r:")) { done(); return; }
     const project = isProject ? id : v.chat(id).project;
-    v.collapsed = { ...v.collapsed, [project]: true };
+    v.setCollapsed(project, true);
     v.cursor = `p:${project}`;
   } else if (ks === "escape") v.focusInput();
   else return;
+  v.revealCursor();
   done();
 }

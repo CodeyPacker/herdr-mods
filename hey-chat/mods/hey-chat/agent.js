@@ -56,6 +56,31 @@ function utf8(bytes) {
   return s;
 }
 
+/** The script that reads sessions (sessions.mjs). */
+function sessionsScript() {
+  return `${appHome().replace(/\\/g, "/")}/mods/hey-chat/sessions.mjs`;
+}
+
+/**
+ * Your existing Claude and Codex sessions, newest first (sessions.mjs list).
+ * @returns {Promise<{ agent: string, session: string, cwd: string, file: string, title: string, last: string, lastFrom: string, updatedAt: number }[]>}
+ */
+export async function listSessions() {
+  const r = await exec("node", [sessionsScript(), "list"]).catch(() => null);
+  try { return r?.code === 0 ? JSON.parse(r.stdout) : []; } catch { return []; }
+}
+
+/**
+ * A session's history as bridge events (sessions.mjs read): the last `max` messages you typed and
+ * what followed, or with `before`, only what came before that time.
+ * @param {string} agent @param {string} file @param {number} before @param {number} [max]
+ * @returns {Promise<any[]>}
+ */
+export async function readSession(agent, file, before, max = 40) {
+  const r = await exec("node", [sessionsScript(), "read", "--agent", agent, "--file", file, "--before", String(before || 0), "--max", String(max)]).catch(() => null);
+  try { return r?.code === 0 ? JSON.parse(r.stdout) : []; } catch { return []; }
+}
+
 /** True when a bridge answers on that port. @param {number} port */
 async function reachable(port) {
   try { const s = await net.connect("127.0.0.1", port); s.close(); return true; } catch { return false; }
@@ -76,13 +101,14 @@ export class Bridge {
     /** @type {import("net").Socket | null} */
     this.sock = null;
     this.closed = false;
+    this.startedAt = 0;
   }
 
-  /** The port of this chat's running bridge, or null. */
+  /** The port of this chat's running bridge, or null. Sets `startedAt` to when that bridge started. */
   async running() {
     const text = await readTextFile(`${bridgeDir()}/${this.chat}.json`).catch(() => null);
     let port = null;
-    try { port = Number(JSON.parse(text ?? "").port) || null; } catch { /* none */ }
+    try { const s = JSON.parse(text ?? ""); port = Number(s.port) || null; this.startedAt = Number(s.startedAt) || 0; } catch { /* none */ }
     return port && await reachable(port) ? port : null;
   }
 

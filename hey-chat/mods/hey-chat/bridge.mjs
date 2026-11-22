@@ -123,6 +123,7 @@ function serve(opts) {
   const pending = new Map();
   let asks = 0;
   let lastSeen = Date.now();
+  const startedAt = Date.now();
 
   /** @param {any} ev */
   const emit = (ev) => {
@@ -475,7 +476,8 @@ function serve(opts) {
   server.listen(0, "127.0.0.1", () => {
     mkdirSync(state, { recursive: true });
     const port = /** @type {any} */ (server.address()).port;
-    writeFileSync(join(state, `${chat}.json`), JSON.stringify({ port, pid: process.pid, cwd, agent }));
+    // startedAt: a pane reads the session file for what came before, and the bridge's replay for the rest.
+    writeFileSync(join(state, `${chat}.json`), JSON.stringify({ port, pid: process.pid, cwd, agent, startedAt }));
     emit({ type: "ready", session, agent });
   });
 

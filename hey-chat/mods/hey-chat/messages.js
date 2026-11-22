@@ -1,7 +1,15 @@
 // Bridge events to chat messages (scope section 3), and the words for tool calls and permission cards.
 
-/** @typedef {import("./sample.js").Chat} Chat */
-/** @typedef {import("./sample.js").Message} Message */
+/**
+ * A message in a chat's thread:
+ *   { kind: "sep", text }                                     a day divider
+ *   { kind: "text", from: "me" | "agent", text, time? }       a bubble
+ *   { kind: "code", from: "agent", lang, text }               a code card
+ *   { kind: "tool", from: "agent", icon, title, lines, add?, del? }  a tool call card
+ *   { kind: "permission", from: "agent", ask, tool, state, title, lines }  a permission card
+ *   { kind: "error", from: "agent", text } and { kind: "note", text }
+ * @typedef {{ id: string, kind: string, from?: string, text?: string, time?: string, lang?: string, icon?: string, title?: string, lines?: string[], add?: string, del?: string, [k: string]: any }} Message
+ */
 
 /** How many lines of a tool's output its card shows when opened. */
 const OUTPUT_LINES = 12;
@@ -115,6 +123,18 @@ export function clock(at) {
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** A chat's time in the tree: "9:46 AM" today, "Yesterday", "Mon" this week, else "Nov 12". @param {number} at */
+export function shortWhen(at) {
+  const now = Date.now();
+  if (sameDay(at, now)) return clock(at);
+  if (sameDay(at, now - 86400000)) return "Yesterday";
+  const d = new Date(at);
+  if (now - at < 6 * 86400000) return DAYS[d.getDay()];
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
+}
 
 /** True when two times fall on the same day. @param {number} a @param {number} b */
 function sameDay(a, b) {

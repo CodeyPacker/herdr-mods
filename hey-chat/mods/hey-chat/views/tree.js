@@ -36,7 +36,7 @@ export function roundButton(t, id, icon, size, click) {
 
 /**
  * One chat's row: the agent's picture, the title and time, and a preview with an unread dot.
- * @param {any} v the view @param {Theme} t @param {import("../sample.js").Chat} chat @param {string} key `r:` in Recent, `c:` in a project
+ * @param {any} v the view @param {Theme} t @param {any} chat @param {string} key `r:` in Recent, `c:` in a project
  */
 function chatRow(v, t, chat, key) {
   const open = chat.id === v.chatId;
@@ -44,7 +44,7 @@ function chatRow(v, t, chat, key) {
   const asking = Boolean(v.waiting(chat));
   const thinking = v.busy(chat) && !asking;
   const last = chat.thread[chat.thread.length - 1];
-  let preview = "No messages yet";
+  let preview = chat.last ? (chat.lastFrom === "me" ? `You: ${chat.last}` : chat.last) : "No messages yet";
   if (last) {
     preview = last.kind === "tool" ? last.title : last.kind === "code" ? "Sent a code snippet" : last.text;
     if (last.from === "me") preview = `You: ${preview}`;
@@ -70,9 +70,9 @@ function chatRow(v, t, chat, key) {
         .when(unread, (el) => el.child(div().flex_none().size(9).rounded_full().bg(t.accent)))));
 }
 
-/** A project's row: chevron, folder, name, chat count, and a + that starts a chat there. @param {any} v @param {Theme} t @param {import("../sample.js").Project} p @param {number} count */
+/** A project's row: chevron, folder, name, chat count, and a + that starts a chat there. @param {any} v @param {Theme} t @param {import("../store.js").Project} p @param {number} count */
 function projectRow(v, t, p, count) {
-  const open = !v.collapsed[p.id];
+  const open = v.isOpen(p.id);
   return h_flex().id(`proj-${p.id}`).w_full().h(34).flex_none().gap(8).pl(8).pr(4).rounded(10).items_center()
     .cursor_pointer().text_color(t.muted).hover((s) => s.bg(t.hover).text_color(t.foreground))
     .border_1().border_color(cursorBorder(v, t, `p:${p.id}`))
@@ -86,13 +86,30 @@ function projectRow(v, t, p, count) {
 
 /** The whole sidebar card. @param {any} v @param {Theme} t */
 export function treeView(v, t) {
-  const recent = v.recentIds().map((id) => chatRow(v, t, v.chat(id), `r:${id}`));
-  const groups = v.projects.map((/** @type {any} */ p) => {
+  // Every row is a direct child of the scrolling list, so the list overflows (and scrolls) instead
+  // of squeezing them, and the j/k cursor can scroll its row into view by index (v.treeKeys).
+  /** @type {any[]} */
+  const rows = [];
+  /** @type {(string | null)[]} */
+  const keys = [];
+  const add = (/** @type {any} */ el, /** @type {string | null} */ key = null) => { rows.push(el.flex_none()); keys.push(key); };
+  const recent = v.query ? [] : v.recentIds();
+  if (recent.length > 0) {
+    add(h_flex().h(30).px(8).gap(8).items_center().text_color(t.muted)
+      .child(svg(`${ICONS}/clock.svg`).size(15))
+      .child(div().text_size(13).font_semibold().child("Recent")));
+    for (const id of recent) add(chatRow(v, t, v.chat(id), `r:${id}`), `r:${id}`);
+    add(div().h(1).my(6).bg(t.border));
+  }
+  const projects = v.visibleProjects();
+  for (const p of projects) {
     const chats = v.chatsIn(p.id);
-    return v_flex().gap(2)
-      .child(projectRow(v, t, p, chats.length))
-      .when(!v.collapsed[p.id], (el) => el.child(v_flex().gap(2).pl(10).children(chats.map((c) => chatRow(v, t, c, `c:${c.id}`)))));
-  });
+    add(projectRow(v, t, p, chats.length).when(rows.length > 0, (el) => el.mt(4)), `p:${p.id}`);
+    if (v.isOpen(p.id)) for (const c of chats) add(div().w_full().pl(10).child(chatRow(v, t, c, `c:${c.id}`)), `c:${c.id}`);
+  }
+  if (!v.loaded) add(div().px(10).py(8).text_size(12.5).text_color(t.dim).child("Finding your sessions\u2026"));
+  if (v.query && projects.length === 0) add(div().px(10).py(8).text_size(12.5).text_color(t.dim).child("No chats match."));
+  v.treeKeys = keys;
 
   const lit = v.zone === "tree" || v.zone === "search";
   return v_flex().id("tree").relative().w(TREE_WIDTH).flex_none().h_full().rounded(14).border_1().border_color(lit ? focusBorder(t) : t.border).bg(t.background)
@@ -100,19 +117,15 @@ export function treeView(v, t) {
     .child(h_flex().flex_none().items_center().justify_between().pl(20).pr(14).pt(16).pb(10)
       .child(div().text_size(20).font_bold().text_color(t.foreground).child("Hey, chat"))
       .child(roundButton(t, "new-here", `${ICONS}/pencil.svg`, 36, (cx) => { v.newChat(v.chat(v.chatId).project, cx); cx.notify(); })))
-    // Search. Filtering comes with existing sessions (A6).
+    // Search: filters the chats by title, last message and folder.
     .child(div().flex_none().px(14).pb(8)
       .child(h_flex().h(36).px(12).gap(8).items_center().rounded_full().bg(t.raised).border_1().border_color(t.border)
         .child(svg(`${ICONS}/search.svg`).size(15).flex_none().text_color(t.dim))
         .child(Input.new(v.searchInput).flex_1().text_size(13.5).text_color(t.foreground))))
     // Recent, then the projects.
-    .child(v_flex().id("tree-scroll").flex_1().min_h(0).overflow_y_scrollbar().px(8).pb(8).gap(6)
-      .child(v_flex().gap(2).pb(6).border_b_1().border_color(t.border)
-        .child(h_flex().h(30).px(8).gap(8).items_center().text_color(t.muted)
-          .child(svg(`${ICONS}/clock.svg`).size(15))
-          .child(div().text_size(13).font_semibold().child("Recent")))
-        .children(recent))
-      .children(groups))
+    // Recent (except while searching), then the projects.
+    .child(v_flex().id("tree-scroll").flex_1().min_h(0).overflow_y_scrollbar().track_scroll(v.treeScroll).px(8).pb(8).gap(2)
+      .children(rows))
     // The tree's keys, while it has the keyboard.
     .when(v.zone === "tree", (el) => el.child(div().flex_none().px(16).pt(8).pb(4).child(legend(t, TREE_HINTS))))
     // Your picture and the settings gear: a click opens or closes Settings.
