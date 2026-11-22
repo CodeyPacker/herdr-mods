@@ -1,6 +1,6 @@
 // Hey, chat: a Messenger-style chat with Claude Code or Codex, grouped by project folder.
 // Scope and design: ../../SCOPE.md. Built so far: A1 (the pane, its layout and the opacity rules),
-// A2 (keys and focus), A3 (Settings and your picture) and A4 (Claude through the bridge).
+// A2 (keys and focus), A3 (Settings and your picture), A4 (Claude through the bridge) and A5 (Codex).
 // The sample chats stay until existing sessions fill the tree (A6). The pieces:
 //   sample.js     the sample projects and chats
 //   store.js      the real chats and their folders, kept in <appHome>/data/hey-chat/chats.json
@@ -273,7 +273,7 @@ export default class HeyChat extends View {
     const had = this.bridges.get(chat.id);
     if (had?.sock) return Promise.resolve(had);
     return new Promise((resolve) => {
-      const bridge = new Bridge({ chat: chat.id, cwd: chat.cwd, session: chat.session ?? null },
+      const bridge = new Bridge({ chat: chat.id, agent: chat.agent, cwd: chat.cwd, session: chat.session ?? null },
         (ev, cx) => this.onEvent(chat, ev, cx),
         (cx) => { this.bridges.delete(chat.id); chat.working = false; cx.notify(); });
       this.bridges.set(chat.id, bridge);
@@ -348,7 +348,6 @@ export default class HeyChat extends View {
   /** Why a chat's agent can't run here, or null. @param {string} agent */
   missingCli(agent) {
     if (window().platform === "windows") return "Hey, chat can't run agents on Windows yet.";
-    if (agent === "codex") return "Codex isn't connected yet. It comes next (A5). Start a chat with Claude for now.";
     if (!this.agents) return null;
     if (!this.agents.includes("node")) return "Hey, chat needs node on your PATH to run the agent.";
     if (!this.agents.includes(agent)) return `Hey, chat can't find the ${agent} command. Install it and sign in, then try again.`;
@@ -380,7 +379,7 @@ export default class HeyChat extends View {
     this.typing = chat.id;
     this.scrollDown();
     cx.timer.after(1600, (cx) => {
-      chat.thread.push({ id: `r${Date.now()}`, kind: "text", from: "agent", text: "This is a sample chat. Start a new chat to talk to Claude." });
+      chat.thread.push({ id: `r${Date.now()}`, kind: "text", from: "agent", text: "This is a sample chat. Start a new chat to talk to Claude or Codex." });
       if (this.typing === chat.id) this.typing = null;
       if (this.chatId !== chat.id) this.unread = { ...this.unread, [chat.id]: true };
       else this.scrollDown();

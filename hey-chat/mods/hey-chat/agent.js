@@ -67,11 +67,11 @@ async function reachable(port) {
  */
 export class Bridge {
   /**
-   * @param {{ chat: string, cwd: string, session: string | null }} o
+   * @param {{ chat: string, agent: string, cwd: string, session: string | null }} o
    * @param {(ev: any, cx: any) => void} onEvent @param {(cx: any) => void} onClose
    */
   constructor(o, onEvent, onClose) {
-    this.chat = o.chat; this.cwd = o.cwd; this.session = o.session;
+    this.chat = o.chat; this.agent = o.agent; this.cwd = o.cwd; this.session = o.session;
     this.onEvent = onEvent; this.onClose = onClose;
     /** @type {import("net").Socket | null} */
     this.sock = null;
@@ -90,7 +90,7 @@ export class Bridge {
   async launch(cx) {
     const self = `${appHome().replace(/\\/g, "/")}/mods/hey-chat/bridge.mjs`;
     const q = (/** @type {string} */ s) => `'${s.replace(/'/g, `'\\''`)}'`;
-    const args = ["serve", "--chat", this.chat, "--cwd", this.cwd, "--state", bridgeDir(), ...(this.session ? ["--resume", this.session] : [])];
+    const args = ["serve", "--chat", this.chat, "--agent", this.agent, "--cwd", this.cwd, "--state", bridgeDir(), ...(this.session ? ["--resume", this.session] : [])];
     const r = await hc(["run", "--bg", "--no-parent", "--outlive-parent", "--cwd", this.cwd, "--label", "hey-chat=bridge", "--json", "--",
       "sh", "-c", `exec node ${q(self)} ${args.map(q).join(" ")}`]);
     if (r.code !== 0) throw new Error(r.stderr.trim() || "Couldn't start the bridge.");

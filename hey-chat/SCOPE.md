@@ -177,7 +177,8 @@ those don't allow becomes a permission card in the chat:
   push origin staging`" or "Edit `tourist/mods/tourist/main.js`" with a
   collapsed diff.
 - Buttons **Allow once**, **Always allow** (Claude: this command pattern for
-  the folder; Codex: this session) and **Deny**, with keys `y`, `a` and `n`
+  the folder; Codex: this exact command, for the rest of the session) and
+  **Deny**, with keys `y`, `a` and `n`
   while the card is the newest message.
 - The status line reads "Waiting for you" in the `blocked` color, the tree
   row shows the same, and Herdr's attention sound plays if the pane isn't

@@ -4,9 +4,10 @@
 // A mod's exec stops after 30 s, and a turn can wait on you for longer than that, so the mod
 // starts this program in a hidden Herdr terminal and talks to it over a local socket instead.
 //
-//   node bridge.mjs serve --chat <id> --cwd <folder> --state <dir> [--resume <session>]
-//       Listens on 127.0.0.1, writes { port, pid } to <state>/<chat>.json, and runs Claude Code
-//       for that chat. Ends on "quit", or after 30 minutes with no pane connected and no turn running.
+//   node bridge.mjs serve --chat <id> --cwd <folder> --state <dir> [--agent claude|codex] [--resume <session>]
+//       Listens on 127.0.0.1, writes { port, pid } to <state>/<chat>.json, and runs the chat's agent:
+//       Claude Code (`claude -p`, the default) or Codex (`codex app-server`). Ends on "quit", or after
+//       30 minutes with no pane connected and no turn running.
 //   node bridge.mjs mcp --port <port>
 //       Claude starts this itself as a stdio MCP server with one tool, `approve`, which Claude asks
 //       (--permission-prompt-tool) whenever your settings don't already allow a tool. It passes the
@@ -107,22 +108,19 @@ function askBridge(port, question) {
 
 function serve(opts) {
   const chat = opts.chat, cwd = opts.cwd, state = opts.state;
+  const agent = opts.agent === "codex" ? "codex" : "claude";
   let session = opts.resume || null;
-  /** @type {import("node:child_process").ChildProcess | null} */
-  let proc = null;
   let turn = false;         // a turn is running
-  let stopping = false;     // the pane asked to stop the turn
-  /** @type {any} */
-  let killTimer = null;     // ends Claude when SIGINT didn't stop the turn
-  let stderr = "";
   /** @type {any[]} */
   const history = [];       // every event so far, for a pane that connects later
   /** @type {Set<import("node:net").Socket>} */
   const panes = new Set();
-  /** @type {Map<string, { sock: import("node:net").Socket, tool: string, input: any }>} */
+  /**
+   * Questions waiting on you, by id. `answer` replies to whoever asked: the approve tool's
+   * socket for Claude, the app-server's request for Codex.
+   * @type {Map<string, { tool: string, input: any, answer: (allow: boolean, always: boolean) => void }>}
+   */
   const pending = new Map();
-  /** @type {{ tool: string, prefix?: string }[]} */
-  const always = [];        // "Always allow" answers from this run
   let asks = 0;
   let lastSeen = Date.now();
 
@@ -133,133 +131,315 @@ function serve(opts) {
     for (const p of panes) p.write(line);
   };
 
-  const start = () => {
-    const port = /** @type {any} */ (server.address()).port;
-    const mcpConfig = { mcpServers: { heychat: { command: process.execPath, args: [SELF, "mcp", "--port", String(port)] } } };
-    const args = ["-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose",
-      "--permission-prompt-tool", "mcp__heychat__approve", "--mcp-config", JSON.stringify(mcpConfig),
-      ...(session ? ["--resume", session] : [])];
-    stderr = "";
-    const child = spawn("claude", args, { cwd, stdio: ["pipe", "pipe", "pipe"] });
-    proc = child;
-    child.stdout.on("data", lines((line) => fromClaude(parse(line))));
-    child.stderr.on("data", (d) => { stderr = (stderr + d.toString()).slice(-2000); });
-    child.on("error", (e) => { emit({ type: "error", message: `Couldn't start claude: ${e.message}` }); });
-    child.on("exit", (code) => {
-      // A Claude the bridge already let go (after a stop) no longer owns the turn.
-      if (proc !== child) return;
-      proc = null;
-      if (turn) {
-        turn = false;
-        if (stopping) emit({ type: "turn_end", stopped: true });
-        else emit({ type: "turn_end", error: true, text: stderr.trim() || `claude stopped (exit ${code}).` });
-      }
-      stopping = false;
-      denyAll("The turn ended.");
-    });
+  /** @param {string | null} id */
+  const setSession = (id) => { if (id && id !== session) { session = id; emit({ type: "session", id }); } };
+
+  /** Puts a question to the pane. @param {string} tool @param {any} input @param {string | null} toolUseId @param {(allow: boolean, always: boolean) => void} answer */
+  const ask = (tool, input, toolUseId, answer) => {
+    const id = `ask${++asks}`;
+    pending.set(id, { tool, input, answer });
+    emit({ type: "permission", id, tool, input, toolUseId });
+    return id;
   };
 
-  /** @param {any} ev a line of Claude's stream-json */
-  const fromClaude = (ev) => {
-    if (!ev) return;
-    if (ev.session_id && ev.session_id !== session) { session = ev.session_id; emit({ type: "session", id: session }); }
-    if (ev.type === "assistant") {
-      for (const c of ev.message?.content ?? []) {
-        if (c.type === "text" && c.text?.trim()) emit({ type: "text", text: c.text });
-        else if (c.type === "tool_use") emit({ type: "tool", id: c.id, name: c.name, input: c.input ?? {} });
-      }
-    } else if (ev.type === "user") {
-      const content = ev.message?.content;
-      if (Array.isArray(content)) for (const c of content) {
-        if (c.type !== "tool_result") continue;
-        const out = Array.isArray(c.content) ? c.content.map((/** @type {any} */ x) => x.text ?? "").join("\n") : String(c.content ?? "");
-        emit({ type: "tool_done", id: c.tool_use_id, error: Boolean(c.is_error), output: out.slice(0, OUTPUT_MAX) });
-      }
-    } else if (ev.type === "result" || (ev.stop_reason !== undefined && ev.duration_api_ms !== undefined)) {
-      if (!turn) return;
-      turn = false;
-      // Claude takes SIGINT as "stop this turn", then exits. It's let go here, so the next message
-      // starts a new one with --resume instead of racing the old one's exit.
-      if (stopping) {
-        stopping = false; clearTimeout(killTimer);
-        const child = proc; proc = null; child?.kill("SIGTERM");
-        emit({ type: "turn_end", stopped: true });
-        return;
-      }
-      const error = Boolean(ev.is_error) || (ev.subtype && ev.subtype !== "success");
-      emit({ type: "turn_end", error, text: error ? String(ev.result ?? ev.subtype ?? "The turn failed.") : "" });
-    }
-  };
-
-  /** True when an "Always allow" answer from this run covers the call. @param {string} tool @param {any} input */
-  const allowedAlready = (tool, input) => always.some((r) => r.tool === tool && (!r.prefix || String(input?.command ?? "").trim().startsWith(r.prefix)));
-
-  /** The "Always allow" rule for a call, as Claude's settings write it. @param {string} tool @param {any} input */
-  const ruleFor = (tool, input) => {
-    if (tool !== "Bash") return { tool, rule: tool };
-    const words = String(input?.command ?? "").trim().split(/\s+/);
-    const n = TWO_WORD.has(words[0]) && words[1] && !words[1].startsWith("-") ? 2 : 1;
-    const prefix = words.slice(0, n).join(" ");
-    return { tool, prefix, rule: `Bash(${prefix}:*)` };
-  };
-
-  /** Adds an allow rule to the folder's .claude/settings.local.json, as Claude's own "don't ask again" does. @param {string} rule */
-  const saveRule = (rule) => {
-    const file = join(cwd, ".claude", "settings.local.json");
-    let s = {};
-    try { s = JSON.parse(readFileSync(file, "utf8")); } catch { /* new file */ }
-    const perms = /** @type {any} */ (s).permissions ?? {};
-    const allow = Array.isArray(perms.allow) ? perms.allow : [];
-    if (!allow.includes(rule)) allow.push(rule);
-    /** @type {any} */ (s).permissions = { ...perms, allow };
-    try { mkdirSync(join(cwd, ".claude"), { recursive: true }); writeFileSync(file, `${JSON.stringify(s, null, 2)}\n`); } catch { /* the run still allows it */ }
-  };
+  /** Withdraws a question nobody can answer any more. @param {string} id */
+  const withdraw = (id) => { if (pending.delete(id)) emit({ type: "decided", id, behavior: "deny" }); };
 
   /** @param {string} message */
   const denyAll = (message) => {
-    for (const [id, p] of pending) { p.sock.end(`${JSON.stringify({ behavior: "deny", message })}\n`); emit({ type: "decided", id, behavior: "deny" }); }
+    for (const [id, p] of pending) { p.answer(false, false); emit({ type: "decided", id, behavior: "deny", message }); }
     pending.clear();
   };
 
-  /** @param {import("node:net").Socket} sock @param {any} q */
-  const fromMcp = (sock, q) => {
-    if (q?.type !== "ask") return;
-    if (allowedAlready(q.tool, q.input)) { sock.end(`${JSON.stringify({ behavior: "allow", updatedInput: q.input })}\n`); return; }
-    const id = `ask${++asks}`;
-    pending.set(id, { sock, tool: q.tool, input: q.input });
-    sock.on("close", () => { if (pending.delete(id)) emit({ type: "decided", id, behavior: "deny" }); });
-    emit({ type: "permission", id, tool: q.tool, input: q.input, toolUseId: q.toolUseId ?? null });
+  /** @param {boolean} error @param {string} [text] @param {boolean} [stopped] */
+  const endTurn = (error, text = "", stopped = false) => {
+    if (!turn) return;
+    turn = false;
+    denyAll("The turn ended.");
+    emit(stopped ? { type: "turn_end", stopped: true } : { type: "turn_end", error, text });
   };
+
+  const driver = agent === "codex" ? codexDriver() : claudeDriver();
+
+  // -------------------------------------------------------------------------------------------
+  // Claude Code: `claude -p` reading stream-json, one process for many turns.
+
+  function claudeDriver() {
+    /** @type {import("node:child_process").ChildProcess | null} */
+    let proc = null;
+    let stopping = false;     // the pane asked to stop the turn
+    /** @type {any} */
+    let killTimer = null;     // ends Claude when SIGINT didn't stop the turn
+    let stderr = "";
+    /** @type {{ tool: string, prefix?: string }[]} */
+    const always = [];        // "Always allow" answers from this run
+
+    const start = () => {
+      const port = /** @type {any} */ (server.address()).port;
+      const mcpConfig = { mcpServers: { heychat: { command: process.execPath, args: [SELF, "mcp", "--port", String(port)] } } };
+      const args = ["-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose",
+        "--permission-prompt-tool", "mcp__heychat__approve", "--mcp-config", JSON.stringify(mcpConfig),
+        ...(session ? ["--resume", session] : [])];
+      stderr = "";
+      const child = spawn("claude", args, { cwd, stdio: ["pipe", "pipe", "pipe"] });
+      proc = child;
+      child.stdout.on("data", lines((line) => fromClaude(parse(line))));
+      child.stderr.on("data", (d) => { stderr = (stderr + d.toString()).slice(-2000); });
+      child.on("error", (e) => { emit({ type: "error", message: `Couldn't start claude: ${e.message}` }); });
+      child.on("exit", (code) => {
+        // A Claude the bridge already let go (after a stop) no longer owns the turn.
+        if (proc !== child) return;
+        proc = null;
+        if (stopping) { stopping = false; endTurn(false, "", true); }
+        else endTurn(true, stderr.trim() || `claude stopped (exit ${code}).`);
+      });
+    };
+
+    /** @param {any} ev a line of Claude's stream-json */
+    const fromClaude = (ev) => {
+      if (!ev) return;
+      setSession(ev.session_id ?? null);
+      if (ev.type === "assistant") {
+        for (const c of ev.message?.content ?? []) {
+          if (c.type === "text" && c.text?.trim()) emit({ type: "text", text: c.text });
+          else if (c.type === "tool_use") emit({ type: "tool", id: c.id, name: c.name, input: c.input ?? {} });
+        }
+      } else if (ev.type === "user") {
+        const content = ev.message?.content;
+        if (Array.isArray(content)) for (const c of content) {
+          if (c.type !== "tool_result") continue;
+          const out = Array.isArray(c.content) ? c.content.map((/** @type {any} */ x) => x.text ?? "").join("\n") : String(c.content ?? "");
+          emit({ type: "tool_done", id: c.tool_use_id, error: Boolean(c.is_error), output: out.slice(0, OUTPUT_MAX) });
+        }
+      } else if (ev.type === "result" || (ev.stop_reason !== undefined && ev.duration_api_ms !== undefined)) {
+        // Claude takes SIGINT as "stop this turn", then exits. It's let go here, so the next message
+        // starts a new one with --resume instead of racing the old one's exit.
+        if (stopping) {
+          stopping = false; clearTimeout(killTimer);
+          const child = proc; proc = null; child?.kill("SIGTERM");
+          endTurn(false, "", true);
+          return;
+        }
+        const error = Boolean(ev.is_error) || (ev.subtype && ev.subtype !== "success");
+        endTurn(error, error ? String(ev.result ?? ev.subtype ?? "The turn failed.") : "");
+      }
+    };
+
+    /** True when an "Always allow" answer from this run covers the call. @param {string} tool @param {any} input */
+    const allowedAlready = (tool, input) => always.some((r) => r.tool === tool && (!r.prefix || String(input?.command ?? "").trim().startsWith(r.prefix)));
+
+    /** The "Always allow" rule for a call, as Claude's settings write it. @param {string} tool @param {any} input */
+    const ruleFor = (tool, input) => {
+      if (tool !== "Bash") return { tool, rule: tool };
+      const words = String(input?.command ?? "").trim().split(/\s+/);
+      const n = TWO_WORD.has(words[0]) && words[1] && !words[1].startsWith("-") ? 2 : 1;
+      const prefix = words.slice(0, n).join(" ");
+      return { tool, prefix, rule: `Bash(${prefix}:*)` };
+    };
+
+    /** Adds an allow rule to the folder's .claude/settings.local.json, as Claude's own "don't ask again" does. @param {string} rule */
+    const saveRule = (rule) => {
+      const file = join(cwd, ".claude", "settings.local.json");
+      let s = {};
+      try { s = JSON.parse(readFileSync(file, "utf8")); } catch { /* new file */ }
+      const perms = /** @type {any} */ (s).permissions ?? {};
+      const allow = Array.isArray(perms.allow) ? perms.allow : [];
+      if (!allow.includes(rule)) allow.push(rule);
+      /** @type {any} */ (s).permissions = { ...perms, allow };
+      try { mkdirSync(join(cwd, ".claude"), { recursive: true }); writeFileSync(file, `${JSON.stringify(s, null, 2)}\n`); } catch { /* the run still allows it */ }
+    };
+
+    return {
+      /** @param {string} text */
+      send(text) {
+        if (!proc) start();
+        proc?.stdin?.write(`${JSON.stringify({ type: "user", message: { role: "user", content: text } })}\n`);
+      },
+      stop() {
+        // SIGINT first. Only when Claude hasn't ended the turn 5 s later is it ended for good
+        // (the next message starts it again with --resume).
+        if (!proc || stopping) return;
+        stopping = true;
+        const child = proc;
+        child.kill("SIGINT");
+        killTimer = setTimeout(() => { if (stopping && proc === child) child.kill("SIGTERM"); }, 5000);
+      },
+      kill() { proc?.kill("SIGTERM"); },
+      /** The approve tool's question. @param {import("node:net").Socket} sock @param {any} q */
+      approve(sock, q) {
+        if (q?.type !== "ask") return;
+        const reply = (/** @type {any} */ a) => sock.end(`${JSON.stringify(a)}\n`);
+        if (allowedAlready(q.tool, q.input)) { reply({ behavior: "allow", updatedInput: q.input }); return; }
+        const id = ask(q.tool, q.input, q.toolUseId ?? null, (allow, alwaysToo) => {
+          if (allow && alwaysToo) { const r = ruleFor(q.tool, q.input); always.push(r); saveRule(r.rule); }
+          reply(allow ? { behavior: "allow", updatedInput: q.input } : { behavior: "deny", message: "The user said no." });
+        });
+        sock.on("close", () => withdraw(id));
+      },
+    };
+  }
+
+  // -------------------------------------------------------------------------------------------
+  // Codex: `codex app-server`, JSON-RPC over stdio, the protocol Codex's own apps use. Tested with
+  // codex-cli 0.162.1. Approvals arrive as requests from the server and are answered by id.
+
+  function codexDriver() {
+    /** @type {import("node:child_process").ChildProcess | null} */
+    let proc = null;
+    /** @type {Promise<void> | null} */
+    let ready = null;
+    let rpcId = 0;
+    /** @type {Map<number, { resolve: (r: any) => void, reject: (e: Error) => void }>} */
+    const calls = new Map();
+    let turnId = /** @type {string | null} */ (null);
+    let stderr = "";
+    /** Items by id, for an approval that names an item (a file change's diffs). @type {Map<string, any>} */
+    const items = new Map();
+
+    /** @param {any} msg */
+    const write = (msg) => proc?.stdin?.write(`${JSON.stringify({ jsonrpc: "2.0", ...msg })}\n`);
+    /** @param {string} method @param {any} params @returns {Promise<any>} */
+    const call = (method, params) => new Promise((resolve, reject) => {
+      const id = ++rpcId;
+      calls.set(id, { resolve, reject });
+      write({ id, method, params });
+    });
+
+    const start = () => {
+      stderr = "";
+      const child = spawn("codex", ["app-server"], { cwd, stdio: ["pipe", "pipe", "pipe"] });
+      proc = child;
+      child.stdout.on("data", lines((line) => fromCodex(parse(line))));
+      child.stderr.on("data", (d) => { stderr = (stderr + d.toString()).slice(-2000); });
+      child.on("error", (e) => { emit({ type: "error", message: `Couldn't start codex: ${e.message}` }); });
+      child.on("exit", (code) => {
+        if (proc !== child) return;
+        proc = null; ready = null;
+        for (const c of calls.values()) c.reject(new Error(stderr.trim() || `codex stopped (exit ${code}).`));
+        calls.clear();
+        endTurn(true, stderr.trim() || `codex stopped (exit ${code}).`);
+      });
+      ready = (async () => {
+        await call("initialize", { clientInfo: { name: "hey-chat", title: "Hey, chat", version: "1" }, capabilities: null });
+        write({ method: "initialized", params: {} });
+        const r = session ? await call("thread/resume", { threadId: session, cwd }) : await call("thread/start", { cwd });
+        setSession(r?.thread?.id ?? null);
+      })();
+    };
+
+    /** The words for a file change: its paths, and its diffs as + and - lines. @param {any} item */
+    const patchInput = (item) => ({ changes: (item?.changes ?? []).map((/** @type {any} */ c) => ({ path: c.path, kind: c.kind?.type ?? "update", diff: String(c.diff ?? "") })) });
+
+    /** @param {any} m a JSON-RPC message from the app-server */
+    const fromCodex = (m) => {
+      if (!m) return;
+      // A reply to one of our calls.
+      if (m.id !== undefined && !m.method) {
+        const c = calls.get(m.id);
+        if (!c) return;
+        calls.delete(m.id);
+        if (m.error) c.reject(new Error(String(m.error.message ?? "Codex refused that.")));
+        else c.resolve(m.result);
+        return;
+      }
+      // A request from the server: approvals become questions, anything else is turned down.
+      if (m.id !== undefined && m.method) {
+        const p = m.params ?? {};
+        if (m.method === "item/commandExecution/requestApproval" || m.method === "execCommandApproval") {
+          const command = p.commandActions?.[0]?.command ?? (Array.isArray(p.command) ? p.command.join(" ") : p.command) ?? "";
+          const v1 = m.method === "execCommandApproval";
+          ask("Bash", { command, description: p.reason ?? undefined }, p.itemId ?? p.callId ?? null, (allow, always) =>
+            write({ id: m.id, result: { decision: v1 ? (allow ? (always ? "approved_for_session" : "approved") : "denied") : (allow ? (always ? "acceptForSession" : "accept") : "decline") } }));
+        } else if (m.method === "item/fileChange/requestApproval" || m.method === "applyPatchApproval") {
+          const v1 = m.method === "applyPatchApproval";
+          const input = v1 ? { changes: Object.entries(p.fileChanges ?? {}).map(([path, c]) => ({ path, kind: "update", diff: String(/** @type {any} */ (c)?.unified_diff ?? "") })) } : patchInput(items.get(p.itemId));
+          ask("CodexPatch", input, p.itemId ?? p.callId ?? null, (allow, always) =>
+            write({ id: m.id, result: { decision: v1 ? (allow ? (always ? "approved_for_session" : "approved") : "denied") : (allow ? (always ? "acceptForSession" : "accept") : "decline") } }));
+        } else {
+          write({ id: m.id, error: { code: -32601, message: `Hey, chat doesn't handle ${m.method}.` } });
+        }
+        return;
+      }
+      const p = m.params ?? {};
+      switch (m.method) {
+        case "thread/started": setSession(p.thread?.id ?? null); break;
+        case "turn/started": turnId = p.turn?.id ?? turnId; break;
+        case "item/started": {
+          const it = p.item;
+          if (!it) break;
+          items.set(it.id, it);
+          if (it.type === "commandExecution") emit({ type: "tool", id: it.id, name: "Bash", input: { command: it.commandActions?.[0]?.command ?? it.command } });
+          else if (it.type === "fileChange") emit({ type: "tool", id: it.id, name: "CodexPatch", input: patchInput(it) });
+          else if (it.type === "mcpToolCall") emit({ type: "tool", id: it.id, name: `${it.server}.${it.tool}`, input: it.arguments ?? {} });
+          else if (it.type === "webSearch") emit({ type: "tool", id: it.id, name: "WebSearch", input: { query: it.query ?? "" } });
+          break;
+        }
+        case "item/completed": {
+          const it = p.item;
+          if (!it) break;
+          items.set(it.id, it);
+          if (it.type === "agentMessage" && String(it.text ?? "").trim()) emit({ type: "text", text: it.text });
+          else if (it.type === "commandExecution") emit({ type: "tool_done", id: it.id, error: it.status !== "completed" || (it.exitCode ?? 0) !== 0, output: String(it.aggregatedOutput ?? "").slice(0, OUTPUT_MAX) });
+          else if (it.type === "fileChange") emit({ type: "tool_done", id: it.id, error: it.status !== "completed", output: "" });
+          else if (it.type === "mcpToolCall") emit({ type: "tool_done", id: it.id, error: Boolean(it.error), output: JSON.stringify(it.result ?? it.error ?? "").slice(0, OUTPUT_MAX) });
+          else if (it.type === "webSearch") emit({ type: "tool_done", id: it.id, error: false, output: "" });
+          break;
+        }
+        case "turn/completed": {
+          const status = p.turn?.status;
+          turnId = null;
+          if (status === "interrupted") endTurn(false, "", true);
+          else if (status === "failed") endTurn(true, String(p.turn?.error?.message ?? "The turn failed."));
+          else endTurn(false);
+          break;
+        }
+        default: break;
+      }
+    };
+
+    return {
+      /** @param {string} text */
+      send(text) {
+        if (!proc) start();
+        (async () => {
+          try {
+            await ready;
+            const r = await call("turn/start", { threadId: session, input: [{ type: "text", text, text_elements: [] }] });
+            turnId = r?.turn?.id ?? turnId;
+          } catch (e) {
+            endTurn(true, e instanceof Error ? e.message : String(e));
+          }
+        })();
+      },
+      stop() {
+        if (proc && session && turnId) call("turn/interrupt", { threadId: session, turnId }).catch(() => endTurn(false, "", true));
+      },
+      kill() { proc?.kill("SIGTERM"); },
+      /** Codex has no approve tool. @param {import("node:net").Socket} sock */
+      approve(sock) { sock.end(`${JSON.stringify({ behavior: "deny", message: "Not used by Codex." })}\n`); },
+    };
+  }
+
+  // -------------------------------------------------------------------------------------------
+  // The pane's messages, and the socket.
 
   /** @param {any} m */
   const fromPane = (m) => {
     if (!m) return;
     if (m.type === "send" && typeof m.text === "string") {
-      if (!proc) start();
+      if (turn) return;
       turn = true;
       emit({ type: "user", text: m.text, at: Date.now() });
       emit({ type: "working" });
-      proc?.stdin?.write(`${JSON.stringify({ type: "user", message: { role: "user", content: m.text } })}\n`);
+      driver.send(m.text);
     } else if (m.type === "stop") {
-      // SIGINT first. Only when Claude hasn't ended the turn 5 s later is it ended for good
-      // (the next message starts it again with --resume).
-      if (proc && turn && !stopping) {
-        stopping = true;
-        const child = proc;
-        child.kill("SIGINT");
-        killTimer = setTimeout(() => { if (stopping && proc === child) child.kill("SIGTERM"); }, 5000);
-      }
+      if (turn) driver.stop();
     } else if (m.type === "decide") {
       const p = pending.get(m.id);
       if (!p) return;
       pending.delete(m.id);
       const allow = m.behavior === "allow";
-      if (allow && m.always) {
-        const r = ruleFor(p.tool, p.input);
-        always.push(r);
-        saveRule(r.rule);
-      }
-      p.sock.end(`${JSON.stringify(allow ? { behavior: "allow", updatedInput: p.input } : { behavior: "deny", message: "The user said no." })}\n`);
+      p.answer(allow, Boolean(allow && m.always));
       emit({ type: "decided", id: m.id, behavior: allow ? "allow" : "deny", always: Boolean(allow && m.always) });
     } else if (m.type === "quit") {
       quit();
@@ -268,7 +448,7 @@ function serve(opts) {
 
   const quit = () => {
     denyAll("Hey, chat closed.");
-    proc?.kill("SIGTERM");
+    driver.kill();
     try { rmSync(join(state, `${chat}.json`)); } catch { /* already gone */ }
     process.exit(0);
   };
@@ -286,7 +466,7 @@ function serve(opts) {
         }
         return;
       }
-      if (role === "pane") fromPane(m); else fromMcp(sock, m);
+      if (role === "pane") fromPane(m); else driver.approve(sock, m);
     }));
     sock.on("close", () => { if (panes.delete(sock)) lastSeen = Date.now(); });
     sock.on("error", () => { /* the close handler tidies up */ });
@@ -295,8 +475,8 @@ function serve(opts) {
   server.listen(0, "127.0.0.1", () => {
     mkdirSync(state, { recursive: true });
     const port = /** @type {any} */ (server.address()).port;
-    writeFileSync(join(state, `${chat}.json`), JSON.stringify({ port, pid: process.pid, cwd }));
-    emit({ type: "ready", session });
+    writeFileSync(join(state, `${chat}.json`), JSON.stringify({ port, pid: process.pid, cwd, agent }));
+    emit({ type: "ready", session, agent });
   });
 
   setInterval(() => {
@@ -309,4 +489,4 @@ function serve(opts) {
 const [mode, ...rest] = process.argv.slice(2);
 if (mode === "mcp") mcp(flags(rest));
 else if (mode === "serve") serve(flags(rest));
-else { process.stderr.write("usage: bridge.mjs serve --chat <id> --cwd <folder> --state <dir> [--resume <session>] | mcp --port <port>\n"); process.exit(2); }
+else { process.stderr.write("usage: bridge.mjs serve --chat <id> --cwd <folder> --state <dir> [--agent claude|codex] [--resume <session>] | mcp --port <port>\n"); process.exit(2); }

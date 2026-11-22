@@ -51,9 +51,28 @@ export function describeTool(name, input) {
       const todos = Array.isArray(i.todos) ? i.todos : [];
       return { icon: "run", title: "Updated the plan", lines: todos.map((/** @type {any} */ t) => `${t.status === "completed" ? "✓" : "·"} ${t.content ?? ""}`) };
     }
+    // Codex's file changes: one card for a patch, which can touch several files.
+    case "CodexPatch": {
+      const changes = Array.isArray(i.changes) ? i.changes : [];
+      const diffLines = changes.flatMap((/** @type {any} */ c) => String(c.diff ?? "").split("\n"));
+      const add = diffLines.filter((l) => l.startsWith("+") && !l.startsWith("+++")).length;
+      const del = diffLines.filter((l) => l.startsWith("-") && !l.startsWith("---")).length;
+      const title = changes.length === 1 ? `Edited ${base(changes[0].path)}` : `Edited ${changes.length} files`;
+      return { icon: "edit", title, add: `+${add}`, del: `\u2212${del}`, lines: changes.map((/** @type {any} */ c) => String(c.path ?? "")) };
+    }
     case "Task": case "Agent": return { icon: "run", title: `Started a helper: ${clip(String(i.description ?? ""), 36)}`, lines: [clip(String(i.prompt ?? ""), 200)] };
     default: return { icon: "run", title: `Used ${name}`, lines: [clip(JSON.stringify(i), 200)] };
   }
+}
+
+/** The first word of a finished tool card's title, and what it says while the tool still runs. */
+const RUNNING = [["Ran", "Running"], ["Read", "Reading"], ["Edited", "Editing"], ["Wrote", "Writing"], ["Searched", "Searching"],
+  ["Looked", "Looking"], ["Listed", "Listing"], ["Updated", "Updating"], ["Started", "Starting"], ["Used", "Using"]];
+
+/** A finished card's title as it reads while the tool runs: "Ran ls" → "Running ls". @param {string} title */
+export function runningTitle(title) {
+  for (const [done, now] of RUNNING) if (title.startsWith(`${done} `)) return `${now}${title.slice(done.length)}`;
+  return title;
 }
 
 /**
@@ -74,6 +93,14 @@ export function describeAsk(name, input) {
   if (name === "Write") {
     const body = String(i.content ?? "").split("\n");
     return { title: `Write ${base(i.file_path)}`, lines: [String(i.file_path ?? ""), ...body.slice(0, DIFF_LINES).map((l) => `+ ${l}`), ...(body.length > DIFF_LINES ? ["…"] : [])] };
+  }
+  if (name === "CodexPatch") {
+    const changes = Array.isArray(i.changes) ? i.changes : [];
+    const diff = changes.flatMap((/** @type {any} */ c) => [String(c.path ?? ""), ...String(c.diff ?? "").split("\n")
+      .filter((l) => (l.startsWith("+") || l.startsWith("-")) && !l.startsWith("+++") && !l.startsWith("---"))
+      .map((l) => `${l[0]} ${l.slice(1)}`)]);
+    const title = changes.length === 1 ? `Edit ${base(changes[0].path)}` : `Edit ${changes.length} files`;
+    return { title, lines: [...diff.slice(0, DIFF_LINES), ...(diff.length > DIFF_LINES ? ["\u2026"] : [])] };
   }
   const d = describeTool(name, input);
   return { title: `Use ${name}`, lines: d.lines };
@@ -142,14 +169,17 @@ export function applyEvent(chat, ev) {
       push({ kind: "text", from: "agent", text: ev.text });
       return null;
     case "tool": {
-      const card = push({ kind: "tool", from: "agent", ...describeTool(ev.name, ev.input) });
+      // The card says "Running …" until the tool is done, then "Ran …".
+      const d = describeTool(ev.name, ev.input);
+      const card = push({ kind: "tool", from: "agent", ...d, doneTitle: d.title, title: runningTitle(d.title), running: true });
       chat.tools.set(ev.id, card);
       return null;
     }
     case "tool_done": {
       const card = chat.tools.get(ev.id);
       if (!card) return null;
-      if (ev.error) card.title = `${card.title} (failed)`;
+      card.running = false;
+      card.title = ev.error ? `${card.doneTitle} (failed)` : card.doneTitle;
       const out = String(ev.output ?? "").split("\n").filter((l) => l.trim());
       if (card.icon === "run" && out.length) card.lines = [...card.lines, ...out.slice(0, OUTPUT_LINES), ...(out.length > OUTPUT_LINES ? ["…"] : [])];
       if (ev.error && card.icon !== "run" && out.length) card.lines = [...card.lines, out[0]];
@@ -168,6 +198,8 @@ export function applyEvent(chat, ev) {
     case "turn_end":
       chat.working = false;
       for (const card of chat.asks.values()) if (card.state === "pending") card.state = "denied";
+      // A tool the turn ended in the middle of.
+      for (const card of chat.tools.values()) if (card.running) { card.running = false; card.title = `${card.doneTitle} (${ev.stopped ? "stopped" : "didn't finish"})`; }
       if (ev.stopped) push({ kind: "note", text: "Stopped." });
       else if (ev.error) push({ kind: "error", from: "agent", text: String(ev.text || "Something went wrong.") });
       return "ended";
