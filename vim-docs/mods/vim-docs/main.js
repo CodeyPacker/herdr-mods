@@ -14,7 +14,7 @@
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, ScrollHandle } from "gpui-base";
 import { props, closeOverlay, nextCommand, shared, setShared, settings } from "herdr";
-import { colors, SIZE } from "./kit/theme.js";
+import { colors, SIZE, focusBorder } from "./kit/theme.js";
 import { DOCS, search, keyParts } from "./data.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
@@ -173,7 +173,7 @@ export default class VimDocs extends View {
           .on_click((_e, cx) => { cx.stop_propagation(); this.dismiss(); })
           .child("✕")))
       .child(keep(div().id("vim-docs-search").flex_none()).child(Input.new(this.query).h(28).px(8).rounded(6).border_1()
-        .border_color(t.accent).bg(t.background).text_size(12).text_color(t.foreground)))
+        .border_color(focusBorder(t)).bg(t.background).text_size(12).text_color(t.foreground)))
       .child(keep(v_flex().id("vim-docs-list")).flex_1().min_h(0).overflow_y_scrollbar().track_scroll(this.scroll)
         .children(rows.length ? children : [div().p(8).text_color(t.dim).child(empty)]))
       .child(h_flex().flex_none().gap(10).text_size(10.5).text_color(t.dim)

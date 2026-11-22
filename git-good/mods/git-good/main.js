@@ -14,7 +14,7 @@
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, InputState, Textarea, TextareaState, ScrollHandle, VirtualListScrollHandle, Scrollbar, v_virtual_list } from "gpui-base";
 import { spaces, panes, props, closeOverlay, nextCommand, settings } from "herdr";
-import { colors, SIZE } from "./kit/theme.js";
+import { colors, SIZE, focusBorder } from "./kit/theme.js";
 import { frame, divider } from "./kit/frame.js";
 import { legend, hint } from "./kit/legend.js";
 import { listRow, listNote } from "./kit/list.js";
@@ -119,11 +119,6 @@ function folderOf(s, ps) {
     || ps.find((p) => shown.has(p.tab) && p.cwd)?.cwd
     || ps.find((p) => all.has(p.tab) && p.cwd)?.cwd
     || s.folder || null;
-}
-
-/** The border of the pane that has the keyboard: the accent color at a third of its strength. @param {string} color @returns {import("./kit/theme.js").Color} */
-function focusEdge(color) {
-  return /** @type {any} */ (`${color}55`);
 }
 
 /** A faint wash of a theme color, behind an added or a removed line. @param {string} color @returns {import("./kit/theme.js").Color} */
@@ -955,7 +950,7 @@ export default class GitGood extends View {
   commitBox(t) {
     const ready = this.hasMessage && (this.staged.length > 0 || this.amend) && !this.busy && !this.pending && !this.writing;
     return v_flex().flex_none().gap(8)
-      .child(this.escBox(Textarea.new(this.message).h(96).px(10).py(8).rounded(8).border_1().border_color(this.typing ? focusEdge(t.accent) : t.input).bg(t.background).text_size(12.5).text_color(t.foreground),
+      .child(this.escBox(Textarea.new(this.message).h(96).px(10).py(8).rounded(8).border_1().border_color(this.typing ? focusBorder(t) : t.input).bg(t.background).text_size(12.5).text_color(t.foreground),
         // The box's keys, over its bottom right corner while it has the keyboard. Drawn over the box so nothing moves.
         this.typing && this.shortcuts.showHints
           ? h_flex().absolute().bottom(6).right(10).gap(10).text_size(SIZE.small).child(hint(t, ["ctrl-enter", "commit"])).child(hint(t, ["esc", "back"]))
@@ -1059,7 +1054,7 @@ export default class GitGood extends View {
     const body = div().id("gg-diff-body").flex_1().min_h(0).relative().font_family(this.mono()).text_size(12)
       .on_size_change((size, cx) => { if (size.height !== this.diffHeight) { this.diffHeight = size.height; cx.notify(); } });
     const sized = div().absolute().top(0).left(0).w_full().h(this.diffHeight);
-    return v_flex().id("gg-diff-pane").flex_1().min_w(0).rounded(10).overflow_hidden().border_1().border_color(this.focus === "diff" ? focusEdge(t.accent) : t.border).bg(t.background)
+    return v_flex().id("gg-diff-pane").flex_1().min_w(0).rounded(10).overflow_hidden().border_1().border_color(this.focus === "diff" ? focusBorder(t) : t.border).bg(t.background)
       .on_click((_e, cx) => { if (this.focus !== "diff") { this.focus = "diff"; cx.notify(); } })
       .child(h_flex().flex_none().h(40).px(12).gap(10).items_center().border_b_1().border_color(t.border)
         .child(h_flex().flex_1().min_w(0).font_family(this.mono()).text_size(12)

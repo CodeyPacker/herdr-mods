@@ -716,6 +716,12 @@ function serve(opts) {
       if (role === null) {
         role = m?.role ?? "pane";
         if (role === "pane") {
+          if (m.snapshot) {
+            const after = Math.max(0, Number(m.after) || 0);
+            for (const ev of history.slice(after)) sock.write(`${JSON.stringify(ev)}\n`);
+            sock.end(`${JSON.stringify({ type: "replay_end", total: history.length, startedAt })}\n`);
+            return;
+          }
           panes.add(sock); lastSeen = Date.now();
           for (const ev of history) sock.write(`${JSON.stringify(ev)}\n`);
         }

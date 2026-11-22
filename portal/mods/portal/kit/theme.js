@@ -68,6 +68,17 @@ export function seeThroughFill(color) {
   return /** @type {Color} */ (`${color}${Math.round(opacity * 255).toString(16).padStart(2, "0")}`);
 }
 
+/**
+ * The border that shows where the keyboard is: a text box you're typing in, the pane or card that
+ * has the keys. The text color at 20%, a little lighter than `border`, so it shows without pulling
+ * the eye the way the accent does. Selection and "on" states keep the accent.
+ * @param {Theme} t @returns {Color}
+ */
+export function focusBorder(t) {
+  const c = String(t.foreground ?? "");
+  return /** @type {Color} */ (/^#[0-9a-f]{6}$/i.test(c) ? `${c}33` : t.input);
+}
+
 /** Sizes in pixels. One table, so every mod's frame, rows and text match. */
 export const SIZE = {
   /** The space between a frame's edge and its content. */

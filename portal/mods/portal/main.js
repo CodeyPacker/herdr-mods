@@ -11,7 +11,7 @@
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, v_virtual_list, VirtualListScrollHandle, Scrollbar, Popover } from "gpui-base";
 import { props, closeOverlay, window as win, readTextFile, appHome } from "herdr";
-import { colors, SIZE } from "./kit/theme.js";
+import { colors, SIZE, focusBorder } from "./kit/theme.js";
 import { frame, divider } from "./kit/frame.js";
 import { chip, toolButton } from "./kit/controls.js";
 import { legend } from "./kit/legend.js";
@@ -729,7 +729,7 @@ export default class Portal extends View {
   /** A filter box's frame. @param {Theme} t @param {string} id @param {ReturnType<typeof InputState.new>} state @param {boolean} on @param {boolean} bad @param {number | null} w */
   field(t, id, state, on, bad, w) {
     return div().id(id).h(30).px(10).flex().items_center().rounded(8).border_1()
-      .border_color(bad ? t.blocked : on ? t.accent : t.border).bg(t.background).cursor_text()
+      .border_color(bad ? t.blocked : on ? focusBorder(t) : t.border).bg(t.background).cursor_text()
       .when(w === null, (el) => el.flex_1().min_w(0)).when(w !== null, (el) => el.w(w ?? 0).flex_none())
       .on_mouse_down("left", (_e, cx) => { state.focus(); cx.stop_propagation(); })
       .child(Input.new(state).h_full().w_full().text_size(12).text_color(t.foreground));

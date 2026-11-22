@@ -60,7 +60,7 @@ test('a dropped stream reconnects and replays missing events without duplicates'
   }, () => { closes++; });
   bridge.running = async () => { bridge.startedAt = 1; return 1234; };
   bridge.launch = async () => { launches++; throw new Error('must not launch'); };
-  const cx = { notify() {}, timer: { after(_ms, done) { queueMicrotask(done); } } };
+  const cx = { notify() {}, timer: { every() { return { cancel() {} }; }, after(_ms, done) { queueMicrotask(done); } } };
   await bridge.open(cx);
   assert.equal(connects, 2);
   assert.equal(launches, 0);
@@ -78,7 +78,7 @@ test('a stopped bridge reports disconnection instead of starting a second writer
   const bridge = new Bridge({ chat: 'chat', agent: 'codex', cwd: '/tmp', session: 'session' }, ev => applyEvent(chat, ev), () => { closed = true; });
   bridge.running = async () => { bridge.startedAt = 1; return ++probes === 1 ? 1234 : null; };
   bridge.launch = async () => { throw new Error('must not launch'); };
-  await bridge.open({ notify() {}, timer: { after(_ms, done) { queueMicrotask(done); } } });
+  await bridge.open({ notify() {}, timer: { every() { return { cancel() {} }; }, after(_ms, done) { queueMicrotask(done); } } });
   assert.equal(closed, true);
   assert.equal(chat.reconnecting, false);
   assert.equal(chat.disconnected, true);
@@ -119,4 +119,62 @@ test('the last message and typing indicator stay anchored after layout catches u
   assert.equal(scrolls.at(-1), 3);
   v.trackMessageScroll(100);
   assert.equal(v.atBottom, false, 'scrolling up pauses following');
+});
+
+test('an open socket with a stuck read recovers a missing approval without sending a message', async () => {
+  const permission = { type: 'permission', id: 'ask1', tool: 'Bash', input: { command: 'npm test' } };
+  const missing = [{ type: 'working' }, permission];
+  let reads = 0, writes = 0, probe;
+  const nativeRead = new Promise(() => {});
+  const net = { connect: async () => ({
+    write: async () => { writes++; },
+    read: async () => ++reads === 1 ? line({ type: 'ready', session: 'session' }) : nativeRead,
+    close() {},
+  }) };
+  const exec = async (_command, args) => {
+    assert.deepEqual(args.slice(-2), ['1234', '1']);
+    return { code: 0, stdout: JSON.stringify({ after: 1, events: missing, total: 3, startedAt: 1 }) };
+  };
+  const Bridge = new Function('net', 'exec', 'appHome', (await source('agent.js')).replace(/export /g, '') + '\nreturn Bridge;')(net, exec, () => '/tmp');
+  const chat = { id: 'chat' };
+  resetThread(chat);
+  const bridge = new Bridge({ chat: 'chat', agent: 'codex', session: 'session' }, ev => applyEvent(chat, ev), () => {});
+  bridge.running = async () => { bridge.startedAt = 1; return 1234; };
+  const jobs = [];
+  const cx = { notify() {}, spawn(fn) { jobs.push(fn(cx)); }, timer: { every(_ms, fn) { probe = fn; return { cancel() {} }; } } };
+  void bridge.open(cx);
+  for (let i = 0; i < 10; i++) await Promise.resolve();
+  assert.equal(reads, 2, 'native read stays pending with the socket open');
+  bridge.lastEventAt = 0;
+  probe(cx);
+  await Promise.all(jobs);
+  assert.equal(chat.asks.get('ask1').state, 'pending');
+  assert.equal(chat.working, true);
+  assert.equal(writes, 1, 'only the initial subscription was sent');
+  assert.equal(bridge.received, 3);
+  bridge.close();
+});
+
+test('catch-up skips live events received while the snapshot was in flight and ignores a closed chat', async () => {
+  let finish;
+  const exec = () => new Promise(resolve => { finish = resolve; });
+  const Bridge = new Function('exec', 'appHome', (await source('agent.js')).replace(/export /g, '') + '\nreturn Bridge;')(exec, () => '/tmp');
+  const events = [];
+  const bridge = new Bridge({ chat: 'chat' }, ev => events.push(ev), () => {});
+  bridge.sock = { close() {} };
+  bridge.received = 1;
+  bridge.port = 1234;
+  bridge.startedAt = 1;
+  const cx = { notify() {} };
+  const pending = bridge.catchUp(cx);
+  bridge.received = 2;
+  finish({ code: 0, stdout: JSON.stringify({ events: [{ type: 'working' }, { type: 'permission', id: 'ask1' }], startedAt: 1 }) });
+  await pending;
+  assert.deepEqual(events, [{ type: 'permission', id: 'ask1' }]);
+  bridge.lastEventAt = 0;
+  const closing = bridge.catchUp(cx);
+  bridge.close();
+  finish({ code: 0, stdout: JSON.stringify({ events: [{ type: 'permission', id: 'stale' }], startedAt: 1 }) });
+  await closing;
+  assert.equal(events.length, 1);
 });

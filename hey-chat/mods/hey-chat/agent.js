@@ -171,6 +171,31 @@ export class Bridge {
     this.closed = false;
     this.startedAt = 0;
     this.protocol = 1;
+    this.received = 0;
+    this.lastEventAt = 0;
+    this.catchUpBusy = false;
+    this.watch = null;
+  }
+
+  /** Recover events even if the native socket's pending read never settles. */
+  async catchUp(cx) {
+    if (this.closed || !this.sock || this.catchUpBusy || Date.now() - this.lastEventAt < 5000) return;
+    this.catchUpBusy = true;
+    const sock = this.sock, startedAt = this.startedAt, after = this.received;
+    try {
+      const script = `${appHome().replace(/\\/g, "/")}/mods/hey-chat/bridge-events.mjs`;
+      const result = await exec("node", [script, String(this.port), String(after)], { timeout: 5000 });
+      if (result.code !== 0 || this.closed || this.sock !== sock || this.startedAt !== startedAt) return;
+      const replay = JSON.parse(result.stdout);
+      if (replay.startedAt && replay.startedAt !== startedAt) return;
+      for (let i = 0; i < replay.events.length; i++) {
+        if (after + i < this.received) continue;
+        this.onEvent(replay.events[i], cx);
+        this.received++;
+        this.lastEventAt = Date.now();
+      }
+      cx.notify();
+    } finally { this.catchUpBusy = false; }
   }
 
   /** The port of this chat's running bridge, or null. Sets `startedAt` to when that bridge started. */
@@ -207,8 +232,15 @@ export class Bridge {
   /** Connects and recovers a dropped socket, skipping events already received from the same bridge. @param {any} cx */
   async open(cx) {
     const port = (await this.running()) ?? (await this.launch(cx));
+    this.port = port;
     const startedAt = this.startedAt;
-    let received = 0, retries = 0, connected = false;
+    this.received = 0;
+    let retries = 0, connected = false;
+    this.watch = cx.timer.every(3000, (cx) => {
+      cx.spawn(async (cx) => {
+        try { await this.catchUp(cx); } catch (error) { console.error("Chat replay check failed:", error); }
+      });
+    });
     while (!this.closed) {
       let sock = null;
       let connectedAt = 0;
@@ -229,9 +261,10 @@ export class Bridge {
           for (const line of reader.push(bytes)) {
             let ev = null;
             try { ev = JSON.parse(line); } catch { continue; }
-            if (replayed++ < received) continue;
+            if (replayed++ < this.received) continue;
             this.onEvent(ev, cx);
-            received++;
+            this.received++;
+            this.lastEventAt = Date.now();
             retries = 0;
           }
           cx.notify();
@@ -254,6 +287,7 @@ export class Bridge {
       if (running !== port || this.startedAt !== startedAt) break;
     }
     if (!this.closed) {
+      this.watch?.cancel();
       this.onEvent({ type: "connection", state: "disconnected" }, cx);
       this.onClose(cx);
     }
@@ -290,6 +324,7 @@ export class Bridge {
   /** Drops the link. The bridge keeps running for a later pane. */
   close() {
     this.closed = true;
+    this.watch?.cancel();
     try { this.sock?.close(); } catch { /* already closed */ }
     this.sock = null;
   }

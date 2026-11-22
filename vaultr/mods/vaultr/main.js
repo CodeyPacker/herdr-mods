@@ -435,7 +435,8 @@ export default class Vaultr extends View {
         .child(div().flex_none().child("←"))
         .child(div().min_w(0).truncate().child(`Back to ${stem(this.note.path)}`))))
       .child(h_flex().flex_none().h(30).mx(8).my(6).px(8).gap(6).items_center().rounded(6).border(1)
-        .border_color(this.typing ? t.accent : t.border).bg(t.background)
+        // While typing: the text color at 20%, the same quiet focus border as the kit's focusBorder.
+        .border_color(this.typing ? (/^#[0-9a-f]{6}$/i.test(String(t.foreground)) ? `${t.foreground}33` : t.input) : t.border).bg(t.background)
         .child(Input.new(this.search).flex_1().text_size(12.5).text_color(t.foreground))
         .child(div().flex_none().text_size(11).text_color(t.dim).child("/")))
       .child(v_flex().id("vaultr-list").flex_1().min_h(0).pb(6).overflow_y_scrollbar().track_scroll(this.listScroll)

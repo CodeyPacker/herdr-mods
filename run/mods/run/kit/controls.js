@@ -1,6 +1,7 @@
 // Controls: the spinner, the text box, the round icon button, chips, buttons and the slider.
 import { div, svg } from "gpui-kit";
 import { h_flex, Input, Slider, SliderTrack, SliderIndicator, SliderThumb } from "gpui-base";
+import { focusBorder } from "./theme.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("./theme.js").Theme} Theme */
@@ -13,9 +14,9 @@ export function spinner(t) {
   return div().text_color(t.accent).frames(SPINNER, 90).child(SPINNER[0]);
 }
 
-/** A one-line text box. `active` outlines it in the accent color. @param {Theme} t @param {any} state an InputState @param {boolean} [active] */
+/** A one-line text box. `active` (it has the keyboard) outlines it in the focus color. @param {Theme} t @param {any} state an InputState @param {boolean} [active] */
 export function textInput(t, state, active = true) {
-  return Input.new(state).h(32).px(10).rounded(8).border_1().border_color(active ? t.accent : t.input).bg(t.background).text_size(12.5).text_color(t.foreground);
+  return Input.new(state).h(32).px(10).rounded(8).border_1().border_color(active ? focusBorder(t) : t.input).bg(t.background).text_size(12.5).text_color(t.foreground);
 }
 
 /**
