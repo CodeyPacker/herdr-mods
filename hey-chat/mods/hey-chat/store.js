@@ -5,7 +5,7 @@
 import { readTextFile, writeTextFile, appHome, home, checking } from "herdr";
 import * as fs from "fs/promises";
 
-/** @typedef {{ id: string, path: string, cwd: string }} Project */
+/** @typedef {{ id: string, path: string, cwd: string, made?: boolean }} Project */
 
 function file() {
   return `${appHome().replace(/\\/g, "/")}/data/hey-chat/chats.json`;
@@ -22,28 +22,37 @@ export function tilde(cwd) {
   return cwd === h || cwd.startsWith(`${h}/`) ? `~${cwd.slice(h.length)}` : cwd;
 }
 
-/** @returns {Promise<{ chats: any[], projects: { id: string, path: string }[] }>} */
+/** @returns {Promise<{ chats: any[], projects: { id: string, path: string, made?: boolean }[], activeChat: string | null }>} */
 export async function loadStore() {
   const text = await readTextFile(file()).catch(() => null);
   try {
     const s = JSON.parse(text ?? "");
-    return { chats: Array.isArray(s.chats) ? s.chats : [], projects: Array.isArray(s.projects) ? s.projects : [] };
+    return { chats: Array.isArray(s.chats) ? s.chats : [], projects: Array.isArray(s.projects) ? s.projects : [], activeChat: typeof s.activeChat === "string" ? s.activeChat : null };
   } catch {
-    return { chats: [], projects: [] };
+    return { chats: [], projects: [], activeChat: null };
   }
 }
 
+// Keep saves in order so a slower earlier save cannot replace a newer session id.
+let saving = Promise.resolve();
+
 /**
  * Saves the chats that have a session (a new chat you never wrote in has none) and the folders they're in.
- * @param {any[]} chats @param {Project[]} projects
+ * @param {any[]} chats @param {Project[]} projects @param {string} [activeChat]
  */
-export async function saveStore(chats, projects) {
+export async function saveStore(chats, projects, activeChat) {
   if (checking()) return;
   const real = chats.filter((c) => c.session).map((c) => ({
-    id: c.id, project: c.project, cwd: c.cwd, agent: c.agent, title: c.title, session: c.session ?? null, stamp: c.stamp, time: c.time,
+    id: c.id, project: c.project, cwd: c.cwd, agent: c.agent, model: c.model ?? null, selectedModel: c.selectedModel ?? null, title: c.title, session: c.session ?? null, stamp: c.stamp, time: c.time,
   }));
   const used = new Set(real.map((c) => c.project));
-  const folders = projects.filter((p) => used.has(p.id)).map((p) => ({ id: p.id, path: p.path }));
-  await fs.mkdir(file().replace(/\/[^/]+$/, ""), { recursive: true }).catch(() => null);
-  await writeTextFile(file(), `${JSON.stringify({ chats: real, projects: folders }, null, 2)}\n`, null).catch(() => null);
+  // Folders with chats, and the projects you made (kept while they have none yet).
+  const folders = projects.filter((p) => used.has(p.id) || p.made).map((p) => ({ id: p.id, path: p.path, ...(p.made ? { made: true } : {}) }));
+  const text = `${JSON.stringify({ chats: real, projects: folders, activeChat: activeChat ?? null }, null, 2)}\n`;
+  saving = saving.catch(() => {}).then(async () => {
+    await fs.mkdir(file().replace(/\/[^/]+$/, ""), { recursive: true });
+    const expected = await readTextFile(file());
+    await writeTextFile(file(), text, expected);
+  });
+  await saving;
 }

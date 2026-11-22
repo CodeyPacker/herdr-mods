@@ -22,7 +22,7 @@ export function agentPicture(agent, size) {
 }
 
 /**
- * Your picture, `size` px across: your photo or a built-in picture, else initials on a color.
+ * Your picture, `size` px across: your uploaded photo, else initials on a color.
  * @param {import("./me.js").Me} me @param {number} size
  */
 export function myPicture(me, size) {

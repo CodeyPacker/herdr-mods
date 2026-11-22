@@ -4,9 +4,13 @@
  * A message in a chat's thread:
  *   { kind: "sep", text }                                     a day divider
  *   { kind: "text", from: "me" | "agent", text, time? }       a bubble
+ *   { kind: "image", from: "me" | "agent", path, w, h, time? } a picture (path for image(), from Herdr's home)
  *   { kind: "code", from: "agent", lang, text }               a code card
  *   { kind: "tool", from: "agent", icon, title, lines, add?, del? }  a tool call card
  *   { kind: "permission", from: "agent", ask, tool, state, title, lines }  a permission card
+ *   { kind: "question", from: "agent", ask, questions, picks, state }  the agent's questions for you:
+ *       questions are { id, header, question, options: { label, description }[], multi }, picks
+ *       the answers so far by question id, state "pending", "answered" or "dismissed"
  *   { kind: "error", from: "agent", text } and { kind: "note", text }
  * @typedef {{ id: string, kind: string, from?: string, text?: string, time?: string, lang?: string, icon?: string, title?: string, lines?: string[], add?: string, del?: string, [k: string]: any }} Message
  */
@@ -68,6 +72,10 @@ export function describeTool(name, input) {
       const title = changes.length === 1 ? `Edited ${base(changes[0].path)}` : `Edited ${changes.length} files`;
       return { icon: "edit", title, add: `+${add}`, del: `\u2212${del}`, lines: changes.map((/** @type {any} */ c) => String(c.path ?? "")) };
     }
+    case "AskUserQuestion": {
+      const qs = Array.isArray(i.questions) ? i.questions : [];
+      return { icon: "run", title: qs.length === 1 ? "Asked you a question" : `Asked you ${qs.length} questions`, lines: qs.map((/** @type {any} */ q) => String(q.question ?? "")) };
+    }
     case "Task": case "Agent": return { icon: "run", title: `Started a helper: ${clip(String(i.description ?? ""), 36)}`, lines: [clip(String(i.prompt ?? ""), 200)] };
     default: return { icon: "run", title: `Used ${name}`, lines: [clip(JSON.stringify(i), 200)] };
   }
@@ -75,12 +83,40 @@ export function describeTool(name, input) {
 
 /** The first word of a finished tool card's title, and what it says while the tool still runs. */
 const RUNNING = [["Ran", "Running"], ["Read", "Reading"], ["Edited", "Editing"], ["Wrote", "Writing"], ["Searched", "Searching"],
-  ["Looked", "Looking"], ["Listed", "Listing"], ["Updated", "Updating"], ["Started", "Starting"], ["Used", "Using"]];
+  ["Looked", "Looking"], ["Listed", "Listing"], ["Updated", "Updating"], ["Started", "Starting"], ["Used", "Using"], ["Asked", "Asking"]];
 
 /** A finished card's title as it reads while the tool runs: "Ran ls" → "Running ls". @param {string} title */
 export function runningTitle(title) {
   for (const [done, now] of RUNNING) if (title.startsWith(`${done} `)) return `${now}${title.slice(done.length)}`;
   return title;
+}
+
+/** Useful work to show beside the dots, only while its tool runs. @param {string} name @param {any} input */
+export function describeActivity(name, input) {
+  const i = input ?? {};
+  if (name === "Bash") {
+    const command = String(i.command ?? "");
+    if (/\b(?:rg|grep|graphify)\b/.test(command)) return "Searching the repo";
+    if (/\b(?:sed|cat|head|tail)\b/.test(command)) return "Reading files";
+    if (/\b(?:test|pytest|vitest|playwright)\b/.test(command)) return "Running tests";
+    if (/\b(?:build|check|tsc)\b/.test(command)) return "Checking changes";
+    if (/\bgit\s+(?:diff|status|log|show)\b/.test(command)) return "Reviewing changes";
+    return "";
+  }
+  if (["Read", "Grep", "Glob", "LS", "Edit", "MultiEdit", "Write", "NotebookEdit", "CodexPatch", "WebSearch", "WebFetch", "Task", "Agent"].includes(name)) {
+    return runningTitle(describeTool(name, input).title);
+  }
+  // Computer tools supply a human-readable action, unlike their internal tool names.
+  if (/cua_repl/.test(name) && typeof i.title === "string") return clip(i.title, 72);
+  return "";
+}
+
+/** The latest useful tool still running. Completed activity never lingers. @param {any} chat */
+export function currentActivity(chat) {
+  if (!chat.working) return "";
+  const cards = [...(chat.tools?.values() ?? [])];
+  for (let n = cards.length - 1; n >= 0; n--) if (cards[n].running && cards[n].activity) return cards[n].activity;
+  return "";
 }
 
 /**
@@ -150,14 +186,23 @@ function dayLabel(at) {
   return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${clock(at)}`;
 }
 
-/**
- * Clears what a chat built from its bridge, before the bridge replays its events.
- * @param {any} chat
- */
+/** The displayed history, keeping hidden activity available when condensed mode is off. @param {any} chat @param {boolean} condensed */
+export function visibleMessages(chat, condensed) {
+  if (!condensed) return chat.thread;
+  return chat.thread.filter((m) => {
+    if (m.kind === "tool") return false;
+    if (m.kind === "permission") return m.state === "pending";
+    if (m.kind === "text" && m.from === "agent" && /^\s*::browser-complete\{[^\n]*\}\s*$/.test(m.text ?? "")) return false;
+    return true;
+  });
+}
+
+/** Clears what a chat built from its bridge before replaying its events. @param {any} chat */
 export function resetThread(chat) {
   chat.thread = [];
   chat.tools = new Map();     // tool call id → its card
   chat.asks = new Map();      // permission id → its card
+  chat.questions = new Map(); // question id → its card
   chat.working = false;
   chat.lastAt = 0;
 }
@@ -165,23 +210,50 @@ export function resetThread(chat) {
 /**
  * Applies one bridge event to a chat: adds or updates its messages and its working state.
  * Returns what the view should know: "asked" when a permission card arrived, "ended" when a turn ended.
- * @param {any} chat @param {any} ev @returns {"asked" | "ended" | null}
+ * @param {any} chat @param {any} ev @returns {"asked" | "question" | "ended" | null}
  */
 export function applyEvent(chat, ev) {
   const push = (/** @type {any} */ m) => { chat.thread.push({ id: `${chat.id}.${chat.thread.length}`, ...m }); return chat.thread[chat.thread.length - 1]; };
   switch (ev.type) {
+    case "connection":
+      chat.reconnecting = ev.state === "reconnecting";
+      chat.disconnected = ev.state === "disconnected";
+      return null;
+    case "model":
+      if (typeof ev.model === "string" && ev.model) chat.model = ev.model;
+      return null;
     case "ready":
     case "session":
       if (ev.session ?? ev.id) chat.session = ev.session ?? ev.id;
       return null;
+    case "queue_error": {
+      for (const card of chat.thread) if (card.queueId === ev.id) { card.sending = false; card.queueError = String(ev.message ?? "Couldn't send. Try again."); }
+      return null;
+    }
+    case "queued":
     case "user": {
+      const queueId = ev.queueId ?? (ev.type === "queued" ? ev.id : null);
+      const existing = queueId && chat.thread.filter(m => m.queueId === queueId);
+      if (existing?.length) {
+        for (const card of existing) { card.queued = ev.type === "queued"; card.sending = false; card.queueError = null; }
+        return null;
+      }
       const at = Number(ev.at) || Date.now();
       if (!chat.lastAt || !sameDay(chat.lastAt, at) || at - chat.lastAt > 3600000) push({ kind: "sep", text: dayLabel(at) });
       chat.lastAt = at;
       chat.time = clock(at);
-      push({ kind: "text", from: "me", text: ev.text, time: clock(at) });
+      const state = { queueId, queued: ev.type === "queued" };
+      for (const img of Array.isArray(ev.images) ? ev.images : []) push({ kind: "image", from: "me", path: img.path, w: img.w, h: img.h, time: clock(at), ...state });
+      if (ev.text) push({ kind: "text", from: "me", text: ev.text, time: clock(at), ...state });
+      if (state.queued) chat.thread[chat.thread.length - 1].queueAction = true;
       return null;
     }
+    case "image":
+      push({ kind: "image", from: "agent", path: ev.path, w: ev.w, h: ev.h });
+      return null;
+    case "note":
+      push({ kind: "note", text: String(ev.text ?? "") });
+      return null;
     case "working":
       chat.working = true;
       return null;
@@ -191,7 +263,7 @@ export function applyEvent(chat, ev) {
     case "tool": {
       // The card says "Running …" until the tool is done, then "Ran …".
       const d = describeTool(ev.name, ev.input);
-      const card = push({ kind: "tool", from: "agent", ...d, doneTitle: d.title, title: runningTitle(d.title), running: true });
+      const card = push({ kind: "tool", from: "agent", ...d, activity: describeActivity(ev.name, ev.input), doneTitle: d.title, title: runningTitle(d.title), running: true });
       chat.tools.set(ev.id, card);
       return null;
     }
@@ -210,7 +282,19 @@ export function applyEvent(chat, ev) {
       chat.asks.set(ev.id, card);
       return "asked";
     }
+    case "question": {
+      const card = push({ kind: "question", from: "agent", ask: ev.id, questions: Array.isArray(ev.questions) ? ev.questions : [], async: Boolean(ev.async), picks: {}, state: "pending" });
+      chat.questions.set(ev.id, card);
+      return "question";
+    }
+    case "answered": {
+      const card = chat.questions.get(ev.id);
+      if (card) { card.state = "answered"; card.picks = ev.answers ?? card.picks; }
+      return null;
+    }
     case "decided": {
+      const q = chat.questions.get(ev.id);
+      if (q) { if (q.state === "pending") q.state = "dismissed"; return null; }
       const card = chat.asks.get(ev.id);
       if (card) card.state = ev.behavior === "allow" ? (ev.always ? "always" : "allowed") : "denied";
       return null;
@@ -218,6 +302,7 @@ export function applyEvent(chat, ev) {
     case "turn_end":
       chat.working = false;
       for (const card of chat.asks.values()) if (card.state === "pending") card.state = "denied";
+      for (const card of chat.questions.values()) if (card.state === "pending" && (!card.async || ev.error || ev.stopped)) card.state = "dismissed";
       // A tool the turn ended in the middle of.
       for (const card of chat.tools.values()) if (card.running) { card.running = false; card.title = `${card.doneTitle} (${ev.stopped ? "stopped" : "didn't finish"})`; }
       if (ev.stopped) push({ kind: "note", text: "Stopped." });
@@ -230,6 +315,13 @@ export function applyEvent(chat, ev) {
     default:
       return null;
   }
+}
+
+/** The question card waiting on you in a chat, or null. @param {any} chat */
+export function pendingQuestion(chat) {
+  if (!chat.questions) return null;
+  for (const card of chat.questions.values()) if (card.state === "pending") return card;
+  return null;
 }
 
 /** The permission card waiting on you in a chat, or null. @param {any} chat */

@@ -1,4 +1,4 @@
-// Your profile: initials, their color, and a picture (a built-in one or your own photo).
+// Your profile: initials, their color, and your own uploaded photo.
 // Kept in Herdr's shared state, which every copy sees and which lasts across restarts.
 // A photo is copied into <appHome>/data/hey-chat/, cropped square and shrunk where the system can.
 import { shared, setShared, exec, appHome, window } from "herdr";
@@ -10,10 +10,6 @@ const KEY = "hey-chat.me";
 /** The initials colors Settings offers. The first is the default. */
 export const COLORS = ["#7c5cff", "#2f6fe4", "#0f7a5e", "#c2410c", "#be185d", "#475569"];
 
-/** The built-in pictures, as paths image() takes. */
-export const PICTURES = ["sunset", "mountains", "waves", "orbit", "bloom", "blocks"]
-  .map((name) => ({ name, path: `mods/hey-chat/pictures/${name}.svg` }));
-
 /** Image types a photo can be. */
 const PHOTO = /\.(png|jpe?g|gif|webp|heic|heif|tiff?|bmp)$/i;
 
@@ -23,7 +19,7 @@ export function loadMe() {
   return {
     initials: typeof s?.initials === "string" ? s.initials : "Me",
     color: typeof s?.color === "string" ? s.color : COLORS[0],
-    picture: typeof s?.picture === "string" ? s.picture : null,
+    picture: typeof s?.picture === "string" && !s.picture.startsWith("mods/hey-chat/pictures/") ? s.picture : null,
   };
 }
 
@@ -37,7 +33,7 @@ export function isPhoto(path) {
   return PHOTO.test(path);
 }
 
-/** True when `picture` is a photo of yours, not a built-in picture. @param {string | null} picture */
+/** True when `picture` is an uploaded photo owned by this mod. @param {string | null} picture */
 function isOwnPhoto(picture) {
   return Boolean(picture?.startsWith("data/hey-chat/"));
 }
@@ -102,7 +98,7 @@ export async function importPhoto(src, old) {
   return `data/hey-chat/${name}`;
 }
 
-/** Removes your old photo's file when you go back to initials or a built-in picture. @param {string | null} old */
+/** Removes your old photo's file when you go back to initials. @param {string | null} old */
 export async function dropPhoto(old) {
   if (isOwnPhoto(old)) await removeFile(`${appHome()}/${old}`);
 }

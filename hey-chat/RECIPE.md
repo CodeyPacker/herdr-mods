@@ -8,31 +8,34 @@ every chat grouped by the folder it runs in. The design it follows is
 ## What you see
 
 Two cards side by side, 10 px apart, each with 14 px corners and a 1 px `border`.
-The card with the keyboard has a softened `accent` border.
+The card with the keyboard has a faint `foreground` border (20%), a little lighter than `border`.
 
 The sidebar (320 px):
 
-- "Hey, chat" and a pencil that starts a new chat in the open chat's folder.
-- A search box. Typing filters chats by title, last message and folder name,
+- No title (Herdr's pane header names the mod). At the top, a search box with a
+  pencil to its right that starts a new chat in the open chat's folder. Typing
+  in the search box filters chats by title, last message and folder name,
   hides Recent, and opens every folder with a match. "No chats match." when
   none do.
 - Recent: the two chats with the newest messages, from any folder. Each preview
   starts with the folder's name.
-- One row per folder: a chevron, a folder icon, its name, its chat count, and a
-  `+` that starts a chat there. Folders are sorted by their newest chat.
+- One row per folder: a chevron, a folder icon, its name, its chat count, a
+  `+` that starts a chat there, and a trash button that asks to delete all its
+  chats. Folders are sorted by their newest chat.
 - Under an open folder, its chats, newest first: the agent's picture (34 px),
   the title, the time ("9:46 AM" today, "Yesterday", "Mon", "Nov 12"), a
   preview of the last message ("You: ..." for yours), and an unread dot. The
   open chat has the `selected` fill. While the agent works the preview reads
   "Thinking…" in `working`, and "Waiting for you" in `blocked` while it waits
   on a permission.
-- At the bottom, your picture and a gear. A click opens Settings.
-- While the sidebar has the keyboard, the cursor's row has an `accent` outline
+- At the bottom, a button that hides the sidebar (left) and the Settings gear
+  (right). Only the gear opens Settings.
+- While the sidebar has the keyboard, the cursor's row has a `foreground` outline (35%)
   and the kit's key legend shows above the bottom row.
 
 The chat:
 
-- A header: the agent's picture (40 px) with a status dot, the chat title,
+- A header: while the sidebar is hidden, a button that shows it, then the agent's picture (40 px) with a status dot, the chat title,
   "Claude · Ready" (or "Thinking…", "Waiting for you", "Loading…"), a chip with
   the folder's path, search and details buttons (not wired yet), and a trash
   button that asks to delete the chat.
@@ -65,13 +68,19 @@ The chat:
 The delete question, a `raised` card with a `blocked` border above the sidebar's
 bottom row: "Delete “<title>”?", "Its Claude session is deleted for good."
 (or Codex), and Delete (filled `blocked`, with a ring: it has the focus, so
-`enter` or `y` presses it) and Cancel (`n`). "Deleting…"
+`enter` or `y` presses it) and Cancel (`n`). For a folder: "Delete all 12
+chats in “herdr-mods”?", "Their Claude and Codex sessions are deleted for good.
+The folder on your disk isn't touched.", and "Deleting 3 of 12…" while it runs. "Deleting…"
 while it runs, and the reason in `blocked` if it fails.
 
 Settings, a solid `popover` card above the bottom row: your picture (72 px)
 with Upload photo and Use initials, six built-in pictures (sunset, mountains,
 waves, orbit, bloom, blocks) with a ring on the chosen one, an initials box, and
 six initials colors. Dropping an image on the card uses it as your photo.
+Below a line, a "Show key hints" switch (on by default, shared state
+`hey-chat.keyHints`). Off, it hides the sidebar's key legend, the message box's
+`⌃j ⌃k scroll` hint, and the key letters on the permission and delete buttons.
+The keys still work.
 
 Claude's picture is a `#D97757` circle with a white 12-ray starburst. Codex's
 is a near-black circle with a faint ring and a white `>_`, not OpenAI's logo.
@@ -90,18 +99,31 @@ Opacity follows the kit: the mod's own background is `paneBackground(...)`
 - The pane opens on a new chat in that folder, with the message box focused.
   A new chat you leave without writing in is dropped.
 - Keys (the view's `on_key_down`, so only while Hey, chat has the keyboard):
-  - `ctrl-h` sidebar, `ctrl-l` message box, `ctrl-j` / `ctrl-k` scroll the chat
+  - `ctrl-h` sidebar (showing it if it's hidden), `ctrl-l` message box, `ctrl-b`
+    hides or shows the sidebar, `ctrl-j` / `ctrl-k` scroll the chat
     one message from anywhere (holding repeats), `ctrl-c` stops a turn.
   - Sidebar: `j`/`k` or the arrows move, `l`, `enter` or right opens a chat or
     a folder (`enter` on an open folder closes it), `h` or left closes the
     cursor's folder, `g`/`G` first and last row, `d` asks to delete the
-    cursor's chat, `esc` back to the message box. The list scrolls to keep the
+    cursor's chat (on a folder row: every chat in that folder),
+    `v` starts or ends a selection, `esc` back to the message box. The list scrolls to keep the
     cursor in view.
+  - A selection: `v`, or shift with `j`/`k` or the arrows, starts one at the
+    cursor. `j`, `k`, `g`, `G` (and the shifted keys) extend it, `d` asks to
+    delete every chat it covers ("Delete 7 chats?"), `esc` or `v` ends it, and
+    any other key ends it first. Shift-click on a chat selects from the cursor
+    to it. Selected chats have the `selected` fill. Folder rows inside a
+    selection are skipped, and a chat in both Recent and its folder counts once.
+    The key legend reads `j k extend · d delete · esc cancel`.
   - The delete question: `enter` or `y` deletes, `n` or `esc` cancels. Other keys wait.
   - A waiting permission: `y` allow once, `a` always allow, `n` deny.
   - Settings: `esc` closes it.
   - Inside the message box `ctrl-h` and `ctrl-k` would delete text. The view
     handles them first.
+- Hiding the sidebar gives the chat the pane's whole width. It stays hidden
+  across panes and restarts (shared state `hey-chat.sidebarHidden`). Hiding it
+  while it has the keyboard moves the keyboard to the message box. The delete
+  question shows it again.
 - Folders you open or close stay that way (shared state `hey-chat.collapsed`).
   A folder you've never touched starts closed, except the one you opened from.
 - Opening a chat with a session shows its last 40 messages you sent and what
@@ -126,6 +148,9 @@ Opacity follows the kit: the mod's own background is `paneBackground(...)`
   `<id>.jsonl` and the `<id>/` folder beside it, or `codex delete --force <id>`.
   The next chat in its folder opens, or a new one there. A chat with no messages
   is only dropped.
+- Deleting a folder deletes its chats one at a time, the same way. Once none are
+  left, the folder leaves the sidebar. A chat that can't be deleted stays, and
+  the question shows why. The folder on disk is never touched.
 - A chat in the background that finishes a turn gets an unread dot.
 - Times are formatted by hand: Herdr's JavaScript ignores
   `toLocaleTimeString`'s options.

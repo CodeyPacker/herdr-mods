@@ -1,9 +1,9 @@
 // The Settings card: a solid popover above the sidebar's bottom row, for your picture
-// (upload or drop a photo, or pick a built-in one), your initials and their color.
-import { div, svg, image } from "gpui-kit";
+// (upload or drop a photo), your initials and their color.
+import { div, svg } from "gpui-kit";
 import { h_flex, v_flex, Input } from "gpui-base";
 import { myPicture } from "../pictures.js";
-import { COLORS, PICTURES } from "../me.js";
+import { COLORS } from "../me.js";
 import { roundButton } from "./tree.js";
 
 /** @typedef {import("../kit/theme.js").Theme} Theme */
@@ -50,10 +50,6 @@ export function settingsView(v, t) {
           .on_click((_e, cx) => { v.setPicture(null); cx.notify(); })
           .child("Use initials")))))
     .when(Boolean(v.photoError), (el) => el.child(div().text_size(12).text_color(t.blocked).child(v.photoError ?? "")))
-    .child(v_flex().gap(8)
-      .child(label(t, "Or pick one"))
-      .child(h_flex().gap(4).flex_wrap().children(PICTURES.map((p) =>
-        choice(t, `pic-${p.name}`, me.picture === p.path, image(p.path).size(36).rounded_full(), () => v.setPicture(p.path))))))
     .child(v_flex().gap(6)
       .child(label(t, "Initials"))
       .child(h_flex().h(36).px(12).items_center().rounded(10).bg(t.background).border_1().border_color(t.border)
@@ -62,5 +58,26 @@ export function settingsView(v, t) {
       .child(label(t, "Initials color"))
       .child(h_flex().gap(4).children(COLORS.map((c) =>
         choice(t, `color-${c}`, me.color === c, div().size(26).rounded_full().bg(c), () => v.setColor(c))))))
-    .child(div().text_size(12).text_color(t.dim).child("Drop a picture here to use it. Shows next to your messages."));
+    .child(div().text_size(12).text_color(t.dim).child("Drop a picture here to use it. Shows next to your messages."))
+    .child(div().h(1).bg(t.border))
+    .child(h_flex().id("condense-chat").gap(10).items_center().justify_between().cursor_pointer()
+      .on_click((_e, cx) => { v.toggleCondenseChat(); cx.notify(); })
+      .child(v_flex().flex_1().min_w(0).gap(2)
+        .child(div().text_size(13).text_color(t.foreground).child("Condense chat"))
+        .child(div().text_size(11.5).text_color(t.dim).child("Hide tool cards, including file edits. Show activity beside the dots.")))
+      .child(toggle(t, v.condenseChat)))
+    // Key hints: the sidebar's legend, the message box's scroll hint and the keys on buttons.
+    .child(h_flex().id("key-hints").gap(10).items_center().justify_between().cursor_pointer()
+      .on_click((_e, cx) => { v.toggleKeyHints(); cx.notify(); })
+      .child(v_flex().gap(2)
+        .child(div().text_size(13).text_color(t.foreground).child("Show key hints"))
+        .child(div().text_size(11.5).text_color(t.dim).child("The keys on buttons and in the sidebar.")))
+      .child(toggle(t, v.keyHints)));
+}
+
+/** An on/off switch: a track that fills with the accent when on, and a round knob. @param {Theme} t @param {boolean} on */
+function toggle(t, on) {
+  return h_flex().flex_none().w(36).h(20).p(2).rounded_full().bg(on ? t.accent : t.hover)
+    .when(on, (el) => el.justify_end())
+    .child(div().size(16).rounded_full().bg(on ? t.accent_foreground : t.muted));
 }

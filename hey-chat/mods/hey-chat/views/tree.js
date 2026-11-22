@@ -1,9 +1,10 @@
 // The sidebar card: the title, search, Recent, the project tree, and your picture with the settings gear.
 import { div, svg } from "gpui-kit";
 import { h_flex, v_flex, Input } from "gpui-base";
-import { agentPicture, myPicture } from "../pictures.js";
+import { agentPicture } from "../pictures.js";
 import { legend } from "../kit/legend.js";
-import { TREE_HINTS } from "../keys.js";
+import { focusBorder } from "../kit/theme.js";
+import { TREE_HINTS, SELECT_HINTS } from "../keys.js";
 import { settingsView } from "./settings.js";
 
 /** @typedef {import("../kit/theme.js").Theme} Theme */
@@ -16,21 +17,25 @@ export const TREE_WIDTH = 320;
 /** A transparent border, so a row keeps its size when the cursor's border comes and goes. */
 const CLEAR = "#00000000";
 
-/** The border of the card that has the keyboard: the accent, softened. @param {Theme} t */
-export function focusBorder(t) {
-  return /^#[0-9a-f]{6}$/i.test(String(t.accent)) ? `${t.accent}8c` : t.accent;
+/** A theme color at some strength (0 to 1), or the color as it is when it isn't #rrggbb. @param {string} color @param {number} strength */
+function soft(color, strength) {
+  return /^#[0-9a-f]{6}$/i.test(String(color)) ? `${color}${Math.round(strength * 255).toString(16).padStart(2, "0")}` : color;
 }
 
-/** The tree cursor's outline on row `key`, while the tree has the keyboard. @param {any} v @param {Theme} t @param {string} key */
+/** The border of the card that has the keyboard: the kit's focus color. */
+export { focusBorder };
+
+/** The tree cursor's outline on row `key`, while the tree has the keyboard: the text color, a little stronger. @param {any} v @param {Theme} t @param {string} key */
 function cursorBorder(v, t, key) {
-  return v.zone === "tree" && v.cursor === key ? t.accent : CLEAR;
+  return v.zone === "tree" && v.cursor === key ? soft(t.foreground, 0.35) : CLEAR;
 }
 
 /** A round icon button. @param {Theme} t @param {string} id @param {string} icon @param {number} size @param {(cx: any) => void} click */
 export function roundButton(t, id, icon, size, click) {
   return h_flex().id(id).flex_none().size(size).rounded_full().items_center().justify_center().cursor_pointer()
     .text_color(t.muted).hover((s) => s.bg(t.hover).text_color(t.foreground))
-    .on_click((_e, cx) => click(cx))
+    // The click stays here, so a button inside a row (a folder's + and trash) doesn't also click the row.
+    .on_click((_e, cx) => { cx.stop_propagation(); click(cx); cx.notify(); })
     .child(svg(icon).size(Math.round(size * 0.5)));
 }
 
@@ -40,13 +45,14 @@ export function roundButton(t, id, icon, size, click) {
  */
 function chatRow(v, t, chat, key) {
   const open = chat.id === v.chatId;
+  const picked = Boolean(v.selectedSet?.has(chat.id));
   const unread = Boolean(v.unread[chat.id]) && !open;
-  const asking = Boolean(v.waiting(chat));
-  const thinking = v.busy(chat) && !asking;
+  const asking = v.needsYou(chat);
+  const thinking = v.thinking(chat) && !asking;
   const last = chat.thread[chat.thread.length - 1];
   let preview = chat.last ? (chat.lastFrom === "me" ? `You: ${chat.last}` : chat.last) : "No messages yet";
   if (last) {
-    preview = last.kind === "tool" ? last.title : last.kind === "code" ? "Sent a code snippet" : last.text;
+    preview = last.kind === "tool" ? last.title : last.kind === "code" ? "Sent a code snippet" : last.kind === "image" ? "Sent an image" : last.text;
     if (last.from === "me") preview = `You: ${preview}`;
   }
   if (thinking) preview = "Thinking…";
@@ -54,9 +60,14 @@ function chatRow(v, t, chat, key) {
   if (key.startsWith("r:")) preview = `${chat.project} · ${preview}`;
   return h_flex().id(`row-${key}`).w_full().flex_none().gap(10).px(10).py(8).rounded(12).items_center().cursor_pointer()
     .border_1().border_color(cursorBorder(v, t, key))
-    .when(open, (el) => el.bg(t.selected))
-    .hover((s) => s.bg(open ? t.selected : t.hover))
-    .on_click((_e, cx) => { v.openChat(chat.id, cx); cx.notify(); })
+    .when(open || picked, (el) => el.bg(t.selected))
+    .hover((s) => s.bg(open || picked ? t.selected : t.hover))
+    // Shift-click selects from the cursor to this chat. A plain click opens it.
+    .on_click((e, cx) => {
+      if (e.modifiers?.shift) { if (!v.anchor) v.anchor = v.cursor || key; v.cursor = key; v.zone = "tree"; v.handle.focus(); }
+      else { v.anchor = null; v.openChat(chat.id, cx); }
+      cx.notify();
+    })
     .child(agentPicture(chat.agent, 34))
     .child(v_flex().flex_1().min_w(0).gap(2)
       .child(h_flex().gap(8).items_center()
@@ -81,19 +92,26 @@ function projectRow(v, t, p, count) {
     .child(svg(`${ICONS}/folder.svg`).size(16).flex_none())
     .child(div().flex_1().min_w(0).truncate().text_size(13).font_semibold().child(p.id))
     .child(div().flex_none().text_size(12).text_color(t.dim).child(String(count)))
-    .child(roundButton(t, `new-${p.id}`, `${ICONS}/plus.svg`, 28, (cx) => { v.newChat(p.id, cx); cx.notify(); }));
+    .child(roundButton(t, `new-${p.id}`, `${ICONS}/plus.svg`, 28, (cx) => { v.newChat(p.id, cx); cx.notify(); }))
+    .child(roundButton(t, `delete-${p.id}`, `${ICONS}/trash.svg`, 28, () => v.askDeleteProject(p.id)));
 }
 
 /** "Delete … ?" with y and n, for the chat v.deleting names. @param {any} v @param {Theme} t */
 function deleteCard(v, t) {
   const d = v.deleting;
-  const chat = v.chats.find((/** @type {any} */ c) => c.id === d.id);
-  const what = !chat?.session ? "This chat has no messages yet."
+  const chat = d.project || d.ids ? null : v.chats.find((/** @type {any} */ c) => c.id === d.id);
+  const count = d.project ? v.chats.filter((/** @type {any} */ c) => c.project === d.project).length : d.ids ? d.ids.length : 0;
+  const question = d.project ? `Delete all ${count} chat${count === 1 ? "" : "s"} in \u201c${d.project}\u201d?`
+    : d.ids ? `Delete ${count} chats?` : `Delete \u201c${chat?.title ?? "this chat"}\u201d?`;
+  const what = d.project ? "Their Claude and Codex sessions are deleted for good. The folder on your disk isn't touched."
+    : d.ids ? "Their Claude and Codex sessions are deleted for good."
+    : !chat?.session ? "This chat has no messages yet."
     : chat.agent === "codex" ? "Its Codex session is deleted for good." : "Its Claude session is deleted for good.";
+  const progress = (d.project || d.ids) && d.total ? `Deleting ${Math.min(d.done + 1, d.total)} of ${d.total}\u2026` : "Deleting\u2026";
   return v_flex().flex_none().mx(10).mt(8).p(12).gap(10).rounded(12).bg(t.raised).border_1().border_color(t.blocked)
     .child(v_flex().gap(4)
-      .child(div().text_size(13.5).font_semibold().text_color(t.foreground).child(`Delete \u201c${chat?.title ?? "this chat"}\u201d?`))
-      .child(div().text_size(12).text_color(t.muted).child(d.busy ? "Deleting\u2026" : what)))
+      .child(div().text_size(13.5).font_semibold().text_color(t.foreground).child(question))
+      .child(div().text_size(12).text_color(t.muted).child(d.busy ? progress : what)))
     .when(Boolean(d.error), (el) => el.child(div().text_size(12).text_color(t.blocked).child(d.error ?? "")))
     .child(h_flex().gap(8)
       // Delete has the focus, drawn with a ring: enter presses it.
@@ -101,15 +119,17 @@ function deleteCard(v, t) {
         .border_2().border_color(t.foreground)
         .text_size(12.5).font_medium().text_color("#ffffff")
         .on_click((_e, cx) => { v.confirmDelete(cx); cx.notify(); })
-        .child(div().font_semibold().opacity(0.75).child("\u21b5")).child("Delete"))
+        .when(v.keyHints, (el) => el.child(div().font_semibold().opacity(0.75).child("\u21b5"))).child("Delete"))
       .child(h_flex().id("delete-no").h(30).px(12).gap(6).items_center().rounded_full().cursor_pointer().bg(t.background)
         .border_1().border_color(t.border).text_size(12.5).font_medium().text_color(t.foreground).hover((s) => s.bg(t.hover))
         .on_click((_e, cx) => { v.cancelDelete(); cx.notify(); })
-        .child(div().font_semibold().opacity(0.75).child("n")).child("Cancel")));
+        .when(v.keyHints, (el) => el.child(div().font_semibold().opacity(0.75).child("n"))).child("Cancel")));
 }
 
 /** The whole sidebar card. @param {any} v @param {Theme} t */
 export function treeView(v, t) {
+  // The chats a selection covers, for chatRow's highlight.
+  v.selectedSet = new Set(v.selectedIds());
   // Every row is a direct child of the scrolling list, so the list overflows (and scrolls) instead
   // of squeezing them, and the j/k cursor can scroll its row into view by index (v.treeKeys).
   /** @type {any[]} */
@@ -137,15 +157,14 @@ export function treeView(v, t) {
 
   const lit = v.zone === "tree" || v.zone === "search";
   return v_flex().id("tree").relative().w(TREE_WIDTH).flex_none().h_full().rounded(14).border_1().border_color(lit ? focusBorder(t) : t.border).bg(t.background)
-    // Title and new chat.
-    .child(h_flex().flex_none().items_center().justify_between().pl(20).pr(14).pt(16).pb(10)
-      .child(div().text_size(20).font_bold().text_color(t.foreground).child("Hey, chat"))
-      .child(roundButton(t, "new-here", `${ICONS}/pencil.svg`, 36, (cx) => { v.newChat(v.chat(v.chatId).project, cx); cx.notify(); })))
-    // Search: filters the chats by title, last message and folder.
-    .child(div().flex_none().px(14).pb(8)
-      .child(h_flex().h(36).px(12).gap(8).items_center().rounded_full().bg(t.raised).border_1().border_color(t.border)
+    // Search (filters the chats by title, last message and folder), then new project and new chat.
+    // Herdr's pane header already names the mod, so the sidebar has no title of its own.
+    .child(h_flex().flex_none().gap(6).items_center().pl(14).pr(10).pt(14).pb(8)
+      .child(h_flex().flex_1().min_w(0).h(36).px(12).gap(8).items_center().rounded_full().bg(t.raised).border_1().border_color(t.border)
         .child(svg(`${ICONS}/search.svg`).size(15).flex_none().text_color(t.dim))
-        .child(Input.new(v.searchInput).flex_1().text_size(13.5).text_color(t.foreground))))
+        .child(Input.new(v.searchInput).flex_1().text_size(13.5).text_color(t.foreground)))
+      .child(roundButton(t, "new-project", `${ICONS}/folder-plus.svg`, 36, (cx) => { v.newProject(cx); cx.notify(); }))
+      .child(roundButton(t, "new-here", `${ICONS}/pencil.svg`, 36, (cx) => { v.newChat(v.chat(v.chatId).project, cx); cx.notify(); })))
     // Recent, then the projects.
     // Recent (except while searching), then the projects.
     .child(v_flex().id("tree-scroll").flex_1().min_h(0).overflow_y_scrollbar().track_scroll(v.treeScroll).px(8).pb(8).gap(2)
@@ -153,14 +172,11 @@ export function treeView(v, t) {
     // The delete question, above the bottom row.
     .when(Boolean(v.deleting), (el) => el.child(deleteCard(v, t)))
     // The tree's keys, while it has the keyboard.
-    .when(v.zone === "tree", (el) => el.child(div().flex_none().px(16).pt(8).pb(4).child(legend(t, TREE_HINTS))))
-    // Your picture and the settings gear: a click opens or closes Settings.
-    .child(h_flex().id("me-row").flex_none().mx(8).my(8).px(10).py(8).gap(10).items_center().rounded(12)
-      .cursor_pointer().hover((s) => s.bg(t.hover))
-      .when(v.settingsOpen, (el) => el.bg(t.hover))
-      .on_click((_e, cx) => { v.toggleSettings(); cx.notify(); })
-      .child(myPicture(v.me, 36))
-      .child(div().flex_1())
-      .child(svg("mods/hey-chat/kit/gear.svg").size(19).text_color(v.settingsOpen ? t.foreground : t.muted)))
+    .when(v.zone === "tree" && v.keyHints, (el) => el.child(div().flex_none().px(16).pt(8).pb(4).child(legend(t, v.anchor ? SELECT_HINTS : TREE_HINTS))))
+    // The bottom row: hide the sidebar (ctrl-b) on the left, the Settings gear on the right.
+    .child(h_flex().flex_none().mx(8).my(8).px(4).py(4).items_center().justify_between()
+      .child(roundButton(t, "hide-sidebar", `${ICONS}/sidebar.svg`, 36, () => v.toggleSidebar()))
+      .child(roundButton(t, "open-settings", "mods/hey-chat/kit/gear.svg", 36, () => v.toggleSettings())
+        .when(v.settingsOpen, (el) => el.bg(t.hover).text_color(t.foreground))))
     .when(v.settingsOpen, (el) => el.child(settingsView(v, t)));
 }

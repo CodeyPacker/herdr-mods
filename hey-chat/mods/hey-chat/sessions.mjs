@@ -8,9 +8,10 @@
 //       ~/.codex/session_index.jsonl). Only the start and end of each file are read, since a session
 //       can be tens of megabytes. Sessions in temporary or app scratch folders, and helper agents'
 //       sessions, are left out.
-//   node sessions.mjs read --agent claude|codex --file <path> [--before <ms>] [--max <n>]
+//   node sessions.mjs read --agent claude|codex --file <path> [--before <ms>] [--max <n>] [--images <dir>]
 //       Prints a session's history as a JSON array of the same events the bridge sends (user, text,
-//       tool, tool_done, turn_end), so the pane builds the chat with the same code. `--before` keeps
+//       image, note, tool, tool_done, turn_end), so the pane builds the chat with the same code. Images are
+//       copied into <dir> (images.mjs). `--before` keeps
 //       what came before a time (a running bridge replays the rest). `--max` keeps the last n user
 //       turns (default 40).
 //   node sessions.mjs delete --agent claude|codex --session <id> [--file <path>]
@@ -20,6 +21,7 @@ import { readdirSync, statSync, openSync, readSync, closeSync, readFileSync, exi
 import { join, dirname, basename, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { homedir, tmpdir } from "node:os";
+import { keepFile, keepBase64, keepDataUrl, pathsIn, REL } from "./images.mjs";
 
 const HOME = homedir();
 /** How much of a file's start and end the list reads. */
@@ -73,16 +75,31 @@ function clip(s, n) {
   return one.length > n ? `${one.slice(0, n - 1)}…` : one;
 }
 
+/** The model in an agent's own session record. @param {string} agent @param {any} d */
+function sessionModel(agent, d) {
+  const model = agent === "codex" ? (d.type === "turn_context" ? d.payload?.model : null)
+    : (d.type === "assistant" && !d.isSidechain ? d.message?.model : null);
+  return typeof model === "string" && model && !model.startsWith("<") ? model : null;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Claude Code
 
 /** A Claude user line's typed text, or null when it's a tool result, a command or other plumbing. @param {any} d */
 function claudeUserText(d) {
-  if (d.type !== "user" || d.isMeta || d.isSidechain) return null;
+  if (d.type !== "user" || d.isMeta || d.isSidechain || d.isCompactSummary) return null;
   const c = d.message?.content;
-  const text = typeof c === "string" ? c : Array.isArray(c) ? c.filter((x) => x.type === "text").map((x) => x.text).join("\n") : "";
-  if (!text.trim() || /^\s*<(command-|local-command|system-reminder|bash-|task-notification)/.test(text)) return null;
+  // Claude adds reminders as their own parts beside what you typed, as with a pasted image.
+  const text = typeof c === "string" ? c : Array.isArray(c) ? c.filter((x) => x.type === "text" && !/^\s*<system-reminder/.test(x.text ?? "")).map((x) => x.text).join("\n") : "";
+  if (/^\s*<(command-|local-command|system-reminder|bash-|task-notification)/.test(text)) return null;
+  if (!text.trim()) return claudeUserImages(d).length ? "" : null;
   return text;
+}
+
+/** The images in a Claude user line you typed. @param {any} d */
+function claudeUserImages(d) {
+  const c = d.message?.content;
+  return Array.isArray(c) ? c.filter((x) => x.type === "image" && x.source?.type === "base64") : [];
 }
 
 /** A Claude assistant line's text, or null. @param {any} d */
@@ -118,7 +135,8 @@ function listClaude() {
         if (a) { last = a; lastFrom = "agent"; break; }
         if (u) { last = u; lastFrom = "me"; break; }
       }
-      out.push({ agent: "claude", session: f.replace(/\.jsonl$/, ""), cwd, file, title: clip(first, 60), last: clip(last ?? first, 120), lastFrom: lastFrom ?? "me", updatedAt: st.mtimeMs });
+      const model = all.map(d => sessionModel("claude", d)).filter(Boolean).at(-1) ?? null;
+      out.push({ agent: "claude", session: f.replace(/\.jsonl$/, ""), cwd, file, model, title: clip(first, 60), last: clip(last ?? first, 120), lastFrom: lastFrom ?? "me", updatedAt: st.mtimeMs });
     }
   }
   return out;
@@ -133,11 +151,19 @@ function readClaude(file, before, max) {
     if (!d || d.isSidechain) continue;
     const at = Date.parse(d.timestamp ?? "") || 0;
     if (before && at >= before) break;
+    const model = sessionModel("claude", d);
+    if (model) events.push({ type: "model", model });
     const user = claudeUserText(d);
-    if (user) { events.push({ type: "user", text: user, at }); continue; }
-    if (d.type === "assistant") {
+    if (user !== null) {
+      const images = claudeUserImages(d).map((x) => keepBase64(x.source.data, x.source.media_type, images_dir)).filter(Boolean);
+      events.push({ type: "user", text: user, images, at });
+      continue;
+    }
+    if (d.type === "system" && d.subtype === "compact_boundary") {
+      events.push({ type: "note", text: d.compactMetadata?.trigger === "auto" ? "Chat compacted automatically." : "Chat compacted." });
+    } else if (d.type === "assistant") {
       for (const c of d.message?.content ?? []) {
-        if (c.type === "text" && c.text?.trim()) events.push({ type: "text", text: c.text });
+        if (c.type === "text" && c.text?.trim()) pushText(events, c.text);
         else if (c.type === "tool_use") events.push({ type: "tool", id: c.id, name: c.name, input: c.input ?? {} });
       }
     } else if (d.type === "user" && Array.isArray(d.message?.content)) {
@@ -145,6 +171,7 @@ function readClaude(file, before, max) {
         if (c.type !== "tool_result") continue;
         const out = Array.isArray(c.content) ? c.content.map((/** @type {any} */ x) => x.text ?? "").join("\n") : String(c.content ?? "");
         events.push({ type: "tool_done", id: c.tool_use_id, error: Boolean(c.is_error), output: out.slice(0, OUTPUT_MAX) });
+        if (Array.isArray(c.content)) for (const x of c.content) if (x.type === "image") pushImage(events, keepBase64(x.source?.data, x.source?.media_type, images_dir));
       }
     }
   }
@@ -157,9 +184,16 @@ function readClaude(file, before, max) {
 /** A Codex user message you typed, or null for the instructions Codex adds. @param {any} p a response_item payload */
 function codexUserText(p) {
   if (p?.type !== "message" || p.role !== "user") return null;
-  const text = (p.content ?? []).map((/** @type {any} */ c) => c.text ?? "").join("\n");
-  if (!text.trim() || /^\s*(<|# AGENTS\.md)/.test(text)) return null;
+  // A pasted image comes wrapped in <image …> and </image> parts, beside what you typed.
+  const text = (p.content ?? []).map((/** @type {any} */ c) => c.text ?? "").filter((/** @type {string} */ s) => !/^\s*<\/?image\b/.test(s)).join("\n");
+  if (/^\s*(<|# AGENTS\.md)/.test(text)) return null;
+  if (!text.trim()) return codexUserImages(p).length ? "" : null;
   return text;
+}
+
+/** The data: URLs of the images in a Codex user message. @param {any} p @returns {string[]} */
+function codexUserImages(p) {
+  return (p?.content ?? []).filter((/** @type {any} */ c) => c.type === "input_image" && typeof c.image_url === "string").map((/** @type {any} */ c) => c.image_url);
 }
 
 /** @param {any} p */
@@ -216,7 +250,8 @@ function listCodex() {
       if (a) { last = a; lastFrom = "agent"; break; }
       if (u) { last = u; lastFrom = "me"; break; }
     }
-    out.push({ agent: "codex", session: id, cwd, file, title: clip(names.get(id) ?? first ?? "Codex chat", 60), last: clip(last ?? first ?? "", 120), lastFrom: lastFrom ?? "me", updatedAt: st.mtimeMs });
+    const model = [...head, ...tail].map(d => sessionModel("codex", d)).filter(Boolean).at(-1) ?? null;
+    out.push({ agent: "codex", session: id, cwd, file, model, title: clip(names.get(id) ?? first ?? "Codex chat", 60), last: clip(last ?? first ?? "", 120), lastFrom: lastFrom ?? "me", updatedAt: st.mtimeMs });
   }
   return out;
 }
@@ -259,13 +294,19 @@ function readCodex(file, before, max) {
     const at = Date.parse(d.timestamp ?? "") || 0;
     if (before && at >= before) break;
     const p = d.payload ?? {};
+    const model = sessionModel("codex", d);
+    if (model) events.push({ type: "model", model });
     if (d.type === "response_item") {
       const user = codexUserText(p);
-      if (user) { events.push({ type: "user", text: user, at }); continue; }
+      if (user !== null) {
+        events.push({ type: "user", text: user, images: codexUserImages(p).map((url) => keepDataUrl(url, images_dir)).filter(Boolean), at });
+        continue;
+      }
       const agent = codexAgentText(p);
-      if (agent) { events.push({ type: "text", text: agent }); continue; }
+      if (agent) { pushText(events, agent); continue; }
       if (p.type === "function_call" || p.type === "custom_tool_call" || p.type === "local_shell_call") {
         const id = p.call_id ?? p.id;
+        if (p.name === "view_image") { pushImage(events, keepFile(String(parse(p.arguments ?? "")?.path ?? ""), images_dir)); continue; }
         if (p.name === "apply_patch") { events.push({ type: "tool", id, name: "CodexPatch", input: { changes: patchChanges(p.input ?? parse(p.arguments ?? "")?.input) } }); continue; }
         const command = codexCommand(p);
         events.push(command ? { type: "tool", id, name: "Bash", input: { command } } : { type: "tool", id, name: String(p.name ?? "tool"), input: {} });
@@ -277,6 +318,8 @@ function readCodex(file, before, max) {
           : typeof raw === "string" ? raw : String(raw?.content ?? JSON.stringify(raw ?? ""));
         events.push({ type: "tool_done", id: p.call_id, error: /aborted|error|failed/i.test(out.slice(0, 60)), output: out.slice(0, OUTPUT_MAX) });
       }
+    } else if (d.type === "compacted") {
+      events.push({ type: "note", text: "Chat compacted." });
     } else if (d.type === "event_msg" && p.type === "turn_aborted") {
       events.push({ type: "turn_end", stopped: true });
     }
@@ -284,11 +327,29 @@ function readCodex(file, before, max) {
   return lastTurns(events, max);
 }
 
+/** An image the agent showed, unless it was just shown. @param {any[]} events @param {{ path: string, w: number, h: number } | null} img */
+function pushImage(events, img) {
+  if (!img) return;
+  const last = events[events.length - 1];
+  if (last?.type === "image" && last.path === img.path) return;
+  events.push({ type: "image", ...img });
+}
+
+/** The agent's words, then each image file they name. @param {any[]} events @param {string} text */
+function pushText(events, text) {
+  events.push({ type: "text", text });
+  for (const file of pathsIn(text)) pushImage(events, keepFile(file, images_dir));
+}
+
 /** The events from the nth-last message you typed on. @param {any[]} events @param {number} max */
 function lastTurns(events, max) {
+  const model = events.findLast(e => e.type === "model");
   let seen = 0;
   for (let i = events.length - 1; i >= 0; i--) {
-    if (events[i].type === "user" && ++seen === max) return events.slice(i);
+    if (events[i].type === "user" && ++seen === max) {
+      const history = events.slice(i);
+      return model ? [model, ...history.filter(e => e.type !== "model")] : history;
+    }
   }
   return events;
 }
@@ -307,8 +368,16 @@ function removeSession(agent, session, file) {
   }
   // Claude: only <id>.jsonl inside ~/.claude/projects/<folder>/, and the <id>/ folder beside it.
   const root = join(HOME, ".claude", "projects");
-  const path = resolve(file ?? "");
-  if (dirname(dirname(path)) !== root || basename(path) !== `${session}.jsonl`) return { ok: false, message: "That file isn't a Claude session." };
+  let path = resolve(file ?? "");
+  // A chat made here has no file saved, and a resumed one can have moved to a new session id:
+  // then the session's file is found by its id. None at all means it's already gone.
+  if (dirname(dirname(path)) !== root || basename(path) !== `${session}.jsonl`) {
+    let dirs = [];
+    try { dirs = readdirSync(root); } catch { /* no sessions */ }
+    const found = dirs.map((d) => join(root, d, `${session}.jsonl`)).find((p) => existsSync(p));
+    if (!found) return { ok: true, message: "" };
+    path = found;
+  }
   try {
     rmSync(path, { force: true });
     rmSync(join(dirname(path), session), { recursive: true, force: true });
@@ -320,6 +389,8 @@ function removeSession(agent, session, file) {
 
 const [mode, ...rest] = process.argv.slice(2);
 const opts = flags(rest);
+/** Where images a chat shows are copied (images.mjs). */
+const images_dir = opts.images || join(HOME, ".config", "herdr-app", REL);
 if (mode === "list") {
   const all = [...listClaude(), ...listCodex()].sort((a, b) => b.updatedAt - a.updatedAt);
   process.stdout.write(JSON.stringify(all));

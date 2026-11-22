@@ -1,12 +1,16 @@
 // Keys (scope section 7): ctrl-h and ctrl-l move between the tree and the message box, ctrl-j and
 // ctrl-k scroll the chat from anywhere, the tree moves with j, k, h, l, g and G, a permission bar
-// takes y, a and n, d asks to delete a chat, and ctrl-c stops a turn.
+// takes y, a and n, d asks to delete a chat, v (or shift) selects several, ctrl-b hides the sidebar,
+// and ctrl-c stops a turn.
 
 /** The messages' padding above the first row and below the last, as views/chat.js draws it. */
 export const LIST_PAD_TOP = 16, LIST_PAD_BOTTOM = 10;
 
 /** The key hints the tree shows while it has the keyboard. */
-export const TREE_HINTS = [["j k", "move"], ["l", "open"], ["h", "close"], ["d", "delete"], ["⌃l", "chat"]];
+export const TREE_HINTS = [["j k", "move"], ["v", "select"], ["l", "open"], ["h", "close"], ["d", "delete"], ["n", "new chat"], ["N", "new project"], ["⌃l", "chat"]];
+
+/** The key hints while a selection is going. */
+export const SELECT_HINTS = [["j k", "extend"], ["d", "delete"], ["esc", "cancel"]];
 
 /**
  * The tree's rows in screen order, as cursor keys: `r:<chat>` in Recent, then `p:<project>` and,
@@ -63,6 +67,18 @@ export function scrollChat(v, dir) {
 export function handleKey(v, e, cx) {
   const ks = e.keystroke;
   const done = () => { cx.stop_propagation(); cx.notify(); };
+  if (v.modelPicker && ks === "escape") { v.modelPicker = null; done(); return; }
+  // An image shown big: esc closes it.
+  if (v.viewing && ks === "escape") { v.viewing = null; done(); return; }
+  // The / menu over the message box: up and down (or ctrl-p and ctrl-n) move, tab or enter picks,
+  // esc closes it. Other keys go on to the box.
+  const slash = v.zone === "chat" ? v.slashItems() : null;
+  if (slash?.length) {
+    if (ks === "up" || ks === "ctrl-p") { v.moveSlash(-1); done(); return; }
+    if (ks === "down" || ks === "ctrl-n") { v.moveSlash(1); done(); return; }
+    if (ks === "tab" || ks === "enter") { v.pickSlash(slash[Math.min(v.slashIndex, slash.length - 1)]); done(); return; }
+    if (ks === "escape") { v.closeSlash(); done(); return; }
+  }
   // The delete question: enter (Delete has the focus) or y deletes, n or esc puts it away. Other keys wait.
   if (v.zone === "confirm") {
     if (ks === "enter" || ks === "y") v.confirmDelete(cx);
@@ -76,6 +92,16 @@ export function handleKey(v, e, cx) {
     if (ks === "ctrl-h" || ks === "ctrl-l") { v.closeSettings(); if (ks === "ctrl-h") v.focusTree(); done(); }
     return;
   }
+  // A question card is waiting and the box is empty: 1 to 9 pick an option of its next question.
+  if (v.zone === "chat" && /^[1-9]$/.test(ks)) {
+    const chat = v.chat(v.chatId);
+    const card = v.question(chat);
+    if (card && v.inputFor(chat.agent).value() === "") {
+      const q = v.nextQuestion(card) ?? card.questions[card.questions.length - 1];
+      const option = q?.options?.[Number(ks) - 1];
+      if (option) { v.pickAnswer(card, q, option.label, cx); done(); return; }
+    }
+  }
   // ctrl-c stops the open chat's turn, from the message box or the permission bar.
   if (ks === "ctrl-c" && v.busy(v.chat(v.chatId)) && (v.zone === "chat" || v.zone === "ask")) { v.stop(); done(); return; }
   // A permission card is waiting: y allows once, a always, n denies. Other keys wait, except the ctrl ones below.
@@ -85,6 +111,7 @@ export function handleKey(v, e, cx) {
     if (ks === "n") { v.decide("deny", false, cx); done(); return; }
   }
   if (ks === "ctrl-h") { v.focusTree(); done(); return; }
+  if (ks === "ctrl-b") { v.toggleSidebar(); done(); return; }
   if (ks === "ctrl-l") { v.focusInput(); done(); return; }
   if (ks === "ctrl-j" || ks === "ctrl-k") { scrollChat(v, ks === "ctrl-j" ? 1 : -1); done(); return; }
   if (v.zone === "search") {
@@ -99,8 +126,16 @@ export function handleKey(v, e, cx) {
   const cur = items[i];
   const id = cur.slice(2);
   const isProject = cur.startsWith("p:");
-  if (ks === "j" || ks === "down") v.cursor = items[Math.min(i + 1, items.length - 1)];
-  else if (ks === "k" || ks === "up") v.cursor = items[Math.max(i - 1, 0)];
+  // A selection: v starts or ends one. Shift with j, k or the arrows starts one and extends it.
+  // While one is going, j, k, g and G extend it, d deletes its chats and esc ends it.
+  const shifted = ["shift-j", "shift-k", "shift-down", "shift-up"].includes(ks);
+  if (ks === "v") { v.anchor = v.anchor ? null : cur; done(); return; }
+  if (shifted && !v.anchor) v.anchor = cur;
+  if (v.anchor && ks === "escape") { v.anchor = null; done(); return; }
+  if (v.anchor && ks === "d") { v.askDeleteSelected(); done(); return; }
+  if (v.anchor && !shifted && !["j", "k", "down", "up", "g", "shift-g"].includes(ks) && e.key !== "G") v.anchor = null;
+  if (ks === "j" || ks === "down" || ks === "shift-j" || ks === "shift-down") v.cursor = items[Math.min(i + 1, items.length - 1)];
+  else if (ks === "k" || ks === "up" || ks === "shift-k" || ks === "shift-up") v.cursor = items[Math.max(i - 1, 0)];
   else if (ks === "g") v.cursor = items[0];
   else if (ks === "shift-g" || e.key === "G") v.cursor = items[items.length - 1];
   else if (ks === "l" || ks === "enter" || ks === "right") {
@@ -113,8 +148,19 @@ export function handleKey(v, e, cx) {
     v.setCollapsed(project, true);
     v.cursor = `p:${project}`;
   } else if (ks === "d") {
-    if (isProject) return;
-    v.askDelete(id);
+    if (isProject) v.askDeleteProject(id); else v.askDelete(id);
+  } else if (ks === "shift-n" || e.key === "N") {
+    v.newProject(cx);
+    done();
+    return;
+  } else if (ks === "n") {
+    // A new chat in the folder under the cursor, or the folder of the chat under it, ready to type in.
+    const project = isProject ? id : v.chat(id)?.project;
+    if (!project) { done(); return; }
+    v.newChat(project, cx);
+    v.focusInput();
+    done();
+    return;
   } else if (ks === "escape") v.focusInput();
   else return;
   v.revealCursor();

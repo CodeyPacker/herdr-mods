@@ -13,13 +13,13 @@ and settings. Where this file and the design disagree, this file wins.
 Two cards side by side inside one mod pane, 12 px apart, each with 14 px
 corners and a 1 px `border`.
 
-- **Sidebar (left, 320 px):** title "Hey, chat" with a new-chat button, a
-  search box, the project tree, and a bottom row with your picture and a
-  settings gear.
+- **Sidebar (left, 320 px):** a search box with a new-chat button to its
+  right (no title: Herdr's pane header names the mod), the project tree, and
+  a bottom row with a button that hides the sidebar and a settings gear.
 - **Chat (right, fills the rest):** a header, the message list, and the
   message box.
 
-The card with the keyboard gets a light accent border. The other keeps the
+The card with the keyboard gets a faint text-color border. The other keeps the
 plain `border` color.
 
 ## 2. Project tree
@@ -44,7 +44,10 @@ plain `border` color.
 - Search filters chats by title and message text across every project.
 - `d` on a chat (or the trash button in its header) asks "Delete …?" with
   `y` / `n`. Deleting removes the session for good: Claude's session file and
-  folder, or `codex delete --force` (D5).
+  folder, or `codex delete --force` (D5). `d` on a folder (or its trash
+  button) deletes every chat in it the same way. The folder on disk is never
+  touched. `v` (or shift with `j`/`k`, the arrows or a click) selects a run of
+  chats, and `d` deletes them all after one question.
 
 ## 3. Chat view
 
@@ -124,6 +127,7 @@ see-through panes:
 |---|---|---|
 | `ctrl-h` | anywhere | Focus the tree |
 | `ctrl-l` | anywhere | Focus the message box |
+| `ctrl-b` | anywhere | Hide or show the sidebar (remembered). `ctrl-h` shows it too |
 | `ctrl-j` / `ctrl-k` | anywhere | Scroll the chat down / up. Holding repeats. The message box keeps focus |
 | `j` / `k`, arrows | tree | Move the cursor |
 | `l`, `enter`, right | tree | Open the chat (focuses the message box) or open the project |
@@ -134,7 +138,7 @@ see-through panes:
 
 - The message box is focused when the pane opens, when a chat opens and when
   a new chat starts.
-- With the tree focused, the cursor row gets an accent outline and a key hint
+- With the tree focused, the cursor row gets a faint text-color outline and a key hint
   strip shows above the bottom row (the kit's legend).
 - These are mod keys (`on_key_down` in the view), not `keys.json` bindings,
   so they only act while Hey, chat has the keyboard. Inside the text input,
