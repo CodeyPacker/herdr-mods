@@ -234,6 +234,7 @@ Follows the repo's mod layout:
 
 - **D1:** The agent does whatever your settings allow and asks in the chat
   for the rest (section 8). It works with both subscription logins.
-- **D2:** `ctrl-a c` opens and closes the pane.
+- **D2:** `ctrl-a c` opens and closes the pane. It opens zoomed to fill the
+  tab (`pane.zoom`, so `ctrl-shift-z` gives the split back).
 - **D3:** "Read" means the agent started working on your message.
 - **D4:** A Recent section with the last two chats sits above the projects.
