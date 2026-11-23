@@ -81,7 +81,7 @@
         }
       ],
       "size": {
-        "px": 268
+        "px": 202
       },
       "min": 44,
       "max": 480,
@@ -121,7 +121,7 @@
                     "height": 30,
                     "position": "top"
                   },
-                  "background": "#17191dd9",
+                  "background": "#0d0f13d9",
                   "border": {
                     "width": 1,
                     "color": "border"
@@ -195,6 +195,10 @@
   ],
   "background": "canvas",
   "padding": 12,
+  "theme": {
+    "light": "paper",
+    "dark": "slate-dark"
+  },
   "terminal_padding": [
     16,
     14
