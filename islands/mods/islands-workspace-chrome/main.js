@@ -71,7 +71,7 @@ function toggleSidebar() {
   if (!narrow()) setShared("sidebar.width", width);
   // Mods edited before the rail went by width still read the flag.
   setShared("sidebar.collapsed", !narrow());
-  run("layout.resize", { id: "sidebar", px: narrow() ? (shared("sidebar.width") ?? 268) : window()?.platform === "macos" ? 76 : 44 });
+  run("layout.resize", { id: "sidebar", px: narrow() ? (shared("sidebar.width") ?? 268) : window()?.platform === "macos" ? 78 : 44 });
 }
 
 export default class WorkspaceChrome extends View {
@@ -104,9 +104,11 @@ export default class WorkspaceChrome extends View {
     // Mods draw again when the theme changes: the header copy keeps see-through panes in its colors.
     if (!props()?.footer) syncSeeThrough();
     if (props()?.footer) {
+      // Bigger icons on the macOS rail, matching the space tiles.
+      const big = collapsed && (find(layout(), "sidebar")?.size?.px ?? 0) >= 70;
       const row = (id, icon, label, dim, action) => h_flex().id(id).h(28).px(collapsed ? 6 : 8).gap(9).items_center().rounded(8).when(collapsed, el => el.justify_center())
         .text_color(dim ? t.dim : t.muted).hover(s => s.bg(t.hover).text_color(t.foreground)).cursor_pointer()
-        .on_click(action).child(svg(`mods/islands-workspace-chrome/${icon}.svg`).size(14))
+        .on_click(action).child(svg(`mods/islands-workspace-chrome/${icon}.svg`).size(big ? 18 : 14))
         .when(!collapsed, el => el.child(div().min_w(0).truncate().child(label)));
       return v_flex().size_full().rounded(13).overflow_hidden().bg(islandFill(t.chrome)).px(collapsed ? 5 : 8).py(8).text_size(13) // its own card, no divider
         .child(row("settings", "settings", "Settings", false, () => run("app.settings"))
@@ -118,6 +120,8 @@ export default class WorkspaceChrome extends View {
     const lights = window()?.platform === "macos" && !window()?.fullscreen;
     const left = lights ? 76 : 14;
     const width = find(layout(), "sidebar")?.size?.px ?? Infinity;
+    // On macOS the sidebar never gets narrower than the window buttons plus a 12pt inset on each side.
+    if (lights && width < 78) run("layout.resize", { id: "sidebar", px: 78 });
     const showSearch = width >= left + 26 + 4 + 26 + 10 + 4;
     const showLogo = width >= left + 20 + 4 + 26 + 4 + 26 + 10 + 4;
     return h_flex().size_full().rounded(13).overflow_hidden().bg(islandFill(t.chrome)).when(collapsed, el => el.justify_center()).when(!collapsed, el => el.pl(14).pr(10)).gap(4).items_center().text_size(13.5)

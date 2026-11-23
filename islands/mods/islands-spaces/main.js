@@ -458,19 +458,21 @@ export default class Spaces extends View {
     const colors = shared("space.colors") ?? {};
     const color = colors[w.id] ?? "ansi6";
     const fill = color.startsWith("#") ? color : (MARK[color] ?? t[color]);
+    // The macOS rail (78 px, wide enough for the window buttons) has room for bigger tiles.
+    const big = (find(layout(), "sidebar")?.size?.px ?? 0) >= 70;
     return h_flex()
       .id(`space-${w.id}`)
-      .size(28)
+      .size(big ? 40 : 28)
       .flex_none()
       .my(2) // 4px between spaces
       .items_center()
       .justify_center()
-      .rounded(6)
+      .rounded(big ? 9 : 6)
       .when(w.active, (el) => el.bg(t.selected))
       .when(!w.active, (el) => el.hover((s) => s.bg(t.hover)))
       .on_click(() => run("space.select", { id: w.id }))
       .on_mouse_down("right", () => this.menu(w))
-      .child(h_flex().size(18).flex_none().rounded(5).bg(fill).items_center().justify_center().text_size(10.5).font_bold().text_color("#ffffff").child([...w.name][0]?.toUpperCase() ?? "?"));
+      .child(h_flex().size(big ? 28 : 18).flex_none().rounded(big ? 7 : 5).bg(fill).items_center().justify_center().text_size(big ? 14 : 10.5).font_bold().text_color("#ffffff").child([...w.name][0]?.toUpperCase() ?? "?"));
   }
 
   render() {
