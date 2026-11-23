@@ -1,5 +1,0 @@
-{
-  "global": {
-    "ctrl-a s": "mod.open:syntax"
-  }
-}

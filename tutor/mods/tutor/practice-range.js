@@ -2,7 +2,7 @@
 // Tutor never needs it. When Practice Range is missing, too old, or Node can't run, there is no link.
 import { appHome, exec, readTextFile, run } from "herdr";
 
-const script = () => `${appHome()}/mods/syntax/topics.mjs`.replace(/\\/g, "/");
+const script = () => `${appHome()}/mods/practice-range/topics.mjs`.replace(/\\/g, "/");
 
 /**
  * Practice Range's topics for language `id` as [{ id, title, description }], or null when there
@@ -25,5 +25,5 @@ export function topicsFor(list, id) {
 
 /** Opens a Practice Range tab at `topicId`. Versions without the start topic open as usual. */
 export function openPracticeRange(languageId, topicId) {
-  run("tab.new", { name: "Practice Range", mod: "syntax", props: { practiceTab: true, startTopic: { languageId, topicId } } });
+  run("tab.new", { name: "Practice Range", mod: "practice-range", props: { practiceTab: true, startTopic: { languageId, topicId } } });
 }

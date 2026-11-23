@@ -36,8 +36,8 @@ test("topics come from Practice Range's topics.mjs, and nothing without it", asy
   const home = await mkdtemp(join(tmpdir(), "tutor-range-"));
   globalThis.herdrStub = { appHome: home };
   assert.equal(await practiceRangeTopics("csharp"), null, "not installed");
-  await mkdir(join(home, "mods/syntax"), { recursive: true });
-  await writeFile(join(home, "mods/syntax/topics.mjs"), "");
+  await mkdir(join(home, "mods/practice-range"), { recursive: true });
+  await writeFile(join(home, "mods/practice-range/topics.mjs"), "");
   globalThis.herdrStub = { appHome: home, exec: async () => ({ code: 0, stdout: JSON.stringify({ version: 1, languages: [{ id: "csharp", topics }] }) }) };
   assert.deepEqual(await practiceRangeTopics("csharp"), topics);
   globalThis.herdrStub = { appHome: home, exec: async () => ({ code: 1, stdout: "" }) };
@@ -45,5 +45,5 @@ test("topics come from Practice Range's topics.mjs, and nothing without it", asy
   const runs = [];
   globalThis.herdrStub = { run: (...a) => runs.push(a) };
   openPracticeRange("csharp", "linq");
-  assert.deepEqual(runs, [["tab.new", { name: "Practice Range", mod: "syntax", props: { practiceTab: true, startTopic: { languageId: "csharp", topicId: "linq" } } }]]);
+  assert.deepEqual(runs, [["tab.new", { name: "Practice Range", mod: "practice-range", props: { practiceTab: true, startTopic: { languageId: "csharp", topicId: "linq" } } }]]);
 });

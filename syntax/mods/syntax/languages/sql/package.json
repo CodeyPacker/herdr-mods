@@ -1,9 +1,0 @@
-{
-  "name": "herdr-syntax-sql-pack",
-  "private": true,
-  "description": "Pinned PGlite (PostgreSQL compiled to WebAssembly) used to check Syntax answers. Install with npm ci in this folder.",
-  "type": "module",
-  "dependencies": {
-    "@electric-sql/pglite": "0.5.16"
-  }
-}

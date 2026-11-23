@@ -54,7 +54,7 @@ function checkExercise(ex) {
 }
 
 /** run.mjs and the folders it may find a compiler in: its own, then Practice Range's copy. */
-const runArgs = ctx => [`${ctx.modDir}/lang/typescript/run.mjs`, ...(ctx.appHome ? [`${ctx.appHome}/mods/syntax/languages/typescript`] : [])];
+const runArgs = ctx => [`${ctx.modDir}/lang/typescript/run.mjs`, ...(ctx.appHome ? [`${ctx.appHome}/mods/practice-range/languages/typescript`] : [])];
 
 export const typescript = {
   id: "typescript",

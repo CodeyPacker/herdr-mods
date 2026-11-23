@@ -1,9 +1,0 @@
-{
-  "name": "herdr-syntax-typescript-pack",
-  "private": true,
-  "description": "Pinned TypeScript compiler used to check Syntax answers. Install with npm ci in this folder.",
-  "type": "module",
-  "dependencies": {
-    "typescript": "6.0.3"
-  }
-}
