@@ -113,12 +113,20 @@ export default class WorkspaceChrome extends View {
           .when(Boolean(updates().app.ready), el => el.child(div().size(6).rounded_full().bg(t.accent))))
         .child(row("machine", "plus", "Add machine", true, () => run("mod.open", { name: "machine-add" })));
     }
+    // A narrow sidebar drops the logo, then search, so nothing overlaps.
+    // Room needed: left padding, logo 20, buttons 26 each, gaps 4, right padding 10, plus the card border.
+    const lights = window()?.platform === "macos" && !window()?.fullscreen;
+    const left = lights ? 76 : 14;
+    const width = find(layout(), "sidebar")?.size?.px ?? Infinity;
+    const showSearch = width >= left + 26 + 4 + 26 + 10 + 4;
+    const showLogo = width >= left + 20 + 4 + 26 + 4 + 26 + 10 + 4;
     return h_flex().size_full().rounded(13).overflow_hidden().bg(islandFill(t.chrome)).when(collapsed, el => el.justify_center()).when(!collapsed, el => el.pl(14).pr(10)).gap(4).items_center().text_size(13.5)
-      .when(window()?.platform === "macos" && !window()?.fullscreen && !collapsed, el => el.pl(76))
-      .when(!collapsed, el => el.child(h_flex().flex_1().min_w(0).gap(8).items_center().child(image("frame/welcome/herdr.png").size(20).flex_none().rounded(5))))
+      .when(lights && !collapsed, el => el.pl(76))
+      .when(!collapsed, el => el.child(h_flex().flex_1().min_w(0).gap(8).items_center()
+        .when(showLogo, el => el.child(image("frame/welcome/herdr.png").size(20).flex_none().rounded(5)))))
       // The macOS rail without traffic lights (full screen) has the row free: the logo alone.
       .when(collapsed && window()?.platform === "macos" && Boolean(window()?.fullscreen), el => el.child(image("frame/welcome/herdr.png").size(20).flex_none().rounded(5)))
-      .when(!collapsed, el => el.child(this.button("search", svg("mods/islands-workspace-chrome/search.svg").size(15), () => run("mod.open", { name: "picker" }))))
+      .when(!collapsed && showSearch, el => el.child(this.button("search", svg("mods/islands-workspace-chrome/search.svg").size(15), () => run("mod.open", { name: "picker" }))))
       // On the macOS rail the traffic lights fill the row; the agents list's » unfolds it.
       .when(!(collapsed && window()?.platform === "macos"), el => el.child(this.button("sidebar-toggle", svg("mods/islands-workspace-chrome/sidebar.svg").size(15), toggleSidebar)));
   }

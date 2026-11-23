@@ -203,8 +203,8 @@
   "gap": 12,
   "titlebar": "none",
   "traffic_lights": [
-    12,
-    16
+    24,
+    24
   ],
   "preview": "layouts/islands.svg"
 }

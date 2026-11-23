@@ -110,7 +110,7 @@ terminals. Nothing is set, so settings.json still wins there.
     the agents dot is `needs > 0 ? t.blocked : list.length > 0 ? t.done : t.dim`.
 - `layouts/islands.svg`: the 160x100 picture the settings screen shows.
 
-The layout root (`row`, `titlebar: "none"`, `traffic_lights: [12, 16]`):
+The layout root (`row`, `titlebar: "none"`, `traffic_lights: [24, 24]`):
 
 ```json
 "background": "canvas", "padding": 12, "gap": 12,
