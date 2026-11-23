@@ -9,6 +9,7 @@
     {"id":"zen","capture":"gallery/sources/zen-capture.png","crop":{"left":24,"top":24,"width":3408,"height":2120}},
     {"id":"spotify","capture":"gallery/sources/spotify-capture.png","blur":8,"dialog":{"left":868,"top":86,"width":1720,"height":1994,"radius":32},"crop":{"left":788,"top":6,"width":1880,"height":1296}},
     {"id":"portal","capture":"gallery/sources/portal-capture.png","blur":8,"dialog":{"left":868,"top":218,"width":1720,"height":1732,"radius":32},"crop":{"left":788,"top":138,"width":1880,"height":1892}},
-    {"id":"vim-docs","capture":"gallery/sources/vim-docs-capture.png","blur":8,"dialog":{"left":1472,"top":230,"width":718,"height":960,"radius":24},"crop":{"left":1392,"top":150,"width":880,"height":1120}}
+    {"id":"vim-docs","capture":"gallery/sources/vim-docs-capture.png","blur":8,"dialog":{"left":1472,"top":230,"width":718,"height":960,"radius":24},"crop":{"left":1392,"top":150,"width":880,"height":1120}},
+    {"id":"hey-chat","capture":"gallery/sources/hey-chat-capture.png","crop":{"left":0,"top":0,"width":1893,"height":1093}}
   ]
 }

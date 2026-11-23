@@ -12,7 +12,7 @@
 import { div } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { run, notify, watchFolder, terminals, knownAgents, focused } from "herdr";
-import { colors } from "./kit/theme.js";
+import { colors, seeThroughFill } from "./kit/theme.js";
 import { dataDir, readBoard, onlyWorktrees } from "./data.js";
 import { installed, savedStarters, pickStarter, startAgent, hideAgent, agentOn } from "./start.js";
 import { openReview, submission } from "./review.js";
@@ -183,7 +183,7 @@ export class Slot {
     const n = this.count ?? 0;
     const text = this.error ? "Tickets: error" : this.count === null ? "Tickets" : n ? `${n} need${n === 1 ? "s" : ""} you` : "No tickets waiting";
     return h_flex().id("tickets-slot").size_full().px(12).gap(7).items_center().justify_center().rounded(13).overflow_hidden()
-      .bg(t.chrome).text_size(11.8).cursor_pointer()
+      .bg(seeThroughFill(t.chrome)).text_size(11.8).cursor_pointer()
       .when(Boolean(this.error), (el) => el.tooltip(this.error))
       .on_click(() => { run("mod.open", { name: "tickets" }); })
       .child(div().flex_none().text_color(n ? t.blocked : t.dim).child(n ? "●" : "○"))

@@ -232,9 +232,10 @@ and its branch are deleted, and the comments stay.
   `kit/` (this repo's shared kit: rows, letter badges, key buttons, pane header and bar,
   tags, banners, the key legend, sizes) and
   `views/` (setup, tour, diff, fix, review, planning and error).
-- `mod.json`: `{ "place": "none", "focusable": true, "title": "Tourist" }`.
-- `keys.json` opens it in a split: `"ctrl-shift-g": { "command": "pane.split",
-  "args": { "direction": "right", "mod": "tourist" } }`.
+- `mod.json`: `{ "place": "none", "focusable": true, "title": "Tourist", "overlay": { "kind": "popup", "width": 1, "height": 1, "frame": "none" } }`.
+- `keys.json`: `"ctrl-shift-g": "mod.open:tourist"`. That opens a tiny overlay copy that toggles
+  and closes: it closes the Tourist pane in the shown tab when there is one, otherwise it splits
+  the focused pane right with Tourist.
 - The folder is the pane's `props().folder`, else the focused pane's cwd. Git
   finds the root, branch, base (`origin/HEAD`, `main` or `master`), merge-base
   and changed files.

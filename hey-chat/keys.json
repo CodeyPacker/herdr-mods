@@ -1,0 +1,5 @@
+{
+  "global": {
+    "ctrl-a c": "mod.open:hey-chat"
+  }
+}

@@ -3,11 +3,44 @@ import { h_flex } from "gpui-base";
 import { spaces, panes, run, openOverlay, theme, window, shared, layout, settings, props } from "herdr";
 
 // The islands' fill at the opacity in islands-workspace-chrome/settings.json (1 when unset).
+// Over a background picture with see-through terminals, at the terminals' opacity instead.
 const islandFill = (c) => {
-  const o = shared("islands.opacity");
+  const o = seeThroughOpacity() ?? shared("islands.opacity");
   if (typeof o !== "number" || o >= 1 || !/^#[0-9a-f]{6}$/i.test(c)) return c;
   return c + Math.round(Math.max(0, o) * 255).toString(16).padStart(2, "0");
 };
+
+// The panes' opacity when the background picker made them see-through on the shown layout: it
+// records { layout, opacity } in shared state, clears the terminals and gives the pane frame the
+// theme's background at that opacity. Null otherwise, so other setups look as they always have.
+// Same as seeThroughOpacity in the mods' kit/theme.js.
+function seeThroughOpacity() {
+  const s = shared("backgrounds.seeThrough");
+  if (!s || typeof s !== "object" || s.layout !== shared("layout")) return null;
+  const root = layout();
+  if (!root || typeof root.background !== "object" || typeof root.background?.image !== "string") return null;
+  const o = Number(s.opacity);
+  return Number.isFinite(o) && o < 1 ? Math.max(0, o) : null;
+}
+
+// The borders' color: light or dark when the background picker wrote one of its two into the
+// layout's main pane frame, else the theme's. Other custom colors there don't change the mods.
+const PICKER_BORDERS = ["#ffffff26", "#00000059"];
+const edge = (t) => {
+  const c = find(layout(), "main")?.content?.pane?.border?.color;
+  return PICKER_BORDERS.includes(c) ? c : t.border;
+};
+
+// The hover fill: the theme's hover color laid over the tab's own color, then at the islands'
+// opacity like the tab. A hover color with its own alpha alone would show the picture through.
+const over = (base, top) => {
+  const m = /^#([0-9a-f]{6})([0-9a-f]{2})?$/i.exec(top), b = /^#([0-9a-f]{6})$/i.exec(base);
+  if (!m || !b) return top;
+  const a = m[2] ? parseInt(m[2], 16) / 255 : 1;
+  const ch = (h, i) => parseInt(h.slice(i, i + 2), 16);
+  return "#" + [0, 2, 4].map(i => Math.round(ch(m[1], i) * a + ch(b[1], i) * (1 - a)).toString(16).padStart(2, "0")).join("");
+};
+const hoverFill = (t) => islandFill(over(t.surface, t.hover));
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -76,8 +109,8 @@ export default class Tabs extends View {
     const shown = space?.tabs ?? [];
     const stop = (_e, cx) => cx.stop_propagation();
     const button = (id, label, action, pill = false) => div().id(id).size(26).flex_none().flex().items_center().justify_center().rounded(6).text_color(t.dim)
-      .when(pill, el => el.bg(t.surface).border(1).border_color(t.border)) // neutral pill, like a tab
-      .hover(s => s.bg(t.hover).text_color(t.foreground))
+      .when(pill, el => el.bg(t.surface).border(1).border_color(edge(t))) // neutral pill, like a tab
+      .hover(s => s.bg(hoverFill(t)).text_color(t.foreground))
       .on_mouse_down("left", stop).on_click(action).child(label);
     const info = (c) => {
       const program = panes().find(p => p.tab === c.id && p.program?.agent)?.program ?? panes().find(p => p.tab === c.id)?.program;
@@ -101,12 +134,12 @@ export default class Tabs extends View {
       return h_flex().id(`tab-${c.id}`).h_full().px(compact ? 10 : 14).gap(7).items_center().flex_none().text_size(12)
         .when(compact, el => el.tooltip(name)).when(faded, el => el.opacity(0.4))
         // Every tab is a pill, as tall and round as the Herdr card. When joined, the one shared pill around them draws that instead.
-        .when(!joined, el => el.rounded(14).border(1).border_color(t.border).bg(islandFill(t.surface)))
+        .when(!joined, el => el.rounded(14).border(1).border_color(edge(t)).bg(islandFill(t.surface)))
         // The pill clips to a rectangle, not to its round ends, so the end tabs round their own outer corners
         // (the pill's 14 minus its 1 px border) to keep the hover color inside.
         .when(joined && first, el => el.rounded_l(13)).when(joined && last, el => el.rounded_r(13))
         .text_color(c.active ? t.ansi3 : t.muted) // the active one in the theme's yellow (ansi3), like the branch pill
-        .hover(s => s.bg(t.hover))
+        .hover(s => s.bg(hoverFill(t)))
         .on_mouse_down("left", (e, cx) => { cx.stop_propagation(); this.pressed = i; if (e.click_count === 2) run("tab.rename", { id: c.id }); })
         .on_mouse_up("left", () => {
           const from = this.pressed; this.pressed = null;
@@ -134,14 +167,14 @@ export default class Tabs extends View {
       const on = panel && !panel.hidden && body?.active === id;
       return h_flex().id(`panel-${id}`).size(26).flex_none().items_center().justify_center().rounded(6)
         .border(1).border_color(on ? t.accent : "#00000000").text_color(on ? t.accent : t.muted)
-        .hover(s => s.bg(t.hover)).on_mouse_down("left", stop)
+        .hover(s => s.bg(hoverFill(t))).on_mouse_down("left", stop)
         .on_click(() => {
           if (on) run("layout.hide", { id: "panel" });
           else { run("layout.select", { stack: "panel-body", child: id }); run("layout.show", { id: "panel" }); }
         }).child(svg(icon).size(14));
     };
     // The buttons on the right share one card, like the sidebar's, flush with the main panel's right edge.
-    const actions = h_flex().id("tab-actions").flex_none().h_full().px(10).gap(2).items_center().rounded(14).bg(islandFill(t.chrome)).border(1).border_color(t.border)
+    const actions = h_flex().id("tab-actions").flex_none().h_full().px(10).gap(2).items_center().rounded(14).bg(islandFill(t.chrome)).border(1).border_color(edge(t))
         .child(button("tab-new", "+", () => openOverlay({ mod: "new-menu", kind: "popup", width: 250, height: 512 })))
         .when(enabled.includes("files"), el => el.child(panelButton("files", "mods/files/file.svg")))
         .when(enabled.includes("changes"), el => el.child(panelButton("changes", "mods/changes/changes.svg")))
@@ -156,8 +189,8 @@ export default class Tabs extends View {
     });
     // Joined: one pill that hugs the tabs, clipped to its round ends, with a divider before every tab but the first.
     const strip = joined && tabItems.length > 0
-      ? [h_flex().id("tab-pill").h_full().flex_none().items_center().rounded(14).overflow_hidden().border(1).border_color(t.border).bg(islandFill(t.surface))
-          .children(tabItems.flatMap((el, k) => (k === 0 ? [el] : [div().w(1).h(14).flex_none().bg(t.border), el])))]
+      ? [h_flex().id("tab-pill").h_full().flex_none().items_center().rounded(14).overflow_hidden().border(1).border_color(edge(t)).bg(islandFill(t.surface))
+          .children(tabItems.flatMap((el, k) => (k === 0 ? [el] : [div().w(1).h(14).flex_none().bg(edge(t)), el])))]
       : tabItems;
     return h_flex().size_full().min_w(0).pl(lightsPadding).gap(3).items_center() // no fill: the canvas shows through
       .on_mouse_up("left", () => { this.pressed = null; })

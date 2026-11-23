@@ -1,8 +1,0 @@
-{
-  "global": {
-    "ctrl-shift-i": {
-      "command": "tab.new",
-      "args": { "name": "Practice Range", "mod": "syntax", "props": { "practiceTab": true } }
-    }
-  }
-}

@@ -1,0 +1,254 @@
+import { mod, fake } from './support/mod.mjs';
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { applyEvent, resetThread } from '../mods/hey-chat/messages.js';
+
+const { default: HeyChat } = await mod('main.js');
+const { Bridge } = await mod('agent.js');
+const line = ev => Buffer.from(JSON.stringify(ev) + '\n');
+
+test('idle connection recovery never adds typing dots or scrolls the conversation', async () => {
+  const chat = { id: 'chat' };
+  resetThread(chat);
+  const timers = [];
+  let scrolls = 0;
+  const cx = { notify() {}, timer: { after(ms, fn) { timers.push({ ms, fn }); } } };
+  const v = Object.assign(Object.create(HeyChat.prototype), { chatId: 'chat', chat: () => chat, atBottom: true,
+    needsYou: () => false, scrollDown() { scrolls++; } });
+  v.onEvent(chat, { type: 'connection', state: 'reconnecting' }, cx);
+  assert.equal(v.busy(chat), true, 'sending stays blocked during recovery');
+  assert.equal(v.thinking(chat), false);
+  assert.deepEqual(v.rowIds(), [], 'no temporary typing row');
+  assert.equal(chat.connectionSlow, false, 'brief retries stay out of the status');
+  assert.equal(timers[0].ms, 1000);
+  v.onEvent(chat, { type: 'connection', state: 'connected' }, cx);
+  timers.shift().fn(cx);
+  assert.equal(chat.connectionSlow, false, 'a completed retry cannot flash a stale notice');
+  assert.equal(v.busy(chat), false);
+  assert.equal(scrolls, 0);
+  v.onEvent(chat, { type: 'connection', state: 'reconnecting' }, cx);
+  timers.shift().fn(cx);
+  assert.equal(chat.connectionSlow, true, 'sustained connection problems remain visible');
+  assert.deepEqual(v.rowIds(), []);
+  chat.working = true;
+  assert.equal(v.thinking(chat), true, 'an actual running turn still shows its dots');
+  assert.deepEqual(v.rowIds(), ['typing']);
+  v.onEvent(chat, { type: 'connection', state: 'disconnected' }, cx);
+  assert.equal(chat.connectionSlow, false);
+  assert.equal(chat.disconnected, true);
+});
+
+test('a dropped stream reconnects and replays missing events without duplicates', async () => {
+  const first = [{ type: 'ready', session: 'session' }, { type: 'user', text: 'Hello' }, { type: 'working' }, { type: 'text', text: 'First response' }];
+  const final = { type: 'text', text: 'Final response ✓' };
+  const complete = { type: 'turn_end' };
+  // The original socket fails partway through the final message, including a split UTF-8 character.
+  const chunks = [Buffer.concat([...first.map(line), line(final).subarray(0, -4)]), new Error('socket read failed')];
+  const replay = Buffer.concat([...first, final, complete].map(line));
+  const sockets = [chunks, [replay]];
+  let connects = 0, closes = 0, launches = 0;
+  const net = { async connect() {
+    const reads = sockets[connects++];
+    assert.ok(reads, 'must reuse the existing bridge');
+    return { async write() {}, async read() { const next = reads.shift(); if (next instanceof Error) throw next; return next ?? null; }, close() {} };
+  } };
+  fake('net', net);
+  const events = [];
+  const bridge = new Bridge({ chat: 'chat', agent: 'codex', cwd: '/tmp', session: 'session' }, ev => {
+    events.push(ev);
+    if (ev.type === 'turn_end') bridge.close();
+  }, () => { closes++; });
+  bridge.running = async () => { bridge.startedAt = 1; return 1234; };
+  bridge.launch = async () => { launches++; throw new Error('must not launch'); };
+  const cx = { notify() {}, timer: { every() { return { cancel() {} }; }, after(_ms, done) { queueMicrotask(() => done(cx)); } } };
+  await bridge.open(cx);
+  assert.equal(connects, 2);
+  assert.equal(launches, 0);
+  assert.equal(closes, 0);
+  assert.deepEqual(events.filter(e => e.type !== 'connection' && e.type !== 'synced'), [...first, final, complete]);
+  assert.equal(events.filter(e => e.type === 'synced').length, 1, 'the replay is marked done once, not again after reconnecting');
+  assert.ok(events.some(e => e.type === 'connection' && e.state === 'reconnecting'));
+});
+
+test('a stopped bridge reports disconnection instead of starting a second writer', async () => {
+  let probes = 0, closed = false;
+  const net = { connect: async () => ({ write: async () => {}, read: async () => null, close() {} }) };
+  fake('net', net);
+  const chat = {};
+  resetThread(chat);
+  const bridge = new Bridge({ chat: 'chat', agent: 'codex', cwd: '/tmp', session: 'session' }, ev => applyEvent(chat, ev), () => { closed = true; });
+  bridge.running = async () => { bridge.startedAt = 1; return ++probes === 1 ? 1234 : null; };
+  bridge.launch = async () => { throw new Error('must not launch'); };
+  const cx = { notify() {}, timer: { every() { return { cancel() {} }; }, after(_ms, done) { queueMicrotask(() => done(cx)); } } };
+  await bridge.open(cx);
+  assert.equal(closed, true);
+  assert.equal(chat.reconnecting, false);
+  assert.equal(chat.disconnected, true);
+});
+
+test('the last message and typing indicator stay anchored after layout catches up', async () => {
+  const chat = { id: 'chat' };
+  resetThread(chat);
+  const scrolls = [];
+  let notifications = 0;
+  const cx = { notify() { notifications++; } };
+  const v = Object.assign(Object.create(HeyChat.prototype), { chatId: 'chat', chat: () => chat, atBottom: true, rowHeights: new Map(), viewH: 500, top: 0, bridges: new Map(),
+    scroll: { scroll_to_item(i) { scrolls.push(i); } }, saveChats() {}, needsYou: () => false });
+  v.onEvent(chat, { type: 'text', text: 'A response taller than the viewport.\n'.repeat(100) }, cx);
+  assert.equal(scrolls.at(-1), 1, 'target the bottom marker after the oversized message');
+  v.measureRow(chat.thread[0].id, 3000, cx);
+  assert.equal(scrolls.length, 2, 'repeat the scroll after the actual height is measured');
+  v.onEvent(chat, { type: 'working' }, cx);
+  assert.equal(scrolls.at(-1), 2, 'target the marker after the new typing indicator');
+  v.measureRow('typing', 52, cx);
+  assert.equal(scrolls.at(-1), 2);
+  v.onEvent(chat, { type: 'turn_end' }, cx);
+  assert.equal(scrolls.at(-1), 1, 'reanchor when the typing indicator is removed');
+  const before = notifications;
+  v.measureRow('typing', 52, cx);
+  v.measureViewport(500, cx);
+  assert.equal(notifications, before, 'stable layout must not cause a redraw loop');
+  v.atBottom = false;
+  const count = scrolls.length;
+  v.onEvent(chat, { type: 'text', text: 'Another response' }, cx);
+  v.measureRow(chat.thread.at(-1).id, 80, cx);
+  v.measureViewport(400, cx);
+  assert.equal(scrolls.length, count, 'do not pull someone away from older messages they are reading');
+  v.trackMessageScroll(-10000);
+  assert.equal(v.atBottom, true, 'manual scrolling back to the bottom resumes following');
+  v.onEvent(chat, { type: 'text', text: 'Latest response' }, cx);
+  assert.equal(scrolls.at(-1), 3);
+  v.trackMessageScroll(100);
+  assert.equal(v.atBottom, false, 'scrolling up pauses following');
+});
+
+test('an open socket with a stuck read recovers a missing approval without sending a message', async () => {
+  const permission = { type: 'permission', id: 'ask1', tool: 'Bash', input: { command: 'npm test' } };
+  const missing = [{ type: 'working' }, permission];
+  let reads = 0, writes = 0, probe;
+  const nativeRead = new Promise(() => {});
+  const net = { connect: async () => ({
+    write: async () => { writes++; },
+    read: async () => ++reads === 1 ? line({ type: 'ready', session: 'session' }) : nativeRead,
+    close() {},
+  }) };
+  const exec = async (_command, args) => {
+    assert.deepEqual(args.slice(-2), ['1234', '1']);
+    return { code: 0, stdout: JSON.stringify({ after: 1, events: missing, total: 3, startedAt: 1 }) };
+  };
+  fake('net', net);
+  fake('herdr', { exec, appHome: () => '/tmp' });
+  const chat = { id: 'chat' };
+  resetThread(chat);
+  const bridge = new Bridge({ chat: 'chat', agent: 'codex', session: 'session' }, ev => applyEvent(chat, ev), () => {});
+  bridge.running = async () => { bridge.startedAt = 1; return 1234; };
+  const jobs = [];
+  const cx = { notify() {}, spawn(fn) { jobs.push(fn(cx)); }, timer: { every(_ms, fn) { probe = fn; return { cancel() {} }; }, after() {} } };
+  void bridge.open(cx);
+  for (let i = 0; i < 10; i++) await Promise.resolve();
+  assert.equal(reads, 2, 'native read stays pending with the socket open');
+  bridge.lastEventAt = 0;
+  probe(cx);
+  await Promise.all(jobs);
+  assert.equal(chat.asks.get('ask1').state, 'pending');
+  assert.equal(chat.working, true);
+  assert.equal(writes, 1, 'only the initial subscription was sent');
+  assert.equal(bridge.received, 3);
+  bridge.close();
+});
+
+test('resumed activity scrolls after layout even when cached row heights are unchanged', async () => {
+  const chat = { id: 'chat', cwd: '/tmp' };
+  resetThread(chat);
+  applyEvent(chat, { type: 'text', text: 'Previous reply' });
+  const timers = [], scrolls = [];
+  let paintedRows = 1;
+  const v = Object.assign(Object.create(HeyChat.prototype), {
+    chatId: chat.id, chat: () => chat, atBottom: true, rowHeights: new Map([['typing', 52]]), bridges: new Map(),
+    needsYou: () => false, saveChats() {},
+    scroll: { scroll_to_item(index) { scrolls.push({ index, paintedRows }); } },
+  });
+  const cx = { notify() {}, timer: { after(_ms, fn) { timers.push(fn); } } };
+  v.onEvent(chat, { type: 'working' }, cx);
+  v.measureRow('typing', 52, cx);
+  assert.equal(timers.length, 1, 'height caching cannot suppress the correction');
+  paintedRows = 2;
+  timers.shift()(cx);
+  assert.deepEqual(scrolls.at(-1), { index: 2, paintedRows: 2 });
+  v.onEvent(chat, { type: 'text', text: 'Resumed reply' }, cx);
+  v.onEvent(chat, { type: 'turn_end' }, cx);
+  assert.equal(timers.length, 1, 'multiple replay events share one correction');
+  paintedRows = 2;
+  timers.shift()(cx);
+  assert.deepEqual(scrolls.at(-1), { index: 2, paintedRows: 2 });
+  v.scrollDown(cx);
+  v.atBottom = false;
+  const count = scrolls.length;
+  timers.shift()(cx);
+  assert.equal(scrolls.length, count, 'manual scrolling cancels a pending correction');
+  v.scrollDown(cx);
+  v.chatId = 'other';
+  const switched = scrolls.length;
+  timers.shift()(cx);
+  assert.equal(scrolls.length, switched, 'a correction cannot scroll a different conversation');
+});
+
+test('catch-up skips live events received while the snapshot was in flight and ignores a closed chat', async () => {
+  let finish;
+  const exec = () => new Promise(resolve => { finish = resolve; });
+  fake('herdr', { exec, appHome: () => '/tmp' });
+  const events = [];
+  const bridge = new Bridge({ chat: 'chat' }, ev => events.push(ev), () => {});
+  bridge.sock = { close() {} };
+  bridge.received = 1;
+  bridge.port = 1234;
+  bridge.startedAt = 1;
+  const cx = { notify() {} };
+  const pending = bridge.catchUp(cx);
+  bridge.received = 2;
+  finish({ code: 0, stdout: JSON.stringify({ events: [{ type: 'working' }, { type: 'permission', id: 'ask1' }], startedAt: 1 }) });
+  await pending;
+  assert.deepEqual(events, [{ type: 'permission', id: 'ask1' }]);
+  bridge.lastEventAt = 0;
+  const closing = bridge.catchUp(cx);
+  bridge.close();
+  finish({ code: 0, stdout: JSON.stringify({ events: [{ type: 'permission', id: 'stale' }], startedAt: 1 }) });
+  await closing;
+  assert.equal(events.length, 1);
+});
+
+test('the replay end marker says the chat is synced and is not counted as an event', async () => {
+  const replay = Buffer.concat([{ type: 'ready', session: 'session' }, { type: 'text', text: 'Earlier reply' }, { type: 'replay_end' }].map(line));
+  const reads = [replay];
+  let hello = null;
+  fake('net', { connect: async () => ({ write: async text => { hello ??= JSON.parse(text); }, read: async () => reads.shift() ?? null, close() {} }) });
+  const events = [];
+  const bridge = new Bridge({ chat: 'chat', agent: 'codex', cwd: '/tmp', session: 'session' }, ev => {
+    events.push(ev);
+    if (ev.type === 'synced') bridge.close();
+  }, () => {});
+  bridge.running = async () => { bridge.startedAt = 1; return 1234; };
+  // Timers never fire here, so only the marker can end the sync.
+  await bridge.open({ notify() {}, timer: { every() { return { cancel() {} }; }, after() {} } });
+  assert.equal(hello.replayEnd, true, 'the pane asks for the marker');
+  assert.deepEqual(events.filter(e => e.type !== 'connection').map(e => e.type), ['ready', 'text', 'synced']);
+  assert.equal(bridge.received, 2);
+});
+
+test('a bridge without the marker counts as synced once its reads go quiet', async () => {
+  const reads = [line({ type: 'ready', session: 'session' })];
+  fake('net', { connect: async () => ({ write: async () => {}, read: async () => reads.shift() ?? new Promise(() => {}), close() {} }) });
+  const timers = [];
+  const events = [];
+  const bridge = new Bridge({ chat: 'chat', agent: 'codex', cwd: '/tmp', session: 'session' }, ev => events.push(ev), () => {});
+  bridge.running = async () => { bridge.startedAt = 1; return 1234; };
+  const cx = { notify() {}, timer: { every() { return { cancel() {} }; }, after(_ms, fn) { timers.push(fn); } } };
+  void bridge.open(cx);
+  for (let i = 0; i < 10; i++) await Promise.resolve();
+  assert.equal(events.some(e => e.type === 'synced'), false, 'not before the quiet time passes');
+  timers.shift()(cx); // the check armed at connect: a read came after it
+  assert.equal(events.some(e => e.type === 'synced'), false);
+  timers.shift()(cx); // the check armed after the last read
+  assert.equal(events.filter(e => e.type === 'synced').length, 1);
+  bridge.close();
+});

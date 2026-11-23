@@ -6,7 +6,8 @@ import { theme, run, props, window, shared, setShared, updates, layout, appHome,
 const fade = (c, o) => typeof o !== "number" || o >= 1 || !/^#[0-9a-f]{6}$/i.test(c)
   ? c : c + Math.round(Math.max(0, o) * 255).toString(16).padStart(2, "0");
 // The islands' fill at "opacity" in this mod's settings.json (1 when unset).
-const islandFill = (c) => fade(c, shared("islands.opacity"));
+// With the background picker's see-through panes, at the panes' opacity instead.
+const islandFill = (c) => fade(c, seeThroughOpacity() ?? shared("islands.opacity"));
 
 // The main panel's fill comes from the layout, not a mod, so "main_opacity" rewrites
 // the main pane's background there: the theme's background, faded. At 1 it goes back
@@ -15,8 +16,24 @@ function applyMainOpacity() {
   const root = layout();
   const pane = find(root, "main")?.content?.pane;
   if (!pane) return;
+  // The background picker made the panes see-through: their frame is the theme's background at
+  // that opacity, written as a color, so it is written again when the theme changes (render).
+  if (seeThroughOpacity() !== null) { syncSeeThrough(); return; }
   const o = shared("islands.mainOpacity");
   const want = typeof o === "number" && o < 1 ? fade(theme().background, o) : "background";
+  if (pane.background === want) return;
+  const next = JSON.parse(JSON.stringify(root));
+  find(next, "main").content.pane.background = want;
+  run("layout.set", { layout: next });
+}
+
+/** See-through panes: the main pane frame at the theme's background and the panes' opacity. */
+function syncSeeThrough() {
+  const root = layout();
+  const pane = find(root, "main")?.content?.pane;
+  const o = seeThroughOpacity();
+  if (!pane || o === null) return;
+  const want = fade(theme().background, o);
   if (pane.background === want) return;
   const next = JSON.parse(JSON.stringify(root));
   find(next, "main").content.pane.background = want;
@@ -30,6 +47,19 @@ function find(node, id) {
     if (found) return found;
   }
   return null;
+}
+
+// The panes' opacity when the background picker made them see-through on the shown layout: it
+// records { layout, opacity } in shared state, clears the terminals and gives the pane frame the
+// theme's background at that opacity. Null otherwise, so other setups look as they always have.
+// Same as seeThroughOpacity in the mods' kit/theme.js.
+function seeThroughOpacity() {
+  const s = shared("backgrounds.seeThrough");
+  if (!s || typeof s !== "object" || s.layout !== shared("layout")) return null;
+  const root = layout();
+  if (!root || typeof root.background !== "object" || typeof root.background?.image !== "string") return null;
+  const o = Number(s.opacity);
+  return Number.isFinite(o) && o < 1 ? Math.max(0, o) : null;
 }
 
 // The sidebar's rail goes by its width, not a flag: dragging its edge narrows it too.
@@ -71,6 +101,8 @@ export default class WorkspaceChrome extends View {
   render() {
     const t = theme();
     const collapsed = narrow();
+    // Mods draw again when the theme changes: the header copy keeps see-through panes in its colors.
+    if (!props()?.footer) syncSeeThrough();
     if (props()?.footer) {
       const row = (id, icon, label, dim, action) => h_flex().id(id).h(28).px(collapsed ? 6 : 8).gap(9).items_center().rounded(8).when(collapsed, el => el.justify_center())
         .text_color(dim ? t.dim : t.muted).hover(s => s.bg(t.hover).text_color(t.foreground)).cursor_pointer()
@@ -83,7 +115,9 @@ export default class WorkspaceChrome extends View {
     }
     return h_flex().size_full().rounded(13).overflow_hidden().bg(islandFill(t.chrome)).when(collapsed, el => el.justify_center()).when(!collapsed, el => el.pl(14).pr(10)).gap(4).items_center().text_size(13.5)
       .when(window()?.platform === "macos" && !window()?.fullscreen && !collapsed, el => el.pl(76))
-      .when(!collapsed, el => el.child(h_flex().flex_1().min_w(0).gap(8).items_center().child(image("frame/welcome/herdr.png").size(20).flex_none().rounded(5)).child(div().min_w(0).truncate().font_semibold().text_color(t.foreground).child("Herdr"))))
+      .when(!collapsed, el => el.child(h_flex().flex_1().min_w(0).gap(8).items_center().child(image("frame/welcome/herdr.png").size(20).flex_none().rounded(5))))
+      // The macOS rail without traffic lights (full screen) has the row free: the logo alone.
+      .when(collapsed && window()?.platform === "macos" && Boolean(window()?.fullscreen), el => el.child(image("frame/welcome/herdr.png").size(20).flex_none().rounded(5)))
       .when(!collapsed, el => el.child(this.button("search", svg("mods/islands-workspace-chrome/search.svg").size(15), () => run("mod.open", { name: "picker" }))))
       // On the macOS rail the traffic lights fill the row; the agents list's » unfolds it.
       .when(!(collapsed && window()?.platform === "macos"), el => el.child(this.button("sidebar-toggle", svg("mods/islands-workspace-chrome/sidebar.svg").size(15), toggleSidebar)));
