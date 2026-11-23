@@ -8,22 +8,13 @@
 // loaded in its init line. Descriptions come from each skill's SKILL.md where one is found.
 // Codex: `codex app-server` answers skills/list, with descriptions and the SKILL.md path that a
 // skill input needs.
-import { spawn } from "node:child_process";
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, basename } from "node:path";
 import { homedir } from "node:os";
+import { askClaude, withCodex } from "./agent-cli.mjs";
+import { flags } from "./cli.mjs";
 
 const HOME = homedir();
-/** How long a lookup may take. */
-const WAIT_MS = 15000;
-
-/** --name value pairs. @param {string[]} argv */
-function flags(argv) {
-  /** @type {Record<string, string>} */
-  const out = {};
-  for (let i = 0; i < argv.length; i++) if (argv[i].startsWith("--")) out[argv[i].slice(2)] = argv[++i] ?? "";
-  return out;
-}
 
 /** A SKILL.md's description, from its front matter. @param {string} file */
 function describe(file) {
@@ -39,7 +30,7 @@ function findSkills(dir, depth, out) {
   let names = [];
   try { names = readdirSync(dir); } catch { return; }
   if (names.includes("SKILL.md")) {
-    const name = dir.split("/").pop() ?? "";
+    const name = basename(dir);
     if (!out.has(name)) out.set(name, join(dir, "SKILL.md"));
     return;
   }
@@ -51,64 +42,31 @@ function findSkills(dir, depth, out) {
   }
 }
 
-/** @param {string} cwd */
-function claudeSkills(cwd) {
-  return new Promise((resolve) => {
-    const child = spawn("claude", ["-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose",
-      "--no-session-persistence", "--settings", JSON.stringify({ disableAllHooks: true })], { cwd, stdio: ["pipe", "pipe", "ignore"] });
-    let buf = "", done = false;
-    const finish = (/** @type {string[]} */ names) => {
-      if (done) return;
-      done = true; clearTimeout(timer); child.kill("SIGTERM");
-      // Descriptions: your skills, the folder's, then the plugins'.
-      const files = new Map();
-      findSkills(join(cwd, ".claude", "skills"), 1, files);
-      findSkills(join(HOME, ".claude", "skills"), 3, files); // synced ones sit in skills/synced/<bucket>/
-      findSkills(join(HOME, ".claude", "plugins"), 7, files);
-      resolve(names.map((name) => {
-        const file = files.get(name.split(":").pop() ?? name);
-        return { name, description: file ? describe(file) : "" };
-      }));
-    };
-    const timer = setTimeout(() => finish([]), WAIT_MS);
-    child.on("error", () => finish([]));
-    child.stdout.on("data", (d) => {
-      buf += d.toString();
-      let n;
-      while ((n = buf.indexOf("\n")) >= 0) {
-        const line = buf.slice(0, n); buf = buf.slice(n + 1);
-        let ev; try { ev = JSON.parse(line); } catch { continue; }
-        if (ev.type === "system" && ev.subtype === "init") finish(Array.isArray(ev.skills) ? ev.skills : []);
-      }
-    });
-    child.stdin.write(`${JSON.stringify({ type: "user", message: { role: "user", content: "/cost" } })}\n`);
+/** @param {string} cwd @returns {Promise<{ name: string, description: string }[]>} */
+async function claudeSkills(cwd) {
+  const args = ["--no-session-persistence", "--settings", JSON.stringify({ disableAllHooks: true })];
+  const names = await askClaude(cwd, args, { type: "user", message: { role: "user", content: "/cost" } },
+    (ev) => ev.type === "system" && ev.subtype === "init" ? (Array.isArray(ev.skills) ? ev.skills : []) : undefined, []);
+  // Descriptions: your skills, the folder's, then the plugins'.
+  const files = new Map();
+  findSkills(join(cwd, ".claude", "skills"), 1, files);
+  findSkills(join(HOME, ".claude", "skills"), 3, files); // synced ones sit in skills/synced/<bucket>/
+  findSkills(join(HOME, ".claude", "plugins"), 7, files);
+  return names.map((/** @type {string} */ name) => {
+    const file = files.get(name.split(":").pop() ?? name);
+    return { name, description: file ? describe(file) : "" };
   });
 }
 
-/** @param {string} cwd */
-function codexSkills(cwd) {
-  return new Promise((resolve) => {
-    const child = spawn("codex", ["app-server"], { cwd, stdio: ["pipe", "pipe", "ignore"] });
-    let buf = "", done = false;
-    const finish = (/** @type {any[]} */ list) => { if (!done) { done = true; clearTimeout(timer); child.kill("SIGTERM"); resolve(list); } };
-    const timer = setTimeout(() => finish([]), WAIT_MS);
-    const write = (/** @type {any} */ m) => child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", ...m })}\n`);
-    child.on("error", () => finish([]));
-    child.stdout.on("data", (d) => {
-      buf += d.toString();
-      let n;
-      while ((n = buf.indexOf("\n")) >= 0) {
-        const line = buf.slice(0, n); buf = buf.slice(n + 1);
-        let m; try { m = JSON.parse(line); } catch { continue; }
-        if (m.id === 1) { write({ method: "initialized", params: {} }); write({ id: 2, method: "skills/list", params: { cwds: [cwd] } }); }
-        else if (m.id === 2) {
-          const skills = (m.result?.data ?? []).flatMap((/** @type {any} */ e) => e.skills ?? []).filter((/** @type {any} */ s) => s.enabled !== false);
-          finish(skills.map((/** @type {any} */ s) => ({ name: String(s.name), description: String(s.shortDescription || s.description || ""), path: String(s.path ?? "") })));
-        }
-      }
+/** @param {string} cwd @returns {Promise<{ name: string, description: string, path: string }[]>} */
+async function codexSkills(cwd) {
+  try {
+    return await withCodex(cwd, async (call) => {
+      const r = await call("skills/list", { cwds: [cwd] });
+      const skills = (r?.data ?? []).flatMap((/** @type {any} */ e) => e.skills ?? []).filter((/** @type {any} */ s) => s.enabled !== false);
+      return skills.map((/** @type {any} */ s) => ({ name: String(s.name), description: String(s.shortDescription || s.description || ""), path: String(s.path ?? "") }));
     });
-    write({ id: 1, method: "initialize", params: { clientInfo: { name: "hey-chat", title: "Hey, chat", version: "1" }, capabilities: null } });
-  });
+  } catch { return []; }
 }
 
 const opts = flags(process.argv.slice(2));

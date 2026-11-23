@@ -8,14 +8,17 @@
 //       instead, and the clipboard's image is the fallback when macOS won't let it be read.
 //   node images.mjs file --dir <images dir> --file <path>
 //       Copies an image file there (a dropped one), cut down like a pasted one. Prints the same.
+//   node images.mjs pick
+//       Windows only: shows the system's file dialog for a picture. Prints { path }, with a null
+//       path when it was cancelled, or { error }.
 //
 // bridge.mjs and sessions.mjs import the rest.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync, rmSync, realpathSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync, rmSync } from "node:fs";
 import { join, extname, resolve } from "node:path";
 import { homedir, tmpdir } from "node:os";
-import { fileURLToPath } from "node:url";
+import { flags, isMain } from "./cli.mjs";
 
 /** Where image() finds the images, from Herdr's home. */
 export const REL = "data/hey-chat/images";
@@ -99,7 +102,10 @@ export function keepDataUrl(url, dir) {
  */
 export function pathsIn(text) {
   const out = [];
-  const re = /(?:^|[\s`'"(<[])((?:~|\/)[^\s`'"()<>[\]]*\.(?:png|jpe?g|gif|webp))(?=$|[\s`'")>\].,:;!?])/gi;
+  // On Windows a full path also starts with a drive (`C:\…\shot.png` or `C:/…/shot.png`).
+  const re = process.platform === "win32"
+    ? /(?:^|[\s`'"(<[])((?:~|\/|[a-z]:[\\/])[^\s`'"()<>[\]]*\.(?:png|jpe?g|gif|webp))(?=$|[\s`'")>\].,:;!?])/gi
+    : /(?:^|[\s`'"(<[])((?:~|\/)[^\s`'"()<>[\]]*\.(?:png|jpe?g|gif|webp))(?=$|[\s`'")>\].,:;!?])/gi;
   for (const m of String(text ?? "").matchAll(re)) {
     const file = resolve(m[1].startsWith("~") ? join(homedir(), m[1].slice(1)) : m[1]);
     if (!out.includes(file) && existsSync(file)) out.push(file);
@@ -109,7 +115,8 @@ export function pathsIn(text) {
 
 /** The file a kept image lives in. @param {string} path its path from Herdr's home @param {string} dir */
 export function fileOf(path, dir) {
-  return join(dir, String(path).split("/").pop() ?? "");
+  // The file name only, so a path can never point outside the images folder.
+  return join(dir, String(path).split(/[\\/]/).pop() ?? "");
 }
 
 /** Cuts a big image down in place (macOS), so the agents take it. @param {string} file */
@@ -165,9 +172,13 @@ function pasteData(dir) {
       spawnSync("osascript", ["-e", script], { stdio: "ignore" });
       if (existsSync(tmp)) shrink(tmp);
     } else if (process.platform === "win32") {
-      const script = `$path = '${tmp.replace(/'/g, "''")}'; Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $image = [Windows.Forms.Clipboard]::GetImage(); if ($image) { try { $image.Save($path, [Drawing.Imaging.ImageFormat]::Png) } finally { $image.Dispose() } }`;
+      // An image copied as pixels is saved. A file copied in Explorer has no pixels on the
+      // clipboard, only its path, which is printed (as base64, so any name survives) and copied in below.
+      const script = `$path = '${tmp.replace(/'/g, "''")}'; Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $image = [Windows.Forms.Clipboard]::GetImage(); if ($image) { try { $image.Save($path, [Drawing.Imaging.ImageFormat]::Png) } finally { $image.Dispose() } } elseif ([Windows.Forms.Clipboard]::ContainsFileDropList()) { [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes([Windows.Forms.Clipboard]::GetFileDropList()[0])) }`;
       // Encode the script and quote the path as a literal for spaces and apostrophes.
-      spawnSync("powershell.exe", ["-NoProfile", "-STA", "-EncodedCommand", Buffer.from(script, "utf16le").toString("base64")], { windowsHide: true });
+      const r = spawnSync("powershell.exe", ["-NoProfile", "-STA", "-EncodedCommand", Buffer.from(script, "utf16le").toString("base64")], { windowsHide: true, encoding: "utf8" });
+      const copied = Buffer.from(String(r.stdout ?? "").trim(), "base64").toString("utf8");
+      if (copied && !existsSync(tmp)) return mediaType(copied) ? takeFile(copied, dir) : { error: "The copied file isn't an image." };
     } else {
       const r = spawnSync("sh", ["-c", "wl-paste --type image/png 2>/dev/null || xclip -selection clipboard -t image/png -o 2>/dev/null"], { maxBuffer: MAX_BYTES });
       if (r.stdout?.length) writeFileSync(tmp, r.stdout);
@@ -179,12 +190,30 @@ function pasteData(dir) {
   }
 }
 
-// Run directly, not imported. Herdr's mods folder links here, so both paths are resolved first.
-if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
+/**
+ * Windows: asks for a picture with the system's file dialog. Herdr has a folder picker but none
+ * for files. Returns { path }, or { path: null } when the dialog was cancelled.
+ */
+function pickFile() {
+  if (process.platform !== "win32") return { error: "Only used on Windows." };
+  // The owner keeps the dialog in front of Herdr. The path is printed as base64 so any name survives.
+  const script = [
+    "Add-Type -AssemblyName System.Windows.Forms",
+    "$owner = New-Object Windows.Forms.Form -Property @{ TopMost = $true; ShowInTaskbar = $false }",
+    "$dialog = New-Object Windows.Forms.OpenFileDialog -Property @{ Title = 'Pick a picture'; Filter = 'Pictures|*.png;*.jpg;*.jpeg;*.gif;*.webp;*.bmp|All files|*.*' }",
+    "if ($dialog.ShowDialog($owner) -eq 'OK') { [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($dialog.FileName)) }",
+    "$owner.Dispose()",
+  ].join("; ");
+  const r = spawnSync("powershell.exe", ["-NoProfile", "-STA", "-EncodedCommand", Buffer.from(script, "utf16le").toString("base64")], { windowsHide: true, encoding: "utf8" });
+  if (r.error || r.status !== 0) return { error: "Couldn't open the file dialog." };
+  const path = Buffer.from(String(r.stdout ?? "").trim(), "base64").toString("utf8");
+  return { path: path || null };
+}
+
+if (isMain(import.meta.url)) {
   const [mode, ...rest] = process.argv.slice(2);
-  /** @type {Record<string, string>} */
-  const opts = {};
-  for (let i = 0; i < rest.length; i++) if (rest[i].startsWith("--")) opts[rest[i].slice(2)] = rest[++i] ?? "";
+  const opts = flags(rest);
   if (mode === "paste" && opts.dir) process.stdout.write(JSON.stringify(paste(opts.dir, opts.file)));
   else if (mode === "file" && opts.dir && opts.file) process.stdout.write(JSON.stringify(takeFile(opts.file, opts.dir)));
+  else if (mode === "pick") process.stdout.write(JSON.stringify(pickFile()));
 }

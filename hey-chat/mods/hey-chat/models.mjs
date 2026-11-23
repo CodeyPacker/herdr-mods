@@ -1,51 +1,42 @@
 #!/usr/bin/env node
 // Reads the agent's model options without opening a conversation or claiming its writer.
-import { spawnAgent as spawn } from "./process.mjs";
-import { createInterface } from "node:readline";
+//
+//   node models.mjs claude|codex <folder>
+//       Prints a JSON array: { id, name }. Codex failures go to stderr with exit code 1.
+import { askClaude, withCodex } from "./agent-cli.mjs";
+import { errorText } from "./cli.mjs";
 
 const [agent, cwd] = process.argv.slice(2);
 if (agent === "claude") {
-  process.stdout.write(JSON.stringify(["sonnet", "opus", "haiku"].map(id => ({ id, name: id[0].toUpperCase() + id.slice(1) }))));
+  // Claude Code lists its models in reply to the setup message (initialize) of its JSON mode.
+  // No chat message is sent. The short names (opus, fable, ...) are the current models; the
+  // pinned older versions are left out so the list stays short. Any failure gives the old list.
+  const fallback = ["sonnet", "opus", "haiku"].map(id => ({ id, name: id[0].toUpperCase() + id.slice(1) }));
+  const models = await askClaude(cwd, [], { type: "control_request", request_id: "models", request: { subtype: "initialize" } }, (m) => {
+    if (m.type !== "control_response" || m.response?.request_id !== "models") return undefined;
+    const list = (m.response.response?.models ?? [])
+      .filter((/** @type {any} */ x) => typeof x.value === "string" && !x.value.startsWith("claude-"))
+      .slice(0, 5)
+      .map((/** @type {any} */ x) => ({ id: x.value, name: x.displayName || x.value }));
+    return list.length ? list : fallback;
+  }, fallback);
+  process.stdout.write(JSON.stringify(models));
 } else if (agent === "codex") {
-  const child = spawn("codex", ["app-server"], { cwd, stdio: ["pipe", "pipe", "pipe"] });
-  const calls = new Map();
-  let id = 0, stderr = "";
-  const fail = error => { for (const c of calls.values()) c.reject(error); calls.clear(); };
-  const timer = setTimeout(() => { fail(new Error("Loading models timed out. Try again.")); child.kill(); }, 15000);
-  child.stderr.on("data", d => { stderr = (stderr + d).slice(-2000); });
-  child.on("error", fail);
-  child.on("exit", () => fail(new Error(stderr.trim() || "Codex stopped while loading models.")));
-  const reader = createInterface({ input: child.stdout });
-  reader.on("line", line => {
-    let m;
-    try { m = JSON.parse(line); } catch { return; }
-    const pending = calls.get(m.id);
-    if (!pending) return;
-    calls.delete(m.id);
-    if (m.error) pending.reject(new Error(m.error.message ?? "Couldn't load models."));
-    else pending.resolve(m.result);
-  });
-  const call = (method, params) => new Promise((resolve, reject) => {
-    const request = ++id;
-    calls.set(request, { resolve, reject });
-    child.stdin.write(JSON.stringify({ id: request, method, params }) + "\n");
-  });
   try {
-    await call("initialize", { clientInfo: { name: "hey-chat-models", version: "1" } });
-    child.stdin.write(JSON.stringify({ method: "initialized", params: {} }) + "\n");
-    const models = [];
-    let cursor = null;
-    do {
-      const page = await call("model/list", { cursor, includeHidden: false });
-      for (const m of page.data ?? []) if (!m.hidden && m.model) models.push({ id: m.model, name: m.displayName || m.model });
-      cursor = page.nextCursor;
-    } while (cursor);
+    const models = await withCodex(cwd, async (call) => {
+      const found = [];
+      let cursor = null;
+      do {
+        const page = await call("model/list", { cursor, includeHidden: false });
+        for (const m of page.data ?? []) if (!m.hidden && m.model) found.push({ id: m.model, name: m.displayName || m.model });
+        cursor = page.nextCursor;
+      } while (cursor);
+      return found;
+    }, "Loading models timed out. Try again.");
     process.stdout.write(JSON.stringify(models));
   } catch (e) {
-    process.stderr.write(e instanceof Error ? e.message : String(e));
+    process.stderr.write(errorText(e));
     process.exitCode = 1;
-  } finally {
-    clearTimeout(timer); reader.close(); child.kill();
   }
 } else {
   process.stderr.write("Unknown agent."); process.exitCode = 1;

@@ -1,10 +1,11 @@
 // A bounded replay read, independent of the UI runtime's persistent socket reader.
 import { connect } from 'node:net';
-import { pathToFileURL } from 'node:url';
 import { StringDecoder } from 'node:string_decoder';
-import { realpath } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
+import { isMain } from './cli.mjs';
 
-export function readEvents(port, after = 0) {
+/** @param {number} port @param {number} [after] @param {string | null} [token] the bridge's token, from its file */
+export function readEvents(port, after = 0, token = null) {
   return new Promise((resolve, reject) => {
     const socket = connect(port, '127.0.0.1');
     const events = [];
@@ -20,7 +21,7 @@ export function readEvents(port, after = 0) {
       else resolve(result ?? { after, events: events.slice(after), total: events.length });
     };
     const deadline = setTimeout(() => finish(new Error('Bridge replay timed out.')), 3000);
-    socket.on('connect', () => socket.write(JSON.stringify({ role: 'pane', snapshot: true, after }) + '\n'));
+    socket.on('connect', () => socket.write(JSON.stringify({ role: 'pane', snapshot: true, after, ...(token ? { token } : {}) }) + '\n'));
     socket.on('data', chunk => {
       buffer += decoder.write(chunk);
       let end;
@@ -49,8 +50,14 @@ export function readEvents(port, after = 0) {
   });
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(await realpath(process.argv[1])).href) {
-  readEvents(Number(process.argv[2]), Number(process.argv[3]) || 0)
+if (isMain(import.meta.url)) {
+  // bridge-events.mjs [<the bridge's file>] <port> <after>. The file holds the token, kept off the command line.
+  const args = process.argv.slice(2);
+  let token = null;
+  if (args.length > 2) {
+    try { token = JSON.parse(await readFile(args.shift(), 'utf8')).token ?? null; } catch { /* an older bridge has none */ }
+  }
+  readEvents(Number(args[0]), Number(args[1]) || 0, token)
     .then(result => process.stdout.write(JSON.stringify(result)))
     .catch(error => { process.stderr.write(error.message); process.exitCode = 1; });
 }

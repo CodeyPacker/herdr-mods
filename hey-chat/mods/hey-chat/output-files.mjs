@@ -3,6 +3,7 @@ import { readFile, stat, realpath } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { isAbsolute, dirname, extname } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { isMain } from './cli.mjs';
 
 export async function fileAction(action, target, platform = process.platform, launch = spawn) {
   if (!isAbsolute(target)) throw new Error('Expected an absolute file path.');
@@ -30,12 +31,14 @@ export async function fileAction(action, target, platform = process.platform, la
   await new Promise((resolve, reject) => {
     const child = launch(command, args, { stdio: 'ignore', windowsHide: true });
     child.once('error', reject);
-    child.once('exit', code => code === 0 ? resolve() : reject(new Error('Could not open this output.')));
+    // Windows Explorer exits with 1 even when it opened the folder, so its exit code says nothing.
+    const ignoreCode = platform === 'win32' && action === 'reveal';
+    child.once('exit', code => code === 0 || ignoreCode ? resolve() : reject(new Error('Could not open this output.')));
   });
   return { ok: true };
 }
 
-if (process.argv[1] && pathToFileURL(await realpath(process.argv[1])).href === import.meta.url) {
+if (isMain(import.meta.url)) {
   try { process.stdout.write(JSON.stringify(await fileAction(process.argv[2], process.argv[3]))); }
   catch (error) { process.stdout.write(JSON.stringify({ error: error.message })); process.exitCode = 1; }
 }

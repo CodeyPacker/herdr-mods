@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Your existing Claude Code and Codex sessions, for Hey, chat's tree (scope section 2, A6).
+// Your existing Claude Code and Codex sessions, for Hey, chat's tree.
 //
 //   node sessions.mjs list
 //       Prints a JSON array, newest first: { agent, session, cwd, file, title, last, lastFrom, updatedAt }.
@@ -21,7 +21,9 @@ import { readdirSync, statSync, openSync, readSync, closeSync, readFileSync, exi
 import { join, dirname, basename, resolve } from "node:path";
 import { runAgent as spawnSync } from "./process.mjs";
 import { homedir, tmpdir } from "node:os";
-import { keepFile, keepBase64, keepDataUrl, pathsIn, REL } from "./images.mjs";
+import { keepFile, keepBase64, keepDataUrl, REL } from "./images.mjs";
+import { flags, parse, clip, errorText } from "./cli.mjs";
+import { imageEvent, textEvents, compactNote, claudeAssistantEvents, claudeToolResultEvents } from "./agent-events.mjs";
 
 const HOME = homedir();
 /** How much of a file's start and end the list reads. */
@@ -29,19 +31,6 @@ const HEAD = 1024 * 1024, TAIL = 256 * 1024;
 /** How much of a tool's output a history keeps. */
 const OUTPUT_MAX = 2000;
 const TEMP = [tmpdir(), "/tmp/", "/private/tmp/", "/private/var/folders/", "/var/folders/"];
-
-/** @param {string[]} argv */
-function flags(argv) {
-  /** @type {Record<string, string>} */
-  const out = {};
-  for (let i = 0; i < argv.length; i++) if (argv[i].startsWith("--")) out[argv[i].slice(2)] = argv[++i] ?? "";
-  return out;
-}
-
-/** @param {string} line */
-function parse(line) {
-  try { return JSON.parse(line); } catch { return null; }
-}
 
 /** Bytes [from, from + n) of a file, as text. @param {string} file @param {number} from @param {number} n */
 function slice(file, from, n) {
@@ -69,10 +58,18 @@ function temporary(cwd) {
   return !existsSync(cwd);
 }
 
-/** @param {string} s @param {number} n */
-function clip(s, n) {
-  const one = String(s ?? "").replace(/\s+/g, " ").trim();
-  return one.length > n ? `${one.slice(0, n - 1)}…` : one;
+/**
+ * A session's last message, searched from the end of `lines`: { last, lastFrom }, both null when none.
+ * @param {any[]} lines @param {(d: any) => string | null} agentText @param {(d: any) => string | null} userText
+ */
+function lastMessage(lines, agentText, userText) {
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const a = agentText(lines[i]);
+    if (a) return { last: a, lastFrom: "agent" };
+    const u = userText(lines[i]);
+    if (u) return { last: u, lastFrom: "me" };
+  }
+  return { last: null, lastFrom: null };
 }
 
 /** The model in an agent's own session record. @param {string} agent @param {any} d */
@@ -129,12 +126,7 @@ function listClaude() {
       if (temporary(cwd)) continue;
       const first = head.map(claudeUserText).find(Boolean);
       if (!first) continue; // nothing you typed: a helper's run
-      let last = null, lastFrom = null;
-      for (const d of (tail.length ? tail : head).slice().reverse()) {
-        const a = claudeAgentText(d), u = claudeUserText(d);
-        if (a) { last = a; lastFrom = "agent"; break; }
-        if (u) { last = u; lastFrom = "me"; break; }
-      }
+      const { last, lastFrom } = lastMessage(tail.length ? tail : head, claudeAgentText, claudeUserText);
       const model = all.map(d => sessionModel("claude", d)).filter(Boolean).at(-1) ?? null;
       out.push({ agent: "claude", session: f.replace(/\.jsonl$/, ""), cwd, file, model, title: clip(first, 60), last: clip(last ?? first, 120), lastFrom: lastFrom ?? "me", updatedAt: st.mtimeMs });
     }
@@ -159,21 +151,9 @@ function readClaude(file, before, max) {
       events.push({ type: "user", text: user, images, at });
       continue;
     }
-    if (d.type === "system" && d.subtype === "compact_boundary") {
-      events.push({ type: "note", text: d.compactMetadata?.trigger === "auto" ? "Chat compacted automatically." : "Chat compacted." });
-    } else if (d.type === "assistant") {
-      for (const c of d.message?.content ?? []) {
-        if (c.type === "text" && c.text?.trim()) pushText(events, c.text);
-        else if (c.type === "tool_use") events.push({ type: "tool", id: c.id, name: c.name, input: c.input ?? {} });
-      }
-    } else if (d.type === "user" && Array.isArray(d.message?.content)) {
-      for (const c of d.message.content) {
-        if (c.type !== "tool_result") continue;
-        const out = Array.isArray(c.content) ? c.content.map((/** @type {any} */ x) => x.text ?? "").join("\n") : String(c.content ?? "");
-        events.push({ type: "tool_done", id: c.tool_use_id, error: Boolean(c.is_error), output: out.slice(0, OUTPUT_MAX) });
-        if (Array.isArray(c.content)) for (const x of c.content) if (x.type === "image") pushImage(events, keepBase64(x.source?.data, x.source?.media_type, images_dir));
-      }
-    }
+    if (d.type === "system" && d.subtype === "compact_boundary") events.push(compactNote(d.compactMetadata?.trigger));
+    else if (d.type === "assistant") add(events, claudeAssistantEvents(d.message?.content, images_dir));
+    else if (d.type === "user") add(events, claudeToolResultEvents(d.message?.content, images_dir, OUTPUT_MAX));
   }
   return lastTurns(events, max);
 }
@@ -243,13 +223,8 @@ function listCodex() {
     if (meta.source && typeof meta.source === "object" && meta.source.subagent) continue; // a helper's thread
     const first = head.map((d) => d.type === "response_item" ? codexUserText(d.payload) : null).find(Boolean);
     if (!first && !names.get(id)) continue;
-    let last = null, lastFrom = null;
-    for (const d of (tail.length ? tail : head).slice().reverse()) {
-      if (d.type !== "response_item") continue;
-      const a = codexAgentText(d.payload), u = codexUserText(d.payload);
-      if (a) { last = a; lastFrom = "agent"; break; }
-      if (u) { last = u; lastFrom = "me"; break; }
-    }
+    const item = (/** @type {(p: any) => string | null} */ text) => (/** @type {any} */ d) => d.type === "response_item" ? text(d.payload) : null;
+    const { last, lastFrom } = lastMessage(tail.length ? tail : head, item(codexAgentText), item(codexUserText));
     const model = [...head, ...tail].map(d => sessionModel("codex", d)).filter(Boolean).at(-1) ?? null;
     out.push({ agent: "codex", session: id, cwd, file, model, title: clip(names.get(id) ?? first ?? "Codex chat", 60), last: clip(last ?? first ?? "", 120), lastFrom: lastFrom ?? "me", updatedAt: st.mtimeMs });
   }
@@ -303,10 +278,10 @@ function readCodex(file, before, max) {
         continue;
       }
       const agent = codexAgentText(p);
-      if (agent) { pushText(events, agent); continue; }
+      if (agent) { add(events, textEvents(agent, images_dir)); continue; }
       if (p.type === "function_call" || p.type === "custom_tool_call" || p.type === "local_shell_call") {
         const id = p.call_id ?? p.id;
-        if (p.name === "view_image") { pushImage(events, keepFile(String(parse(p.arguments ?? "")?.path ?? ""), images_dir)); continue; }
+        if (p.name === "view_image") { add(events, [imageEvent(keepFile(String(parse(p.arguments ?? "")?.path ?? ""), images_dir))]); continue; }
         if (p.name === "apply_patch") { events.push({ type: "tool", id, name: "CodexPatch", input: { changes: patchChanges(p.input ?? parse(p.arguments ?? "")?.input) } }); continue; }
         const command = codexCommand(p);
         events.push(command ? { type: "tool", id, name: "Bash", input: { command } } : { type: "tool", id, name: String(p.name ?? "tool"), input: {} });
@@ -319,7 +294,7 @@ function readCodex(file, before, max) {
         events.push({ type: "tool_done", id: p.call_id, error: /aborted|error|failed/i.test(out.slice(0, 60)), output: out.slice(0, OUTPUT_MAX) });
       }
     } else if (d.type === "compacted") {
-      events.push({ type: "note", text: "Chat compacted." });
+      events.push(compactNote(undefined));
     } else if (d.type === "event_msg" && p.type === "turn_aborted") {
       events.push({ type: "turn_end", stopped: true });
     }
@@ -327,18 +302,14 @@ function readCodex(file, before, max) {
   return lastTurns(events, max);
 }
 
-/** An image the agent showed, unless it was just shown. @param {any[]} events @param {{ path: string, w: number, h: number } | null} img */
-function pushImage(events, img) {
-  if (!img) return;
-  const last = events[events.length - 1];
-  if (last?.type === "image" && last.path === img.path) return;
-  events.push({ type: "image", ...img });
-}
-
-/** The agent's words, then each image file they name. @param {any[]} events @param {string} text */
-function pushText(events, text) {
-  events.push({ type: "text", text });
-  for (const file of pathsIn(text)) pushImage(events, keepFile(file, images_dir));
+/** Adds events to a history. An image the agent just showed isn't shown again. @param {any[]} events @param {any[]} more */
+function add(events, more) {
+  for (const ev of more) {
+    if (!ev) continue;
+    const last = events[events.length - 1];
+    if (ev.type === "image" && last?.type === "image" && last.path === ev.path) continue;
+    events.push(ev);
+  }
 }
 
 /** The events from the nth-last message you typed on. @param {any[]} events @param {number} max */
@@ -383,7 +354,7 @@ function removeSession(agent, session, file) {
     rmSync(join(dirname(path), session), { recursive: true, force: true });
     return { ok: true, message: "" };
   } catch (e) {
-    return { ok: false, message: e instanceof Error ? e.message : String(e) };
+    return { ok: false, message: errorText(e) };
   }
 }
 
