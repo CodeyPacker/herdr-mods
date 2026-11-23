@@ -44,8 +44,18 @@ function hash(text) {
   return h.toString(36);
 }
 
-/** Copies a file. Herdr's fs has no copyFile. @param {string} from @param {string} to */
+/**
+ * Copies a file. Herdr's fs has no copyFile.
+ * On Windows, fs.writeFile writes binary data as an empty file, so Windows' copy command does it.
+ * @param {string} from @param {string} to
+ */
 async function copyFile(from, to) {
+  if (window().platform === "windows") {
+    const win = (/** @type {string} */ p) => p.replace(/\//g, "\\");
+    const r = await exec("cmd", ["/d", "/c", "copy", "/b", "/y", win(from), win(to)]);
+    if (r.code !== 0) throw new Error((r.stderr || r.stdout || `copy failed (${r.code})`).trim());
+    return;
+  }
   await fs.writeFile(to, await fs.readFile(from));
 }
 
@@ -224,7 +234,10 @@ export default class Wallpaper extends View {
     const name = this.names[this.at];
     if (!name) return;
     try {
-      await fs.mkdir(`${appHome()}/backgrounds`, { recursive: true });
+      // On Windows, only when missing: backgrounds/ can be a link out of Herdr's folder (to dotfiles,
+      // say), and Herdr refuses mkdir there even when the folder already exists.
+      const skip = window().platform === "windows" && await fs.exists(`${appHome()}/backgrounds`);
+      if (!skip) await fs.mkdir(`${appHome()}/backgrounds`, { recursive: true });
       await copyFile(`${this.folder}/${name}`, `${appHome()}/backgrounds/${name}`);
     } catch (e) {
       this.error = `Could not copy ${name}: ${e instanceof Error ? e.message : String(e)}`;
