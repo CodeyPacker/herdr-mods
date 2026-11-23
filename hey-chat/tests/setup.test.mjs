@@ -1,3 +1,4 @@
+import { view, fake } from './support/mod.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, writeFile, mkdir, rm } from 'node:fs/promises';
@@ -55,11 +56,10 @@ test('Windows native and npm agents resolve without shell command interpolation'
 });
 
 test('setup only guides fresh chats, preserves existing chats, and refreshes after Node installation', async () => {
-  const code = (await readFile(new URL('../mods/hey-chat/main.js', import.meta.url), 'utf8')).replace(/^import .*;\n/gm, '').replace('export default class', 'return class');
   let state = { node: false, agents: {} };
-  const HeyChat = new Function('View', 'checkSetup', code)(class {}, async () => state);
+  fake('agent.js', { checkSetup: async () => state });
   const chat = { thread: [], agent: 'claude' };
-  const v = Object.assign(Object.create(HeyChat.prototype), { chat: () => chat, chatId: 'chat', loadChats: async () => { v.reloaded = true; } });
+  const v = await view({ chat: () => chat, chatId: 'chat', loadChats: async () => { v.reloaded = true; } });
   const jobs = [];
   const cx = { spawn: fn => jobs.push(fn(cx)), notify() {} };
   v.refreshSetup(cx, true); await Promise.all(jobs);

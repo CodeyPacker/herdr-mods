@@ -1,13 +1,13 @@
-// Bridge events to chat messages (scope section 3), and the words for tool calls and permission cards.
+// Bridge events to chat messages, and the words for tool calls and permission cards.
 
 /**
  * A message in a chat's thread:
  *   { kind: "sep", text }                                     a day divider
  *   { kind: "text", from: "me" | "agent", text, time? }       a bubble
  *   { kind: "image", from: "me" | "agent", path, w, h, time? } a picture (path for image(), from Herdr's home)
- *   { kind: "code", from: "agent", lang, text }               a code card
  *   { kind: "tool", from: "agent", icon, title, lines, add?, del? }  a tool call card
- *   { kind: "permission", from: "agent", ask, tool, state, title, lines }  a permission card
+ *   { kind: "permission", from: "agent", ask, tool, state, title, lines, covers }  a permission card
+ *       (covers: what "Always allow" would allow, in words)
  *   { kind: "question", from: "agent", ask, questions, picks, state }  the agent's questions for you:
  *       questions are { id, header, question, options: { label, description }[], multi }, picks
  *       the answers so far by question id, state "pending", "answered" or "dismissed"
@@ -34,6 +34,11 @@ function lineCount(s) {
 function clip(s, n) {
   const one = s.replace(/\s+/g, " ").trim();
   return one.length > n ? `${one.slice(0, n - 1)}…` : one;
+}
+
+/** The first `n` lines, then "…" when there were more. @param {string[]} lines @param {number} n */
+function capped(lines, n) {
+  return lines.length > n ? [...lines.slice(0, n), "…"] : lines;
 }
 
 /**
@@ -132,11 +137,11 @@ export function describeAsk(name, input) {
       ...String(e.old_string ?? "").split("\n").map((l) => `- ${l}`),
       ...String(e.new_string ?? "").split("\n").map((l) => `+ ${l}`),
     ]);
-    return { title: `Edit ${base(i.file_path)}`, lines: [String(i.file_path ?? ""), ...diff.slice(0, DIFF_LINES), ...(diff.length > DIFF_LINES ? ["…"] : [])] };
+    return { title: `Edit ${base(i.file_path)}`, lines: [String(i.file_path ?? ""), ...capped(diff, DIFF_LINES)] };
   }
   if (name === "Write") {
-    const body = String(i.content ?? "").split("\n");
-    return { title: `Write ${base(i.file_path)}`, lines: [String(i.file_path ?? ""), ...body.slice(0, DIFF_LINES).map((l) => `+ ${l}`), ...(body.length > DIFF_LINES ? ["…"] : [])] };
+    const body = String(i.content ?? "").split("\n").map((l) => `+ ${l}`);
+    return { title: `Write ${base(i.file_path)}`, lines: [String(i.file_path ?? ""), ...capped(body, DIFF_LINES)] };
   }
   if (name === "CodexPatch") {
     const changes = Array.isArray(i.changes) ? i.changes : [];
@@ -144,7 +149,7 @@ export function describeAsk(name, input) {
       .filter((l) => (l.startsWith("+") || l.startsWith("-")) && !l.startsWith("+++") && !l.startsWith("---"))
       .map((l) => `${l[0]} ${l.slice(1)}`)]);
     const title = changes.length === 1 ? `Edit ${base(changes[0].path)}` : `Edit ${changes.length} files`;
-    return { title, lines: [...diff.slice(0, DIFF_LINES), ...(diff.length > DIFF_LINES ? ["\u2026"] : [])] };
+    return { title, lines: capped(diff, DIFF_LINES) };
   }
   const d = describeTool(name, input);
   return { title: `Use ${name}`, lines: d.lines };
@@ -274,12 +279,12 @@ export function applyEvent(chat, ev) {
       card.title = ev.error ? `${card.doneTitle} (failed)` : card.doneTitle;
       card.failed = Boolean(ev.error);
       const out = String(ev.output ?? "").split("\n").filter((l) => l.trim());
-      if (card.icon === "run" && out.length) card.lines = [...card.lines, ...out.slice(0, OUTPUT_LINES), ...(out.length > OUTPUT_LINES ? ["…"] : [])];
+      if (card.icon === "run" && out.length) card.lines = [...card.lines, ...capped(out, OUTPUT_LINES)];
       if (ev.error && card.icon !== "run" && out.length) card.lines = [...card.lines, out[0]];
       return null;
     }
     case "permission": {
-      const card = push({ kind: "permission", from: "agent", ask: ev.id, tool: ev.tool, state: "pending", ...describeAsk(ev.tool, ev.input) });
+      const card = push({ kind: "permission", from: "agent", ask: ev.id, tool: ev.tool, state: "pending", covers: typeof ev.covers === "string" ? ev.covers : null, ...describeAsk(ev.tool, ev.input) });
       chat.asks.set(ev.id, card);
       return "asked";
     }
@@ -318,16 +323,18 @@ export function applyEvent(chat, ev) {
   }
 }
 
+/** The first card still pending in a map of cards, or null. @param {Map<string, any> | undefined} cards */
+function firstPending(cards) {
+  for (const card of cards?.values() ?? []) if (card.state === "pending") return card;
+  return null;
+}
+
 /** The question card waiting on you in a chat, or null. @param {any} chat */
 export function pendingQuestion(chat) {
-  if (!chat.questions) return null;
-  for (const card of chat.questions.values()) if (card.state === "pending") return card;
-  return null;
+  return firstPending(chat.questions);
 }
 
 /** The permission card waiting on you in a chat, or null. @param {any} chat */
 export function pendingAsk(chat) {
-  if (!chat.asks) return null;
-  for (const card of chat.asks.values()) if (card.state === "pending") return card;
-  return null;
+  return firstPending(chat.asks);
 }

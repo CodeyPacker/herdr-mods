@@ -1,8 +1,9 @@
+import { view } from './support/mod.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, chmod, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, chmod, rm } from 'node:fs/promises';
 import { tmpdir, homedir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname, delimiter } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
@@ -12,9 +13,7 @@ const script = fileURLToPath(new URL('../mods/hey-chat/sessions.mjs', import.met
 const modelsScript = fileURLToPath(new URL('../mods/hey-chat/models.mjs', import.meta.url));
 
 test('model selection waits for writer shutdown and keeps the conversation', async () => {
-  const code = (await readFile(new URL('../mods/hey-chat/main.js', import.meta.url), 'utf8')).replace(/^import .*;\n/gm, '').replace('export default class', 'return class');
-  const HeyChat = new Function('View', code)(class {});
-  const v = Object.create(HeyChat.prototype);
+  const v = await view();
   const chat = { id: 'chat', session: 'same-session', model: 'old-model', models: [{ id: 'next-model' }] };
   let release;
   const calls = [];
@@ -50,7 +49,10 @@ test('model selection waits for writer shutdown and keeps the conversation', asy
 test('Codex model discovery handles pagination without opening a thread', async t => {
   const dir = await mkdtemp(join(tmpdir(), 'hey-chat-model-list-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
-  const fake = join(dir, 'codex');
+  // Windows has no shebang: there the fake is npm's JS entry point, which the mod runs with Node.
+  const windows = process.platform === 'win32';
+  const fake = windows ? join(dir, 'node_modules', '@openai', 'codex', 'bin', 'codex.js') : join(dir, 'codex');
+  await mkdir(dirname(fake), { recursive: true });
   await writeFile(fake, `#!${process.execPath}
 require('node:readline').createInterface({ input: process.stdin }).on('line', line => {
  const m = JSON.parse(line);
@@ -62,7 +64,10 @@ require('node:readline').createInterface({ input: process.stdin }).on('line', li
 });
 `);
   await chmod(fake, 0o755);
-  const { stdout } = await run(process.execPath, [modelsScript, 'codex', dir], { env: { ...process.env, PATH: `${dir}:${process.env.PATH}` } });
+  // One PATH entry whatever its case, since Windows names it Path.
+  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => key.toLowerCase() !== 'path'));
+  env.PATH = `${dir}${delimiter}${process.env.PATH ?? process.env.Path ?? ''}`;
+  const { stdout } = await run(process.execPath, [modelsScript, 'codex', dir], { env });
   assert.deepEqual(JSON.parse(stdout), [{ id: 'first', name: 'First' }, { id: 'second', name: 'Second' }]);
 });
 
@@ -94,12 +99,13 @@ test('session lists and trimmed history retain the latest agent model', async t 
   const files = { claude: join(claudeDir, 'claude-session.jsonl'), codex: join(codexDir, 'rollout-test.jsonl') };
   for (const agent of ['claude', 'codex']) {
     await writeFile(files[agent], fixtures[agent].map(d => JSON.stringify(d)).join('\n') + '\n');
-    const { stdout } = await run(process.execPath, [script, 'read', '--agent', agent, '--file', files[agent], '--max', '1'], { env: { ...process.env, HOME: home } });
+    const { stdout } = await run(process.execPath, [script, 'read', '--agent', agent, '--file', files[agent], '--max', '1'], { env: { ...process.env, HOME: home, USERPROFILE: home } });
     const history = JSON.parse(stdout);
     assert.equal(history.find(e => e.type === 'model').model, `current-${agent}`);
     assert.equal(history.filter(e => e.type === 'user').length, 1);
   }
-  const { stdout } = await run(process.execPath, [script, 'list'], { env: { ...process.env, HOME: home } });
+  // Node reads the home folder from USERPROFILE on Windows.
+  const { stdout } = await run(process.execPath, [script, 'list'], { env: { ...process.env, HOME: home, USERPROFILE: home } });
   const chats = JSON.parse(stdout);
   assert.equal(chats.length, 2);
   for (const agent of ['claude', 'codex']) assert.equal(chats.find(c => c.agent === agent).model, `current-${agent}`);

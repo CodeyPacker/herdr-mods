@@ -1,16 +1,26 @@
-// Keys (scope section 7): ctrl-h and ctrl-l move between the tree and the message box, ctrl-j and
-// ctrl-k scroll the chat from anywhere, the tree moves with j, k, h, l, g and G, a permission bar
-// takes y, a and n, d asks to delete a chat, v (or shift) selects several, ctrl-b hides the sidebar,
-// and ctrl-c stops a turn.
+// Keys. Most can be changed in Settings (shortcuts.js lists them, with what they start on), so
+// they are asked for by name with v.pressed(id, e), never by letter. Fixed: the tree moves with j,
+// k, h, l, g and G (and the arrows), 1 to 9 pick a question's option, and the delete question
+// takes enter, y, n and esc.
 
 /** The messages' padding above the first row and below the last, as views/chat.js draws it. */
 export const LIST_PAD_TOP = 16, LIST_PAD_BOTTOM = 10;
 
-/** The key hints the tree shows while it has the keyboard. */
-export const TREE_HINTS = [["j k", "move"], ["v", "select"], ["l", "open"], ["h", "close"], ["d", "delete"], ["n", "new chat"], ["N", "open project"], ["⌃l", "chat"]];
+/** Hints with their keys, leaving out those whose key is off. @param {[string, string][]} hints */
+function withKeys(hints) {
+  return hints.filter(([key]) => key);
+}
 
-/** The key hints while a selection is going. */
-export const SELECT_HINTS = [["j k", "extend"], ["d", "delete"], ["esc", "cancel"]];
+/** The key hints the tree shows while it has the keyboard. @param {any} v */
+export function treeHints(v) {
+  return withKeys([["j k", "move"], [v.keyHint("select"), "select"], ["l", "open"], ["h", "close"], [v.keyHint("delete"), "delete"],
+    [v.keyHint("newChat"), "new chat"], [v.keyHint("openProject"), "open project"], [v.keyHint("chat"), "chat"]]);
+}
+
+/** The key hints while a selection is going. @param {any} v */
+export function selectHints(v) {
+  return withKeys([["j k", "extend"], [v.keyHint("delete"), "delete"], ["esc", "cancel"]]);
+}
 
 /**
  * The tree's rows in screen order, as cursor keys: `r:<chat>` in Recent, then `p:<project>` and,
@@ -18,6 +28,8 @@ export const SELECT_HINTS = [["j k", "extend"], ["d", "delete"], ["esc", "cancel
  * @param {any} v the view @returns {string[]}
  */
 export function treeItems(v) {
+  // While the list syncs it shows no rows, so the keys have none to move over.
+  if (v.treeSyncing()) return [];
   const items = v.query ? [] : v.recentIds().map((/** @type {string} */ id) => `r:${id}`);
   for (const p of v.visibleProjects()) {
     items.push(`p:${p.id}`);
@@ -67,6 +79,19 @@ export function scrollChat(v, dir) {
 export function handleKey(v, e, cx) {
   const ks = e.keystroke;
   const done = () => { cx.stop_propagation(); cx.notify(); };
+  const is = (/** @type {string} */ id) => v.pressed(id, e);
+  // Settings covers the pane: keys don't reach what is behind it.
+  if (v.settingsOpen) {
+    // The Shortcuts tab takes every key: moving, switching, and the new key it waits for.
+    if (v.settingsTab === "shortcuts" && v.shortcuts.open) {
+      v.shortcuts.key(e, cx);
+      if (!v.shortcuts.open) v.closeSettings(); // esc, or its own key, closed it
+      return;
+    }
+    if (ks === "escape" || is("settings")) { v.closeSettings(); done(); }
+    // Anything else goes to the initials box when it has the keyboard, and nowhere otherwise.
+    return;
+  }
   if (v.chatSearchOpen && v.zone === "chat-search") {
     if (ks === "escape") { v.toggleChatSearch(); done(); return; }
     if (ks === "enter" || ks === "shift-enter") { v.findChatMatch(ks === "shift-enter" ? -1 : 1); done(); return; }
@@ -91,34 +116,34 @@ export function handleKey(v, e, cx) {
     done();
     return;
   }
-  // Settings is open: esc closes it, wherever the keyboard is.
-  if (v.settingsOpen && ks === "escape") { v.closeSettings(); done(); return; }
-  if (v.zone === "settings") {
-    if (ks === "ctrl-h" || ks === "ctrl-l") { v.closeSettings(); if (ks === "ctrl-h") v.focusTree(); done(); }
-    return;
-  }
+  if (is("settings")) { v.toggleSettings(); done(); return; }
   // A question card is waiting and the box is empty: 1 to 9 pick an option of its next question.
   if (v.zone === "chat" && /^[1-9]$/.test(ks)) {
     const chat = v.chat(v.chatId);
     const card = v.question(chat);
     if (card && v.inputFor(chat.agent).value() === "") {
-      const q = v.nextQuestion(card) ?? card.questions[card.questions.length - 1];
+      const q = v.answeringQuestion(card);
       const option = q?.options?.[Number(ks) - 1];
       if (option) { v.pickAnswer(card, q, option.label, cx); done(); return; }
     }
   }
-  // ctrl-c stops the open chat's turn, from the message box or the permission bar.
-  if (ks === "ctrl-c" && v.busy(v.chat(v.chatId)) && (v.zone === "chat" || v.zone === "ask")) { v.stop(); done(); return; }
-  // A permission card is waiting: y allows once, a always, n denies. Other keys wait, except the ctrl ones below.
+  // Stop ends the open chat's turn, from the message box or the permission bar.
+  if (is("stop") && v.busy(v.chat(v.chatId)) && (v.zone === "chat" || v.zone === "ask")) { v.stop(); done(); return; }
+  // A permission card is waiting: allow once, always allow, or deny. Other keys wait, except the ones below.
   if (v.zone === "ask") {
-    if (ks === "y") { v.decide("allow", false, cx); done(); return; }
-    if (ks === "a") { v.decide("allow", true, cx); done(); return; }
-    if (ks === "n") { v.decide("deny", false, cx); done(); return; }
+    if (is("allow")) { v.decide("allow", false, cx); done(); return; }
+    if (is("always")) { v.decide("allow", true, cx); done(); return; }
+    if (is("deny")) { v.decide("deny", false, cx); done(); return; }
   }
-  if (ks === "ctrl-h") { v.focusTree(); done(); return; }
-  if (ks === "ctrl-b") { v.toggleSidebar(); done(); return; }
-  if (ks === "ctrl-l") { v.focusInput(); done(); return; }
-  if (ks === "ctrl-j" || ks === "ctrl-k") { scrollChat(v, ks === "ctrl-j" ? 1 : -1); done(); return; }
+  // Jump opens the chat that just finished, and last switches between this chat and the one
+  // before. They are taken even when there is nowhere to go, so the message box never gets them
+  // (⌃o, their key to start with, inserts a line on macOS).
+  if (is("jump")) { v.jumpToFresh(cx); done(); return; }
+  if (is("last")) { v.switchBack(cx); done(); return; }
+  if (is("tree")) { v.focusTree(); done(); return; }
+  if (is("sidebar")) { v.toggleSidebar(); done(); return; }
+  if (is("chat")) { v.focusInput(); done(); return; }
+  if (is("scrollDown") || is("scrollUp")) { scrollChat(v, is("scrollDown") ? 1 : -1); done(); return; }
   if (v.zone === "search") {
     if (ks === "escape") { v.focusTree(); done(); }
     return;
@@ -126,20 +151,40 @@ export function handleKey(v, e, cx) {
   if (v.zone !== "tree") return;
 
   const items = treeItems(v);
+  // A search with no match leaves no row for the keys to act on: only esc does anything.
+  if (items.length === 0) {
+    if (ks === "escape") { v.focusInput(); done(); }
+    return;
+  }
   let i = items.indexOf(v.cursor);
   if (i < 0) i = 0;
   const cur = items[i];
   const id = cur.slice(2);
   const isProject = cur.startsWith("p:");
-  // A selection: v starts or ends one. Shift with j, k or the arrows starts one and extends it.
-  // While one is going, j, k, g and G extend it, d deletes its chats and esc ends it.
+  // A selection: select starts or ends one. Shift with j, k or the arrows starts one and extends it.
+  // While one is going, j, k, g and G extend it, delete deletes its chats and esc ends it.
   const shifted = ["shift-j", "shift-k", "shift-down", "shift-up"].includes(ks);
-  if (ks === "v") { v.anchor = v.anchor ? null : cur; done(); return; }
+  if (is("select")) { v.anchor = v.anchor ? null : cur; done(); return; }
   if (shifted && !v.anchor) v.anchor = cur;
   if (v.anchor && ks === "escape") { v.anchor = null; done(); return; }
-  if (v.anchor && ks === "d") { v.askDeleteSelected(); done(); return; }
+  if (v.anchor && is("delete")) { v.askDeleteSelected(); done(); return; }
   if (v.anchor && !shifted && !["j", "k", "down", "up", "g", "shift-g"].includes(ks) && e.key !== "G") v.anchor = null;
-  if (ks === "j" || ks === "down" || ks === "shift-j" || ks === "shift-down") v.cursor = items[Math.min(i + 1, items.length - 1)];
+  // The shortcuts first: one may be on a key the tree also moves with.
+  if (is("delete")) {
+    if (isProject) v.askDeleteProject(id); else v.askDelete(id);
+  } else if (is("openProject")) {
+    v.newProject(cx);
+    done();
+    return;
+  } else if (is("newChat")) {
+    // A new chat in the folder under the cursor, or the folder of the chat under it, ready to type in.
+    const project = isProject ? id : v.chat(id)?.project;
+    if (!project) { done(); return; }
+    v.newChat(project, cx);
+    v.focusInput();
+    done();
+    return;
+  } else if (ks === "j" || ks === "down" || ks === "shift-j" || ks === "shift-down") v.cursor = items[Math.min(i + 1, items.length - 1)];
   else if (ks === "k" || ks === "up" || ks === "shift-k" || ks === "shift-up") v.cursor = items[Math.max(i - 1, 0)];
   else if (ks === "g") v.cursor = items[0];
   else if (ks === "shift-g" || e.key === "G") v.cursor = items[items.length - 1];
@@ -152,20 +197,6 @@ export function handleKey(v, e, cx) {
     const project = isProject ? id : v.chat(id).project;
     v.setCollapsed(project, true);
     v.cursor = `p:${project}`;
-  } else if (ks === "d") {
-    if (isProject) v.askDeleteProject(id); else v.askDelete(id);
-  } else if (ks === "shift-n" || e.key === "N") {
-    v.newProject(cx);
-    done();
-    return;
-  } else if (ks === "n") {
-    // A new chat in the folder under the cursor, or the folder of the chat under it, ready to type in.
-    const project = isProject ? id : v.chat(id)?.project;
-    if (!project) { done(); return; }
-    v.newChat(project, cx);
-    v.focusInput();
-    done();
-    return;
   } else if (ks === "escape") v.focusInput();
   else return;
   v.revealCursor();

@@ -1,23 +1,24 @@
+import { mod, fake } from './support/mod.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+// Expose only the filesystem methods Herdr actually provides. Node's rename is unavailable there.
+const herdrFs = { mkdir: fs.mkdir };
+
 test('saving an existing store preserves the bridge id and latest session on reopen', async t => {
   const home = await fs.mkdtemp(join(tmpdir(), 'hey-chat-store-'));
   t.after(() => fs.rm(home, { recursive: true, force: true }));
-  const code = (await fs.readFile(new URL('../mods/hey-chat/store.js', import.meta.url), 'utf8'))
-    .replace(/^import .*;\n/gm, '').replace(/export /g, '');
   const readTextFile = file => fs.readFile(file, 'utf8').catch(e => { if (e.code === 'ENOENT') return null; throw e; });
   const writeTextFile = async (file, text, expected) => {
     assert.equal(await readTextFile(file), expected, 'the native API requires the current file as its expected snapshot');
     await fs.writeFile(file, text);
   };
-  // Expose only the filesystem methods Herdr actually provides. Node's rename is unavailable there.
-  const { saveStore, loadStore } = new Function('fs', 'readTextFile', 'writeTextFile', 'appHome', 'checking', `${code}\nreturn { saveStore, loadStore };`)(
-    { mkdir: fs.mkdir }, readTextFile, writeTextFile, () => home, () => false,
-  );
+  fake('herdr', { readTextFile, writeTextFile, appHome: () => home });
+  fake('fs/promises', herdrFs);
+  const { saveStore, loadStore } = await mod('store.js');
   const projects = [{ id: 'project', path: '/tmp' }];
   const chat = { id: 'original-bridge-id', agent: 'codex', cwd: '/tmp', project: 'project', session: 'first-session' };
   await saveStore([chat], projects);
@@ -43,8 +44,6 @@ test('saving an existing store preserves the bridge id and latest session on reo
 test('independent project saves merge, retry conflicts, and preserve project selections', async t => {
   const root = await fs.mkdtemp(join(tmpdir(), 'hey-chat-projects-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  const code = (await fs.readFile(new URL('../mods/hey-chat/store.js', import.meta.url), 'utf8'))
-    .replace(/^import .*;\n/gm, '').replace(/export /g, '');
   let text = null;
   let conflict = true;
   const read = async () => text;
@@ -57,9 +56,10 @@ test('independent project saves merge, retry conflicts, and preserve project sel
     if (text !== expected) throw new Error('stale snapshot');
     text = next;
   };
-  const make = () => new Function('fs', 'readTextFile', 'writeTextFile', 'appHome', 'home', 'checking', `${code}\nreturn {saveStore, loadStore};`)(
-    { mkdir: fs.mkdir }, read, write, () => root, () => root, () => false);
-  const a = make(), b = make();
+  fake('herdr', { readTextFile: read, writeTextFile: write, appHome: () => root, home: () => root });
+  fake('fs/promises', herdrFs);
+  // Two panes, each with its own copy of store.js, as two Herdr tabs have.
+  const a = await mod('store.js?pane-a'), b = await mod('store.js?pane-b');
   const chat = (id, cwd) => ({ id, cwd, session: id, project: id });
   await a.saveStore([chat('a', '/a')], [], 'a', '/a');
   assert.deepEqual((await a.loadStore()).chats.map(c => c.id).sort(), ['a', 'foreign']);

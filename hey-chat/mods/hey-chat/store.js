@@ -1,14 +1,15 @@
-// What Hey, chat keeps on disk (scope section 9): <appHome>/data/hey-chat/chats.json holds each
+// What Hey, chat keeps on disk: <appHome>/data/hey-chat/chats.json holds each
 // real chat's id, folder, agent, title, the agent's session id and when it last changed, and the
-// folders you chat in. Messages aren't copied: a running bridge replays them, and (A6) the
+// folders you chat in. Messages aren't copied: a running bridge replays them, and the
 // agent's own session file has them.
-import { readTextFile, writeTextFile, appHome, home, checking } from "herdr";
+import { readTextFile, writeTextFile, home, checking } from "herdr";
 import * as fs from "fs/promises";
+import { dataDir } from "./common.js";
 
 /** @typedef {{ id: string, path: string, cwd: string, made?: boolean }} Project */
 
 function file() {
-  return `${appHome().replace(/\\/g, "/")}/data/hey-chat/chats.json`;
+  return `${dataDir()}/chats.json`;
 }
 
 /** `~/x` to an absolute path. @param {string} path */

@@ -1,3 +1,4 @@
+import { view, fake } from './support/mod.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdtemp, mkdir, chmod, rm, access } from 'node:fs/promises';
@@ -9,14 +10,12 @@ import { once } from 'node:events';
 import { connect } from 'node:net';
 
 const root = new URL('../mods/hey-chat/', import.meta.url);
-const source = async name => (await readFile(new URL(name, root), 'utf8')).replace(/^import .*;\n/gm, '');
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
-function view(Bridge, deleteSession) {
-  return source('main.js').then(code => {
-    const HeyChat = new Function('View', 'Bridge', 'deleteSession', code.replace('export default class', 'return class'))(class {}, Bridge, deleteSession);
-    return Object.assign(Object.create(HeyChat.prototype), { bridges: new Map(), links: new Map() });
-  });
+/** A view whose bridges and session deletion are the test's. */
+function deleter(Bridge, deleteSession) {
+  fake('agent.js', { Bridge, deleteSession });
+  return view({ bridges: new Map(), links: new Map() });
 }
 const chat = { id: 'chat', agent: 'codex', session: 'session', cwd: '/tmp' };
 
@@ -28,7 +27,7 @@ test('deletion finds a disconnected bridge and waits for shutdown before deletin
     quit() { calls.push('quit'); return new Promise(resolve => { finish = resolve; }); }
     close() { calls.push('close'); }
   }
-  const v = await view(Bridge, async () => { calls.push('delete'); return { ok: true }; });
+  const v = await deleter(Bridge, async () => { calls.push('delete'); return { ok: true }; });
   const deleting = v.removeChatSession(chat);
   await tick();
   assert.deepEqual(calls, ['quit']);
@@ -39,7 +38,7 @@ test('deletion finds a disconnected bridge and waits for shutdown before deletin
 
 test('shutdown failure keeps the chat and never deletes its session', async () => {
   let deletes = 0;
-  const v = await view(class {}, async () => { deletes++; });
+  const v = await deleter(class {}, async () => { deletes++; });
   v.bridges.set(chat.id, { quit: async () => { throw new Error('Shutdown timed out'); } });
   const r = await v.removeChatSession(chat);
   assert.equal(r.ok, false);
@@ -56,7 +55,7 @@ test('concurrent opens share one bridge connection', async () => {
     running() { return new Promise(resolve => { release = resolve; }); }
     async open() { this.sock = {}; }
   }
-  const v = await view(Bridge, () => {});
+  const v = await deleter(Bridge, () => {});
   const jobs = [];
   const cx = { spawn(fn) { jobs.push(fn(cx)); }, timer: { after(_ms, fn) { setImmediate(fn); } } };
   const first = v.link(chat, cx, true);
@@ -69,7 +68,8 @@ test('concurrent opens share one bridge connection', async () => {
   await Promise.all(jobs);
 });
 
-test('bridge quit waits for the actual Codex child to release its writer', { timeout: 15000 }, async t => {
+// Windows ends a process outright on SIGTERM, so the fake Codex's slow shutdown can't run there.
+test('bridge quit waits for the actual Codex child to release its writer', { timeout: 15000, skip: process.platform === 'win32' && 'needs POSIX signals' }, async t => {
   const dir = await mkdtemp(join(tmpdir(), 'hey-chat-delete-'));
   const state = join(dir, 'state');
   const marker = join(dir, 'writer');
@@ -99,19 +99,20 @@ readline.createInterface({ input: process.stdin }).on('line', line => {
   child.stderr.on('data', d => { stderr += d; });
   const exited = once(child, 'exit');
   t.after(async () => { if (child.exitCode === null) child.kill('SIGTERM'); await exited; await rm(dir, { recursive: true, force: true }); });
-  let port;
+  let port, token;
   for (let i = 0; i < 100 && !port; i++) {
-    try { port = JSON.parse(await readFile(join(state, 'chat.json'), 'utf8')).port; } catch {}
+    try { ({ port, token } = JSON.parse(await readFile(join(state, 'chat.json'), 'utf8'))); } catch {}
     if (!port) await new Promise(resolve => setTimeout(resolve, 20));
   }
   assert.ok(port, stderr);
+  assert.ok(token, 'the bridge saves the token its clients send first');
   const pane = connect(port, '127.0.0.1');
   t.after(() => pane.destroy());
   pane.on('error', () => {});
   await once(pane, 'connect');
   let events = '';
   pane.on('data', d => { events += d; });
-  pane.write(JSON.stringify({ role: 'pane' }) + '\n' + JSON.stringify({ type: 'send', text: 'test' }) + '\n');
+  pane.write(JSON.stringify({ role: 'pane', token }) + '\n' + JSON.stringify({ type: 'send', text: 'test' }) + '\n');
   for (let i = 0; i < 100 && !events.includes('fake-thread'); i++) await new Promise(resolve => setTimeout(resolve, 20));
   assert.ok(events.includes('fake-thread'), events);
   await access(marker);
@@ -129,7 +130,7 @@ readline.createInterface({ input: process.stdin }).on('line', line => {
   let replay = '';
   reopened.on('data', d => { replay += d; });
   await once(reopened, 'connect');
-  reopened.write(JSON.stringify({ role: 'pane' }) + '\n');
+  reopened.write(JSON.stringify({ role: 'pane', token: JSON.parse(found).token }) + '\n');
   for (let i = 0; i < 100 && !replay.includes('fake-thread'); i++) await new Promise(resolve => setTimeout(resolve, 20));
   assert.ok(replay.includes('fake-thread'), replay);
   const quitter = spawn(process.execPath, [script, 'quit', '--chat', 'reopened-chat', '--state', state, '--agent', 'codex', '--resume', 'fake-thread']);

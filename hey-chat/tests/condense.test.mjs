@@ -1,6 +1,6 @@
+import { view, fake } from './support/mod.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import { applyEvent, resetThread, visibleMessages, currentActivity, describeActivity } from '../mods/hey-chat/messages.js';
 
 test('condensed history preserves conversation and unanswered requests while hiding all tool cards', () => {
@@ -38,11 +38,10 @@ test('condensed history preserves conversation and unanswered requests while hid
 });
 
 test('condensing defaults on and scrolling follows the displayed rows when toggled', async () => {
-  const source = (await readFile(new URL('../mods/hey-chat/main.js', import.meta.url), 'utf8')).replace(/^import .*;\n/gm, '').replace('export default class', 'return class');
   const saved = [];
-  const HeyChat = new Function('View', 'visibleMessages', 'checking', 'setShared', source)(class {}, visibleMessages, () => false, (...args) => saved.push(args));
+  fake('herdr', { setShared: (...args) => saved.push(args) });
   const chat = { id: 'chat', working: true, thread: [{ id: 'run', kind: 'tool', icon: 'run' }, { id: 'edit', kind: 'tool', icon: 'edit' }] };
-  const v = Object.assign(Object.create(HeyChat.prototype), { chatId: chat.id, chat: () => chat, needsYou: () => false, scrollDown() {} });
+  const v = await view({ chatId: chat.id, chat: () => chat, needsYou: () => false, scrollDown() {} });
   assert.deepEqual(v.rowIds(), ['typing']);
   v.condenseChat = true;
   v.toggleCondenseChat();

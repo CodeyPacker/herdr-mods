@@ -1,11 +1,8 @@
+import { mod } from './support/mod.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import { clock } from '../mods/hey-chat/messages.js';
 
-const code = (await readFile(new URL('../mods/hey-chat/main.js', import.meta.url), 'utf8'))
-  .replace(/^import .*;\n/gm, '').replace('export default class', 'return class');
-const HeyChat = new Function('View', 'clock', code)(class {}, clock);
+const { default: HeyChat } = await mod('main.js');
 function setup(wire, working = true) {
   const chat = { id: 'chat', agent: 'codex', session: 'same-session', working, thread: [], attached: [{ path: 'picture.png' }] };
   let text = 'A follow-up';

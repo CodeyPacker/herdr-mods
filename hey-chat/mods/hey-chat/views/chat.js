@@ -1,18 +1,19 @@
 // The chat card: the header, the messages, and the message box.
 import { div, svg, image } from "gpui-kit";
 import { h_flex, v_flex, Input, Textarea, TextView } from "gpui-base";
-import { settings } from "herdr";
+import { settings, window } from "herdr";
 import { AGENTS, agentPicture, myPicture, withDot } from "../pictures.js";
-import { roundButton, focusBorder } from "./tree.js";
+import { roundButton } from "./tree.js";
+import { focusBorder } from "../kit/theme.js";
+import { ICONS } from "../common.js";
 import { LIST_PAD_TOP, LIST_PAD_BOTTOM } from "../keys.js";
-import { outputSummary } from "./outputs.js";
+import { outputToast } from "./outputs.js";
 import { currentActivity } from "../messages.js";
 import { markedText, markedMarkdown } from "../search.js";
 
 /** @typedef {import("../kit/theme.js").Theme} Theme */
 /** @typedef {import("../messages.js").Message} Message */
 
-const ICONS = "mods/hey-chat/icons";
 
 /** Bubble corners: 18 px, and 5 px on the side that joins the next or last bubble of the same sender. */
 const ROUND = 18, JOINED = 5;
@@ -20,6 +21,16 @@ const ROUND = 18, JOINED = 5;
 const GROUP_GAP = 14, BUBBLE_GAP = 4;
 /** A small picture beside a group's last bubble. */
 const SMALL = 28;
+
+/**
+ * The message box's text size. On Windows 14.5 gives lines a fraction of a pixel tall, so at two
+ * lines the box counts its text as taller than itself and scrolls it by a pixel on every key.
+ * 15 gives whole-pixel lines.
+ */
+function boxTextSize() {
+  // There is no window while `herdr-app check` renders.
+  return window()?.platform === "windows" ? 15 : 14.5;
+}
 
 /** True when `a` and `b` come from the same sender, so they sit in one group. @param {Message} a @param {Message} [b] */
 function sameSender(a, b) {
@@ -66,17 +77,6 @@ function toolCard(v, t, m, el) {
         .child(svg(`${ICONS}/${open ? "chevron-down" : "chevron"}.svg`).size(14).flex_none().text_color(t.muted)))
       .when(open, (col) => col.child(v_flex().gap(4).px(10).py(8).rounded(8).bg(t.background)
         .children((m.lines ?? []).map((line, i) => div().truncate().text_size(12).font_family(mono()).text_color(t.muted).child(searchText(v, `tool-line-${m.id}-${i}`, line)))))));
-}
-
-/** A code card: the language and a copy button over a monospace block. @param {Theme} t @param {Message} m @param {any} el @param {number} max */
-function codeCard(v, t, m, el, max) {
-  return el.min_w(360).max_w(max).overflow_hidden().bg(t.raised)
-    .child(v_flex().w_full()
-      .child(h_flex().pl(14).pr(6).py(5).items_center().justify_between().border_b_1().border_color(t.border)
-        .child(div().text_size(11.5).font_family(mono()).text_color(t.muted).child(m.lang ?? ""))
-        .child(roundButton(t, `copy-${m.id}`, `${ICONS}/copy.svg`, 26, () => {})))
-      .child(v_flex().px(14).py(12).bg(t.background).text_size(12.5).font_family(mono()).text_color(t.foreground)
-        .children(String(m.text ?? "").split("\n").map((line, i) => div().whitespace_nowrap().child(searchText(v, `code-line-${m.id}-${i}`, line || " "))))));
 }
 
 /** The biggest a picture in the chat is drawn. */
@@ -134,7 +134,7 @@ function attachments(v, t, chat) {
  * own words. Several questions, or one with several picks, wait for Send.
  * @param {any} v @param {Theme} t @param {any} m @param {any} el @param {number} max
  */
-function questionCard(v, t, m, el, max) {
+export function questionCard(v, t, m, el, max) {
   const pending = m.state === "pending" && !m.sending;
   const next = pending ? v.nextQuestion(m) : null;
   const needsSend = m.questions.length > 1 || m.questions.some((/** @type {any} */ q) => q.multi);
@@ -175,7 +175,7 @@ function questionCard(v, t, m, el, max) {
 const SLASH_ROWS = 8;
 
 /**
- * The / menu above the message box: compact and the agent's skills, each with what it does.
+ * The / menu above the message box: the agent's skills, each with what it does.
  * The lit row is the one tab or enter picks. @param {any} v @param {Theme} t @param {any[]} items
  */
 function slashMenu(v, t, items) {
@@ -219,6 +219,48 @@ export function pill(t, id, key, label, main, click) {
     .child(label);
 }
 
+/** "Claude wants to run ls": a permission card's question. @param {string} agent @param {string} title */
+function wantsTo(agent, title) {
+  return `${agent} wants to ${title.charAt(0).toLowerCase()}${title.slice(1)}`;
+}
+
+/**
+ * The copy button beside a message. Its room is kept when it's hidden, so the bubble never moves.
+ * It shows while the pointer is over the message (actions/copy.js), and as a check once copied.
+ * @param {any} v @param {Theme} t @param {Message} m
+ */
+function copyButton(v, t, m) {
+  const copied = v.copied?.id === m.id;
+  const shown = copied || v.copyFor === m.id;
+  return div().flex_none().size(26).when(shown, (el) => el.child(h_flex().id(`copy-${m.id}`).size(26).rounded_full().items_center().justify_center()
+    .cursor_pointer().text_color(copied ? t.done : t.muted).hover((s) => s.bg(t.hover).text_color(t.foreground))
+    .on_click((_e, cx) => { v.copyMessage(m, cx); cx.notify(); })
+    .child(svg(`${ICONS}/${copied ? "check" : "copy"}.svg`).size(14))));
+}
+
+/**
+ * The key hints inside the message box: each key in the accent color, then what it does. Hints
+ * whose key is off or hidden are left out. @param {Theme} t @param {string[][]} hints [key, what] each
+ */
+function boxHints(t, hints) {
+  return h_flex().flex_none().gap(8).items_center().text_size(11.5).children(hints.filter(([key]) => key).map(([key, what]) =>
+    h_flex().gap(4).items_center()
+      .child(div().text_color(t.accent).font_semibold().child(key))
+      .child(div().text_color(t.dim).child(what))));
+}
+
+/**
+ * The three answers to a permission card as pill buttons, with their keys when key hints show.
+ * @param {any} v @param {Theme} t @param {(answer: string) => string} id each button's element id
+ */
+function askButtons(v, t, id) {
+  return [
+    pill(t, id("allow"), v.keyHint("allow") || null, "Allow once", true, (cx) => v.decide("allow", false, cx)),
+    pill(t, id("always"), v.keyHint("always") || null, "Always allow", false, (cx) => v.decide("allow", true, cx)),
+    pill(t, id("deny"), v.keyHint("deny") || null, "Deny", false, (cx) => v.decide("deny", false, cx)),
+  ];
+}
+
 /**
  * A permission card: what the agent wants to do, the command or diff, and how it was answered.
  * A pending card has the three answers as buttons too.
@@ -232,21 +274,20 @@ function askCard(v, t, m, el, max) {
   return el.max_w(max).min_w(320).p(12).bg(t.raised).border_1().border_color(pending ? t.blocked : t.border)
     .child(v_flex().w_full().gap(10)
       .child(h_flex().gap(8).items_center()
-        .child(div().flex_1().min_w(0).text_size(13.5).text_color(t.foreground)
-          .child(`${v.chatAgentName()} wants to ${m.title.charAt(0).toLowerCase()}${m.title.slice(1)}`))
+        .child(div().flex_1().min_w(0).text_size(13.5).text_color(t.foreground).child(wantsTo(v.chatAgentName(), m.title)))
         .child(div().flex_none().text_size(12).font_medium().text_color(a.color).child(a.text)))
       .when(lines.length > 0, (col) => col.child(v_flex().px(10).py(8).rounded(8).bg(t.background).text_size(12).font_family(mono()).children(lines)))
-      .when(pending, (col) => col.child(h_flex().gap(8)
-        .child(pill(t, `allow-${m.id}`, v.keyHints ? "y" : null, "Allow once", true, (cx) => v.decide("allow", false, cx)))
-        .child(pill(t, `always-${m.id}`, v.keyHints ? "a" : null, "Always allow", false, (cx) => v.decide("allow", true, cx)))
-        .child(pill(t, `deny-${m.id}`, v.keyHints ? "n" : null, "Deny", false, (cx) => v.decide("deny", false, cx))))));
+      .when(Boolean(m.error), (col) => col.child(div().text_size(12).text_color(t.blocked).child(m.error)))
+      .when(pending, (col) => col.child(h_flex().gap(8).children(askButtons(v, t, (answer) => `${answer}-${m.id}`))))
+      // What "Always allow" would cover, so nobody allows more than they meant to.
+      .when(pending && Boolean(m.covers), (col) => col.child(div().text_size(12).text_color(t.dim).child(m.covers))));
 }
 
 /**
  * One message row, with its picture slot and the space above it.
  * @param {any} v @param {Theme} t @param {Message[]} list @param {number} i @param {number} max a bubble's widest
  */
-function messageRow(v, t, list, i, max, searchCurrent = false) {
+export function messageRow(v, t, list, i, max, searchCurrent = false) {
   const m = list[i];
   if (m.kind === "sep") {
     return h_flex().justify_center().pt(i === 0 ? 0 : 12).pb(6)
@@ -264,7 +305,6 @@ function messageRow(v, t, list, i, max, searchCurrent = false) {
 
   let bubble = corners(div(), mine, above, below);
   if (m.kind === "tool") bubble = toolCard(v, t, m, bubble);
-  else if (m.kind === "code") bubble = codeCard(v, t, m, bubble, max);
   else if (m.kind === "permission") bubble = askCard(v, t, m, bubble, max);
   else if (m.kind === "question") bubble = questionCard(v, t, m, bubble, max);
   else if (m.kind === "image") bubble = pictureBubble(v, t, m, bubble);
@@ -276,7 +316,6 @@ function messageRow(v, t, list, i, max, searchCurrent = false) {
   else bubble = bubble.max_w(max).px(14).py(9).text_size(14.5).line_height(1.42)
     .bg(mine ? t.accent : t.raised).text_color(mine ? t.accent_foreground : t.foreground).child(searchText(v, `text-${m.id}`, m.text));
 
-
   if (searchCurrent) {
     const yellow = String(t.ansi3);
     bubble = bubble.border_1().border_color(/^#[0-9a-f]{6}/i.test(yellow) ? `${yellow.slice(0, 7)}66` : t.ansi3);
@@ -285,9 +324,12 @@ function messageRow(v, t, list, i, max, searchCurrent = false) {
   const picture = div().flex_none().size(SMALL)
     .when(lastOfGroup, (el) => el.child(mine ? myPicture(v.me, SMALL) : agentPicture(chat.agent, SMALL)));
 
-  const row = h_flex().w_full().gap(8).items_end().pt(i === 0 ? 0 : above ? BUBBLE_GAP : GROUP_GAP)
-    .when(mine, (el) => el.justify_end().child(bubble).child(picture))
-    .when(!mine, (el) => el.child(picture).child(bubble));
+  // Words can be copied: a button beside the bubble, on the side away from the picture.
+  const copyable = m.kind === "text" || m.kind === "error";
+  const row = h_flex().id(`msg-${m.id}`).w_full().gap(8).items_end().pt(i === 0 ? 0 : above ? BUBBLE_GAP : GROUP_GAP)
+    .when(copyable, (el) => el.on_hover((/** @type {boolean} */ on, /** @type {any} */ cx) => v.hoverMessage(m.id, on, cx)))
+    .when(mine, (el) => el.justify_end().when(copyable, (r) => r.child(copyButton(v, t, m))).child(bubble).child(picture))
+    .when(!mine, (el) => el.child(picture).child(bubble).when(copyable, (r) => r.child(copyButton(v, t, m))));
 
   if (mine && m.queued && m.queueAction) return v_flex().w_full().child(row)
     .child(h_flex().justify_end().pr(SMALL + 8).pt(4).gap(10).items_center()
@@ -403,7 +445,6 @@ export function chatView(v, t, width) {
     .child(h_flex().flex_none().gap(6).px(10).py(5).items_center().rounded(8).bg(t.raised).border_1().border_color(t.border)
       .text_size(12).font_family(mono()).text_color(t.muted)
       .child(svg(`${ICONS}/folder.svg`).size(13)).child(project?.path ?? chat.project))
-    .child(roundButton(t, "chat-compact", `${ICONS}/compact.svg`, 36, (cx) => v.compact(cx)))
     .child(h_flex().id("chat-outputs").flex_none().px(10).py(7).gap(5).rounded(8).items_center().cursor_pointer().text_size(12).text_color(t.muted).hover(s => s.bg(t.hover).text_color(t.foreground))
       .on_click((_e, cx) => { v.toggleOutputs(cx); cx.notify(); })
       .child(svg(`${ICONS}/file.svg`).size(16)).child(`Files${chat.outputs?.length ? ` (${chat.outputs.length})` : ""}`))
@@ -430,21 +471,16 @@ export function chatView(v, t, width) {
   // While a permission card waits, the message box gives way to its question and answers.
   const askBar = ask && h_flex().flex_none().gap(10).items_center().mx(14).mt(10).mb(14).pl(16).pr(8).py(8).rounded(16)
     .bg(t.raised).border_1().border_color(t.blocked)
-    .child(div().flex_1().min_w(0).truncate().text_size(13.5).text_color(t.foreground)
-      .child(`${agent.name} wants to ${ask.title.charAt(0).toLowerCase()}${ask.title.slice(1)}`))
-    .child(pill(t, "bar-allow", v.keyHints ? "y" : null, "Allow once", true, (cx) => v.decide("allow", false, cx)))
-    .child(pill(t, "bar-always", v.keyHints ? "a" : null, "Always allow", false, (cx) => v.decide("allow", true, cx)))
-    .child(pill(t, "bar-deny", v.keyHints ? "n" : null, "Deny", false, (cx) => v.decide("deny", false, cx)));
+    .child(div().flex_1().min_w(0).truncate().text_size(13.5).text_color(t.foreground).child(wantsTo(agent.name, ask.title)))
+    .children(askButtons(v, t, (answer) => `bar-${answer}`));
 
   const working = v.thinking(chat);
   // The box grows with new lines (shift-enter), so the buttons sit at its bottom.
   const composer = askBar || h_flex().flex_none().gap(8).items_end().px(14).pt(10).pb(14)
-    .child(roundButton(t, "attach", `${ICONS}/plus.svg`, 36, () => {}))
     .child(h_flex().flex_1().min_h(42).px(16).py(10).items_center().rounded(21).bg(t.raised).border_1().border_color(t.border)
-      .child(Textarea.new(input).flex_1().text_size(14.5).text_color(t.foreground))
-      .when(v.keyHints, (box) => box.child(h_flex().flex_none().gap(4).items_center().text_size(11.5)
-        .child(div().text_color(t.accent).font_semibold().child("⌃j ⌃k"))
-        .child(div().text_color(t.dim).child(working && chat.real ? "scroll \u00b7 \u2303c stop" : "scroll")))))
+      .child(Textarea.new(input).flex_1().text_size(boxTextSize()).text_color(t.foreground))
+      .child(boxHints(t, [[`${v.keyHint("scrollDown")} ${v.keyHint("scrollUp")}`.trim(), "scroll"],
+        ...(working && chat.real ? [[v.keyHint("stop"), "stop"]] : [])])))
     // A new message can be queued while Stop remains available for the active turn.
     .when(working && chat.real && !v.question(chat), el => el.child(h_flex().id("stop").flex_none().size(36).rounded_full().items_center().justify_center().cursor_pointer()
         .bg(t.raised).border_1().border_color(t.border).text_color(t.foreground).hover((s) => s.bg(t.hover))
@@ -457,6 +493,7 @@ export function chatView(v, t, width) {
         .child(svg(`${ICONS}/send.svg`).size(18))));
 
   const pasted = !askBar && ((chat.attached ?? []).length > 0 || chat.pasteError);
+  const toast = outputToast(v, t, chat);
   const slash = askBar ? null : v.slashItems();
   return v_flex().id("chat").relative().flex_1().min_w(0).h_full().rounded(14).border_1().border_color(v.zone === "chat" ? focusBorder(t) : t.border).bg(t.background).overflow_hidden()
     // Images dropped anywhere on the chat go with the next message, as pasted ones do.
@@ -473,8 +510,9 @@ export function chatView(v, t, width) {
           .child(pill(t, "find-next", null, "Next", false, () => v.findChatMatch(1)))
           .child(roundButton(t, "close-chat-search", `${ICONS}/close.svg`, 28, () => v.toggleChatSearch())));
       })
-      .when(v.modelPicker === chat.id, el => el.child(modelPicker(v, t, chat))).child(body).child(outputSummary(v, t, chat)).when(Boolean(pasted), (el) => el.child(attachments(v, t, chat)))
+      .when(v.modelPicker === chat.id, el => el.child(modelPicker(v, t, chat))).child(body).when(Boolean(pasted), (el) => el.child(attachments(v, t, chat)))
       .when(Boolean(slash), (el) => el.child(slashMenu(v, t, slash ?? []))).child(composer))
+    .when(Boolean(toast), (el) => el.child(toast))
     .when(Boolean(loading), el => el.child(v_flex().id("chat-loading").absolute().top(0).bottom(0).left(0).right(0).bg(t.popover)
       .items_center().justify_center().child(div().text_size(13).text_color(t.dim).child("Loading conversation…"))));
 }

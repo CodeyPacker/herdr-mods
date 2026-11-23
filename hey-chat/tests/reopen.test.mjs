@@ -1,19 +1,23 @@
+import { mod, fake } from './support/mod.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import { resetThread } from '../mods/hey-chat/messages.js';
 
-const source = (await readFile(new URL('../mods/hey-chat/main.js', import.meta.url), 'utf8'))
-  .replace(/^import .*;\n/gm, '').replace('export default class', 'return class');
+const { default: HeyChat } = await mod('main.js');
+
+/** A message box that keeps its text. */
+function box() {
+  let text = '';
+  return { value: () => text, set_value: next => { text = next; }, focus() {} };
+}
 
 function pane(store) {
   const saved = [];
-  const HeyChat = new Function('View', 'loadStore', 'listSessions', 'resetThread', 'expand', 'saveStore', source)(
-    class {}, async () => store, async () => [], resetThread, x => x,
-    async (_chats, _projects, active) => { saved.push(active); });
+  fake('store.js', { loadStore: async () => store, saveStore: async (_chats, _projects, active) => { saved.push(active); } });
+  fake('agent.js', { listSessions: async () => [] });
   const v = Object.assign(Object.create(HeyChat.prototype), {
     chats: [{ id: 'startup', thread: [] }], projects: [], chatId: 'startup', loaded: false,
-    unread: {}, bridges: new Map(), collapsed: {},
+    unread: {}, bridges: new Map(), collapsed: {}, syncing: new Set(), fresh: [], previous: null,
+    inputs: { claude: box(), codex: box() },
     addProject: () => 'project', link: async () => null,
     loadHistory: async chat => { chat.historyLoaded = true; },
     scrollDown() {}, focusInput() {}, setCollapsed(id, closed) { this.collapsed[id] = closed; },
@@ -49,7 +53,8 @@ test('missing saved chats keep the new chat available', async () => {
 });
 
 test('restoring does not replace a user selection or a message started during loading', async () => {
-  for (const action of [v => { v.chatId = 'other'; }, v => { v.chats[0].working = true; }, v => { v.chats[0].thread.push({ kind: 'text', text: 'Hello' }); }]) {
+  for (const action of [v => { v.chatId = 'other'; }, v => { v.chats[0].working = true; }, v => { v.chats[0].thread.push({ kind: 'text', text: 'Hello' }); },
+    v => { v.inputs.claude.set_value('A message I am still typing'); }]) {
     const { v, cx } = pane(stored('last'));
     const loading = v.loadChats(cx);
     action(v);
@@ -130,6 +135,19 @@ test('a layout correction after the final scroll stays covered until the correct
   assert.equal(v.restoring, null);
 });
 
+
+test('the sidebar shows syncing until each running bridge has replayed its chat', async () => {
+  const { v, cx, jobs } = pane(stored('deleted'));
+  // "last" has a running bridge. "other" has none.
+  v.link = async chat => chat.id === 'last' ? {} : null;
+  assert.equal(v.treeSyncing(), true, 'the sessions are not listed yet');
+  await v.loadChats(cx);
+  await Promise.all(jobs);
+  assert.equal(v.treeSyncing(), true, 'the running bridge is still replaying');
+  v.onEvent(v.chat('last'), { type: 'synced' }, cx);
+  assert.equal(v.treeSyncing(), false);
+  assert.equal(v.chat('last').thread.length, 0, 'the marker adds nothing to the chat');
+});
 
 test('project tabs load and link only their own chats and restore their own selection', async () => {
   const store = stored('other');

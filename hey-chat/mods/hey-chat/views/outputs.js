@@ -1,23 +1,29 @@
 import { div, image, svg } from 'gpui-kit';
 import { h_flex, v_flex, TextView } from 'gpui-base';
 import { roundButton } from './tree.js';
+import { ICONS } from '../common.js';
 
 export const OUTPUTS_WIDTH = 400;
-const ICONS = 'mods/hey-chat/icons';
 
 function button(t, id, label, action) {
   return h_flex().id(id).flex_none().h(30).px(10).items_center().rounded(8).bg(t.raised).text_size(12).text_color(t.foreground).cursor_pointer()
     .hover(s => s.bg(t.hover)).on_click((_e, cx) => { action(cx); cx.notify(); }).child(label);
 }
 
-export function outputSummary(v, t, chat) {
-  const outputs = chat.outputs ?? [];
-  if (!outputs.length || v.outputsOpen) return div();
-  return h_flex().id('view-outputs').flex_none().mx(20).mt(8).px(12).py(10).gap(8).items_center().rounded(10).bg(t.raised).border_1().border_color(t.border).cursor_pointer()
+/**
+ * A short toast when the open chat makes a new file or link (actions/outputs.js). It floats over
+ * the messages, so they don't move, and goes away on its own. A click opens the Files panel.
+ * Null when there is none. The header's Files button lists them all.
+ */
+export function outputToast(v, t, chat) {
+  const toast = v.outputToast;
+  if (!toast || toast.chat !== chat.id || v.outputsOpen) return null;
+  return h_flex().id('output-toast').absolute().top(76).right(16).max_w(320).px(12).py(8).gap(8).items_center().rounded(10)
+    .bg(t.popover).border_1().border_color(t.border).shadow_lg().cursor_pointer()
     .on_click((_e, cx) => { v.toggleOutputs(cx); cx.notify(); })
-    .child(svg(`${ICONS}/file.svg`).size(16).text_color(t.accent))
-    .child(div().flex_1().min_w(0).truncate().text_size(12.5).text_color(t.foreground).child(outputs.length === 1 ? outputs[0].label : `${outputs.length} files & links`))
-    .child(div().text_size(12).text_color(t.accent).child('View outputs'));
+    .child(svg(`${ICONS}/file.svg`).size(15).flex_none().text_color(t.accent))
+    .child(div().flex_1().min_w(0).truncate().text_size(12.5).text_color(t.foreground).child(toast.text))
+    .child(div().flex_none().text_size(12).text_color(t.accent).child('View'));
 }
 
 export function outputsView(v, t) {

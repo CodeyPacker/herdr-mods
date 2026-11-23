@@ -1,6 +1,7 @@
+import { view, fake } from './support/mod.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, rm, readFile, realpath, symlink } from 'node:fs/promises';
+import { mkdtemp, writeFile, rm, realpath, symlink } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
@@ -108,11 +109,10 @@ test('opening and revealing outputs use literal arguments on Mac and Windows', a
 });
 
 test('a slow preview cannot replace a newer selection or leak into another conversation', async () => {
-  const code = (await readFile(new URL('../mods/hey-chat/main.js', import.meta.url), 'utf8')).replace(/^import .*;\n/gm, '').replace('export default class', 'return class');
   const pending = [];
-  const HeyChat = new Function('View', 'outputFileAction', code)(class {}, () => new Promise(resolve => pending.push(resolve)));
+  fake('agent.js', { outputFileAction: () => new Promise(resolve => pending.push(resolve)) });
   const chat = { id: 'one', outputs: [{ key: 'a', kind: 'text', target: '/a.txt' }, { key: 'b', kind: 'text', target: '/b.txt' }] };
-  const v = Object.assign(Object.create(HeyChat.prototype), { chatId: 'one', chat: () => chat });
+  const v = await view({ chatId: 'one', chat: () => chat });
   const jobs = [];
   const cx = { spawn: fn => jobs.push(fn(cx)), notify() {} };
   v.selectOutput('a', cx); v.selectOutput('b', cx);
@@ -126,4 +126,30 @@ test('a slow preview cannot replace a newer selection or leak into another conve
   pending[2]({ kind: 'text', text: 'wrong conversation' });
   await jobs[2];
   assert.equal(v.outputPreview, null);
+});
+
+test('a new file shows a short toast in the open chat only, and replayed history never does', async () => {
+  const { resetThread: reset } = await import('../mods/hey-chat/messages.js');
+  const chat = { id: 'one', cwd: '/project' };
+  reset(chat);
+  const timers = [];
+  const cx = { notify() {}, timer: { after(ms, fn) { timers.push({ ms, fn }); } } };
+  const bridge = { synced: false };
+  const v = await view({ chatId: 'one', chat: () => chat, bridges: new Map([['one', bridge]]), outputsOpen: false, outputToast: null,
+    unread: {}, atBottom: false, zone: 'chat', needsYou: () => false, saveChats() {}, focusInput() {} });
+  const write = (id, file) => {
+    v.onEvent(chat, { type: 'tool', id, name: 'Write', input: { file_path: file } }, cx);
+    v.onEvent(chat, { type: 'tool_done', id }, cx);
+  };
+  write('replayed', 'old.md');
+  assert.equal(v.outputToast, null, 'a file from replayed history is not news');
+  bridge.synced = true;
+  write('live', 'review.md');
+  assert.equal(v.outputToast.text, 'New: review.md');
+  assert.equal(timers.at(-1).ms, 4000);
+  timers.at(-1).fn(cx);
+  assert.equal(v.outputToast, null, 'it goes away on its own');
+  v.chatId = 'other';
+  write('elsewhere', 'other.md');
+  assert.equal(v.outputToast, null, 'only the open chat shows it');
 });

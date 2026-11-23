@@ -1,15 +1,14 @@
 // The sidebar card: the title, search, Recent, the project tree, and your picture with the settings gear.
-import { div, svg } from "gpui-kit";
+import { div, svg, image } from "gpui-kit";
 import { h_flex, v_flex, Input } from "gpui-base";
 import { agentPicture } from "../pictures.js";
 import { legend } from "../kit/legend.js";
 import { focusBorder } from "../kit/theme.js";
-import { TREE_HINTS, SELECT_HINTS } from "../keys.js";
-import { settingsView } from "./settings.js";
+import { treeHints, selectHints } from "../keys.js";
+import { ICONS } from "../common.js";
 
 /** @typedef {import("../kit/theme.js").Theme} Theme */
 
-const ICONS = "mods/hey-chat/icons";
 
 /** The sidebar's width in pixels. */
 export const TREE_WIDTH = 320;
@@ -21,9 +20,6 @@ const CLEAR = "#00000000";
 function soft(color, strength) {
   return /^#[0-9a-f]{6}$/i.test(String(color)) ? `${color}${Math.round(strength * 255).toString(16).padStart(2, "0")}` : color;
 }
-
-/** The border of the card that has the keyboard: the kit's focus color. */
-export { focusBorder };
 
 /** The tree cursor's outline on row `key`, while the tree has the keyboard: the text color, a little stronger. @param {any} v @param {Theme} t @param {string} key */
 function cursorBorder(v, t, key) {
@@ -52,7 +48,7 @@ function chatRow(v, t, chat, key) {
   const last = chat.thread[chat.thread.length - 1];
   let preview = chat.last ? (chat.lastFrom === "me" ? `You: ${chat.last}` : chat.last) : "No messages yet";
   if (last) {
-    preview = last.kind === "tool" ? last.title : last.kind === "code" ? "Sent a code snippet" : last.kind === "image" ? "Sent an image" : last.text;
+    preview = last.kind === "tool" ? last.title : last.kind === "image" ? "Sent an image" : last.text;
     if (last.from === "me") preview = `You: ${preview}`;
   }
   if (thinking) preview = "Thinking…";
@@ -73,7 +69,10 @@ function chatRow(v, t, chat, key) {
       .child(h_flex().gap(8).items_center()
         .child(div().flex_1().min_w(0).truncate().text_size(14).text_color(t.foreground)
           .when(unread, (el) => el.font_semibold()).when(!unread, (el) => el.font_medium()).child(chat.title))
-        .child(div().flex_none().text_size(11.5).text_color(t.dim).child(chat.time)))
+        // The chat the jump key opens shows that key in place of its time.
+        .child(chat.id === v.jumpId && v.keyHint("jump")
+          ? div().flex_none().px(6).py(1).rounded(6).bg(t.accent).text_size(11.5).font_semibold().text_color(t.accent_foreground).child(v.keyHint("jump"))
+          : div().flex_none().text_size(11.5).text_color(t.dim).child(chat.time)))
       .child(h_flex().gap(8).items_center()
         .child(div().flex_1().min_w(0).truncate().text_size(12.5)
           .text_color(asking ? t.blocked : thinking ? t.working : unread ? t.foreground : t.muted)
@@ -126,10 +125,23 @@ function deleteCard(v, t) {
         .when(v.keyHints, (el) => el.child(div().font_semibold().opacity(0.75).child("n"))).child("Cancel")));
 }
 
+/**
+ * What the chat list shows while it loads: the typing dots and what it waits for. Herdr animates
+ * the dots, so they cost no redraws.
+ * @param {any} v @param {Theme} t
+ */
+function syncing(v, t) {
+  return v_flex().w_full().pt(40).gap(12).items_center()
+    .child(image(`${ICONS}/typing.gif`).id("sync-dots").w(29).h(16))
+    .child(div().text_size(12.5).text_color(t.dim).child(v.loaded ? "Syncing chats…" : "Finding your sessions…"));
+}
+
 /** The whole sidebar card. @param {any} v @param {Theme} t */
 export function treeView(v, t) {
   // The chats a selection covers, for chatRow's highlight.
   v.selectedSet = new Set(v.selectedIds());
+  // The chat ⌃g opens, for chatRow's badge.
+  v.jumpId = v.jumpTarget();
   // Every row is a direct child of the scrolling list, so the list overflows (and scrolls) instead
   // of squeezing them, and the j/k cursor can scroll its row into view by index (v.treeKeys).
   /** @type {any[]} */
@@ -137,22 +149,24 @@ export function treeView(v, t) {
   /** @type {(string | null)[]} */
   const keys = [];
   const add = (/** @type {any} */ el, /** @type {string | null} */ key = null) => { rows.push(el.flex_none()); keys.push(key); };
-  const recent = v.query ? [] : v.recentIds();
-  if (recent.length > 0) {
-    add(h_flex().h(30).px(8).gap(8).items_center().text_color(t.muted)
-      .child(svg(`${ICONS}/clock.svg`).size(15))
-      .child(div().text_size(13).font_semibold().child("Recent")));
-    for (const id of recent) add(chatRow(v, t, v.chat(id), `r:${id}`), `r:${id}`);
-    add(div().h(1).my(6).bg(t.border));
+  if (v.treeSyncing()) add(syncing(v, t));
+  else {
+    const recent = v.query ? [] : v.recentIds();
+    if (recent.length > 0) {
+      add(h_flex().h(30).px(8).gap(8).items_center().text_color(t.muted)
+        .child(svg(`${ICONS}/clock.svg`).size(15))
+        .child(div().text_size(13).font_semibold().child("Recent")));
+      for (const id of recent) add(chatRow(v, t, v.chat(id), `r:${id}`), `r:${id}`);
+      add(div().h(1).my(6).bg(t.border));
+    }
+    const projects = v.visibleProjects();
+    for (const p of projects) {
+      const chats = v.chatsIn(p.id);
+      add(projectRow(v, t, p, chats.length).when(rows.length > 0, (el) => el.mt(4)), `p:${p.id}`);
+      if (v.isOpen(p.id)) for (const c of chats) add(div().w_full().pl(10).child(chatRow(v, t, c, `c:${c.id}`)), `c:${c.id}`);
+    }
+    if (v.query && projects.length === 0) add(div().px(10).py(8).text_size(12.5).text_color(t.dim).child("No chats match."));
   }
-  const projects = v.visibleProjects();
-  for (const p of projects) {
-    const chats = v.chatsIn(p.id);
-    add(projectRow(v, t, p, chats.length).when(rows.length > 0, (el) => el.mt(4)), `p:${p.id}`);
-    if (v.isOpen(p.id)) for (const c of chats) add(div().w_full().pl(10).child(chatRow(v, t, c, `c:${c.id}`)), `c:${c.id}`);
-  }
-  if (!v.loaded) add(div().px(10).py(8).text_size(12.5).text_color(t.dim).child("Finding your sessions\u2026"));
-  if (v.query && projects.length === 0) add(div().px(10).py(8).text_size(12.5).text_color(t.dim).child("No chats match."));
   v.treeKeys = keys;
 
   const lit = v.zone === "tree" || v.zone === "search";
@@ -168,18 +182,16 @@ export function treeView(v, t) {
       .hover(s => s.text_color(t.foreground))
       .on_click((_e, cx) => { v.newProject(cx); cx.notify(); })
       .child(svg(`${ICONS}/folder-plus.svg`).size(14)).child("Open project"))
-    // Recent, then the projects.
     // Recent (except while searching), then the projects.
     .child(v_flex().id("tree-scroll").flex_1().min_h(0).overflow_y_scrollbar().track_scroll(v.treeScroll).px(8).pb(8).gap(2)
       .children(rows))
     // The delete question, above the bottom row.
     .when(Boolean(v.deleting), (el) => el.child(deleteCard(v, t)))
     // The tree's keys, while it has the keyboard.
-    .when(v.zone === "tree" && v.keyHints, (el) => el.child(div().flex_none().px(16).pt(8).pb(4).child(legend(t, v.anchor ? SELECT_HINTS : TREE_HINTS))))
+    .when(v.zone === "tree" && v.keyHints, (el) => el.child(div().flex_none().px(16).pt(8).pb(4).child(legend(t, v.anchor ? selectHints(v) : treeHints(v)))))
     // The bottom row: hide the sidebar (ctrl-b) on the left, the Settings gear on the right.
     .child(h_flex().flex_none().mx(8).my(8).px(4).py(4).items_center().justify_between()
       .child(roundButton(t, "hide-sidebar", `${ICONS}/sidebar.svg`, 36, () => v.toggleSidebar()))
       .child(roundButton(t, "open-settings", "mods/hey-chat/kit/gear.svg", 36, () => v.toggleSettings())
-        .when(v.settingsOpen, (el) => el.bg(t.hover).text_color(t.foreground))))
-    .when(v.settingsOpen, (el) => el.child(settingsView(v, t)));
+        .when(v.settingsOpen, (el) => el.bg(t.hover).text_color(t.foreground))));
 }

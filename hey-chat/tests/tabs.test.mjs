@@ -1,9 +1,9 @@
+import { mod, fake } from './support/mod.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 
-const main = await readFile(new URL('../mods/hey-chat/main.js', import.meta.url), 'utf8');
-const source = main.slice(main.indexOf('const CHAT_TABS'), main.indexOf('/** Which projects are closed'));
+const { toggle } = await mod('tabs.js');
+
 function setup({ legacy = false, otherSpace = false } = {}) {
   const work = { id: 'work', name: 'Work', active: true, tabs: [{ id: 'terminal', active: true }] };
   const spaces = [work];
@@ -27,8 +27,7 @@ function setup({ legacy = false, otherSpace = false } = {}) {
     if (name === 'tab.select') focus = { ...focus, tab: args.id, cwd: args.id === 'chat' ? null : '/project' };
     if (name === 'pane.close') panes.splice(panes.findIndex(p => p.pane === args.pane), 1);
   };
-  const toggle = new Function('focused', 'spaces', 'panes', 'shared', 'setShared', 'run', 'expand', 'home', 'folderName', source + '\nreturn toggle;')(
-    () => focus, () => spaces, () => panes, () => saved, (_key, value) => { saved = value; }, run, x => x, () => '/home', x => x.split('/').pop());
+  fake('herdr', { focused: () => focus, spaces: () => spaces, panes: () => panes, shared: () => saved, setShared: (_key, value) => { saved = value; }, run, home: () => '/home' });
   const cx = { timer: { after(_ms, done) { pending?.(); pending = null; done(); } } };
   return { toggle: folder => toggle(cx, folder), commands, panes, work, focus: () => focus,
     setFocus: id => { focus = { ...focus, tab: id, cwd: id === 'chat' ? null : '/project' }; }, saved: () => saved,
@@ -38,7 +37,7 @@ function setup({ legacy = false, otherSpace = false } = {}) {
 test('shortcut creates one dedicated chat tab and switches back without destroying it', async () => {
   const s = setup();
   await s.toggle();
-  assert.deepEqual(s.commands[0], { name: 'tab.new', args: { name: 'Hey, chat · project', space: 'work', mod: 'hey-chat', props: { folder: '/project' } } });
+  assert.deepEqual(s.commands[0], { name: 'tab.new', args: { name: 'Chat · project', space: 'work', mod: 'hey-chat', props: { folder: '/project' } } });
   assert.deepEqual(s.saved(), { chat: { folder: '/project', previous: 'terminal' } });
   const chatPane = s.panes.find(p => p.mod === 'hey-chat');
   await s.toggle();

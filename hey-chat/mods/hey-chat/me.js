@@ -2,6 +2,7 @@
 // Kept in Herdr's shared state, which every copy sees and which lasts across restarts.
 // A photo is copied into <appHome>/data/hey-chat/, cropped square and shrunk where the system can.
 import { shared, setShared, exec, appHome, window } from "herdr";
+import { script } from "./common.js";
 
 const KEY = "hey-chat.me";
 
@@ -46,6 +47,14 @@ function isOwnPhoto(picture) {
 export async function pickPhoto() {
   const platform = window().platform;
   const wait = { timeout: 600000 };
+  if (platform === "windows") {
+    // Herdr has no file picker, so Node shows Windows' own (images.mjs pick). A failure throws,
+    // so it can be told apart from a cancelled dialog.
+    const r = await exec("node", [script("images.mjs"), "pick"], wait);
+    const picked = JSON.parse(r.stdout);
+    if (picked.error) throw new Error(picked.error);
+    return picked.path ?? null;
+  }
   try {
     if (platform === "macos") {
       const r = await exec("osascript", ["-e", 'POSIX path of (choose file with prompt "Pick a picture" of type {"public.image"})'], wait);
@@ -75,8 +84,9 @@ export async function importPhoto(src, old) {
   const name = `me-${Date.now()}.${ext}`;
   const out = `${dir}/${name}`;
   if (window().platform === "windows") {
-    await exec("cmd", ["/c", "mkdir", dir.replace(/\//g, "\\")]).catch(() => null);
-    const r = await exec("cmd", ["/c", "copy", "/y", src, out.replace(/\//g, "\\")]);
+    // Node copies it. cmd reads a name like R&D.png as two commands.
+    const copy = "const fs = require('fs'); fs.mkdirSync(process.argv[2], { recursive: true }); fs.copyFileSync(process.argv[1], process.argv[3]);";
+    const r = await exec("node", ["-e", copy, src, dir, out]).catch(() => ({ code: 1 }));
     if (r.code !== 0) throw new Error("Couldn't copy that picture.");
   } else {
     await exec("mkdir", ["-p", dir]);

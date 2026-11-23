@@ -1,10 +1,9 @@
 // Profile pictures: Claude's, Codex's and yours, as round elements of any size.
 import { div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
+import { ICONS } from "./common.js";
 
 /** @typedef {import("./kit/theme.js").Theme} Theme */
-
-const ICONS = "mods/hey-chat/icons";
 
 /** Each agent's name, circle color and mark. The marks are drawn white on the circle. */
 export const AGENTS = {
@@ -27,7 +26,8 @@ export function agentPicture(agent, size) {
  */
 export function myPicture(me, size) {
   const el = h_flex().flex_none().size(size).rounded_full().overflow_hidden().items_center().justify_center();
-  if (me.picture) return el.child(image(me.picture).size(size));
+  // The image is rounded itself: the round frame around it doesn't clip its corners.
+  if (me.picture) return el.child(image(me.picture).size(size).rounded_full());
   return el.bg(me.color)
     .child(div().text_size(Math.round(size * 0.38)).font_semibold().text_color("#ffffff").child(me.initials));
 }
