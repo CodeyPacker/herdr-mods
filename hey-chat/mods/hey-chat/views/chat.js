@@ -1,11 +1,13 @@
 // The chat card: the header, the messages, and the message box.
 import { div, svg, image } from "gpui-kit";
-import { h_flex, v_flex, Textarea, TextView } from "gpui-base";
+import { h_flex, v_flex, Input, Textarea, TextView } from "gpui-base";
 import { settings } from "herdr";
 import { AGENTS, agentPicture, myPicture, withDot } from "../pictures.js";
 import { roundButton, focusBorder } from "./tree.js";
 import { LIST_PAD_TOP, LIST_PAD_BOTTOM } from "../keys.js";
+import { outputSummary } from "./outputs.js";
 import { currentActivity } from "../messages.js";
+import { markedText, markedMarkdown } from "../search.js";
 
 /** @typedef {import("../kit/theme.js").Theme} Theme */
 /** @typedef {import("../messages.js").Message} Message */
@@ -39,6 +41,13 @@ function mono() {
   return String(settings().font_family ?? "Menlo");
 }
 
+/** Underline search matches without changing their text color. */
+function searchText(v, id, text) {
+  const query = v.chatSearchOpen ? v.chatSearchInput.value().trim() : "";
+  if (!query || !String(text ?? "").toLowerCase().includes(query.toLowerCase())) return String(text ?? "");
+  return TextView.html(id, markedText(text, query).replace(/\n/g, "<br>")).selectable(true);
+}
+
 /** A tool call: icon, title, +/− counts and a chevron. A click shows its files or command. @param {any} v @param {Theme} t @param {Message} m @param {any} el */
 function toolCard(v, t, m, el) {
   const open = v.openTools.has(m.id);
@@ -50,24 +59,24 @@ function toolCard(v, t, m, el) {
       .child(h_flex().gap(10).items_center()
         .child(h_flex().flex_none().size(26).rounded(8).bg(t.hover).items_center().justify_center()
           .child(svg(`${ICONS}/${icon}.svg`).size(14).text_color(t.muted)))
-        .child(div().flex_1().min_w(0).truncate().text_size(13.5).font_medium().text_color(t.foreground).child(m.title ?? ""))
+        .child(div().flex_1().min_w(0).truncate().text_size(13.5).font_medium().text_color(t.foreground).child(searchText(v, `tool-title-${m.id}`, m.title)))
         .when(Boolean(m.add), (row) => row.child(h_flex().flex_none().gap(6).text_size(12).font_family(mono())
           .child(div().text_color(t.ansi2).child(m.add ?? ""))
           .child(div().text_color(t.ansi1).child(m.del ?? ""))))
         .child(svg(`${ICONS}/${open ? "chevron-down" : "chevron"}.svg`).size(14).flex_none().text_color(t.muted)))
       .when(open, (col) => col.child(v_flex().gap(4).px(10).py(8).rounded(8).bg(t.background)
-        .children((m.lines ?? []).map((line) => div().truncate().text_size(12).font_family(mono()).text_color(t.muted).child(line))))));
+        .children((m.lines ?? []).map((line, i) => div().truncate().text_size(12).font_family(mono()).text_color(t.muted).child(searchText(v, `tool-line-${m.id}-${i}`, line)))))));
 }
 
 /** A code card: the language and a copy button over a monospace block. @param {Theme} t @param {Message} m @param {any} el @param {number} max */
-function codeCard(t, m, el, max) {
+function codeCard(v, t, m, el, max) {
   return el.min_w(360).max_w(max).overflow_hidden().bg(t.raised)
     .child(v_flex().w_full()
       .child(h_flex().pl(14).pr(6).py(5).items_center().justify_between().border_b_1().border_color(t.border)
         .child(div().text_size(11.5).font_family(mono()).text_color(t.muted).child(m.lang ?? ""))
         .child(roundButton(t, `copy-${m.id}`, `${ICONS}/copy.svg`, 26, () => {})))
       .child(v_flex().px(14).py(12).bg(t.background).text_size(12.5).font_family(mono()).text_color(t.foreground)
-        .children(String(m.text ?? "").split("\n").map((line) => div().whitespace_nowrap().child(line || " ")))));
+        .children(String(m.text ?? "").split("\n").map((line, i) => div().whitespace_nowrap().child(searchText(v, `code-line-${m.id}-${i}`, line || " "))))));
 }
 
 /** The biggest a picture in the chat is drawn. */
@@ -136,7 +145,7 @@ function questionCard(v, t, m, el, max) {
     return v_flex().gap(8)
       .child(h_flex().gap(8).items_center()
         .when(Boolean(q.header), (row) => row.child(div().flex_none().px(8).py(2).rounded_full().bg(t.hover).text_size(11.5).font_medium().text_color(t.muted).child(q.header)))
-        .child(div().flex_1().min_w(0).text_size(13.5).text_color(t.foreground).child(q.question + (q.multi ? " (pick any)" : ""))))
+        .child(div().flex_1().min_w(0).text_size(13.5).text_color(t.foreground).child(searchText(v, `question-text-${m.id}-${qi}`, q.question + (q.multi ? " (pick any)" : "")))))
       .child(v_flex().gap(6).children((q.options ?? []).map((/** @type {any} */ o, /** @type {number} */ oi) => {
         const on = picks.includes(o.label);
         return h_flex().id(`q-${m.id}-${qi}-${oi}`).w_full().px(10).py(7).gap(10).items_center().rounded(10).border_1()
@@ -237,7 +246,7 @@ function askCard(v, t, m, el, max) {
  * One message row, with its picture slot and the space above it.
  * @param {any} v @param {Theme} t @param {Message[]} list @param {number} i @param {number} max a bubble's widest
  */
-function messageRow(v, t, list, i, max) {
+function messageRow(v, t, list, i, max, searchCurrent = false) {
   const m = list[i];
   if (m.kind === "sep") {
     return h_flex().justify_center().pt(i === 0 ? 0 : 12).pb(6)
@@ -255,17 +264,23 @@ function messageRow(v, t, list, i, max) {
 
   let bubble = corners(div(), mine, above, below);
   if (m.kind === "tool") bubble = toolCard(v, t, m, bubble);
-  else if (m.kind === "code") bubble = codeCard(t, m, bubble, max);
+  else if (m.kind === "code") bubble = codeCard(v, t, m, bubble, max);
   else if (m.kind === "permission") bubble = askCard(v, t, m, bubble, max);
   else if (m.kind === "question") bubble = questionCard(v, t, m, bubble, max);
   else if (m.kind === "image") bubble = pictureBubble(v, t, m, bubble);
   else if (m.kind === "error") bubble = bubble.max_w(max).px(14).py(9).text_size(14).bg(t.raised).border_1().border_color(t.blocked)
-    .text_color(t.foreground).child(m.text ?? "");
+    .text_color(t.foreground).child(searchText(v, `error-${m.id}`, m.text));
   // A real agent's words are Markdown: bold, lists, code and links.
   else if (!mine && chat.real) bubble = bubble.max_w(max).px(14).py(9).text_size(14.5).bg(t.raised).text_color(t.foreground)
-    .child(TextView.markdown(`md-${m.id}`, m.text ?? "").selectable(true));
+    .child(TextView.markdown(`md-${m.id}`, markedMarkdown(m.text ?? "", v.chatSearchOpen ? v.chatSearchInput.value() : "")).selectable(true));
   else bubble = bubble.max_w(max).px(14).py(9).text_size(14.5).line_height(1.42)
-    .bg(mine ? t.accent : t.raised).text_color(mine ? t.accent_foreground : t.foreground).child(m.text ?? "");
+    .bg(mine ? t.accent : t.raised).text_color(mine ? t.accent_foreground : t.foreground).child(searchText(v, `text-${m.id}`, m.text));
+
+
+  if (searchCurrent) {
+    const yellow = String(t.ansi3);
+    bubble = bubble.border_1().border_color(/^#[0-9a-f]{6}/i.test(yellow) ? `${yellow.slice(0, 7)}66` : t.ansi3);
+  }
 
   const picture = div().flex_none().size(SMALL)
     .when(lastOfGroup, (el) => el.child(mine ? myPicture(v.me, SMALL) : agentPicture(chat.agent, SMALL)));
@@ -365,6 +380,8 @@ export function chatView(v, t, width) {
   const status = needs ? "Waiting for you" : chat.connectionSlow ? "Reconnecting\u2026" : typingHere ? "Thinking\u2026" : chat.loading ? "Loading\u2026" : chat.disconnected ? "Disconnected" : "Ready";
   const max = Math.max(240, Math.round((width - 40) * 0.62));
   const list = v.visibleThread(chat);
+  const searchMatches = v.chatSearchOpen ? v.chatMatches() : [];
+  const searchCurrent = searchMatches[v.chatSearchIndex];
   const input = v.inputFor(chat.agent);
   const hasText = input.value().trim().length > 0 || (chat.attached ?? []).length > 0;
   const loading = v.starting || v.restoring?.id === chat.id;
@@ -387,8 +404,10 @@ export function chatView(v, t, width) {
       .text_size(12).font_family(mono()).text_color(t.muted)
       .child(svg(`${ICONS}/folder.svg`).size(13)).child(project?.path ?? chat.project))
     .child(roundButton(t, "chat-compact", `${ICONS}/compact.svg`, 36, (cx) => v.compact(cx)))
-    .child(roundButton(t, "chat-search", `${ICONS}/search.svg`, 36, () => {}))
-    .child(roundButton(t, "chat-info", `${ICONS}/info.svg`, 36, () => {}))
+    .child(h_flex().id("chat-outputs").flex_none().px(10).py(7).gap(5).rounded(8).items_center().cursor_pointer().text_size(12).text_color(t.muted).hover(s => s.bg(t.hover).text_color(t.foreground))
+      .on_click((_e, cx) => { v.toggleOutputs(cx); cx.notify(); })
+      .child(svg(`${ICONS}/file.svg`).size(16)).child(`Files${chat.outputs?.length ? ` (${chat.outputs.length})` : ""}`))
+    .child(roundButton(t, "chat-search", `${ICONS}/search.svg`, 36, () => v.toggleChatSearch()))
     .child(roundButton(t, "chat-delete", `${ICONS}/trash.svg`, 36, () => v.askDelete(chat.id)));
 
   const body = list.length === 0 && !typingHere && (chat.session || chat.loading)
@@ -404,7 +423,7 @@ export function chatView(v, t, width) {
         const dy = e.delta_lines ? e.delta_lines.y * 20 : e.delta.y;
         v.trackMessageScroll(dy);
       })
-      .children(list.map((m, i) => measured(v, `row-${m.id}`, m.id, messageRow(v, t, list, i, max))))
+      .children(list.map((m, i) => measured(v, `row-${m.id}`, m.id, messageRow(v, t, list, i, max, i === searchCurrent))))
       .when(typingHere, (el) => el.child(measured(v, "row-typing", "typing", typingRow(v, t))))
       .child(div().id("chat-end").flex_none().h(1));
 
@@ -444,7 +463,17 @@ export function chatView(v, t, width) {
     .on_drop((e, cx) => { v.dropImages(e.paths ?? [], cx); cx.notify(); })
     // Keep the real chat painted beneath the cover so native text and scrolling settle before reveal.
     .child(v_flex().flex_1().min_h(0).w_full()
-      .child(header).when(v.modelPicker === chat.id, el => el.child(modelPicker(v, t, chat))).child(body).when(Boolean(pasted), (el) => el.child(attachments(v, t, chat)))
+      .child(header)
+      .when(v.chatSearchOpen, el => {
+        const matches = searchMatches;
+        return el.child(h_flex().flex_none().px(14).py(8).gap(8).items_center().border_b_1().border_color(t.border)
+          .child(Input.new(v.chatSearchInput).flex_1().text_size(13).text_color(t.foreground))
+          .child(div().text_size(12).text_color(t.muted).child(matches.length ? `${Math.min(v.chatSearchIndex + 1, matches.length)} of ${matches.length}` : v.chatSearchInput.value().trim() ? "No matches" : "Loaded messages only"))
+          .child(pill(t, "find-previous", null, "Previous", false, () => v.findChatMatch(-1)))
+          .child(pill(t, "find-next", null, "Next", false, () => v.findChatMatch(1)))
+          .child(roundButton(t, "close-chat-search", `${ICONS}/close.svg`, 28, () => v.toggleChatSearch())));
+      })
+      .when(v.modelPicker === chat.id, el => el.child(modelPicker(v, t, chat))).child(body).child(outputSummary(v, t, chat)).when(Boolean(pasted), (el) => el.child(attachments(v, t, chat)))
       .when(Boolean(slash), (el) => el.child(slashMenu(v, t, slash ?? []))).child(composer))
     .when(Boolean(loading), el => el.child(v_flex().id("chat-loading").absolute().top(0).bottom(0).left(0).right(0).bg(t.popover)
       .items_center().justify_center().child(div().text_size(13).text_color(t.dim).child("Loading conversation…"))));

@@ -67,7 +67,12 @@ export function scrollChat(v, dir) {
 export function handleKey(v, e, cx) {
   const ks = e.keystroke;
   const done = () => { cx.stop_propagation(); cx.notify(); };
+  if (v.chatSearchOpen && v.zone === "chat-search") {
+    if (ks === "escape") { v.toggleChatSearch(); done(); return; }
+    if (ks === "enter" || ks === "shift-enter") { v.findChatMatch(ks === "shift-enter" ? -1 : 1); done(); return; }
+  }
   if (v.modelPicker && ks === "escape") { v.modelPicker = null; done(); return; }
+  if (v.outputsOpen && ks === "escape") { v.outputsOpen = false; done(); return; }
   // An image shown big: esc closes it.
   if (v.viewing && ks === "escape") { v.viewing = null; done(); return; }
   // The / menu over the message box: up and down (or ctrl-p and ctrl-n) move, tab or enter picks,

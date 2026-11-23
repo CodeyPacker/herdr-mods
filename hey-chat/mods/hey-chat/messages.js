@@ -272,6 +272,7 @@ export function applyEvent(chat, ev) {
       if (!card) return null;
       card.running = false;
       card.title = ev.error ? `${card.doneTitle} (failed)` : card.doneTitle;
+      card.failed = Boolean(ev.error);
       const out = String(ev.output ?? "").split("\n").filter((l) => l.trim());
       if (card.icon === "run" && out.length) card.lines = [...card.lines, ...out.slice(0, OUTPUT_LINES), ...(out.length > OUTPUT_LINES ? ["…"] : [])];
       if (ev.error && card.icon !== "run" && out.length) card.lines = [...card.lines, out[0]];
@@ -304,7 +305,7 @@ export function applyEvent(chat, ev) {
       for (const card of chat.asks.values()) if (card.state === "pending") card.state = "denied";
       for (const card of chat.questions.values()) if (card.state === "pending" && (!card.async || ev.error || ev.stopped)) card.state = "dismissed";
       // A tool the turn ended in the middle of.
-      for (const card of chat.tools.values()) if (card.running) { card.running = false; card.title = `${card.doneTitle} (${ev.stopped ? "stopped" : "didn't finish"})`; }
+      for (const card of chat.tools.values()) if (card.running) { card.running = false; card.failed = true; card.title = `${card.doneTitle} (${ev.stopped ? "stopped" : "didn't finish"})`; }
       if (ev.stopped) push({ kind: "note", text: "Stopped." });
       else if (ev.error) push({ kind: "error", from: "agent", text: String(ev.text || "Something went wrong.") });
       return "ended";

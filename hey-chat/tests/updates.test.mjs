@@ -1,3 +1,4 @@
+import { collectOutputs } from '../mods/hey-chat/outputs.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -85,7 +86,7 @@ test('a stopped bridge reports disconnection instead of starting a second writer
 });
 
 test('the last message and typing indicator stay anchored after layout catches up', async () => {
-  const HeyChat = new Function('View', 'applyEvent', 'visibleMessages', 'LIST_PAD_TOP', 'LIST_PAD_BOTTOM', (await source('main.js')).replace('export default class', 'return class'))(class {}, applyEvent, visibleMessages, 16, 10);
+  const HeyChat = new Function('View', 'applyEvent', 'visibleMessages', 'LIST_PAD_TOP', 'LIST_PAD_BOTTOM', 'collectOutputs', 'home', (await source('main.js')).replace('export default class', 'return class'))(class {}, applyEvent, visibleMessages, 16, 10, collectOutputs, () => '/home');
   const chat = { id: 'chat' };
   resetThread(chat);
   const scrolls = [];
@@ -153,6 +154,44 @@ test('an open socket with a stuck read recovers a missing approval without sendi
   assert.equal(writes, 1, 'only the initial subscription was sent');
   assert.equal(bridge.received, 3);
   bridge.close();
+});
+
+test('resumed activity scrolls after layout even when cached row heights are unchanged', async () => {
+  const HeyChat = new Function('View', 'applyEvent', 'visibleMessages', 'collectOutputs', 'home',
+    (await source('main.js')).replace('export default class', 'return class'))(class {}, applyEvent, visibleMessages, collectOutputs, () => '/home');
+  const chat = { id: 'chat', cwd: '/tmp' };
+  resetThread(chat);
+  applyEvent(chat, { type: 'text', text: 'Previous reply' });
+  const timers = [], scrolls = [];
+  let paintedRows = 1;
+  const v = Object.assign(Object.create(HeyChat.prototype), {
+    chatId: chat.id, chat: () => chat, atBottom: true, rowHeights: new Map([['typing', 52]]),
+    needsYou: () => false, saveChats() {},
+    scroll: { scroll_to_item(index) { scrolls.push({ index, paintedRows }); } },
+  });
+  const cx = { notify() {}, timer: { after(_ms, fn) { timers.push(fn); } } };
+  v.onEvent(chat, { type: 'working' }, cx);
+  v.measureRow('typing', 52, cx);
+  assert.equal(timers.length, 1, 'height caching cannot suppress the correction');
+  paintedRows = 2;
+  timers.shift()(cx);
+  assert.deepEqual(scrolls.at(-1), { index: 2, paintedRows: 2 });
+  v.onEvent(chat, { type: 'text', text: 'Resumed reply' }, cx);
+  v.onEvent(chat, { type: 'turn_end' }, cx);
+  assert.equal(timers.length, 1, 'multiple replay events share one correction');
+  paintedRows = 2;
+  timers.shift()(cx);
+  assert.deepEqual(scrolls.at(-1), { index: 2, paintedRows: 2 });
+  v.scrollDown(cx);
+  v.atBottom = false;
+  const count = scrolls.length;
+  timers.shift()(cx);
+  assert.equal(scrolls.length, count, 'manual scrolling cancels a pending correction');
+  v.scrollDown(cx);
+  v.chatId = 'other';
+  const switched = scrolls.length;
+  timers.shift()(cx);
+  assert.equal(scrolls.length, switched, 'a correction cannot scroll a different conversation');
 });
 
 test('catch-up skips live events received while the snapshot was in flight and ignores a closed chat', async () => {

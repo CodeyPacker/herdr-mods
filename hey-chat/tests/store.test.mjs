@@ -24,6 +24,7 @@ test('saving an existing store preserves the bridge id and latest session on reo
   chat.session = 'current-session';
   chat.model = 'current-model';
   chat.selectedModel = 'chosen-model';
+  chat.outputs = [{ key: 'file:/tmp/review.md', target: '/tmp/review.md', kind: 'markdown', label: 'Review' }];
   const first = saveStore([chat], projects);
   chat.title = 'Latest title';
   await Promise.all([first, saveStore([chat], projects, chat.id)]);
@@ -35,6 +36,7 @@ test('saving an existing store preserves the bridge id and latest session on reo
   assert.equal(reopened.model, 'current-model');
   assert.equal(reopened.selectedModel, 'chosen-model');
   assert.equal(reopened.title, 'Latest title');
+  assert.deepEqual(reopened.outputs, chat.outputs);
 });
 
 

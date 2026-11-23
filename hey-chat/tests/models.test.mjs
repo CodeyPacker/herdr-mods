@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, chmod, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { tmpdir, homedir } from 'node:os';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -73,7 +73,7 @@ test('session lists and trimmed history retain the latest agent model', async t 
   const codexDir = join(home, '.codex/sessions');
   await mkdir(claudeDir, { recursive: true });
   await mkdir(codexDir, { recursive: true });
-  const cwd = fileURLToPath(new URL('../../', import.meta.url));
+  const cwd = homedir();
   const fixtures = {
     claude: [
       { type: 'user', cwd, message: { content: 'First question' } },

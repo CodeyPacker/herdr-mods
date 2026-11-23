@@ -2,6 +2,7 @@
 import { connect } from 'node:net';
 import { pathToFileURL } from 'node:url';
 import { StringDecoder } from 'node:string_decoder';
+import { realpath } from 'node:fs/promises';
 
 export function readEvents(port, after = 0) {
   return new Promise((resolve, reject) => {
@@ -48,7 +49,7 @@ export function readEvents(port, after = 0) {
   });
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(await realpath(process.argv[1])).href) {
   readEvents(Number(process.argv[2]), Number(process.argv[3]) || 0)
     .then(result => process.stdout.write(JSON.stringify(result)))
     .catch(error => { process.stderr.write(error.message); process.exitCode = 1; });

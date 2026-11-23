@@ -329,3 +329,12 @@ export class Bridge {
     this.sock = null;
   }
 }
+
+/** @param {string} action @param {string} target */
+export async function outputFileAction(action, target) {
+  const script = `${appHome().replace(/\\/g, "/")}/mods/hey-chat/output-files.mjs`;
+  const r = await exec("node", [script, action, target], { timeout: 10000 });
+  const result = JSON.parse(r.stdout);
+  if (result.error) throw new Error(result.error);
+  return result;
+}

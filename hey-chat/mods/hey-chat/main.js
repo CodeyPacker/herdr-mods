@@ -17,11 +17,13 @@ import { nextCommand, panes, spaces, props, run, focused, closeOverlay, theme, w
 import { loadMe, saveMe, pickPhoto, importPhoto, dropPhoto } from "./me.js";
 import { colors, paneBackground } from "./kit/theme.js";
 import { AGENTS } from "./pictures.js";
-import { Bridge, checkSetup, listSessions, readSession, deleteSession, pasteImage, listSkills, imageFile, listModels } from "./agent.js";
+import { Bridge, checkSetup, listSessions, readSession, deleteSession, pasteImage, listSkills, imageFile, listModels, outputFileAction } from "./agent.js";
 import { applyEvent, resetThread, pendingAsk, pendingQuestion, clock, shortWhen, visibleMessages } from "./messages.js";
 import { loadStore, saveStore, expand, tilde } from "./store.js";
 import { pickProject } from "./folders.js";
 import { treeView, TREE_WIDTH } from "./views/tree.js";
+import { collectOutputs, webOutput } from "./outputs.js";
+import { outputsView, OUTPUTS_WIDTH } from "./views/outputs.js";
 import { setupView } from "./views/setup.js";
 import { chatView, imageViewer } from "./views/chat.js";
 import { handleKey, treeItems as treeItemsOf, LIST_PAD_TOP, LIST_PAD_BOTTOM } from "./keys.js";
@@ -120,6 +122,14 @@ export default class HeyChat extends View {
     this.bridges = new Map();
     /** @type {Map<string, Promise<Bridge | null>>} Connections still opening. */
     this.links = new Map();
+    this.outputsOpen = false;
+    this.chatSearchOpen = false;
+    this.chatSearchIndex = 0;
+    this.chatSearchInput = InputState.new({ placeholder: "Find in loaded messages" });
+    this.chatSearchInput.on("focus", (_e, cx) => { this.zone = "chat-search"; cx.notify(); });
+    this.chatSearchInput.on("change", (_e, cx) => { this.chatSearchIndex = 0; this.findChatMatch(0); cx.notify(); });
+    this.outputPreview = null;
+    this.outputError = null;
     this.setupOpen = Boolean(props()?.setup);
     this.setupAgent = "codex";
     this.setupChecking = false;
@@ -217,7 +227,7 @@ export default class HeyChat extends View {
   async close() {
     if (this.launcher) return;
     for (const b of this.bridges.values()) b.close();
-    this.scroll.release(); this.treeScroll.release(); this.searchInput.release(); this.initialsInput.release();
+    this.scroll.release(); this.treeScroll.release(); this.searchInput.release(); this.initialsInput.release(); this.chatSearchInput.release();
     for (const box of Object.values(this.inputs)) box.release();
   }
 
@@ -309,6 +319,7 @@ export default class HeyChat extends View {
     chat.loading = true; cx.notify();
     const events = await readSession(chat.agent, chat.file, before);
     for (const ev of events) applyEvent(chat, ev);
+    this.syncOutputs(chat, cx);
     chat.working = false;
     chat.loading = false;
     if (chat.id === this.chatId) this.scrollDown();
@@ -402,6 +413,29 @@ export default class HeyChat extends View {
   /** The messages shown after applying the profile setting. @param {any} chat */
   visibleThread(chat) { return visibleMessages(chat, this.condenseChat !== false); }
 
+  chatMatches() {
+    const query = this.chatSearchInput.value().trim().toLowerCase();
+    if (!query) return [];
+    return this.visibleThread(this.chat(this.chatId)).flatMap((m, index) => {
+      const text = [m.text, m.title, ...(m.lines ?? []), ...(m.questions ?? []).map(q => q.question)].filter(Boolean).join("\n");
+      return text.toLowerCase().includes(query) ? [index] : [];
+    });
+  }
+
+  findChatMatch(direction) {
+    const matches = this.chatMatches();
+    if (!matches.length) { this.chatSearchIndex = 0; return; }
+    this.chatSearchIndex = ((this.chatSearchIndex + direction) % matches.length + matches.length) % matches.length;
+    this.atBottom = false;
+    this.scroll.scroll_to_item(matches[this.chatSearchIndex]);
+  }
+
+  toggleChatSearch() {
+    this.chatSearchOpen = !this.chatSearchOpen;
+    if (this.chatSearchOpen) this.chatSearchInput.focus();
+    else this.focusInput();
+  }
+
   /** The open chat's message rows in order, by id, as the keys see them. */
   rowIds() {
     const chat = this.chat(this.chatId);
@@ -410,12 +444,22 @@ export default class HeyChat extends View {
     return ids;
   }
 
-  /** Puts the newest message on screen. */
-  scrollDown() {
+  /** Puts the newest message on screen, then corrects its position after changed rows are laid out. @param {any} [cx] */
+  scrollDown(cx) {
     const n = this.rowIds().length;
     // The final direct child is a bottom marker, even when the last message is taller than the viewport.
     if (n > 0) this.scroll.scroll_to_item(n);
     this.atBottom = true;
+    if (cx?.timer && !this.bottomScrollPending) {
+      const chatId = this.chatId;
+      this.bottomScrollPending = true;
+      cx.timer.after(16, (cx) => {
+        this.bottomScrollPending = false;
+        if (this.chatId !== chatId || !this.atBottom) return;
+        this.scrollDown();
+        cx.notify();
+      });
+    }
   }
 
   /** Reapply bottom anchoring once a message's actual layout height is known. @param {string} key @param {number} height @param {any} cx */
@@ -480,7 +524,12 @@ export default class HeyChat extends View {
   /** Opens a chat and gives its message box the keyboard. @param {string} id @param {any} cx */
   openChat(id, cx) {
     if (this.restoring && this.restoring.id !== id) this.restoring = null;
+    this.chatSearchOpen = false;
+    this.chatSearchIndex = 0;
+    this.chatSearchInput?.set_value("");
     this.modelPicker = null;
+    this.outputPreview = null;
+    this.outputError = null;
     // A new chat you never wrote in goes away when you leave it.
     this.chats = this.chats.filter((c) => c.id === id || c.session || c.thread.length > 0);
     this.chatId = id;
@@ -639,6 +688,7 @@ export default class HeyChat extends View {
     const before = chat.session;
     const beforeModel = chat.model;
     const what = applyEvent(chat, ev);
+    if (["turn_end", "tool_done", "user"].includes(ev.type)) this.syncOutputs(chat, cx);
     if (ev.type === "connection") {
       const recovery = {};
       chat.recovery = recovery;
@@ -660,7 +710,7 @@ export default class HeyChat extends View {
     }
     if (what === "ended" && !open) this.unread = { ...this.unread, [chat.id]: true };
     if (what === "ended" && open && this.zone === "ask") this.focusInput();
-    if (open && this.atBottom && ev.type !== "connection") this.scrollDown();
+    if (open && this.atBottom && ev.type !== "connection") this.scrollDown(cx);
     cx.notify();
   }
 
@@ -865,7 +915,7 @@ export default class HeyChat extends View {
     chat.stamp = Date.now(); chat.time = clock(Date.now());
     this.saveChats();
     chat.connecting = !queued;
-    this.scrollDown();
+    this.scrollDown(cx);
     cx.spawn(async (cx) => {
       try {
         let bridge = await this.link(chat, cx, true);
@@ -883,7 +933,10 @@ export default class HeyChat extends View {
         const draft = box.value();
         box.set_value([text, draft].filter(Boolean).join("\n\n"));
         chat.attached = [...images, ...(chat.attached ?? [])].filter((img, n, all) => all.findIndex(x => x.path === img.path) === n);
-      } finally { chat.connecting = false; }
+      } finally {
+        chat.connecting = false;
+        if (this.chatId === chat.id && this.atBottom) this.scrollDown(cx);
+      }
       cx.notify();
     });
   }
@@ -1210,6 +1263,67 @@ export default class HeyChat extends View {
     cx.notify();
   }
 
+  /** Discover outputs after a tool or turn finishes, rather than on every render. */
+  syncOutputs(chat, cx) {
+    const outputs = collectOutputs(chat, home());
+    if (JSON.stringify(outputs) === JSON.stringify(chat.outputs ?? [])) return;
+    chat.outputs = outputs;
+    if (cx && this.outputsOpen && this.chatId === chat.id && chat.outputKey) this.selectOutput(chat.outputKey, cx);
+    if (this.loaded) this.saveChats();
+  }
+
+  toggleOutputs(cx) {
+    this.outputsOpen = !this.outputsOpen;
+    if (!this.outputsOpen) return;
+    const chat = this.chat(this.chatId);
+    this.syncOutputs(chat, cx);
+    const first = (chat.outputs ?? []).find(o => o.key === chat.outputKey) ?? chat.outputs?.[0];
+    if (first) this.selectOutput(first.key, cx);
+  }
+
+  addOutputLink(cx) {
+    const chat = this.chat(this.chatId);
+    const output = webOutput((cx.read_from_clipboard() ?? "").trim());
+    if (!output) { this.outputError = "Copy an http or https link first, then try again."; return; }
+    chat.outputs = [...(chat.outputs ?? []).filter(o => o.key !== output.key), { ...output, updated: Date.now(), message: "attached" }];
+    this.outputError = null;
+    this.saveChats();
+    this.selectOutput(output.key, cx);
+  }
+
+  selectOutput(key, cx) {
+    const chat = this.chat(this.chatId);
+    const output = chat.outputs?.find(o => o.key === key);
+    if (!output) return;
+    chat.outputKey = key;
+    this.outputError = null;
+    this.outputPreview = null;
+    if (output.kind === "link") return;
+    const request = {};
+    this.outputRequest = request;
+    cx.spawn(async cx => {
+      let preview;
+      try {
+        preview = output.kind === "image" ? { ...await imageFile(output.target), kind: "image" } : await outputFileAction("read", output.target);
+      } catch (error) { preview = { error: "Couldn't read this file. It may have moved or been deleted." }; }
+      if (this.outputRequest !== request || this.chatId !== chat.id || chat.outputKey !== key) return;
+      this.outputPreview = { ...preview, key, chat: chat.id, version: Date.now() };
+      cx.notify();
+    });
+  }
+
+  openOutput(action, cx) {
+    const chat = this.chat(this.chatId);
+    const output = chat.outputs?.find(o => o.key === chat.outputKey);
+    if (!output) return;
+    if (output.kind === "link") { cx.open_url(output.target); return; }
+    cx.spawn(async cx => {
+      try { await outputFileAction(action, output.target); }
+      catch (error) { if (this.chatId === chat.id) this.outputError = error instanceof Error ? error.message : "Couldn't open this output."; }
+      cx.notify();
+    });
+  }
+
   render(_cx) {
     if (this.launcher) return h_flex();
     const t = colors();
@@ -1217,13 +1331,17 @@ export default class HeyChat extends View {
       .track_focus(this.handle)
       .on_key_down((e, cx) => { if (e.keystroke === "escape") { this.setupOpen = false; this.focusInput(); cx.notify(); } })
       .child(setupView(this, t));
-    const chatWidth = Math.max(0, this.width - (this.sidebarHidden ? GAP * 2 : TREE_WIDTH + GAP * 3));
+    const wide = this.width >= 1100;
+    const outputOverlay = this.width < 800;
+    const showTree = !this.sidebarHidden && (!this.outputsOpen || wide);
+    const chatWidth = Math.max(0, this.width - GAP * 2 - (showTree ? TREE_WIDTH + GAP : 0) - (this.outputsOpen && !outputOverlay ? OUTPUTS_WIDTH + GAP : 0));
     return h_flex().id("root").relative().size_full().p(GAP).gap(GAP).bg(paneBackground(theme().background))
       .track_focus(this.handle)
       .on_key_down((e, cx) => handleKey(this, e, cx))
       .on_size_change((size, cx) => { this.width = size.width; this.height = size.height; cx.notify(); })
-      .when(!this.sidebarHidden, (el) => el.child(treeView(this, t)))
+      .when(showTree, (el) => el.child(treeView(this, t)))
       .child(chatView(this, t, chatWidth))
+      .when(this.outputsOpen, el => el.child(outputsView(this, t).when(outputOverlay, panel => panel.absolute().top(GAP).right(GAP).w(Math.max(1, Math.min(OUTPUTS_WIDTH, this.width - GAP * 2))).h(Math.max(1, this.height - GAP * 2)))))
       .when(Boolean(this.viewing), (el) => el.child(imageViewer(this)));
   }
 }

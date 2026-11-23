@@ -43,7 +43,7 @@ let saving = Promise.resolve();
 export async function saveStore(chats, projects, activeChat, folder) {
   if (checking()) return;
   const real = chats.filter((c) => c.session).map((c) => ({
-    id: c.id, project: c.project, cwd: c.cwd, agent: c.agent, model: c.model ?? null, selectedModel: c.selectedModel ?? null, title: c.title, session: c.session ?? null, stamp: c.stamp, time: c.time,
+    id: c.id, project: c.project, cwd: c.cwd, agent: c.agent, model: c.model ?? null, selectedModel: c.selectedModel ?? null, title: c.title, outputs: c.outputs ?? [], session: c.session ?? null, stamp: c.stamp, time: c.time,
   }));
   const used = new Set(real.map((c) => c.project));
   // Folders with chats, and the projects you made (kept while they have none yet).
