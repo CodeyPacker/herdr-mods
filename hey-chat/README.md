@@ -61,7 +61,7 @@ Finish signing in in your browser. See the [official Claude Code install guide](
 
 After installing tools, quit and reopen Herdr so it can find them. Open **Settings → Agent setup** to check again at any time. An older agent that cannot report sign-in status offers **Continue** after you have signed in yourself.
 
-On Windows, install Node.js and your agent in Windows itself, using PowerShell. A tool installed only inside WSL is not available to a native Windows Hey, chat tab. Native Windows launching is implemented, but still needs verification on a Windows machine. macOS checks and automated launch tests run in this repository.
+On Windows, install Node.js and your agent in Windows itself, using PowerShell. A tool installed only inside WSL is not available to a native Windows Hey, chat tab.
 
 ## Start a conversation
 
