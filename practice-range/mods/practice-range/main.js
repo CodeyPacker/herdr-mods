@@ -8,7 +8,7 @@ import { keyButton, spinner, textInput } from "./kit/controls.js";
 import { listRow, rowText, listNote } from "./kit/list.js";
 import { catalogFor } from "./catalog.js";
 import { topicProgress, filteredTopics, visibleHints, savedExercise } from "./practice.js";
-import { practiceCommand, appCommand, openVSCode, openVSCodeDiff, neovimDiff, reuseNeovim, configuredEditor, saveEditorPreference, setupStatus, checkSetupRequirements, completeSetup, configuredTutor, saveTutorPreference, checkTutorProvider, askTutorQuestion, cancelTutorRequest } from "./bridge.js";
+import { practiceCommand, appCommand, openVSCode, openVSCodeDiff, neovimDiff, reuseNeovim, configuredEditor, saveEditorPreference, setupStatus, checkSetupRequirements, completeSetup, configuredTutor, saveTutorPreference, checkTutorProvider, askTutorQuestion, cancelTutorRequest, syncEnabled, syncProgress } from "./bridge.js";
 import { findPracticePane, neovimDiffCommands, neovimDiffExpression } from "./editor-pane.js";
 import { defaultLanguage, findLanguage, languages } from "./languages/index.js";
 import { setupPanel } from "./setup-panel.js";
@@ -139,6 +139,10 @@ export default class Syntax extends View {
     this.busy = "";
     this.practicePending = false;
     this.error = "";
+    /** Device sync (sync.mjs), on only when practice-range.json has "sync": true. */
+    this.sync = false;
+    /** Why the last pull failed. Practice still works, so this does not block anything. */
+    this.syncError = "";
     this.screen = "setup";
     this.setupStep = 0;
     this.setupCompleted = false;
@@ -247,6 +251,8 @@ export default class Syntax extends View {
       if (shared(DIALOG_KEY) === props()?.overlay) setShared(DIALOG_KEY, null);
     }
     this.cancelTutor(cx);
+    // Not awaited: the dialog closes now and git finishes on its own.
+    if (this.sync) syncProgress("push");
     this.answerWatch?.cancel();
     this.tutorWatchClosed = true;
     this.tutorSettingsWatch?.cancel();
@@ -363,6 +369,16 @@ export default class Syntax extends View {
         catch (error) {
           this.tutor = { enabled: false, provider: null };
           this.tutorSettingsError = error instanceof Error ? error.message : String(error);
+        }
+        // Pull before the session loads, so the next save can't overwrite the pulled progress.
+        try { this.sync = await syncEnabled(); }
+        catch (error) { this.syncError = error instanceof Error ? error.message : String(error); }
+        if (this.sync) {
+          this.busy = "Syncing progress…";
+          cx.notify();
+          const failed = await syncProgress("pull");
+          if (failed) this.syncError = `Device sync could not pull: ${failed}`;
+          this.busy = "Loading setup…";
         }
         const status = await setupStatus();
         start = startTopic(props()?.startTopic, status);
@@ -1138,6 +1154,8 @@ export default class Syntax extends View {
       .when(Boolean(this.error), element => element.child(v_flex().flex_none().px(SIZE.panePad).py(8).gap(8)
         .child(banner(t, this.error, t.blocked))
         .child(keyButton(t, "retry", "", "Retry", !this.busy, cx => this.action("retry", cx)))))
+      .when(Boolean(this.syncError), element => element.child(v_flex().flex_none().px(SIZE.panePad).py(8)
+        .child(banner(t, this.syncError, t.blocked))))
       .when(Boolean(this.busy), element => element.child(h_flex().flex_none().px(SIZE.panePad).py(8).gap(8).items_center()
         .child(spinner(t)).child(div().text_color(t.muted).child(this.busy))))
       .child(this.screen === "setup" ? setupPanel(t, { step: this.setupStep, busy: Boolean(this.busy), requirements: this.requirements,

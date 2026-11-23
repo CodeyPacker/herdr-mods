@@ -1,5 +1,5 @@
 import { appHome, exec, props, readTextFile, writeTextFile } from "herdr";
-import { parseEditorConfig, saveEditorConfig } from "./editor-config.js";
+import { parseEditorConfig, parseSyncConfig, saveEditorConfig } from "./editor-config.js";
 import { parseTutorConfig, saveTutorConfig } from "./tutor/config.js";
 import { neovimCloseDiffsExpression } from "./editor-pane.js";
 
@@ -19,6 +19,21 @@ export async function saveEditorPreference(editor) {
 export function practiceDirectory() {
   // Tests or an explicitly configured panel can use a separate practice directory.
   return props()?.practiceDirectory ?? `${appHome()}/data/practice-range`;
+}
+
+/** True when practice-range.json turns on device sync. */
+export async function syncEnabled() {
+  return parseSyncConfig(await readTextFile(`${appHome()}/practice-range.json`));
+}
+
+/** Pull or push progress with git (sync.mjs). Resolves to an error message, or "" on success. @param {"pull" | "push"} action */
+export async function syncProgress(action) {
+  try {
+    const result = await exec("node", [`${appHome()}/mods/practice-range/sync.mjs`, practiceDirectory(), action], { timeout: 90000 });
+    let data;
+    try { data = JSON.parse(result.stdout); } catch { return result.stderr || "Device sync did not return a result."; }
+    return data.error ?? "";
+  } catch (error) { return error instanceof Error ? error.message : String(error); }
 }
 
 /** @param {string} action @param {string | null} [value] */

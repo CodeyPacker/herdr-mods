@@ -36,6 +36,24 @@ Every check shows what your code produced: what it printed, the value a failed c
 Another mod can open Practice Range at a topic by adding `"startTopic": { "languageId": "csharp", "topicId": "linq" }`
 to the tab's props. Tutor does this. `node practice-range/mods/practice-range/topics.mjs` prints every language and topic as JSON.
 
+## Sync between computers (optional)
+
+Off by default. When on, Practice Range pulls your progress from a git repo as it opens and pushes it as it closes.
+Only each language's progress, answers and backups are committed. Checker builds and per-computer setup stay local.
+
+1. Create an empty private repo, for example on GitHub.
+2. On the computer that has your progress:
+   ```sh
+   cd ~/.config/herdr-app/data/practice-range
+   git init -b main && git remote add origin <your repo URL>
+   ```
+3. On each other computer, move any old `data/practice-range` folder aside, then clone the repo into its place:
+   `git clone <your repo URL> ~/.config/herdr-app/data/practice-range`
+4. On every computer, add `"sync": true` to `~/.config/herdr-app/practice-range.json`.
+
+Practice on one computer at a time. If both change before syncing, the pull shows git's error in the panel and
+practice keeps working locally until you resolve it in that folder.
+
 ## Install
 
 Tell your agent:

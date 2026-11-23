@@ -27,3 +27,11 @@ export async function saveEditorConfig(editor, io) {
   config.editor = editor;
   await io.write(JSON.stringify(config, null, 2) + "\n", previous);
 }
+
+/** Device sync is opt-in: only "sync": true turns it on. @param {string | null} text */
+export function parseSyncConfig(text) {
+  const config = parseConfig(text);
+  if (config.sync === undefined || config.sync === null || config.sync === false) return false;
+  if (config.sync !== true) throw new Error("practice-range.json: sync must be true or false.");
+  return true;
+}
