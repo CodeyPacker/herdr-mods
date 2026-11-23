@@ -18,3 +18,8 @@ export const pickFolder = async () => null;
 export const spaces = () => [];
 export const watchFolder = () => new Promise(() => {});
 export const props = () => stub().props ?? {};
+export const layout = () => ({});
+export const shared = () => undefined;
+export const setShared = () => {};
+export const openOverlay = () => {};
+export const closeOverlay = () => {};
