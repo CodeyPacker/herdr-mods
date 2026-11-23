@@ -44,7 +44,7 @@ function toggleSidebar() {
   if (!narrow()) setShared("sidebar.width", width);
   // Mods edited before the rail went by width still read the flag.
   setShared("sidebar.collapsed", !narrow());
-  run("layout.resize", { id: "sidebar", px: narrow() ? (shared("sidebar.width") ?? 268) : window()?.platform === "macos" ? 76 : 44 });
+  run("layout.resize", { id: "sidebar", px: narrow() ? (shared("sidebar.width") ?? 268) : window()?.platform === "macos" ? 78 : 44 });
 }
 
 const clean = (s) => (s ?? "").replace(/^[^\p{L}\p{N}]+/u, "").trim();
@@ -473,7 +473,8 @@ export default class Agents extends View {
             .child(
               div()
                 .id("collapse")
-                .text_size(13)
+                // Bigger on the macOS rail, matching the space tiles.
+                .text_size((find(layout(), "sidebar")?.size?.px ?? 0) >= 70 ? 20 : 13)
                 .text_color(t.dim)
                 .hover((s) => s.text_color(t.foreground))
                 .on_click(toggleSidebar)
