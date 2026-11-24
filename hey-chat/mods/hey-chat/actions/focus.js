@@ -9,6 +9,19 @@ export const focus = {
     this.inputFor(this.chat(this.chatId).agent).focus();
   },
 
+  /**
+   * Gives the keyboard back to where it last was, for when the pane is picked again (another tab
+   * or pane had it). An open dialog, the tree and the search boxes keep it, the zone says which.
+   */
+  regainFocus() {
+    if (this.setupOpen) this.handle.focus();
+    else if (this.zone === "chat" || this.zone === "ask") this.focusInput();
+    else if (this.zone === "search") this.searchInput.focus();
+    else if (this.zone === "chat-search") this.chatSearchInput.focus();
+    else if (this.zone === "settings") this.initialsInput.focus();
+    else this.handle.focus(); // tree, confirm, dialog
+  },
+
   /** Hides or shows the sidebar (ctrl-b), and remembers it. Hiding it takes the keyboard to the message box. */
   toggleSidebar() {
     this.setSidebarHidden(!this.sidebarHidden);
