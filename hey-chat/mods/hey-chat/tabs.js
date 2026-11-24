@@ -55,6 +55,41 @@ export async function toggle(cx, folder) {
   }
 }
 
+/**
+ * Every chat tab in every space, in space then tab order: { tab, space, spaceName, folder, name,
+ * status, current }. `current` is the tab on screen. A tab holding a split chat pane from older
+ * versions is left out, since it is a terminal tab.
+ */
+export function chatTabs() {
+  const saved = shared(CHAT_TABS) ?? {};
+  const all = panes();
+  const out = [];
+  for (const s of spaces()) {
+    for (const tab of s.tabs) {
+      const mine = all.filter(p => p.tab === tab.id);
+      if (!mine.some(p => p.mod === "hey-chat") || mine.some(p => p.mod !== "hey-chat")) continue;
+      const folder = saved[tab.id]?.folder ?? null;
+      const name = folder ? folderName(folder) : tab.name.replace(/^Chat · /, "");
+      out.push({ tab: tab.id, pane: mine[0].pane, space: s.id, spaceName: s.name, folder, name, status: tab.status ?? null, current: s.active && tab.active });
+    }
+  }
+  return out;
+}
+
+/**
+ * Shows a chat tab, switching spaces first when it is in another, and gives its message box the
+ * keyboard, so its keys (⌃p among them) work straight away.
+ * @param {{ tab: string, pane?: string, space: string, current?: boolean }} entry
+ */
+export function showChatTab(entry) {
+  if (!entry.current) {
+    if (!spaces().find(s => s.id === entry.space)?.active) run("space.select", { id: entry.space });
+    run("tab.select", { id: entry.tab });
+  }
+  if (entry.pane) run("pane.focus", { pane: entry.pane });
+  run("hey-chat.focus");
+}
+
 /** Records the tab a pane runs in as `folder`'s chat tab, and names it. @param {string | undefined} pane @param {string} folder */
 export function claimTab(pane, folder) {
   const own = panes().find(p => p.pane === pane);

@@ -23,6 +23,7 @@ export const KEYS = [
   { id: "stop", key: "ctrl-c", what: "Stop the agent's turn" },
   { id: "jump", key: "ctrl-g", what: "Open the chat that just finished" },
   { id: "last", key: "ctrl-o", what: "Switch to the last chat" },
+  { id: "projects", key: "ctrl-p", what: "Jump to another project's chat tab" },
   { id: "allow", key: "y", what: "Permission: allow once" },
   { id: "always", key: "a", what: "Permission: always allow" },
   { id: "deny", key: "n", what: "Permission: deny" },
