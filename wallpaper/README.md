@@ -7,3 +7,5 @@ Open with `ctrl-a w`. Arrows or hjkl preview pictures. Enter advances to opacity
 ## Install
 
 Copy or symlink `mods/wallpaper` into `~/.config/herdr-app/mods/wallpaper`, then merge [`keys.json`](keys.json) into Herdr's `keys.json`.
+
+[`RECIPE.md`](RECIPE.md) has the full details, including what it runs on your machine.

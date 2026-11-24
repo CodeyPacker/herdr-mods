@@ -1,5 +1,5 @@
 {
   "global": {
-    "ctrl-a c": "mod.open:hey-chat"
+    "ctrl-shift-h": "mod.open:hey-chat"
   }
 }
