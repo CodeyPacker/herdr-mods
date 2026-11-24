@@ -137,7 +137,7 @@
     "title": "Hey, chat",
     "description": "Your project chats,\nall in one place.",
     "badges": [
-      "Claude Code \u00b7 Codex"
+      "Claude Code · Codex"
     ],
     "previous": [],
     "state": "Fictional sample-app project with Codex conversation and Claude Code chats, captured using the actual mod renderer",
@@ -146,6 +146,22 @@
       "treatment": "Isolated Herdr capture with fictional conversations, cropped to the chat pane"
     },
     "screenshotRadius": 14,
+    "platforms": [
+      "macos",
+      "windows"
+    ]
+  },
+  {
+    "id": "wallpaper",
+    "title": "Wallpaper",
+    "description": "Change Herdr's wallpaper\nand panel opacity, fast.",
+    "previous": [],
+    "state": "Picture step with a folder of wallpapers, captured in an isolated Herdr window",
+    "screenshotSource": {
+      "file": "gallery/sources/wallpaper.png",
+      "treatment": "Isolated Herdr capture, cropped to the Wallpaper window"
+    },
+    "screenshotRadius": 12,
     "platforms": [
       "macos",
       "windows"

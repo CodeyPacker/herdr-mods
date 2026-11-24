@@ -18,7 +18,7 @@
 
 import { View, div, image } from "gpui-kit";
 import { v_flex, h_flex, ScrollHandle } from "gpui-base";
-import { run, layout, props, closeOverlay, checking, theme, appHome, home, exec, pickFolder, readTextFile, writeTextFile, notify, window, nextCommand, setShared, shared } from "herdr";
+import { run, layout, props, closeOverlay, checking, theme, appHome, home, exec, pickFolder, readTextFile, writeTextFile, notify, window, nextCommand, setShared, shared, layouts } from "herdr";
 
 import * as fs from "fs/promises";
 
@@ -59,21 +59,33 @@ async function copyFile(from, to) {
   await fs.writeFile(to, await fs.readFile(from));
 }
 
-/** The border choices. Light and dark are faint, so they suit most pictures. */
+/**
+ * The border choices. Light and dark are faint, so they suit most pictures. None has no color of
+ * its own: the borders take the panes' fill, at the opacity, so they don't show.
+ */
 const BORDERS = [
   { id: "theme", label: "Theme", color: "border" },
   { id: "light", label: "Light", color: "#ffffff26" },
   { id: "dark", label: "Dark", color: "#00000059" },
+  { id: "none", label: "None", color: "" },
 ];
 /** A #rrggbb color at an opacity (0..1), as #rrggbbaa. @param {string} c @param {number} o */
 const fade = (c, o) => /^#[0-9a-f]{6}$/i.test(c) ? c + Math.round(Math.max(0, o) * 255).toString(16).padStart(2, "0") : c;
 
-const BORDER_COLORS = BORDERS.map((b) => b.color);
+const BORDER_COLORS = BORDERS.map((b) => b.color).filter(Boolean);
 
-/** The layout's border choice, read from the main pane's frame. @param {any} tree */
+/** The panes' frame: the main block's, else the block that shows the tab. @param {any} tree */
+const paneOf = (tree) => find(tree, "main")?.content?.pane ?? tabBlock(tree)?.content?.pane;
+
+/**
+ * The layout's border choice, read from the main pane's frame. A clear border (#rrggbb00), or
+ * one in the frame's own solid fill, is None. @param {any} tree
+ */
 function borderOf(tree) {
-  const c = find(tree, "main")?.content?.pane?.border?.color;
-  return BORDERS.find((b) => b.id !== "theme" && b.color === c)?.id ?? "theme";
+  const pane = paneOf(tree);
+  const c = pane?.border?.color;
+  if (c && (c === pane?.background || /^#[0-9a-f]{6}00$/i.test(c))) return "none";
+  return BORDERS.find((b) => b.id !== "theme" && b.id !== "none" && b.color === c)?.id ?? "theme";
 }
 
 /** @param {any} node @param {string} id @returns {any} */
@@ -87,16 +99,17 @@ function find(node, id) {
 }
 
 /**
- * Sets every border and divider that uses the theme's border color, or one of the choices,
- * to `color`. Borders in other colors (an accent focus ring) stay. @param {any} node @param {string} color
+ * Sets every border and divider that uses the theme's border color, one of the choices, or a
+ * color in `also` (the fill a None border had), to `color`. Borders in other colors (an accent
+ * focus ring) stay. @param {any} node @param {string} color @param {string[]} [also]
  */
-function recolorBorders(node, color) {
-  if (Array.isArray(node)) { node.forEach((n) => recolorBorders(n, color)); return; }
+function recolorBorders(node, color, also = []) {
+  if (Array.isArray(node)) { node.forEach((n) => recolorBorders(n, color, also)); return; }
   if (!node || typeof node !== "object") return;
   for (const [key, value] of Object.entries(node)) {
     if ((key === "border" || key === "divider" || key === "focus") && value && typeof value === "object"
-      && BORDER_COLORS.includes(value.color)) value.color = color;
-    recolorBorders(value, color);
+      && (BORDER_COLORS.includes(value.color) || also.includes(value.color))) value.color = color;
+    recolorBorders(value, color, also);
   }
 }
 
@@ -120,6 +133,73 @@ function dropPaneBackgrounds(node) {
   if (!node || typeof node !== "object") return;
   if (node.pane && typeof node.pane === "object") delete node.pane.background;
   Object.values(node).forEach(dropPaneBackgrounds);
+}
+
+/**
+ * The theme colors Herdr's own sidebar, tab bar, status bar and pane headers fill with. On a copy
+ * of one of Herdr's layouts they are built in, not mods that follow "backgrounds.seeThrough".
+ */
+const CHROME_COLORS = ["chrome", "canvas", "surface", "background"];
+/**
+ * Colors made fully clear instead of faded. The pane headers fill a square bar with `background`,
+ * which shows past the frame's round corners once it is see-through, so it is clear and the
+ * frame's own fill (rounded) does the tinting. The color stays in the value, at alpha 00, so
+ * the theme's color can still be read back from it.
+ */
+const CLEAR_COLORS = ["background"];
+
+/**
+ * Sets the layout's own color overrides for the chrome to the theme's colors at `opacity`, or
+ * takes them out again for solid (null). The theme's color is read without any alpha, since an
+ * override from the last change is already in theme(). @param {any} tree @param {number | null} opacity
+ */
+function fadeChrome(tree, opacity) {
+  const colors = { ...(tree.colors && typeof tree.colors === "object" ? tree.colors : {}) };
+  const t = /** @type {Record<string, unknown>} */ (theme());
+  for (const key of CHROME_COLORS) {
+    const base = String(t[key] ?? "").slice(0, 7);
+    if (opacity === null || !/^#[0-9a-f]{6}$/i.test(base)) { if (/^#[0-9a-f]{8}$/i.test(String(colors[key] ?? ""))) delete colors[key]; continue; }
+    colors[key] = fade(base, CLEAR_COLORS.includes(key) ? 0 : opacity);
+  }
+  if (Object.keys(colors).length) tree.colors = colors; else delete tree.colors;
+}
+
+/**
+ * Takes out a layout node's own fill in a chrome color, such as the sidebar column's "chrome".
+ * The mods inside fill with the same color, so once it is see-through the two layers stack and
+ * the sidebar is darker than the tab bar. @param {any} node
+ */
+function dropChromeFills(node) {
+  if (!node || typeof node !== "object") return;
+  if (typeof node.background === "string" && CHROME_COLORS.includes(node.background)) delete node.background;
+  for (const child of node.children ?? []) dropChromeFills(child);
+}
+
+/**
+ * Draws the layout's dividers (the line between the sidebar and the bars) in the bars' faded
+ * color. A divider has nothing under it, so a see-through one shows the picture itself: a bright
+ * seam over a light part of the picture. The divider stays, so it can still be dragged.
+ * @param {any} node @param {string} color
+ */
+function chromeDividers(node, color) {
+  if (!node || typeof node !== "object" || !/^#[0-9a-f]{8}$/i.test(color)) return;
+  if (node.divider && typeof node.divider === "object") node.divider = { ...node.divider, color };
+  for (const child of node.children ?? []) chromeDividers(child, color);
+}
+
+/**
+ * Herdr's own bars and the mods draw their borders in the theme's `border` color, not from the
+ * layout file, so Light, Dark and None also override that color on the layout (None with the
+ * panes' fill, `fill`, as #rrggbb or #rrggbbaa). Theme takes the override out again, when it is
+ * one this window set (`wasNone`: the last choice was None).
+ * @param {any} tree @param {string} border a BORDERS id @param {string} fill @param {boolean} wasNone
+ */
+function themeBorder(tree, border, fill, wasNone) {
+  const colors = { ...(tree.colors && typeof tree.colors === "object" ? tree.colors : {}) };
+  const chosen = BORDERS.find((b) => b.id === border && b.id !== "theme");
+  if (chosen) colors.border = chosen.id === "none" ? fill : chosen.color;
+  else if (BORDER_COLORS.includes(colors.border) || wasNone) delete colors.border;
+  if (Object.keys(colors).length) tree.colors = colors; else delete tree.colors;
 }
 
 export default class Wallpaper extends View {
@@ -146,8 +226,24 @@ export default class Wallpaper extends View {
     this.originalSee = shared(SEE_THROUGH) ?? null;
     this.kept = false;
     this.applied = false;
+    /** The shown layout is one of Herdr's own, which layout.set only changes a few fields of. */
+    this.shipped = false;
+    /** The shown layout is a copy of one of Herdr's own, whose sidebar and bars draw in theme colors. */
+    this.copyOfShipped = false;
     this.handle.focus();
     if (checking()) return; // herdr-app check runs init for real: don't touch the layout then
+    // Herdr lists the layouts it ships in installed.json as "layout:<name>". Those refuse the
+    // change, with a toast on every step, so the window offers a copy of the layout instead.
+    cx.spawn(async (cx) => {
+      const text = await readTextFile(`${appHome()}/installed.json`).catch(() => null);
+      try {
+        const installed = text ? JSON.parse(text) : {};
+        this.shipped = Boolean(installed[`layout:${shared("layout")}`]);
+        const from = this.original?.cloned_from?.name;
+        this.copyOfShipped = !this.shipped && typeof from === "string" && Boolean(installed[`layout:${from}`]);
+      } catch { /* treat it as the person's own */ }
+      cx.notify();
+    });
     // The dialog takes the keyboard a moment after it opens.
     cx.timer.after(100, () => this.handle.focus());
     const bg = this.original?.background;
@@ -232,7 +328,7 @@ export default class Wallpaper extends View {
   /** Shows the picture under the cursor with the chosen opacity. @param {any} cx */
   async apply(cx) {
     const name = this.names[this.at];
-    if (!name) return;
+    if (!name || this.shipped) return;
     try {
       // On Windows, only when missing: backgrounds/ can be a link out of Herdr's folder (to dotfiles,
       // say), and Herdr refuses mkdir there even when the folder already exists.
@@ -254,11 +350,33 @@ export default class Wallpaper extends View {
     tree.terminal_opacity = see ? 0 : 1;
     dropPaneBackgrounds(tree);
     const pane = tabBlock(tree)?.content?.pane;
-    if (pane && typeof pane === "object") pane.background = see ? fade(String(theme().background), this.opacity / 100) : "background";
-    recolorBorders(tree, BORDERS.find((b) => b.id === this.border)?.color ?? "border");
+    const base = String(theme().background).slice(0, 7);
+    const fill = see ? fade(base, this.opacity / 100) : "background";
+    if (pane && typeof pane === "object") pane.background = fill;
+    // None: a border is drawn on top of the pane's fill, so one in the same see-through color
+    // stacks into a darker line. See-through, it is clear (the fill shows), and solid it is the
+    // fill's own color. A None border from before is recolored too.
+    const wasNone = borderOf(this.original) === "none";
+    const before = paneOf(this.original)?.border?.color;
+    const none = see ? fade(base, 0) : "background";
+    const color = this.border === "none" ? none : BORDERS.find((b) => b.id === this.border)?.color ?? "border";
+    recolorBorders(tree, color, wasNone && typeof before === "string" ? [before] : []);
+    if (this.copyOfShipped) {
+      fadeChrome(tree, see ? this.opacity / 100 : null);
+      if (see) { dropChromeFills(tree); chromeDividers(tree, fade(String(theme().chrome ?? "").slice(0, 7), this.opacity / 100)); }
+      themeBorder(tree, this.border, see ? fade(base, 0) : base, wasNone);
+    }
     run("layout.set", { layout: tree });
-    // setShared also makes every mod draw again, which a layout change alone doesn't.
-    setShared(SEE_THROUGH, see ? { layout: shared("layout"), opacity: this.opacity / 100 } : null);
+    // setShared also makes every mod draw again, which a layout change alone doesn't. Solid is
+    // recorded as opacity 1 rather than nothing: the kit's mods treat 1 as solid either way, and
+    // Islands then draws its islands solid too instead of at its own islands.opacity.
+    // `borders` tells the mods the choice: "none" asks them to hide their own borders, and
+    // "light" or "dark" comes with `borderColor` for them to draw in (the kit's colors() and
+    // bordersHidden(), and the Islands chrome). Theme records nothing. Mods that don't read it keep theirs.
+    const chosen = BORDERS.find((b) => b.id === this.border);
+    const record = this.border === "none" ? { borders: "none" }
+      : chosen && this.border !== "theme" ? { borders: this.border, borderColor: chosen.color } : {};
+    setShared(SEE_THROUGH, { layout: shared("layout"), opacity: see ? this.opacity / 100 : 1, ...record });
     this.applied = true;
   }
 
@@ -310,9 +428,29 @@ export default class Wallpaper extends View {
     cx.spawn(async (cx) => {
       if (!this.applied) await this.apply(cx);
       this.kept = true;
-      notify({ title: "Background set", body: `${this.names[this.at]} at ${this.opacity}%, ${this.border} borders`, level: "success", timeout: 2000 });
+      notify({ title: "Background set", body: `${this.names[this.at]} at ${this.opacity}%, ${this.border === "none" ? "no" : this.border} borders`, level: "success", timeout: 2000 });
       this.closeWindow();
     });
+  }
+
+  /** The name the copy of the shown layout gets: "<name>-copy", or with a number when that is taken. */
+  copyName() {
+    const taken = new Set(layouts());
+    const base = `${shared("layout")}-copy`;
+    let name = base;
+    for (let n = 2; taken.has(name); n++) name = `${base}-${n}`;
+    return name;
+  }
+
+  /**
+   * Copies the shown Herdr layout and switches to the copy, which takes every change. The switch
+   * closes this window, so it opens again on the copy.
+   */
+  cloneLayout() {
+    const as = this.copyName();
+    notify({ title: "Layout copied", body: `Now on ${as}, your own copy. Pick a picture.`, level: "success", timeout: 3000 });
+    run("layout.clone", { name: shared("layout"), as });
+    run("mod.open", { name: "wallpaper" });
   }
 
   closeWindow() {
@@ -331,7 +469,10 @@ export default class Wallpaper extends View {
     let used = true;
     // A window gets esc itself. Closing puts the layout back (see close).
     if (k === "escape") this.closeWindow();
-    else if (this.step === "pictures") {
+    else if (this.shipped) {
+      if (k === "c") this.cloneLayout();
+      else used = false;
+    } else if (this.step === "pictures") {
       if (k === "left" || k === "h") this.select(this.at - 1, cx);
       else if (k === "right" || k === "l") this.select(this.at + 1, cx);
       else if (k === "up" || k === "k") this.select(this.at - COLUMNS, cx);
@@ -416,8 +557,23 @@ export default class Wallpaper extends View {
         })));
   }
 
+  /** On one of Herdr's own layouts: why nothing can change here, and a button that copies it. @param {any} t */
+  shippedPanel(t) {
+    const name = String(shared("layout") ?? "");
+    return v_flex().id("wallpaper").size_full().p(20).gap(14).bg(t.popover).text_size(13)
+      .track_focus(this.handle).on_key_down((e, cx) => this.key(e, cx))
+      .child(div().flex_none().text_size(16).font_semibold().text_color(t.foreground).child("Background"))
+      .child(v_flex().flex_1().items_center().justify_center().gap(14)
+        .child(div().max_w(520).text_size(14).text_color(t.foreground).child(`"${name}" is one of Herdr's own layouts. Herdr doesn't let mods change its picture, pane opacity or borders.`))
+        .child(div().max_w(520).text_size(13).text_color(t.muted).child(`Make your own copy, "${this.copyName()}", to change them. It looks and works the same, and Ctrl+Shift+L switches back.`))
+        .child(h_flex().id("bg-clone").flex_none().h(34).px(16).items_center().rounded(8).bg(t.accent)
+          .text_color(t.accent_foreground).cursor_pointer().on_click(() => this.cloneLayout()).child("Make a copy")))
+      .child(h_flex().flex_none().gap(16).text_size(12).child(this.hint(t, "c", "make a copy")).child(this.hint(t, "esc", "cancel")));
+  }
+
   render(_cx) {
     const t = theme();
+    if (this.shipped) return this.shippedPanel(t);
     const pictures = this.step === "pictures";
     const hints = pictures
       ? [["arrows/hjkl", "pick (shows at once)"], ["enter", "next: opacity"], ["f", "folder"], ["esc", "cancel"]]

@@ -16,6 +16,7 @@ The supplied approved reference is preserved as `reference.jpg`. Branch and Git 
 | Tutor | None | Native course setup. No course generated. |
 | Vim Docs | `vim-docs/preview.png`, `vim-docs/thumbnail.png` | Supplied Vim Docs screenshot, showing movement commands with surrounding editor blurred |
 | Tickets | None | Native empty board from `tickets-tourist-wip` |
+| Wallpaper | None | Isolated Herdr window, picture step, cropped to the Wallpaper window. The folder was linked as `C:/wallpapers` so no personal path shows. |
 
 Every updated mod has a matching `preview.png` and `thumbnail.png` at 2560 × 1440, except Islands, which preserves its original artwork and dimensions. Existing tracked alternate thumbnail names also receive the new image. The six `islands-*` implementation mods are presented together as Islands. `kit` is shared source. `personal-sync/usage-limits` explicitly excludes itself from gallery submission.
 
