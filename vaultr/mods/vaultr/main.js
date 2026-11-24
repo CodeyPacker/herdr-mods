@@ -11,6 +11,25 @@ import { splitFrontmatter, transform, parseLink, linkTargets, splitTarget, headi
 import { slash, base, stem, isNote, order, ancestors, makeIndex, resolve, rows, vaultKey, vaultList, nextVault } from "./vault.js";
 import { openExternal, copyFile, fileUrl } from "./platform.js";
 
+/**
+ * Whether the Wallpaper mod's borders are None on the shown layout (it records borders: "none" in
+ * "backgrounds.seeThrough"). Only in a tab or pane: the dialog floats over everything and keeps its
+ * borders. The same as bordersHidden in the shared kit, which Vaultr doesn't carry.
+ */
+function bordersHidden() {
+  if (props()?.overlay !== undefined) return false;
+  const s = /** @type {any} */ (shared("backgrounds.seeThrough"));
+  return Boolean(s && typeof s === "object" && s.layout === shared("layout") && s.borders === "none");
+}
+
+/** The border color the Wallpaper mod's Light or Dark chose for the shown layout, or null. Not in the dialog. */
+function chosenBorder() {
+  if (props()?.overlay !== undefined) return null;
+  const s = /** @type {any} */ (shared("backgrounds.seeThrough"));
+  if (!s || typeof s !== "object" || s.layout !== shared("layout") || (s.borders !== "light" && s.borders !== "dark")) return null;
+  return /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(String(s.borderColor ?? "")) ? s.borderColor : null;
+}
+
 const VAULT = "vaultr.vault";   // shared: every copy reads the same vault
 const VAULTS = "vaultr.vaults"; // shared: the vaults to switch between
 const NARROW = 620;           // below this width the list and the note take turns
@@ -436,7 +455,7 @@ export default class Vaultr extends View {
         .child(div().min_w(0).truncate().child(`Back to ${stem(this.note.path)}`))))
       .child(h_flex().flex_none().h(30).mx(8).my(6).px(8).gap(6).items_center().rounded(6).border(1)
         // While typing: the text color at 20%, the same quiet focus border as the kit's focusBorder.
-        .border_color(this.typing ? (/^#[0-9a-f]{6}$/i.test(String(t.foreground)) ? `${t.foreground}33` : t.input) : t.border).bg(t.background)
+        .border_color(this.typing && !bordersHidden() ? (/^#[0-9a-f]{6}$/i.test(String(t.foreground)) ? `${t.foreground}33` : t.input) : t.border).bg(t.background)
         .child(Input.new(this.search).flex_1().text_size(12.5).text_color(t.foreground))
         .child(div().flex_none().text_size(11).text_color(t.dim).child("/")))
       .child(v_flex().id("vaultr-list").flex_1().min_h(0).pb(6).overflow_y_scrollbar().track_scroll(this.listScroll)
@@ -514,7 +533,10 @@ export default class Vaultr extends View {
   }
 
   render(cx) {
-    const t = theme();
+    // With the Wallpaper mod's borders None, `border` is clear, so the outlines go (bordersHidden).
+    // With Light or Dark it is that color (chosenBorder).
+    const edge = bordersHidden() ? "#00000000" : chosenBorder();
+    const t = edge ? { ...theme(), border: edge } : theme();
     // Another copy, or the folder form, changed the vault.
     if (!checking() && configured() !== this.vault) this.start(configured(), cx);
     const root = h_flex().id("vaultr").track_focus(this.handle).on_key_down((e, cx) => this.key(e, cx))

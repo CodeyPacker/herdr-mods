@@ -7,7 +7,7 @@ const fade = (c, o) => typeof o !== "number" || o >= 1 || !/^#[0-9a-f]{6}$/i.tes
   ? c : c + Math.round(Math.max(0, o) * 255).toString(16).padStart(2, "0");
 // The islands' fill at "opacity" in this mod's settings.json (1 when unset).
 // With the background picker's see-through panes, at the panes' opacity instead.
-const islandFill = (c) => fade(c, seeThroughOpacity() ?? shared("islands.opacity"));
+const islandFill = (c) => fade(c, wallpaperOpacity() ?? shared("islands.opacity"));
 
 // The main panel's fill comes from the layout, not a mod, so "main_opacity" rewrites
 // the main pane's background there: the theme's background, faded. At 1 it goes back
@@ -53,6 +53,15 @@ function find(node, id) {
 // records { layout, opacity } in shared state, clears the terminals and gives the pane frame the
 // theme's background at that opacity. Null otherwise, so other setups look as they always have.
 // Same as seeThroughOpacity in the mods' kit/theme.js.
+// The opacity the Wallpaper mod recorded for the shown layout, 1 (solid) included, so its 100%
+// wins over islands.opacity. Null when it recorded none for this layout.
+function wallpaperOpacity() {
+  const s = shared("backgrounds.seeThrough");
+  if (!s || typeof s !== "object" || s.layout !== shared("layout")) return null;
+  const o = Number(s.opacity);
+  return Number.isFinite(o) ? Math.min(1, Math.max(0, o)) : null;
+}
+
 function seeThroughOpacity() {
   const s = shared("backgrounds.seeThrough");
   if (!s || typeof s !== "object" || s.layout !== shared("layout")) return null;
