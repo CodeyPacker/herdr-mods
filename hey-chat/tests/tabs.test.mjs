@@ -2,7 +2,7 @@ import { mod, fake } from './support/mod.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { toggle } = await mod('tabs.js');
+const { toggle, chatTabs, showChatTab } = await mod('tabs.js');
 
 function setup({ legacy = false, otherSpace = false } = {}) {
   const work = { id: 'work', name: 'Work', active: true, tabs: [{ id: 'terminal', active: true }] };
@@ -99,4 +99,19 @@ test('opening the same project focuses its tab and a different project creates a
   await s.toggle('/other');
   assert.equal(s.commands.filter(c => c.name === 'tab.new').length, 2);
   assert.equal(s.commands.filter(c => c.name === 'tab.new').at(-1).args.props.folder, '/other');
+});
+
+test('the project list shows chat tabs in every space and jumps across spaces', async () => {
+  const s = setup({ otherSpace: true, legacy: true });
+  s.setSaved({ 'other-chat': { folder: '/code/api' } });
+  const list = chatTabs();
+  assert.deepEqual(list.map(t => t.tab), ['other-chat'], 'a terminal tab with an old split chat pane is not a chat tab');
+  assert.equal(list[0].name, 'api');
+  showChatTab(list[0]);
+  assert.deepEqual(s.commands, [
+    { name: 'space.select', args: { id: 'other' } },
+    { name: 'tab.select', args: { id: 'other-chat' } },
+    { name: 'pane.focus', args: { pane: 'other-chat-pane' } },
+    { name: 'hey-chat.focus', args: undefined },
+  ], 'the chat pane and its message box get the keyboard, so its keys work straight away');
 });

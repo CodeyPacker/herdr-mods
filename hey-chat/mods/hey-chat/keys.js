@@ -140,6 +140,8 @@ export function handleKey(v, e, cx) {
   // (⌃o, their key to start with, inserts a line on macOS).
   if (is("jump")) { v.jumpToFresh(cx); done(); return; }
   if (is("last")) { v.switchBack(cx); done(); return; }
+  // The project list: every chat tab, in every space (picker.js).
+  if (is("projects")) { v.openProjects(); done(); return; }
   if (is("tree")) { v.focusTree(); done(); return; }
   if (is("sidebar")) { v.toggleSidebar(); done(); return; }
   if (is("chat")) { v.focusInput(); done(); return; }

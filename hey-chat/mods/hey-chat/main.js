@@ -3,6 +3,7 @@
 //   main.js       the view: its state, its message boxes, and how its parts are laid out
 //   actions/      the view's methods, by area (chats, talk, questions, delete, ...). main.js adds them to the view
 //   tabs.js       the shortcut, and each project's chat tab
+//   picker.js     the project list (⌃p): every chat tab, in every space
 //   store.js      the chats made here and their folders, kept in <appHome>/data/hey-chat/chats.json
 //   agent.js      finding the CLIs, listing and reading sessions, and each chat's link to its bridge
 //   bridge.mjs    the Node program that runs a chat's agent (started by agent.js)
@@ -14,7 +15,7 @@
 //   views/        the sidebar (tree.js), the chat (chat.js), Settings, setup and the Files panel
 import { View } from "gpui-kit";
 import { h_flex, InputState, TextareaState, ScrollHandle } from "gpui-base";
-import { nextCommand, props, focused, closeOverlay, theme, checking, shared, home } from "herdr";
+import { nextCommand, props, focused, closeOverlay, theme, checking, shared, home, panes } from "herdr";
 import { loadMe } from "./me.js";
 import { colors, paneBackground } from "./kit/theme.js";
 import { AGENTS } from "./pictures.js";
@@ -42,12 +43,15 @@ import { copy } from "./actions/copy.js";
 import { settingsDialog } from "./views/settings.js";
 import { outputs } from "./actions/outputs.js";
 import { jump } from "./actions/jump.js";
+import { Picker, openPicker } from "./picker.js";
 
 /** The space around and between the two cards. */
 const GAP = 10;
 
 export default class HeyChat extends View {
   init(_props, cx) {
+    // The project list's copy (⌃p): a popup of every chat tab.
+    if (props()?.projects) { this.picker = new Picker(cx); return; }
     // The key's copy: an overlay. Panes Hey, chat runs in have no overlay.
     this.launcher = props()?.overlay !== undefined;
     if (this.launcher) {
@@ -192,6 +196,7 @@ export default class HeyChat extends View {
   }
 
   async close() {
+    if (this.picker) { this.picker.release(); return; }
     if (this.launcher) return;
     for (const b of this.bridges.values()) b.close();
     this.scroll.release(); this.treeScroll.release(); this.searchInput.release(); this.initialsInput.release(); this.chatSearchInput.release();
@@ -199,12 +204,22 @@ export default class HeyChat extends View {
     for (const box of Object.values(this.inputs)) box.release();
   }
 
+  /** ⌃p: the project list (picker.js). */
+  openProjects() { openPicker(); }
+
   /** `hey-chat.<name>` commands: focus. */
-  command(c, _cx) {
-    if (c === "focus") this.focusInput();
+  command(c, cx) {
+    if (c !== "focus") return;
+    // Every chat tab's copy gets the command. Only the one whose pane has the keyboard takes it,
+    // again once its tab, just shown, has drawn.
+    const own = panes().find(p => p.pane === props()?.pane);
+    if (own && !own.focused) return;
+    this.focusInput();
+    cx.timer.after(50, () => { if (this.zone === "chat") this.focusInput(); });
   }
 
   render(_cx) {
+    if (this.picker) return this.picker.render();
     if (this.launcher) return h_flex();
     const t = colors();
     if (this.setupOpen) return h_flex().size_full().p(GAP).bg(paneBackground(theme().background))
