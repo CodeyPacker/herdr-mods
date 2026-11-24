@@ -122,3 +122,25 @@ test("a language must finish setup before practice can switch to it", { timeout:
   await assert.rejects(command(root, "language", "typescript"), /Set up TypeScript/);
   assert.equal((await command(root, "setup-status")).languageId, "csharp");
 });
+
+test("saving a solved answer checks it again, and a wrong answer marks it unsolved", { timeout: 120000 }, async t => {
+  const root = await practiceRoot(t, "resave", ["typescript"]);
+  let state = await command(root, "status");
+  const id = state.exerciseId;
+  await writeFile(state.file, "const count = 12;\n");
+  state = await command(root, "check-saved", saved(state));
+  assert.equal(state.progress[id].passes, 1);
+  // Later, the same answer saved again: it is checked, not skipped.
+  const sessionFile = join(state.root, "session.json");
+  const session = JSON.parse(await readFile(sessionFile, "utf8"));
+  session.result.at -= 60000;
+  await writeFile(sessionFile, JSON.stringify(session));
+  state = await command(root, "check-saved", saved(state));
+  assert.equal(state.progress[id].attempts, 2);
+  assert.equal(state.progress[id].passes, 2);
+  await writeFile(state.file, "const count = \"twelve\";\n");
+  state = await command(root, "check-saved", saved(state));
+  assert.equal(state.result.passed, false);
+  assert.equal(state.progress[id].passes, 0, "A wrong answer marks the exercise unsolved");
+  assert.equal(state.progress[id].independentPasses, 0);
+});
