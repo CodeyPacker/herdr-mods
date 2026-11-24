@@ -5,7 +5,7 @@ import { spaces, panes, run, openOverlay, theme, window, shared, layout, setting
 // The islands' fill at the opacity in islands-workspace-chrome/settings.json (1 when unset).
 // Over a background picture with see-through terminals, at the terminals' opacity instead.
 const islandFill = (c) => {
-  const o = seeThroughOpacity() ?? shared("islands.opacity");
+  const o = wallpaperOpacity() ?? shared("islands.opacity");
   if (typeof o !== "number" || o >= 1 || !/^#[0-9a-f]{6}$/i.test(c)) return c;
   return c + Math.round(Math.max(0, o) * 255).toString(16).padStart(2, "0");
 };
@@ -14,6 +14,15 @@ const islandFill = (c) => {
 // records { layout, opacity } in shared state, clears the terminals and gives the pane frame the
 // theme's background at that opacity. Null otherwise, so other setups look as they always have.
 // Same as seeThroughOpacity in the mods' kit/theme.js.
+// The opacity the Wallpaper mod recorded for the shown layout, 1 (solid) included, so its 100%
+// wins over islands.opacity. Null when it recorded none for this layout.
+function wallpaperOpacity() {
+  const s = shared("backgrounds.seeThrough");
+  if (!s || typeof s !== "object" || s.layout !== shared("layout")) return null;
+  const o = Number(s.opacity);
+  return Number.isFinite(o) ? Math.min(1, Math.max(0, o)) : null;
+}
+
 function seeThroughOpacity() {
   const s = shared("backgrounds.seeThrough");
   if (!s || typeof s !== "object" || s.layout !== shared("layout")) return null;
@@ -25,8 +34,14 @@ function seeThroughOpacity() {
 
 // The borders' color: light or dark when the background picker wrote one of its two into the
 // layout's main pane frame, else the theme's. Other custom colors there don't change the mods.
+// None in the Wallpaper mod hides them: it records borders: "none" for the shown layout.
+const wallpaperBordersHidden = () => {
+  const s = shared("backgrounds.seeThrough");
+  return Boolean(s && typeof s === "object" && s.layout === shared("layout") && s.borders === "none");
+};
 const PICKER_BORDERS = ["#ffffff26", "#00000059"];
 const edge = (t) => {
+  if (wallpaperBordersHidden()) return "#00000000";
   const c = find(layout(), "main")?.content?.pane?.border?.color;
   return PICKER_BORDERS.includes(c) ? c : t.border;
 };
@@ -178,7 +193,7 @@ export default class Tabs extends View {
         .child(button("tab-new", "+", () => openOverlay({ mod: "new-menu", kind: "popup", width: 250, height: 512 })))
         .when(enabled.includes("files"), el => el.child(panelButton("files", "mods/files/file.svg")))
         .when(enabled.includes("changes"), el => el.child(panelButton("changes", "mods/changes/changes.svg")))
-        .when(w?.buttons, el => el.child(div().w(1).h(16).mx(3).flex_none().bg(t.border))
+        .when(w?.buttons, el => el.child(div().w(1).h(16).mx(3).flex_none().bg(edge(t)))
           .child(button("minimize", w.platform === "windows" ? svg("mods/islands-tabs/win-min.svg").size(16) : "−", () => run("window.minimize")))
           .child(button("maximize", w.platform === "windows" ? svg(`mods/islands-tabs/${w.maximized ? "win-restore" : "win-max"}.svg`).size(16) : "□", () => run("window.maximize")))
           .child(button("close-window", w.platform === "windows" ? svg("mods/islands-tabs/win-close.svg").size(16) : svg("mods/pane/close.svg").size(13), () => run("window.close"))));

@@ -43,6 +43,14 @@ export function neovimCloseDiffsExpression() {
   return `execute(map(reverse(filter(range(1, tabpagenr('$')), {_, tab -> gettabvar(tab, '${diffMarker}', 0)})), {_, tab -> 'silent! tabclose ' . tab}))`;
 }
 
+/**
+ * Ex commands that make ctrl-h in this Neovim move the keyboard to the Practice Range panel on its
+ * left. They apply to the Neovim Practice Range starts, not to other Neovims.
+ */
+export function neovimPanelKeyCommands() {
+  return ["lua vim.keymap.set({ 'n', 'v' }, '<C-h>', function() vim.fn.jobstart({ 'herdr-app', 'do', 'pane.go', '--direction', 'left' }) end, { desc = 'Practice Range panel' })"];
+}
+
 /** Close earlier comparisons, then open this one, for `nvim --remote-expr`. @param {string} answer @param {string} reference */
 export function neovimDiffExpression(answer, reference) {
   return `${neovimCloseDiffsExpression()} . execute([${neovimDiffCommands(answer, reference).map(vimString).join(", ")}])`;

@@ -16,20 +16,52 @@ const SEE_THROUGH = ["background", "canvas", "chrome", "surface", "raised", "hov
 /**
  * The app's theme colors by name, typed as colors the builders accept. In a tab over a background
  * picture with see-through terminals (seeThroughOpacity), the fills come at the terminals'
- * opacity, so a mod's rows, inputs and buttons match them. Dialogs keep the solid colors.
+ * opacity, so a mod's rows, inputs and buttons match them. When the Wallpaper mod's borders are
+ * None (bordersHidden), `border` is clear, so outlines drawn in it go away, and with Light or Dark
+ * (chosenBorder) it is that color. Dialogs keep the solid colors and their borders.
  * @returns {Theme}
  */
 export function colors() {
   const t = /** @type {Theme} */ (theme());
   const opacity = props()?.overlay === undefined ? seeThroughOpacity() : null;
-  if (opacity === null) return t;
-  const alpha = Math.round(opacity * 255).toString(16).padStart(2, "0");
+  const hide = bordersHidden();
+  const edge = chosenBorder();
+  if (opacity === null && !hide && !edge) return t;
   const faded = { ...t };
-  for (const key of SEE_THROUGH) {
-    const c = String(t[key] ?? "");
-    if (/^#[0-9a-f]{6}$/i.test(c)) faded[key] = /** @type {Color} */ (c + alpha);
+  if (opacity !== null) {
+    const alpha = Math.round(opacity * 255).toString(16).padStart(2, "0");
+    for (const key of SEE_THROUGH) {
+      const c = String(t[key] ?? "");
+      if (/^#[0-9a-f]{6}$/i.test(c)) faded[key] = /** @type {Color} */ (c + alpha);
+    }
   }
+  if (hide) faded.border = /** @type {Color} */ ("#00000000");
+  else if (edge) faded.border = edge;
   return faded;
+}
+
+/**
+ * The border color the Wallpaper mod's Light or Dark chose for the shown layout ({ borders,
+ * borderColor } in "backgrounds.seeThrough"), or null for Theme, None, or a dialog, which keeps
+ * the theme's. @returns {Color | null}
+ */
+export function chosenBorder() {
+  if (props()?.overlay !== undefined) return null;
+  const s = /** @type {any} */ (shared("backgrounds.seeThrough"));
+  if (!s || typeof s !== "object" || s.layout !== shared("layout") || (s.borders !== "light" && s.borders !== "dark")) return null;
+  return /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(String(s.borderColor ?? "")) ? /** @type {Color} */ (s.borderColor) : null;
+}
+
+/**
+ * Whether the Wallpaper mod's borders are None on the shown layout: it records
+ * { layout, opacity, borders: "none" } in shared state ("backgrounds.seeThrough"). Only for a mod
+ * in a pane, tab or bar. A dialog floats over everything and keeps its borders.
+ * @returns {boolean}
+ */
+export function bordersHidden() {
+  if (props()?.overlay !== undefined) return false;
+  const s = /** @type {any} */ (shared("backgrounds.seeThrough"));
+  return Boolean(s && typeof s === "object" && s.layout === shared("layout") && s.borders === "none");
 }
 
 /**
@@ -75,6 +107,9 @@ export function seeThroughFill(color) {
  * @param {Theme} t @returns {Color}
  */
 export function focusBorder(t) {
+  // With the Wallpaper mod's borders None, the outline is clear too, so no border is left. `border`
+  // is clear then: colors() makes it so, and so does the layout on a copy of Herdr's own.
+  if (bordersHidden() || /^#[0-9a-f]{6}00$/i.test(String(t.border ?? ""))) return /** @type {Color} */ ("#00000000");
   const c = String(t.foreground ?? "");
   return /** @type {Color} */ (/^#[0-9a-f]{6}$/i.test(c) ? `${c}33` : t.input);
 }

@@ -5,6 +5,7 @@
 // next open shows it again. Practice Range saves where you were as it closes (see main.js).
 import { openOverlay, closeOverlay, shared, setShared, terminals, exec, appHome } from "herdr";
 import { configuredEditor } from "./bridge.js";
+import { neovimPanelKeyCommands } from "./editor-pane.js";
 import { opensAsTab, toggleTab } from "./kit/open-as.js";
 
 /** The open dialog's overlay id, or null. Practice Range clears it as it closes. */
@@ -22,7 +23,7 @@ export function liveEditor() {
 /** Starts Neovim in a terminal without a tab, listening for files to open. */
 async function startEditor() {
   const server = `127.0.0.1:${19000 + Math.floor(Math.random() * 30000)}`;
-  const result = await exec("hc", ["run", "--bg", "--json", "--no-parent", "--name", `practice-nvim-${Date.now() % 100000}`, "--cwd", appHome(), "nvim", "--listen", server]);
+  const result = await exec("hc", ["run", "--bg", "--json", "--no-parent", "--name", `practice-nvim-${Date.now() % 100000}`, "--cwd", appHome(), "nvim", "--listen", server, ...neovimPanelKeyCommands().flatMap(command => ["-c", command])]);
   if (result.code !== 0) throw new Error(result.stderr || "Could not start Neovim.");
   const editor = { terminal: JSON.parse(result.stdout).address, server };
   setShared(EDITOR_KEY, editor);

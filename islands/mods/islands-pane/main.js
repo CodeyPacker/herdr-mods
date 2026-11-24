@@ -33,8 +33,14 @@ function seeThroughOpacity() {
 
 // The borders' color: light or dark when the background picker wrote one of its two into the
 // layout's main pane frame, else the theme's. Other custom colors there don't change the mods.
+// None in the Wallpaper mod hides them: it records borders: "none" for the shown layout.
+const wallpaperBordersHidden = () => {
+  const s = shared("backgrounds.seeThrough");
+  return Boolean(s && typeof s === "object" && s.layout === shared("layout") && s.borders === "none");
+};
 const PICKER_BORDERS = ["#ffffff26", "#00000059"];
 const edge = (t) => {
+  if (wallpaperBordersHidden()) return "#00000000";
   const c = find(layout(), "main")?.content?.pane?.border?.color;
   return PICKER_BORDERS.includes(c) ? c : t.border;
 };

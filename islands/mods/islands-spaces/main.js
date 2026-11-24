@@ -10,7 +10,7 @@ import { spaces, machines, panes, run, openOverlay, exec, hc, theme, shared, set
 // The islands' fill at the opacity in islands-workspace-chrome/settings.json (1 when unset).
 // Over a background picture with see-through terminals, at the terminals' opacity instead.
 const islandFill = (c) => {
-  const o = seeThroughOpacity() ?? shared("islands.opacity");
+  const o = wallpaperOpacity() ?? shared("islands.opacity");
   if (typeof o !== "number" || o >= 1 || !/^#[0-9a-f]{6}$/i.test(c)) return c;
   return c + Math.round(Math.max(0, o) * 255).toString(16).padStart(2, "0");
 };
@@ -19,6 +19,15 @@ const islandFill = (c) => {
 // records { layout, opacity } in shared state, clears the terminals and gives the pane frame the
 // theme's background at that opacity. Null otherwise, so other setups look as they always have.
 // Same as seeThroughOpacity in the mods' kit/theme.js.
+// The opacity the Wallpaper mod recorded for the shown layout, 1 (solid) included, so its 100%
+// wins over islands.opacity. Null when it recorded none for this layout.
+function wallpaperOpacity() {
+  const s = shared("backgrounds.seeThrough");
+  if (!s || typeof s !== "object" || s.layout !== shared("layout")) return null;
+  const o = Number(s.opacity);
+  return Number.isFinite(o) ? Math.min(1, Math.max(0, o)) : null;
+}
+
 function seeThroughOpacity() {
   const s = shared("backgrounds.seeThrough");
   if (!s || typeof s !== "object" || s.layout !== shared("layout")) return null;
