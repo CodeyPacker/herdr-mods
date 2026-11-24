@@ -3,6 +3,3 @@
 */mods/*/jsconfig.json
 gpui-kit.d.ts
 jsconfig.json
-
-# Keep Hey, chat out of recipe-based gallery discovery for now.
-/hey-chat/RECIPE.md

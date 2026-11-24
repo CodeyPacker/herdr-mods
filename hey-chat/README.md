@@ -91,3 +91,5 @@ Tool cards are hidden by default. Useful activity appears beside the typing dots
 Deleting a conversation also deletes its agent session permanently, after confirmation. It never deletes project files.
 
 For an agent-assisted installation, ask it to read your Herdr home’s `AGENTS.md` and install [this mod](https://github.com/CodeyPacker/herdr-mods/tree/main/hey-chat).
+
+[`RECIPE.md`](RECIPE.md) has the full details, including what it runs on your machine.
