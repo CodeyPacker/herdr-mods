@@ -10,6 +10,9 @@ import { loadLanguageRunner } from "./languages/runner.mjs";
 import { setupStatus, checkRequirements, completeSetup, selectLanguage } from "./setup.mjs";
 import { readyForReview, reviewSet } from "./review.js";
 
+/** The same content saved again within this many milliseconds is one save, not a new attempt. */
+const DUPLICATE_SAVE_MS = 3000;
+
 async function readJson(path, fallback) {
   try { return JSON.parse(await readFile(path, "utf8")); }
   catch (error) { if (error.code === "ENOENT") return fallback; throw new Error(`Cannot read ${path}: ${error.message}`); }
@@ -243,9 +246,13 @@ export async function command(root, action, value) {
       const file = await ensureExercise(base, exercise, language, runner, { review: Boolean(state.review) });
       const submitted = (await readFile(file, "utf8")).replaceAll("\r\n", "\n");
       const sourceHash = createHash("sha256").update(submitted).digest("hex");
-      // Ignore duplicate notifications, generated starter files, and saves for a previous exercise.
+      // Every save checks, even an answer that already passed. Skipped: saves for a previous
+      // exercise, an untouched starter file, and the same content again within a few seconds,
+      // since one save can arrive as several notifications.
+      const starter = runner.createAnswer(exercise).replaceAll("\r\n", "\n");
+      const duplicate = state.result?.sourceHash === sourceHash && Date.now() - (state.result?.at ?? 0) < DUPLICATE_SAVE_MS;
       const shouldCheck = action === "check" || ((saved.languageId ?? defaultLanguage.id) === language.id && saved.exerciseId === exercise.id
-        && sourceHash !== (state.result?.sourceHash ?? saved.sourceHash));
+        && submitted !== starter && !duplicate);
       if (shouldCheck) {
         const result = await runner.check(base, exercise, submitted);
         state.result = { ...result, at: Date.now(), sourceHash, assisted: state.answerShown };
@@ -254,6 +261,8 @@ export async function command(root, action, value) {
         progress.attempts++;
         progress.last = Date.now();
         if (result.passed) { progress.passes++; if (!state.answerShown) progress.independentPasses++; }
+        // A wrong answer marks the exercise unsolved again, even if it passed before.
+        else { progress.passes = 0; progress.independentPasses = 0; }
         if (state.review) {
           // Only a first-try pass without hints or the answer counts as remembered.
           const clean = result.passed && checksBefore === 0 && state.hintCount === 0 && !state.answerShown;

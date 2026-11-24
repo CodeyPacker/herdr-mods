@@ -9,6 +9,8 @@ export function agentName(id) { return AGENTS.find(a => a.id === id)?.name ?? "T
 
 const PS_ARGS = ["-NoLogo", "-NoProfile", "-Command"]; // -NoProfile: a user profile can take seconds to load
 let psExe = null; // "pwsh" or "powershell.exe" once one has run; asked once per load of the mod
+// Herdr's PATH on Windows can miss the folders the claude and codex installers use.
+const PS_PATH = `$env:Path = "$env:USERPROFILE\\.local\\bin;$env:APPDATA\\npm;$env:Path"; `;
 
 /**
  * Runs a PowerShell script, preferring PowerShell 7 (pwsh) and falling back to Windows
@@ -36,7 +38,7 @@ export async function findAgents(on) {
   // One lookup for every agent, in the same shell the jobs run in, so PATH matches.
   const ids = AGENTS.map(a => a.id);
   const r = window()?.platform === "windows"
-    ? await runPs(`Get-Command ${ids.join(",")} -ErrorAction SilentlyContinue | ForEach-Object { $_.Name }`, on).catch(() => null)
+    ? await runPs(`${PS_PATH}Get-Command ${ids.join(",")} -ErrorAction SilentlyContinue | ForEach-Object { $_.Name }`, on).catch(() => null)
     : await exec("sh", ["-c", `for a in ${ids.join(" ")}; do command -v "$a" >/dev/null 2>&1 && echo "$a"; done`], { on }).catch(() => null);
   // Windows names come back with an extension (claude.exe, codex.cmd).
   const names = (r?.stdout ?? "").split(/\r?\n/).map(n => n.trim().toLowerCase().replace(/\.(exe|cmd|bat|ps1)$/, ""));
@@ -85,7 +87,7 @@ export class AgentSession {
     const { argv, ps } = await shell();
     const q = ps ? (s => `'${s.replace(/'/g, "''")}'`) : (s => `'${s.replace(/'/g, `'\\''`)}'`);
     const script = ps
-      ? `$OutputEncoding = [Console]::InputEncoding = [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); Get-Content -Raw -Encoding utf8 -LiteralPath ${q(inFile)} | ${agent} ${flags.map(q).join(" ")} 2> ${q(errFile)} | Set-Content -NoNewline -Encoding utf8 -LiteralPath ${q(outFile)}`
+      ? `${PS_PATH}$OutputEncoding =[Console]::InputEncoding = [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); Get-Content -Raw -Encoding utf8 -LiteralPath ${q(inFile)} | ${agent} ${flags.map(q).join(" ")} 2> ${q(errFile)} | Set-Content -NoNewline -Encoding utf8 -LiteralPath ${q(outFile)}`
       : `${agent} ${flags.map(q).join(" ")} < ${q(inFile)} > ${q(outFile)} 2> ${q(errFile)}`;
     const started = await hc(["run", "--bg", "--no-parent", "--outlive-parent", "--cwd", this.cwd ?? "", "--json", "--", ...argv, script]);
     if (started.code !== 0) throw new Error(started.stderr || `Could not start ${agent}.`);

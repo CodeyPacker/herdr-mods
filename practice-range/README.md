@@ -38,7 +38,8 @@ to the tab's props. Tutor does this. `node practice-range/mods/practice-range/to
 
 ## Sync between computers (optional)
 
-Off by default. When on, Practice Range pulls your progress from a git repo as it opens and pushes it as it closes.
+Off by default. When on, Practice Range pulls your progress from a git repo as it opens, pushes it a few seconds
+after each check, and pushes again as it closes. A failed push shows in the panel and is retried by the next push.
 Only each language's progress, answers and backups are committed. Checker builds and per-computer setup stay local.
 
 1. Create an empty private repo, for example on GitHub.

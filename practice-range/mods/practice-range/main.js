@@ -1,6 +1,6 @@
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, TextView, InputState, ScrollHandle } from "gpui-base";
-import { run, nextCommand, panes, props, watchFolder, focused, checking, appHome, closeOverlay, shared, setShared, exec } from "herdr";
+import { run, nextCommand, panes, props, watchFolder, focused, checking, appHome, closeOverlay, shared, setShared, exec, window as appWindow } from "herdr";
 import { togglePractice, reopenPractice, openPractice, liveEditor, DIALOG_KEY } from "./toggle.js";
 import { colors, SIZE, paneBackground } from "./kit/theme.js";
 import { paneHeader, paneTitle, paneDetail, paneBar, tag, sectionLabel, banner } from "./kit/pane.js";
@@ -47,6 +47,8 @@ const ESC_CONTEXT = "PracticeRangeDialog";
 const ESC_ACTION = "practice-range-escape";
 /** Esc as an action and as a key within this many ms is one press. */
 const ESC_GAP_MS = 150;
+/** Device sync pushes this long after the last check, so a run of saves makes one commit. */
+const SYNC_PUSH_DELAY_MS = 5000;
 
 /** Where the last dialog was, to show it again on the next open. @returns {{ languageId: string, screen: string, pickerTopicId: string | null } | null} */
 function savedSpot() {
@@ -64,7 +66,11 @@ function saved(key, fallback) {
 }
 
 /** @param {string} path */
-function normalizePath(path) { return path.replaceAll("\\", "/"); }
+function normalizePath(path) {
+  const slashed = path.replaceAll("\\", "/");
+  // Windows: Herdr can report \\?\C:\... paths, and paths there ignore letter case.
+  return appWindow()?.platform === "windows" ? slashed.replace(/^\/\/\?\//, "").toLowerCase() : slashed;
+}
 
 /** @param {import("./types.js").ReviewSummary} summary */
 function reviewSummary(summary) {
@@ -141,8 +147,12 @@ export default class Syntax extends View {
     this.error = "";
     /** Device sync (sync.mjs), on only when practice-range.json has "sync": true. */
     this.sync = false;
-    /** Why the last pull failed. Practice still works, so this does not block anything. */
+    /** Why the last pull or push failed. Practice still works, so this does not block anything. */
     this.syncError = "";
+    /** Each check bumps this. A waiting push runs only if no newer check came after it. */
+    this.syncPushTurn = 0;
+    /** True while a push after a check runs, so two never use git at once. */
+    this.syncPushing = false;
     this.screen = "setup";
     this.setupStep = 0;
     this.setupCompleted = false;
@@ -530,6 +540,7 @@ export default class Syntax extends View {
           }
         }
         if (!this.watching) this.watchAnswers(cx);
+        if (this.sync && !state.scratch && ["check", "check-saved"].includes(action)) this.pushSoon(cx);
       } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
       finally { this.practicePending = false; this.busy = ""; cx.notify(); }
       // Restoring ends with its last step, or at once when a step failed.
@@ -551,6 +562,26 @@ export default class Syntax extends View {
         this.pendingTopic = null;
         if (!this.error && this.screen === "topics") this.chooseTopic(topic, cx);
       }
+    });
+  }
+
+  /**
+   * Push progress a few seconds after a check, so another computer sees it even while this
+   * tab stays open. A failed push shows in the panel. Closing still pushes as well.
+   * @param {Context} cx
+   */
+  pushSoon(cx) {
+    const turn = ++this.syncPushTurn;
+    cx.spawn(async cx => {
+      await cx.sleep(SYNC_PUSH_DELAY_MS);
+      while (this.syncPushing) await cx.sleep(500);
+      if (turn !== this.syncPushTurn || this.tutorWatchClosed) return;
+      this.syncPushing = true;
+      try {
+        const failed = await syncProgress("push");
+        this.syncError = failed ? `Device sync could not push: ${failed}` : "";
+      } finally { this.syncPushing = false; }
+      cx.notify();
     });
   }
 
