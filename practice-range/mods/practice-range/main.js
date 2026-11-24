@@ -9,7 +9,7 @@ import { listRow, rowText, listNote } from "./kit/list.js";
 import { catalogFor } from "./catalog.js";
 import { topicProgress, filteredTopics, visibleHints, savedExercise } from "./practice.js";
 import { practiceCommand, appCommand, openVSCode, openVSCodeDiff, neovimDiff, reuseNeovim, configuredEditor, saveEditorPreference, setupStatus, checkSetupRequirements, completeSetup, configuredTutor, saveTutorPreference, checkTutorProvider, askTutorQuestion, cancelTutorRequest, syncEnabled, syncProgress } from "./bridge.js";
-import { findPracticePane, neovimDiffCommands, neovimDiffExpression } from "./editor-pane.js";
+import { findPracticePane, neovimDiffCommands, neovimDiffExpression, neovimPanelKeyCommands } from "./editor-pane.js";
 import { defaultLanguage, findLanguage, languages } from "./languages/index.js";
 import { setupPanel } from "./setup-panel.js";
 import { languagePanel } from "./language-panel.js";
@@ -37,6 +37,7 @@ const SHORTCUTS = [
   { id: "compare", key: "d", what: "compare with reference" }, { id: "send-to-scratch", key: "s", what: "send to scratch" },
   { id: "repeat", key: "r", what: "repeat" }, { id: "next", key: "n", what: "next exercise" },
   { id: "open", key: "o", what: "open editor" }, { id: "tutor", key: "u", what: "ask tutor" },
+  { id: "focus-editor", key: "ctrl-l", what: "move to the editor (ctrl-h in Neovim comes back)" },
 ];
 
 /** How Practice Range opens: as a tab, or as the dialog with Neovim beside it (toggle.js). */
@@ -648,6 +649,8 @@ export default class Syntax extends View {
     if (action === "save-editor-default") { this.saveEditorDefault(cx); return; }
     if (action === "skip-editor-default") { this.finishEditorChoice(cx); return; }
     if (action === "shuffle" && this.screen === "exercises") { this.shuffleExercise(cx); return; }
+    // The editor is the pane on the right: a Neovim split in the tab, or the terminal beside the dialog.
+    if (action === "focus-editor") { run("pane.go", { direction: "right" }); return; }
     if (this.screen === "scratch" && this.state) {
       if (action === "check") this.perform("check", null, cx);
       else if (action === "scratch" || action === "practice") this.perform("practice", null, cx);
@@ -791,7 +794,7 @@ export default class Syntax extends View {
             // explicitly, so a changed keyboard focus cannot split another tab.
             const opened = await appCommand("pane.split", {
               pane: panel.pane, direction: "right",
-              argv: ["nvim", "--listen", server, file, ...(diff ? neovimDiffCommands(diff.answerFile, diff.referenceFile).flatMap(command => ["-c", command]) : [])],
+              argv: ["nvim", "--listen", server, file, ...neovimPanelKeyCommands().flatMap(command => ["-c", command]), ...(diff ?neovimDiffCommands(diff.answerFile, diff.referenceFile).flatMap(command => ["-c", command]) : [])],
             });
             this.server = server;
             this.editorTerminal = opened.terminal;
