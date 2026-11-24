@@ -6,7 +6,7 @@ import { join, dirname } from "node:path";
 import { parseTutorConfig, saveTutorConfig } from "../mods/practice-range/tutor/config.js";
 import { askTutor, cancelRequest, tutorContext } from "../mods/practice-range/tutor/service.mjs";
 import { checkProvider, providerArguments } from "../mods/practice-range/tutor/providers.mjs";
-import { runTutorProcess } from "../mods/practice-range/tutor/process.mjs";
+import { runTutorProcess, windowsCommand } from "../mods/practice-range/tutor/process.mjs";
 import { findLanguage } from "../mods/practice-range/languages/index.js";
 import { catalogFor } from "../mods/practice-range/catalog.js";
 import { exerciseFile } from "../mods/practice-range/runner.mjs";
@@ -115,4 +115,15 @@ test("cancellation stops the owned process instead of waiting for its timeout", 
   const result = await pending;
   assert.match(result.problem, /cancelled/);
   assert.ok(Date.now() - started < 3000);
+});
+
+test("Windows finds codex and claude outside Herdr's PATH, and npm installs through Node", () => {
+  const options = { env: { Path: '"/on path";/other', APPDATA: "/appdata" }, home: "/home" };
+  const local = join("/home", ".local", "bin", "claude.exe");
+  assert.deepEqual(windowsCommand("claude", { ...options, exists: file => file === local }), { command: local, args: [] });
+  const onPath = join("/on path", "codex.exe");
+  assert.deepEqual(windowsCommand("codex", { ...options, exists: file => file === onPath }), { command: onPath, args: [] });
+  const entry = join("/appdata", "npm", "node_modules", "@anthropic-ai/claude-code/cli.js");
+  assert.deepEqual(windowsCommand("claude", { ...options, exists: file => file === entry }), { command: process.execPath, args: [entry] });
+  assert.equal(windowsCommand("claude", { ...options, exists: () => false }), null);
 });
