@@ -39,7 +39,7 @@ export function roundButton(t, id, icon, size, click) {
  * One chat's row: the agent's picture, the title and time, and a preview with an unread dot.
  * @param {any} v the view @param {Theme} t @param {any} chat @param {string} key `r:` in Recent, `c:` in a project
  */
-function chatRow(v, t, chat, key) {
+export function chatRow(v, t, chat, key) {
   const open = chat.id === v.chatId;
   const picked = Boolean(v.selectedSet?.has(chat.id));
   const unread = Boolean(v.unread[chat.id]) && !open;
@@ -48,12 +48,18 @@ function chatRow(v, t, chat, key) {
   const last = chat.thread[chat.thread.length - 1];
   let preview = chat.last ? (chat.lastFrom === "me" ? `You: ${chat.last}` : chat.last) : "No messages yet";
   if (last) {
-    preview = last.kind === "tool" ? last.title : last.kind === "image" ? "Sent an image" : last.text;
+    // Cards have no text: a permission card shows what was asked, a question card that it asked.
+    preview = last.kind === "tool" || last.kind === "permission" ? last.title
+      : last.kind === "question" ? "Asked you a question"
+      : last.kind === "image" ? "Sent an image" : last.text;
     if (last.from === "me") preview = `You: ${preview}`;
   }
   if (thinking) preview = "Thinking…";
   if (asking) preview = "Waiting for you";
   if (key.startsWith("r:")) preview = `${chat.project} · ${preview}`;
+  // Herdr refuses a child that is not text or an element, and then stops redrawing the pane, so
+  // anything missing draws as empty text instead.
+  preview = String(preview ?? "");
   return h_flex().id(`row-${key}`).w_full().flex_none().gap(10).px(10).py(8).rounded(12).items_center().cursor_pointer()
     .border_1().border_color(cursorBorder(v, t, key))
     .when(open || picked, (el) => el.bg(t.selected))
@@ -68,11 +74,11 @@ function chatRow(v, t, chat, key) {
     .child(v_flex().flex_1().min_w(0).gap(2)
       .child(h_flex().gap(8).items_center()
         .child(div().flex_1().min_w(0).truncate().text_size(14).text_color(t.foreground)
-          .when(unread, (el) => el.font_semibold()).when(!unread, (el) => el.font_medium()).child(chat.title))
+          .when(unread, (el) => el.font_semibold()).when(!unread, (el) => el.font_medium()).child(String(chat.title ?? "")))
         // The chat the jump key opens shows that key in place of its time.
         .child(chat.id === v.jumpId && v.keyHint("jump")
           ? div().flex_none().px(6).py(1).rounded(6).bg(t.accent).text_size(11.5).font_semibold().text_color(t.accent_foreground).child(v.keyHint("jump"))
-          : div().flex_none().text_size(11.5).text_color(t.dim).child(chat.time)))
+          : div().flex_none().text_size(11.5).text_color(t.dim).child(String(chat.time ?? ""))))
       .child(h_flex().gap(8).items_center()
         .child(div().flex_1().min_w(0).truncate().text_size(12.5)
           .text_color(asking ? t.blocked : thinking ? t.working : unread ? t.foreground : t.muted)
