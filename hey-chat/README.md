@@ -15,7 +15,7 @@ Chat with Codex or Claude Code in a Herdr tab. Each project has its own conversa
    node hey-chat/install.mjs
    ```
 
-5. **Open Herdr.** Press **Ctrl+A**, release both keys, then press **C**. Hey, chat checks this computer and walks you through any remaining setup. Already installed and signed in? Start chatting.
+5. **Open Herdr.** Press **Ctrl+Shift+H**. Hey, chat checks this computer and walks you through any remaining setup. Already installed and signed in? Start chatting.
 
 The installer copies only Hey, chat and adds its shortcut. It preserves other key bindings, backs up an existing installation, and stops if the shortcut is already assigned to something else. Set `HERDR_APP_HOME` before running it if you use a custom Herdr home. No Git, npm packages for the mod, or manual JSON editing are needed.
 
@@ -65,7 +65,7 @@ On Windows, install Node.js and your agent in Windows itself, using PowerShell. 
 
 ## Start a conversation
 
-Open a terminal in your project, then press **Ctrl+A C**. The project’s chat tab opens or comes forward. **New chat** stays in that project. **Open project** chooses another folder and opens its tab. Existing sessions for that folder appear automatically, and reopening restores your last conversation.
+Open a terminal in your project, then press **Ctrl+Shift+H**. The project’s chat tab opens or comes forward. **New chat** stays in that project. **Open project** chooses another folder and opens its tab. Existing sessions for that folder appear automatically, and reopening restores your last conversation.
 
 Choose Codex or Claude Code, type your message and send. Click the model beside the agent name to change it. Messages sent while an agent works are queued. **Send now** steers the current turn. Closing a tab leaves its agent running.
 
@@ -75,14 +75,14 @@ Tool cards are hidden by default. Useful activity appears beside the typing dots
 
 - **Node.js or agent not found:** quit and reopen Herdr after installation. Check **Settings → Agent setup**. Custom installations must be on Herdr’s `PATH`. Native agents in `~/.local/bin` are also detected.
 - **Sign-in needed:** run the displayed login command in Terminal or PowerShell, complete the browser flow, then click **Check again**. Credentials stay with the agent. Do not paste them into a chat.
-- **Shortcut does nothing:** confirm the installer completed and restart Herdr. The installer reports conflicts instead of replacing an existing shortcut.
+- **Shortcut does nothing:** confirm the installer completed and restart Herdr. The installer reports conflicts instead of replacing an existing shortcut, and keeps a key you already set for Hey, chat.
 - **Installer says the mod is linked:** this is a development installation. Update the linked source rather than installing over it.
 
 ## Keys
 
 | Key | Action |
 | --- | --- |
-| Ctrl+A, then C | Open project chat or return to the previous tab |
+| Ctrl+Shift+H | Open project chat or return to the previous tab |
 | Ctrl+B | Show or hide sidebar |
 | Ctrl+H / Ctrl+L | Focus sidebar / composer |
 | Ctrl+J / Ctrl+K | Scroll conversation |

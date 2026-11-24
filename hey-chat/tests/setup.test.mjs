@@ -21,7 +21,7 @@ test('installer works in a fresh home and updates without losing unrelated bindi
   const result = await install(dir);
   assert.equal((await readFile(join(result.destination, 'main.js'), 'utf8')).includes('class HeyChat'), true);
   const installed = JSON.parse(await readFile(keysFile, 'utf8'));
-  assert.equal(installed.global['ctrl-a c'], 'mod.open:hey-chat');
+  assert.equal(installed.global['ctrl-shift-h'], 'mod.open:hey-chat');
   assert.equal(installed.global['ctrl-a x'], 'existing');
   assert.deepEqual(installed.terminal, keys.terminal);
   assert.deepEqual(JSON.parse(await readFile(join(result.backup, 'keys.json'), 'utf8')), keys);
@@ -29,12 +29,20 @@ test('installer works in a fresh home and updates without losing unrelated bindi
   assert.ok(await readFile(join(update.backup, 'mod', 'main.js')));
   const fresh = await temp(t);
   await install(fresh);
-  assert.equal(JSON.parse(await readFile(join(fresh, 'keys.json'), 'utf8')).global['ctrl-a c'], 'mod.open:hey-chat');
+  assert.equal(JSON.parse(await readFile(join(fresh, 'keys.json'), 'utf8')).global['ctrl-shift-h'], 'mod.open:hey-chat');
+});
+
+test('installer keeps a key already set for Hey, chat and adds no other', async t => {
+  const dir = await temp(t);
+  const text = JSON.stringify({ global: { 'ctrl-a c': 'mod.open:hey-chat', 'ctrl-shift-h': 'other' } });
+  await writeFile(join(dir, 'keys.json'), text);
+  await install(dir);
+  assert.equal(await readFile(join(dir, 'keys.json'), 'utf8'), text, 'keys.json is left as it was');
 });
 
 test('installer refuses shortcut conflicts and invalid settings before copying files', async t => {
   const dir = await temp(t);
-  for (const text of [JSON.stringify({ global: { 'ctrl-a c': 'other' } }), '{bad', '[]']) {
+  for (const text of [JSON.stringify({ global: { 'ctrl-shift-h': 'other' } }), '{bad', '[]']) {
     await writeFile(join(dir, 'keys.json'), text);
     await assert.rejects(install(dir));
     assert.equal(await readFile(join(dir, 'keys.json'), 'utf8'), text);
