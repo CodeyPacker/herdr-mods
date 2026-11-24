@@ -214,13 +214,21 @@ export default class HeyChat extends View {
     // again once its tab, just shown, has drawn.
     const own = panes().find(p => p.pane === props()?.pane);
     if (own && !own.focused) return;
-    this.focusInput();
-    cx.timer.after(50, () => { if (this.zone === "chat") this.focusInput(); });
+    this.regainFocus();
+    cx.timer.after(50, () => this.regainFocus());
   }
 
-  render(_cx) {
+  render(cx) {
     if (this.picker) return this.picker.render();
     if (this.launcher) return h_flex();
+    // Herdr hands this pane the keyboard (its tab shown, or the pane picked), but not a spot inside
+    // it. Once the pane is drawn, the keyboard goes back where it was, so keys work without a click.
+    const paneFocused = panes().find(p => p.pane === props()?.pane)?.focused ?? false;
+    if (paneFocused && !this.paneFocused) {
+      cx.timer.after(0, (cx) => { this.regainFocus(); cx.notify(); });
+      cx.timer.after(50, (cx) => { this.regainFocus(); cx.notify(); });
+    }
+    this.paneFocused = paneFocused;
     const t = colors();
     if (this.setupOpen) return h_flex().size_full().p(GAP).bg(paneBackground(theme().background))
       .track_focus(this.handle)
