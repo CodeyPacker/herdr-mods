@@ -63,14 +63,45 @@ box has the keyboard:
 - While a permission waits, the message box is replaced by a bar with the
   question and the three answers.
 
-**Files panel**, 400 px wide: "Files & previews", "Add link from clipboard",
-the files and links the chat made, and a preview of the selected one. It
-floats over the chat when the pane is under 800 px wide. A 4 second toast
-announces a new file or link.
+**Files panel**, 400 px wide, 14 px round corners on `background`. It sits
+beside the chat, hides the sidebar when the pane is under 1100 px wide, and
+floats over the chat when the pane is under 800 px wide.
 
-**Settings**, a dialog up to 620 by 600 px on `popover` over a dimmed pane.
-General: your photo or initials, the initials color, "Condense chat", and
-"Agent setup". Shortcuts: "Show key hints" and every key.
+- Header: "Files & previews" in 15 px semibold, the count in dim text and a
+  28 px close button. Under it, 30 px buttons on `raised`: "Add link from
+  clipboard", and "Refresh" once something is selected.
+- The list, at most 180 px tall: a file icon (`accent` for a Claude
+  artifact, `muted` otherwise), the name in 13 px and the path or link in
+  11 px dim text. The selected row has the `selected` background. With
+  nothing yet: "Files and preview links from this conversation appear here."
+- The selected output: its name in 14 px semibold, a note ("Claude
+  artifact", "Web link", "Latest file contents" or "Open in your browser or
+  default app"), then "Open file" / "Open in browser" / "Open in Claude",
+  "Copy path" / "Copy link", and "Show folder" for files.
+- The preview on `raised`: Markdown drawn as Markdown, text files as plain
+  text, images up to 336 px wide. Other files say they open in their usual
+  app. Links say to open the web version. A preview is cut at 20,000
+  characters with "Preview shortened. Open the file to see everything."
+- A toast at the top right of the chat, 320 px at most on `popover`, says
+  "New: <name>" or "N new files & links" with "View" in `accent`. It goes
+  after 4 seconds and a click opens the panel.
+
+**Settings**, a dialog 320 to 620 px wide and 320 to 600 px tall, 20 px
+padding, 16 px round corners on `popover`, over the pane dimmed with
+`#00000066`. A press beside it closes it. Tabs: General and Shortcuts.
+
+- General: "YOUR PICTURE" with your 72 px picture, "Upload photo" ("Adding…"
+  while it copies) and "Use initials" once there is a photo. Dropping a
+  picture on the dialog uses it. A 200 px "Initials" box. "Initials color":
+  six 26 px swatches (`#7c5cff`, `#2f6fe4`, `#0f7a5e`, `#c2410c`, `#be185d`,
+  `#475569`) with a ring on the chosen one. A "Condense chat" switch ("Hide
+  tool cards, including file edits. Show activity beside the dots."). An
+  "Agent setup" link that opens the setup screen.
+- Shortcuts: an "Options" section with "Show key hints", then "Shortcut
+  keys": one row per key with its key in a 96 px cap, what it does, and
+  "On" or "Off". A click on the row turns it on or off. A click on the cap,
+  or `enter`, waits for a new key ("press a key"). `esc` keeps the old key
+  and backspace brings back the one it came with.
 
 **Setup**, up to 680 px wide: "Set up Hey, chat", a Codex / Claude Code
 choice, the install and sign-in commands with "Copy command", and "Check
@@ -85,8 +116,16 @@ again".
   sessions for that folder appear on their own. Reopening restores the last
   conversation.
 - `enter` sends and `shift-enter` adds a line. A message sent while the agent
-  works is queued. "Send now" steers the current turn: Codex takes it with
-  `turn/steer`, Claude is interrupted and resumed with it.
+  works is queued. "Send now" steers the current turn. Codex takes it with
+  `turn/steer` and its tools keep running. Claude's CLI has no steer call,
+  so the bridge moves the message to the front of the queue, stops the
+  turn, and sends it as soon as the turn has ended.
+- Files and links appear in the Files panel after a tool or turn finishes:
+  files the agent edited or wrote, Markdown links to files or to pages named
+  like an output, preview or report, Claude artifact links, `localhost`
+  links, and file names in backticks with a known type (`.html`, `.md`,
+  `.png`, `.pdf` and others). Open and Show folder only run after a click,
+  and a file's content is never run.
 - Typing `/` at the start of the box opens a menu of the agent's skills.
   `up`/`down` or `ctrl-p`/`ctrl-n` move, `tab` or `enter` picks, `esc` closes.
 - Pasted or dropped images go with the next message. Clicking one shows it
@@ -176,6 +215,11 @@ again".
 - Herdr draws only images under its home, so every image is copied into
   `<appHome>/data/hey-chat/images` first.
 - Windows fixes sit behind platform checks. The macOS path is unchanged.
+- `child()` takes only an element or a string. Anything else (`undefined`
+  from a card with no text, a number) makes Herdr keep the last frame that
+  worked until the next good render, so the pane looks frozen. Turn values
+  from sessions and bridge events into text before drawing them. The test
+  stand-in for `child()` throws the same error.
 - Two `actions/` files with a method of the same name stop the mod from
   loading, on purpose.
 - Edit the shared parts in the repo's root `kit/`, never the copy.
