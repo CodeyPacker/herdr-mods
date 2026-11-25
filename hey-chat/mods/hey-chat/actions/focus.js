@@ -1,7 +1,28 @@
 // Where the keyboard is: the message box, the permission bar, or the sidebar tree.
+import { focused, panes } from "herdr";
 import { SIDEBAR_HIDDEN, remember } from "../common.js";
+import { claimTab } from "../tabs.js";
 
 export const focus = {
+  /**
+   * Learns which pane this copy is in. Herdr tells only pane headers which pane they are on
+   * (props().pane), not a mod that is the pane, so it is the focused Hey, chat pane while the
+   * person uses this copy, or when the copy first shows (a copy starts when it is first shown).
+   * The first time, the tab is claimed for the folder (tabs.js).
+   */
+  learnPane() {
+    const f = focused();
+    if (!f?.pane || !panes().some((p) => p.pane === f.pane && p.mod === "hey-chat")) return;
+    const first = !this.paneId;
+    this.paneId = f.pane;
+    if (first && !this.quick) claimTab(this.paneId, this.folder);
+  },
+
+  /** This copy's pane, or undefined while it isn't known yet. */
+  ownPane() {
+    return this.paneId ? panes().find((p) => p.pane === this.paneId) : undefined;
+  },
+
   /** Gives the open chat's message box the keyboard, or the permission bar when one is waiting. */
   focusInput() {
     if (this.waiting(this.chat(this.chatId))) { this.zone = "ask"; this.handle.focus(); return; }

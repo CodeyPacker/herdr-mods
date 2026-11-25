@@ -15,13 +15,15 @@
 //   views/        the sidebar (tree.js), the chat (chat.js), Settings, setup and the Files panel
 import { View } from "gpui-kit";
 import { h_flex, InputState, TextareaState, ScrollHandle } from "gpui-base";
-import { nextCommand, props, focused, closeOverlay, theme, checking, shared, home, panes } from "herdr";
+import { nextCommand, props, focused, closeOverlay, theme, checking, shared, home, panes, run } from "herdr";
+import { mkdir } from "fs/promises";
+import { forgetQuick } from "./agent.js";
 import { loadMe } from "./me.js";
 import { colors, paneBackground } from "./kit/theme.js";
 import { AGENTS } from "./pictures.js";
 import { expand } from "./store.js";
-import { toggle, claimTab } from "./tabs.js";
-import { COLLAPSED, SIDEBAR_HIDDEN, CONDENSE_CHAT, SHOW_PLAN, normalFolder } from "./common.js";
+import { toggle } from "./tabs.js";
+import { COLLAPSED, SIDEBAR_HIDDEN, CONDENSE_CHAT, SHOW_PLAN, quickDir, normalFolder } from "./common.js";
 import { makeShortcuts } from "./shortcuts.js";
 import { treeView, TREE_WIDTH } from "./views/tree.js";
 import { outputsView, OUTPUTS_WIDTH } from "./views/outputs.js";
@@ -43,20 +45,21 @@ import { copy } from "./actions/copy.js";
 import { settingsDialog } from "./views/settings.js";
 import { outputs } from "./actions/outputs.js";
 import { jump } from "./actions/jump.js";
-import { Picker, openPicker } from "./picker.js";
+import { Picker, openPicker, openChooser } from "./picker.js";
 
 /** The space around and between the two cards. */
 const GAP = 10;
 
 export default class HeyChat extends View {
   init(_props, cx) {
-    // The project list's copy (⌃p): a popup of every chat tab.
+    // The project list's copy (⌃p): a popup of every chat tab, or of your projects to pick one.
     if (props()?.projects) { this.picker = new Picker(cx); return; }
-    // The key's copy: an overlay. Panes Hey, chat runs in have no overlay.
+    // The key's copy: an overlay. Panes Hey, chat runs in have no overlay. With no folder to go
+    // on (a mod tab in a space with no terminals), it asks which project.
     this.launcher = props()?.overlay !== undefined;
     if (this.launcher) {
       const overlay = props()?.overlay;
-      cx.spawn(async (cx) => { try { await toggle(cx); } finally { closeOverlay(overlay); } });
+      cx.spawn(async (cx) => { try { if (await toggle(cx) === "choose") await openChooser(); } finally { closeOverlay(overlay); } });
       return;
     }
     /**
@@ -151,9 +154,17 @@ export default class HeyChat extends View {
     cx.spawn(async (cx) => { for (;;) { this.command(await nextCommand(), cx); cx.notify(); } });
     // A new chat in the folder the pane was opened from, ready to type into. Your sessions fill
     // the tree around it once they're listed.
-    const start = checking() ? home() : (props()?.folder ?? focused()?.cwd ?? home());
+    // A quick chat (picker.js) is in a new empty folder, isn't saved, and is deleted with its tab.
+    this.quick = Boolean(props()?.quick) && !checking();
+    const start = checking() ? home() : this.quick ? `${quickDir()}/q${Date.now().toString(36)}` : (props()?.folder ?? focused()?.cwd ?? home());
     this.folder = normalFolder(expand(start));
-    if (!checking()) claimTab(props()?.pane, this.folder);
+    if (this.quick) cx.spawn(async () => { await mkdir(this.folder, { recursive: true }).catch(() => {}); });
+    // Which pane this copy is: the focused one once it has drawn, since a copy starts when it
+    // first shows (learnPane). Every Hey, chat pane's title bar says "Chat", not the mod's name.
+    if (!checking()) cx.timer.after(300, () => {
+      this.learnPane();
+      for (const p of panes()) if (p.mod === "hey-chat" && p.name !== "Chat") run("pane.rename", { pane: p.pane, name: "Chat" });
+    });
     const startId = this.addProject(this.folder);
     this.collapsed = { ...this.collapsed, [startId]: false };
     this.newChat(startId, cx);
@@ -163,8 +174,9 @@ export default class HeyChat extends View {
     cx.timer.after(400, () => { if (this.zone === "chat") this.focusInput(); });
     if (checking()) return;
     // Your sessions, the chats made here (reconnected to their bridges where those still run),
-    // and the CLIs on PATH.
-    cx.spawn(async (cx) => { await this.loadChats(cx); cx.notify(); });
+    // and the CLIs on PATH. A quick chat has no sessions to list.
+    if (this.quick) { this.loaded = true; this.starting = false; }
+    else cx.spawn(async (cx) => { await this.loadChats(cx); cx.notify(); });
     this.refreshSetup(cx, true);
   }
 
@@ -199,6 +211,10 @@ export default class HeyChat extends View {
     if (this.picker) { this.picker.release(); return; }
     if (this.launcher) return;
     for (const b of this.bridges.values()) b.close();
+    // A quick chat goes with its tab: its agent stops, and its session and folder are deleted.
+    // Herdr gives close() a moment only, and a program started here keeps running, so one Node
+    // program does all of it.
+    if (this.quick) forgetQuick(this.chats, this.folder).catch(() => {});
     this.scroll.release(); this.treeScroll.release(); this.searchInput.release(); this.initialsInput.release(); this.chatSearchInput.release();
     this.shortcuts.scroll.release();
     for (const box of Object.values(this.inputs)) box.release();
@@ -212,7 +228,7 @@ export default class HeyChat extends View {
     if (c !== "focus") return;
     // Every chat tab's copy gets the command. Only the one whose pane has the keyboard takes it,
     // again once its tab, just shown, has drawn.
-    const own = panes().find(p => p.pane === props()?.pane);
+    const own = this.ownPane();
     if (own && !own.focused) return;
     this.regainFocus();
     cx.timer.after(50, () => this.regainFocus());
@@ -223,7 +239,7 @@ export default class HeyChat extends View {
     if (this.launcher) return h_flex();
     // Herdr hands this pane the keyboard (its tab shown, or the pane picked), but not a spot inside
     // it. Once the pane is drawn, the keyboard goes back where it was, so keys work without a click.
-    const paneFocused = panes().find(p => p.pane === props()?.pane)?.focused ?? false;
+    const paneFocused = this.ownPane()?.focused ?? false;
     if (paneFocused && !this.paneFocused) {
       cx.timer.after(0, (cx) => { this.regainFocus(); cx.notify(); });
       cx.timer.after(50, (cx) => { this.regainFocus(); cx.notify(); });
@@ -236,11 +252,14 @@ export default class HeyChat extends View {
       .child(setupView(this, t));
     const wide = this.width >= 1100;
     const outputOverlay = this.width < 800;
-    const showTree = !this.sidebarHidden && (!this.outputsOpen || wide);
+    // A quick chat is the only chat in its tab, so it has no sidebar.
+    const showTree = !this.quick && !this.sidebarHidden && (!this.outputsOpen || wide);
     const chatWidth = Math.max(0, this.width - GAP * 2 - (showTree ? TREE_WIDTH + GAP : 0) - (this.outputsOpen && !outputOverlay ? OUTPUTS_WIDTH + GAP : 0));
     return h_flex().id("root").relative().size_full().p(GAP).gap(GAP).bg(paneBackground(theme().background))
       .track_focus(this.handle)
-      .on_key_down((e, cx) => handleKey(this, e, cx))
+      // A key or a press here means this copy's pane has the keyboard: learn which pane it is.
+      .on_key_down((e, cx) => { if (!this.paneId) this.learnPane(); handleKey(this, e, cx); })
+      .on_mouse_down("left", () => { if (!this.paneId) this.learnPane(); })
       .on_size_change((size, cx) => { this.width = size.width; this.height = size.height; cx.notify(); })
       .when(showTree, (el) => el.child(treeView(this, t)))
       .child(chatView(this, t, chatWidth))

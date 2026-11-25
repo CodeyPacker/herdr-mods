@@ -156,6 +156,16 @@ export async function deleteSession(agent, session, file) {
   return r.out ?? { ok: false, message: r.stderr || "Couldn't delete it." };
 }
 
+/**
+ * Deletes a quick chat for good: stops each chat's bridge, deletes its session, then removes the
+ * chat's folder (only one inside the quick chats folder). Runs as one Node program, so it finishes
+ * even after the pane is gone. @param {any[]} chats @param {string} folder
+ */
+export function forgetQuick(chats, folder) {
+  const list = chats.map((c) => ({ chat: c.id, agent: c.agent, session: c.session ?? null, file: c.file ?? null }));
+  return exec("node", [script("sessions.mjs"), "forget", "--folder", folder, "--state", bridgeDir(), "--chats", JSON.stringify(list)]);
+}
+
 /** True when a bridge answers on that port. @param {number} port */
 async function reachable(port) {
   try { const s = await net.connect("127.0.0.1", port); s.close(); return true; } catch { return false; }

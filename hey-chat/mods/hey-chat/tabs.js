@@ -13,10 +13,32 @@ function tabName(folder) {
 }
 
 /**
+ * The folder a new chat is for: the focused terminal's, else (a mod tab has none) a terminal's in
+ * the same tab, else the first terminal's in the space's tabs, else the space's own folder. Home
+ * never counts: it isn't a project, and spaces and shells start there. Null when there is none:
+ * the person picks a project instead.
+ * @param {any} space @param {string | undefined} current the shown tab
+ * @param {string | null | undefined} cwd the focused folder @param {any[]} all every pane
+ * @returns {string | null}
+ */
+export function spaceFolder(space, current, cwd, all) {
+  const homeFolder = normalFolder(home()).toLowerCase();
+  /** @param {any} f */
+  const project = (f) => Boolean(f) && normalFolder(expand(String(f))).toLowerCase() !== homeFolder;
+  if (project(cwd)) return /** @type {string} */ (cwd);
+  const inTab = (/** @type {string | undefined} */ tab) => all.find(p => p.tab === tab && p.terminal && project(p.cwd))?.cwd;
+  const here = inTab(current);
+  if (here) return here;
+  for (const t of space.tabs) { const found = inTab(t.id); if (found) return found; }
+  return project(space.folder) ? space.folder : null;
+}
+
+/**
  * The shortcut: goes back from a chat tab, else opens (or focuses) the chat tab for `folder`, by
- * default the focused folder. A chat pane split beside a terminal, from older versions, is closed
- * once its tab exists.
+ * default the focused folder (spaceFolder). A chat pane split beside a terminal, from older
+ * versions, is closed once its tab exists. Returns "choose" when there is no folder to use.
  * @param {any} cx @param {string} [folder]
+ * @returns {Promise<"choose" | void>}
  */
 export async function toggle(cx, folder) {
   const f = focused();
@@ -33,7 +55,9 @@ export async function toggle(cx, folder) {
     if (back) run("tab.select", { id: back.id });
     return;
   }
-  folder = normalFolder(expand(folder ?? f?.cwd ?? space.folder ?? home()));
+  const found = folder ?? spaceFolder(space, current, f?.cwd, all);
+  if (!found) return "choose";
+  folder = normalFolder(expand(found));
   const tab = space.tabs.find(t => saved[t.id]?.folder === folder && all.some(p => p.tab === t.id && p.mod === "hey-chat"));
   if (tab) {
     if (current !== tab.id) {
@@ -53,6 +77,16 @@ export async function toggle(cx, folder) {
     }
     await new Promise((done) => cx.timer.after(16, done));
   }
+}
+
+/** A quick chat's tab name. */
+export const QUICK_TAB = "Chat · Quick";
+
+/** Opens a quick chat: a new tab whose chat isn't saved, in an empty folder (main.js). */
+export function openQuick() {
+  const f = focused();
+  const space = spaces().find(s => s.id === f?.space) ?? spaces().find(s => s.active);
+  run("tab.new", { name: QUICK_TAB, ...(space ? { space: space.id } : {}), mod: "hey-chat", props: { quick: true } });
 }
 
 /**

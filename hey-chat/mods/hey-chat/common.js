@@ -24,6 +24,11 @@ export function dataDir() {
   return `${appDir()}/data/hey-chat`;
 }
 
+/** Where quick chats run: one empty folder each, deleted with the chat. */
+export function quickDir() {
+  return `${dataDir()}/quick`;
+}
+
 /** One of the mod's Node programs. @param {string} name */
 export function script(name) {
   return `${appDir()}/mods/hey-chat/${name}`;

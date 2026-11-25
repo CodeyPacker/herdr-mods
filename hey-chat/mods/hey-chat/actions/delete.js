@@ -1,5 +1,6 @@
 // Deleting chats: one, every chat in a folder, or the chats selected in the tree. Each asks first.
-import { home } from "herdr";
+import { home, spaces, run } from "herdr";
+import { QUICK_TAB } from "../tabs.js";
 import { deleteSession } from "../agent.js";
 import { treeItems } from "../keys.js";
 import { COLLAPSED, errorText, remember } from "../common.js";
@@ -15,6 +16,16 @@ export const deleting = {
     this.deleting = { ...what, back: this.zone === "tree" ? "tree" : "chat", busy: false, error: null, done: 0 };
     this.zone = "confirm";
     this.handle.focus();
+  },
+
+  /** Closes a quick chat's tab. Closing it deletes the chat (main.js close). */
+  closeQuick() {
+    // The trash was just clicked, so the focused pane is this one. Only a tab that is a quick chat's
+    // is closed: a tab.close with no id would close whichever tab is focused.
+    this.learnPane();
+    const tab = this.ownPane()?.tab;
+    const isQuick = tab && spaces().some((s) => s.tabs.some((t) => t.id === tab && t.name === QUICK_TAB));
+    if (isQuick) run("tab.close", { id: tab });
   },
 
   /** Asks whether to delete a chat (y / n). @param {string} id */

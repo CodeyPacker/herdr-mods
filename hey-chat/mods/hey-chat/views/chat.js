@@ -404,7 +404,7 @@ function emptyChat(v, t) {
   return v_flex().flex_1().items_center().justify_center().gap(14)
     .child(agentPicture(chat.agent, 72))
     .child(v_flex().items_center().gap(4)
-      .child(div().text_size(18).font_semibold().text_color(t.foreground).child(`New chat in ${chat.project}`))
+      .child(div().text_size(18).font_semibold().text_color(t.foreground).child(v.quick ? "New quick chat" : `New chat in ${chat.project}`))
       .child(div().text_size(13.5).text_color(t.muted).child("Pick who you're talking to, then send your first message.")))
     .child(h_flex().p(4).gap(4).rounded_full().bg(t.raised).border_1().border_color(t.border)
       .child(pick("claude")).child(pick("codex")));
@@ -458,7 +458,7 @@ export function chatView(v, t, width) {
 
   const header = h_flex().flex_none().gap(12).items_center().pl(v.sidebarHidden ? 10 : 18).pr(12).py(12).border_b_1().border_color(t.border)
     // Shows the hidden sidebar (ctrl-b). While it shows, its own bottom row has the button.
-    .when(v.sidebarHidden, (el) => el.child(roundButton(t, "show-sidebar", `${ICONS}/sidebar.svg`, 32, () => v.toggleSidebar())))
+    .when(v.sidebarHidden && !v.quick, (el) => el.child(roundButton(t, "show-sidebar", `${ICONS}/sidebar.svg`, 32, () => v.toggleSidebar())))
     .child(withDot(agentPicture(chat.agent, 40), 40, statusColor, t.background))
     .child(v_flex().flex_1().min_w(0).gap(2)
       .child(div().truncate().text_size(16).font_semibold().text_color(t.foreground).child(chat.title))
@@ -472,12 +472,13 @@ export function chatView(v, t, width) {
         .child(div().flex_none().text_color(statusColor).child(status))))
     .child(h_flex().flex_none().gap(6).px(10).py(5).items_center().rounded(8).bg(t.raised).border_1().border_color(t.border)
       .text_size(12).font_family(mono()).text_color(t.muted)
-      .child(svg(`${ICONS}/folder.svg`).size(13)).child(project?.path ?? chat.project))
+      .child(svg(`${ICONS}/folder.svg`).size(13)).child(v.quick ? "Quick chat · deleted when closed" : project?.path ?? chat.project))
     .child(h_flex().id("chat-outputs").flex_none().px(10).py(7).gap(5).rounded(8).items_center().cursor_pointer().text_size(12).text_color(t.muted).hover(s => s.bg(t.hover).text_color(t.foreground))
       .on_click((_e, cx) => { v.toggleOutputs(cx); cx.notify(); })
       .child(svg(`${ICONS}/file.svg`).size(16)).child(`Files${chat.outputs?.length ? ` (${chat.outputs.length})` : ""}`))
     .child(roundButton(t, "chat-search", `${ICONS}/search.svg`, 36, () => v.toggleChatSearch()))
-    .child(roundButton(t, "chat-delete", `${ICONS}/trash.svg`, 36, () => v.askDelete(chat.id)));
+    // A quick chat goes with its tab, so its trash closes the tab, which deletes it.
+    .child(roundButton(t, "chat-delete", `${ICONS}/trash.svg`, 36, () => v.quick ? v.closeQuick() : v.askDelete(chat.id)));
 
   const body = list.length === 0 && !typingHere && (chat.session || chat.loading)
     ? v_flex().flex_1().items_center().justify_center().child(div().text_size(13).text_color(t.dim).child(chat.loading ? "Loading\u2026" : "No messages to show."))
