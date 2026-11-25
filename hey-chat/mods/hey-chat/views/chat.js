@@ -357,6 +357,34 @@ function typingRow(v, t) {
       .when(Boolean(activity), el => el.child(div().min_w(0).text_size(12).text_color(t.dim).child(activity))));
 }
 
+/** How many plan steps the box shows at once. */
+const PLAN_ROWS = 8;
+
+/**
+ * The agent's plan while it works: one row per step, a check when done, a spinning ring of dots
+ * in the accent color on the step it is on. A long plan shows the rows around that step.
+ * @param {Theme} t @param {{ text: string, status: string }[]} steps
+ */
+function planBox(t, steps) {
+  const done = steps.filter((s) => s.status === "completed").length;
+  const on = steps.findIndex((s) => s.status === "in_progress");
+  const from = Math.max(0, Math.min((on < 0 ? done : on) - 2, steps.length - PLAN_ROWS));
+  const shown = steps.slice(from, from + PLAN_ROWS);
+  const mark = (/** @type {string} */ status) => status === "completed"
+    ? svg(`${ICONS}/check.svg`).flex_none().size(14).text_color(t.done)
+    : status === "in_progress"
+      ? svg(`${ICONS}/spinner-dots.svg`).flex_none().size(14).text_color(t.accent).spin(1000)
+      : div().flex_none().size(12).mx(1).rounded_full().border_1().border_color(t.dim);
+  return v_flex().id("plan").flex_none().mx(14).mt(10).px(14).py(10).gap(6).rounded(12).bg(t.raised).border_1().border_color(t.border)
+    .child(h_flex().gap(6).items_center().text_size(12)
+      .child(div().font_semibold().text_color(t.muted).child("Plan"))
+      .child(div().text_color(t.dim).child(`${done} of ${steps.length}`)))
+    .children(shown.map((s, i) => h_flex().id(`plan-${from + i}`).min_w(0).gap(8).items_center().text_size(12.5)
+      .child(mark(s.status))
+      .child(div().min_w(0).truncate().text_color(s.status === "in_progress" ? t.foreground : s.status === "completed" ? t.dim : t.muted).child(s.text))))
+    .when(steps.length > shown.length, (el) => el.child(div().text_size(11.5).text_color(t.dim).child(`${steps.length - shown.length} more`)));
+}
+
 /** An empty chat: the agent's picture, where it is, and the Claude / Codex switch. @param {any} v @param {Theme} t */
 function emptyChat(v, t) {
   const chat = v.chat(v.chatId);
@@ -492,6 +520,7 @@ export function chatView(v, t, width) {
         .on_click((_e, cx) => { v.send(cx); cx.notify(); })
         .child(svg(`${ICONS}/send.svg`).size(18))));
 
+  const plan = v.showPlan !== false && typingHere && chat.plan?.length ? planBox(t, chat.plan) : null;
   const pasted = !askBar && ((chat.attached ?? []).length > 0 || chat.pasteError);
   const toast = outputToast(v, t, chat);
   const slash = askBar ? null : v.slashItems();
@@ -510,7 +539,7 @@ export function chatView(v, t, width) {
           .child(pill(t, "find-next", null, "Next", false, () => v.findChatMatch(1)))
           .child(roundButton(t, "close-chat-search", `${ICONS}/close.svg`, 28, () => v.toggleChatSearch())));
       })
-      .when(v.modelPicker === chat.id, el => el.child(modelPicker(v, t, chat))).child(body).when(Boolean(pasted), (el) => el.child(attachments(v, t, chat)))
+      .when(v.modelPicker === chat.id, el => el.child(modelPicker(v, t, chat))).child(body).when(Boolean(plan), (el) => el.child(plan)).when(Boolean(pasted), (el) => el.child(attachments(v, t, chat)))
       .when(Boolean(slash), (el) => el.child(slashMenu(v, t, slash ?? []))).child(composer))
     .when(Boolean(toast), (el) => el.child(toast))
     .when(Boolean(loading), el => el.child(v_flex().id("chat-loading").absolute().top(0).bottom(0).left(0).right(0).bg(t.popover)

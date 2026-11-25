@@ -9,9 +9,10 @@
 //       Claude Code (`claude -p`, the default) or Codex (`codex app-server`). Ends on "quit", or after
 //       30 minutes with no pane connected and no turn running.
 //   node bridge.mjs mcp --port <port> --state <dir> --chat <id>
-//       Claude starts this itself as a stdio MCP server with one tool, `approve`, which Claude asks
-//       (--permission-prompt-tool) whenever your settings don't already allow a tool. It passes the
-//       question to the serving bridge and waits for your answer from the pane.
+//       Claude starts this itself as a stdio MCP server with two tools. `approve`, which Claude asks
+//       (--permission-prompt-tool) whenever your settings don't already allow a tool, passes the
+//       question to the serving bridge and waits for your answer from the pane. `plan` (always
+//       allowed) only acknowledges: the pane draws its steps from the tool call.
 //
 // The socket carries one JSON object per line. The first line says who is talking and carries the
 // token from the bridge's file. Only you can read that file, so nothing else on the computer
@@ -121,7 +122,32 @@ async function quitBridge(opts) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// mcp: the approve tool
+// mcp: the approve tool, and the plan tool the pane shows as a checklist
+
+const PLAN_TOOL = {
+  name: "plan",
+  description: "Shows your plan to the person in Hey, chat as a live checklist above their message box. "
+    + "For a task with 3 or more steps, call it before you start with every step, then again with the whole list each time a step starts or finishes. "
+    + "Keep one step in_progress while you work. Each call replaces the list.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      items: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: { text: { type: "string", description: "The step, in a few plain words." }, status: { type: "string", enum: ["pending", "in_progress", "completed"] } },
+          required: ["text", "status"],
+        },
+      },
+    },
+    required: ["items"],
+  },
+};
+
+/** What Claude is told about the plan tool, at the end of its system prompt. */
+const PLAN_PROMPT = "You are running inside Hey, chat. For any task with 3 or more steps, keep the person's checklist current with the mcp__heychat__plan tool "
+  + "(load it with ToolSearch if it is deferred): call it with every step before you start, and again with the whole list whenever a step starts or finishes.";
 
 function mcp(opts) {
   const port = Number(opts.port);
@@ -139,7 +165,10 @@ function mcp(opts) {
         name: "approve",
         description: "Asks the person in Hey, chat whether a tool may run.",
         inputSchema: { type: "object", properties: { tool_name: { type: "string" }, input: { type: "object" }, tool_use_id: { type: "string" } }, required: ["tool_name", "input"] },
-      }] } });
+      }, PLAN_TOOL] } });
+    } else if (m.method === "tools/call" && m.params?.name === "plan") {
+      // The pane reads the steps from the tool call itself, so there is nothing to do here.
+      reply({ id: m.id, result: { content: [{ type: "text", text: "The person sees this plan. Call plan again with the whole list when a step starts or finishes." }] } });
     } else if (m.method === "tools/call") {
       const args = m.params?.arguments ?? {};
       const answer = await askBridge(port, saved(), { type: "ask", tool: args.tool_name, input: args.input ?? {}, toolUseId: args.tool_use_id ?? null })
@@ -289,6 +318,7 @@ export function serve(opts) {
       const mcpConfig = { mcpServers: { heychat: { command: process.execPath, args: [SELF, "mcp", "--port", String(port), "--state", state, "--chat", chat] } } };
       const args = ["-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose",
         "--permission-prompt-tool", "mcp__heychat__approve", "--mcp-config", JSON.stringify(mcpConfig),
+        "--allowedTools", "mcp__heychat__plan", "--append-system-prompt", PLAN_PROMPT,
         ...(session ? ["--resume", session] : []), ...(selectedModel ? ["--model", selectedModel] : [])];
       stderr = "";
       const child = spawn("claude", args, { cwd, stdio: ["pipe", "pipe", "pipe"] });

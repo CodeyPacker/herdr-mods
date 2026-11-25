@@ -11,6 +11,8 @@ export const COLLAPSED = "hey-chat.collapsed";
 export const SIDEBAR_HIDDEN = "hey-chat.sidebarHidden";
 /** Hide routine tool activity unless the user turns it back on in Settings. */
 export const CONDENSE_CHAT = "hey-chat.condenseChat";
+/** Show the agent's plan above the message box while it works, on unless turned off in Settings. */
+export const SHOW_PLAN = "hey-chat.showPlan";
 
 /** Herdr's home, with forward slashes. */
 export function appDir() {
