@@ -78,6 +78,8 @@ function generalTab(v, t) {
     .child(divider(t))
     .child(switchRow(t, "condense-chat", "Condense chat", "Hide tool cards, including file edits. Show activity beside the dots.",
       v.condenseChat, () => v.toggleCondenseChat()))
+    .child(switchRow(t, "show-plan", "Show plan", "Show the agent's checklist above the message box while it works.",
+      v.showPlan, () => v.toggleShowPlan()))
     .child(div().id("open-setup").py(6).text_size(13).text_color(t.foreground).cursor_pointer()
       .hover(s => s.text_color(t.accent))
       .on_click((_e, cx) => { v.closeSettings(); v.setupOpen = true; v.refreshSetup(cx); cx.notify(); }).child("Agent setup"));

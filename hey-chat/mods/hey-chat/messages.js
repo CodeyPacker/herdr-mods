@@ -41,6 +41,21 @@ function capped(lines, n) {
   return lines.length > n ? [...lines.slice(0, n), "…"] : lines;
 }
 
+/** The plan tool Hey, chat gives Claude (bridge.mjs), as Claude names it. */
+export const PLAN_TOOL = "mcp__heychat__plan";
+const PLAN_STATES = new Set(["pending", "in_progress", "completed"]);
+
+/**
+ * A plan tool call's steps: { text, status } each, status "pending", "in_progress" or "completed".
+ * @param {any} input @returns {{ text: string, status: string }[]}
+ */
+export function planSteps(input) {
+  const items = Array.isArray(input?.items) ? input.items : [];
+  return items
+    .map((/** @type {any} */ s) => ({ text: String(s?.text ?? "").trim(), status: PLAN_STATES.has(s?.status) ? s.status : "pending" }))
+    .filter((s) => s.text);
+}
+
 /**
  * A tool call as a card: icon, title, +/− counts and the lines it shows when opened.
  * @param {string} name @param {any} input
@@ -68,6 +83,8 @@ export function describeTool(name, input) {
       const todos = Array.isArray(i.todos) ? i.todos : [];
       return { icon: "run", title: "Updated the plan", lines: todos.map((/** @type {any} */ t) => `${t.status === "completed" ? "✓" : "·"} ${t.content ?? ""}`) };
     }
+    case PLAN_TOOL:
+      return { icon: "run", title: "Updated the plan", lines: planSteps(i).map((s) => `${s.status === "completed" ? "✓" : "·"} ${s.text}`) };
     // Codex's file changes: one card for a patch, which can touch several files.
     case "CodexPatch": {
       const changes = Array.isArray(i.changes) ? i.changes : [];
@@ -210,6 +227,7 @@ export function resetThread(chat) {
   chat.questions = new Map(); // question id → its card
   chat.working = false;
   chat.lastAt = 0;
+  chat.plan = null;           // the agent's latest plan: { text, status }[]
 }
 
 /**
@@ -237,6 +255,8 @@ export function applyEvent(chat, ev) {
     }
     case "queued":
     case "user": {
+      // A message the agent now reads starts a new turn, and the last turn's plan goes with it.
+      if (ev.type === "user") chat.plan = null;
       const queueId = ev.queueId ?? (ev.type === "queued" ? ev.id : null);
       const existing = queueId && chat.thread.filter(m => m.queueId === queueId);
       if (existing?.length) {
@@ -267,6 +287,8 @@ export function applyEvent(chat, ev) {
       return null;
     case "tool": {
       // The card says "Running …" until the tool is done, then "Ran …".
+      // Each plan call replaces the whole list.
+      if (ev.name === PLAN_TOOL) chat.plan = planSteps(ev.input);
       const d = describeTool(ev.name, ev.input);
       const card = push({ kind: "tool", from: "agent", ...d, activity: describeActivity(ev.name, ev.input), doneTitle: d.title, title: runningTitle(d.title), running: true });
       chat.tools.set(ev.id, card);

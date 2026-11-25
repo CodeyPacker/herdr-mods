@@ -2,7 +2,7 @@
 // shows) and its Shortcuts tab, where each key can be changed or turned off.
 import { saveMe, pickPhoto, importPhoto, dropPhoto } from "../me.js";
 import { keyLabel } from "../shortcuts.js";
-import { CONDENSE_CHAT, remember } from "../common.js";
+import { CONDENSE_CHAT, SHOW_PLAN, remember } from "../common.js";
 
 /** The kit's option for whether key hints show. */
 const HINTS = "hints";
@@ -26,6 +26,12 @@ export const settings = {
     this.condenseChat = !this.condenseChat;
     remember(CONDENSE_CHAT, this.condenseChat);
     this.scrollDown();
+  },
+
+  /** Shows or hides the plan box, and remembers it. Separate from Condense chat. */
+  toggleShowPlan() {
+    this.showPlan = !this.showPlan;
+    remember(SHOW_PLAN, this.showPlan);
   },
 
   /** Shows or hides the key hints, and remembers it. */

@@ -21,7 +21,7 @@ import { colors, paneBackground } from "./kit/theme.js";
 import { AGENTS } from "./pictures.js";
 import { expand } from "./store.js";
 import { toggle, claimTab } from "./tabs.js";
-import { COLLAPSED, SIDEBAR_HIDDEN, CONDENSE_CHAT, normalFolder } from "./common.js";
+import { COLLAPSED, SIDEBAR_HIDDEN, CONDENSE_CHAT, SHOW_PLAN, normalFolder } from "./common.js";
 import { makeShortcuts } from "./shortcuts.js";
 import { treeView, TREE_WIDTH } from "./views/tree.js";
 import { outputsView, OUTPUTS_WIDTH } from "./views/outputs.js";
@@ -80,6 +80,7 @@ export default class HeyChat extends View {
     this.shortcuts = makeShortcuts((id, on) => this.shortcutChanged(id, on));
     this.keyHints = this.shortcuts.showHints;
     this.condenseChat = shared(CONDENSE_CHAT) !== false;
+    this.showPlan = shared(SHOW_PLAN) !== false;
     this.loaded = false;           // the sessions have been listed
     this.syncing = new Set();      // chats whose running bridge is still replaying them, by id
     // ⌃g and ⌃o (actions/jump.js): chats whose turn just finished ({ id, until }, newest first),
