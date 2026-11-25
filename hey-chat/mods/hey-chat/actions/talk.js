@@ -96,7 +96,6 @@ export const talk = {
     // marks the chat unread and puts it one ⌃g away.
     if (what === "ended" && !open && this.bridges.get(chat.id)?.synced) {
       this.unread = { ...this.unread, [chat.id]: true };
-      this.markFresh(chat.id, cx);
     }
     // The permission bar is gone (answered here or elsewhere, withdrawn, or the turn ended): the
     // keyboard goes back to the message box instead of staying on a bar that no longer shows.

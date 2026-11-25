@@ -135,7 +135,7 @@ export function handleKey(v, e, cx) {
     if (is("always")) { v.decide("allow", true, cx); done(); return; }
     if (is("deny")) { v.decide("deny", false, cx); done(); return; }
   }
-  // Jump opens the chat that just finished, and last switches between this chat and the one
+  // Jump opens the next chat that needs you or just finished, and last switches between this chat and the one
   // before. They are taken even when there is nowhere to go, so the message box never gets them
   // (⌃o, their key to start with, inserts a line on macOS).
   if (is("jump")) { v.jumpToFresh(cx); done(); return; }
