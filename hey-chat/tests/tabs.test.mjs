@@ -115,3 +115,36 @@ test('the project list shows chat tabs in every space and jumps across spaces', 
     { name: 'hey-chat.focus', args: undefined },
   ], 'the chat pane and its message box get the keyboard, so its keys work straight away');
 });
+
+test('from a mod tab, a new chat is for a terminal folder in the same space, not home', async () => {
+  const { spaceFolder } = await mod('tabs.js');
+  fake('herdr', { home: () => '/home' });
+  const space = { folder: '', tabs: [{ id: 'code' }, { id: 'mod' }, { id: 'split' }] };
+  const panes = [
+    { pane: 'p1', tab: 'code', terminal: 't1', cwd: '/repo' },
+    { pane: 'p2', tab: 'mod', terminal: null, mod: 'git-good', cwd: null },
+    { pane: 'p3', tab: 'split', terminal: 't3', cwd: '/other' },
+    { pane: 'p4', tab: 'split', terminal: null, mod: 'git-good', cwd: null },
+  ];
+  assert.equal(spaceFolder(space, 'mod', '/focused', panes), '/focused', 'a focused terminal wins');
+  assert.equal(spaceFolder(space, 'mod', null, panes), '/repo', 'else the first terminal in the space');
+  assert.equal(spaceFolder(space, 'split', null, panes), '/other', 'a terminal in the same tab comes first');
+  assert.equal(spaceFolder({ folder: '/space', tabs: [{ id: 'mod' }] }, 'mod', null, [panes[1]]), '/space');
+  assert.equal(spaceFolder({ folder: '', tabs: [{ id: 'mod' }] }, 'mod', null, [panes[1]]), null, 'nothing to go on: the person picks');
+  assert.equal(spaceFolder({ folder: '/home', tabs: [{ id: 'mod' }] }, 'mod', null, [panes[1]]), null, 'a space in home is no project either');
+  const atHome = [{ pane: 'h', tab: 'shell', terminal: 't', cwd: '/home' }];
+  assert.equal(spaceFolder({ folder: '/home', tabs: [{ id: 'shell' }] }, 'shell', '/home', atHome), null, 'a terminal in home: the person picks');
+  assert.equal(spaceFolder({ folder: '', tabs: [{ id: 'shell' }, { id: 'code' }] }, 'shell', '/home', [...atHome, panes[0]]), '/repo', 'home is skipped for a real project');
+});
+
+test('with no folder to go on, the shortcut asks which project instead of opening home', async () => {
+  const commands = [];
+  fake('herdr', {
+    focused: () => ({ space: 'work', tab: 'mod', cwd: null }),
+    spaces: () => [{ id: 'work', active: true, folder: '', tabs: [{ id: 'mod', active: true }] }],
+    panes: () => [{ pane: 'p', tab: 'mod', terminal: null, mod: 'git-good' }],
+    shared: () => ({}), setShared() {}, run: (name, args) => commands.push({ name, args }), home: () => '/home',
+  });
+  assert.equal(await toggle({ timer: { after() {} } }), 'choose');
+  assert.deepEqual(commands, [], 'no tab is made');
+});

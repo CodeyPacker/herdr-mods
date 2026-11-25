@@ -17,15 +17,24 @@
 //   node sessions.mjs delete --agent claude|codex --session <id> [--file <path>]
 //       Removes a session for good and prints { ok, message }. Claude: its <id>.jsonl and the <id>/
 //       folder beside it, only inside ~/.claude/projects. Codex: `codex delete --force <id>`.
+//   node sessions.mjs forget --folder <quick chat folder> --state <bridges dir> --chats '[{ chat, agent, session, file }]'
+//       Deletes a quick chat when its tab closes: stops each chat's bridge, deletes its session, the
+//       session folder Claude keeps for that folder, and the folder itself. Only a folder inside a
+//       hey-chat/quick folder is touched.
 import { readdirSync, statSync, openSync, readSync, closeSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { join, dirname, basename, resolve } from "node:path";
 import { runAgent as spawnSync } from "./process.mjs";
+import { spawnSync as runProgram } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { homedir, tmpdir } from "node:os";
 import { keepFile, keepBase64, keepDataUrl, REL } from "./images.mjs";
 import { flags, parse, clip, errorText } from "./cli.mjs";
 import { imageEvent, textEvents, compactNote, claudeAssistantEvents, claudeToolResultEvents } from "./agent-events.mjs";
 
 const HOME = homedir();
+const SELF = fileURLToPath(import.meta.url);
+/** Runs a Node program and waits for it. @param {string[]} args */
+const runNode = (args) => runProgram(process.execPath, args, { stdio: "ignore", windowsHide: true, timeout: 15000 });
 /** How much of a file's start and end the list reads. */
 const HEAD = 1024 * 1024, TAIL = 256 * 1024;
 /** How much of a tool's output a history keeps. */
@@ -358,6 +367,31 @@ function removeSession(agent, session, file) {
   }
 }
 
+/**
+ * Deletes a quick chat for good (see the top of this file). Nothing outside a hey-chat/quick
+ * folder and ~/.claude/projects is removed. @param {Record<string, string>} opts
+ */
+function forgetQuick(opts) {
+  const folder = resolve(opts.folder ?? "");
+  const name = basename(folder);
+  if (!/[\\/]hey-chat[\\/]quick[\\/]q[0-9a-z]+$/i.test(folder)) return { ok: false, message: "That isn't a quick chat's folder." };
+  let chats = [];
+  try { chats = JSON.parse(opts.chats ?? "[]"); } catch { /* none */ }
+  for (const c of Array.isArray(chats) ? chats : []) {
+    // The agent stops first, so it isn't writing the session while it goes.
+    if (c?.chat) runNode([join(dirname(SELF), "bridge.mjs"), "quit", "--chat", String(c.chat), "--state", String(opts.state ?? ""), "--agent", String(c.agent ?? "claude"), ...(c.session ? ["--resume", String(c.session)] : [])]);
+    if (c?.session) removeSession(String(c.agent ?? "claude"), String(c.session), c.file ?? undefined);
+  }
+  // Claude keeps a folder's sessions in ~/.claude/projects/<the folder's path, with dashes>. The
+  // quick folder's name is unique, so a session not known yet (a chat closed early) goes too.
+  const root = join(HOME, ".claude", "projects");
+  let dirs = [];
+  try { dirs = readdirSync(root); } catch { /* no sessions */ }
+  for (const d of dirs) if (d.endsWith(`-hey-chat-quick-${name}`)) rmSync(join(root, d), { recursive: true, force: true });
+  rmSync(folder, { recursive: true, force: true });
+  return { ok: true, message: "" };
+}
+
 const [mode, ...rest] = process.argv.slice(2);
 const opts = flags(rest);
 /** Where images a chat shows are copied (images.mjs). */
@@ -370,6 +404,8 @@ if (mode === "list") {
   process.stdout.write(JSON.stringify(opts.agent === "codex" ? readCodex(opts.file, before, max) : readClaude(opts.file, before, max)));
 } else if (mode === "delete") {
   process.stdout.write(JSON.stringify(removeSession(opts.agent, opts.session, opts.file)));
+} else if (mode === "forget") {
+  process.stdout.write(JSON.stringify(forgetQuick(opts)));
 } else {
   process.stderr.write("usage: sessions.mjs list | read --agent claude|codex --file <path> [--before <ms>] [--max <n>] | delete --agent claude|codex --session <id> [--file <path>]\n");
   process.exit(2);

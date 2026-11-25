@@ -112,7 +112,7 @@ export const chats = {
   },
 
   /** Saves the real chats. */
-  saveChats() { return saveStore(this.chats, this.projects, this.chatId, this.folder).catch(e => console.error("Hey, chat couldn't save its conversations:", e)); },
+  saveChats() { if (this.quick) return Promise.resolve(); return saveStore(this.chats, this.projects, this.chatId, this.folder).catch(e => console.error("Hey, chat couldn't save its conversations:", e)); },
 
   /** @param {string} id */
   chat(id) { return this.chats.find((c) => c.id === id) ?? this.chats[0]; },
