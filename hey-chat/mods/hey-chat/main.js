@@ -85,7 +85,6 @@ export default class HeyChat extends View {
     this.syncing = new Set();      // chats whose running bridge is still replaying them, by id
     // ⌃g and ⌃o (actions/jump.js): chats whose turn just finished ({ id, until }, newest first),
     // and the chat you were in before this one, by id.
-    this.fresh = [];
     this.previous = null;
     this.starting = !checking();   // keep the startup chat hidden until history and layout settle
     this.restoring = null;

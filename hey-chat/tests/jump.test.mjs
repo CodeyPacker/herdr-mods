@@ -20,7 +20,7 @@ async function setup() {
   const v = await view({
     chats, chatId: 'a', unread: {}, fresh: [], previous: null, syncing: new Set(), keyHints: true, shortcuts: makeShortcuts(),
     bridges: new Map(chats.map(c => [c.id, { synced: true }])), links: new Map(),
-    inputs: { claude: box(), codex: box() }, zone: 'chat',
+    inputs: { claude: box(), codex: box() }, zone: 'chat', handle: { focus() {} },
     scrollDown() {}, focusInput() {}, focusTree() {},
   });
   const finish = (id, replaying = false) => {
@@ -31,29 +31,30 @@ async function setup() {
   return { v, cx, timers, finish, press };
 }
 
-test('⌃g opens the chat that finished last, then the one before it', async () => {
+test('⌃g cycles through every chat that waits on you or finished, in list order', async () => {
   const s = await setup();
   s.finish('b');
-  s.finish('c');
-  assert.equal(s.v.jumpTarget(), 'c', 'the newest finished chat carries the badge');
-  assert.equal(s.v.unread.c, true);
+  s.v.onEvent(s.v.chat('c'), { type: 'permission', id: 'ask-c', tool: 'Bash', input: { command: 'ls' } }, s.cx);
+  assert.equal(s.v.unread.b, true);
   s.press('ctrl-g');
-  assert.equal(s.v.chatId, 'c');
-  assert.equal(s.v.jumpTarget(), 'b', 'pressing again goes to the one before');
+  assert.equal(s.v.chatId, 'b', 'the finished chat after the open one');
   s.press('ctrl-g');
-  assert.equal(s.v.chatId, 'b');
-  assert.equal(s.v.jumpTarget(), null);
+  assert.equal(s.v.chatId, 'c', 'then the waiting one');
+  assert.equal(s.v.jumpTarget(), null, 'b was opened, so only c is left, and it is open');
+  s.v.chatId = 'a';
+  assert.equal(s.v.jumpTarget(), 'c', 'c waits until you answer it');
 });
 
-test('the ⌃g badge lasts 10 seconds and skips the open chat', async () => {
+test('⌃g wraps around and skips the open chat', async () => {
   const s = await setup();
-  s.finish('b');
-  assert.equal(s.timers.at(-1).ms, 10000, 'a redraw is scheduled for when the badge expires');
+  for (const id of ['a', 'c']) s.v.onEvent(s.v.chat(id), { type: 'permission', id: `ask-${id}`, tool: 'Bash', input: { command: 'ls' } }, s.cx);
   s.v.chatId = 'b';
-  assert.equal(s.v.jumpTarget(), null, 'the chat you are in needs no jump');
-  s.v.chatId = 'a';
-  s.v.fresh[0].until = Date.now() - 1;
-  assert.equal(s.v.jumpTarget(), null);
+  s.press('ctrl-g');
+  assert.equal(s.v.chatId, 'c');
+  s.press('ctrl-g');
+  assert.equal(s.v.chatId, 'a');
+  s.press('ctrl-g');
+  assert.equal(s.v.chatId, 'c');
 });
 
 test('replayed turns are not news: no unread dot and no ⌃g', async () => {
@@ -61,7 +62,6 @@ test('replayed turns are not news: no unread dot and no ⌃g', async () => {
   s.finish('b', true);
   assert.equal(s.v.unread.b, undefined);
   assert.equal(s.v.jumpTarget(), null);
-  assert.equal(s.timers.length, 0);
 });
 
 test('⌃o switches between the last two chats, as many times as you press it', async () => {

@@ -1,40 +1,30 @@
-// Jumping between chats: ⌃g opens a chat whose turn just finished, and ⌃o switches between the
-// chat you're in and the one you were in before.
-
-/** How long a finished chat stays one ⌃g away. */
-const FRESH_MS = 10 * 1000;
+// Jumping between chats: ⌃g opens a chat that needs you (a permission or a question) or one whose
+// turn finished while you were elsewhere, and ⌃o switches between the chat you're in and the one
+// you were in before.
 
 export const jump = {
   /**
-   * A chat in the background finished its turn: for a while, ⌃g opens it. The newest goes first.
-   * @param {string} id @param {any} cx
+   * The chat ⌃g opens, or null: the next chat after the open one, in list order and wrapping
+   * around, that waits on you or finished while you were elsewhere (unread). Pressing again goes
+   * through every one of them.
    */
-  markFresh(id, cx) {
-    this.fresh = [{ id, until: Date.now() + FRESH_MS }, ...this.fresh.filter((/** @type {any} */ f) => f.id !== id)];
-    // Redraw when it expires, so its ⌃g badge goes away.
-    cx.timer.after(FRESH_MS, (/** @type {any} */ cx) => cx.notify());
-  },
-
-  /** The chat ⌃g opens: the newest one that finished in the last few seconds, or null. */
   jumpTarget() {
-    const now = Date.now();
-    const f = this.fresh.find((/** @type {any} */ f) => f.until > now && f.id !== this.chatId && this.chats.some((/** @type {any} */ c) => c.id === f.id));
-    return f?.id ?? null;
+    const at = this.chats.findIndex((/** @type {any} */ c) => c.id === this.chatId);
+    const order = [...this.chats.slice(at + 1), ...this.chats.slice(0, Math.max(at, 0))];
+    return order.find((/** @type {any} */ c) => this.needsYou(c) || this.unread[c.id])?.id ?? null;
   },
 
-  /** ⌃g: opens the chat that just finished. Pressed again, the one that finished before it. @param {any} cx */
+  /** ⌃g: opens the next chat that needs you or just finished. @param {any} cx */
   jumpToFresh(cx) {
     const id = this.jumpTarget();
     if (id) this.openChat(id, cx);
   },
 
   /**
-   * Records a move from one chat to another: the chat you left is the one ⌃o goes back to, and
-   * the one you opened no longer needs a ⌃g.
+   * Records a move from one chat to another: the chat you left is the one ⌃o goes back to.
    * @param {string} from @param {string} to
    */
   noteVisit(from, to) {
-    this.fresh = this.fresh.filter((/** @type {any} */ f) => f.id !== to);
     if (from && from !== to) this.previous = from;
   },
 
