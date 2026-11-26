@@ -128,10 +128,14 @@ export default class Tabs extends View {
       .hover(s => s.bg(hoverFill(t)).text_color(t.foreground))
       .on_mouse_down("left", stop).on_click(action).child(label);
     const info = (c) => {
-      const program = panes().find(p => p.tab === c.id && p.program?.agent)?.program ?? panes().find(p => p.tab === c.id)?.program;
-      const name = /^tb\d+$/.test(c.name) ? program?.name ?? "Terminal" : c.name;
+      const tabPanes = allPanes.filter(p => p.tab === c.id);
+      const chat = tabPanes.length > 0 && tabPanes.every(p => p.mod === "hey-chat");
+      const program = chat ? { icon: "mods/islands-tabs/chat.svg", tint: true }
+        : tabPanes.find(p => p.program?.agent)?.program ?? tabPanes[0]?.program;
+      const name = chat ? c.name.replace(/^Chat · /, "") : /^tb\d+$/.test(c.name) ? program?.name ?? "Terminal" : c.name;
       return { program, name: c.zoomed ? `${name} Z` : name };
     };
+    const allPanes = panes();
     // Mods can't measure text, so tab widths are estimated (12 px Geist, about 6.2 px a character).
     const width = (c, compact) => {
       const { program, name } = info(c);

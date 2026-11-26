@@ -12,6 +12,8 @@ Don't want the branch pill under each space name? Add `"props": { "branch_pill":
 
 Want all the tabs in one pill with dividers between them, instead of a pill each? Add `"props": { "joined": true }` next to `"mod": "islands-tabs"`.
 
+Use Hey, chat? In your installed layout's `agents` block, change `"mod": "islands-agents"` to `"mod": "islands-hey-chat-agents"`. This opt-in replaces the Agents card below Spaces with Hey, chat activity and requests for attention. Click an agent to open its chat. It follows Wallpaper's opacity and border choices. The default layout keeps Herdr's regular agents, and the replacement requires Hey, chat to be installed.
+
 Want a wallpaper behind the cards? Drop an image in `~/.config/herdr-app/backgrounds/` and change the layout root to `"background": { "image": "backgrounds/your.png", "fit": "cover" }`.
 
 ## Install

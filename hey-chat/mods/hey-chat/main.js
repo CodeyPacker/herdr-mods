@@ -59,7 +59,7 @@ export default class HeyChat extends View {
     this.launcher = props()?.overlay !== undefined;
     if (this.launcher) {
       const overlay = props()?.overlay;
-      cx.spawn(async (cx) => { try { if (await toggle(cx) === "choose") await openChooser(); } finally { closeOverlay(overlay); } });
+      cx.spawn(async (cx) => { try { if (await toggle(cx, shared("hey-chat.openRequest")?.cwd) === "choose") await openChooser(); } finally { closeOverlay(overlay); } });
       return;
     }
     /**
@@ -99,7 +99,7 @@ export default class HeyChat extends View {
     this.outputsOpen = false;
     this.chatSearchOpen = false;
     this.chatSearchIndex = 0;
-    this.chatSearchInput = InputState.new({ placeholder: "Find in loaded messages" });
+    this.chatSearchInput = InputState.new({ placeholder: "Find in conversation" });
     this.chatSearchInput.on("focus", (_e, cx) => { this.zone = "chat-search"; cx.notify(); });
     this.chatSearchInput.on("change", (_e, cx) => { this.chatSearchIndex = 0; this.findChatMatch(0); cx.notify(); });
     this.outputPreview = null;
@@ -178,6 +178,7 @@ export default class HeyChat extends View {
     if (this.quick) { this.loaded = true; this.starting = false; }
     else cx.spawn(async (cx) => { await this.loadChats(cx); cx.notify(); });
     this.refreshSetup(cx, true);
+
   }
 
   /**
@@ -188,7 +189,7 @@ export default class HeyChat extends View {
   messageBox(agent) {
     const box = TextareaState.new({ placeholder: `Message ${agent}` });
     box.set_auto_grow(1, 8);
-    box.on("change", (_e, cx) => { this.pastedPath(box, cx); this.slashChanged(cx); cx.notify(); });
+    box.on("change", (_e, cx) => { this.pastedPath(box, cx); this.slashChanged(cx); this.draftChanged(cx); cx.notify(); });
     // The box may add the new line itself on either key, so this makes sure shift-enter has one
     // and plain enter doesn't.
     box.on("submit", (e, cx) => {
@@ -210,6 +211,11 @@ export default class HeyChat extends View {
   async close() {
     if (this.picker) { this.picker.release(); return; }
     if (this.launcher) return;
+    this.renaming?.box.release();
+    this.renaming = null;
+    this.queueEdit?.box.release();
+    this.queueEdit = null;
+    if (this.loaded) await this.saveChats();
     for (const b of this.bridges.values()) b.close();
     // A quick chat goes with its tab: its agent stops, and its session and folder are deleted.
     // Herdr gives close() a moment only, and a program started here keeps running, so one Node
@@ -217,6 +223,7 @@ export default class HeyChat extends View {
     if (this.quick) forgetQuick(this.chats, this.folder).catch(() => {});
     this.scroll.release(); this.treeScroll.release(); this.searchInput.release(); this.initialsInput.release(); this.chatSearchInput.release();
     this.shortcuts.scroll.release();
+    for (const input of Object.values(this.messageColorInputs ?? {})) input.release();
     for (const box of Object.values(this.inputs)) box.release();
   }
 
@@ -225,6 +232,10 @@ export default class HeyChat extends View {
 
   /** `hey-chat.<name>` commands: focus. */
   command(c, cx) {
+    if (c === "refresh-links") {
+      cx.spawn(async cx => this.refreshLinkedChats(cx));
+      return;
+    }
     if (c !== "focus") return;
     // Every chat tab's copy gets the command. Only the one whose pane has the keyboard takes it,
     // again once its tab, just shown, has drawn.
@@ -245,6 +256,7 @@ export default class HeyChat extends View {
       cx.timer.after(50, (cx) => { this.regainFocus(); cx.notify(); });
     }
     this.paneFocused = paneFocused;
+    this.openRequestedChat(cx);
     const t = colors();
     if (this.setupOpen) return h_flex().size_full().p(GAP).bg(paneBackground(theme().background))
       .track_focus(this.handle)

@@ -3,3 +3,6 @@
 */mods/*/jsconfig.json
 gpui-kit.d.ts
 jsconfig.json
+
+# Installed JavaScript dependencies
+node_modules/

@@ -18,7 +18,7 @@ function pane(store) {
     chats: [{ id: 'startup', thread: [] }], projects: [], chatId: 'startup', loaded: false,
     unread: {}, bridges: new Map(), collapsed: {}, syncing: new Set(), fresh: [], previous: null,
     inputs: { claude: box(), codex: box() },
-    addProject: () => 'project', link: async () => null,
+    addProject(cwd) { if (!this.projects.length) this.projects.push({id:'project',cwd}); return 'project'; }, link: async () => null,
     loadHistory: async chat => { chat.historyLoaded = true; },
     scrollDown() {}, focusInput() {}, setCollapsed(id, closed) { this.collapsed[id] = closed; },
   });
@@ -33,7 +33,30 @@ const stored = activeChat => ({ activeChat, projects: [], chats: [
   { id: 'other', session: 'session-other', cwd: '/tmp', agent: 'claude' },
 ] });
 
-test('reopening restores the last chat, loads its history, and saves later selections', async () => {
+test('saved and linked chats connect before the slower session list without duplicate links', async () => {
+  const state = stored('deleted');
+  state.chats[0].file = '/sessions/last.jsonl';
+  const { v, cx, jobs } = pane(state);
+  let finishListing;
+  fake('agent.js', {
+    listSessions: () => new Promise(resolve => { finishListing = resolve; }),
+    listLinkedChats: async () => [{id:'child',parentId:'last',cwd:'/tmp',agent:'claude',title:'Review'}],
+  });
+  const connected = [];
+  v.link = async chat => { connected.push(chat.id); return null; };
+  const loading = v.loadChats(cx);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(connected, ['last', 'other', 'child']);
+  assert.equal(v.chat('last').file, '/sessions/last.jsonl');
+  assert.equal(v.loaded, false, 'session discovery is still pending');
+  finishListing([]);
+  await loading;
+  await Promise.all(jobs);
+  assert.deepEqual(connected, ['last', 'other', 'child']);
+  assert.equal(v.loaded, true);
+});
+
+test('reopening opens the first parent chat, loads its history, and saves later selections', async () => {
   const { v, cx, saved, jobs } = pane(stored('last'));
   await v.loadChats(cx);
   await Promise.all(jobs);
@@ -46,10 +69,55 @@ test('reopening restores the last chat, loads its history, and saves later selec
   assert.equal(saved.at(-1), 'other');
 });
 
-test('missing saved chats keep the new chat available', async () => {
+test('missing saved selections still open the first available parent chat', async () => {
   const { v, cx } = pane(stored('deleted'));
   await v.loadChats(cx);
-  assert.equal(v.chatId, 'startup');
+  assert.equal(v.chatId, 'last');
+});
+
+test('startup picks the first parent in sidebar order instead of a saved child or newer descendant', async () => {
+  const state = {activeChat:'child',projects:[],chats:[
+    {id:'parent',linkId:'root',session:'parent-session',cwd:'/tmp',agent:'claude',stamp:10},
+    {id:'child',parentId:'root',session:'child-session',cwd:'/tmp',agent:'codex',stamp:100},
+    {id:'pinned',session:'pinned-session',cwd:'/tmp',agent:'claude',stamp:1,pinned:true},
+  ]};
+  const {v,cx,jobs}=pane(state);
+  await v.loadChats(cx); await Promise.all(jobs);
+  assert.equal(v.chatId,'pinned');
+  const next=pane({...state,chats:state.chats.filter(c=>c.id!=='pinned')});
+  await next.v.loadChats(next.cx); await Promise.all(next.jobs);
+  assert.equal(next.v.chatId,'parent');
+});
+
+test('a parent whose bridge already connected releases its startup loading cover', async () => {
+  const {v,cx,jobs,timers}=pane(stored('last'));
+  v.link=async chat=>{const bridge={sock:{}};v.bridges.set(chat.id,bridge);return bridge;};
+  await v.loadChats(cx); await Promise.all(jobs);
+  assert.equal(v.chatId,'last');
+  assert.equal(v.restoring.pending,false);
+  while(timers.length) timers.shift().fn(cx);
+  assert.equal(v.restoring,null);
+});
+
+test('an empty project keeps its new chat ready', async () => {
+  const {v,cx}=pane({projects:[],chats:[]});
+  await v.loadChats(cx);
+  assert.equal(v.chatId,'startup');
+  assert.equal(v.starting,false);
+});
+
+test('deleted child records override stale saved chats and provider session listings', async () => {
+  const state = stored('child');
+  state.chats.push({id:'child',linkId:'child',parentId:'last',session:'deleted-session',agent:'codex',cwd:'/tmp'});
+  const {v,cx,jobs}=pane(state);
+  fake('agent.js',{
+    listLinkedChats:async()=>[{id:'child',session:'deleted-session',agent:'codex',deleted:true}],
+    listSessions:async()=>[{id:'provider-copy',session:'deleted-session',agent:'codex',cwd:'/tmp'}],
+  });
+  await v.loadChats(cx); await Promise.all(jobs);
+  assert.equal(v.chats.some(c=>c.id==='child'||c.session==='deleted-session'),false);
+  assert.equal(v.chatId,'last');
+  assert.equal(v.adoptLinkedChat({...state.chats.at(-1),deleted:false}),null);
 });
 
 test('restoring does not replace a user selection or a message started during loading', async () => {
@@ -163,4 +231,35 @@ test('project tabs load and link only their own chats and restore their own sele
   assert.equal(v.chatId, 'last');
   assert.equal(v.chats.some(c => c.id === 'foreign'), false);
   assert.deepEqual([...new Set(linked)].sort(), ['last', 'other']);
+});
+
+
+test('reopening restores text and images in a chat that has never sent a message', async () => {
+  const draft = { id: 'draft', agent: 'claude', cwd: '/tmp', draft: 'Still writing', attached: [{ path: '/tmp/image.png', w: 20, h: 10 }] };
+  const { v, cx, jobs } = pane({ activeChat: draft.id, projects: [], chats: [draft] });
+  await v.loadChats(cx);
+  await Promise.all(jobs);
+  assert.equal(v.chatId, draft.id);
+  assert.equal(v.inputs.claude.value(), draft.draft);
+  assert.deepEqual(v.chat(draft.id).attached, draft.attached);
+  v.newChat('project', cx);
+  assert.equal(v.inputs.claude.value(), '');
+  assert.equal(v.chat(v.chatId).attached, undefined);
+  v.openChat(draft.id, cx);
+  assert.equal(v.inputs.claude.value(), draft.draft);
+});
+
+test('reopening keeps renamed and pinned empty chats available', async () => {
+  const named = { id: 'named', agent: 'claude', cwd: '/tmp', title: 'Research notes', customTitle: true };
+  const pinned = { id: 'pinned', agent: 'codex', cwd: '/tmp', title: 'New chat', pinned: true };
+  const { v, cx, jobs } = pane({ activeChat: named.id, projects: [], chats: [named, pinned] });
+  await v.loadChats(cx);
+  await Promise.all(jobs);
+  assert.equal(v.chatId, pinned.id);
+  assert.equal(v.chat(named.id).title, 'Research notes');
+  assert.equal(v.chatsIn('project')[0].id, pinned.id);
+  v.openChat(pinned.id, cx);
+  assert.ok(v.chats.some(c => c.id === named.id));
+  v.openChat(named.id, cx);
+  assert.ok(v.chats.some(c => c.id === pinned.id));
 });

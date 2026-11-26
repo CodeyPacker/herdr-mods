@@ -5,6 +5,7 @@
 // starts this program in a hidden Herdr terminal and talks to it over a local socket instead.
 //
 //   node bridge.mjs serve --chat <id> --cwd <folder> --state <dir> [--agent claude|codex] [--resume <session>]
+//       [--permissions ask|edits|auto|full]
 //       Listens on 127.0.0.1, writes { port, pid, token } to <state>/<chat>.json, and runs the chat's agent:
 //       Claude Code (`claude -p`, the default) or Codex (`codex app-server`). Ends on "quit", or after
 //       30 minutes with no pane connected and no turn running.
@@ -17,7 +18,8 @@
 // The socket carries one JSON object per line. The first line says who is talking and carries the
 // token from the bridge's file. Only you can read that file, so nothing else on the computer
 // (another account, a web page posting to the port) can send messages or answer for you:
-//   { role: "pane" }  the mod. It sends { type: "send", text, images, skill? }, { type: "stop" },
+//   { role: "pane" }  the mod. It sends { type: "send", text, images, skill?, permissions? }, { type: "stop" },
+//                     { type: "permissions", level },
 //                     { type: "answer", id, answers: { <question id>: [answer, …] } } for the agent's questions,
 //                     { type: "decide", id, behavior: "allow" | "deny", always }, { type: "quit" },
 //                     and gets every event since the bridge started (then { type: "replay_end" }
@@ -32,6 +34,11 @@ import { mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync } from "nod
 import { join, dirname } from "node:path";
 import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import { chatMcpServer, codexMcpArgs, LINK_TOOL_NAMES, permissionLevel, claudePermissionMode, codexPermissions } from "./bridge-options.js";
+import { withSender } from "./link-messages.js";
+import { ChatLinks, CHAT_TOOLS, CHAT_INSTRUCTIONS } from "./chat-links.mjs";
+import { readDocuments } from "./documents.mjs";
+import { withDocuments } from "./file-messages.mjs";
 import { keepFile, fileOf, mediaType } from "./images.mjs";
 import { flags, parse, lines, errorText, isMain } from "./cli.mjs";
 import { imageEvent, textEvents, compactNote, claudeAssistantEvents, claudeToolResultEvents } from "./agent-events.mjs";
@@ -165,12 +172,19 @@ function mcp(opts) {
         name: "approve",
         description: "Asks the person in Hey, chat whether a tool may run.",
         inputSchema: { type: "object", properties: { tool_name: { type: "string" }, input: { type: "object" }, tool_use_id: { type: "string" } }, required: ["tool_name", "input"] },
-      }, PLAN_TOOL] } });
+      }, PLAN_TOOL, ...(opts.links === "true" ? CHAT_TOOLS : [])].filter(tool => opts.agent !== "codex" || tool.name !== "approve") } });
     } else if (m.method === "tools/call" && m.params?.name === "plan") {
       // The pane reads the steps from the tool call itself, so there is nothing to do here.
       reply({ id: m.id, result: { content: [{ type: "text", text: "The person sees this plan. Call plan again with the whole list when a step starts or finishes." }] } });
     } else if (m.method === "tools/call") {
       const args = m.params?.arguments ?? {};
+      if (m.params?.name !== "approve") {
+        try {
+          const result = await askBridge(port, saved(), { type: "link_tool", name: m.params?.name, arguments: args });
+          reply({ id: m.id, result: { content: [{ type: "text", text: JSON.stringify(result) }], ...(result.error ? { isError: true } : {}) } });
+        } catch (error) { reply({ id: m.id, result: { isError: true, content: [{ type: "text", text: errorText(error) }] } }); }
+        return;
+      }
       const answer = await askBridge(port, saved(), { type: "ask", tool: args.tool_name, input: args.input ?? {}, toolUseId: args.tool_use_id ?? null })
         .catch(() => ({ behavior: "deny", message: "Hey, chat couldn't ask you, so this was not allowed." }));
       reply({ id: m.id, result: { content: [{ type: "text", text: JSON.stringify(answer) }] } });
@@ -197,20 +211,36 @@ function askBridge(port, saved, question) {
 // serve: one chat
 
 /** Runs one chat's agent and listens for its pane. @param {Record<string, string>} opts see the top of this file */
-export function serve(opts) {
+export function serve(opts, dependencies = {}) {
+  const timers = [];
+  const spawnProcess = dependencies.spawnAgent ?? spawn;
+  const outputStatus = dependencies.outputStatus ?? (value => process.stdout.write(value));
   const chat = opts.chat, cwd = opts.cwd, state = opts.state;
   const agent = opts.agent === "codex" ? "codex" : "claude";
-  let session = opts.resume || null;
+  const links = opts.links === "true" ? new ChatLinks({ state, chat, cwd, agent, model: opts.model || null, title: opts.title || "", session: opts.resume || null, permissions: () => permissions, launch: dependencies.launchBridge, models: dependencies.listModels }) : null;
+  const savedLink = links?.get();
+  let session = opts.resume || savedLink?.session || null;
   const selectedModel = opts.model || null;
+  /** How often the agent asks first (bridge-options.js). The pane sends changes. */
+  let permissions = permissionLevel(opts.permissions);
+  let activeMessage = null;
+  let failedMessage = null;
   let turn = false;         // a turn is running
   let turnEndedAt = Date.now(); // when the agent last had work
-  const queue = [];
-  const submitted = new Set();
+  const deliveredIds = new Set(links?.events.filter(e => e.type === "user").map(e => e.queueId).filter(Boolean) ?? []);
+  const queue = (savedLink?.queue ?? []).filter(entry => !deliveredIds.has(entry.id)).map(entry => ({ ...entry, steering: false, interrupting: false }));
+  links?.saveQueue(queue);
+  const submitted = new Set([...(links?.events.filter(e => ["queued", "user"].includes(e.type)).map(e => e.queueId ?? e.id).filter(Boolean) ?? []), ...queue.map(entry => entry.id)]);
+  if (links) for (const event of links.events) {
+    if (event.type === "turn_end" && event.retry) failedMessage = { id: event.retry.id, entry: { ...event.retry, id: `original-${event.retry.id}` } };
+    if (event.type === "retry_cleared" && failedMessage?.id === event.id) failedMessage = null;
+  }
   let messageId = 0;
   /** @type {any[]} */
-  const history = [];       // every event so far, for a pane that connects later
+  const history = [...(links?.events ?? [])];       // every event so far, for a pane that connects later
   /** @type {Set<import("node:net").Socket>} */
   const panes = new Set();
+  const clients = new Set();
   /**
    * Questions waiting on you, by id. `answer` replies to whoever asked: the approve tool's
    * socket for Claude, the app-server's request for Codex.
@@ -219,12 +249,25 @@ export function serve(opts) {
   const pending = new Map();
   let asks = 0;
   let lastSeen = Date.now();
-  const startedAt = Date.now();
+  const startedAt = savedLink?.createdAt ?? Date.now();
   /** What a client must send first. It is kept in this bridge's file, which only you can read. */
   const token = randomBytes(24).toString("hex");
 
   /** @param {any} ev */
   const emit = (ev) => {
+    if (links) {
+      ev = links.record(ev);
+      const attention = [...pending].map(([id, p]) => ({ id, kind: p.tool === "question" ? "question" : "permission", tool: p.tool }));
+      const status = attention.length ? "blocked" : turn ? "working" : ev.type === "turn_end" ? ev.error ? "error" : ev.stopped ? "idle" : "done" : links.get().status ?? "idle";
+      links.update({ id: chat, attention, status });
+      outputStatus(`\x1b]7501;state=${status}:app=hey-chat\x1b\\`);
+      if (ev.type === "text") links.update({ id: chat, lastResponse: String(ev.text ?? "").slice(-2000) });
+      if (["permission", "question", "turn_end"].includes(ev.type) && !ev.recovered) {
+        links.enqueue(() => links.notifyParent(ev, status)).catch(error => {
+          links.update({ id: chat, reportError: errorText(error) });
+        });
+      }
+    }
     history.push(ev);
     const line = `${JSON.stringify(ev)}\n`;
     for (const p of panes) p.write(line);
@@ -290,7 +333,15 @@ export function serve(opts) {
     turn = false;
     turnEndedAt = Date.now();
     denyAll("The turn ended.", !error && !stopped);
-    emit(stopped ? { type: "turn_end", stopped: true } : { type: "turn_end", error, text });
+    let retry = null;
+    if (error && activeMessage) {
+      failedMessage = { id: `failure-${randomBytes(12).toString("hex")}`, entry: activeMessage };
+      const { text, images, files, skill } = activeMessage;
+      retry = { id: failedMessage.id, text, images, files, skill };
+    }
+    activeMessage = null;
+    emit(stopped ? { type: "turn_end", stopped: true } : { type: "turn_end", error, text, ...(retry ? { retry } : {}) });
+    if (links) emit({ type: "linked_summary", summary: links.summary(chat) });
     if (queue[0]?.interrupting) { queue[0].interrupting = false; drainQueue(); }
     else if (!error && !stopped) drainQueue();
   };
@@ -315,13 +366,16 @@ export function serve(opts) {
 
     const start = () => {
       const port = /** @type {any} */ (server.address()).port;
-      const mcpConfig = { mcpServers: { heychat: { command: process.execPath, args: [SELF, "mcp", "--port", String(port), "--state", state, "--chat", chat] } } };
+      const mcpConfig = { mcpServers: { heychat: chatMcpServer({ node: process.execPath, script: SELF, port, state, chat, provider: "claude", linked: Boolean(links) }) } };
       const args = ["-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose",
         "--permission-prompt-tool", "mcp__heychat__approve", "--mcp-config", JSON.stringify(mcpConfig),
-        "--allowedTools", "mcp__heychat__plan", "--append-system-prompt", PLAN_PROMPT,
+        "--allowedTools", "mcp__heychat__plan", ...(links ? LINK_TOOL_NAMES.map(name => `mcp__heychat__${name}`) : []),
+        "--append-system-prompt", [PLAN_PROMPT, ...(links ? [CHAT_INSTRUCTIONS] : [])].join("\n\n"),
+        // Allows switching to Full access later. The mode itself comes from --permission-mode.
+        "--permission-mode", claudePermissionMode(permissions), "--allow-dangerously-skip-permissions",
         ...(session ? ["--resume", session] : []), ...(selectedModel ? ["--model", selectedModel] : [])];
       stderr = "";
-      const child = spawn("claude", args, { cwd, stdio: ["pipe", "pipe", "pipe"] });
+      const child = spawnProcess("claude", args, { cwd, stdio: ["pipe", "pipe", "pipe"] });
       proc = child;
       child.stdout.on("data", lines((line) => fromClaude(parse(line))));
       child.stderr.on("data", (d) => { stderr = (stderr + d.toString()).slice(-2000); });
@@ -403,7 +457,12 @@ export function serve(opts) {
       try { mkdirSync(join(cwd, ".claude"), { recursive: true }); writeFileSync(file, `${JSON.stringify(s, null, 2)}\n`); } catch { /* the run still allows it */ }
     };
 
+    let controlId = 0;
     return {
+      /** Changes a running Claude's permission mode. A new Claude starts with the current one. */
+      setPermissions() {
+        proc?.stdin?.write(`${JSON.stringify({ type: "control_request", request_id: `mode-${++controlId}`, request: { subtype: "set_permission_mode", mode: claudePermissionMode(permissions) } })}\n`);
+      },
       /** @param {string} text @param {{ path: string }[]} images */
       send(text, images) {
         if (!proc) start();
@@ -434,6 +493,10 @@ export function serve(opts) {
       approve(sock, q) {
         if (q?.type !== "ask") return;
         const reply = (/** @type {any} */ a) => sock.end(`${JSON.stringify(a)}\n`);
+        if (links && LINK_TOOL_NAMES.some(name => q.tool === `mcp__heychat__${name}`)) {
+          reply({ behavior: "allow", updatedInput: q.input });
+          return;
+        }
         // AskUserQuestion: Claude's questions for you. Your answers go back in its input, keyed by
         // question text, several picks joined with ", " (as Claude Code's own picker answers).
         if (q.tool === "AskUserQuestion") {
@@ -493,7 +556,9 @@ export function serve(opts) {
 
     const start = () => {
       stderr = "";
-      const child = spawn("codex", ["app-server"], { cwd, stdio: ["pipe", "pipe", "pipe"] });
+      const port = server.address().port;
+      const linkConfig = links ? codexMcpArgs(chatMcpServer({ node: process.execPath, script: SELF, port, state, chat, provider: "codex" })) : [];
+      const child = spawnProcess("codex", ["app-server", ...linkConfig], { cwd, stdio: ["pipe", "pipe", "pipe"] });
       proc = child;
       child.stdout.on("data", lines((line) => fromCodex(parse(line))));
       child.stderr.on("data", (d) => { stderr = (stderr + d.toString()).slice(-2000); });
@@ -514,7 +579,9 @@ export function serve(opts) {
         await released;
         await call("initialize", { clientInfo: { name: "hey-chat", title: "Hey, chat", version: "1" }, capabilities: { experimentalApi: true } });
         write({ method: "initialized", params: {} });
-        const options = { cwd, ...(selectedModel ? { model: selectedModel } : {}) };
+        const options = { cwd, ...(selectedModel ? { model: selectedModel } : {}), ...(links ? {
+          developerInstructions: CHAT_INSTRUCTIONS,
+        } : {}) };
         const r = session ? await call("thread/resume", { threadId: session, ...options }) : await call("thread/start", options);
         setSession(r?.thread?.id ?? null);
         setModel(r?.model);
@@ -619,7 +686,7 @@ export function serve(opts) {
                 emit({ type: "user", text, images: [], at: Date.now() });
                 if (!active) emit({ type: "working" });
                 const input = [{ type: "text", text, text_elements: [] }];
-                call(active ? "turn/steer" : "turn/start", { threadId: session, input, ...(active ? { expectedTurnId: turnId } : selectedModel ? { model: selectedModel } : {}) })
+                call(active ? "turn/steer" : "turn/start", { threadId: session, input, ...(active ? { expectedTurnId: turnId } : { ...codexPermissions(permissions), ...(selectedModel ? { model: selectedModel } : {}) }) })
                   .then(r => { turnId = r?.turn?.id ?? turnId; })
                   .catch(e => endTurn(true, errorText(e)));
               }, true);
@@ -651,13 +718,15 @@ export function serve(opts) {
        * A skill you picked from the / menu goes in as a skill input, and its /name comes off the text.
        * @param {string} text @param {{ path: string }[]} images @param {{ name: string, path: string } | null} [skill]
        */
+      /** Codex takes the level with each turn/start, so a change applies from the next turn. */
+      setPermissions() {},
       send(text, images, skill = null) {
         if (!proc) start();
         const input = turnInput(text, images, skill);
         startingTurn = (async () => {
           try {
             await ready;
-            const r = await call("turn/start", { threadId: session, input, ...(selectedModel ? { model: selectedModel } : {}) });
+            const r = await call("turn/start", { threadId: session, input, ...codexPermissions(permissions), ...(selectedModel ? { model: selectedModel } : {}) });
             turnId = r?.turn?.id ?? turnId;
           } catch (e) {
             endTurn(true, errorText(e));
@@ -694,13 +763,27 @@ export function serve(opts) {
 
   const deliver = (entry) => {
     queue.splice(queue.indexOf(entry), 1);
-    emit({ type: "user", queueId: entry.id, text: entry.text, images: entry.images, at: entry.at });
+    activeMessage = entry;
+    emit({ type: "user", queueId: entry.id, text: entry.text, images: entry.images, files: entry.files, skill: entry.skill, source: entry.source, at: entry.at });
+    links?.saveQueue(queue);
   };
-  const startMessage = (entry) => {
+  const documentInput = entry => withSender(withDocuments(entry.text, readDocuments(entry.files ?? [], join(dirname(state), "files"))), entry.source);
+  const startMessage = (entry, preparedText) => {
+    let text;
+    try { text = preparedText ?? documentInput(entry); }
+    catch (error) {
+      emit({ type: "queued", ...entry });
+      emit({ type: "queue_error", id: entry.id, message: errorText(error) });
+      return;
+    }
+    if (failedMessage) {
+      emit({ type: "retry_cleared", id: failedMessage.id });
+      failedMessage = null;
+    }
     turn = true;
     deliver(entry);
     emit({ type: "working" });
-    driver.send(entry.text, entry.images, entry.skill);
+    driver.send(text, entry.images, entry.skill);
   };
   const drainQueue = () => {
     if (!turn && queue.length && !queue[0].steering) startMessage(queue[0]);
@@ -709,15 +792,18 @@ export function serve(opts) {
     if (!entry || entry.steering || entry.interrupting) return;
     if (!turn) { startMessage(entry); return; }
     if (agent === "claude") {
+      try { documentInput(entry); }
+      catch (error) { emit({ type: "queue_error", id: entry.id, message: errorText(error) }); return; }
       // Claude's streaming CLI has no turn/steer RPC. Resume with the selected message after interrupting.
       queue.splice(queue.indexOf(entry), 1); queue.unshift(entry);
+      links?.saveQueue(queue);
       entry.interrupting = true;
       driver.stop();
       return;
     }
     entry.steering = true;
     try {
-      await driver.steer(entry.text, entry.images, entry.skill);
+      await driver.steer(documentInput(entry), entry.images, entry.skill);
       deliver(entry);
     } catch (e) {
       entry.steering = false;
@@ -730,19 +816,68 @@ export function serve(opts) {
   const fromPane = (m) => {
     if (!m || quitting) return;
     if (m.type === "send" && typeof m.text === "string") {
+      // The pane's current level rides along, for a bridge that missed a change while unconnected.
+      if (m.permissions) fromPane({ type: "permissions", level: m.permissions });
       // Pictures you pasted: { path, w, h } each, already in the images folder.
       const images = (Array.isArray(m.images) ? m.images : []).filter((/** @type {any} */ i) => typeof i?.path === "string");
       const skill = m.skill && typeof m.skill.name === "string" && typeof m.skill.path === "string" ? m.skill : null;
-      if (!m.text && images.length === 0) return;
+      const files = (Array.isArray(m.files) ? m.files : []).filter(f => f?.kind === "document" && typeof f.path === "string");
+      if (!m.text && images.length === 0 && files.length === 0) return;
       const id = typeof m.id === "string" ? m.id : `message-${++messageId}`;
       if (submitted.has(id)) return;
       submitted.add(id);
-      const entry = { id, text: m.text, images, skill, at: Date.now(), steering: false, interrupting: false };
+      const entry = { id, text: m.text, images, files, skill, ...(m.source ? { source: m.source } : {}), at: Date.now(), steering: false, interrupting: false };
       queue.push(entry);
+      links?.saveQueue(queue);
       if (turn || queue.length > 1) emit({ type: "queued", ...entry });
-      drainQueue();
+      if (m.now) void sendNow(entry); else drainQueue();
+    } else if (m.type === "retry_turn") {
+      if (!failedMessage || failedMessage.id !== m.id) {
+        emit({ type: "retry_error", id: m.id, message: "This turn has already been retried or a newer message has started." });
+        return;
+      }
+      if (turn) {
+        emit({ type: "retry_error", id: m.id, message: "Wait for the current turn to finish, then try again." });
+        return;
+      }
+      const entry = { ...failedMessage.entry, id: `retry-${failedMessage.id}`, at: Date.now(), steering: false, interrupting: false };
+      let text;
+      try {
+        text = documentInput(entry);
+        for (const image of entry.images) {
+          try { readFileSync(fileOf(image.path, imageDir)); }
+          catch { throw new Error("An attached image is missing. Restore it before retrying, or send a new message."); }
+        }
+      }
+      catch (error) { emit({ type: "retry_error", id: m.id, message: errorText(error) }); return; }
+      queue.unshift(entry);
+      submitted.add(entry.id);
+      startMessage(entry, text);
     } else if (m.type === "send_now") {
       void sendNow(queue.find(entry => entry.id === m.id));
+    } else if (m.type === "queue_edit" || m.type === "queue_remove") {
+      const entry = queue.find(entry => entry.id === m.id);
+      if (!entry || entry.steering || entry.interrupting) {
+        emit({ type: "queue_error", id: m.id, message: "This message has already started sending. It can't be changed." });
+        return;
+      }
+      if (m.type === "queue_remove") {
+        queue.splice(queue.indexOf(entry), 1);
+        links?.saveQueue(queue);
+        emit({ type: "queue_removed", id: entry.id });
+      } else {
+        if (typeof m.text !== "string" || (!m.text.trim() && !entry.images.length && !entry.files.length)) {
+          emit({ type: "queue_error", id: entry.id, message: "Add a message or use Remove." });
+          return;
+        }
+        entry.text = m.text.trim();
+        entry.skill = m.skill && typeof m.skill.name === "string" && typeof m.skill.path === "string" ? m.skill : null;
+        links?.saveQueue(queue);
+        emit({ type: "queue_updated", id: entry.id, text: entry.text });
+      }
+    } else if (m.type === "permissions") {
+      const level = permissionLevel(m.level);
+      if (level !== permissions) { permissions = level; driver.setPermissions(); }
     } else if (m.type === "stop") {
       if (turn) driver.stop();
     } else if (m.type === "decide") {
@@ -761,22 +896,64 @@ export function serve(opts) {
       for (const [k, v] of Object.entries(m.answers ?? {})) if (Array.isArray(v)) answers[k] = v.map(String);
       p.answer(true, false, answers);
       emit({ type: "answered", id: m.id, answers });
+    } else if (m.type === "link_seen" && links) {
+      if (!turn && !pending.size && links.get().status === "done") {
+        links.update({ id: chat, status: "idle" });
+        outputStatus("\x1b]7501;state=idle:app=hey-chat\x1b\\");
+      }
+    } else if (m.type === "link_metadata" && links) {
+      if (typeof m.title === "string") links.update({ id: chat, title: m.title.slice(0, 120) });
     } else if (m.type === "quit") {
       quit();
     }
+  };
+
+  const runLinkedTool = async (name, args) => {
+    if (!links) throw new Error("Linked chats are not enabled in this bridge. Reopen the chat after its current work finishes.");
+    const result = await links.enqueue(() => links.call(name, args));
+    if (name === "chat_create") emit({ type: "linked_chat", chat: links.get(result.chat_id) });
+    if (name === "chat_summary") {
+      emit({ type: "linked_summary", summary: links.summary(chat) });
+      if (args.needs?.length) links.enqueue(() => links.notifyParent(links.events.at(-1), "decision requested")).catch(() => {});
+    }
+    return result;
+  };
+
+  const control = async m => {
+    if (!links) throw new Error("This bridge does not support linked chats.");
+    if (m.type === "link_ping") return { chat, session, status: links.get().status, protocol: 11 };
+    if (m.type === "link_tool") return runLinkedTool(m.name, m.arguments ?? {});
+    if (m.type === "link_send") {
+      links.related(m.source?.chat);
+      if (typeof m.id !== "string" || !/^[a-zA-Z0-9_-]{1,160}$/.test(m.id) || typeof m.text !== "string") throw new Error("Invalid linked message.");
+      fromPane({ ...m, type: "send" });
+      return { accepted: true, message_id: m.id, queued: queue.some(entry => entry.id === m.id) };
+    }
+    if (m.type === "link_metadata") {
+      const fields = {};
+      if (typeof m.title === "string") fields.title = m.title.slice(0, 120);
+      links.update({ id: chat, ...fields });
+      return { updated: true };
+    }
+    throw new Error("Unknown linked-chat request.");
   };
 
   let quitting = false;
   const quit = async () => {
     if (quitting) return;
     quitting = true;
+    links?.stop();
     denyAll("Hey, chat closed.");
     await driver.kill();
     try { rmSync(join(state, `${chat}.json`)); } catch { /* already gone */ }
-    process.exit(0);
+    for (const timer of timers) clearInterval(timer);
+    for (const client of clients) client.destroy?.();
+    server.close?.();
+    if (dependencies.exit) dependencies.exit(0); else process.exit(0);
   };
 
   const server = createServer((sock) => {
+    clients.add(sock);
     /** @type {string | null} */
     let role = null;
     sock.on("data", lines((line) => {
@@ -784,7 +961,7 @@ export function serve(opts) {
       if (role === null) {
         // A first line without the token is not ours: another account, or a web page.
         if (!m || m.token !== token) { role = "refused"; sock.destroy(); return; }
-        role = m.role === "mcp" ? "mcp" : "pane";
+        role = m.role === "mcp" ? "mcp" : m.role === "control" ? "control" : "pane";
         if (role === "pane") {
           if (m.snapshot) {
             const after = Math.max(0, Number(m.after) || 0);
@@ -799,12 +976,20 @@ export function serve(opts) {
         }
         return;
       }
-      if (role === "pane") fromPane(m); else if (role === "mcp") driver.approve(sock, m);
+      if (role === "pane") fromPane(m);
+      else if (role === "control" || (role === "mcp" && m.type === "link_tool")) {
+        control(m).then(result => sock.end(`${JSON.stringify(role === "mcp" ? result : { result })}\n`), error => sock.end(`${JSON.stringify({ error: errorText(error) })}\n`));
+      } else if (role === "mcp") driver.approve(sock, m);
     }));
-    sock.on("close", () => { if (panes.delete(sock)) lastSeen = Date.now(); });
+    sock.on("close", () => { clients.delete(sock); if (panes.delete(sock)) lastSeen = Date.now(); });
     sock.on("error", () => { /* the close handler tidies up */ });
   });
 
+  server.on?.("error", error => {
+    for (const timer of timers) clearInterval(timer);
+    if (links) links.update({ id: chat, status: "error", bridgeError: errorText(error) });
+    if (!dependencies.exit) { process.stderr.write(`Could not start the chat bridge: ${errorText(error)}\n`); process.exit(1); }
+  });
   server.listen(0, "127.0.0.1", () => {
     mkdirSync(state, { recursive: true });
     const port = /** @type {any} */ (server.address()).port;
@@ -812,19 +997,26 @@ export function serve(opts) {
     // Made new each time and readable by you alone, since it holds the token.
     const file = join(state, `${chat}.json`);
     rmSync(file, { force: true });
-    writeFileSync(file, JSON.stringify({ port, pid: process.pid, cwd, agent, startedAt, protocol: 2, token }), { mode: 0o600 });
-    emit({ type: "ready", session, agent, protocol: 2 });
+    writeFileSync(file, JSON.stringify({ port, pid: process.pid, cwd, agent, startedAt, protocol: 11, token }), { mode: 0o600 });
+    emit({ type: "ready", session, agent, protocol: 11 });
+    if (links && ["working", "blocked"].includes(savedLink?.status)) {
+      const request = savedLink.lastRequest;
+      if (request) { activeMessage = { ...request, id: request.queueId ?? request.id, images: request.images ?? [], files: request.files ?? [] }; turn = true; endTurn(true, "This turn was interrupted when its bridge stopped. You can retry the original request."); }
+    }
+    if (links) for (const entry of queue) emit({ type: "queued", ...entry });
   });
 
-  setInterval(() => {
+  if (links) { const timer = setInterval(() => { void links.flushReports(); }, 2000); timer.unref?.(); timers.push(timer); }
+
+  timers.push(setInterval(() => {
     if (panes.size === 0 && !turn && queue.length === 0 && Date.now() - lastSeen > IDLE_MS) { quit(); return; }
     // A pane is still open, but the agent has had nothing to do: stop it and keep the bridge. A
     // question still waiting on you keeps it, since its answer goes to that same agent.
     const resting = !turn && queue.length === 0 && pending.size === 0 && Date.now() - turnEndedAt > AGENT_IDLE_MS;
     if (resting && !quitting && driver.idle()) driver.release();
-  }, 60 * 1000);
-  process.on("SIGTERM", quit);
-  process.on("SIGHUP", quit);
+  }, 60 * 1000));
+  if (!dependencies.exit) { process.on("SIGTERM", quit); process.on("SIGHUP", quit); }
+  return { server, close: quit };
 }
 
 if (isMain(import.meta.url)) {

@@ -1,7 +1,7 @@
 // Deleting chats: one, every chat in a folder, or the chats selected in the tree. Each asks first.
 import { home, spaces, run } from "herdr";
 import { QUICK_TAB } from "../tabs.js";
-import { deleteSession } from "../agent.js";
+import { deleteSession, detachLinkedChat } from "../agent.js";
 import { treeItems } from "../keys.js";
 import { COLLAPSED, errorText, remember } from "../common.js";
 
@@ -24,7 +24,7 @@ export const deleting = {
     // is closed: a tab.close with no id would close whichever tab is focused.
     this.learnPane();
     const tab = this.ownPane()?.tab;
-    const isQuick = tab && spaces().some((s) => s.tabs.some((t) => t.id === tab && t.name === QUICK_TAB));
+    const isQuick = tab && spaces().some((s) => s.tabs.some((t) => t.id === tab && t.name.replace(/^Chat · /, "") === QUICK_TAB));
     if (isQuick) run("tab.close", { id: tab });
   },
 
@@ -68,7 +68,13 @@ export const deleting = {
     try {
       await this.links.get(chat.id);
       await this.quitBridge(chat);
-      return chat.session ? await deleteSession(chat.agent, chat.session, chat.file ?? null) : { ok: true };
+      const result = chat.session ? await deleteSession(chat.agent, chat.session, chat.file ?? null) : { ok: true };
+      if (result.ok && chat.linkId) {
+        await detachLinkedChat(chat.linkId);
+        this.rememberDeletedChats([{id:chat.linkId,agent:chat.agent,session:chat.session,deleted:true}]);
+        for (const child of this.chats) if (child.parentId === chat.linkId) child.parentId = null;
+      }
+      return result;
     } catch (e) {
       return { ok: false, message: errorText(e) };
     }

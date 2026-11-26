@@ -13,6 +13,8 @@ export const SIDEBAR_HIDDEN = "hey-chat.sidebarHidden";
 export const CONDENSE_CHAT = "hey-chat.condenseChat";
 /** Show the agent's plan above the message box while it works, on unless turned off in Settings. */
 export const SHOW_PLAN = "hey-chat.showPlan";
+/** How often agents ask before acting: ask, edits, auto or full (bridge-options.js). */
+export const PERMISSIONS = "hey-chat.permissions";
 
 /** Herdr's home, with forward slashes. */
 export function appDir() {

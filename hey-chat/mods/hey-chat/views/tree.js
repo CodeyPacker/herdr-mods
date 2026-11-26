@@ -51,16 +51,15 @@ export function chatRow(v, t, chat, key) {
     // Cards have no text: a permission card shows what was asked, a question card that it asked.
     preview = last.kind === "tool" || last.kind === "permission" ? last.title
       : last.kind === "question" ? "Asked you a question"
-      : last.kind === "image" ? "Sent an image" : last.text;
-    if (last.from === "me") preview = `You: ${preview}`;
+      : last.kind === "file" ? last.name : last.kind === "image" ? "Sent an image" : last.text;
+    if (last.source) preview = `${last.source.title}: ${last.kind === "file" ? last.name : preview}`;
+    else if (last.from === "me") preview = `You: ${preview}`;
   }
+  preview = String(preview ?? "").replace(/\s+/g, " ").trim();
   if (thinking) preview = "Thinking…";
   if (asking) preview = "Waiting for you";
   if (key.startsWith("r:")) preview = `${chat.project} · ${preview}`;
-  // Herdr refuses a child that is not text or an element, and then stops redrawing the pane, so
-  // anything missing draws as empty text instead.
-  preview = String(preview ?? "");
-  return h_flex().id(`row-${key}`).w_full().flex_none().gap(10).px(10).py(8).rounded(12).items_center().cursor_pointer()
+  return h_flex().id(`row-${key}`).w_full().flex_none().gap(10).px(10).py(8).rounded(12).items_start().cursor_pointer()
     .border_1().border_color(cursorBorder(v, t, key))
     .when(open || picked, (el) => el.bg(t.selected))
     .hover((s) => s.bg(open || picked ? t.selected : t.hover))
@@ -75,6 +74,7 @@ export function chatRow(v, t, chat, key) {
       .child(h_flex().gap(8).items_center()
         .child(div().flex_1().min_w(0).truncate().text_size(14).text_color(t.foreground)
           .when(unread, (el) => el.font_semibold()).when(!unread, (el) => el.font_medium()).child(String(chat.title ?? "")))
+        .when(Boolean(chat.pinned), el => el.child(svg(`${ICONS}/pin.svg`).size(12).flex_none().text_color(t.accent)))
         // The chat the jump key opens shows that key in place of its time.
         .child(chat.id === v.jumpId && v.keyHint("jump")
           ? div().flex_none().px(6).py(1).rounded(6).bg(t.accent).text_size(11.5).font_semibold().text_color(t.accent_foreground).child(v.keyHint("jump"))
@@ -84,6 +84,37 @@ export function chatRow(v, t, chat, key) {
           .text_color(asking ? t.blocked : thinking ? t.working : unread ? t.foreground : t.muted)
           .when(unread, (el) => el.font_semibold()).child(preview))
         .when(unread, (el) => el.child(div().flex_none().size(9).rounded_full().bg(t.accent)))));
+}
+
+// Branches run from a parent's avatar to the edge of each child's avatar.
+const CHAT_INDENT = 32;
+function chatTreeRow(v, t, chats, index, byId) {
+  const chat = chats[index];
+  const depth = Math.min(6, v.chatDepth?.[chat.id] ?? 0);
+  const identity = c => c.linkId ?? c.id;
+  const color = soft(t.muted, 0.45);
+  const row = div().relative().w_full().pl(10 + depth * CHAT_INDENT)
+    .child(chatRow(v, t, chat, `c:${chat.id}`));
+  let parent = byId.get(chat.parentId);
+  const seen = new Set([identity(chat)]);
+  while (parent && !seen.has(identity(parent))) {
+    seen.add(identity(parent));
+    const parentDepth = Math.min(6, v.chatDepth?.[parent.id] ?? 0);
+    const x = 38 + parentDepth * CHAT_INDENT;
+    const direct = identity(parent) === chat.parentId;
+    const continues = chats.slice(index + 1).some(c => c.parentId === identity(parent));
+    if (parentDepth < depth && (direct || continues)) {
+      row.child(div().id(`branch-${parent.id}-${chat.id}`).absolute().left(x).top(0).w(1).bg(color)
+        .when(continues, el => el.bottom(-2))
+        .when(!continues, el => el.h(27)));
+      if (direct) row.child(div().absolute().left(x + 1).top(26).w(20 + depth * CHAT_INDENT - x).h(1).bg(color));
+    }
+    parent = byId.get(parent.parentId);
+  }
+  if (chats.some(c => c.parentId === identity(chat))) {
+    row.child(div().id(`branch-start-${chat.id}`).absolute().left(38 + depth * CHAT_INDENT).top(43).bottom(-2).w(1).bg(color));
+  }
+  return row;
 }
 
 /** A project's row: chevron, folder, name, chat count, and a + that starts a chat there. @param {any} v @param {Theme} t @param {import("../store.js").Project} p @param {number} count */
@@ -169,7 +200,10 @@ export function treeView(v, t) {
     for (const p of projects) {
       const chats = v.chatsIn(p.id);
       add(projectRow(v, t, p, chats.length).when(rows.length > 0, (el) => el.mt(4)), `p:${p.id}`);
-      if (v.isOpen(p.id)) for (const c of chats) add(div().w_full().pl(10).child(chatRow(v, t, c, `c:${c.id}`)), `c:${c.id}`);
+      if (v.isOpen(p.id)) {
+        const byId = new Map(chats.map(c => [c.linkId ?? c.id, c]));
+        for (let i = 0; i < chats.length; i++) add(chatTreeRow(v, t, chats, i, byId), `c:${chats[i].id}`);
+      }
     }
     if (v.query && projects.length === 0) add(div().px(10).py(8).text_size(12.5).text_color(t.dim).child("No chats match."));
   }

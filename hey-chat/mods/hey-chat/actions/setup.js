@@ -14,7 +14,7 @@ export const setup = {
         this.agents = [...(state.node ? ["node"] : []), ...Object.keys(state.agents).filter(a => state.agents[a].installed)];
         const ready = Object.keys(state.agents).find(a => state.agents[a].auth === "ready");
         if (automatic && !this.chat(this.chatId)?.session && !this.chat(this.chatId)?.thread.length) {
-          if (ready) this.chat(this.chatId).agent = ready;
+          if (ready) this.setChatAgent(this.chat(this.chatId), ready);
           else this.setupOpen = true;
         }
         if (previous?.node === false && state.node) await this.loadChats(cx);

@@ -96,7 +96,7 @@ export const scroll = {
     const query = this.chatSearchInput.value().trim().toLowerCase();
     if (!query) return [];
     return this.visibleThread(this.chat(this.chatId)).flatMap((/** @type {any} */ m, /** @type {number} */ index) => {
-      const text = [m.text, m.title, ...(m.lines ?? []), ...(m.questions ?? []).map((/** @type {any} */ q) => q.question)].filter(Boolean).join("\n");
+      const text = [m.text, m.title, m.name, ...(m.lines ?? []), ...(m.questions ?? []).map((/** @type {any} */ q) => q.question)].filter(Boolean).join("\n");
       return text.toLowerCase().includes(query) ? [index] : [];
     });
   },

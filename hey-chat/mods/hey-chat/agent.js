@@ -7,6 +7,7 @@
 // gets every event since the bridge started, so a reloaded pane rebuilds the chat from them.
 import { exec, hc, readTextFile } from "herdr";
 import net from "net";
+import { bridgeArgs } from "./bridge-options.js";
 import { dataDir, script } from "./common.js";
 
 // Use the detected absolute runtime when the core predates a Node.js installation.
@@ -128,6 +129,36 @@ export async function imageFile(file) {
   return r.out ?? { error: r.stderr || "Couldn't add the image." };
 }
 
+/** Copies a document into the app's saved attachments. */
+export async function documentFile(file) {
+  const r = await runScript("documents.mjs", ["file", "--dir", `${dataDir()}/files`, "--file", file]);
+  return r.out ?? { error: r.stderr || "Couldn't add this file." };
+}
+
+/** Checks saved documents and their combined size before sending. */
+export async function checkDocuments(files) {
+  const r = await runScript("documents.mjs", ["check", "--dir", `${dataDir()}/files`, "--files", JSON.stringify(files)]);
+  if (r.code !== 0 || r.out?.error) throw new Error(r.out?.error || r.stderr || "Couldn't read these attachments.");
+}
+
+/** Opens a saved attachment in its default app. */
+export async function openDocument(path) {
+  const r = await runScript("documents.mjs", ["open", "--dir", `${dataDir()}/files`, "--path", path]);
+  if (r.code !== 0 || r.out?.error) throw new Error(r.out?.error || r.stderr || "Couldn't open this file.");
+}
+
+/** Linked chats use the same session discovery and normal chat view. */
+export async function listLinkedChats() {
+  const r = await runScript("chat-links.mjs", ["list", "--state", bridgeDir(), "--include-deleted", "true"]);
+  if (r.code !== 0) throw new Error(r.out?.error || "Couldn't load linked chats.");
+  return Array.isArray(r.out) ? r.out : [];
+}
+
+export async function detachLinkedChat(id) {
+  const r = await runScript("chat-links.mjs", ["detach", "--state", bridgeDir(), "--chat", id]);
+  if (r.code !== 0) throw new Error(r.out?.error || "Couldn't detach linked chats.");
+}
+
 /**
  * The skills an agent has loaded in a folder (skills.mjs), for the / menu.
  * @param {string} agent @param {string} cwd
@@ -155,12 +186,12 @@ export async function listSessions() {
 }
 
 /**
- * A session's history as bridge events (sessions.mjs read): the last `max` messages you typed and
- * what followed, or with `before`, only what came before that time.
+ * A session's full history as bridge events (sessions.mjs read). A positive `max` limits
+ * it to that many user turns. With `before`, only events before that time are returned.
  * @param {string} agent @param {string} file @param {number} before @param {number} [max]
  * @returns {Promise<any[]>}
  */
-export async function readSession(agent, file, before, max = 40) {
+export async function readSession(agent, file, before, max = 0) {
   const r = await runScript("sessions.mjs", ["read", "--agent", agent, "--file", file, "--before", String(before || 0), "--max", String(max), "--images", imagesDir()]);
   return r.code === 0 && r.out ? r.out : [];
 }
@@ -203,6 +234,8 @@ export class Bridge {
   constructor(o, onEvent, onClose) {
     this.chat = o.chat; this.agent = o.agent; this.cwd = o.cwd; this.session = o.session;
     this.model = o.model ?? null;
+    this.permissions = o.permissions ?? null;
+    this.title = o.title ?? "";
     this.onEvent = onEvent; this.onClose = onClose;
     /** @type {import("net").Socket | null} */
     this.sock = null;
@@ -308,7 +341,10 @@ export class Bridge {
 
   /** Starts the bridge in a hidden terminal and waits for its port. @param {any} cx */
   async launch(cx) {
-    const args = ["serve", "--chat", this.chat, "--agent", this.agent, "--cwd", this.cwd, "--state", bridgeDir(), ...(this.session ? ["--resume", this.session] : []), ...(this.model ? ["--model", this.model] : [])];
+    let record;
+    try { record = JSON.parse(await readTextFile(`${dataDir()}/links/${this.chat}.json`) ?? "null"); } catch { /* no saved link */ }
+    if (record?.deleted) throw new Error("This chat was deleted. Choose another conversation.");
+    const args = bridgeArgs({ chat: this.chat, agent: this.agent, cwd: this.cwd, state: bridgeDir(), session: this.session, model: this.model, title: this.title, permissions: this.permissions });
     const r = await hc(["run", "--bg", "--no-parent", "--outlive-parent", "--cwd", this.cwd, "--label", "hey-chat=bridge", "--json", "--",
       nodeRuntime, script("bridge.mjs"), ...args]);
     if (r.code !== 0) throw new Error(r.stderr.trim() || "Couldn't start the bridge.");
@@ -407,9 +443,19 @@ export class Bridge {
    * @param {string} text @param {{ path: string, w: number, h: number }[]} [images]
    * @param {{ name: string, path: string } | null} [skill] a Codex skill picked from the / menu
    */
-  send(text, images = [], skill = null, id = null) { return this.write({ type: "send", text, images, ...(skill ? { skill } : {}), ...(id ? { id } : {}) }); }
+  send(text, images = [], skill = null, id = null, files = []) { return this.write({ type: "send", text, images, ...(this.permissions ? { permissions: this.permissions } : {}), ...(files.length ? { files } : {}), ...(skill ? { skill } : {}), ...(id ? { id } : {}) }); }
   /** Sends a queued message into the active turn. @param {string} id */
   sendNow(id) { return this.write({ type: "send_now", id }); }
+  /** How often the agent asks first: ask, edits, auto or full. @param {string} level */
+  setPermissions(level) { this.permissions = level; return this.write({ type: "permissions", level }); }
+  markSeen() { return this.write({ type: "link_seen" }); }
+  updateLinkMetadata(title) { return this.write({ type: "link_metadata", title }); }
+  /** Retries a failed turn by its bridge-owned failure id. */
+  retryTurn(id) { return this.write({ type: "retry_turn", id }); }
+  /** Changes a message that is still waiting in the queue. */
+  editQueued(id, text, skill = null) { return this.write({ type: "queue_edit", id, text, skill }); }
+  /** Removes a message that is still waiting in the queue. */
+  removeQueued(id) { return this.write({ type: "queue_remove", id }); }
   /** Answers the agent's questions: each question id's answers. @param {string} id @param {Record<string, string[]>} answers */
   answer(id, answers) { return this.write({ type: "answer", id, answers }); }
   stop() { return this.write({ type: "stop" }); }
