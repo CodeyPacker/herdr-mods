@@ -1,0 +1,77 @@
+{
+  "id": "course:ts-foundations/task/remaining",
+  "role": "independent",
+  "title": "Count unfinished tasks",
+  "concepts": [
+    "inference",
+    "numeric-expression",
+    "binding"
+  ],
+  "prompt": "The supplied number opening is the number of tasks at the start. change is how many finished, between zero and opening. Declare a let variable named remaining. Its value must be the number still unfinished and its inferred type must be number. Leave off the type annotation. With 6 tasks and 2 finished, remaining is 4.",
+  "hints": [
+    "Which input is the whole group?",
+    "Finishing tasks makes the group smaller. A let declaration can calculate its initial value.",
+    "Use the two supplied names in the calculation. The compiler can infer the result of subtracting numbers."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [
+    {
+      "kind": "VariableDeclaration",
+      "name": "remaining",
+      "declaration": "let",
+      "message": "Use let for remaining so another number can be assigned."
+    },
+    {
+      "kind": "VariableDeclaration",
+      "name": "remaining",
+      "has": "type",
+      "max": 0,
+      "message": "Leave off the annotation on remaining so the compiler infers its type."
+    }
+  ],
+  "checks": [
+    "remaining === opening - change"
+  ],
+  "typeChecks": [
+    "__Equal<typeof remaining, number>"
+  ],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "morning",
+      "declarations": "fixture-morning.ts"
+    },
+    {
+      "id": "empty",
+      "declarations": "fixture-empty.ts"
+    },
+    {
+      "id": "busy",
+      "declarations": "fixture-busy.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-sample.ts",
+      "misconception": "Treats the worked example as a fixed answer.",
+      "witness": {
+        "fixture": "busy",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-annotate.ts",
+      "misconception": "Writes the type where the task asks for inference.",
+      "witness": {
+        "fixture": "morning",
+        "kind": "syntax",
+        "detail": "Leave off the annotation"
+      }
+    }
+  ],
+  "feedback": "Check the value with an empty queue, and check whether the declaration lets TypeScript infer number."
+}

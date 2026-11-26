@@ -1,0 +1,58 @@
+{
+  "id": "course:ts-foundations/task/apply-edit",
+  "role": "independent",
+  "title": "Apply a counter edit",
+  "concepts": [
+    "discriminant",
+    "narrowing",
+    "numeric-expression"
+  ],
+  "prompt": "Write nextCount(count: number, edit: Edit): number. An add edit increases count by its amount. A set edit replaces count with its value. A keep edit returns count. Zero and negative counts, amounts and values are valid. Edit is supplied. Return the calculated number.",
+  "hints": [
+    "Describe the change each tag makes to the original count.",
+    "The variant with amount adds. The variant with value replaces.",
+    "Handle the distinct cases before you reach for a payload field. The keep case needs only count."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "nextCount(7, { kind: \"keep\" }) === 7",
+    "nextCount(4, { kind: \"add\", amount: -3 }) === 1",
+    "nextCount(9, { kind: \"set\", value: 0 }) === 0",
+    "nextCount(-5, { kind: \"add\", amount: 0 }) === -5",
+    "nextCount(11, { kind: \"set\", value: -2 }) === -2",
+    "nextCount(-2, { kind: \"add\", amount: 8 }) === 6"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "edits",
+      "declarations": "fixture-edits.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-falsy.ts",
+      "misconception": "Treats a zero replacement as absent.",
+      "witness": {
+        "fixture": "edits",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    },
+    {
+      "source": "wrong-replace.ts",
+      "misconception": "Confuses a change in count with a new total.",
+      "witness": {
+        "fixture": "edits",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Use the failing case to decide whether this tag adds to, replaces, or preserves the previous count."
+}

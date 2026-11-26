@@ -1,0 +1,56 @@
+{
+  "id": "course:ts-foundations/task/sensor-display",
+  "role": "review",
+  "title": "Report a sensor reading",
+  "concepts": [
+    "discriminant",
+    "narrowing"
+  ],
+  "prompt": "A sensor returns Reading. Its boolean tag ok identifies a measurement or a failure. Implement display(reading: Reading): string. For a measurement return its degrees as text followed by \" C\". For a failure return its message exactly. Zero and negative degrees and an empty message are valid.",
+  "hints": [
+    "Find the field present in both shapes.",
+    "The boolean tag tells you which payload exists even if its value is zero or empty.",
+    "In the measurement branch convert the number to text before appending the unit."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "display({ ok: true, degrees: 0 }) === \"0 C\"",
+    "display({ ok: false, message: \"offline\" }) === \"offline\"",
+    "display({ ok: true, degrees: -7 }) === \"-7 C\"",
+    "display({ ok: false, message: \"\" }) === \"\"",
+    "display({ ok: true, degrees: 10.5 }) === \"10.5 C\""
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "readings",
+      "declarations": "fixture-readings.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-zero.ts",
+      "misconception": "Drops a valid zero measurement.",
+      "witness": {
+        "fixture": "readings",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-offline.ts",
+      "misconception": "Replaces every failure message with one sample.",
+      "witness": {
+        "fixture": "readings",
+        "kind": "result",
+        "detail": "Check 4 failed"
+      }
+    }
+  ],
+  "feedback": "Branch on ok. Preserve the payload even when its number or text would be false in an if test."
+}

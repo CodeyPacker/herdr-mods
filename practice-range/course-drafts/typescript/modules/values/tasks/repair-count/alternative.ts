@@ -1,0 +1,1 @@
+let count = change + opening;

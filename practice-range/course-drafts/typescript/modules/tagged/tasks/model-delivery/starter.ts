@@ -1,0 +1,1 @@
+type Delivery = { kind: string };

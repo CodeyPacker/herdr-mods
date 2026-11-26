@@ -1,0 +1,55 @@
+{
+  "id": "course:ts-foundations/task/repair-caption",
+  "role": "debug",
+  "title": "Repair a blocked task caption",
+  "concepts": [
+    "narrowing",
+    "diagnostic"
+  ],
+  "prompt": "caption takes an Entry. A blocked entry should return its reason exactly, including empty text. A ready entry should return \"Ready\". Repair the starter diagnostic while keeping this function safe for both shapes.",
+  "hints": [
+    "The diagnostic points to a field found on just one member of Entry.",
+    "Look for the field present on every Entry.",
+    "Read reason inside the branch where the tag guarantees that field exists."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "caption({ kind: \"ready\" }) === \"Ready\"",
+    "caption({ kind: \"blocked\", reason: \"Waiting on Lee\" }) === \"Waiting on Lee\"",
+    "caption({ kind: \"blocked\", reason: \"\" }) === \"\"",
+    "caption({ kind: \"blocked\", reason: \"No key\" }) === \"No key\""
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "entries",
+      "declarations": "fixture-entries.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-early.ts",
+      "misconception": "Attempts to read reason before narrowing.",
+      "witness": {
+        "fixture": "entries",
+        "kind": "compile",
+        "detail": "TS2339"
+      }
+    },
+    {
+      "source": "wrong-falsy.ts",
+      "misconception": "Treats empty text as a ready task.",
+      "witness": {
+        "fixture": "entries",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "Use the tag to distinguish blocked entries. An empty reason is still a valid blocked reason."
+}

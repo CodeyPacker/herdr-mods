@@ -1,0 +1,59 @@
+{
+  "id": "course:ts-foundations/task/model-delivery",
+  "role": "independent",
+  "title": "Describe a successful or failed delivery",
+  "concepts": [
+    "discriminant",
+    "object-union"
+  ],
+  "prompt": "Declare the type Delivery for exactly two message shapes. { kind: \"sent\", receipt: string } describes success. { kind: \"failed\", reason: string } describes failure. Require the matching field for each tag and reject other tag values. These are ordinary structural object types. Extra keys on existing objects are outside the task. No runtime code is required.",
+  "hints": [
+    "Each shape has a required kind and one required text field.",
+    "A type with two optional fields permits a message missing both fields.",
+    "Define each shape, then combine the alternatives using the union operator."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [],
+  "typeChecks": [
+    "__Extends<{ kind: \"sent\"; receipt: string }, Delivery>",
+    "__Extends<{ kind: \"failed\"; reason: string }, Delivery>",
+    "__Extends<Delivery, { kind: \"sent\"; receipt: string } | { kind: \"failed\"; reason: string }>"
+  ],
+  "rejects": [
+    "const missing: Delivery = { kind: \"sent\" }",
+    "const mismatched: Delivery = { kind: \"failed\", receipt: \"A\" }",
+    "const unrecognized: Delivery = { kind: \"pending\", reason: \"later\" }",
+    "const numeric: Delivery = { kind: \"sent\", receipt: 42 }"
+  ],
+  "fixtures": [
+    {
+      "id": "messages",
+      "declarations": "fixture-messages.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-optional.ts",
+      "misconception": "Makes the matching field optional in both cases.",
+      "witness": {
+        "fixture": "messages",
+        "kind": "types",
+        "detail": "Type check 3"
+      }
+    },
+    {
+      "source": "wrong-success-only.ts",
+      "misconception": "Models only the successful outcome.",
+      "witness": {
+        "fixture": "messages",
+        "kind": "types",
+        "detail": "Type check 2"
+      }
+    }
+  ],
+  "feedback": "Try assigning a failed delivery with a reason, and a sent delivery missing its receipt. Only the first should fit."
+}

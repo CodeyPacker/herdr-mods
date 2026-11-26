@@ -1,0 +1,386 @@
+{
+  "schemaVersion": "1-draft",
+  "contentVersion": "0.1.0-draft.1",
+  "id": "course:ts-foundations",
+  "languageId": "typescript",
+  "runner": {
+    "registeredLanguage": "typescript",
+    "compiler": {
+      "name": "typescript",
+      "range": "=6.0.3"
+    },
+    "node": ">=20"
+  },
+  "title": "Build a task tracker with TypeScript",
+  "audience": [
+    "New to programming",
+    "Experienced in another language, new to TypeScript"
+  ],
+  "prerequisiteConcepts": [],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:ts-foundations/module/save",
+      "order": "listed"
+    },
+    {
+      "id": "experienced",
+      "start": "course:ts-foundations/module/save",
+      "readiness": [
+        "R1",
+        "R2",
+        "R3",
+        "R4"
+      ],
+      "description": "Try each group’s readiness task or skip freely. A skip records navigation only."
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/save",
+      "description": "Save a two-line script and identify the output and the line of an error.",
+      "assessment": "course:ts-foundations/module/save"
+    },
+    {
+      "id": "outcome/values",
+      "description": "Trace assignments, compute a number, construct a label, and repair a type mismatch.",
+      "assessment": "course:ts-foundations/module/values"
+    },
+    {
+      "id": "outcome/decisions",
+      "description": "Choose a branch using equality, ordering and boolean operators. Distinguish empty text and zero from absent data.",
+      "assessment": "course:ts-foundations/module/decisions"
+    },
+    {
+      "id": "outcome/functions",
+      "description": "Write a typed function with a return value and local state. Explain why a name is out of scope.",
+      "assessment": "course:ts-foundations/module/functions"
+    },
+    {
+      "id": "outcome/lists",
+      "description": "Build and traverse an array with a for-of loop and an accumulator.",
+      "assessment": "course:ts-foundations/module/lists"
+    },
+    {
+      "id": "outcome/shapes",
+      "description": "Describe a task with a type alias or interface, read a property and update an object while keeping its input intact.",
+      "assessment": "course:ts-foundations/module/shapes"
+    },
+    {
+      "id": "outcome/missing",
+      "description": "Represent a missing owner or due date. Use string literal unions, null checks and typeof to narrow a value.",
+      "assessment": "course:ts-foundations/module/missing"
+    },
+    {
+      "id": "outcome/collections",
+      "description": "Select and transform tasks with callbacks. Build a Map of groups and a Set of unique owners.",
+      "assessment": "course:ts-foundations/module/collections"
+    },
+    {
+      "id": "outcome/tagged",
+      "description": "Model tag/payload pairs, use the tag to compute a result, and repair a field read.",
+      "assessment": "course:ts-foundations/module/tagged"
+    },
+    {
+      "id": "outcome/boundary",
+      "description": "Accept unknown input, distinguish it from unchecked any, and inspect real properties before accepting a task.",
+      "assessment": "course:ts-foundations/module/boundary"
+    },
+    {
+      "id": "outcome/modules",
+      "description": "Import and export values and types. Locate strict and target in supplied compiler settings and predict their roles.",
+      "assessment": "course:ts-foundations/module/modules"
+    },
+    {
+      "id": "outcome/checks",
+      "description": "Interpret expected and actual values, isolate an off-by-one defect, and write a distinguishing test.",
+      "assessment": "course:ts-foundations/module/checks"
+    },
+    {
+      "id": "outcome/errors",
+      "description": "Separate an expected business outcome from an exception and safely explain an unknown thrown value.",
+      "assessment": "course:ts-foundations/module/errors"
+    },
+    {
+      "id": "outcome/async",
+      "description": "Return a promise, await a local source and handle fulfillment and rejection.",
+      "assessment": "course:ts-foundations/module/async"
+    },
+    {
+      "id": "outcome/generic",
+      "description": "Preserve input/output types with a generic function and describe task projections with Pick, Omit and Partial.",
+      "assessment": "course:ts-foundations/module/generic"
+    },
+    {
+      "id": "outcome/compose",
+      "description": "Read fields, constructors and methods in an existing class, then compose its local reader with pure functions.",
+      "assessment": "course:ts-foundations/module/compose"
+    },
+    {
+      "id": "outcome/tracker",
+      "description": "Join task edits, input checks and a local asynchronous reader through module boundaries.",
+      "assessment": "course:ts-foundations/module/tracker"
+    },
+    {
+      "id": "outcome/report",
+      "description": "Independently combine validation, reporting, error handling, local async behavior and regression tests.",
+      "assessment": "course:ts-foundations/module/report"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:ts-foundations/module/save",
+      "title": "Save, run, read output",
+      "prerequisites": [],
+      "teaches": [
+        "save-run",
+        "read-output"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/values",
+      "title": "Values, variables and inference",
+      "prerequisites": [
+        "course:ts-foundations/module/save"
+      ],
+      "teaches": [
+        "binding",
+        "numeric-expression",
+        "text-expression",
+        "inference",
+        "diagnostic"
+      ],
+      "status": "sample",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/values/module.json"
+      }
+    },
+    {
+      "id": "course:ts-foundations/module/decisions",
+      "title": "Make a decision",
+      "prerequisites": [
+        "course:ts-foundations/module/values"
+      ],
+      "teaches": [
+        "branch",
+        "truthiness",
+        "boolean"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/functions",
+      "title": "Give a calculation a name",
+      "prerequisites": [
+        "course:ts-foundations/module/decisions"
+      ],
+      "teaches": [
+        "function",
+        "scope",
+        "annotation"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/lists",
+      "title": "Work through a list",
+      "prerequisites": [
+        "course:ts-foundations/module/functions"
+      ],
+      "teaches": [
+        "array",
+        "loop"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/shapes",
+      "title": "Describe a task",
+      "prerequisites": [
+        "course:ts-foundations/module/functions",
+        "course:ts-foundations/module/lists"
+      ],
+      "teaches": [
+        "object-shape",
+        "type-alias",
+        "interface"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/missing",
+      "title": "Handle a missing value",
+      "prerequisites": [
+        "course:ts-foundations/module/shapes",
+        "course:ts-foundations/module/decisions"
+      ],
+      "teaches": [
+        "optional",
+        "nullish",
+        "literal-union",
+        "narrowing"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/collections",
+      "title": "Group and transform tasks",
+      "prerequisites": [
+        "course:ts-foundations/module/lists",
+        "course:ts-foundations/module/shapes",
+        "course:ts-foundations/module/missing"
+      ],
+      "teaches": [
+        "callback",
+        "transform",
+        "map-set"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/tagged",
+      "title": "Choose fields by case",
+      "prerequisites": [
+        "course:ts-foundations/module/missing",
+        "course:ts-foundations/module/functions",
+        "course:ts-foundations/module/shapes",
+        "course:ts-foundations/module/decisions"
+      ],
+      "teaches": [
+        "discriminant",
+        "object-union"
+      ],
+      "status": "sample",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/tagged/module.json"
+      }
+    },
+    {
+      "id": "course:ts-foundations/module/boundary",
+      "title": "Read unknown data",
+      "prerequisites": [
+        "course:ts-foundations/module/tagged",
+        "course:ts-foundations/module/collections"
+      ],
+      "teaches": [
+        "unknown",
+        "validation",
+        "erasure"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/modules",
+      "title": "Split code into modules",
+      "prerequisites": [
+        "course:ts-foundations/module/functions",
+        "course:ts-foundations/module/shapes"
+      ],
+      "teaches": [
+        "import-export",
+        "compiler-config"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/checks",
+      "title": "Read and write checks",
+      "prerequisites": [
+        "course:ts-foundations/module/modules",
+        "course:ts-foundations/module/collections"
+      ],
+      "teaches": [
+        "tests",
+        "debugging"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/errors",
+      "title": "Recover from errors",
+      "prerequisites": [
+        "course:ts-foundations/module/boundary",
+        "course:ts-foundations/module/checks"
+      ],
+      "teaches": [
+        "throw-catch",
+        "failure"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/async",
+      "title": "Wait for local data",
+      "prerequisites": [
+        "course:ts-foundations/module/errors",
+        "course:ts-foundations/module/modules"
+      ],
+      "teaches": [
+        "promise",
+        "await",
+        "async-fixture"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/generic",
+      "title": "Keep a type relationship",
+      "prerequisites": [
+        "course:ts-foundations/module/functions",
+        "course:ts-foundations/module/missing",
+        "course:ts-foundations/module/collections"
+      ],
+      "teaches": [
+        "generic",
+        "utility"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/compose",
+      "title": "Connect small pieces",
+      "prerequisites": [
+        "course:ts-foundations/module/async",
+        "course:ts-foundations/module/generic",
+        "course:ts-foundations/module/checks"
+      ],
+      "teaches": [
+        "composition",
+        "class-reading"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/tracker",
+      "title": "Assemble the tracker",
+      "prerequisites": [
+        "course:ts-foundations/module/compose",
+        "course:ts-foundations/module/boundary",
+        "course:ts-foundations/module/tagged"
+      ],
+      "teaches": [
+        "project-workspace"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/report",
+      "title": "Deliver an unfamiliar report",
+      "prerequisites": [
+        "course:ts-foundations/module/tracker"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "planned"
+    }
+  ],
+  "project": "project/project.json",
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  }
+}

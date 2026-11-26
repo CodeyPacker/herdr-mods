@@ -1,0 +1,7 @@
+[
+  "remainingAfter(0, 0, 0) === 0",
+  "remainingAfter(6, 2, 3) === 5",
+  "remainingAfter(3, 2, 5) === 0",
+  "remainingAfter(0, 4, 0) === 4",
+  "remainingAfter(8, 0, 1) === 7"
+]

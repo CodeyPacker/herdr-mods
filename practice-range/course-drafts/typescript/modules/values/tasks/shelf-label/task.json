@@ -1,0 +1,67 @@
+{
+  "id": "course:ts-foundations/task/shelf-label",
+  "role": "independent",
+  "title": "Label a task shelf",
+  "concepts": [
+    "text-expression",
+    "binding"
+  ],
+  "prompt": "Two supplied text values, area and owner, identify a shelf. Give the fixed label the name label using const. It must contain the area, a slash with one space on each side, and the owner, in that order. For area \"Desk\" and owner \"Jo\", produce \"Desk / Jo\". Keep empty text and all input spaces exactly as supplied.",
+  "hints": [
+    "Write down the three pieces of text in their final order.",
+    "The slash and its two spaces are themselves a text value.",
+    "Use + between text values. Quoting a variable name would put that name in the label."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [
+    {
+      "kind": "VariableDeclaration",
+      "name": "label",
+      "declaration": "const",
+      "message": "Use const for the fixed label."
+    }
+  ],
+  "checks": [
+    "label === area + \" / \" + owner"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "desk",
+      "declarations": "fixture-desk.ts"
+    },
+    {
+      "id": "empty",
+      "declarations": "fixture-empty.ts"
+    },
+    {
+      "id": "other",
+      "declarations": "fixture-other.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-literal.ts",
+      "misconception": "Copies the sample label.",
+      "witness": {
+        "fixture": "empty",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-reverse.ts",
+      "misconception": "Reverses the two supplied names.",
+      "witness": {
+        "fixture": "desk",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Compare the order and spaces against the two inputs in the failed case."
+}

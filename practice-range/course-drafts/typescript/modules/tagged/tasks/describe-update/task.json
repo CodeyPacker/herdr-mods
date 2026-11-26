@@ -1,0 +1,55 @@
+{
+  "id": "course:ts-foundations/task/describe-update",
+  "role": "guided",
+  "title": "Print the actual duration",
+  "concepts": [
+    "discriminant",
+    "narrowing"
+  ],
+  "prompt": "Update has two shapes. A queued update carries title, and a done update carries minutes. The supplied starter handles queued updates. Complete describe so a done update produces \"Minutes: \" followed by its minutes, including zero. Preserve \"Next: \" followed by the title for queued updates, including an empty title.",
+  "hints": [
+    "Which shape reaches the final return after the early return?",
+    "Look at the field paired with the done tag.",
+    "Combine the required prefix with the numeric field. String(value) converts a number to text."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "describe({ kind: \"queued\", title: \"Paint\" }) === \"Next: Paint\"",
+    "describe({ kind: \"done\", minutes: 0 }) === \"Minutes: 0\"",
+    "describe({ kind: \"done\", minutes: 23 }) === \"Minutes: 23\"",
+    "describe({ kind: \"queued\", title: \"\" }) === \"Next: \""
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "updates",
+      "declarations": "fixture-updates.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-fixed.ts",
+      "misconception": "Uses the sample zero for every duration.",
+      "witness": {
+        "fixture": "updates",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    },
+    {
+      "source": "wrong-shared.ts",
+      "misconception": "Reads a field before checking which shape arrived.",
+      "witness": {
+        "fixture": "updates",
+        "kind": "compile",
+        "detail": "TS2339"
+      }
+    }
+  ],
+  "feedback": "Look at the tag in the failing input and use the value that belongs to that shape."
+}

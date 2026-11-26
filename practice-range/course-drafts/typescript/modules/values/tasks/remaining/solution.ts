@@ -1,0 +1,1 @@
+let remaining = opening - change;

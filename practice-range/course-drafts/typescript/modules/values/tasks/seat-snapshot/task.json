@@ -1,0 +1,62 @@
+{
+  "id": "course:ts-foundations/task/seat-snapshot",
+  "role": "review",
+  "title": "Save a before-and-after seat count",
+  "concepts": [
+    "binding",
+    "numeric-expression",
+    "inference"
+  ],
+  "prompt": "A small workshop supplies two numbers, seats and booked. booked is between zero and seats. Save the original seat count as before and the free count after booking as after. The two values must be numbers. With 9 seats and 4 bookings the values are 9 and 5. This time no output is required.",
+  "hints": [
+    "A name can hold the value of another name at a particular point.",
+    "Use the original seat count for the first value.",
+    "Calculate the second value from the original count and the bookings."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "before === seats",
+    "after === seats - booked"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "workshop",
+      "declarations": "fixture-workshop.ts"
+    },
+    {
+      "id": "sold",
+      "declarations": "fixture-sold.ts"
+    },
+    {
+      "id": "quiet",
+      "declarations": "fixture-quiet.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-both.ts",
+      "misconception": "Takes the snapshot after subtracting bookings.",
+      "witness": {
+        "fixture": "workshop",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-bookings.ts",
+      "misconception": "Reports bookings as free seats.",
+      "witness": {
+        "fixture": "sold",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Compare the original number to before, then account for every booking in after."
+}

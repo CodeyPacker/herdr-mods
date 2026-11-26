@@ -1,0 +1,63 @@
+{
+  "id": "course:ts-foundations/task/repair-count",
+  "role": "debug",
+  "title": "Repair a number stored as text",
+  "concepts": [
+    "inference",
+    "numeric-expression",
+    "diagnostic"
+  ],
+  "prompt": "The supplied opening and change are numbers of tasks and new arrivals. The starter should keep a numeric variable called count and add the arrivals. Read its diagnostic, repair it, then save. The final value must be a number even when there are no arrivals.",
+  "hints": [
+    "Read the line number first. Which line gave count its starting type?",
+    "Quotation marks make text. The characters inside quotes do not read a variable.",
+    "Start from the supplied numeric opening count. Then add the supplied change."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "count === opening + change"
+  ],
+  "typeChecks": [
+    "__Equal<typeof count, number>"
+  ],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "morning",
+      "declarations": "fixture-morning.ts"
+    },
+    {
+      "id": "empty",
+      "declarations": "fixture-empty.ts"
+    },
+    {
+      "id": "busy",
+      "declarations": "fixture-busy.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-quoted.ts",
+      "misconception": "Keeps a text initializer and assigns a number.",
+      "witness": {
+        "fixture": "morning",
+        "kind": "compile",
+        "detail": "TS2322"
+      }
+    },
+    {
+      "source": "wrong-zero.ts",
+      "misconception": "Discards the opening tasks.",
+      "witness": {
+        "fixture": "busy",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Trace the first value assigned to count and check the resulting number includes both inputs."
+}

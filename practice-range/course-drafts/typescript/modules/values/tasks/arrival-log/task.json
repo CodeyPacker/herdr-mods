@@ -1,0 +1,68 @@
+{
+  "id": "course:ts-foundations/task/arrival-log",
+  "role": "guided",
+  "title": "Show a delivery arriving",
+  "concepts": [
+    "binding",
+    "numeric-expression"
+  ],
+  "prompt": "The supplied numbers opening and change tell you how many tasks were open and how many just arrived. The starter prints the opening count and an outdated final count. Update the let variable total between the two print lines. With 6 open and 2 arriving, print 6 then 8, one number per line.",
+  "hints": [
+    "Read the print lines from top to bottom. Which one should see the new value?",
+    "An assignment calculates its right side before updating the name on its left.",
+    "Use the current total and the arrival count in one addition between the prints."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [
+    {
+      "kind": "VariableDeclaration",
+      "name": "total",
+      "declaration": "let",
+      "message": "Use let for total so another number can be assigned."
+    }
+  ],
+  "checks": [
+    "__same(__logs(), [String(opening), String(opening + change)])",
+    "total === opening + change"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "morning",
+      "declarations": "fixture-morning.ts"
+    },
+    {
+      "id": "empty",
+      "declarations": "fixture-empty.ts"
+    },
+    {
+      "id": "busy",
+      "declarations": "fixture-busy.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-replace.ts",
+      "misconception": "Overwrites the original count with the arrival count.",
+      "witness": {
+        "fixture": "morning",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-late.ts",
+      "misconception": "Updates before recording the opening count.",
+      "witness": {
+        "fixture": "morning",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Compare the two printed lines with the opening count and the updated count, in that order."
+}
