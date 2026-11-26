@@ -1,0 +1,58 @@
+{
+  "id": "course:ts-foundations/task/shapes-ticket",
+  "role": "independent",
+  "title": "Specify the required fields",
+  "concepts": [
+    "object-shape",
+    "type-alias",
+    "interface"
+  ],
+  "prompt": "Declare the type Ticket for an object with id: number and open: boolean, both required. A fresh object missing either field or using the wrong type must fail assignment.",
+  "hints": [
+    "List both fields and their value types.",
+    "Each field must be present.",
+    "Use a type alias or interface with required properties."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [],
+  "typeChecks": [
+    "__Extends<{id:number;open:boolean}, Ticket>",
+    "__Extends<Ticket, {id:number;open:boolean}>"
+  ],
+  "rejects": [
+    "const x: Ticket = { open: true }",
+    "const x: Ticket = { id: 2 }",
+    "const x: Ticket = { id: 2, open: \"yes\" }"
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Makes the id optional.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "types",
+        "detail": "Type check 2"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Requires text IDs.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "types",
+        "detail": "Type check 1"
+      }
+    }
+  ],
+  "feedback": "List both fields and their value types."
+}

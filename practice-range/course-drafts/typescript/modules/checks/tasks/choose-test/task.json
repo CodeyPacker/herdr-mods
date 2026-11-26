@@ -1,0 +1,54 @@
+{
+  "id": "course:ts-foundations/task/checks-choose-test",
+  "role": "independent",
+  "title": "Test a faulty count",
+  "concepts": [
+    "tests",
+    "debugging"
+  ],
+  "prompt": "Write catchesMissingLast(candidate): boolean. A correct candidate sums a number array; the broken candidate sums every element except the last. Return true when your test sees the correct result and false when it detects the defect. Call the supplied candidate on a distinguishing input.",
+  "hints": [
+    "Compare the two behaviors on an empty list.",
+    "Choose an input where the final entry affects the answer.",
+    "Compute the expected answer independently of the candidate."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "catchesMissingLast(xs => xs.reduce((sum,x) => sum+x,0)) === true",
+    "catchesMissingLast(xs => xs.slice(0,-1).reduce((sum,x) => sum+x,0)) === false",
+    "(() => { let calls = 0; catchesMissingLast(xs => { calls++; return 0; }); return calls > 0; })()"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Always passes the candidate.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Uses an empty input.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Compare the two behaviors on an empty list."
+}

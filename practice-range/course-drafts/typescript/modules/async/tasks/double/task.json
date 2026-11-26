@@ -1,0 +1,56 @@
+{
+  "id": "course:ts-foundations/task/async-double",
+  "role": "guided",
+  "title": "Wait before multiplying",
+  "concepts": [
+    "promise",
+    "await",
+    "async-fixture"
+  ],
+  "prompt": "The local source returns Promise<number>. Read it once and resolve with twice its value, including zero and negative numbers.",
+  "hints": [
+    "Read the compiler message about the arithmetic operand.",
+    "Which expression returns the future result?",
+    "Get the number with await before multiplying."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(await doubled(async()=>3), 6)",
+    "__same(await doubled(async()=>-2), -4)",
+    "__same(await doubled(async()=>0), 0)",
+    "await (async()=>{let calls=0; await doubled(async()=>++calls); return calls===1;})()"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Returns the unscaled result.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Replaces all readings with zero.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Read the compiler message about the arithmetic operand."
+}

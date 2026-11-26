@@ -1,0 +1,56 @@
+{
+  "id": "course:ts-foundations/task/save-echo-card",
+  "role": "review",
+  "title": "Read a supplied card",
+  "concepts": [
+    "save-run",
+    "read-output"
+  ],
+  "prompt": "The checker supplies text under the name card. Print the text it gives you, followed by Checked on a separate line. A name without quotes reads the supplied value. With card set to Mail, the first line is Mail.",
+  "hints": [
+    "Identify which output line depends on the supplied text.",
+    "A quoted word prints itself. An unquoted supplied name reads its value.",
+    "Check the order of the two print calls using the Gate case."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(__logs(), [card, \"Checked\"])"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "mail",
+      "declarations": "fixture-mail.ts"
+    },
+    {
+      "id": "gate",
+      "declarations": "fixture-gate.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Prints the name of the input.",
+      "witness": {
+        "fixture": "mail",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Copies one sample value.",
+      "witness": {
+        "fixture": "gate",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Identify which output line depends on the supplied text."
+}

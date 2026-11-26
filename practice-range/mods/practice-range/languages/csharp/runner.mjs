@@ -41,7 +41,7 @@ export async function environment() {
     .filter(Boolean).map(match => ({ major: Number(match[1]), version: match[0] })).filter(item => item.major >= 8)
     .sort((a, b) => b.major - a.major || b.version.localeCompare(a.version, undefined, { numeric: true }));
   if (!versions.length) throw new Error("Install a .NET SDK (8 or newer), then press Retry.");
-  return versions[0];
+  return { ...versions[0], label: `.NET SDK ${versions[0].version}` };
 }
 
 export async function buildChecker(root) {

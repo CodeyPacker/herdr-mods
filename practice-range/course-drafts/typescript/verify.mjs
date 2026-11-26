@@ -67,11 +67,13 @@ async function checkTask(dir, entry, concepts) {
   );
   const witnessed = new Set();
   let failedStarter = false;
+  const modules = {};
+  for (const [name, path] of Object.entries(spec.moduleSources ?? {})) modules[name] = await source(taskDir, path);
   for (const fixture of spec.fixtures) {
     const exercise = {
       id: spec.id, mode: spec.mode, rules: spec.rules, checks: spec.checks,
       typeChecks: spec.typeChecks, rejects: spec.rejects,
-      declarations: await source(taskDir, fixture.declarations)
+      declarations: await source(taskDir, fixture.declarations), modules
     };
     const check = answer => checkAnswer(tmp, exercise, answer);
     expectResult(await check(solution), true, spec.id + " solution " + fixture.id);
@@ -113,7 +115,8 @@ async function checkModule(entry, manifest) {
   const tasks = new Set(module.tasks.map(t => t.id));
   assert.equal(questions.size, module.questions.length);
   assert.equal(tasks.size, module.tasks.length);
-  assert.ok(manifest.modules.findIndex(m => m.id === module.review.afterModule) > manifest.modules.indexOf(entry));
+  if (module.review.afterCompletion) assert.equal(entry.id, manifest.modules.at(-1).id);
+  else assert.ok(manifest.modules.findIndex(m => m.id === module.review.afterModule) > manifest.modules.indexOf(entry));
   assert.ok(tasks.has(module.review.task));
   for (const q of module.questions) {
     assert.ok(module.examples[q.example]);
@@ -198,13 +201,19 @@ try {
   const manifest = await json(root, "manifest.json");
   assert.equal(manifest.runner.compiler.range, "=" + compiler.version.split(" ").at(-1));
   console.log(compiler.version, process.version);
+  const candidates = new Set(process.argv.slice(2));
+  for (const key of candidates) assert.ok(manifest.modules.some(m => m.id === manifest.id + "/module/" + key), "Unknown module " + key);
   for (const entry of manifest.modules) {
     entry.prerequisites.forEach(id => assert.ok(ids.has(id), "Missing or out-of-order prerequisite " + id));
     unique(entry.id);
-    if (entry.source) await checkModule(entry, manifest);
+    const key = entry.id.split("/").at(-1);
+    if (candidates.has(key)) {
+      entry.source ??= { kind: "bundled", path: "modules/" + key + "/module.json" };
+      await checkModule(entry, manifest);
+    } else if (!candidates.size && entry.source) await checkModule(entry, manifest);
   }
   manifest.outcomes.forEach(o => assert.ok(ids.has(o.assessment)));
-  await checkProject(manifest);
+  if (!candidates.size) await checkProject(manifest);
   console.log(JSON.stringify(counts));
 } finally {
   await rm(tmp, { recursive: true, force: true });

@@ -183,7 +183,7 @@ export const talk = {
         if (files.length) await checkDocuments(files);
         let bridge = await this.link(chat, cx, true);
         // A bridge from before the queue protocol is replaced once it is idle.
-        if (bridge?.protocol < 11 && !queued && !chat.working && !chat.thread.some(m => m.queued)) {
+        if (bridge?.protocol < 12 && !queued && !chat.working && !chat.thread.some(m => m.queued)) {
           await this.quitBridge(chat, bridge);
           bridge = await this.link(chat, cx, true);
         }

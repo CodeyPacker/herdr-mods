@@ -1,0 +1,52 @@
+{
+  "id": "course:ts-foundations/task/save-board-sign",
+  "role": "independent",
+  "title": "Print the board sign",
+  "concepts": [
+    "save-run",
+    "read-output"
+  ],
+  "prompt": "Print Task board and then All clear on separate lines, with exactly that capitalization. Text inside matching single or double quotes is accepted.",
+  "hints": [
+    "Write down what the first line should say.",
+    "Use a separate print instruction for each line.",
+    "Read the instructions from top to bottom and check the spaces inside the quotes."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(__logs(), [\"Task board\", \"All clear\"])"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Prints the lines in reverse order.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Combines two lines into a single message.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Write down what the first line should say."
+}

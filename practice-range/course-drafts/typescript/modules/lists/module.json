@@ -1,0 +1,152 @@
+{
+  "id": "course:ts-foundations/module/lists",
+  "title": "Walk through every task",
+  "requires": [
+    "function",
+    "numeric-expression"
+  ],
+  "outcomes": [
+    {
+      "id": "predict",
+      "can": "Trace an accumulator on a list and an empty list.",
+      "assessment": [
+        "predict",
+        "explain"
+      ]
+    },
+    {
+      "id": "sum",
+      "can": "Repair an accumulated duration",
+      "assessment": [
+        "course:ts-foundations/task/lists-sum"
+      ]
+    },
+    {
+      "id": "long",
+      "can": "Collect long tasks",
+      "assessment": [
+        "course:ts-foundations/task/lists-long"
+      ]
+    },
+    {
+      "id": "count-zero",
+      "can": "Count empty bins",
+      "assessment": [
+        "course:ts-foundations/task/lists-count-zero"
+      ]
+    }
+  ],
+  "intro": "An array stores values in order. number[] describes an array of numbers. [] is empty. A for-of loop visits each value once. A variable declared before the loop can accumulate a result across visits. The array’s length counts its entries. To build a new list, start from [] and use push(value) to append an entry.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Walk through every task",
+      "text": "An array stores values in order. number[] describes an array of numbers. [] is empty. A for-of loop visits each value once. A variable declared before the loop can accumulate a result across visits. The array’s length counts its entries. To build a new list, start from [] and use push(value) to append an entry."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict before running",
+      "text": "Read the example and predict what happens before checking your answer.",
+      "example": "trace",
+      "questions": [
+        "predict"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Trace the example",
+      "text": "Trace the count before the loop and after each visit: 0, 2, 2, 5. The zero is still visited. On an empty list, execution skips the body entirely. Placing the starting value inside the body would lose earlier work.",
+      "example": "trace"
+    },
+    {
+      "kind": "prediction",
+      "title": "Check your explanation",
+      "text": "Read the indicated code and choose the explanation that accounts for its behavior.",
+      "example": "trace",
+      "questions": [
+        "explain"
+      ]
+    },
+    {
+      "kind": "modification",
+      "title": "Repair an accumulated duration",
+      "text": "Return the sum of all durations, with an empty list totaling zero. The starter keeps only the last duration.",
+      "task": "course:ts-foundations/task/lists-sum"
+    },
+    {
+      "kind": "independent",
+      "title": "Collect long tasks",
+      "text": "Use the contract in the exercise and check your answer on save.",
+      "task": "course:ts-foundations/task/lists-long"
+    }
+  ],
+  "questions": [
+    {
+      "id": "predict",
+      "example": "trace",
+      "prompt": "What prints after the last visit?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "5",
+          "feedback": "All three values contribute."
+        },
+        {
+          "text": "3",
+          "feedback": "3 is only the last value."
+        }
+      ]
+    },
+    {
+      "id": "explain",
+      "example": "trace",
+      "prompt": "If minutes were empty, what would print?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "The program would fail.",
+          "feedback": "An empty array can be traversed."
+        },
+        {
+          "text": "0",
+          "feedback": "No visits change the starting total."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "trace": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/trace.ts"
+      },
+      "stdout": [
+        "5"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:ts-foundations/task/lists-sum",
+      "path": "tasks/sum/task.json"
+    },
+    {
+      "id": "course:ts-foundations/task/lists-long",
+      "path": "tasks/long/task.json"
+    },
+    {
+      "id": "course:ts-foundations/task/lists-count-zero",
+      "path": "tasks/count-zero/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:ts-foundations/task/lists-count-zero",
+    "afterModule": "course:ts-foundations/module/collections",
+    "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
+  },
+  "drills": [
+    "loops/for-of",
+    "arrays/push"
+  ],
+  "drillGap": "The linked drills isolate syntax. This module checks the combined behavior on varied inputs."
+}

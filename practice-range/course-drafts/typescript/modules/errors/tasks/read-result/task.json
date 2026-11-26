@@ -1,0 +1,57 @@
+{
+  "id": "course:ts-foundations/task/errors-read-result",
+  "role": "independent",
+  "title": "Keep successes and exceptions distinct",
+  "concepts": [
+    "throw-catch",
+    "failure"
+  ],
+  "prompt": "Run source once. Return {kind:\"ok\", text} when it returns a string, including empty text. If it throws, return {kind:\"error\", message} using the Error message, thrown string, or \"Unknown\".",
+  "hints": [
+    "Separate the success path from the catch path.",
+    "Use the returned string even when it is empty.",
+    "Narrow caught data before building the error result."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(readText(() => \"\"), {kind:\"ok\",text:\"\"})",
+    "__same(readText(() => \"Mail\"), {kind:\"ok\",text:\"Mail\"})",
+    "__same(readText(() => { throw new Error(\"Busy\") }), {kind:\"error\",message:\"Busy\"})",
+    "__same(readText(() => { throw \"\" }), {kind:\"error\",message:\"\"})",
+    "__same(readText(() => { throw null }), {kind:\"error\",message:\"Unknown\"})",
+    "(() => { let n=0; readText(()=>{n++;return \"x\"}); return n===1; })()"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Treats empty success as an exception.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Discards specific errors.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "Separate the success path from the catch path."
+}

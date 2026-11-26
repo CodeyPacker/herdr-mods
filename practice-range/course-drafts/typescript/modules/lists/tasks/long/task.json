@@ -1,0 +1,55 @@
+{
+  "id": "course:ts-foundations/task/lists-long",
+  "role": "independent",
+  "title": "Collect long tasks",
+  "concepts": [
+    "array",
+    "loop"
+  ],
+  "prompt": "Return a new array of values at least the supplied minimum, preserving order and duplicates. Leave the original array intact.",
+  "hints": [
+    "Start with an empty output list.",
+    "Test each value against the threshold.",
+    "Add qualifying values as you encounter them."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(longTasks([3,2,3,5], 3), [3,3,5])",
+    "__same(longTasks([], 0), [])",
+    "__same(longTasks([0,-1], 0), [0])",
+    "(() => { const input = [1, 4]; const output = longTasks(input, 4); return output !== input && __same(input, [1, 4]); })()"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Excludes the boundary.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Returns everything.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Start with an empty output list."
+}

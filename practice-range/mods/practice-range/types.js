@@ -2,6 +2,16 @@
  * @typedef {{ ready: boolean, detail: string }} SetupRequirement
  * @typedef {{ node: SetupRequirement, language: SetupRequirement, editor: SetupRequirement }} SetupRequirements
  * @typedef {{ completed: boolean, languageId: string, enabled: string[] }} SetupStatus
+ * @typedef {{ found: boolean, version: string }} Probe a command and the first line of its --version
+ * @typedef {{ ready: boolean, detail: string, passed: number, total: number }} PackScan
+ *   `detail`: the runtime's version when ready, else what is missing
+ * @typedef {{ node: { ready: boolean, version: string }, languages: Record<string, PackScan>,
+ *   editors: { neovim: Probe, vscode: Probe } }} ToolScan
+ * @typedef {Probe & { ready: boolean, detail: string }} TutorProbe `ready`: new enough and signed in
+ * @typedef {{ claude: TutorProbe, codex: TutorProbe }} TutorScan
+ * @typedef {{ side: "left" | "right", width: number, compact: boolean }} Layout
+ *   `side`: where the panel sits beside Neovim. `width`: the panel's share of the tab, 0.3 to 0.7.
+ *   `compact`: leave out the help sentences under each part of the panel.
  * @typedef {{ id: string, title: string, prompt: string, solution: string,
  *   hints: string[], declarations?: string }} Exercise
  * @typedef {Exercise & { topicId: string }} CatalogExercise

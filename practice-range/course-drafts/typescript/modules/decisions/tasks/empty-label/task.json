@@ -1,0 +1,61 @@
+{
+  "id": "course:ts-foundations/task/decisions-empty-label",
+  "role": "review",
+  "title": "Handle an empty label",
+  "concepts": [
+    "branch",
+    "truthiness",
+    "boolean"
+  ],
+  "prompt": "The supplied name label is text. Set shown to \"Untitled\" only when label is exactly empty. Otherwise preserve it, including a single space.",
+  "hints": [
+    "Is a space the same as no characters?",
+    "Compare the supplied value with an empty pair of quotes.",
+    "Keep the original value on the path where it has any characters."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "shown === (label === \"\" ? \"Untitled\" : label)"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "empty",
+      "declarations": "fixture-empty.ts"
+    },
+    {
+      "id": "space",
+      "declarations": "fixture-space.ts"
+    },
+    {
+      "id": "named",
+      "declarations": "fixture-named.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Treats a space as empty.",
+      "witness": {
+        "fixture": "space",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Preserves the empty string.",
+      "witness": {
+        "fixture": "empty",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Is a space the same as no characters?"
+}

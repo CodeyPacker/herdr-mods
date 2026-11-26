@@ -25,7 +25,7 @@ import { expand } from "./store.js";
 import { toggle } from "./tabs.js";
 import { COLLAPSED, SIDEBAR_HIDDEN, CONDENSE_CHAT, SHOW_PLAN, quickDir, normalFolder } from "./common.js";
 import { makeShortcuts } from "./shortcuts.js";
-import { treeView, TREE_WIDTH } from "./views/tree.js";
+import { treeView, deleteDialog, TREE_WIDTH } from "./views/tree.js";
 import { outputsView, OUTPUTS_WIDTH } from "./views/outputs.js";
 import { setupView } from "./views/setup.js";
 import { chatView, imageViewer } from "./views/chat.js";
@@ -277,7 +277,8 @@ export default class HeyChat extends View {
       .child(chatView(this, t, chatWidth))
       .when(this.outputsOpen, el => el.child(outputsView(this, t).when(outputOverlay, panel => panel.absolute().top(GAP).right(GAP).w(Math.max(1, Math.min(OUTPUTS_WIDTH, this.width - GAP * 2))).h(Math.max(1, this.height - GAP * 2)))))
       .when(Boolean(this.viewing), (el) => el.child(imageViewer(this)))
-      .when(this.settingsOpen, (el) => el.child(settingsDialog(this, t)));
+      .when(this.settingsOpen, (el) => el.child(settingsDialog(this, t)))
+      .when(Boolean(this.deleting), (el) => el.child(deleteDialog(this, t)));
   }
 }
 

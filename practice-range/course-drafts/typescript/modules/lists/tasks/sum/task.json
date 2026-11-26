@@ -1,0 +1,54 @@
+{
+  "id": "course:ts-foundations/task/lists-sum",
+  "role": "guided",
+  "title": "Repair an accumulated duration",
+  "concepts": [
+    "array",
+    "loop"
+  ],
+  "prompt": "Return the sum of all durations, with an empty list totaling zero. The starter keeps only the last duration.",
+  "hints": [
+    "Trace the total after the first and second visit.",
+    "Initialize the running number once before the loop.",
+    "Use the existing total when updating it."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(totalMinutes([]), 0)",
+    "__same(totalMinutes([2, 0, 3]), 5)",
+    "__same(totalMinutes([4, 4]), 8)"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Keeps the final value.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Counts items.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Trace the total after the first and second visit."
+}

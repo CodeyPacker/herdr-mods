@@ -1,0 +1,55 @@
+{
+  "id": "course:ts-foundations/task/collections-unique",
+  "role": "review",
+  "title": "List distinct stops",
+  "concepts": [
+    "callback",
+    "transform",
+    "map-set"
+  ],
+  "prompt": "Return unique stop names in first-seen order, preserving case and empty text.",
+  "hints": [
+    "Which occurrence decides a name’s position?",
+    "A Set records whether you have seen a name.",
+    "Walk the input in order, or expand a Set built from that ordered input."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(uniqueStops([\"b\",\"\",\"b\",\"A\",\"a\",\"\"]), [\"b\",\"\",\"A\",\"a\"])",
+    "__same(uniqueStops([]), [])",
+    "__same(uniqueStops([\"x\",\"x\"]), [\"x\"])"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Keeps duplicates.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Sorts the distinct names.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Which occurrence decides a name’s position?"
+}

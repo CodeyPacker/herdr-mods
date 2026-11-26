@@ -78,6 +78,16 @@ export function keyButton(t, id, key, label, enabled, click) {
 }
 
 /**
+ * A thin bar that fills from the left, for how much of something is done.
+ * @param {Theme} t @param {number} fraction 0 to 1 @param {Color} [color] the fill (default: the accent)
+ */
+export function meter(t, fraction, color) {
+  const share = Math.min(1, Math.max(0, fraction));
+  return div().w_full().h(4).flex_none().rounded(2).bg(t.raised).overflow_hidden()
+    .child(div().h_full().rounded(2).bg(color ?? t.accent).w(`${Math.round(share * 1000) / 10}%`));
+}
+
+/**
  * A line with a round knob: drag the knob, or click along the line. Herdr places the fill
  * and the knob from `state`, a SliderState. Pair it with DragSlider (drag-slider.js) when the
  * value also changes by itself.

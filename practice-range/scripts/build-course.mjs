@@ -27,10 +27,11 @@ for (const entry of manifest.modules.filter(entry => entry.source)) {
   for (const entry of module.tasks) {
     const taskFolder = dirname(resolve(folder, entry.path));
     const task = await json(folder, entry.path);
-    const { alternative, wrongAnswers, ...content } = task;
+    const { alternative, wrongAnswers, moduleSources, ...content } = task;
     tasks.push({ ...content,
       starter: await source(taskFolder, task.starter), solution: await source(taskFolder, task.solution),
       fixtures: await Promise.all(task.fixtures.map(async fixture => ({ ...fixture, declarations: await source(taskFolder, fixture.declarations) }))),
+      ...(moduleSources ? { modules: Object.fromEntries(await Promise.all(Object.entries(moduleSources).map(async ([name, path]) => [name, await source(taskFolder, path)]))) } : {}),
     });
   }
   modules.push({ ...module, examples, tasks });

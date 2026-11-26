@@ -1,0 +1,55 @@
+{
+  "id": "course:ts-foundations/task/generic-pair",
+  "role": "review",
+  "title": "Keep both sides of a pair",
+  "concepts": [
+    "generic",
+    "utility"
+  ],
+  "prompt": "Return {left,right} with each field retaining the type of its corresponding argument. Left and right may have different types.",
+  "hints": [
+    "Each type parameter belongs to one input and one field.",
+    "Check the expected return shape.",
+    "Keep the original inputs paired with their original field names."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(pair(0,\"x\"), {left:0,right:\"x\"})",
+    "__same(pair(false,3), {left:false,right:3})"
+  ],
+  "typeChecks": [
+    "__Equal<ReturnType<typeof pair<number,string>>,{left:number;right:string}>"
+  ],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Swaps inputs.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "compile",
+        "detail": "TS2322"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Forgets the right field.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "compile",
+        "detail": "TS2741"
+      }
+    }
+  ],
+  "feedback": "Each type parameter belongs to one input and one field."
+}

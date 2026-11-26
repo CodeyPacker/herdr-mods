@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /** Everything is ignored except each language's session, answers and backups. */
-export const GITIGNORE = `# Practice Range device sync: only progress and answers are shared.
+const LEGACY_GITIGNORE = `# Practice Range device sync: only progress and answers are shared.
 /*
 !/.gitignore
 !/session.json
@@ -27,6 +27,18 @@ bin/
 obj/
 node_modules/
 *.bak*
+`;
+
+// Only learner-owned course records travel. Checker files and machine attachments stay local.
+export const GITIGNORE = LEGACY_GITIGNORE + `!/courses/
+/courses/*
+!/courses/*/
+/courses/*/*
+!/courses/*/*/
+/courses/*/*/*
+!/courses/*/*/enrollment.json
+!/courses/*/*/answers/
+!/courses/*/*/history/
 `;
 
 /** @param {string} folder @param {string[]} args @returns {Promise<{ code: number, stdout: string, stderr: string }>} */
@@ -54,10 +66,16 @@ async function checkRepo(folder) {
   }
 }
 
-/** Write the allow-list once. A changed one is left alone. @param {string} folder */
+/** Upgrade our previous allow-list. A user-edited one is left alone. @param {string} folder */
 async function ensureGitignore(folder) {
   const path = join(folder, ".gitignore");
-  try { await readFile(path, "utf8"); } catch { await writeFile(path, GITIGNORE); }
+  try {
+    const existing = await readFile(path, "utf8");
+    if (existing === LEGACY_GITIGNORE) await writeFile(path, GITIGNORE);
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+    await writeFile(path, GITIGNORE);
+  }
 }
 
 /** @param {string} folder */

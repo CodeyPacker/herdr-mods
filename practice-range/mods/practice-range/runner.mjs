@@ -9,6 +9,8 @@ import { defaultLanguage, findLanguage } from "./languages/index.js";
 import { loadLanguageRunner } from "./languages/runner.mjs";
 import { setupStatus, checkRequirements, completeSetup, selectLanguage } from "./setup.mjs";
 import { readyForReview, reviewSet } from "./review.js";
+import { scanTools, scanTutors } from "./setup/scan.mjs";
+import { installPack } from "./setup/install.mjs";
 
 /** The same content saved again within this many milliseconds is one save, not a new attempt. */
 const DUPLICATE_SAVE_MS = 3000;
@@ -132,6 +134,8 @@ export async function command(root, action, value) {
   root = resolve(root);
   await mkdir(root, { recursive: true });
   if (action === "setup-status") return setupStatus(root);
+  if (action === "setup-scan") return value === "tutors" ? scanTutors() : scanTools(root);
+  if (action === "setup-install") return installPack(value);
   if (action === "setup-check" || action === "setup-complete") {
     // Already-open tabs can still send the editor name from before language selection.
     const options = value === "neovim" || value === "vscode" ? { editor: value } : value ? JSON.parse(value) : {};

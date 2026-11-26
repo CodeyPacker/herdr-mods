@@ -1,0 +1,60 @@
+{
+  "id": "course:ts-foundations/task/boundary-valid-task",
+  "role": "independent",
+  "title": "Accept only complete imported tasks",
+  "concepts": [
+    "unknown",
+    "validation",
+    "erasure"
+  ],
+  "prompt": "For JSON input return true only for a non-null, non-array object with a nonempty string id and boolean done. Extra fields are allowed. A space is a nonempty id.",
+  "hints": [
+    "Test a valid open task first.",
+    "Both the presence and type of each required property matter.",
+    "Validate the ID length and allow either boolean value."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(validTask({id:\"A\",done:false}), true)",
+    "__same(validTask({id:\"\",done:true}), false)",
+    "__same(validTask({id:\"A\",done:1}), false)",
+    "__same(validTask(null), false)",
+    "__same(validTask([]), false)",
+    "__same(validTask({id:\" \",done:true,note:\"ok\"}), true)",
+    "__same(validTask({done:false}), false)",
+    "__same(validTask(\"x\"), false)"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Checks field presence alone.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Accepts only true statuses.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Test a valid open task first."
+}

@@ -30,7 +30,7 @@ test("course enrollment resumes reading and predictions without a repo, model, o
   state = await run("status");
   assert.deepEqual(state.enrollment.position, { moduleId, step: 1 });
   assert.deepEqual(state.enrollment.modules[moduleId].seen, [1]);
-  await assert.rejects(run("open", { moduleId: `${courseId}/module/save` }), /planned/);
+  await assert.rejects(run("open", { moduleId: `${courseId}/module/not-written` }), /planned/);
   assert.deepEqual((await run("status")).enrollment.position, state.enrollment.position);
   await assert.rejects(readFile(join(root, "session.json")), { code: "ENOENT" });
 });
@@ -45,7 +45,7 @@ test("course fixtures aggregate into one attempt, preserve assistance, and ignor
   await run("open", { moduleId, step: 2 });
   let state = await run("task");
   assert.equal(state.file.startsWith(join(root, "courses")), true);
-  assert.equal(state.course.lessons[0].tasks.find(task => task.id === taskId).solution, null);
+  assert.equal(state.course.lessons.find(lesson => lesson.id === moduleId).tasks.find(task => task.id === taskId).solution, null);
   state = await run("check-saved");
   assert.equal(state.enrollment.tasks[taskId].attempts, 0);
   await writeFile(state.file, task.solution);
@@ -59,7 +59,7 @@ test("course fixtures aggregate into one attempt, preserve assistance, and ignor
   assert.equal(state.enrollment.tasks[taskId].attempts, 1);
   await run("reset");
   state = await run("hint");
-  assert.equal(state.course.lessons[0].tasks.find(task => task.id === taskId).hints.length, 1);
+  assert.equal(state.course.lessons.find(lesson => lesson.id === moduleId).tasks.find(task => task.id === taskId).hints.length, 1);
   await writeFile(state.file, task.solution + "\n");
   state = await run("check");
   progress = state.enrollment.tasks[taskId];
@@ -68,7 +68,7 @@ test("course fixtures aggregate into one attempt, preserve assistance, and ignor
   assert.equal(progress.independentPasses, 1, "A hinted pass is separate from independent success");
   assert.equal(progress.history[1].assisted, true);
   state = await run("answer");
-  assert.equal(state.course.lessons[0].tasks.find(task => task.id === taskId).solution, task.solution);
+  assert.equal(state.course.lessons.find(lesson => lesson.id === moduleId).tasks.find(task => task.id === taskId).solution, task.solution);
   await writeFile(state.file, "const broken: number = 'text';\n");
   assert.equal((await run("status")).stale, true);
   state = await run("check");

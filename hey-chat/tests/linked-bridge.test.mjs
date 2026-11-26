@@ -171,7 +171,9 @@ for (const rootAgent of ['claude', 'codex']) for (const childAgent of ['claude',
     await f.send('parent', { type: 'send', id: 'start-fixture', text: 'Delegate fixture' });
     const parent = await until(() => f.processes.find(p => p.childId));
     const childId = parent.childId;
-    await until(() => f.records(childId).status === 'done' && f.processes[0].messages.some(text => text.startsWith('Update from linked chat')));
+    const notices = () => requireRead(join(f.root, 'links', 'parent.jsonl'), 'utf8').trim().split('\n').map(JSON.parse).filter(e => e.type === 'link_notice');
+    await until(() => f.records(childId).status === 'done' && notices().length === 1);
+    assert.deepEqual(parent.messages, ['Delegate fixture'], 'routine completion must not call the parent model');
     assert.deepEqual(f.errors, []);
     const child = f.processes.find(p => p !== parent && p.agent === childAgent);
     assert.ok(child);
@@ -200,12 +202,61 @@ for (const rootAgent of ['claude', 'codex']) for (const childAgent of ['claude',
     await bridgeRequest(await f.saved(childId), { type: 'link_tool', name: 'chat_read', arguments: { chat_id: childId } });
     assert.equal(f.processes[0].messages.length, reportsBeforeDirect, 'direct child conversations must stay quiet in the parent');
     await bridgeRequest(await f.saved('parent'), { type: 'link_tool', name: 'chat_send', arguments: { chat_id: childId, request_id: 'parent-follow-up', message: 'Work on the linked fixture. Again.' } });
-    await until(() => f.processes[0].messages.length > reportsBeforeDirect);
+    await until(() => notices().length === 2);
+    assert.equal(parent.messages.length, reportsBeforeDirect, 'follow-up completion must stay out of the parent model');
     assert.deepEqual(f.errors, []);
     assert.ok(f.records(childId).lastDirectInstruction.text.includes('New decision'));
     const again = await bridgeRequest(await f.saved('parent'), { type: 'link_tool', name: 'chat_create', arguments: { request_id: 'fixture-task', title: 'Child fixture', agent: childAgent, model: `${childAgent}-fixture`, brief: 'Work on the linked fixture.', references: ['scope.md'] } });
     assert.equal(again.chat_id, childId);
     assert.equal(f.processes.filter(p => p !== parent).length, 1, 'retrying delegation cannot create another worker');
+  });
+}
+
+for (const agent of ['claude', 'codex']) {
+  test(`${agent}: routine notices display once without starting or steering a model, including after restart`, async t => {
+    const f = await fixture(t, agent, agent);
+    const child = new ChatLinks({ state: f.state, chat: 'notice-child', cwd: f.root, agent });
+    child.update({ id: 'notice-child', parentId: 'parent' });
+    const history = () => requireRead(join(f.root, 'links', 'parent.jsonl'), 'utf8').trim().split('\n').map(JSON.parse);
+    const notice = { type: 'link_send', id: 'routine-done', text: 'Routine completion',
+      source: { chat: 'notice-child', title: 'Child', kind: 'update', status: 'done', blockers: [], needs: [] } };
+    await bridgeRequest(await f.saved('parent'), notice);
+    await bridgeRequest(await f.saved('parent'), notice);
+    assert.equal(f.processes.length, 0, 'an idle model must not start');
+    assert.equal(history().filter(e => e.type === 'link_notice').length, 1);
+    assert.equal(f.records('parent').lastRequest, undefined);
+    assert.deepEqual(f.records('parent').queue, []);
+    await f.restartParent();
+    await bridgeRequest(await f.saved('parent'), notice);
+    assert.equal(history().filter(e => e.type === 'link_notice').length, 1, 'replayed delivery stays deduplicated');
+    await f.send('parent', { type: 'send', id: 'hold', text: 'Hold fixture' });
+    await until(() => f.processes[0]?.messages.length === 1);
+    await bridgeRequest(await f.saved('parent'), { ...notice, id: 'routine-permission',
+      source: { ...notice.source, status: 'blocked', attention: [{ kind: 'permission' }] } });
+    assert.deepEqual(f.processes[0].messages, ['Hold fixture'], 'human permission notices must not steer the parent');
+    assert.deepEqual(f.records('parent').queue, []);
+    assert.equal(f.records('parent').lastRequest.text, 'Hold fixture');
+    assert.equal(f.records('parent').status, 'working');
+    const snapshot = f.records('parent');
+    snapshot.queue.push({ id: 'old-routine', text: 'Queued by the old bridge', source: notice.source, images: [], files: [] });
+    writeFileSync(join(f.root, 'links', 'parent.json'), JSON.stringify(snapshot));
+    await f.restartParent();
+    await f.send('parent', { type: 'send', id: 'next', text: 'Next task' });
+    await until(() => f.processes[1]?.messages.includes('Next task'));
+    assert.deepEqual(f.processes[1].messages, ['Next task']);
+    assert.equal(history().filter(e => e.type === 'link_notice' && e.queueId === 'old-routine').length, 1);
+  });
+
+  test(`${agent}: actionable linked updates still reach the parent model`, async t => {
+    const f = await fixture(t, agent, agent);
+    const child = new ChatLinks({ state: f.state, chat: 'notice-child', cwd: f.root, agent });
+    child.update({ id: 'notice-child', parentId: 'parent' });
+    for (const [id, details] of Object.entries({ error: { status: 'error' }, blocker: { blockers: ['Build failed'] }, need: { needs: ['Choose a branch'] } })) {
+      await bridgeRequest(await f.saved('parent'), { type: 'link_send', id, text: id,
+        source: { chat: 'notice-child', title: 'Child', kind: 'update', status: 'done', ...details } });
+      await until(() => f.processes[0]?.messages.some(text => splitSender(text).text === id) && f.records('parent').status === 'done');
+    }
+    assert.deepEqual(f.processes[0].messages.map(text => splitSender(text).text), ['error', 'blocker', 'need']);
   });
 }
 

@@ -1,0 +1,155 @@
+{
+  "id": "course:ts-foundations/module/collections",
+  "title": "Select, transform and group tasks",
+  "requires": [
+    "array",
+    "loop",
+    "object-shape",
+    "function",
+    "optional"
+  ],
+  "outcomes": [
+    {
+      "id": "predict",
+      "can": "Trace selection and transformation and explain how a Set treats duplicates.",
+      "assessment": [
+        "predict",
+        "explain"
+      ]
+    },
+    {
+      "id": "titles",
+      "can": "Keep just the open titles",
+      "assessment": [
+        "course:ts-foundations/task/collections-titles"
+      ]
+    },
+    {
+      "id": "owner-counts",
+      "can": "Count tasks per owner",
+      "assessment": [
+        "course:ts-foundations/task/collections-owner-counts"
+      ]
+    },
+    {
+      "id": "unique",
+      "can": "List distinct stops",
+      "assessment": [
+        "course:ts-foundations/task/collections-unique"
+      ]
+    }
+  ],
+  "intro": "A callback is a function passed to another function. The arrow t => t.open is a short function returning the open field. filter keeps items for which its callback returns true. map produces one output per retained item. A Set stores distinct values. A Map stores one current value per key. Use set(key, value) to update a Map, get(key) to read it, and ?? to supply a first count.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Select, transform and group tasks",
+      "text": "A callback is a function passed to another function. The arrow t => t.open is a short function returning the open field. filter keeps items for which its callback returns true. map produces one output per retained item. A Set stores distinct values. A Map stores one current value per key. Use set(key, value) to update a Map, get(key) to read it, and ?? to supply a first count."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict before running",
+      "text": "Read the example and predict what happens before checking your answer.",
+      "example": "trace",
+      "questions": [
+        "predict"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Trace the example",
+      "text": "Filter preserves the original order. The second step then transforms each remaining task into a title. A repeated title remains present twice. When grouping by owner, a Set of seen names answers whether an owner occurred, while a Map from owner to count also records how often.",
+      "example": "trace"
+    },
+    {
+      "kind": "prediction",
+      "title": "Check your explanation",
+      "text": "Read the indicated code and choose the explanation that accounts for its behavior.",
+      "example": "trace",
+      "questions": [
+        "explain"
+      ]
+    },
+    {
+      "kind": "modification",
+      "title": "Keep just the open titles",
+      "text": "Return the titles of open tasks in input order, preserving repeated titles and empty text.",
+      "task": "course:ts-foundations/task/collections-titles"
+    },
+    {
+      "kind": "independent",
+      "title": "Count tasks per owner",
+      "text": "Use the contract in the exercise and check your answer on save.",
+      "task": "course:ts-foundations/task/collections-owner-counts"
+    }
+  ],
+  "questions": [
+    {
+      "id": "predict",
+      "example": "trace",
+      "prompt": "Which titles print?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Mail, Mail",
+          "feedback": "Both open tasks survive, in order."
+        },
+        {
+          "text": "Mail, Pay",
+          "feedback": "Pay is closed."
+        }
+      ]
+    },
+    {
+      "id": "explain",
+      "example": "trace",
+      "prompt": "Would a Set of the resulting titles keep both copies?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Yes. Each input row creates a new entry.",
+          "feedback": "Different input rows can have equal title strings."
+        },
+        {
+          "text": "No. Equal strings share one entry.",
+          "feedback": "A Set keeps distinct values."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "trace": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/trace.ts"
+      },
+      "stdout": [
+        "Mail, Mail"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:ts-foundations/task/collections-titles",
+      "path": "tasks/titles/task.json"
+    },
+    {
+      "id": "course:ts-foundations/task/collections-owner-counts",
+      "path": "tasks/owner-counts/task.json"
+    },
+    {
+      "id": "course:ts-foundations/task/collections-unique",
+      "path": "tasks/unique/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:ts-foundations/task/collections-unique",
+    "afterModule": "course:ts-foundations/module/boundary",
+    "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
+  },
+  "drills": [
+    "callbacks/predicate",
+    "arrays/find"
+  ],
+  "drillGap": "The linked drills isolate syntax. This module checks the combined behavior on varied inputs."
+}

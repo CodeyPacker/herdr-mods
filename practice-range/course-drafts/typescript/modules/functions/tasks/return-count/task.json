@@ -1,0 +1,55 @@
+{
+  "id": "course:ts-foundations/task/functions-return-count",
+  "role": "guided",
+  "title": "Return a local count",
+  "concepts": [
+    "function",
+    "scope",
+    "annotation"
+  ],
+  "prompt": "Repair remainingAfter. It must return opening plus arrivals minus completed. Inputs are nonnegative counts and completions never exceed all available tasks. The starter tries to return a name outside its block.",
+  "hints": [
+    "Read the name mentioned in the diagnostic.",
+    "Find the pair of braces that contains the declaration of that name.",
+    "Return a value from a place where all of its inputs are in scope."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "remainingAfter(3, 4, 2) === 5",
+    "remainingAfter(0, 2, 2) === 0",
+    "remainingAfter(9, 0, 0) === 9"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Ignores completed tasks.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Drops opening tasks.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Read the name mentioned in the diagnostic."
+}

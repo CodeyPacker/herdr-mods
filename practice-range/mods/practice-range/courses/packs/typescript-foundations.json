@@ -136,7 +136,7 @@
         "save-run",
         "read-output"
       ],
-      "status": "planned"
+      "status": "available"
     },
     {
       "id": "course:ts-foundations/module/values",
@@ -164,7 +164,7 @@
         "truthiness",
         "boolean"
       ],
-      "status": "planned"
+      "status": "available"
     },
     {
       "id": "course:ts-foundations/module/functions",
@@ -177,7 +177,7 @@
         "scope",
         "annotation"
       ],
-      "status": "planned"
+      "status": "available"
     },
     {
       "id": "course:ts-foundations/module/lists",
@@ -189,7 +189,7 @@
         "array",
         "loop"
       ],
-      "status": "planned"
+      "status": "available"
     },
     {
       "id": "course:ts-foundations/module/shapes",
@@ -203,7 +203,7 @@
         "type-alias",
         "interface"
       ],
-      "status": "planned"
+      "status": "available"
     },
     {
       "id": "course:ts-foundations/module/missing",
@@ -218,7 +218,7 @@
         "literal-union",
         "narrowing"
       ],
-      "status": "planned"
+      "status": "available"
     },
     {
       "id": "course:ts-foundations/module/collections",
@@ -233,7 +233,7 @@
         "transform",
         "map-set"
       ],
-      "status": "planned"
+      "status": "available"
     },
     {
       "id": "course:ts-foundations/module/tagged",
@@ -377,6 +377,239 @@
   },
   "preview": true,
   "lessons": [
+    {
+      "id": "course:ts-foundations/module/save",
+      "title": "Save a file and read its output",
+      "requires": [],
+      "outcomes": [
+        {
+          "id": "predict",
+          "can": "Predict two lines of output and distinguish a typing error from a different printed message.",
+          "assessment": [
+            "order",
+            "quotes"
+          ]
+        },
+        {
+          "id": "fix-message",
+          "can": "Repair the first message",
+          "assessment": [
+            "course:ts-foundations/task/save-fix-message"
+          ]
+        },
+        {
+          "id": "board-sign",
+          "can": "Print the board sign",
+          "assessment": [
+            "course:ts-foundations/task/save-board-sign"
+          ]
+        },
+        {
+          "id": "echo-card",
+          "can": "Read a supplied card",
+          "assessment": [
+            "course:ts-foundations/task/save-echo-card"
+          ]
+        }
+      ],
+      "intro": "Make the board print a first message, then use the checker to find a typing mistake.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Save a file and read its output",
+          "text": "The editor holds your answer as a text file. Open an exercise, put the cursor inside its starter, type, and save using your editor’s Save command. Practice Range checks the saved file. console.log(\"Ready\"); tells the program to print Ready. The quotes mark the text. The parentheses hold what to print. The dot and matching punctuation are part of this instruction. Lines beginning with // are notes for the reader."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict before running",
+          "text": "Read the example and predict what happens before checking your answer.",
+          "example": "board",
+          "questions": [
+            "order"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the example",
+          "text": "Read the two instructions from the top down. Each call prints one line. The output contains the words inside the quotes. If a quote is missing, the compiler reports a diagnostic with a filename and line number. Fix the earliest broken line and save again. A failed output check means the code ran but produced a different result.",
+          "example": "board"
+        },
+        {
+          "kind": "prediction",
+          "title": "Check your explanation",
+          "text": "Read the indicated code and choose the explanation that accounts for its behavior.",
+          "example": "board",
+          "questions": [
+            "quotes"
+          ]
+        },
+        {
+          "kind": "modification",
+          "title": "Repair the first message",
+          "text": "Make the starter print Ready on exactly one line. Save once to see the missing-quote diagnostic, fix the punctuation and save again.",
+          "task": "course:ts-foundations/task/save-fix-message"
+        },
+        {
+          "kind": "independent",
+          "title": "Print the board sign",
+          "text": "Use the contract in the exercise and check your answer on save.",
+          "task": "course:ts-foundations/task/save-board-sign"
+        }
+      ],
+      "questions": [
+        {
+          "id": "order",
+          "example": "board",
+          "prompt": "What appears, in order?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Open then Ready",
+              "feedback": "The first instruction runs first."
+            },
+            {
+              "text": "Ready then Open",
+              "feedback": "Each instruction prints one line."
+            }
+          ]
+        },
+        {
+          "id": "quotes",
+          "example": "board",
+          "prompt": "If the text Open becomes Closed and you save, what changes?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "Only the second output line.",
+              "feedback": "The first instruction is unchanged."
+            },
+            {
+              "text": "Both output lines.",
+              "feedback": "The two instructions contain separate text."
+            },
+            {
+              "text": "The compiler rejects Closed.",
+              "feedback": "Quoted text can contain either word."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "board": {
+          "stdout": [
+            "Ready",
+            "Open"
+          ],
+          "code": "console.log(\"Ready\");\nconsole.log(\"Open\");\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/save-fix-message",
+          "role": "guided",
+          "title": "Repair the first message",
+          "concepts": [
+            "save-run",
+            "read-output"
+          ],
+          "prompt": "Make the starter print Ready on exactly one line. Save once to see the missing-quote diagnostic, fix the punctuation and save again.",
+          "hints": [
+            "Start with the line number in the diagnostic.",
+            "Look at the text between the parentheses.",
+            "The closing quote goes after the final letter and before the closing parenthesis."
+          ],
+          "starter": "console.log(\"Ready);\n",
+          "solution": "console.log(\"Ready\");\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(__logs(), [\"Ready\"])"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Start with the line number in the diagnostic."
+        },
+        {
+          "id": "course:ts-foundations/task/save-board-sign",
+          "role": "independent",
+          "title": "Print the board sign",
+          "concepts": [
+            "save-run",
+            "read-output"
+          ],
+          "prompt": "Print Task board and then All clear on separate lines, with exactly that capitalization. Text inside matching single or double quotes is accepted.",
+          "hints": [
+            "Write down what the first line should say.",
+            "Use a separate print instruction for each line.",
+            "Read the instructions from top to bottom and check the spaces inside the quotes."
+          ],
+          "starter": "// Write the two print instructions.\n",
+          "solution": "console.log(\"Task board\");\nconsole.log(\"All clear\");\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(__logs(), [\"Task board\", \"All clear\"])"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Write down what the first line should say."
+        },
+        {
+          "id": "course:ts-foundations/task/save-echo-card",
+          "role": "review",
+          "title": "Read a supplied card",
+          "concepts": [
+            "save-run",
+            "read-output"
+          ],
+          "prompt": "The checker supplies text under the name card. Print the text it gives you, followed by Checked on a separate line. A name without quotes reads the supplied value. With card set to Mail, the first line is Mail.",
+          "hints": [
+            "Identify which output line depends on the supplied text.",
+            "A quoted word prints itself. An unquoted supplied name reads its value.",
+            "Check the order of the two print calls using the Gate case."
+          ],
+          "starter": "console.log(\"Checked\");\n",
+          "solution": "console.log(card);\nconsole.log(\"Checked\");\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(__logs(), [card, \"Checked\"])"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "mail",
+              "declarations": "const card = \"Mail\";\n"
+            },
+            {
+              "id": "gate",
+              "declarations": "const card = \"Gate\";\n"
+            }
+          ],
+          "feedback": "Identify which output line depends on the supplied text."
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/save-echo-card",
+        "afterModule": "course:ts-foundations/module/decisions",
+        "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
+      },
+      "drills": [],
+      "drillGap": "Existing drills begin with language syntax. Saving a first file and reading output need a separate introduction."
+    },
     {
       "id": "course:ts-foundations/module/values",
       "title": "Values that stay and values that change",
@@ -796,6 +1029,1482 @@
         "variables/infer-let"
       ],
       "drillGap": "These drills isolate declaration forms. They do not check a snapshot against changing supplied input pairs."
+    },
+    {
+      "id": "course:ts-foundations/module/decisions",
+      "title": "Decide which tasks need attention",
+      "requires": [
+        "binding",
+        "numeric-expression",
+        "read-output"
+      ],
+      "outcomes": [
+        {
+          "id": "predict",
+          "can": "Choose the correct branch at a threshold and distinguish equality from truthiness.",
+          "assessment": [
+            "edge",
+            "zero"
+          ]
+        },
+        {
+          "id": "limit",
+          "can": "Include the last available place",
+          "assessment": [
+            "course:ts-foundations/task/decisions-limit"
+          ]
+        },
+        {
+          "id": "flag",
+          "can": "Flag urgent work",
+          "assessment": [
+            "course:ts-foundations/task/decisions-flag"
+          ]
+        },
+        {
+          "id": "empty-label",
+          "can": "Handle an empty label",
+          "assessment": [
+            "course:ts-foundations/task/decisions-empty-label"
+          ]
+        }
+      ],
+      "intro": "A comparison such as count >= 3 produces true or false (a boolean). An if statement runs its first block when the condition is true. An else block runs otherwise. Braces group the lines in each block. === compares values for equality. && requires both tests to be true, and || requires at least one.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Decide which tasks need attention",
+          "text": "A comparison such as count >= 3 produces true or false (a boolean). An if statement runs its first block when the condition is true. An else block runs otherwise. Braces group the lines in each block. === compares values for equality. && requires both tests to be true, and || requires at least one."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict before running",
+          "text": "Read the example and predict what happens before checking your answer.",
+          "example": "limit",
+          "questions": [
+            "edge"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the example",
+          "text": "At exactly 3, >= includes the boundary and prints Busy. A number used directly as an if condition uses truthiness: 0 is false and other ordinary nonzero numbers are true. The empty string is false too. To ask whether a value is zero, compare it to zero explicitly.",
+          "example": "limit"
+        },
+        {
+          "kind": "prediction",
+          "title": "Check your explanation",
+          "text": "Read the indicated code and choose the explanation that accounts for its behavior.",
+          "example": "limit",
+          "questions": [
+            "zero"
+          ]
+        },
+        {
+          "kind": "modification",
+          "title": "Include the last available place",
+          "text": "The supplied numbers requests and places are nonnegative. Set fits to true when every request can fit, including an exact fit. Fix the starter’s boundary mistake.",
+          "task": "course:ts-foundations/task/decisions-limit"
+        },
+        {
+          "kind": "independent",
+          "title": "Flag urgent work",
+          "text": "Use the contract in the exercise and check your answer on save.",
+          "task": "course:ts-foundations/task/decisions-flag"
+        }
+      ],
+      "questions": [
+        {
+          "id": "edge",
+          "example": "limit",
+          "prompt": "What prints for the example as written?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Room",
+              "feedback": "The equal sign in >= includes three."
+            },
+            {
+              "text": "Busy",
+              "feedback": "Three meets its own threshold."
+            }
+          ]
+        },
+        {
+          "id": "zero",
+          "example": "limit",
+          "prompt": "If the condition were simply if (count), which count would select Room?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "0",
+              "feedback": "Zero is false in this condition."
+            },
+            {
+              "text": "3",
+              "feedback": "A positive count is true."
+            },
+            {
+              "text": "-1",
+              "feedback": "A negative nonzero number is also true."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "limit": {
+          "stdout": [
+            "Busy"
+          ],
+          "code": "const count = 3;\nif (count >= 3) {\n  console.log(\"Busy\");\n} else {\n  console.log(\"Room\");\n}\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/decisions-limit",
+          "role": "guided",
+          "title": "Include the last available place",
+          "concepts": [
+            "branch",
+            "truthiness",
+            "boolean"
+          ],
+          "prompt": "The supplied numbers requests and places are nonnegative. Set fits to true when every request can fit, including an exact fit. Fix the starter’s boundary mistake.",
+          "hints": [
+            "Test two requests and two places.",
+            "Both a smaller request and an equal request fit.",
+            "Look for the comparison that includes equality."
+          ],
+          "starter": "const fits = requests < places;\n",
+          "solution": "const fits = requests <= places;\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "fits === (requests <= places)"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "tie",
+              "declarations": "const requests: number = 2;\nconst places: number = 2;\n"
+            },
+            {
+              "id": "full",
+              "declarations": "const requests: number = 5;\nconst places: number = 3;\n"
+            },
+            {
+              "id": "room",
+              "declarations": "const requests: number = 1;\nconst places: number = 4;\n"
+            }
+          ],
+          "feedback": "Test two requests and two places."
+        },
+        {
+          "id": "course:ts-foundations/task/decisions-flag",
+          "role": "independent",
+          "title": "Flag urgent work",
+          "concepts": [
+            "branch",
+            "truthiness",
+            "boolean"
+          ],
+          "prompt": "The supplied inputs are open (boolean), age (number of days), and escalated (boolean). Set flag to true only for open tasks that are at least three days old or escalated. Closed tasks are always false.",
+          "hints": [
+            "Which condition must always hold?",
+            "List the two reasons an open task could qualify.",
+            "Group the two alternative reasons together when combining them with the open check."
+          ],
+          "starter": "const flag: boolean = false;\n",
+          "solution": "const flag = open && (age >= 3 || escalated);\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(flag, open && (age >= 3 || escalated))"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "threshold",
+              "declarations": "const open: boolean = true;\nconst age: number = 3;\nconst escalated: boolean = false;\n"
+            },
+            {
+              "id": "closed",
+              "declarations": "const open: boolean = false;\nconst age: number = 8;\nconst escalated: boolean = true;\n"
+            },
+            {
+              "id": "fresh",
+              "declarations": "const open: boolean = true;\nconst age: number = 1;\nconst escalated: boolean = false;\n"
+            },
+            {
+              "id": "urgent",
+              "declarations": "const open: boolean = true;\nconst age: number = 1;\nconst escalated: boolean = true;\n"
+            }
+          ],
+          "feedback": "Which condition must always hold?"
+        },
+        {
+          "id": "course:ts-foundations/task/decisions-empty-label",
+          "role": "review",
+          "title": "Handle an empty label",
+          "concepts": [
+            "branch",
+            "truthiness",
+            "boolean"
+          ],
+          "prompt": "The supplied name label is text. Set shown to \"Untitled\" only when label is exactly empty. Otherwise preserve it, including a single space.",
+          "hints": [
+            "Is a space the same as no characters?",
+            "Compare the supplied value with an empty pair of quotes.",
+            "Keep the original value on the path where it has any characters."
+          ],
+          "starter": "let shown = label;\n",
+          "solution": "let shown = label;\nif (label === \"\") shown = \"Untitled\";\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "shown === (label === \"\" ? \"Untitled\" : label)"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "empty",
+              "declarations": "const label: string = \"\";\n"
+            },
+            {
+              "id": "space",
+              "declarations": "const label: string = \" \";\n"
+            },
+            {
+              "id": "named",
+              "declarations": "const label: string = \"Gate\";\n"
+            }
+          ],
+          "feedback": "Is a space the same as no characters?"
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/decisions-empty-label",
+        "afterModule": "course:ts-foundations/module/lists",
+        "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
+      },
+      "drills": [
+        "narrowing/if-else",
+        "narrowing/truthiness"
+      ],
+      "drillGap": "The course checks boundary and empty-input cases together."
+    },
+    {
+      "id": "course:ts-foundations/module/functions",
+      "title": "Give a calculation a name",
+      "requires": [
+        "numeric-expression",
+        "branch",
+        "inference"
+      ],
+      "outcomes": [
+        {
+          "id": "predict",
+          "can": "Trace separate calls and identify which names are local.",
+          "assessment": [
+            "outputs",
+            "scope"
+          ]
+        },
+        {
+          "id": "return-count",
+          "can": "Return a local count",
+          "assessment": [
+            "course:ts-foundations/task/functions-return-count"
+          ]
+        },
+        {
+          "id": "extra-hours",
+          "can": "Calculate time beyond a booking",
+          "assessment": [
+            "course:ts-foundations/task/functions-extra-hours"
+          ]
+        },
+        {
+          "id": "movement",
+          "can": "Measure a signed change",
+          "assessment": [
+            "course:ts-foundations/task/functions-movement"
+          ]
+        }
+      ],
+      "intro": "A function packages instructions so callers can use them with different values. Its parameters are names for those inputs. In hours + extra the two names refer to this call's numbers. A colon followed by number says what kind of input or output the compiler expects. return sends a value back to the caller and ends this call.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Give a calculation a name",
+          "text": "A function packages instructions so callers can use them with different values. Its parameters are names for those inputs. In hours + extra the two names refer to this call's numbers. A colon followed by number says what kind of input or output the compiler expects. return sends a value back to the caller and ends this call."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict before running",
+          "text": "Read the example and predict what happens before checking your answer.",
+          "example": "calls",
+          "questions": [
+            "outputs"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the example",
+          "text": "Read the inputs from left to right. Each call creates its own parameters and local variables. The name total belongs inside the braces (its scope). Another function cannot read it directly. Return it and use the returned value in the caller. A function can return a result without printing it.",
+          "example": "calls"
+        },
+        {
+          "kind": "prediction",
+          "title": "Check your explanation",
+          "text": "Read the indicated code and choose the explanation that accounts for its behavior.",
+          "example": "calls",
+          "questions": [
+            "scope"
+          ]
+        },
+        {
+          "kind": "modification",
+          "title": "Return a local count",
+          "text": "Repair remainingAfter. It must return opening plus arrivals minus completed. Inputs are nonnegative counts and completions never exceed all available tasks. The starter tries to return a name outside its block.",
+          "task": "course:ts-foundations/task/functions-return-count"
+        },
+        {
+          "kind": "independent",
+          "title": "Calculate time beyond a booking",
+          "text": "Use the contract in the exercise and check your answer on save.",
+          "task": "course:ts-foundations/task/functions-extra-hours"
+        }
+      ],
+      "questions": [
+        {
+          "id": "outputs",
+          "example": "calls",
+          "prompt": "Which two values print?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "5 then 1",
+              "feedback": "The second call receives its own inputs."
+            },
+            {
+              "text": "5 then 6",
+              "feedback": "The local total does not accumulate across calls."
+            }
+          ]
+        },
+        {
+          "id": "scope",
+          "example": "calls",
+          "prompt": "Can a later console.log(total) outside the function read total?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Yes, after calling addHours once.",
+              "feedback": "Calling the function does not create a global total."
+            },
+            {
+              "text": "No. total belongs to the function body.",
+              "feedback": "Use the value returned by a call."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "calls": {
+          "stdout": [
+            "5",
+            "1"
+          ],
+          "code": "function addHours(hours: number, extra: number): number {\n  const total = hours + extra;\n  return total;\n}\nconsole.log(addHours(3, 2));\nconsole.log(addHours(1, 0));\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/functions-return-count",
+          "role": "guided",
+          "title": "Return a local count",
+          "concepts": [
+            "function",
+            "scope",
+            "annotation"
+          ],
+          "prompt": "Repair remainingAfter. It must return opening plus arrivals minus completed. Inputs are nonnegative counts and completions never exceed all available tasks. The starter tries to return a name outside its block.",
+          "hints": [
+            "Read the name mentioned in the diagnostic.",
+            "Find the pair of braces that contains the declaration of that name.",
+            "Return a value from a place where all of its inputs are in scope."
+          ],
+          "starter": "function remainingAfter(opening: number, arrivals: number, completed: number): number {\n  if (opening >= 0) {\n    const remaining = opening + arrivals - completed;\n  }\n  return remaining;\n}\n",
+          "solution": "function remainingAfter(opening: number, arrivals: number, completed: number): number {\n  const remaining = opening + arrivals - completed;\n  return remaining;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "remainingAfter(3, 4, 2) === 5",
+            "remainingAfter(0, 2, 2) === 0",
+            "remainingAfter(9, 0, 0) === 9"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Read the name mentioned in the diagnostic."
+        },
+        {
+          "id": "course:ts-foundations/task/functions-extra-hours",
+          "role": "independent",
+          "title": "Calculate time beyond a booking",
+          "concepts": [
+            "function",
+            "scope",
+            "annotation"
+          ],
+          "prompt": "Write extraHours(hours: number, included: number): number. For nonnegative numbers, return the hours beyond the included amount, or 0 when the booking covers everything. A later call starts fresh.",
+          "hints": [
+            "Consider a booking that is larger than the time used.",
+            "Decide what to return when all time is covered.",
+            "On the other path return only the excess."
+          ],
+          "starter": "function extraHours(hours: number, included: number): number {\n  return 0;\n}\n",
+          "solution": "function extraHours(hours: number, included: number): number {\n  if (hours <= included) return 0;\n  return hours - included;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "extraHours(6, 2) === 4",
+            "extraHours(2, 6) === 0",
+            "extraHours(4, 4) === 0",
+            "extraHours(1.5, 0.5) === 1"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Consider a booking that is larger than the time used."
+        },
+        {
+          "id": "course:ts-foundations/task/functions-movement",
+          "role": "review",
+          "title": "Measure a signed change",
+          "concepts": [
+            "function",
+            "scope",
+            "annotation"
+          ],
+          "prompt": "Write movement(before: number, after: number): number. Return the change from before to after. A decrease must produce a negative number, and no change produces zero.",
+          "hints": [
+            "Trace a move from five to two.",
+            "A decrease should retain its negative sign.",
+            "Subtract the starting point from the ending point."
+          ],
+          "starter": "function movement(before: number, after: number): number {\n  return after;\n}\n",
+          "solution": "function movement(before: number, after: number): number {\n  return after - before;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "movement(3, 9) === 6",
+            "movement(5, 2) === -3",
+            "movement(-4, -4) === 0",
+            "movement(-2, 1) === 3"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Trace a move from five to two."
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/functions-movement",
+        "afterModule": "course:ts-foundations/module/shapes",
+        "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
+      },
+      "drills": [
+        "functions/declaration",
+        "variables/block-scope"
+      ],
+      "drillGap": "These tasks also check successive calls with different inputs."
+    },
+    {
+      "id": "course:ts-foundations/module/lists",
+      "title": "Walk through every task",
+      "requires": [
+        "function",
+        "numeric-expression"
+      ],
+      "outcomes": [
+        {
+          "id": "predict",
+          "can": "Trace an accumulator on a list and an empty list.",
+          "assessment": [
+            "predict",
+            "explain"
+          ]
+        },
+        {
+          "id": "sum",
+          "can": "Repair an accumulated duration",
+          "assessment": [
+            "course:ts-foundations/task/lists-sum"
+          ]
+        },
+        {
+          "id": "long",
+          "can": "Collect long tasks",
+          "assessment": [
+            "course:ts-foundations/task/lists-long"
+          ]
+        },
+        {
+          "id": "count-zero",
+          "can": "Count empty bins",
+          "assessment": [
+            "course:ts-foundations/task/lists-count-zero"
+          ]
+        }
+      ],
+      "intro": "An array stores values in order. number[] describes an array of numbers. [] is empty. A for-of loop visits each value once. A variable declared before the loop can accumulate a result across visits. The array’s length counts its entries. To build a new list, start from [] and use push(value) to append an entry.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Walk through every task",
+          "text": "An array stores values in order. number[] describes an array of numbers. [] is empty. A for-of loop visits each value once. A variable declared before the loop can accumulate a result across visits. The array’s length counts its entries. To build a new list, start from [] and use push(value) to append an entry."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict before running",
+          "text": "Read the example and predict what happens before checking your answer.",
+          "example": "trace",
+          "questions": [
+            "predict"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the example",
+          "text": "Trace the count before the loop and after each visit: 0, 2, 2, 5. The zero is still visited. On an empty list, execution skips the body entirely. Placing the starting value inside the body would lose earlier work.",
+          "example": "trace"
+        },
+        {
+          "kind": "prediction",
+          "title": "Check your explanation",
+          "text": "Read the indicated code and choose the explanation that accounts for its behavior.",
+          "example": "trace",
+          "questions": [
+            "explain"
+          ]
+        },
+        {
+          "kind": "modification",
+          "title": "Repair an accumulated duration",
+          "text": "Return the sum of all durations, with an empty list totaling zero. The starter keeps only the last duration.",
+          "task": "course:ts-foundations/task/lists-sum"
+        },
+        {
+          "kind": "independent",
+          "title": "Collect long tasks",
+          "text": "Use the contract in the exercise and check your answer on save.",
+          "task": "course:ts-foundations/task/lists-long"
+        }
+      ],
+      "questions": [
+        {
+          "id": "predict",
+          "example": "trace",
+          "prompt": "What prints after the last visit?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "5",
+              "feedback": "All three values contribute."
+            },
+            {
+              "text": "3",
+              "feedback": "3 is only the last value."
+            }
+          ]
+        },
+        {
+          "id": "explain",
+          "example": "trace",
+          "prompt": "If minutes were empty, what would print?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "The program would fail.",
+              "feedback": "An empty array can be traversed."
+            },
+            {
+              "text": "0",
+              "feedback": "No visits change the starting total."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "trace": {
+          "stdout": [
+            "5"
+          ],
+          "code": "const minutes = [2, 0, 3];\nlet total = 0;\nfor (const value of minutes) {\n  total = total + value;\n}\nconsole.log(total);\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/lists-sum",
+          "role": "guided",
+          "title": "Repair an accumulated duration",
+          "concepts": [
+            "array",
+            "loop"
+          ],
+          "prompt": "Return the sum of all durations, with an empty list totaling zero. The starter keeps only the last duration.",
+          "hints": [
+            "Trace the total after the first and second visit.",
+            "Initialize the running number once before the loop.",
+            "Use the existing total when updating it."
+          ],
+          "starter": "function totalMinutes(values: number[]): number {\n  let sum = 0;\n  for (const value of values) sum = value;\n  return sum;\n}\n",
+          "solution": "function totalMinutes(values: number[]): number {\n  let sum = 0;\n  for (const value of values) sum += value;\n  return sum;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(totalMinutes([]), 0)",
+            "__same(totalMinutes([2, 0, 3]), 5)",
+            "__same(totalMinutes([4, 4]), 8)"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Trace the total after the first and second visit."
+        },
+        {
+          "id": "course:ts-foundations/task/lists-long",
+          "role": "independent",
+          "title": "Collect long tasks",
+          "concepts": [
+            "array",
+            "loop"
+          ],
+          "prompt": "Return a new array of values at least the supplied minimum, preserving order and duplicates. Leave the original array intact.",
+          "hints": [
+            "Start with an empty output list.",
+            "Test each value against the threshold.",
+            "Add qualifying values as you encounter them."
+          ],
+          "starter": "function longTasks(values: number[], minimum: number): number[] {\n  return [];\n}\n",
+          "solution": "function longTasks(values: number[], minimum: number): number[] {\n  const kept: number[] = [];\n  for (const value of values) {\n    if (value >= minimum) kept.push(value);\n  }\n  return kept;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(longTasks([3,2,3,5], 3), [3,3,5])",
+            "__same(longTasks([], 0), [])",
+            "__same(longTasks([0,-1], 0), [0])",
+            "(() => { const input = [1, 4]; const output = longTasks(input, 4); return output !== input && __same(input, [1, 4]); })()"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Start with an empty output list."
+        },
+        {
+          "id": "course:ts-foundations/task/lists-count-zero",
+          "role": "review",
+          "title": "Count empty bins",
+          "concepts": [
+            "array",
+            "loop"
+          ],
+          "prompt": "Return how many entries in numbers are exactly zero. Other values, including negatives, do not count.",
+          "hints": [
+            "Which item qualifies?",
+            "Add one for each matching entry.",
+            "Start the counter outside the loop."
+          ],
+          "starter": "function emptyBins(numbers: number[]): number {\n  return 0;\n}\n",
+          "solution": "function emptyBins(numbers: number[]): number {\n  let count = 0;\n  for (const value of numbers) {\n    if (value === 0) count++;\n  }\n  return count;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(emptyBins([0, -1, 0, 2]), 2)",
+            "__same(emptyBins([]), 0)",
+            "__same(emptyBins([3, 4]), 0)"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Which item qualifies?"
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/lists-count-zero",
+        "afterModule": "course:ts-foundations/module/collections",
+        "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
+      },
+      "drills": [
+        "loops/for-of",
+        "arrays/push"
+      ],
+      "drillGap": "The linked drills isolate syntax. This module checks the combined behavior on varied inputs."
+    },
+    {
+      "id": "course:ts-foundations/module/shapes",
+      "title": "Describe a task with fields",
+      "requires": [
+        "function",
+        "array"
+      ],
+      "outcomes": [
+        {
+          "id": "predict",
+          "can": "Trace an object copy and identify a missing required field.",
+          "assessment": [
+            "predict",
+            "explain"
+          ]
+        },
+        {
+          "id": "rename",
+          "can": "Rename without changing the input",
+          "assessment": [
+            "course:ts-foundations/task/shapes-rename"
+          ]
+        },
+        {
+          "id": "ticket",
+          "can": "Specify the required fields",
+          "assessment": [
+            "course:ts-foundations/task/shapes-ticket"
+          ]
+        },
+        {
+          "id": "move",
+          "can": "Move a point",
+          "assessment": [
+            "course:ts-foundations/task/shapes-move"
+          ]
+        }
+      ],
+      "intro": "An object groups named fields. A type alias gives a shape a reusable name. An interface can also describe the required fields. The checker accepts a value when its fields fit. At runtime task.title reads the actual title. The expression { ...task, title: next } copies the fields and writes a replacement title on the copy.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Describe a task with fields",
+          "text": "An object groups named fields. A type alias gives a shape a reusable name. An interface can also describe the required fields. The checker accepts a value when its fields fit. At runtime task.title reads the actual title. The expression { ...task, title: next } copies the fields and writes a replacement title on the copy."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict before running",
+          "text": "Read the example and predict what happens before checking your answer.",
+          "example": "trace",
+          "questions": [
+            "predict"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the example",
+          "text": "The spread copies the original fields before the new title is written. Renaming the copy leaves the original title available. For the simple primitive fields here a shallow copy is enough. When a required field is missing the checker reports the mismatch before running the code.",
+          "example": "trace"
+        },
+        {
+          "kind": "prediction",
+          "title": "Check your explanation",
+          "text": "Read the indicated code and choose the explanation that accounts for its behavior.",
+          "example": "trace",
+          "questions": [
+            "explain"
+          ]
+        },
+        {
+          "kind": "modification",
+          "title": "Rename without changing the input",
+          "text": "Return a new Task with the same id and the supplied title, even when the title is empty. Preserve the original object.",
+          "task": "course:ts-foundations/task/shapes-rename"
+        },
+        {
+          "kind": "independent",
+          "title": "Specify the required fields",
+          "text": "Use the contract in the exercise and check your answer on save.",
+          "task": "course:ts-foundations/task/shapes-ticket"
+        }
+      ],
+      "questions": [
+        {
+          "id": "predict",
+          "example": "trace",
+          "prompt": "Which titles print?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "Mail then Post",
+              "feedback": "The replacement belongs to a new object."
+            },
+            {
+              "text": "Post then Post",
+              "feedback": "The original field was never assigned."
+            }
+          ]
+        },
+        {
+          "id": "explain",
+          "example": "trace",
+          "prompt": "Would { title: \"Post\" } alone fit Task?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Yes. It has a title.",
+              "feedback": "One matching field is insufficient."
+            },
+            {
+              "text": "No. id is required.",
+              "feedback": "Both fields are required by this shape."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "trace": {
+          "stdout": [
+            "Mail",
+            "Post"
+          ],
+          "code": "type Task = { id: number; title: string };\nconst original: Task = { id: 4, title: \"Mail\" };\nconst renamed = { ...original, title: \"Post\" };\nconsole.log(original.title);\nconsole.log(renamed.title);\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/shapes-rename",
+          "role": "guided",
+          "title": "Rename without changing the input",
+          "concepts": [
+            "object-shape",
+            "type-alias",
+            "interface"
+          ],
+          "prompt": "Return a new Task with the same id and the supplied title, even when the title is empty. Preserve the original object.",
+          "hints": [
+            "Which object owns the original title?",
+            "Construct a separate object.",
+            "Copy the original fields before overriding the title."
+          ],
+          "starter": "function rename(task: Task, title: string): Task {\n  task.title = title;\n  return task;\n}\n",
+          "solution": "function rename(task: Task, title: string): Task {\n  return { ...task, title };\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "(() => { const t = { id: 7, title: \"Mail\" }; const n = rename(t, \"Post\"); return t.title === \"Mail\" && n !== t; })()",
+            "__same(rename({id:7,title:\"Mail\"}, \"\"), {id:7,title:\"\"})",
+            "__same(rename({id:0,title:\"A\"}, \"B\"), {id:0,title:\"B\"})"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "type Task = { id: number; title: string };\n"
+            }
+          ],
+          "feedback": "Which object owns the original title?"
+        },
+        {
+          "id": "course:ts-foundations/task/shapes-ticket",
+          "role": "independent",
+          "title": "Specify the required fields",
+          "concepts": [
+            "object-shape",
+            "type-alias",
+            "interface"
+          ],
+          "prompt": "Declare the type Ticket for an object with id: number and open: boolean, both required. A fresh object missing either field or using the wrong type must fail assignment.",
+          "hints": [
+            "List both fields and their value types.",
+            "Each field must be present.",
+            "Use a type alias or interface with required properties."
+          ],
+          "starter": "type Ticket = {};\n",
+          "solution": "type Ticket = { id: number; open: boolean };\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [],
+          "typeChecks": [
+            "__Extends<{id:number;open:boolean}, Ticket>",
+            "__Extends<Ticket, {id:number;open:boolean}>"
+          ],
+          "rejects": [
+            "const x: Ticket = { open: true }",
+            "const x: Ticket = { id: 2 }",
+            "const x: Ticket = { id: 2, open: \"yes\" }"
+          ],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "List both fields and their value types."
+        },
+        {
+          "id": "course:ts-foundations/task/shapes-move",
+          "role": "review",
+          "title": "Move a point",
+          "concepts": [
+            "object-shape",
+            "type-alias",
+            "interface"
+          ],
+          "prompt": "Return a new Point with x increased by dx and y unchanged. Keep the input point intact.",
+          "hints": [
+            "Which axis changes?",
+            "A distance adds to the current coordinate.",
+            "Return a fresh object retaining the other coordinate."
+          ],
+          "starter": "function move(p: Point, dx: number): Point {\n  return p;\n}\n",
+          "solution": "function move(p: Point, dx: number): Point {\n  return { ...p, x: p.x + dx };\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(move({x:3,y:5},-2),{x:1,y:5})",
+            "__same(move({x:-2,y:0},0),{x:-2,y:0})",
+            "(() => { const p={x:2,y:9}; const q=move(p,1); return p.x===2 && p!==q; })()"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "interface Point { x: number; y: number }\n"
+            }
+          ],
+          "feedback": "Which axis changes?"
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/shapes-move",
+        "afterModule": "course:ts-foundations/module/tagged",
+        "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
+      },
+      "drills": [
+        "objects/object-type",
+        "interfaces/interface",
+        "objects/spread-override"
+      ],
+      "drillGap": "The linked drills isolate syntax. This module checks the combined behavior on varied inputs."
+    },
+    {
+      "id": "course:ts-foundations/module/missing",
+      "title": "Keep missing values distinct",
+      "requires": [
+        "object-shape",
+        "branch"
+      ],
+      "outcomes": [
+        {
+          "id": "predict",
+          "can": "Explain how zero and null behave under ??.",
+          "assessment": [
+            "predict",
+            "explain"
+          ]
+        },
+        {
+          "id": "owner",
+          "can": "Keep empty owner text",
+          "assessment": [
+            "course:ts-foundations/task/missing-owner"
+          ]
+        },
+        {
+          "id": "ticket-id",
+          "can": "Format two kinds of ticket ID",
+          "assessment": [
+            "course:ts-foundations/task/missing-ticket-id"
+          ]
+        },
+        {
+          "id": "status",
+          "can": "Describe a missing status",
+          "assessment": [
+            "course:ts-foundations/task/missing-status"
+          ]
+        }
+      ],
+      "intro": "A field written owner?: string can be absent, so reading it can produce undefined. A union such as number | null permits either kind of value. A literal union such as \"open\" | \"done\" limits text to named choices. Checking a value before using it narrows the cases the compiler must consider.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Keep missing values distinct",
+          "text": "A field written owner?: string can be absent, so reading it can produce undefined. A union such as number | null permits either kind of value. A literal union such as \"open\" | \"done\" limits text to named choices. Checking a value before using it narrows the cases the compiler must consider."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict before running",
+          "text": "Read the example and predict what happens before checking your answer.",
+          "example": "trace",
+          "questions": [
+            "predict"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the example",
+          "text": "The ?? operator uses its right side for null or undefined. A zero stays zero. The || operator would also replace zero or empty text. typeof input returns a string such as \"number\" at runtime; checking that string lets the compiler narrow a string | number union inside the branch.",
+          "example": "trace"
+        },
+        {
+          "kind": "prediction",
+          "title": "Check your explanation",
+          "text": "Read the indicated code and choose the explanation that accounts for its behavior.",
+          "example": "trace",
+          "questions": [
+            "explain"
+          ]
+        },
+        {
+          "kind": "modification",
+          "title": "Keep empty owner text",
+          "text": "Return the supplied owner's text exactly if present, including empty text. Return Unassigned for a missing or null owner.",
+          "task": "course:ts-foundations/task/missing-owner"
+        },
+        {
+          "kind": "independent",
+          "title": "Format two kinds of ticket ID",
+          "text": "Use the contract in the exercise and check your answer on save.",
+          "task": "course:ts-foundations/task/missing-ticket-id"
+        }
+      ],
+      "questions": [
+        {
+          "id": "predict",
+          "example": "trace",
+          "prompt": "What prints for the two calls?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "0 then 7",
+              "feedback": "Zero is present and null is missing."
+            },
+            {
+              "text": "7 then 7",
+              "feedback": "?? only replaces nullish values."
+            }
+          ]
+        },
+        {
+          "id": "explain",
+          "example": "trace",
+          "prompt": "What would change if ?? were replaced by ||?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Null would stay null.",
+              "feedback": "Both operators use the fallback for null."
+            },
+            {
+              "text": "Zero would also become 7.",
+              "feedback": "Zero is false in a truthiness test."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "trace": {
+          "stdout": [
+            "0",
+            "7"
+          ],
+          "code": "function due(days: number | null): number {\n  return days ?? 7;\n}\nconsole.log(due(0));\nconsole.log(due(null));\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/missing-owner",
+          "role": "guided",
+          "title": "Keep empty owner text",
+          "concepts": [
+            "optional",
+            "nullish",
+            "literal-union",
+            "narrowing"
+          ],
+          "prompt": "Return the supplied owner's text exactly if present, including empty text. Return Unassigned for a missing or null owner.",
+          "hints": [
+            "Try an empty owner first.",
+            "Which two values mean missing?",
+            "Use a nullish fallback or two explicit checks."
+          ],
+          "starter": "function ownerName(task: Task): string {\n  return task.owner || \"Unassigned\";\n}\n",
+          "solution": "function ownerName(task: Task): string {\n  return task.owner ?? \"Unassigned\";\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(ownerName({owner:\"\"}), \"\")",
+            "__same(ownerName({}), \"Unassigned\")",
+            "__same(ownerName({owner:null}), \"Unassigned\")",
+            "__same(ownerName({owner:\"Mo\"}), \"Mo\")"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "type Task = { owner?: string | null };\n"
+            }
+          ],
+          "feedback": "Try an empty owner first."
+        },
+        {
+          "id": "course:ts-foundations/task/missing-ticket-id",
+          "role": "independent",
+          "title": "Format two kinds of ticket ID",
+          "concepts": [
+            "optional",
+            "nullish",
+            "literal-union",
+            "narrowing"
+          ],
+          "prompt": "Write ticketId. For a number return \"#\" followed by its digits. For a string return it unchanged. Include zero, empty text and strings that look numeric.",
+          "hints": [
+            "The way a value looks may differ from its type.",
+            "Find out its runtime type first.",
+            "Apply the prefix only on the number path."
+          ],
+          "starter": "function ticketId(input: string | number): string {\n  return String(input);\n}\n",
+          "solution": "function ticketId(input: string | number): string {\n  if (typeof input === \"number\") return \"#\" + String(input);\n  return input;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(ticketId(0), \"#0\")",
+            "__same(ticketId(\"42\"), \"42\")",
+            "__same(ticketId(\"\"), \"\")",
+            "__same(ticketId(-2), \"#-2\")"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "The way a value looks may differ from its type."
+        },
+        {
+          "id": "course:ts-foundations/task/missing-status",
+          "role": "review",
+          "title": "Describe a missing status",
+          "concepts": [
+            "optional",
+            "nullish",
+            "literal-union",
+            "narrowing"
+          ],
+          "prompt": "A status is \"open\", \"done\" or null. Return \"Unknown\" for null, \"Active\" for open, and \"Closed\" for done.",
+          "hints": [
+            "List all three allowed inputs.",
+            "Treat the missing case separately.",
+            "Match each remaining literal with its requested text."
+          ],
+          "starter": "function statusText(status: \"open\" | \"done\" | null): string {\n  return \"Unknown\";\n}\n",
+          "solution": "function statusText(status: \"open\" | \"done\" | null): string {\n  if (status === null) return \"Unknown\";\n  if (status === \"open\") return \"Active\";\n  return \"Closed\";\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(statusText(null), \"Unknown\")",
+            "__same(statusText(\"done\"), \"Closed\")",
+            "__same(statusText(\"open\"), \"Active\")"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "List all three allowed inputs."
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/missing-status",
+        "afterModule": "course:ts-foundations/module/boundary",
+        "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
+      },
+      "drills": [
+        "narrowing/typeof-narrowing",
+        "objects/optional-property"
+      ],
+      "drillGap": "The linked drills isolate syntax. This module checks the combined behavior on varied inputs."
+    },
+    {
+      "id": "course:ts-foundations/module/collections",
+      "title": "Select, transform and group tasks",
+      "requires": [
+        "array",
+        "loop",
+        "object-shape",
+        "function",
+        "optional"
+      ],
+      "outcomes": [
+        {
+          "id": "predict",
+          "can": "Trace selection and transformation and explain how a Set treats duplicates.",
+          "assessment": [
+            "predict",
+            "explain"
+          ]
+        },
+        {
+          "id": "titles",
+          "can": "Keep just the open titles",
+          "assessment": [
+            "course:ts-foundations/task/collections-titles"
+          ]
+        },
+        {
+          "id": "owner-counts",
+          "can": "Count tasks per owner",
+          "assessment": [
+            "course:ts-foundations/task/collections-owner-counts"
+          ]
+        },
+        {
+          "id": "unique",
+          "can": "List distinct stops",
+          "assessment": [
+            "course:ts-foundations/task/collections-unique"
+          ]
+        }
+      ],
+      "intro": "A callback is a function passed to another function. The arrow t => t.open is a short function returning the open field. filter keeps items for which its callback returns true. map produces one output per retained item. A Set stores distinct values. A Map stores one current value per key. Use set(key, value) to update a Map, get(key) to read it, and ?? to supply a first count.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Select, transform and group tasks",
+          "text": "A callback is a function passed to another function. The arrow t => t.open is a short function returning the open field. filter keeps items for which its callback returns true. map produces one output per retained item. A Set stores distinct values. A Map stores one current value per key. Use set(key, value) to update a Map, get(key) to read it, and ?? to supply a first count."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict before running",
+          "text": "Read the example and predict what happens before checking your answer.",
+          "example": "trace",
+          "questions": [
+            "predict"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the example",
+          "text": "Filter preserves the original order. The second step then transforms each remaining task into a title. A repeated title remains present twice. When grouping by owner, a Set of seen names answers whether an owner occurred, while a Map from owner to count also records how often.",
+          "example": "trace"
+        },
+        {
+          "kind": "prediction",
+          "title": "Check your explanation",
+          "text": "Read the indicated code and choose the explanation that accounts for its behavior.",
+          "example": "trace",
+          "questions": [
+            "explain"
+          ]
+        },
+        {
+          "kind": "modification",
+          "title": "Keep just the open titles",
+          "text": "Return the titles of open tasks in input order, preserving repeated titles and empty text.",
+          "task": "course:ts-foundations/task/collections-titles"
+        },
+        {
+          "kind": "independent",
+          "title": "Count tasks per owner",
+          "text": "Use the contract in the exercise and check your answer on save.",
+          "task": "course:ts-foundations/task/collections-owner-counts"
+        }
+      ],
+      "questions": [
+        {
+          "id": "predict",
+          "example": "trace",
+          "prompt": "Which titles print?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "Mail, Mail",
+              "feedback": "Both open tasks survive, in order."
+            },
+            {
+              "text": "Mail, Pay",
+              "feedback": "Pay is closed."
+            }
+          ]
+        },
+        {
+          "id": "explain",
+          "example": "trace",
+          "prompt": "Would a Set of the resulting titles keep both copies?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Yes. Each input row creates a new entry.",
+              "feedback": "Different input rows can have equal title strings."
+            },
+            {
+              "text": "No. Equal strings share one entry.",
+              "feedback": "A Set keeps distinct values."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "trace": {
+          "stdout": [
+            "Mail, Mail"
+          ],
+          "code": "const tasks = [{ title: \"Mail\", open: true }, { title: \"Pay\", open: false }, { title: \"Mail\", open: true }];\nconst titles = tasks.filter(t => t.open).map(t => t.title);\nconsole.log(titles.join(\", \"));\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/collections-titles",
+          "role": "guided",
+          "title": "Keep just the open titles",
+          "concepts": [
+            "callback",
+            "transform",
+            "map-set"
+          ],
+          "prompt": "Return the titles of open tasks in input order, preserving repeated titles and empty text.",
+          "hints": [
+            "Identify which field controls selection.",
+            "Select before turning a task into its title.",
+            "Keep one output entry per qualifying row."
+          ],
+          "starter": "function openTitles(tasks: Task[]): string[] {\n  return tasks.map(t => t.title);\n}\n",
+          "solution": "function openTitles(tasks: Task[]): string[] {\n  return tasks.filter(t => t.open).map(t => t.title);\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(openTitles([{title:\"A\",open:false},{title:\"\",open:true},{title:\"B\",open:true},{title:\"B\",open:true}]), [\"\",\"B\",\"B\"])",
+            "__same(openTitles([]), [])"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "type Task = {title: string; open: boolean};\n"
+            }
+          ],
+          "feedback": "Identify which field controls selection."
+        },
+        {
+          "id": "course:ts-foundations/task/collections-owner-counts",
+          "role": "independent",
+          "title": "Count tasks per owner",
+          "concepts": [
+            "callback",
+            "transform",
+            "map-set"
+          ],
+          "prompt": "Return a Map from each owner string to its number of occurrences. Empty text is an owner, and distinct keys must retain first-seen order.",
+          "hints": [
+            "Read the previous count before replacing it.",
+            "A missing key starts at zero.",
+            "Update the existing key when the owner repeats."
+          ],
+          "starter": "function ownerCounts(owners: string[]): Map<string, number> {\n  return new Map();\n}\n",
+          "solution": "function ownerCounts(owners: string[]): Map<string, number> {\n  const counts = new Map<string, number>();\n  for (const owner of owners) counts.set(owner, (counts.get(owner) ?? 0) + 1);\n  return counts;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(ownerCounts([\"b\",\"\",\"b\",\"a\",\"\"]), new Map([[\"b\",2],[\"\",2],[\"a\",1]]))",
+            "__same(ownerCounts([]), new Map())",
+            "__same(ownerCounts([\"a\"]), new Map([[\"a\",1]]))"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Read the previous count before replacing it."
+        },
+        {
+          "id": "course:ts-foundations/task/collections-unique",
+          "role": "review",
+          "title": "List distinct stops",
+          "concepts": [
+            "callback",
+            "transform",
+            "map-set"
+          ],
+          "prompt": "Return unique stop names in first-seen order, preserving case and empty text.",
+          "hints": [
+            "Which occurrence decides a name’s position?",
+            "A Set records whether you have seen a name.",
+            "Walk the input in order, or expand a Set built from that ordered input."
+          ],
+          "starter": "function uniqueStops(stops: string[]): string[] {\n  return stops;\n}\n",
+          "solution": "function uniqueStops(stops: string[]): string[] {\n  return [...new Set(stops)];\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(uniqueStops([\"b\",\"\",\"b\",\"A\",\"a\",\"\"]), [\"b\",\"\",\"A\",\"a\"])",
+            "__same(uniqueStops([]), [])",
+            "__same(uniqueStops([\"x\",\"x\"]), [\"x\"])"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Which occurrence decides a name’s position?"
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/collections-unique",
+        "afterModule": "course:ts-foundations/module/boundary",
+        "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
+      },
+      "drills": [
+        "callbacks/predicate",
+        "arrays/find"
+      ],
+      "drillGap": "The linked drills isolate syntax. This module checks the combined behavior on varied inputs."
     },
     {
       "id": "course:ts-foundations/module/tagged",

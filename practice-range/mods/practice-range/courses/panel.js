@@ -225,9 +225,10 @@ export class CoursePanel {
     body.child(sectionLabel(t, task.title)).child(markdown("course-task-prompt", task.prompt));
     for (const fixture of task.fixtures) body.child(markdown(`course-fixture-${fixture.id}`, `Case ${fixture.id}\n\n\`\`\`typescript\n${fixture.declarations}\n\`\`\``));
     body.child(div().text_color(t.muted).child("Save your answer to check every case. Your answer must pass them all."))
+      .when(!this.host.editor || this.host.offerEditorDefault, element => element.child(banner(t, "Choose and confirm your editor in Setup before opening this file.")))
       .child(div().text_size(11).text_color(t.dim).child(this.data.file))
       .child(h_flex().gap(8).flex_wrap()
-        .child(keyButton(t, "course-editor", "o", "Open editor", !this.busy && !this.host.busy, cx => this.host.openEditor(cx)))
+        .child(keyButton(t, "course-editor", "o", "Open editor", !this.busy && !this.host.busy && Boolean(this.host.editor) && !this.host.offerEditorDefault, cx => this.host.openEditor(cx)))
         .child(keyButton(t, "course-check", "c", "Check saved answer", !this.busy, cx => this.run("check", { taskId: task.id }, cx)))
         .child(keyButton(t, "course-hint", "h", "Another hint", !this.busy && task.hints.length < 3, cx => this.run("hint", { taskId: task.id }, cx)))
         .child(keyButton(t, "course-answer", "", "Show solution", !this.busy && !task.solution, cx => this.run("answer", { taskId: task.id }, cx)))

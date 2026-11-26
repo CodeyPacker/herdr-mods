@@ -1,0 +1,52 @@
+{
+  "id": "course:ts-foundations/task/modules-config",
+  "role": "review",
+  "title": "Read a project configuration",
+  "concepts": [
+    "import-export",
+    "compiler-config"
+  ],
+  "prompt": "Return a Settings object for a project that checks null access and emits ES2022. The supplied Settings type contains strictNullChecks (boolean) and target (text). This exercise asks for a description of settings and leaves the course's real configuration intact.",
+  "hints": [
+    "Name the option that checks null access.",
+    "Keep the checking choice separate from the emitted language level.",
+    "The requested target is an exact string."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(settings(), {strictNullChecks:true,target:\"ES2022\"})"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Turns off the requested null check.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Changes the emit target.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Name the option that checks null access."
+}

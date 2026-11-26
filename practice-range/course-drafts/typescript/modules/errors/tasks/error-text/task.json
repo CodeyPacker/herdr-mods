@@ -1,0 +1,55 @@
+{
+  "id": "course:ts-foundations/task/errors-error-text",
+  "role": "guided",
+  "title": "Explain a caught value",
+  "concepts": [
+    "throw-catch",
+    "failure"
+  ],
+  "prompt": "Return the Error message for an Error, the original text for a string, and \"Unknown\" otherwise. Preserve empty messages.",
+  "hints": [
+    "Check the runtime kind before reading a field.",
+    "An empty string still carries a string message.",
+    "Use the fallback only after the two known cases."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(issueText(new Error(\"Denied\")), \"Denied\")",
+    "__same(issueText(\"\"), \"\")",
+    "__same(issueText(42), \"Unknown\")",
+    "__same(issueText(null), \"Unknown\")"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Stringifies an Error object.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Replaces an empty thrown string.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Check the runtime kind before reading a field."
+}

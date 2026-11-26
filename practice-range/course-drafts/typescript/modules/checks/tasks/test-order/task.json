@@ -1,0 +1,53 @@
+{
+  "id": "course:ts-foundations/task/checks-test-order",
+  "role": "review",
+  "title": "Catch a reversed pair",
+  "concepts": [
+    "tests",
+    "debugging"
+  ],
+  "prompt": "Implement orderTest(candidate). A correct candidate joins two strings in argument order with a slash, and the faulty version joins them in reverse. Return true for correct behavior and false for the defect.",
+  "hints": [
+    "Would two equal inputs distinguish the orders?",
+    "Choose different first and second strings.",
+    "Specify the expected text for that input."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "orderTest((a,b)=>a+\"/\"+b) === true",
+    "orderTest((a,b)=>b+\"/\"+a) === false"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Uses identical inputs.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Expects the order to be reversed.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Would two equal inputs distinguish the orders?"
+}

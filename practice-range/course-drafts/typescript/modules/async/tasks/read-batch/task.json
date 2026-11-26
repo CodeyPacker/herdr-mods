@@ -1,0 +1,56 @@
+{
+  "id": "course:ts-foundations/task/async-read-batch",
+  "role": "independent",
+  "title": "Report a rejected local read",
+  "concepts": [
+    "promise",
+    "await",
+    "async-fixture"
+  ],
+  "prompt": "Call the supplied source once. Resolve with {kind:\"loaded\", items} when it returns a string array, including an empty array. Resolve with {kind:\"failed\"} if it rejects for any reason.",
+  "hints": [
+    "A fulfilled empty array still counts as a loaded batch.",
+    "Wait for the reader inside a try block.",
+    "Build different tagged results for fulfillment and rejection."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(await loadBatch(async()=>[\"a\",\"b\"]),{kind:\"loaded\",items:[\"a\",\"b\"]})",
+    "__same(await loadBatch(async()=>[]),{kind:\"loaded\",items:[]})",
+    "__same(await loadBatch(async()=>{throw \"offline\"}),{kind:\"failed\"})",
+    "await (async()=>{let calls=0; await loadBatch(async()=>{calls++;return []}); return calls===1;})()"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Drops the actual items.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Treats rejection as an empty success.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "A fulfilled empty array still counts as a loaded batch."
+}

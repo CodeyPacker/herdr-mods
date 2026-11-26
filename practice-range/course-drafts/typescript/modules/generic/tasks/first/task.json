@@ -1,0 +1,60 @@
+{
+  "id": "course:ts-foundations/task/generic-first",
+  "role": "guided",
+  "title": "Keep the first value even when falsey",
+  "concepts": [
+    "generic",
+    "utility"
+  ],
+  "prompt": "Write firstOr<T>. Return the first item when the array is nonempty and the supplied fallback when empty. Preserve the relationship to T, including null or empty-string items.",
+  "hints": [
+    "Check whether a position exists.",
+    "The first item can be zero, empty or null.",
+    "Use the array length to distinguish empty input."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(firstOr([0,2], 7), 0)",
+    "__same(firstOr([], \"none\"), \"none\")",
+    "__same(firstOr([\"\"], \"none\"), \"\")",
+    "__same(firstOr([null], \"next\"), null)"
+  ],
+  "typeChecks": [
+    "__Equal<ReturnType<typeof firstOr<number>>, number>",
+    "__Equal<ReturnType<typeof firstOr<string>>, string>"
+  ],
+  "rejects": [
+    "firstOr<number>([3], \"x\")"
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Treats zero as missing.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Treats null as missing.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 4 failed"
+      }
+    }
+  ],
+  "feedback": "Check whether a position exists."
+}

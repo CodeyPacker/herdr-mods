@@ -136,7 +136,11 @@
         "save-run",
         "read-output"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/save/module.json"
+      }
     },
     {
       "id": "course:ts-foundations/module/values",
@@ -168,7 +172,11 @@
         "truthiness",
         "boolean"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/decisions/module.json"
+      }
     },
     {
       "id": "course:ts-foundations/module/functions",
@@ -181,7 +189,11 @@
         "scope",
         "annotation"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/functions/module.json"
+      }
     },
     {
       "id": "course:ts-foundations/module/lists",
@@ -193,7 +205,11 @@
         "array",
         "loop"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/lists/module.json"
+      }
     },
     {
       "id": "course:ts-foundations/module/shapes",
@@ -207,7 +223,11 @@
         "type-alias",
         "interface"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/shapes/module.json"
+      }
     },
     {
       "id": "course:ts-foundations/module/missing",
@@ -222,7 +242,11 @@
         "literal-union",
         "narrowing"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/missing/module.json"
+      }
     },
     {
       "id": "course:ts-foundations/module/collections",
@@ -237,7 +261,11 @@
         "transform",
         "map-set"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/collections/module.json"
+      }
     },
     {
       "id": "course:ts-foundations/module/tagged",

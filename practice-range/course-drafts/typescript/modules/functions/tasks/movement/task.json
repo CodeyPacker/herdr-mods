@@ -1,0 +1,56 @@
+{
+  "id": "course:ts-foundations/task/functions-movement",
+  "role": "review",
+  "title": "Measure a signed change",
+  "concepts": [
+    "function",
+    "scope",
+    "annotation"
+  ],
+  "prompt": "Write movement(before: number, after: number): number. Return the change from before to after. A decrease must produce a negative number, and no change produces zero.",
+  "hints": [
+    "Trace a move from five to two.",
+    "A decrease should retain its negative sign.",
+    "Subtract the starting point from the ending point."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "movement(3, 9) === 6",
+    "movement(5, 2) === -3",
+    "movement(-4, -4) === 0",
+    "movement(-2, 1) === 3"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Reverses the change.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Clamps decreases to zero.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Trace a move from five to two."
+}

@@ -1,0 +1,54 @@
+{
+  "id": "course:ts-foundations/task/lists-count-zero",
+  "role": "review",
+  "title": "Count empty bins",
+  "concepts": [
+    "array",
+    "loop"
+  ],
+  "prompt": "Return how many entries in numbers are exactly zero. Other values, including negatives, do not count.",
+  "hints": [
+    "Which item qualifies?",
+    "Add one for each matching entry.",
+    "Start the counter outside the loop."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(emptyBins([0, -1, 0, 2]), 2)",
+    "__same(emptyBins([]), 0)",
+    "__same(emptyBins([3, 4]), 0)"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Counts all entries.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Treats negatives as empty.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Which item qualifies?"
+}

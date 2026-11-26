@@ -1,0 +1,1 @@
+const fits = places >= requests;

@@ -1,6 +1,7 @@
-import { appHome, exec, props, readTextFile, writeTextFile } from "herdr";
+import { appHome, exec, props, readTextFile, writeTextFile, window as appWindow } from "herdr";
 import { parseEditorConfig, parseSyncConfig, saveEditorConfig } from "./editor-config.js";
 import { parseTutorConfig, saveTutorConfig } from "./tutor/config.js";
+import { parseLayoutConfig, saveLayoutConfig } from "./layout-config.js";
 import { neovimCloseDiffsExpression } from "./editor-pane.js";
 
 export async function configuredEditor() {
@@ -38,7 +39,9 @@ export async function syncProgress(action) {
 
 /** @param {string} action @param {string | null} [value] */
 async function runnerCommand(action, value) {
-  const result = await exec("node", [`${appHome()}/mods/practice-range/runner.mjs`, practiceDirectory(), action, ...(value ? [value] : [])], { timeout: 180000 });
+  // An install downloads with npm, which can take a few minutes on a slow connection.
+  const timeout = action === "setup-install" ? 330000 : 180000;
+  const result = await exec("node", [`${appHome()}/mods/practice-range/runner.mjs`, practiceDirectory(), action, ...(value ? [value] : [])], { timeout });
   let data;
   try { data = JSON.parse(result.stdout); }
   catch { throw new Error(result.stderr || result.stdout || "The practice runner did not return a result."); }
@@ -52,16 +55,54 @@ export function practiceCommand(action, value) { return runnerCommand(action, va
 /** @returns {Promise<import("./types.js").SetupStatus>} */
 export function setupStatus() { return runnerCommand("setup-status"); }
 
-/** @param {"neovim" | "vscode" | null} editor @param {string} languageId @returns {Promise<import("./types.js").SetupRequirements>} */
-export function checkSetupRequirements(editor, languageId) { return runnerCommand("setup-check", JSON.stringify({ editor, languageId })); }
-
 /** @param {"neovim" | "vscode"} editor @param {string} languageId @returns {Promise<import("./types.js").SetupStatus>} */
 export function completeSetup(editor, languageId) { return runnerCommand("setup-complete", JSON.stringify({ editor, languageId })); }
+
+/**
+ * What this computer has: "tools" is Node, the language packs and the editors, "tutors" the AI
+ * commands. They are separate because the AI checks are slow.
+ * @template {"tools" | "tutors"} P @param {P} part
+ * @returns {Promise<P extends "tools" ? import("./types.js").ToolScan : import("./types.js").TutorScan>}
+ */
+export function scanSetup(part) { return runnerCommand("setup-scan", part); }
+
+/** Install a pack's npm dependencies (setup/install.mjs). @param {string} languageId */
+export function installLanguage(languageId) { return runnerCommand("setup-install", languageId); }
+
+/** Open a web page in the default browser. @param {string} url */
+export async function openUrl(url) {
+  const platform = appWindow()?.platform;
+  const result = platform === "windows" ? await exec("rundll32.exe", ["url.dll,FileProtocolHandler", url])
+    : await exec(platform === "macos" ? "open" : "xdg-open", [url]);
+  if (result.code !== 0) throw new Error(`Could not open ${url}. Open it in your browser.`);
+}
+
+/** @returns {Promise<import("./types.js").Layout>} */
+export async function configuredLayout() {
+  return parseLayoutConfig(await readTextFile(`${appHome()}/practice-range.json`));
+}
+
+/** @param {import("./types.js").Layout} layout */
+export async function saveLayoutPreference(layout) {
+  const path = `${appHome()}/practice-range.json`;
+  await saveLayoutConfig(layout, { read: () => readTextFile(path), write: (text, expected) => writeTextFile(path, text, expected) });
+}
+
+/** Run app commands one after another. @param {{ command: string, args: Record<string, unknown> }[]} commands */
+export async function appCommands(commands) {
+  for (const { command, args } of commands) await appCommand(command, args);
+}
 
 /** @param {string} command @param {Record<string, unknown>} args */
 export async function appCommand(command, args) {
   const result = await exec("herdr-app", ["do", command, JSON.stringify(args)]);
-  if (result.code !== 0) throw new Error(result.stderr || result.stdout || `${command} failed.`);
+  if (result.code !== 0) {
+    // herdr-app reports errors as JSON: { "error": "..." }. Show only the message.
+    const text = result.stderr || result.stdout;
+    let reason = text;
+    try { reason = JSON.parse(text).error ?? text; } catch {}
+    throw new Error(reason || `${command} failed.`);
+  }
   return result.stdout.trim() ? JSON.parse(result.stdout) : {};
 }
 
@@ -81,6 +122,15 @@ export async function openVSCodeDiff(answer, reference) {
 export async function neovimDiff(server, expression) {
   try {
     const result = await exec("nvim", ["--server", server, "--remote-expr", expression]);
+    return result.code === 0;
+  } catch { return false; }
+}
+
+/** Run Ex commands in a running Neovim. False when it isn't reachable. @param {string} server @param {string[]} commands */
+export async function neovimCommands(server, commands) {
+  const list = commands.map(command => `'${command.replaceAll("'", "''")}'`).join(", ");
+  try {
+    const result = await exec("nvim", ["--server", server, "--remote-expr", `execute([${list}])`]);
     return result.code === 0;
   } catch { return false; }
 }

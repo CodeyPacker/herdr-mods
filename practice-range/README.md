@@ -14,9 +14,9 @@ herdr-app do tab.new '{"name":"Practice Range","mod":"practice-range","props":{"
 
 Needs Node.js 20 or newer, plus a .NET SDK 8 or newer for C#, or the pack's pinned TypeScript compiler
 (`npm ci` in `languages/typescript`) for TypeScript, or the pack's pinned PGlite (`npm ci` in `languages/sql`) for SQL.
-PGlite is PostgreSQL compiled to WebAssembly, so there's no database server to install. Setup and controls are explained in the app.
+PGlite is PostgreSQL compiled to WebAssembly, so there's no database server to install. The Languages screen runs that `npm ci` for you when you choose Install. Setup and controls are explained in the app.
 
-Copy or symlink `practice-range/mods/practice-range` into your Herdr `mods` folder. The setup screen guides you through language requirements, your editor, and the optional AI tutor.
+Copy or symlink `practice-range/mods/practice-range` into your Herdr `mods` folder. Setup checks this computer for you and shows one card each for languages, your editor, the layout (panel side, width, and a compact mode), and the optional AI tutor.
 
 Every check shows what your code produced: what it printed, the value a failed check got, or for SQL the rows your query returned.
 

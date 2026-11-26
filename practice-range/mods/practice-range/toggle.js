@@ -4,7 +4,8 @@
 // That terminal runs in herdr-core, so it keeps running while the dialog is closed, and the
 // next open shows it again. Practice Range saves where you were as it closes (see main.js).
 import { openOverlay, closeOverlay, shared, setShared, terminals, exec, appHome } from "herdr";
-import { configuredEditor } from "./bridge.js";
+import { configuredEditor, configuredLayout } from "./bridge.js";
+import { DEFAULT_LAYOUT } from "./layout-config.js";
 import { neovimPanelKeyCommands } from "./editor-pane.js";
 import { opensAsTab, toggleTab } from "./kit/open-as.js";
 
@@ -20,10 +21,10 @@ export function liveEditor() {
   return terminals().some(t => t.address === editor.terminal && t.state === "live") ? editor : null;
 }
 
-/** Starts Neovim in a terminal without a tab, listening for files to open. */
-async function startEditor() {
+/** Starts Neovim in a terminal without a tab, listening for files to open. @param {"left" | "right"} side where the panel is */
+async function startEditor(side) {
   const server = `127.0.0.1:${19000 + Math.floor(Math.random() * 30000)}`;
-  const result = await exec("hc", ["run", "--bg", "--json", "--no-parent", "--name", `practice-nvim-${Date.now() % 100000}`, "--cwd", appHome(), "nvim", "--listen", server, ...neovimPanelKeyCommands().flatMap(command => ["-c", command])]);
+  const result = await exec("hc", ["run", "--bg", "--json", "--no-parent", "--name", `practice-nvim-${Date.now() % 100000}`, "--cwd", appHome(), "nvim", "--listen", server, ...neovimPanelKeyCommands(side).flatMap(command => ["-c", command])]);
   if (result.code !== 0) throw new Error(result.stderr || "Could not start Neovim.");
   const editor = { terminal: JSON.parse(result.stdout).address, server };
   setShared(EDITOR_KEY, editor);
@@ -32,11 +33,16 @@ async function startEditor() {
 
 /** Opens the dialog, with Neovim beside it when Neovim is the chosen editor. */
 export async function openPractice() {
+  // A broken layout setting opens with the default. The layout page says what's wrong.
+  const layout = await configuredLayout().catch(() => DEFAULT_LAYOUT);
   let editor = null;
-  if (await configuredEditor() === "neovim") editor = liveEditor() ?? await startEditor();
+  if (await configuredEditor() === "neovim") editor = liveEditor() ?? await startEditor(layout.side);
   /** @type {any[]} */
-  const children = [{ id: "practice-range", type: "block", content: { mod: "practice-range", props: { dialog: true } }, size: { weight: 1 } }];
-  if (editor) children.push({ id: "practice-editor", type: "block", content: { terminal: editor.terminal }, size: { weight: 1 } });
+  const children = [{ id: "practice-range", type: "block", content: { mod: "practice-range", props: { dialog: true } }, size: { weight: editor ? layout.width : 1 } }];
+  if (editor) {
+    const block = { id: "practice-editor", type: "block", content: { terminal: editor.terminal }, size: { weight: 1 - layout.width } };
+    if (layout.side === "left") children.push(block); else children.unshift(block);
+  }
   const id = openOverlay({ layout: { id: "practice-root", type: "row", children }, kind: "dialog", width: 1, height: 1, modal: true });
   setShared(DIALOG_KEY, id);
 }

@@ -8,8 +8,8 @@ import { spawnSync } from "node:child_process";
 
 const source = resolve(dirname(fileURLToPath(import.meta.url)), "../mods/practice-range");
 const temporary = await mkdtemp(join(tmpdir(), "syntax-panels-"));
-const states = ["practice", "topics", "exercises", "feedback", "error", "repeat", "advanced", "advanced-patterns", "advanced-types", "topics-bottom", "exercises-bottom", "editor-picker", "editor-default-neovim", "editor-default-vscode", "editor-default-declined", "editor-default-error", "setup-welcome", "setup-language", "setup-requirements-ready", "setup-requirements-missing", "setup-editor-picker", "setup-editor-default", "setup-editor-ready", "setup-tutorial", "languages-ready", "languages-add", "topic-navigation", "language-navigation", "language-add-navigation",
-  "ts-setup-language", "ts-setup-missing", "ts-setup-tutorial", "ts-practice", "ts-feedback", "ts-topics", "ts-exercises-advanced", "ts-module"];
+const states = ["practice", "topics", "exercises", "feedback", "error", "repeat", "advanced", "advanced-patterns", "advanced-types", "topics-bottom", "exercises-bottom", "editor-picker", "editor-default-neovim", "editor-default-vscode", "editor-default-declined", "editor-default-error", "setup-hub-checking", "setup-hub-ready", "setup-hub-missing", "setup-editor", "setup-editor-missing", "setup-layout", "setup-layout-compact", "setup-tutor", "languages-ready", "languages-add", "languages-checking", "languages-installing", "languages-manual", "setup-return", "return-languages", "topic-navigation", "language-navigation", "language-add-navigation",
+  "ts-practice", "ts-feedback", "ts-topics", "ts-exercises-advanced", "ts-module"];
 states.push("exercises-shuffle", "ts-exercises-shuffle");
 states.push("tutor-empty", "tutor-off", "tutor-chat", "tutor-thinking", "tutor-error", "tutor-setup");
 // TypeScript fixtures render the same panel with the TypeScript pack selected.
@@ -25,10 +25,18 @@ try {
     const answerFolder = typescript ? `/tmp/syntax/languages/typescript/answers/${exerciseId}` : "/tmp/syntax/answers/loops/for";
     await writeFile(join(folder, "main.js"), `import Syntax from "./panel.js";
 import { findLanguage } from "./languages/index.js";
+/** A scan of a computer with C# and TypeScript ready, SQL not installed, and only Neovim. */
+const SCAN = { node: { ready: true, version: "25.0.0" },
+  languages: { csharp: { ready: true, detail: ".NET SDK 10.0.301", passed: 312, total: 800 }, typescript: { ready: true, detail: "TypeScript 6.0.3", passed: 88, total: 800 },
+    sql: { ready: false, detail: "Install this pack's database engine.", passed: 0, total: 800 } },
+  editors: { neovim: { found: true, version: "NVIM v0.12.6" }, vscode: { found: false, version: "" } } };
+const TUTORS = { claude: { found: true, version: "2.1.0 (Claude Code)", ready: true, detail: "" }, codex: { found: true, version: "codex-cli 0.1", ready: false, detail: "Sign in first: run codex login in your terminal, then reconnect." } };
 export default class Fixture extends Syntax {
   perform(action, value) { this.lastPerformed = { action, value }; }
   init(props, cx) {
     super.init(props, cx);
+    this.setup.tools = ${state.endsWith("-checking") ? "null" : "SCAN"};
+    this.setup.tutors = ${state.endsWith("-checking") ? "null" : "TUTORS"};
     if (${typescript}) {
       this.useLanguage(findLanguage("typescript"));
       this.enabledLanguages = ["csharp", "typescript"];
@@ -75,8 +83,13 @@ export default class Fixture extends Syntax {
         if (this.lastPerformed?.action !== "language" || this.lastPerformed?.value !== "typescript" || this.screen !== "languages") throw new Error("A language choice must load its topics before practice");
       }
       if (${state === 'language-add-navigation'}) {
-        this.chooseLanguage("typescript", cx);
-        if (this.screen !== "setup" || this.setupStep !== 1 || this.setupLanguage.id !== "typescript" || !this.enabledLanguages.includes("csharp")) throw new Error("Adding another language must retain existing packs");
+        this.chooseLanguage("sql", cx);
+        if (this.screen !== "languages" || this.lastPerformed || this.selected !== 2) throw new Error("A pack that isn't installed must offer its install, not open");
+      }
+      if (${state === 'languages-installing'}) { this.selected = 2; this.setup.installing = "sql"; }
+      if (${state === 'languages-manual'}) {
+        this.setup.tools = { ...SCAN, languages: { ...SCAN.languages, csharp: { ready: false, detail: "Install a .NET SDK (8 or newer).", passed: 0, total: 800 } } };
+        this.setup.installErrors.sql = "npm ci failed\\nnpm ERR! network";
       }
     }
     if (${state === 'topic-navigation'}) {
@@ -87,15 +100,6 @@ export default class Fixture extends Syntax {
       if (this.screen !== "topics" || this.lastPerformed) throw new Error("Choose a topic before an exercise");
       this.chooseTopic("arrays", cx);
       if (this.screen !== "exercises" || this.state.exerciseId !== "loops/for" || !this.items().every(item => item.topicId === "arrays")) throw new Error("A topic choice must show exercises before opening an answer");
-    }
-    if (${state.startsWith("ts-setup-")}) {
-      this.screen = "setup";
-      this.setupLanguage = findLanguage("typescript");
-      this.enabledLanguages = ["csharp"];
-      this.setupStep = ${JSON.stringify({ "ts-setup-language": 1, "ts-setup-missing": 2, "ts-setup-tutorial": 4 }[state] ?? 0)};
-      this.requirements = { node: { ready: true, detail: "Node.js 25.0.0" }, language: { ready: ${state !== "ts-setup-missing"}, detail: ${JSON.stringify(state === "ts-setup-missing" ? "Install this pack's TypeScript compiler (6.0.3): run npm ci in /Users/me/.config/herdr-app/mods/practice-range/languages/typescript, then recheck." : "TypeScript: TypeScript 6.0.3")} }, editor: { ready: true, detail: "nvim is available" } };
-      this.action("topics", cx);
-      if (this.screen !== "setup" || this.language.id !== "typescript") throw new Error("TypeScript setup must stay in setup with the TypeScript pack");
     }
     if (${state.endsWith("exercises-shuffle")}) {
       this.screen = "exercises";
@@ -114,20 +118,37 @@ export default class Fixture extends Syntax {
         this.askTutor(cx);
         if (this.tutorBusy || this.tutorRequestId) throw new Error("Disabled AI must never start a request");
       }
-      if (${state === 'tutor-setup'}) { this.screen = "setup"; this.setupStep = 0; }
+      if (${state === 'tutor-setup'}) { this.screen = "setup"; this.setup.page = "tutor"; }
     }
-    if (${state.startsWith("setup-")}) {
+    if (${state === "setup-return" || state === "return-languages"}) {
+      this.screen = "practice";
+      if (${state === "setup-return"}) { this.openSetup("hub", cx); this.openSetup("layout", cx); this.setupKey("escape", cx); this.setupKey("escape", cx); }
+      else { this.action("languages", cx); this.key({ key: "escape", keystroke: "escape", modifiers: {} }, cx); }
+      if (this.screen !== "practice" || this.returnScreen || this.lastPerformed?.action !== "status") throw new Error("esc must go back to the exercise and check it for saves");
+      this.action("languages", cx);
+    }
+    if (${state.startsWith("setup-") && state !== "setup-return"}) {
       this.screen = "setup";
       this.setupCompleted = false;
-      this.setupStep = ${JSON.stringify({ 'setup-welcome': 0, 'setup-language': 1, 'setup-requirements-ready': 2, 'setup-requirements-missing': 2, 'setup-editor-picker': 3, 'setup-editor-default': 3, 'setup-editor-ready': 3, 'setup-tutorial': 4 }[state] ?? 0)};
-      this.requirements = { node: { ready: true, detail: "Node.js 25.0.0" }, language: { ready: ${state !== "setup-requirements-missing"}, detail: ${JSON.stringify(state === 'setup-requirements-missing' ? 'Install a .NET SDK (8 or newer), then recheck.' : 'C#: 10.0.301')} }, editor: { ready: ${state === "setup-editor-ready"}, detail: ${JSON.stringify(state === 'setup-editor-ready' ? 'nvim is available' : 'Choose an editor and check its command.')} } };
-      if (${['setup-editor-picker', 'setup-editor-default'].includes(state)}) {
-        this.editor = null;
-        this.editorDefaultSet = false;
-        if (${state === 'setup-editor-default'}) this.chooseEditor("neovim", cx);
-      }
+      this.setup.page = ${JSON.stringify(state.startsWith("setup-hub") ? "hub" : state.split("-")[1])};
+      if (${state === "setup-hub-missing" || state === "setup-editor-missing"}) { this.editor = "vscode"; this.editorDefaultSet = false; }
+      if (${state === "setup-layout-compact"}) this.useLayout({ side: "right", width: 0.4, compact: true });
       this.action("topics", cx);
       if (this.screen !== "setup") throw new Error("Setup must not be bypassed through practice shortcuts");
+      if (${state === "setup-hub-missing"}) {
+        this.startPracticing(cx);
+        if (this.busy || this.lastPerformed) throw new Error("Start must wait for an editor that is installed");
+      }
+      if (${state === "setup-layout"}) {
+        this.setupKey("l", cx);
+        this.setupKey("s", cx);
+        if (this.layout.width !== 0.55 || this.layout.side !== "right") throw new Error("Layout keys must change the width and side");
+      }
+      if (${state === "setup-editor"}) {
+        this.setupKey("escape", cx);
+        if (this.setup.page !== "hub") throw new Error("esc on a setup page goes back to the hub");
+        this.setup.page = "editor";
+      }
     }
   }
 }

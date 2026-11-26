@@ -144,7 +144,9 @@ function deleteCard(v, t) {
     : !chat?.session ? "This chat has no messages yet."
     : chat.agent === "codex" ? "Its Codex session is deleted for good." : "Its Claude session is deleted for good.";
   const progress = (d.project || d.ids) && d.total ? `Deleting ${Math.min(d.done + 1, d.total)} of ${d.total}\u2026` : "Deleting\u2026";
-  return v_flex().flex_none().mx(10).mt(8).p(12).gap(10).rounded(12).bg(t.raised).border_1().border_color(t.blocked)
+  return v_flex().id("delete-card").w(Math.max(280, Math.min(420, (v.width ?? 420) - 40))).p(16).gap(12).rounded(14).bg(t.popover).border_1().border_color(t.blocked).shadow_lg()
+    // A press inside the dialog stays in it.
+    .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
     .child(v_flex().gap(4)
       .child(div().text_size(13.5).font_semibold().text_color(t.foreground).child(question))
       .child(div().text_size(12).text_color(t.muted).child(d.busy ? progress : what)))
@@ -160,6 +162,13 @@ function deleteCard(v, t) {
         .border_1().border_color(t.border).text_size(12.5).font_medium().text_color(t.foreground).hover((s) => s.bg(t.hover))
         .on_click((_e, cx) => { v.cancelDelete(); cx.notify(); })
         .when(v.keyHints, (el) => el.child(div().font_semibold().opacity(0.75).child("n"))).child("Cancel")));
+}
+
+/** The delete question, centered over a dimmed pane. A press beside it cancels. @param {any} v @param {Theme} t */
+export function deleteDialog(v, t) {
+  return h_flex().id("delete-around").absolute().top(0).left(0).size_full().items_center().justify_center().bg("#00000066")
+    .on_mouse_down("left", (_e, cx) => { if (!v.deleting?.busy) { v.cancelDelete(); cx.notify(); } })
+    .child(deleteCard(v, t));
 }
 
 /**
@@ -225,13 +234,12 @@ export function treeView(v, t) {
     // Recent (except while searching), then the projects.
     .child(v_flex().id("tree-scroll").flex_1().min_h(0).overflow_y_scrollbar().track_scroll(v.treeScroll).px(8).pb(8).gap(2)
       .children(rows))
-    // The delete question, above the bottom row.
-    .when(Boolean(v.deleting), (el) => el.child(deleteCard(v, t)))
     // The tree's keys, while it has the keyboard.
     .when(v.zone === "tree" && v.keyHints, (el) => el.child(div().flex_none().px(16).pt(8).pb(4).child(legend(t, v.anchor ? selectHints(v) : treeHints(v)))))
     // The bottom row: hide the sidebar (ctrl-b) on the left, the Settings gear on the right.
     .child(h_flex().flex_none().mx(8).my(8).px(4).py(4).items_center().justify_between()
       .child(roundButton(t, "hide-sidebar", `${ICONS}/sidebar.svg`, 36, () => v.toggleSidebar()))
       .child(roundButton(t, "open-settings", "mods/hey-chat/kit/gear.svg", 36, () => v.toggleSettings())
-        .when(v.settingsOpen, (el) => el.bg(t.hover).text_color(t.foreground))));
+        .when(v.settingsOpen, (el) => el.bg(t.hover).text_color(t.foreground))))
+;
 }

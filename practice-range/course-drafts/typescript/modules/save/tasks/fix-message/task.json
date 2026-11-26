@@ -1,0 +1,52 @@
+{
+  "id": "course:ts-foundations/task/save-fix-message",
+  "role": "guided",
+  "title": "Repair the first message",
+  "concepts": [
+    "save-run",
+    "read-output"
+  ],
+  "prompt": "Make the starter print Ready on exactly one line. Save once to see the missing-quote diagnostic, fix the punctuation and save again.",
+  "hints": [
+    "Start with the line number in the diagnostic.",
+    "Look at the text between the parentheses.",
+    "The closing quote goes after the final letter and before the closing parenthesis."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(__logs(), [\"Ready\"])"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Changes the spelling.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Leaves an extra print.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Start with the line number in the diagnostic."
+}

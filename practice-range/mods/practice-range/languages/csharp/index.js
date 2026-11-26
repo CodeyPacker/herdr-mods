@@ -5,6 +5,9 @@ import { topics, exercises } from "./catalog.js";
 const csharp = {
   id: "csharp",
   name: "C#",
+  short: "C#",
+  color: "ansi5",
+  install: { kind: "manual", what: ".NET SDK 8 or newer", url: "https://dotnet.microsoft.com/download" },
   answerFile: "Exercise.cs",
   fileExtension: ".cs",
   codeFence: "csharp",

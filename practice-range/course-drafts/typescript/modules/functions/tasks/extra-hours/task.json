@@ -1,0 +1,56 @@
+{
+  "id": "course:ts-foundations/task/functions-extra-hours",
+  "role": "independent",
+  "title": "Calculate time beyond a booking",
+  "concepts": [
+    "function",
+    "scope",
+    "annotation"
+  ],
+  "prompt": "Write extraHours(hours: number, included: number): number. For nonnegative numbers, return the hours beyond the included amount, or 0 when the booking covers everything. A later call starts fresh.",
+  "hints": [
+    "Consider a booking that is larger than the time used.",
+    "Decide what to return when all time is covered.",
+    "On the other path return only the excess."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "extraHours(6, 2) === 4",
+    "extraHours(2, 6) === 0",
+    "extraHours(4, 4) === 0",
+    "extraHours(1.5, 0.5) === 1"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Returns a negative excess.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Returns all hours once over.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Consider a booking that is larger than the time used."
+}

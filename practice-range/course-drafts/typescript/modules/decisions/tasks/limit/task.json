@@ -1,0 +1,61 @@
+{
+  "id": "course:ts-foundations/task/decisions-limit",
+  "role": "guided",
+  "title": "Include the last available place",
+  "concepts": [
+    "branch",
+    "truthiness",
+    "boolean"
+  ],
+  "prompt": "The supplied numbers requests and places are nonnegative. Set fits to true when every request can fit, including an exact fit. Fix the starter’s boundary mistake.",
+  "hints": [
+    "Test two requests and two places.",
+    "Both a smaller request and an equal request fit.",
+    "Look for the comparison that includes equality."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "fits === (requests <= places)"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "tie",
+      "declarations": "fixture-tie.ts"
+    },
+    {
+      "id": "full",
+      "declarations": "fixture-full.ts"
+    },
+    {
+      "id": "room",
+      "declarations": "fixture-room.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Excludes exact fits.",
+      "witness": {
+        "fixture": "tie",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Accepts overbooking.",
+      "witness": {
+        "fixture": "full",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Test two requests and two places."
+}

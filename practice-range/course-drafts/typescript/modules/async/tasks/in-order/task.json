@@ -1,0 +1,55 @@
+{
+  "id": "course:ts-foundations/task/async-in-order",
+  "role": "review",
+  "title": "Read two notes in order",
+  "concepts": [
+    "promise",
+    "await",
+    "async-fixture"
+  ],
+  "prompt": "Return the first source’s text followed by a slash and the second source’s text. Call each exactly once, and call the second only after the first resolves. If the first rejects, propagate the rejection and leave the second uncalled.",
+  "hints": [
+    "Sequence matters for starting the readers as well as combining text.",
+    "Wait for the first result before invoking the second reader.",
+    "A rejected first await exits before the next call unless it is caught."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(await joinNotes(async()=>\"a\",async()=>\"\"),\"a/\")",
+    "await (async()=>{const order:string[]=[]; await joinNotes(async()=>{order.push(\"first\");await Promise.resolve();order.push(\"ready\");return \"a\"},async()=>{order.push(\"second\");return \"b\"});return __same(order,[\"first\",\"ready\",\"second\"]);})()",
+    "await (async()=>{let calls=0;const rejected=await __rejects(joinNotes(async()=>{throw \"no\"},async()=>{calls++;return \"\"}));return rejected&&calls===0;})()"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Reverses the text.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Starts the second reader early.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Sequence matters for starting the readers as well as combining text."
+}
