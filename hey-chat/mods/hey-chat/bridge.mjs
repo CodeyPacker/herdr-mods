@@ -227,10 +227,10 @@ export function serve(opts, dependencies = {}) {
   let failedMessage = null;
   let turn = false;         // a turn is running
   let turnEndedAt = Date.now(); // when the agent last had work
-  const deliveredIds = new Set(links?.events.filter(e => e.type === "user").map(e => e.queueId).filter(Boolean) ?? []);
+  const deliveredIds = new Set(links?.events.filter(e => ["user", "link_notice"].includes(e.type)).map(e => e.queueId).filter(Boolean) ?? []);
   const queue = (savedLink?.queue ?? []).filter(entry => !deliveredIds.has(entry.id)).map(entry => ({ ...entry, steering: false, interrupting: false }));
   links?.saveQueue(queue);
-  const submitted = new Set([...(links?.events.filter(e => ["queued", "user"].includes(e.type)).map(e => e.queueId ?? e.id).filter(Boolean) ?? []), ...queue.map(entry => entry.id)]);
+  const submitted = new Set([...(links?.events.filter(e => ["queued", "user", "link_notice"].includes(e.type)).map(e => e.queueId ?? e.id).filter(Boolean) ?? []), ...queue.map(entry => entry.id)]);
   if (links) for (const event of links.events) {
     if (event.type === "turn_end" && event.retry) failedMessage = { id: event.retry.id, entry: { ...event.retry, id: `original-${event.retry.id}` } };
     if (event.type === "retry_cleared" && failedMessage?.id === event.id) failedMessage = null;
@@ -768,7 +768,20 @@ export function serve(opts, dependencies = {}) {
     links?.saveQueue(queue);
   };
   const documentInput = entry => withSender(withDocuments(entry.text, readDocuments(entry.files ?? [], join(dirname(state), "files"))), entry.source);
+  // Routine reports belong in the pane, not in the model's conversation. Human approval
+  // requests remain visible in the child; errors, blockers and explicit needs can wake the parent.
+  const routineUpdate = entry => entry.source?.kind === "update" && entry.source.status !== "error"
+    && !entry.source.blockers?.length && !entry.source.needs?.length;
+  const showNotice = entry => emit({ type: "link_notice", queueId: entry.id, text: entry.text, source: entry.source, at: entry.at });
   const startMessage = (entry, preparedText) => {
+    // Also handle routine reports queued by an older bridge before it stopped.
+    if (routineUpdate(entry)) {
+      queue.splice(queue.indexOf(entry), 1);
+      showNotice(entry);
+      links?.saveQueue(queue);
+      drainQueue();
+      return;
+    }
     let text;
     try { text = preparedText ?? documentInput(entry); }
     catch (error) {
@@ -827,6 +840,7 @@ export function serve(opts, dependencies = {}) {
       if (submitted.has(id)) return;
       submitted.add(id);
       const entry = { id, text: m.text, images, files, skill, ...(m.source ? { source: m.source } : {}), at: Date.now(), steering: false, interrupting: false };
+      if (routineUpdate(entry)) { showNotice(entry); return; }
       queue.push(entry);
       links?.saveQueue(queue);
       if (turn || queue.length > 1) emit({ type: "queued", ...entry });
@@ -921,7 +935,7 @@ export function serve(opts, dependencies = {}) {
 
   const control = async m => {
     if (!links) throw new Error("This bridge does not support linked chats.");
-    if (m.type === "link_ping") return { chat, session, status: links.get().status, protocol: 11 };
+    if (m.type === "link_ping") return { chat, session, status: links.get().status, protocol: 12 };
     if (m.type === "link_tool") return runLinkedTool(m.name, m.arguments ?? {});
     if (m.type === "link_send") {
       links.related(m.source?.chat);
@@ -997,8 +1011,8 @@ export function serve(opts, dependencies = {}) {
     // Made new each time and readable by you alone, since it holds the token.
     const file = join(state, `${chat}.json`);
     rmSync(file, { force: true });
-    writeFileSync(file, JSON.stringify({ port, pid: process.pid, cwd, agent, startedAt, protocol: 11, token }), { mode: 0o600 });
-    emit({ type: "ready", session, agent, protocol: 11 });
+    writeFileSync(file, JSON.stringify({ port, pid: process.pid, cwd, agent, startedAt, protocol: 12, token }), { mode: 0o600 });
+    emit({ type: "ready", session, agent, protocol: 12 });
     if (links && ["working", "blocked"].includes(savedLink?.status)) {
       const request = savedLink.lastRequest;
       if (request) { activeMessage = { ...request, id: request.queueId ?? request.id, images: request.images ?? [], files: request.files ?? [] }; turn = true; endTurn(true, "This turn was interrupted when its bridge stopped. You can retry the original request."); }

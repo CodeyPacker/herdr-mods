@@ -127,6 +127,26 @@ test('old update cards no longer repeat the task brief or child answer', () => {
   assert.equal(updateText({title:'Review',status:'done',summary:{task:'Long instructions',progress:['Entire answer']}}),'Review: done');
 });
 
+test('routine notices display and replay without changing the active plan or working state', async () => {
+  const { applyEvent, resetThread } = await import('../mods/hey-chat/messages.js');
+  const events = [{ type: 'working' }, { type: 'tool', id: 'plan', name: 'mcp__heychat__plan',
+    input: { items: [{ text: 'Current work', status: 'in_progress' }] } },
+  { type: 'link_notice', queueId: 'notice', text: 'Long automatic notice',
+    source: { chat: 'child', title: 'Child', kind: 'update', status: 'done' } }];
+  const chat = { id: 'parent' };
+  resetThread(chat);
+  for (const event of events) applyEvent(chat, event);
+  applyEvent(chat, events.at(-1));
+  assert.equal(chat.working, true);
+  assert.equal(chat.plan[0].text, 'Current work');
+  assert.equal(chat.thread.filter(m => m.source?.kind === 'update').length, 1);
+  assert.equal(chat.thread.at(-1).text, 'Child: done');
+  const restored = { id: 'restored' };
+  resetThread(restored);
+  for (const event of events) applyEvent(restored, event);
+  assert.equal(restored.thread.at(-1).text, 'Child: done');
+});
+
 test('reporting follows the delivered request, survives restart, and preserves an earlier delegated completion', async t => {
   const {create}=await setup(t);
   create('parent');

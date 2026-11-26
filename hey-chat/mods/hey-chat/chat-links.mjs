@@ -236,7 +236,7 @@ export class ChatLinks {
       if (!args.mode || args.mode === 'summary') return info;
       if (!['messages', 'all'].includes(args.mode)) throw new Error('Choose summary, messages or all.');
       const after = Math.max(0, Number(args.after) || 0), limit = Math.min(100, Math.max(1, Number(args.limit) || 25));
-      const events = this.history(id).filter(e => e.seq > after && (args.mode === 'all' || ['user', 'text', 'note', 'permission', 'question', 'turn_end', 'error'].includes(e.type)));
+      const events = this.history(id).filter(e => e.seq > after && (args.mode === 'all' || ['user', 'link_notice', 'text', 'note', 'permission', 'question', 'turn_end', 'error'].includes(e.type)));
       const result = []; let bytes = 0;
       for (const event of events) {
         const serialized = JSON.stringify(event), size = serialized.length;

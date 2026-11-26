@@ -282,6 +282,7 @@ export function applyEvent(chat, ev) {
       return null;
     }
     case "queued":
+    case "link_notice":
     case "user": {
       // A message the agent now reads starts a new turn, and the last turn's plan goes with it.
       if (ev.type === "user") chat.plan = null;
