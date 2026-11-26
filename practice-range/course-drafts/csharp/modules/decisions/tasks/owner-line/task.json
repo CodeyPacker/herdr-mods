@@ -1,0 +1,68 @@
+{
+  "id": "course:cs-foundations/task/decisions-owner-line",
+  "role": "review",
+  "title": "Print an owner line",
+  "concepts": [
+    "branch",
+    "comparison",
+    "text",
+    "interpolation"
+  ],
+  "prompt": "owner is a supplied string and count is a supplied whole number. Print one line with the owner, a colon and a space, then the count, as in Ana: 2. When owner is the empty string, print Unassigned in its place. When count is 0, print the word none in its place. Both rules can apply to the same line: Unassigned: none.",
+  "hints": [
+    "The two rules are independent. Does your code handle each one whatever the other does?",
+    "Work out the name part and the count part separately, each with its own if, then print them together.",
+    "Use one string variable for the name and one for the count text. Change each only when its own rule applies."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "statements",
+  "captureOutput": true,
+  "rules": [],
+  "checks": [
+    "__Output() == (owner == \"\" ? \"Unassigned\" : owner) + \": \" + (count == 0 ? \"none\" : count.ToString())"
+  ],
+  "checkLabels": [
+    "The line must show the owner or Unassigned, a colon and a space, then the count or none."
+  ],
+  "fixtures": [
+    {
+      "id": "ana",
+      "declarations": "fixture-ana.cs"
+    },
+    {
+      "id": "nobody",
+      "declarations": "fixture-nobody.cs"
+    },
+    {
+      "id": "idle",
+      "declarations": "fixture-idle.cs"
+    },
+    {
+      "id": "blank",
+      "declarations": "fixture-blank.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-merged.cs",
+      "misconception": "Treats the two rules as one: an empty owner always prints none.",
+      "witness": {
+        "fixture": "nobody",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-owner-only.cs",
+      "misconception": "Handles the empty owner but not the zero count.",
+      "witness": {
+        "fixture": "idle",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Find the failing case and check each half of the line on its own. The owner rule and the count rule do not depend on each other."
+}

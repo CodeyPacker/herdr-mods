@@ -1,0 +1,63 @@
+{
+  "id": "course:cs-foundations/task/collections-over",
+  "role": "independent",
+  "title": "Collect the long tasks",
+  "concepts": [
+    "list",
+    "loop",
+    "comparison",
+    "array"
+  ],
+  "prompt": "Write public static List<int> Over(int[] minutes, int limit). Return a new list with the values that are greater than limit, in their original order. A value equal to limit is not included. With no such values, return an empty list.",
+  "hints": [
+    "Start with an empty list and decide, item by item, whether it belongs.",
+    "Add the value itself to the list, not its position.",
+    "Create a new List<int>, loop over minutes, and Add each value that is greater than limit."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.Over(new int[] { 30, 15, 45 }, 20).SequenceEqual(new int[] { 30, 45 })",
+    "Practice.Over(new int[] { 30, 15, 45 }, 30).SequenceEqual(new int[] { 45 })",
+    "Practice.Over(new int[] { 5, 9 }, 60).Count == 0",
+    "Practice.Over(new int[0], 0).Count == 0",
+    "Practice.Over(new int[] { 50, 40, 50 }, 45).SequenceEqual(new int[] { 50, 50 })"
+  ],
+  "checkLabels": [
+    "From 30, 15 and 45 with a limit of 20, the result must be 30 then 45.",
+    "A value equal to the limit must not be included.",
+    "With no value over the limit, the list must be empty.",
+    "An empty array must give an empty list.",
+    "Repeated values must each be kept."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-inclusive.cs",
+      "misconception": "Includes a value equal to the limit.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-positions.cs",
+      "misconception": "Adds the position of each match instead of its value.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Work the failing input by hand. Check the comparison at exactly the limit, and that the list holds values, not positions."
+}

@@ -1,0 +1,54 @@
+{
+  "id": "course:cs-foundations/task/save-echo-card",
+  "role": "review",
+  "title": "Print a task card",
+  "concepts": [
+    "save-run",
+    "read-output"
+  ],
+  "prompt": "Print two lines, exactly: Card: Pack boxes, then Status: waiting.",
+  "hints": [
+    "One statement prints one line.",
+    "Put each line's text in double quotes inside Console.WriteLine( ).",
+    "Check the capital letters: Card, Pack and Status start with a capital. boxes and waiting do not."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "statements",
+  "captureOutput": true,
+  "rules": [],
+  "checks": [
+    "__Output() == \"Card: Pack boxes\\nStatus: waiting\""
+  ],
+  "checkLabels": [
+    "The output must be Card: Pack boxes, then Status: waiting, on two lines."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-swapped.cs",
+      "misconception": "Prints the status before the card.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-capital.cs",
+      "misconception": "Changes a capital letter in the required text.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Compare each printed line with the prompt. The order of the lines and every capital letter must match."
+}

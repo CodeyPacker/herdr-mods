@@ -136,7 +136,11 @@
         "read-output",
         "compiler-error"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/save/module.json"
+      }
     },
     {
       "id": "course:cs-foundations/module/values",
@@ -168,7 +172,11 @@
         "comparison",
         "boolean-logic"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/decisions/module.json"
+      }
     },
     {
       "id": "course:cs-foundations/module/methods",
@@ -181,7 +189,11 @@
         "parameter-return",
         "scope"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/methods/module.json"
+      }
     },
     {
       "id": "course:cs-foundations/module/collections",
@@ -194,7 +206,11 @@
         "list",
         "loop"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/collections/module.json"
+      }
     },
     {
       "id": "course:cs-foundations/module/classes",

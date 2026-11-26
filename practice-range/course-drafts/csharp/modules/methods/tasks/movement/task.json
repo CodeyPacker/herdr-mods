@@ -1,0 +1,60 @@
+{
+  "id": "course:cs-foundations/task/methods-movement",
+  "role": "review",
+  "title": "Measure a change",
+  "concepts": [
+    "method",
+    "parameter-return",
+    "number-types"
+  ],
+  "prompt": "Write public static int Movement(int before, int after). Return how much the count changed from before to after. A rise is positive, a fall is negative, and no change is 0.",
+  "hints": [
+    "From 3 to 5 is a rise of 2. From 5 to 3 is a fall. What should the sign be?",
+    "One subtraction gives both the size and the sign.",
+    "Subtract before from after."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.Movement(3, 5) == 2",
+    "Practice.Movement(5, 3) == -2",
+    "Practice.Movement(4, 4) == 0",
+    "Practice.Movement(0, 7) == 7"
+  ],
+  "checkLabels": [
+    "From 3 to 5 must give 2.",
+    "From 5 to 3 must give -2.",
+    "No change must give 0.",
+    "From 0 to 7 must give 7."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-reversed.cs",
+      "misconception": "Subtracts in the wrong order, so the sign is flipped.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-size-only.cs",
+      "misconception": "Returns the size of the change and drops its sign.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Check one rise and one fall. The sign of the result tells the caller which way the count moved."
+}

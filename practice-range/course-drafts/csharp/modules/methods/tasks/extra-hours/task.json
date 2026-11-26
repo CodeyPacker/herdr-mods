@@ -1,0 +1,61 @@
+{
+  "id": "course:cs-foundations/task/methods-extra-hours",
+  "role": "independent",
+  "title": "Calculate time beyond a booking",
+  "concepts": [
+    "method",
+    "parameter-return",
+    "branch",
+    "number-types"
+  ],
+  "prompt": "Write public static double ExtraHours(double hours, double included). Both inputs are zero or more. Return the hours beyond the included amount, or 0 when the booking covers everything.",
+  "hints": [
+    "Think about a booking that is larger than the time used.",
+    "Decide what to return when all the time is covered.",
+    "On the other path, return only the part beyond the included hours."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.ExtraHours(6, 2) == 4",
+    "Practice.ExtraHours(2, 6) == 0",
+    "Practice.ExtraHours(4, 4) == 0",
+    "Practice.ExtraHours(1.5, 0.5) == 1"
+  ],
+  "checkLabels": [
+    "6 hours with 2 included must give 4.",
+    "A booking larger than the time used must give 0.",
+    "Using exactly the included hours must give 0.",
+    "1.5 hours with 0.5 included must give 1."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-negative.cs",
+      "misconception": "Returns a negative amount when the booking covers everything.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-all-hours.cs",
+      "misconception": "Returns all the hours once the booking is passed.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Try a booking that is larger than the time used, then one that is smaller. The result is never below 0."
+}

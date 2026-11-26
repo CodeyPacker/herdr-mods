@@ -1,0 +1,66 @@
+{
+  "id": "course:cs-foundations/task/decisions-can-start",
+  "role": "independent",
+  "title": "Decide whether work can start",
+  "concepts": [
+    "boolean-logic",
+    "comparison",
+    "variable"
+  ],
+  "prompt": "assigned and blocked are supplied bools, and minutes is a supplied whole number. Declare a bool named ready. It is true only when the task is assigned, is not blocked, and has more than 0 minutes.",
+  "hints": [
+    "How many separate facts must all be true?",
+    "Join facts that must all hold with &&. Flip blocked with !.",
+    "Combine assigned, !blocked and minutes > 0 with && in one expression."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "statements",
+  "rules": [],
+  "checks": [
+    "ready == (assigned && !blocked && minutes > 0)"
+  ],
+  "checkLabels": [
+    "ready must be true only for an assigned task that is not blocked and has more than 0 minutes."
+  ],
+  "fixtures": [
+    {
+      "id": "go",
+      "declarations": "fixture-go.cs"
+    },
+    {
+      "id": "blocked",
+      "declarations": "fixture-blocked.cs"
+    },
+    {
+      "id": "unassigned",
+      "declarations": "fixture-unassigned.cs"
+    },
+    {
+      "id": "zero",
+      "declarations": "fixture-zero.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-minutes.cs",
+      "misconception": "Leaves out the minutes condition.",
+      "witness": {
+        "fixture": "zero",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-or.cs",
+      "misconception": "Uses or where every condition must hold.",
+      "witness": {
+        "fixture": "blocked",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Take the failing case and work out each of the three facts on its own. ready is true only when all three are true."
+}

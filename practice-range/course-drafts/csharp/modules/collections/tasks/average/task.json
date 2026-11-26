@@ -1,0 +1,63 @@
+{
+  "id": "course:cs-foundations/task/collections-average",
+  "role": "review",
+  "title": "Average the minutes",
+  "concepts": [
+    "list",
+    "loop",
+    "number-types",
+    "branch"
+  ],
+  "prompt": "Write public static double Average(List<int> minutes). Return the average of the values, keeping any fraction. For an empty list return 0.",
+  "hints": [
+    "What does the average of 1 and 2 need to be? What do two ints give when divided?",
+    "An empty list has a Count of 0. Decide what to return before dividing.",
+    "Add the values into a double total, return 0 when Count is 0, and otherwise divide the total by Count."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.Average(new List<int> { 1, 2 }) == 1.5",
+    "Practice.Average(new List<int> { 30 }) == 30",
+    "Practice.Average(new List<int>()) == 0",
+    "Practice.Average(new List<int> { 0, 0 }) == 0",
+    "Practice.Average(new List<int> { 2, 4, 9 }) == 5"
+  ],
+  "checkLabels": [
+    "The average of 1 and 2 must be 1.5.",
+    "The average of one value must be that value.",
+    "An empty list must give 0.",
+    "The average of 0 and 0 must be 0.",
+    "The average of 2, 4 and 9 must be 5."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-int-division.cs",
+      "misconception": "Divides two ints, so the fraction is dropped.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-empty.cs",
+      "misconception": "Divides by a count of 0 for an empty list.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "Try the list 1, 2 and then an empty list. Check the types on both sides of the division and what happens when Count is 0."
+}

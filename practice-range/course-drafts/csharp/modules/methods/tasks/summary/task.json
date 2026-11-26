@@ -1,0 +1,62 @@
+{
+  "id": "course:cs-foundations/task/methods-summary",
+  "role": "independent",
+  "title": "Summarize the board",
+  "concepts": [
+    "method",
+    "parameter-return",
+    "interpolation"
+  ],
+  "prompt": "Write two methods. public static int Total(int open, int done) returns the two counts added together. public static string Summary(int open, int done) returns text in the form \"3 open, 1 done, 4 total\", and gets its total by calling Total. Both methods return their result. Neither prints.",
+  "hints": [
+    "What type does each method give back?",
+    "Summary can call Total(open, done) and use the result inside its text.",
+    "Return an interpolated string with open, done and Total(open, done) in braces."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.Total(3, 1) == 4",
+    "Practice.Total(0, 0) == 0",
+    "Practice.Summary(3, 1) == \"3 open, 1 done, 4 total\"",
+    "Practice.Summary(0, 0) == \"0 open, 0 done, 0 total\"",
+    "Practice.Summary(2, 9) == \"2 open, 9 done, 11 total\""
+  ],
+  "checkLabels": [
+    "Total of 3 and 1 must be 4.",
+    "Total of 0 and 0 must be 0.",
+    "Summary of 3 and 1 must be \"3 open, 1 done, 4 total\".",
+    "Summary of 0 and 0 must be \"0 open, 0 done, 0 total\".",
+    "Summary of 2 and 9 must be \"2 open, 9 done, 11 total\"."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-prints.cs",
+      "misconception": "Prints the summary instead of returning it.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "compile",
+        "detail": "CS0019"
+      }
+    },
+    {
+      "source": "wrong-difference.cs",
+      "misconception": "Works out the total as a difference.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Check that both methods return a value, and compare the text with the prompt character by character."
+}

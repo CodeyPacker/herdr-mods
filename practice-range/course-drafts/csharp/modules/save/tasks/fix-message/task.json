@@ -1,0 +1,55 @@
+{
+  "id": "course:cs-foundations/task/save-fix-message",
+  "role": "guided",
+  "title": "Repair the first message",
+  "concepts": [
+    "save-run",
+    "read-output",
+    "compiler-error"
+  ],
+  "prompt": "The program should print Ready on one line and Open on the next. The starter does not compile, and its first message has a spelling mistake. Read the compiler error, repair the line it names, then fix the text.",
+  "hints": [
+    "The error names a line and says what the compiler expected there.",
+    "Every statement ends with a semicolon. Add the missing one, then save again.",
+    "Once it compiles, compare the first printed line with the word Ready, letter by letter."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "statements",
+  "captureOutput": true,
+  "rules": [],
+  "checks": [
+    "__Output() == \"Ready\\nOpen\""
+  ],
+  "checkLabels": [
+    "The output must be Ready, then Open, on two lines."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-typo.cs",
+      "misconception": "Fixes the compiler error but leaves the misspelled text.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-order.cs",
+      "misconception": "Prints the two lines in the wrong order.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Compare your output with the prompt one character at a time. Spelling, capital letters and line order all count."
+}

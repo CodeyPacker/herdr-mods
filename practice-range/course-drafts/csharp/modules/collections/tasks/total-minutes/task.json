@@ -1,0 +1,62 @@
+{
+  "id": "course:cs-foundations/task/collections-total-minutes",
+  "role": "guided",
+  "title": "Total the minutes",
+  "concepts": [
+    "array",
+    "loop",
+    "method"
+  ],
+  "prompt": "TotalMinutes(int[] minutes) should return all the values added together, and 0 for an empty array. The starter returns only the last value. Repair the loop.",
+  "hints": [
+    "Follow total through an array of two items. What does it hold after each run?",
+    "Each run must keep what total already has.",
+    "Inside the loop, add value to total and store the result back in total."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.TotalMinutes(new int[] { 30, 15, 45 }) == 90",
+    "Practice.TotalMinutes(new int[] { 30 }) == 30",
+    "Practice.TotalMinutes(new int[0]) == 0",
+    "Practice.TotalMinutes(new int[] { 5, 5 }) == 10",
+    "Practice.TotalMinutes(new int[] { 7, 0 }) == 7"
+  ],
+  "checkLabels": [
+    "30, 15 and 45 must total 90.",
+    "A single value must be the total.",
+    "An empty array must total 0.",
+    "Two equal values must both be counted.",
+    "A final 0 must not wipe out the total."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-skip-first.cs",
+      "misconception": "Starts counting at position 1 and misses the first item.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-past-end.cs",
+      "misconception": "Reads one position past the end of the array.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "IndexOutOfRangeException"
+      }
+    }
+  ],
+  "feedback": "Trace total by hand for the failing array. Check where the loop starts, where it stops, and whether each run keeps the earlier total."
+}

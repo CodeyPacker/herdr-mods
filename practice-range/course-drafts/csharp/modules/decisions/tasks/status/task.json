@@ -1,0 +1,70 @@
+{
+  "id": "course:cs-foundations/task/decisions-status",
+  "role": "guided",
+  "title": "Report the board status",
+  "concepts": [
+    "branch",
+    "comparison",
+    "variable"
+  ],
+  "prompt": "open is the number of open tasks and limit is the most the board can hold. Both are supplied whole numbers. Set the string status to \"empty\" when open is 0, to \"full\" when open has reached the limit or passed it, and to \"room\" otherwise. The empty rule wins when both apply.",
+  "hints": [
+    "Try the case where open equals limit by hand. Which status does the starter give?",
+    "Reaching the limit counts as full, so the comparison must include the equal case.",
+    "Test open == 0 first, then open >= limit, and leave \"room\" for everything else."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "statements",
+  "rules": [],
+  "checks": [
+    "status == (open == 0 ? \"empty\" : open >= limit ? \"full\" : \"room\")"
+  ],
+  "checkLabels": [
+    "status must be \"empty\" for 0 open tasks, \"full\" at or past the limit, and \"room\" otherwise."
+  ],
+  "fixtures": [
+    {
+      "id": "room",
+      "declarations": "fixture-room.cs"
+    },
+    {
+      "id": "exact",
+      "declarations": "fixture-exact.cs"
+    },
+    {
+      "id": "over",
+      "declarations": "fixture-over.cs"
+    },
+    {
+      "id": "empty",
+      "declarations": "fixture-empty.cs"
+    },
+    {
+      "id": "closed",
+      "declarations": "fixture-closed.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-strict.cs",
+      "misconception": "Treats exactly reaching the limit as still having room.",
+      "witness": {
+        "fixture": "exact",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-order.cs",
+      "misconception": "Tests the full rule before the empty rule that should win.",
+      "witness": {
+        "fixture": "closed",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Work the failing case by hand, reading your conditions from the top. Check the case where open equals limit and the case where both are 0."
+}

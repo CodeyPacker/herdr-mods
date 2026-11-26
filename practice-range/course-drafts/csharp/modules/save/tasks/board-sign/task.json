@@ -1,0 +1,54 @@
+{
+  "id": "course:cs-foundations/task/save-board-sign",
+  "role": "independent",
+  "title": "Print the board sign",
+  "concepts": [
+    "save-run",
+    "read-output"
+  ],
+  "prompt": "Print three lines, exactly: Task board, then Open: 3, then Done: 1. The starter prints the first line.",
+  "hints": [
+    "How many lines must print, and how many does the starter print?",
+    "Each line needs its own Console.WriteLine statement with the text in double quotes.",
+    "Add a statement that prints Open: 3 and another that prints Done: 1. Keep the colon and the space."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "statements",
+  "captureOutput": true,
+  "rules": [],
+  "checks": [
+    "__Output() == \"Task board\\nOpen: 3\\nDone: 1\""
+  ],
+  "checkLabels": [
+    "The output must be Task board, Open: 3 and Done: 1 on three lines."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-one-line.cs",
+      "misconception": "Puts all three parts in one printed line.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-no-colon.cs",
+      "misconception": "Leaves out the punctuation the output needs.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Count your printed lines and compare each with the prompt. The colon and the single space after it are part of the text."
+}
