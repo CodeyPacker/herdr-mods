@@ -6,6 +6,7 @@ import { banner, paneBar, sectionLabel } from "../kit/pane.js";
 import { courseCommand, importTutorPreferences } from "./bridge.js";
 import { configuredEditor, configuredTutor, generateRepoLesson } from "../bridge.js";
 import { tutorChat } from "../tutor/panel.js";
+import { findLanguage } from "../languages/index.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("../kit/theme.js").Theme} Theme */
@@ -23,6 +24,8 @@ export class CoursePanel {
     /** @type {import("./types.js").CourseSnapshot | null} */
     this.data = null;
     this.page = "catalog";
+    this.languageFilter = "";
+    this.returnScreen = "topics";
     this.busy = "";
     this.error = "";
     this.repoLessonId = "";
@@ -55,9 +58,12 @@ export class CoursePanel {
     this.repoInput.on("submit", (_event, cx) => this.run("attach-repo", { path: this.repoInput.value() }, cx));
   }
 
-  /** @param {Context} cx */
-  show(cx) {
-    const resume = this.host.screen !== "courses" && this.data;
+  /** @param {Context} cx @param {string} [languageId] */
+  show(cx, languageId = "") {
+    if (this.busy || this.host.busy) return;
+    const resume = !languageId && ["practice", "topics", "exercises", "scratch"].includes(this.host.screen) && this.data;
+    if (this.host.screen !== "courses") this.returnScreen = this.host.screen;
+    this.languageFilter = languageId;
     this.host.cancelTutor(cx);
     this.host.screen = "courses";
     this.host.pendingSaveCheck = null;
@@ -247,11 +253,14 @@ export class CoursePanel {
     if(this.page==="import-preview") this.page="imports";
     else if(this.page==="imports") this.page="catalog";
     else if (this.page === "source") this.page = this.sourceReturnPage;
-    else if (this.data?.enrollment.review) this.run("review-end", {}, cx);
+    else if (this.page !== "catalog" && this.data?.enrollment.review) this.run("review-end", {}, cx);
     else if (this.page === "task" && this.data?.enrollment.position) this.run("open", this.data.enrollment.position, cx);
     else if (this.page === "lesson" || this.page === "repo-lesson") { this.page = "modules"; this.pause(); }
     else if (this.page === "modules") { this.page = "catalog"; this.pause(); }
-    else { this.pause(); this.host.screen = "topics"; }
+    else {
+      this.pause(); this.host.screen = this.returnScreen;
+      if (["practice", "scratch"].includes(this.returnScreen) && this.host.state) this.host.perform("status", null, cx);
+    }
     cx.notify();
   }
 
@@ -262,10 +271,11 @@ export class CoursePanel {
     if (this.generatingRepoLesson) body.child(keyButton(t,"cancel-repo-lesson","","Cancel generation",Boolean(this.host.tutorRequestId),cx=>this.host.cancelTutor(cx)));
     if (this.error) body.child(banner(t, this.error, t.blocked));
     if (this.page === "catalog") {
-      body.child(div().font_semibold().child("Courses"))
+      body.child(div().font_semibold().child(this.languageFilter ? `${findLanguage(this.languageFilter).name} courses` : "Courses"))
         .child(div().text_color(t.muted).child("Learn with included examples. No repo or AI connection needed."))
         .child(keyButton(t,"course-import","","Import Tutor courses",!this.busy,cx=>this.run("import-list",{},cx)));
-      for (const course of this.catalog) {
+      if (this.languageFilter) body.child(keyButton(t,"course-all-languages","","All courses",!this.busy,cx=>{this.languageFilter="";cx.notify();}));
+      for (const course of this.catalog.filter(course=>!this.languageFilter || course.languageId===this.languageFilter)) {
         const actions=h_flex().gap(8).flex_wrap()
           .child(keyButton(t, `course-beginner-${course.id}`, "", "Start or resume", !this.busy && !course.error, cx => this.run("enroll", { courseId: course.id, entryPath: "beginner" }, cx)));
         if(!course.imported) actions.child(keyButton(t, `course-experienced-${course.id}`, "", "I know another language", !this.busy && !course.error, cx => this.run("enroll", { courseId: course.id, entryPath: "experienced" }, cx)));
@@ -293,8 +303,10 @@ export class CoursePanel {
         input: this.host.tutorInput, typing: this.host.typing, send: cx => this.host.askTutor(cx),
       }));
     }
+    const backLabel = this.page === "catalog" ? `Back to ${this.returnScreen === "setup" ? "setup" : this.returnScreen === "languages" ? "languages" : "practice"}`
+      : ["imports","import-preview"].includes(this.page) ? "Back" : this.data?.enrollment.review ? "End review" : this.page === "task" ? "Return to lesson" : "Back";
     return v_flex().flex_1().min_h(0).child(body).child(paneBar(t)
-      .child(keyButton(t, "course-back", "esc", ["imports","import-preview"].includes(this.page)?"Back":this.data?.enrollment.review ? "End review" : this.page === "task" ? "Return to lesson" : this.page === "catalog" ? "Back to practice" : "Back", !this.busy, cx => this.back(cx))));
+      .child(keyButton(t, "course-back", "esc", backLabel, !this.busy, cx => this.back(cx))));
   }
 
   /** @param {import("gpui-kit").Element} body @param {Theme} t */

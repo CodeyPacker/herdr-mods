@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { loadCourse, listCourses, validatePack, taskFor, lessonFor } from "../mods/practice-range/courses/loader.mjs";
+import { bundledCourses } from "../mods/practice-range/courses/catalog.js";
 
 test("the bundled course stays labeled as a preview before learner validation", async () => {
   const pack = await loadCourse("course:ts-foundations");
@@ -15,6 +16,7 @@ test("the bundled course stays labeled as a preview before learner validation", 
   assert.equal(summary.available, pack.lessons.length);
   assert.equal(summary.total, 18);
   assert.equal(summary.preview, true);
+  for (const entry of bundledCourses) assert.equal((await loadCourse(entry.id)).languageId,entry.languageId,"Language setup must link to a course in the advertised language");
   await assert.rejects(loadCourse("../../other"), /not installed/);
 });
 

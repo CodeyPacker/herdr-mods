@@ -48,6 +48,7 @@ try {
     prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], review: ["task", review], "ai-lesson": ["lesson", modules], "ai-task": ["task", task], attached: ["modules", attached], "repo-missing": ["modules", missing], error: ["task", task],
     "repo-supplement":["repo-lesson",attached], "repo-generating":["modules",attached],
     "repo-source":["source",attached], "repo-source-cached":["source",attached], "repo-source-missing":["source",attached],
+    "language-course-entry":["catalog",review], "setup-course-entry":["catalog",review],
     imports:["imports",null], "import-preview":["import-preview",null], "import-preferences":["import-preview",null], "import-error":["imports",null],
     "imported-catalog":["catalog",null], "imported-modules":["modules",importedModules], "imported-lesson":["lesson",importedLesson], "imported-quiz":["lesson",importedQuiz], "imported-task":["task",importedTask] };
   const requested = process.argv.slice(2);
@@ -106,6 +107,21 @@ export default class Fixture extends Syntax {
     if (this.courses.data?.file && this.courses.page === "task" && this.editorTarget().file !== this.courses.data.file) throw new Error("Course editor must target the course answer");
     if (this.state !== prior) throw new Error("Course rendering must preserve direct practice");
     this.courses.run = () => {};
+    if (${name === "language-course-entry" || name === "setup-course-entry"}) {
+      this.screen=${JSON.stringify(name === "setup-course-entry" ? "setup" : "languages")};
+      const origin=this.screen, priorCourse=this.courses.data;
+      let requested="";
+      this.courses.run=action=>{requested=action;};
+      this.editor=null;this.enabledLanguages=[];this.setup.tools=null;
+      this.courses.show(cx,${JSON.stringify(name === "language-course-entry" ? "typescript" : "")});
+      if (requested!=="list" || this.screen!=="courses") throw new Error("Course reading must be available before installing a compiler or editor");
+      if (this.courses.languageFilter!==${JSON.stringify(name === "language-course-entry" ? "typescript" : "")}) throw new Error("The language card must filter its courses");
+      if (this.courses.data!==priorCourse || this.state!==prior) throw new Error("Browsing courses must preserve course and practice sessions");
+      this.courses.back(cx);
+      if(this.screen!==origin) throw new Error("Course catalog must return to setup or languages, including during a paused review");
+      this.screen="courses";
+      this.courses.run=()=>{};
+    }
     this.courses.key("h", cx);
     this.courses.busy = "Checking…";
     this.action("topics", cx);

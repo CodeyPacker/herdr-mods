@@ -1352,7 +1352,7 @@ export default class Syntax extends View {
       case "tutor": return tutorPage(t, { flow: this.setup, tutor: this.tutor, busy: this.tutorSettingBusy, error: this.tutorSettingsError, compact,
         change: (provider, cx) => this.changeTutor(provider, cx) });
       default: return setupHub(t, { flow: this.setup, editor: this.editor, tutor: this.tutor, layout: this.layout, busy,
-        open: (page, cx) => this.openSetup(page, cx), start: cx => this.startPracticing(cx), rescan: cx => this.setup.scan(cx, { force: true }) });
+        open: (page, cx) => this.openSetup(page, cx), start: cx => this.startPracticing(cx), rescan: cx => this.setup.scan(cx, { force: true }), learn: cx => this.courses.show(cx) });
     }
   }
 
@@ -1389,6 +1389,7 @@ export default class Syntax extends View {
         .child(spinner(t)).child(div().text_color(t.muted).child(this.busy))))
       .child(this.screen === "courses" ? this.courses.render(t) : this.screen === "setup" ? this.setupScreen(t)
         : this.screen === "languages" ? languagePanel(t, { flow: this.setup, selected: this.selected, busy: Boolean(this.busy), compact: this.layout.compact,
+          learn: (id,cx) => this.courses.show(cx,id),
           act: (id, cx) => this.chooseLanguage(id, cx), select: (id, cx) => { this.selected = languages.indexOf(findLanguage(id)); cx.notify(); },
           rescan: cx => this.setup.scan(cx, { force: true, tutors: false }) })
         : this.screen === "practice" ? this.practice(t) : this.screen === "scratch" ? this.scratch(t) : this.topicList(t, cx))

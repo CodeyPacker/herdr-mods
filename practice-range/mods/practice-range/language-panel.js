@@ -1,11 +1,12 @@
 // The languages screen: a card per language pack, with what it needs, how far you've come, and
-// one action. Ready packs open their topics. Packs that use npm install from here. A pack that
+// drill, install and course actions. Ready packs open their topics. Packs that use npm install from here. A pack that
 // needs software you install yourself links to its download page.
 import { div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { keyButton, spinner, meter } from "./kit/controls.js";
 import { card, banner } from "./kit/pane.js";
 import { languages } from "./languages/index.js";
+import { bundledCourses } from "./courses/catalog.js";
 import { packBadge, packColor, statusTag, pageTop, pageBody, cardGrid, inGrid, cardTitle, pageLegend } from "./setup/parts.js";
 
 /** @typedef {import("./kit/theme.js").Theme} Theme */
@@ -33,9 +34,9 @@ function actionLabel(action, pack) {
 
 /**
  * @param {Theme} t @param {LanguagePack} pack @param {import("./setup/flow.js").SetupFlow} flow
- * @param {{ on: boolean, busy: boolean, act: (id: string, cx: Context) => void, select: (id: string, cx: Context) => void }} options
+ * @param {{ on: boolean, busy: boolean, act: (id: string, cx: Context) => void, select: (id: string, cx: Context) => void, learn: (id: string, cx: Context) => void }} options
  */
-function packCard(t, pack, flow, { on, busy, act, select }) {
+function packCard(t, pack, flow, { on, busy, act, select, learn }) {
   const scan = flow.tools?.languages[pack.id];
   const installing = flow.installing === pack.id;
   const error = flow.installErrors[pack.id];
@@ -56,15 +57,18 @@ function packCard(t, pack, flow, { on, busy, act, select }) {
       .child(div().text_size(12).text_color(t.muted).child(`Installing ${pack.install.what} with npm. This can take a minute.`))))
     .when(Boolean(error), element => element.child(banner(t, error, t.blocked).text_size(11)))
     .when(!installing, element => element.child(h_flex()
-      .child(keyButton(t, `language-action-${pack.id}`, on ? "enter" : "", actionLabel(action, pack), !busy && Boolean(action), cx => act(pack.id, cx))))), 220);
+      .child(keyButton(t, `language-action-${pack.id}`, on ? "enter" : "", actionLabel(action, pack), !busy && Boolean(action), cx => act(pack.id, cx)))))
+    .when(bundledCourses.some(course=>course.languageId===pack.id),element=>element
+      .child(keyButton(t,`language-course-${pack.id}`,"","Start or resume course",!busy,cx=>learn(pack.id,cx)))
+      .child(div().text_size(11).text_color(t.muted).child("Read lessons now. Coding checks need the language compiler."))), 220);
 }
 
 /**
  * @param {Theme} t
  * @param {{ flow: import("./setup/flow.js").SetupFlow, selected: number, busy: boolean, compact: boolean,
- *   act: (id: string, cx: Context) => void, select: (id: string, cx: Context) => void, rescan: (cx: Context) => void }} options
+ *   act: (id: string, cx: Context) => void, select: (id: string, cx: Context) => void, learn: (id: string, cx: Context) => void, rescan: (cx: Context) => void }} options
  */
-export function languagePanel(t, { flow, selected, busy, compact, act, select, rescan }) {
+export function languagePanel(t, { flow, selected, busy, compact, act, select, learn, rescan }) {
   const chosen = languages[selected];
   // A pack you install yourself says how, under the cards, while it's the selected one.
   const manual = chosen && flow.tools && !flow.languageReady(chosen.id) && chosen.install.kind === "manual";
@@ -72,7 +76,7 @@ export function languagePanel(t, { flow, selected, busy, compact, act, select, r
     .child(pageBody("languages-body")
       .child(pageTop(t, { label: "LANGUAGES", title: "What do you want to practice?", intro: "Each language keeps its own answers and progress. Installs run here, with nothing to type in a terminal.", compact }))
       .when(Boolean(flow.scanError), element => element.child(banner(t, `Could not check this computer: ${flow.scanError}`, t.blocked)))
-      .child(cardGrid().children(languages.map((pack, index) => packCard(t, pack, flow, { on: index === selected, busy, act, select }))))
+      .child(cardGrid().children(languages.map((pack, index) => packCard(t, pack, flow, { on: index === selected, busy, act, select, learn }))))
       .when(Boolean(manual), element => element.child(card(t, { id: "language-manual" })
         .child(div().text_size(12).child(chosen.setupInstructions))
         .child(h_flex().gap(6).flex_wrap()

@@ -2,8 +2,9 @@
 import { findLanguage } from "../languages/index.js";
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
+import { bundledCourses } from "./catalog.js";
 
-const registry = new Map([["course:ts-foundations", new URL("./packs/typescript-foundations.json", import.meta.url)]]);
+const registry = new Map(bundledCourses.map(course => [course.id, new URL(`./packs/${course.file}`, import.meta.url)]));
 const text = value => typeof value === "string" && value.trim().length > 0;
 const list = (value, label) => { if (!Array.isArray(value)) throw new Error(`${label} must be a list.`); return value; };
 function requireValue(ok, label) { if (!ok) throw new Error(`Invalid course: ${label}.`); }
@@ -135,7 +136,7 @@ export async function listCourses(root) {
       const pack = await loadCourse(id, undefined, root);
       return { id, title: pack.title, languageId: pack.languageId, contentVersion: pack.contentVersion,
         preview: pack.preview === true, imported: pack.legacy?.source === "tutor", available: pack.lessons.length, total: pack.modules.length };
-    } catch (error) { return { id, error: error.message }; }
+    } catch (error) { return { id, languageId: bundledCourses.find(course=>course.id===id)?.languageId, error: error.message }; }
   }));
 }
 

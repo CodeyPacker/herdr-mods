@@ -41,9 +41,9 @@ export function layoutSketch(t, layout) {
  * @param {{ flow: import("./flow.js").SetupFlow, editor: "neovim" | "vscode" | null,
  *   tutor: import("../tutor/config.js").TutorConfig, layout: import("../types.js").Layout, busy: boolean,
  *   open: (page: "languages" | "editor" | "layout" | "tutor", cx: Context) => void, start: (cx: Context) => void,
- *   rescan: (cx: Context) => void }} options
+ *   rescan: (cx: Context) => void, learn: (cx: Context) => void }} options
  */
-export function setupHub(t, { flow, editor, tutor, layout, busy, open, start, rescan }) {
+export function setupHub(t, { flow, editor, tutor, layout, busy, open, start, rescan, learn }) {
   const scan = flow.tools;
   const ready = flow.readyLanguages();
   const blocker = startBlocker(flow, editor);
@@ -89,7 +89,10 @@ export function setupHub(t, { flow, editor, tutor, layout, busy, open, start, re
         .child(inGrid(layoutCard)).child(inGrid(tutorCard)))
       .child(h_flex().gap(10).items_center().flex_wrap()
         .child(keyButton(t, "setup-start", "enter", "Start practicing", !busy && !blocker, start))
-        .when(Boolean(blocker), element => element.child(div().text_size(12).text_color(t.muted).child(blocker)))))
+        .when(Boolean(blocker), element => element.child(div().text_size(12).text_color(t.muted).child(blocker))))
+      .child(h_flex().gap(10).items_center().flex_wrap()
+        .child(keyButton(t,"setup-courses","","Browse courses",!busy,learn))
+        .child(div().text_size(12).text_color(t.muted).child("Read included lessons without a repo, editor or AI connection."))))
     .child(pageLegend(t, [["1–4", "open a card"], ["enter", "start"], ["r", "check again"], [",", "settings"]]).id("setup-hub-legend")
       .child(div().flex_1())
       .child(keyButton(t, "setup-rescan", "r", flow.scanningTools ? "Checking…" : "Check again", !flow.scanningTools, rescan)));
