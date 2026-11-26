@@ -120,7 +120,10 @@ export function validatePack(pack) {
   return pack;
 }
 
-export const courseFolderName = id => encodeURIComponent(id);
+// The folder for a course's saved work. The first TypeScript course keeps its original encoded name, so
+// existing progress stays where it is. Later courses avoid "%", which MSBuild misreads in the path of
+// the C# editor project and so breaks editor errors and completion for course answers.
+export const courseFolderName = id => id === "course:ts-foundations" ? encodeURIComponent(id) : id.replace(":", "_");
 export async function loadCourse(id, version) {
   const path = registry.get(id);
   if (!path) throw new Error(`Course pack is not installed: ${id}`);

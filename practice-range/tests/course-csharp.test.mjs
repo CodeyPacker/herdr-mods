@@ -58,6 +58,7 @@ test("a C# course runs examples and checks a saved answer against every case", {
   await run("open", { moduleId, step: 8 });
   state = await run("task", { taskId });
   assert.match(state.file, /Exercise\.cs$/);
+  assert.doesNotMatch(state.file, /%/, "MSBuild misreads % in a path, which would break the C# editor project beside the answer");
   state = await run("check-saved", { taskId });
   assert.equal(state.enrollment.tasks[taskId].attempts, 0, "An unchanged starter is not an attempt");
   await writeFile(state.file, "int total = opening;\nConsole.WriteLine(total);\ntotal = arrivals;\nConsole.WriteLine(total);\n");
