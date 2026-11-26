@@ -4,14 +4,14 @@ import { join, dirname } from "node:path";
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createHash, randomUUID } from "node:crypto";
-import { loadCourse, listCourses, lessonFor, taskFor } from "./loader.mjs";
+import { loadCourse, listCourses, lessonFor, taskFor, courseFolderName } from "./loader.mjs";
 import { findLanguage } from "../languages/index.js";
 import { loadLanguageRunner } from "../languages/runner.mjs";
 import { courseReview, nextCourseAction } from "./review.js";
 import { attachRepo, detachRepo, repoStatus } from "./repo.mjs";
 
 const hash = source => createHash("sha256").update(typeof source === "string" ? source : JSON.stringify(source)).digest("hex");
-export const enrollmentDirectory = (root, pack) => join(root, "courses", encodeURIComponent(pack.id), pack.contentVersion);
+export const enrollmentDirectory = (root, pack) => join(root, "courses", courseFolderName(pack.id), pack.contentVersion);
 const answerPath = (directory, task, language, review) => join(directory, "answers", ...(review ? ["_review", review.id] : []), task.id.split("/").at(-1), task.workspace?.editable[0].file ?? language.answerFile);
 const newTaskProgress = () => ({ attempts: 0, passes: 0, independentPasses: 0, hintCount: 0, answerShown: false, aiHelp: false, history: [] });
 const taskProgress = (state, id) => state.review ? state.review.progress : state.tasks[id];
@@ -96,6 +96,10 @@ function validateState(state, pack) {
 async function runnerFor(pack) {
   const runner = await loadLanguageRunner(pack.languageId);
   const runtime = await runner.environment();
+  if (pack.runner.compiler.minimumMajor) {
+    if ((runtime.major ?? Number(runtime.version.split(".")[0])) < pack.runner.compiler.minimumMajor) throw new Error(`This imported course needs .NET SDK ${pack.runner.compiler.minimumMajor} or newer.`);
+    return { runner, runtime };
+  }
   const expected = pack.runner.compiler.range.slice(1);
   if (!runtime.version.endsWith(` ${expected}`)) throw new Error(`This course needs ${pack.runner.compiler.name} ${expected}. ${runtime.version} is installed.`);
   return { runner, runtime };
@@ -124,7 +128,8 @@ function reviewOutcome(state) {
 
 /** Every fixture checks the same source snapshot. The caller records just one attempt. */
 export async function checkTask(root, pack, task, source, run) {
-  const runner = run ?? (await runnerFor(pack)).runner.check;
+  const registered = run ? null : (await runnerFor(pack)).runner;
+  const runner = run ?? (task.legacy && registered.checkLegacy ? registered.checkLegacy : registered.check);
   const fixtures = [];
   for (const fixture of task.fixtures) {
     const { fixtures: _fixtures, ...exercise } = task;
@@ -142,18 +147,22 @@ export async function checkTask(root, pack, task, source, run) {
 }
 
 export async function courseCommand(root, action, request = {}) {
-  if (action === "list") return { courses: await Promise.all((await listCourses()).map(async course => {
-    const parent = join(root, "courses", encodeURIComponent(course.id));
+  if (action.startsWith("import-")) {
+    const { tutorImports } = await import("./importer.mjs");
+    return tutorImports(root, action, request);
+  }
+  if (action === "list") return { courses: await Promise.all((await listCourses(root)).map(async course => {
+    const parent = join(root, "courses", courseFolderName(course.id));
     try {
       const selected = await readJson(join(parent, "current.json"));
       const versions = (await readdir(parent, { withFileTypes: true })).filter(entry => entry.isDirectory() && /^\d+\.\d+\.\d+(?:-[a-z0-9.]+)?$/.test(entry.name)).map(entry => entry.name);
       return { ...course, enrolledVersion: selected?.contentVersion, versions };
     } catch (error) { return error.code === "ENOENT" ? course : { ...course, error: error.message }; }
   })) };
-  const latest = await loadCourse(request.courseId);
-  const preferred = join(root, "courses", encodeURIComponent(latest.id), "current.json");
+  const latest = await loadCourse(request.courseId, request.contentVersion, root);
+  const preferred = join(root, "courses", courseFolderName(latest.id), "current.json");
   const selected = await readJson(preferred);
-  const pack = await loadCourse(request.courseId, request.contentVersion ?? selected?.contentVersion ?? latest.contentVersion);
+  const pack = await loadCourse(request.courseId, request.contentVersion ?? selected?.contentVersion ?? latest.contentVersion, root);
   const directory = enrollmentDirectory(root, pack), file = join(directory, "enrollment.json");
   return locked(directory, async () => {
     let state = await readJson(file);
@@ -198,6 +207,7 @@ export async function courseCommand(root, action, request = {}) {
     } else if (action === "example") {
       const lesson = lessonFor(pack, request.moduleId), example = Object.hasOwn(lesson.examples, request.exampleId) ? lesson.examples[request.exampleId] : null;
       if (!example) throw new Error("Unknown lesson example.");
+      if (example.readOnly) throw new Error("This repo excerpt is for reading, not a standalone program.");
       const { runner } = await runnerFor(pack), checks = join(directory, "checks");
       await mkdir(checks, { recursive: true });
       if (!runner.checkExample) throw new Error("This language pack does not support runnable course examples yet.");
@@ -245,7 +255,7 @@ export async function courseCommand(root, action, request = {}) {
           for (const editable of task.workspace.editable) await copyFile(join(dirname(answer), editable.file), join(backup, stamp, editable.file));
         } else await copyFile(answer, join(backup, `${stamp}${language.fileExtension}`));
         await writeStarters(answer, task);
-        progress.hintCount = 0; progress.answerShown = false; progress.aiHelp = false; progress.result = null; progress.checkedHash = null;
+        progress.hintCount = 0; progress.answerShown = false; progress.aiHelp = false; progress.assistanceUnknown = false; progress.result = null; progress.checkedHash = null;
         progress.initialHash = hash(starters(task));
       } else {
         const source = await readAnswer(answer, task), sourceHash = hash(source);
@@ -257,9 +267,9 @@ export async function courseCommand(root, action, request = {}) {
           const currentHash = hash(await readAnswer(answer, task));
           // A newer save will be checked next. Never record a stale verdict as a current pass.
           if (currentHash !== sourceHash) return { ...await snapshot(pack, state, directory), pendingSave: true };
-          const assisted = progress.hintCount > 0 || progress.answerShown || Boolean(progress.aiHelp);
+          const assisted = progress.hintCount > 0 || progress.answerShown || Boolean(progress.aiHelp) || Boolean(progress.assistanceUnknown);
           const attempt = { at: Date.now(), sourceHash, passed: result.passed, assisted,
-            hintCount: progress.hintCount, answerShown: progress.answerShown, aiHelp: Boolean(progress.aiHelp) };
+            hintCount: progress.hintCount, answerShown: progress.answerShown, aiHelp: Boolean(progress.aiHelp), assistanceUnknown: Boolean(progress.assistanceUnknown) };
           progress.attempts++; if (result.passed) progress.passes++;
           if (result.passed && !assisted) progress.independentPasses++;
           progress.history.push(attempt);
@@ -289,19 +299,22 @@ async function snapshot(pack, state, directory) {
     id: task.id, title: task.title, prompt: task.prompt, role: task.role, feedback: task.feedback,
     fixtures: task.fixtures.map(fixture => ({ id: fixture.id, declarations: fixture.declarations })),
     hints: task.id === active?.id ? task.hints.slice(0, progress.hintCount) : [],
+    hintTotal: task.hints.length,
     solution: task.id === active?.id && progress.answerShown ? task.solution : null,
     ...(task.workspace ? { workspace: { editable: task.workspace.editable.map(file => ({ file: file.file,
       solution: task.id === active?.id && progress.answerShown ? file.solution : null })) } } : {}),
   })) }));
   const sourceHash = file ? hash(await readAnswer(file, active)) : null;
-  return { course: { id: pack.id, title: pack.title, contentVersion: pack.contentVersion, languageId: pack.languageId,
-    preview: pack.preview === true, modules: pack.modules, lessons },
+  return { course: { id: pack.id, title: pack.title, contentVersion: pack.contentVersion, languageId: pack.languageId, codeFence: language.codeFence,
+    preview: pack.preview === true, legacy: pack.legacy, modules: pack.modules, lessons },
     enrollment: state.review && active ? { ...state, tasks: { ...state.tasks, [active.id]: progress } } : state,
     reviewReady: courseReview(pack, state, Date.now()).ids.length, recommendation: nextCourseAction(pack, state, Date.now()),
     attachment: await repoStatus(directory),
     file, folder: file ? dirname(file) : null, sourceHash,
     stale: Boolean(progress?.result && progress.result.sourceHash !== sourceHash) };
 }
+
+export { fresh as createEnrollment, newTaskProgress, validateState };
 
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   try {

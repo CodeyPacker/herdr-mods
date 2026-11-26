@@ -8,15 +8,15 @@ using System.Threading.Tasks;
 
 function scaffold(exercise) {
   const declarations = exercise.declarations ? `\n${exercise.declarations}\n` : "";
-  const setup = `${imports}${declarations}\n`;
+  const setup = `${exercise.legacy ? "" : imports}${declarations}\n`;
   if (exercise.mode === "types") return { before: setup, after: "\n" };
   if (exercise.mode === "members") return { before: `${setup}public static class Practice\n{\n`, after: "\n}\n" };
   return { before: `${setup}public static class Practice\n{\n    public static void Run()\n    {\n`, after: "\n    }\n}\n" };
 }
 
 /** Scratch code compiles as top-level statements, which may be followed by type declarations. */
-export function scratchSource(code) {
-  const prefix = `${imports}#line 1 "Scratch.cs"\n`;
+export function scratchSource(code, legacy = false) {
+  const prefix = `${legacy ? "" : imports}#line 1 "Scratch.cs"\n`;
   return { source: `${prefix}${code}\n`, start: prefix.length, end: prefix.length + code.length };
 }
 
@@ -65,7 +65,7 @@ internal static class CheckReport
 }
 `;
 
-const escape = text => text.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+const escape = text => text.replaceAll("\\", "\\\\").replaceAll('"', '\\"').replaceAll("\r", "\\r").replaceAll("\n", "\\n");
 
 /**
  * The parts of a check whose values are worth showing on failure: comparison operands that

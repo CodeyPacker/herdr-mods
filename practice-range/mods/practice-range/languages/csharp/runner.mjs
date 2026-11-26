@@ -86,16 +86,16 @@ export function scratchFromAnswer(exercise, answer) {
 }
 
 /** Compile free-form C# as top-level statements, run it, and report what it printed. */
-export async function runScratch(root, code, { timeout = 5000 } = {}) {
+export async function runScratch(root, code, { timeout = 5000, expectedOutput, legacy = false } = {}) {
   const checker = await buildChecker(root);
   const directory = join(root, "checks", randomUUID());
   await mkdir(directory, { recursive: true });
   try {
-    const generated = scratchSource(code);
+    const generated = scratchSource(code, legacy);
     const file = join(directory, "Scratch.cs");
     const output = join(directory, "Attempt.dll");
     await writeFile(file, generated.source);
-    await writeJson(join(directory, "request.json"), { file, output, start: generated.start, end: generated.end, rules: [] });
+    await writeJson(join(directory, "request.json"), { file, output, start: generated.start, end: generated.end, rules: [], strict: legacy });
     const compiled = await runDotnetProcess("dotnet", [checker.assembly, join(directory, "request.json")], { timeout: 20000 });
     if (compiled.code !== 0) throw new Error(`The checker could not run. ${compiled.problem || compiled.stdout || compiled.stderr}`);
     const compilation = JSON.parse(compiled.stdout);
@@ -107,10 +107,23 @@ export async function runScratch(root, code, { timeout = 5000 } = {}) {
     if (executed.problem) return { passed: false, kind: "runtime", title: "The code could not finish", details: [executed.problem] };
     const printed = executed.stdout.trim() ? [`Your code printed:\n${executed.stdout.trim()}`] : [];
     if (executed.code !== 0) return { passed: false, kind: "result", title: "Your code threw an exception", details: [...exceptionDetails(executed.stderr || executed.stdout).map(line => line.replaceAll("Exercise.cs", "Scratch.cs")), ...printed] };
+    if (typeof expectedOutput === "string") {
+      const tidy = text => text.replaceAll("\r", "").split("\n").map(line => line.trimEnd()).join("\n").replace(/\n+$/, "");
+      const passed = tidy(executed.stdout) === tidy(expectedOutput);
+      return { passed, kind: passed ? "passed" : "result", title: passed ? "Output matches" : "The output needs a correction",
+        details: passed ? printed : [...printed, `Expected output:\n${expectedOutput}`] };
+    }
     return { passed: true, kind: "output", title: "Ran your code", details: printed.length ? printed : ["Your code printed nothing. Use Console.WriteLine to see values."] };
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
+}
+
+/** Tutor programs are complete top-level files, rather than snippets inside Practice.Run. */
+export async function checkLegacy(root, exercise, answer) {
+  if (exercise.legacy?.kind !== "program") return check(root, exercise, answer);
+  const result = await runScratch(root, answer, { expectedOutput: exercise.legacy.expected, legacy: true });
+  return { ...result, details: result.details.map(detail => detail.replaceAll("Scratch.cs", "Exercise.cs")) };
 }
 
 /**
@@ -138,7 +151,7 @@ export async function checkAnswer(root, exercise, answer, checker, { timeout = 5
     const compile = async report => {
       const generated = checkingSource(exercise, answer, { report });
       await writeFile(file, generated.source);
-      await writeJson(join(directory, "request.json"), { file, output, start: generated.start, end: generated.end, rules: exercise.rules });
+      await writeJson(join(directory, "request.json"), { file, output, start: generated.start, end: generated.end, rules: exercise.rules, strict: Boolean(exercise.legacy) });
       const compiled = await runDotnetProcess("dotnet", [checker.assembly, join(directory, "request.json")], { timeout: 20000 });
       if (compiled.code !== 0) throw new Error(`The checker could not run. ${compiled.problem || compiled.stdout || compiled.stderr}`);
       return JSON.parse(compiled.stdout);

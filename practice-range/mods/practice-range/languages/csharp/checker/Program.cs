@@ -25,8 +25,15 @@ internal static class Program
 
             var trustedAssemblies = (string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!;
             var references = trustedAssemblies.Split(Path.PathSeparator).Select(path => MetadataReference.CreateFromFile(path));
-            var compilation = CSharpCompilation.Create("Attempt", [tree], references,
-                new CSharpCompilationOptions(OutputKind.ConsoleApplication, optimizationLevel: OptimizationLevel.Debug));
+            // Tutor used SDK implicit usings in their own generated file. Keep them separate
+            // so an explicit using in a learner file does not become a duplicate directive.
+            SyntaxTree[] trees = request.Strict
+                ? [tree, CSharpSyntaxTree.ParseText("global using System;\nglobal using System.Collections.Generic;\nglobal using System.IO;\nglobal using System.Linq;\nglobal using System.Net.Http;\nglobal using System.Threading;\nglobal using System.Threading.Tasks;", path: "GlobalUsings.g.cs")]
+                : [tree];
+            var compilation = CSharpCompilation.Create("Attempt", trees, references,
+                new CSharpCompilationOptions(OutputKind.ConsoleApplication, optimizationLevel: OptimizationLevel.Debug,
+                    nullableContextOptions: request.Strict ? NullableContextOptions.Enable : NullableContextOptions.Disable,
+                    generalDiagnosticOption: request.Strict ? ReportDiagnostic.Error : ReportDiagnostic.Default));
             using var output = File.Create(request.Output);
             var result = compilation.Emit(output);
             var errors = result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).Take(12)
@@ -81,7 +88,7 @@ internal static class Program
         _ => null
     };
 
-    private sealed record Request(string File, string Output, int Start, int End, Rule[] Rules);
+    private sealed record Request(string File, string Output, int Start, int End, Rule[] Rules, bool Strict = false);
     private sealed record Rule(string Kind, string Message, string? Name = null, string? Type = null,
         string? Token = null, string? Modifier = null, int Min = 1);
 }

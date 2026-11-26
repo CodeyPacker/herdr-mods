@@ -1,5 +1,7 @@
 // Bundled courses are data. Only the existing language registry can choose executable runners.
 import { findLanguage } from "../languages/index.js";
+import { readFile, readdir } from "node:fs/promises";
+import { join } from "node:path";
 
 const registry = new Map([["course:ts-foundations", new URL("./packs/typescript-foundations.json", import.meta.url)]]);
 const text = value => typeof value === "string" && value.trim().length > 0;
@@ -25,7 +27,8 @@ export function validatePack(pack) {
   requireValue(text(pack.title), "title");
   findLanguage(pack.languageId);
   requireValue(pack.runner?.registeredLanguage === pack.languageId, "runner must match registered language");
-  requireValue(/^=\d+\.\d+\.\d+$/.test(pack.runner?.compiler?.range), "compiler must name an exact supported version");
+  requireValue(/^=\d+\.\d+\.\d+$/.test(pack.runner?.compiler?.range) ||
+    (pack.languageId === "csharp" && Number.isInteger(pack.runner?.compiler?.minimumMajor) && pack.runner.compiler.minimumMajor >= 10), "compiler must name an exact supported version or minimum C# SDK");
   const entries = list(pack.modules, "modules");
   requireValue(entries.length > 0, "empty course");
   const ids = unique(entries, "modules");
@@ -59,7 +62,7 @@ export function validatePack(pack) {
     requireValue(lesson.examples && typeof lesson.examples === "object", "examples");
     for (const example of Object.values(lesson.examples)) {
       requireValue(text(example.code), "example source");
-      requireValue(Array.isArray(example.stdout) !== Array.isArray(example.diagnostics), "example must specify output or diagnostics");
+      requireValue(example.readOnly === true || Array.isArray(example.stdout) !== Array.isArray(example.diagnostics), "example must specify output or diagnostics");
     }
     for (const question of questions) {
       requireValue(text(question.prompt) && list(question.choices, "choices").length >= 2, "question choices");
@@ -72,7 +75,7 @@ export function validatePack(pack) {
       taskIds.add(task.id);
       for (const field of ["title", "prompt", "starter", "solution", "feedback"]) requireValue(text(task[field]), `task ${field}`);
       strings(task.hints, "hints"); strings(task.concepts, "task concepts");
-      requireValue(["script", "module"].includes(task.mode), "task mode");
+      requireValue(["script", "module"].includes(task.mode) || (pack.languageId === "csharp" && task.legacy?.source === "tutor" && ["types", "program"].includes(task.mode)), "task mode");
       list(task.rules, "syntax rules");
       for (const field of ["checks", "typeChecks", "rejects"]) strings(task[field] ?? [], field);
       const fixtures = list(task.fixtures, "fixtures");
@@ -103,17 +106,33 @@ export function validatePack(pack) {
   return pack;
 }
 
-export async function loadCourse(id, version) {
+export const isTutorCourse = id => /^course:tutor-[a-f0-9]{16}$/.test(id);
+// MSBuild decodes percent escapes in project paths. New imports use plain folder names.
+export const courseFolderName = id => isTutorCourse(id) ? id.replace(":", "-") : encodeURIComponent(id);
+export async function loadCourse(id, version, root) {
+  if (isTutorCourse(id) && root) {
+    const parent = join(root, "courses", courseFolderName(id));
+    if (!version) version = JSON.parse(await readFile(join(parent, "current.json"), "utf8")).contentVersion;
+    if (!/^\d+\.\d+\.\d+(?:-[a-z0-9.]+)?$/.test(version)) throw new Error("Invalid imported course version.");
+    const pack = validatePack(JSON.parse(await readFile(join(parent, version, "pack.json"), "utf8")));
+    requireValue(pack.id === id && pack.contentVersion === version && pack.legacy?.source === "tutor", "imported course identity");
+    return pack;
+  }
   const path = registry.get(id);
   if (!path) throw new Error(`Course pack is not installed: ${id}`);
   const { readCoursePack } = await import("./storage.mjs");
   return readCoursePack(path, id, version);
 }
 
-export async function listCourses() {
-  return Promise.all([...registry.keys()].map(async id => {
+export async function listCourses(root) {
+  let imported = [];
+  if (root) {
+    try { imported = (await readdir(join(root, "courses"), { withFileTypes: true })).filter(entry => entry.isDirectory()).map(entry => entry.name.replace(/^course-tutor-/,"course:tutor-")).filter(isTutorCourse); }
+    catch (error) { if (error.code !== "ENOENT") throw error; }
+  }
+  return Promise.all([...registry.keys(), ...imported].map(async id => {
     try {
-      const pack = await loadCourse(id);
+      const pack = await loadCourse(id, undefined, root);
       return { id, title: pack.title, languageId: pack.languageId, contentVersion: pack.contentVersion,
         preview: pack.preview === true, available: pack.lessons.length, total: pack.modules.length };
     } catch (error) { return { id, error: error.message }; }
