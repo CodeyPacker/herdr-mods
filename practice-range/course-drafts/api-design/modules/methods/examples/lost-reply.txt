@@ -1,0 +1,18 @@
+Client                                Server
+  |                                     |
+  |  PUT /tasks/42  {"done": true}      |
+  |------------------------------------>|  task 42 is done
+  |                                     |
+  |      200 OK   (lost on the way)     |
+  |        x<---------------------------|
+  |                                     |
+  |  ... no reply, so try again ...     |
+  |                                     |
+  |  PUT /tasks/42  {"done": true}      |
+  |------------------------------------>|  task 42 is still done
+  |                                     |
+  |  200 OK                             |
+  |<------------------------------------|
+
+  The retry did no harm, because PUT is idempotent.
+  With POST /tasks, the retry would have made a second task.

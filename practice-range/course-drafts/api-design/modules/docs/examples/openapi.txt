@@ -1,0 +1,20 @@
+paths:
+  /tasks/{id}:
+    get:
+      summary: Read one task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: The task
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "404":
+          description: No task has this id
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }

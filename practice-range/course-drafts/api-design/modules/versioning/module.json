@@ -1,0 +1,141 @@
+{
+  "id": "course:api-design/module/versioning",
+  "title": "Change without breaking",
+  "requires": [],
+  "outcomes": [],
+  "intro": "An API that people use will need to change. New features arrive, mistakes are found, and the business moves. The skill is to change it without breaking the clients that already exist. This module covers what counts as a breaking change, how to avoid most of them, and what to do when one cannot be avoided.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "What breaks a client",
+      "text": "A change is **breaking** when a client that worked yesterday can fail today without having changed anything itself. The test is always from the client's side.\n\n| Usually safe | Breaking |\n| --- | --- |\n| Adding a new endpoint | Removing or renaming an endpoint |\n| Adding an optional field to a request | Adding a required field to a request |\n| Adding a field to a response | Removing or renaming a response field |\n| Adding an optional query parameter | Changing the type or the meaning of a field |\n| Accepting input that used to be refused | Refusing input that used to be accepted |\n| | Changing a default, such as the sort order |\n| | Changing an error code that clients compare |\n\nThe left column is only safe if clients are written to tolerate it. That is a rule you have to state."
+    },
+    {
+      "kind": "explanation",
+      "title": "The tolerant reader",
+      "text": "Adding a field to a response is safe only for a client that ignores fields it does not know. A client that fails on anything unexpected turns every addition into a breaking change.\n\nSo an API should publish what clients must tolerate. A common set of rules is:\n\n- Ignore fields you do not recognize.\n- Do not rely on the order of fields in an object.\n- Expect new values in a field with a fixed set of values, and handle an unknown one sensibly.\n- Expect new error codes, and fall back on the status family.\n\nThe third rule is the one most often missed. If `status` can be `open` or `done` and you add `blocked`, a client that handles exactly two values may fail. Say from the start that the set can grow."
+    },
+    {
+      "kind": "prediction",
+      "title": "Classify a change",
+      "text": "The tracker returns `\"priority\": 2` on a task, a number from 1 to 3. The team wants to return `\"priority\": \"high\"` instead, because the numbers confuse people.",
+      "questions": [
+        "type-change"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Grow first, version last",
+      "text": "Most changes can be made by adding. Instead of changing a field, add a new one beside it and keep the old one working. This is sometimes called **expand and contract**: first expand the API so that the old way and the new way both work, give clients time to move, and contract only later.\n\nFor the priority example: add `priority_level` with the text value, and keep `priority` with the number. Old clients are untouched. New clients use the new field. The old field can be retired on a published schedule.\n\nA new version of the whole API is the last resort, for a change that cannot be made by adding. Versions are expensive. Each one is a second API to run, test, document and secure.",
+      "example": "expand-contract"
+    },
+    {
+      "kind": "explanation",
+      "title": "Where a version goes",
+      "text": "When a version is needed, there are three common places to put it.\n\n| Where | Example | For | Against |\n| --- | --- | --- | --- |\n| In the address | `/v2/tasks` | Visible, easy to try, easy to route | The address of a thing changes between versions |\n| In a header | `Accept: application/vnd.tracker.v2+json` | Addresses stay stable | Harder to see and to test by hand |\n| By date | `Tracker-Version: 2025-03-01` | Each client stays on the behavior of the day it started | The server has to keep many small differences alive |\n\nAll three work. The version in the address is the most common and the easiest for clients. Whichever you choose, version the API as a whole, start at version 1 on the first day, and raise it only for breaking changes."
+    },
+    {
+      "kind": "explanation",
+      "title": "Retiring something",
+      "text": "Removing a field, an endpoint or a version is a process with a schedule, and the schedule belongs in the contract.\n\n1. **Announce it,** with a date, well in advance. Months, not days.\n2. **Mark it** in the description and in responses. Two standard headers exist for this: `Deprecation`, which says the thing is on its way out, and `Sunset`, which gives the date it stops working.\n3. **Measure** who still uses it, and contact them.\n4. **Remove it** on the date, and answer `410 Gone` with an error that points to the replacement.\n\nSkipping the measuring step is how a removal turns into an outage for somebody else.",
+      "example": "sunset"
+    },
+    {
+      "kind": "debugging",
+      "title": "A small improvement",
+      "text": "A developer tidies the tracker's API in one release. The notes list five changes.",
+      "example": "release-notes",
+      "questions": [
+        "release-notes"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: a richer assignee",
+      "text": "Today a task returns the assignee as a user identifier: `\"assignee\": \"ana\"`. Clients have asked for the name too, so that they need not fetch each user separately. The obvious change is to return an object: `\"assignee\": {\"id\": \"ana\", \"name\": \"Ana Martinez\"}`.\n\nExplain why that change is breaking. Then design a way to give clients the name without breaking anyone, and a plan for what happens to the old field. Then continue."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "Changing a text value into an object changes the field's type. A client that reads `assignee` as text and uses it to build an address will fail.\n\nThe safe path is to add a field and leave the old one alone. The task gains `assignee_user`, an object with the identifier and the name. `assignee` keeps returning the identifier. Clients that want the name start reading the new field when they are ready.\n\nThe old field is then marked as deprecated in the description, its use is measured, and it is removed only in the next version of the API, on a date announced in advance. If nobody ever needs it removed, it can stay. A spare field costs little. A broken client costs a lot.",
+      "example": "assignee"
+    }
+  ],
+  "questions": [
+    {
+      "id": "type-change",
+      "prompt": "What kind of change is this?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Safe, because the meaning is the same",
+          "feedback": "The meaning is the same, but a client that reads a number now receives text and fails."
+        },
+        {
+          "text": "Breaking, because the type of an existing field changes",
+          "feedback": "Clients compare or calculate with the number. The safe route is a new field beside the old one."
+        },
+        {
+          "text": "Safe, as long as the documentation is updated",
+          "feedback": "Documentation does not update the clients that are already running."
+        }
+      ]
+    },
+    {
+      "id": "release-notes",
+      "example": "release-notes",
+      "prompt": "How many of the five changes can break an existing client?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "One",
+          "feedback": "Look again at the rename, the new required field, and the changed default order."
+        },
+        {
+          "text": "Two",
+          "feedback": "There are three: a renamed field, a newly required field, and a different default order."
+        },
+        {
+          "text": "Three",
+          "feedback": "Renaming `due` breaks readers, a required `project_id` breaks creators, and a new default order breaks anyone who relied on the old one. The two additions are safe for tolerant clients."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "expand-contract": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/expand-contract.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "sunset": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/sunset.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    },
+    "release-notes": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/release-notes.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "assignee": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/assignee.txt"
+      },
+      "readOnly": true,
+      "fence": "json"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

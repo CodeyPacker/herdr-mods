@@ -1,0 +1,17 @@
+  The same job, "mark task 42 as done", in three styles.
+
+  Resources     PATCH /tasks/42
+                { "status": "done" }
+
+  Procedures    POST /tracker.TaskService/CompleteTask
+                { "task_id": "42" }
+
+  Queries       POST /graphql
+                mutation {
+                  completeTask(id: "42") { id status }
+                }
+
+  And as an event, sent to subscribers afterwards:
+
+                { "type": "task.completed",
+                  "data": { "task_id": "42" } }

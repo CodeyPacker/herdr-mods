@@ -1,0 +1,8 @@
+HTTP/1.1 500 Internal Server Error
+
+{
+  "error": "NullReferenceException at TaskService.cs:line 88",
+  "query": "INSERT INTO tasks (project_id, title) VALUES (NULL, 'Pack')",
+  "host": "db-primary-02.internal",
+  "stack": "at Tracker.Data.TaskRepository.Insert(Task task) ..."
+}

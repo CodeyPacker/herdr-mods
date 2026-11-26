@@ -1,0 +1,133 @@
+{
+  "id": "course:api-design/module/lists",
+  "title": "Return lists that scale",
+  "requires": [],
+  "outcomes": [],
+  "intro": "A collection that returns ten items in testing returns ten thousand in production. A list endpoint has to let the client ask for the part it wants, in the order it wants, a piece at a time. This module covers filtering, sorting and the two main ways to page through results.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Never return everything",
+      "text": "`GET /tasks` cannot mean \"all tasks\". Sooner or later that response is too large to build, to send and to read, and one careless client can slow the service for everyone.\n\nEvery list endpoint needs a page size from its first release. Choose a default, such as 50, and a maximum, such as 200. Let the client ask for fewer or more with `limit`. A request above the maximum should get the maximum, or a clear `400`. It should never get an unlimited response.\n\nAdding a limit later is a breaking change, because existing clients believe they received everything. Design it in from the start."
+    },
+    {
+      "kind": "explanation",
+      "title": "Filtering and sorting",
+      "text": "Filters go in the query string and are named after the fields they test.\n\n- `GET /tasks?status=open` keeps the open tasks.\n- `GET /tasks?status=open&assignee=ana` combines two filters. A task must pass both.\n- `GET /tasks?due_before=2025-03-01` shows a simple way to express a range.\n\nReject a filter you do not recognize with a `400`. Ignoring it returns far more than the client expected, and a client that then deletes \"the filtered tasks\" will delete the wrong ones.\n\nFor sorting, one parameter is enough: `sort=due_on` for ascending, and `sort=-due_on`, with a minus sign, for descending. Always define a default order, and make it complete by ending with a unique field such as the identifier. Without that, two items with the same due date can swap places between requests, and paging breaks."
+    },
+    {
+      "kind": "explanation",
+      "title": "Paging by position",
+      "text": "The simplest scheme is **offset paging**. The client says how many items to skip: `?limit=3&offset=3` means \"skip three, then give me three\".\n\nIt is easy to build and to understand, and a client can jump straight to page 40. It has two weaknesses. Deep pages are slow, because the server has to walk past everything it skips. And the pages shift when the data changes while a client is reading.",
+      "example": "offset-drift"
+    },
+    {
+      "kind": "prediction",
+      "title": "A filter with a typing mistake",
+      "text": "A client means to list the open tasks, and sends `GET /tasks?staus=open`. The parameter name is misspelled.",
+      "questions": [
+        "unknown-filter"
+      ]
+    },
+    {
+      "kind": "prediction",
+      "title": "A shifting list",
+      "text": "Look at the diagram again. A client reads page 1, a new task arrives, and the client reads page 2.",
+      "questions": [
+        "drift"
+      ],
+      "example": "offset-drift"
+    },
+    {
+      "kind": "explanation",
+      "title": "Paging by cursor",
+      "text": "**Cursor paging** fixes both weaknesses. Instead of a position, the client sends a marker for the last item it saw, and the server returns the items after it.\n\nThe first response includes a `next_cursor`. The client sends it back as `?cursor=...` to get the next page. When there are no more items, `next_cursor` is `null`.\n\nThe cursor is **opaque**: the client must not look inside it or build one. That leaves the server free to change what it contains. Because the server continues from a known item, new arrivals cannot shift the page, and the database can jump straight to the right place.\n\nThe cost is that a client cannot jump to an arbitrary page, only forward. For most lists that is a good trade. Use offset paging for small, stable collections where jumping to a page matters. Use cursors for anything large or busy.",
+      "example": "cursor"
+    },
+    {
+      "kind": "explanation",
+      "title": "What the response carries",
+      "text": "The top level is an object, as an earlier module advised, so there is a place for paging information beside the items.\n\n- `data` holds the items of this page. It is `[]` when there are none.\n- `next_cursor` holds the marker for the next page, or `null` at the end.\n\nA total count is tempting and expensive. Counting every match can cost more than fetching the page. Offer it only if clients truly need it, and consider making it something the client must ask for.\n\nKeep the filters and the sort the same while paging. A cursor belongs to one query, and a server should reject a cursor that is sent with different filters."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: the tasks of a project",
+      "text": "Design the request a client uses to read the open tasks of project 7, soonest due date first, 20 at a time.\n\nWrite the first request, the shape of the response, and the request for the second page. Decide what happens for two tasks with the same due date, and what the last page looks like. Then continue."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "The filter and the sort are plain query parameters. The server adds the identifier as a silent second sort key, so that tasks due on the same day always come in the same order. The response is an object with the items and a cursor. The second request repeats the filter and the sort and adds the cursor. The last page has `\"next_cursor\": null`, which is how the client knows to stop. It does not need a total to know that.",
+      "example": "project-tasks"
+    }
+  ],
+  "questions": [
+    {
+      "id": "unknown-filter",
+      "prompt": "What should the API do?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Answer `400` and name the parameter it does not recognize",
+          "feedback": "The client learns of the mistake at once, instead of receiving every task and treating them as open."
+        },
+        {
+          "text": "Ignore the unknown parameter and return all tasks",
+          "feedback": "The client would believe it holds only open tasks. Anything it does next is done to the wrong set."
+        },
+        {
+          "text": "Return an empty list",
+          "feedback": "An empty list says there are no open tasks, which is false, and hides the mistake."
+        }
+      ]
+    },
+    {
+      "id": "drift",
+      "example": "offset-drift",
+      "prompt": "What does the client see on page 2?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Tasks T6, T5 and T4, as expected",
+          "feedback": "Every task moved down one place when T10 arrived, so skipping three no longer skips the same three."
+        },
+        {
+          "text": "Task T7 again, and it never sees the task that would have ended the page",
+          "feedback": "The new task pushed every item down by one. Offset 3 now starts at T7, which was already on page 1."
+        },
+        {
+          "text": "An error, because the list changed",
+          "feedback": "The server has no idea the client is in the middle of reading. It answers the request as asked."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "offset-drift": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/offset-drift.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "cursor": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/cursor.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    },
+    "project-tasks": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/project-tasks.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

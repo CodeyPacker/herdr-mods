@@ -1,0 +1,12 @@
+# The stored task
+{ "id": "42", "title": "Pack boxes", "done": false, "assignee": "ana" }
+
+# PUT replaces everything. The assignee was left out, so it is gone.
+PUT /tasks/42
+{ "title": "Pack boxes", "done": true }
+  ->  { "id": "42", "title": "Pack boxes", "done": true, "assignee": null }
+
+# PATCH changes what it names and leaves the rest.
+PATCH /tasks/42
+{ "done": true }
+  ->  { "id": "42", "title": "Pack boxes", "done": true, "assignee": "ana" }

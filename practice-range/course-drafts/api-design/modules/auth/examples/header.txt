@@ -1,0 +1,10 @@
+GET /tasks/42
+Authorization: Bearer <the token the client was given>
+
+# With no header, or an expired token:
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer
+
+# With a valid token that lacks the scope:
+HTTP/1.1 403 Forbidden
+{ "code": "missing_scope", "detail": "This request needs tasks:read." }

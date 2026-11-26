@@ -1,0 +1,131 @@
+{
+  "id": "course:api-design/module/async",
+  "title": "Handle slow work and events",
+  "requires": [],
+  "outcomes": [],
+  "intro": "Some work takes longer than a client should wait for a reply: building an export, importing a file, sending a thousand notifications. And sometimes the server is the one with news. This module covers two designs: a job the client can check on, and a webhook through which the server tells the client that something happened.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Do not make the client wait",
+      "text": "A request that stays open for minutes fails in practice. Connections time out, proxies give up, and phones lose signal. The client then cannot tell whether the work finished, so it tries again, and the slow work starts a second time.\n\nThe fix is to separate asking from finishing. The request that asks returns at once. The work continues, and the client learns the result another way."
+    },
+    {
+      "kind": "explanation",
+      "title": "A job the client can check",
+      "text": "Model the slow work as a resource. Starting it creates a **job**, and the job has an address the client can read.\n\n1. The client sends `POST /projects/7/exports`.\n2. The server records the job and answers `202 Accepted` straight away, with the job's address in the `Location` header. `202` means: your request is fine, and the work is not finished.\n3. The client reads `GET /exports/9` from time to time. The response has a `status` of `running`, `succeeded` or `failed`.\n4. When the job has succeeded, the response says where the result is. When it has failed, the response carries an error in the API's usual shape.\n\nAdd a `Retry-After` header to tell the client how long to wait before looking again. Otherwise each client picks its own interval, and some pick zero.\n\nThe job is an ordinary resource. It can be listed, it can be cancelled with a `DELETE`, and with an idempotency key it can be started safely.",
+      "example": "job"
+    },
+    {
+      "kind": "prediction",
+      "title": "Starting slow work",
+      "text": "A client asks for an export that will take about three minutes to build.",
+      "questions": [
+        "accepted"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Webhooks: the server calls the client",
+      "text": "Checking again and again is wasteful when nothing has changed for hours. A **webhook** turns the direction round. The client registers an address of its own, and the server sends a request to that address when something happens.\n\nEach delivery is a small JSON document describing one **event**: a unique identifier, a type such as `task.completed`, the time it happened, and the data.\n\nKeep the type names consistent: a noun, a dot, and a verb in the past tense. Send enough data for the receiver to act, or at least the identifier of the thing that changed, so that it can fetch the current state.",
+      "example": "event"
+    },
+    {
+      "kind": "explanation",
+      "title": "Four rules for webhooks",
+      "text": "A webhook reverses who is the client, and the same care is needed in the other direction.\n\n1. **Deliver at least once, and say so.** If the receiver does not answer with a 2xx, try again later, with growing waits. This means a receiver can get the same event twice. Tell receivers to remember the event identifiers they have handled and to ignore repeats.\n2. **Sign every delivery.** The receiver's address is public, so anyone can send a request to it. Compute a signature over the body with a secret that only the two sides know, and send it in a header. The receiver recomputes it and rejects anything that does not match.\n3. **Do not promise order.** A retry can arrive after a newer event. Put a time in every event, and advise receivers to fetch the current state when order matters.\n4. **Expect a quick answer.** A receiver should store the event, answer 2xx at once, and do its work afterwards. Say how long you wait before treating a delivery as failed."
+    },
+    {
+      "kind": "debugging",
+      "title": "The same event twice",
+      "text": "A receiver records a payment each time it gets a `task.completed` event, because completed tasks are billed. One event is delivered, the receiver's reply is lost, and the event is delivered again.",
+      "questions": [
+        "duplicate-event"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Poll or be told",
+      "text": "| | Checking a job | Webhook |\n| --- | --- | --- |\n| Who starts the request | The client | The server |\n| The client needs | Nothing extra | A public address that accepts requests |\n| News arrives | At the next check | Almost at once |\n| Cost when nothing happens | A request per check | Nothing |\n| Works for a script or a phone app | Yes | Not directly |\n\nThe two are often offered together. A client behind a firewall, or one that is only a script, cannot receive webhooks and has to check. A server-side integration is better served by being told. Even then, a client that receives webhooks should be able to ask for the current state, because a delivery can be missed."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: an import",
+      "text": "A client uploads a file of 50,000 tasks to be created in project 7. Validating and creating them takes several minutes. Some rows may be invalid.\n\nDesign the flow: the request that starts the import, what comes back, how the client learns the outcome by checking and by webhook, and how it finds out which rows failed. Then continue."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "The import is a job. Starting it returns `202` and the job's address at once, and an idempotency key makes the upload safe to retry. Reading the job shows its status and counts while it runs. When it finishes, the job reports how many rows were created and how many failed, with a link to a list of the failures in the usual error shape, one entry per row.\n\nA client that registered a webhook also receives one event, `import.finished`, with the job's identifier. It then reads the job to get the details, so the event can stay small and a repeated delivery does no harm.",
+      "example": "import"
+    }
+  ],
+  "questions": [
+    {
+      "id": "accepted",
+      "prompt": "What should the first response be?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "`200` after three minutes, with the export in the body",
+          "feedback": "Few connections survive that long, and a client that times out will start the export again."
+        },
+        {
+          "text": "`202`, at once, with the address of a job to check",
+          "feedback": "The request is accepted and the work continues. The client reads the job to follow it."
+        },
+        {
+          "text": "`201`, at once, with the finished export",
+          "feedback": "The export does not exist yet, so it cannot be returned. `202` says honestly that the work has only begun."
+        }
+      ]
+    },
+    {
+      "id": "duplicate-event",
+      "prompt": "How should this have been prevented?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "The receiver records each event identifier and ignores one it has seen",
+          "feedback": "Deliveries can repeat, so the receiver has to make handling an event idempotent."
+        },
+        {
+          "text": "The sender should never retry a delivery",
+          "feedback": "Then a single lost reply would mean a lost event, which is worse than a repeated one."
+        },
+        {
+          "text": "The sender should send events in order",
+          "feedback": "Order would not help. This is the same event arriving twice."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "job": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/job.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "event": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/event.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    },
+    "import": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/import.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

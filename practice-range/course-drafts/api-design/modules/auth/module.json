@@ -1,0 +1,132 @@
+{
+  "id": "course:api-design/module/auth",
+  "title": "Know who is calling",
+  "requires": [],
+  "outcomes": [],
+  "intro": "An API has to know who is calling and what that caller is allowed to do. These are two separate questions, and mixing them up is behind many of the most damaging API faults. This module covers how a caller proves who it is, how permissions are expressed, and how to answer when either check fails. It is general guidance. A real product should also follow its organization's security policy and have its design reviewed.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Two questions",
+      "text": "**Authentication** asks: who is this? The caller presents something that proves its identity.\n\n**Authorization** asks: may this caller do this, to this thing? It can only be answered after the first.\n\nThe two fail with different status codes, and the difference tells the client what to do.\n\n- `401 Unauthorized` means the server does not know who is calling. No credentials were sent, or they are invalid or expired. The client should sign in again.\n- `403 Forbidden` means the server knows who is calling, and the answer is no. Signing in again will not help.",
+      "example": "gates"
+    },
+    {
+      "kind": "explanation",
+      "title": "How a caller proves who it is",
+      "text": "Two kinds of credential cover most APIs.\n\nAn **API key** is a long random secret issued to an application. It is simple: the client sends it with each request. It usually lasts until someone revokes it, so it suits one server talking to another. Treat it like a password. It should be possible to create several, to limit what each can do, and to replace one without downtime.\n\nA **bearer token** is a short-lived credential a client obtains by signing in, most often through the OAuth 2.0 standard. Its main advantage is delegation. A user can let another application act for them without ever giving that application their password, and can withdraw that permission later. Because the token expires quickly, a leaked one is useful only briefly.\n\nEither kind is sent in the `Authorization` header.",
+      "example": "header"
+    },
+    {
+      "kind": "debugging",
+      "title": "A key in the address",
+      "text": "An integration guide tells clients to authenticate like this.",
+      "example": "key-in-url",
+      "questions": [
+        "key-in-url"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Where secrets must not go",
+      "text": "An address is not private. It is written to server logs, proxy logs and browser history, shown in monitoring tools, and passed along when a page links to another site. A secret in the address ends up in all of those places.\n\nThree rules follow.\n\n1. Send credentials in the `Authorization` header, never in the address.\n2. Use encrypted connections (HTTPS) for every request, with no exceptions. A credential sent unencrypted is readable by everything on the path.\n3. Never return a secret in a response after the moment it is created. Show a new key once, and afterwards show only enough of it to recognize."
+    },
+    {
+      "kind": "explanation",
+      "title": "Scopes and least privilege",
+      "text": "A credential should allow only what its holder needs. This is the principle of **least privilege**. A reporting tool that reads tasks should hold a credential that cannot delete them, so that a mistake or a leak does limited damage.\n\nThe usual mechanism is **scopes**: named permissions attached to a key or a token, such as `tasks:read` and `tasks:write`. Each endpoint declares the scope it needs. A request whose credential lacks that scope gets `403`.\n\nKeep scopes few and named after what the client can do. Publish which scope each endpoint needs, because a client developer has to choose them before writing any code."
+    },
+    {
+      "kind": "explanation",
+      "title": "Check every object, every time",
+      "text": "Scopes answer \"may this caller read tasks?\". They do not answer \"may this caller read *this* task?\". That second check is where APIs most often fail.\n\nSuppose Ana's client requests `GET /tasks/42` and gets her task. If she changes the address to `/tasks/43` and receives a task from another company, the API has no real access control, whatever credentials it demands. This fault is common enough to top published lists of API security risks.\n\nThe rule is that every request that names an object must check that the caller may access that particular object. The check belongs on the server, on every endpoint, including the ones that update and delete.\n\nIdentifiers that are hard to guess do not replace this check. They make guessing slower. They do not make it forbidden."
+    },
+    {
+      "kind": "prediction",
+      "title": "Someone else's task",
+      "text": "Ben is signed in with a valid token that carries `tasks:read`. He requests `GET /tasks/43`. Task 43 exists and belongs to a different company's account.",
+      "questions": [
+        "other-task"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: three credentials",
+      "text": "Three clients need access to the tracker. The API has four scopes: `tasks:read`, `tasks:write`, `projects:read` and `projects:write`.\n\n1. A wall display that shows the open tasks of each project.\n2. A script that creates a task whenever a customer reports a problem.\n3. An administration tool that sets up new projects and archives old ones.\n\nFor each, choose the kind of credential and the smallest set of scopes that lets it work. Then continue."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. **The wall display** runs unattended and only reads. An API key with `tasks:read` and `projects:read`. It cannot change anything, so a leaked key exposes data but cannot damage it.\n2. **The script** is one server talking to another. An API key with `tasks:write` only. It does not need to read tasks or see projects beyond the one it writes to.\n3. **The administration tool** is used by people. Bearer tokens obtained by signing in, with `projects:read` and `projects:write`, so that each change is tied to a person and a token that leaks expires soon.\n\nNone of the three holds every scope. If one credential is exposed, the damage stops at what that client was allowed to do."
+    }
+  ],
+  "questions": [
+    {
+      "id": "key-in-url",
+      "example": "key-in-url",
+      "prompt": "Why is this a poor way to send a key?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Addresses are recorded in logs, history and monitoring tools",
+          "feedback": "The key would be stored in many places that were never meant to hold secrets."
+        },
+        {
+          "text": "The key makes the address too long",
+          "feedback": "Length is not the issue. Where the address ends up is."
+        },
+        {
+          "text": "Query parameters cannot hold random text",
+          "feedback": "They can. The problem is that the address is not private."
+        }
+      ]
+    },
+    {
+      "id": "other-task",
+      "prompt": "How should the API answer?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "`200`, because the token is valid and has the right scope",
+          "feedback": "The scope allows reading tasks in general. This task is not his to read."
+        },
+        {
+          "text": "`401`, because he is not allowed",
+          "feedback": "The server knows exactly who he is. `401` would tell his client to sign in again, which would not help."
+        },
+        {
+          "text": "`404`, or `403` if the existence of the task is not sensitive",
+          "feedback": "He is known and not permitted. Answering `404` avoids confirming to an outsider that task 43 exists."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "gates": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/gates.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "header": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/header.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    },
+    "key-in-url": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/key-in-url.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

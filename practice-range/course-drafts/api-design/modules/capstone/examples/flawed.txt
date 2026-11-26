@@ -1,0 +1,18 @@
+GET  /api/getAllTasks?key=EXAMPLE-KEY-NOT-REAL
+  -> 200  [ { "ID": 42, "task_title": "Pack", "dueDate": "3/1/25",
+              "Done": 0, "status": 1 }, ... every task ... ]
+
+POST /api/task/create?key=EXAMPLE-KEY-NOT-REAL
+     { "task_title": "Pack", "dueDate": "3/1/25" }
+  -> 200  { "ID": 43 }
+
+POST /api/updateTask?id=42&key=EXAMPLE-KEY-NOT-REAL
+     { "task_title": "Pack", "dueDate": "3/1/25", "Done": 1 }
+  -> 200  "OK"          (fields that are left out are cleared)
+
+GET  /api/deleteTask?id=42&key=EXAMPLE-KEY-NOT-REAL
+  -> 200  "OK"
+
+Any failure:
+  -> 200  { "ok": false,
+            "msg": "Error in query: UPDATE tasks SET ... WHERE id=42" }

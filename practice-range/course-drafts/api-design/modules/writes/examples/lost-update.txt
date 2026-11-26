@@ -1,0 +1,15 @@
+  Ana                      Server                      Ben
+   |                         |                          |
+   | GET /tasks/42           |          GET /tasks/42   |
+   |------------------------>|<-------------------------|
+   | title: "Pack"           |          title: "Pack"   |
+   |<------------------------|------------------------->|
+   |                         |                          |
+   | PATCH title: "Pack 12"  |                          |
+   |------------------------>|  stored: "Pack 12"       |
+   |                         |                          |
+   |                         |  PATCH title: "Pack all" |
+   |                         |<-------------------------|
+   |                         |  stored: "Pack all"      |
+   |                         |                          |
+   Ana's change is gone, and nobody was told.

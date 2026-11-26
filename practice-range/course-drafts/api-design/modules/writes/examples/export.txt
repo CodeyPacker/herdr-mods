@@ -1,0 +1,12 @@
+POST /projects/7/exports
+Idempotency-Key: nightly-2025-03-01
+
+# First attempt that arrives
+HTTP/1.1 201 Created
+Location: /exports/9
+{ "id": "9", "status": "running" }
+
+# Any retry with the same key: nothing new is started
+HTTP/1.1 201 Created
+Location: /exports/9
+{ "id": "9", "status": "running" }

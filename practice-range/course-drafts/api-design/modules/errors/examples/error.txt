@@ -1,0 +1,11 @@
+HTTP/1.1 404 Not Found
+Content-Type: application/problem+json
+
+{
+  "type": "https://api.example.com/problems/task-not-found",
+  "title": "Task not found",
+  "status": 404,
+  "code": "task_not_found",
+  "detail": "There is no task with the id 999.",
+  "request_id": "req_8f3a2c"
+}

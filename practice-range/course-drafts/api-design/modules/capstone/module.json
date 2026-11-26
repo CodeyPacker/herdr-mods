@@ -1,0 +1,141 @@
+{
+  "id": "course:api-design/module/capstone",
+  "title": "Review and design a whole API",
+  "requires": [],
+  "outcomes": [],
+  "intro": "This last module has no new ideas. It asks you to use the earlier ones twice: first to review an API that somebody else designed, and then to design a small one yourself from a short brief. Both are done on paper. Reading the worked answers can explain an approach, but the value is in making the attempt first.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "How to use this module",
+      "text": "There are two exercises. Each one has a page that sets the task and a page that gives one possible answer.\n\nGive each a real attempt before reading on. Twenty minutes for the review and forty for the design is about right. Write your answers down, because a design that only exists in your head has not been tested.\n\nThe checklist from the last module is repeated here to work from.",
+      "example": "checklist"
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise 1: review this API",
+      "text": "A small company has published this API for its task tracker. Read it as a client developer who has to build against it.\n\nFind at least eight problems. For each, say which principle it breaks and what you would change. Then continue.",
+      "example": "flawed"
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible review",
+      "text": "There are more than eight. These are the ones that would hurt clients soonest.\n\n1. **Verbs in addresses, and no pattern.** `getAllTasks`, `task/create`, `deleteTask`. Use `/tasks` and `/tasks/{id}` with methods.\n2. **A `GET` that deletes.** Anything that fetches links will delete tasks. Use `DELETE /tasks/{id}`.\n3. **The list has no page size.** It returns every task and will fail as data grows. Add `limit` and a cursor, and return an object, not a bare list.\n4. **Creating answers `200` with no address.** Answer `201` with a `Location` header.\n5. **Errors return `200`.** Clients, caches and monitoring will all read failures as successes. Use the 4xx and 5xx families.\n6. **The error is a sentence and leaks a query.** Give a stable code, a field, a message and a request identifier, and keep the query in the logs.\n7. **The key is in the address.** It will be written to every log. Use the `Authorization` header.\n8. **Field names follow no rule.** `ID`, `task_title`, `dueDate`, `Done`. Choose one style.\n9. **Types that will be misread.** A date as `3/1/25`, an identifier as a number, a status as `1`. Use ISO 8601 dates, text identifiers and named values.\n10. **The update replaces everything through `POST`.** Use `PATCH` for a partial change, and let clients send a version to avoid overwriting each other.\n11. **Nothing can be retried safely.** Creating a task twice makes two. Accept an idempotency key.\n12. **No version and no way to change.** Start at version 1 and state what clients must tolerate.\n\nNone of these needs new technology to fix. Each is a decision that was not made on purpose.",
+      "example": "flawed"
+    },
+    {
+      "kind": "prediction",
+      "title": "The most urgent fix",
+      "text": "The company can only fix one thing before its next customer starts building.",
+      "questions": [
+        "urgent"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise 2: design time tracking",
+      "text": "The tracker is adding time tracking. This is the brief.\n\n- A user records a **time entry** against a task: a date, a number of minutes, and an optional note.\n- A user can change or remove their own entries. Nobody can change another person's.\n- A project manager wants the total time for each task of a project, for a given week.\n- The phone app is often on a poor connection.\n- A customer's payroll system reads all new entries once a night.\n\nDesign the API. Cover the resources and their addresses, the methods, the JSON for one entry, what happens when input is wrong, how lists are read, how the phone app and the payroll system are kept safe, who may do what, and how the design could grow. Then continue."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible design: resources and bodies",
+      "text": "A time entry belongs to a task, so it is created under the task. It has its own identity, so it is read, changed and removed at its own short address. The weekly totals are a computed resource under the project.\n\nThe entry uses the conventions of the rest of the API. The identifiers are text. The day is a calendar date, because an entry has no time of day. The duration says its unit in its name. The author is a small object, and the timestamps end in `_at`.",
+      "example": "design-resources"
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible design: behavior",
+      "text": "**Wrong input** gets `422` with the usual error body, naming each field: minutes must be from 1 to 1440, and the date must be real and not in the future.\n\n**Lists** are paged with a cursor and can be filtered by date. The payroll system asks for entries created after the last moment it saw, with `created_after`, and follows the cursor until it is `null`. It does not need a webhook, because it runs once a night.\n\n**The phone app** sends an idempotency key with each new entry, so that a retry after a lost reply does not record the time twice. Changes are sent with `If-Match`, so that an edit made on another device is not overwritten silently.\n\n**Access.** Recording time needs the scope `time:write`, and reading needs `time:read`. Beyond the scope, every change or removal checks that the entry belongs to the caller, and answers `403` otherwise. Reading the totals checks that the caller may see the project.\n\n**Growth.** The response is an object, so fields such as a billable flag can be added later. The set of filters can grow. The totals resource takes its week as a parameter, so other periods can be added without a new address.",
+      "example": "design-behavior"
+    },
+    {
+      "kind": "prediction",
+      "title": "One last judgement",
+      "text": "The team considers letting the client send the total directly: `PUT /tasks/42/time` with the total number of minutes for the task, instead of separate entries.",
+      "questions": [
+        "total"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "What to take with you",
+      "text": "The ideas of this course reduce to a few habits.\n\n1. **Design from the client's side.** Write the requests and responses before the code.\n2. **Be consistent.** One way to name, one way to page, one shape for errors.\n3. **Keep the promises of the protocol.** Safe methods read. Status codes tell the truth.\n4. **Make failure usable.** A stable code, a field, a way to find the request, and whether to retry.\n5. **Assume retries and collisions.** Give creates a key and updates a version.\n6. **Grow by adding.** Remove only on a published schedule.\n7. **Check access for every object.** Give each credential the least it needs.\n8. **Set limits and publish them.**\n9. **Describe it, and have someone else read the description** before it is built.\n\nWhen a new situation comes up that this course did not cover, the first habit is the one to fall back on: ask who is calling, what they are trying to do, and what they need to know when it does not work."
+    }
+  ],
+  "questions": [
+    {
+      "id": "urgent",
+      "prompt": "Which fix matters most to make first?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Renaming the fields to one style",
+          "feedback": "Inconsistent names are a nuisance and will be costly to change later, but they do not destroy data."
+        },
+        {
+          "text": "The `GET` that deletes, and the key in the address",
+          "feedback": "One lets ordinary software delete tasks by fetching a link. The other writes every customer's key into logs. Both cause harm that cannot be undone."
+        },
+        {
+          "text": "Adding a version number",
+          "feedback": "A version helps with later changes. It does nothing about the damage the current design can do today."
+        }
+      ]
+    },
+    {
+      "id": "total",
+      "prompt": "What would be lost by storing only a total for each task?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "Nothing. It is simpler and holds the same information",
+          "feedback": "A single total cannot say who worked, or on which day."
+        },
+        {
+          "text": "Only the notes",
+          "feedback": "The notes go, but so do the date and the person for each piece of work."
+        },
+        {
+          "text": "Who worked when, which the weekly report and payroll both need",
+          "feedback": "The brief asks for totals by week and for entries that belong to a user. A bare total cannot answer either, and two people saving at once would overwrite each other."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "checklist": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/checklist.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "flawed": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/flawed.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    },
+    "design-resources": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/design-resources.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    },
+    "design-behavior": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/design-behavior.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

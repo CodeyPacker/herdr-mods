@@ -1,0 +1,23 @@
+  POST /projects/{id}/tasks        Create a task in a project.
+
+  Needs       the scope tasks:write
+  Retry       safe when sent with an Idempotency-Key header
+  Limits      counts toward the rate limit; body up to 64 KB
+
+  Body        title      text, required, 1 to 120 characters
+              due_on     date (YYYY-MM-DD), optional
+              assignee   user id, optional; null for nobody
+              labels     list of label names, optional, default []
+
+  Example     POST /projects/7/tasks
+              { "title": "Pack boxes", "due_on": "2025-03-01" }
+
+              201 Created
+              Location: /tasks/42
+              { "id": "42", "title": "Pack boxes", "status": "open", … }
+
+  Errors      401 not_authenticated   sign in again
+              403 missing_scope       the credential lacks tasks:write
+              404 project_not_found   no project with this id
+              422 validation_failed   see "errors" for each field
+              429 rate_limited        wait for Retry-After seconds

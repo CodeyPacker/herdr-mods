@@ -1,0 +1,7 @@
+  Release 1.8
+
+  1. Tasks now include a "labels" list.
+  2. The field "due" is now called "due_on".
+  3. Creating a task now requires "project_id".
+  4. Lists of tasks are now sorted by due date instead of by creation.
+  5. New endpoint: GET /projects/{id}/summary

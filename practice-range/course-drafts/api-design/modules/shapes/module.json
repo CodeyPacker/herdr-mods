@@ -1,0 +1,136 @@
+{
+  "id": "course:api-design/module/shapes",
+  "title": "Shape requests and responses",
+  "requires": [],
+  "outcomes": [],
+  "intro": "Addresses, methods and statuses are the frame. The body is what the client actually reads and writes. This module covers the shape of the JSON a client sends and receives: how to name fields, which types to use for dates, money and choices, and how to treat a value that is missing.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "One shape per resource",
+      "text": "A task should look the same wherever it appears: when read on its own, inside a list, and in the reply to a create or an update. A client then needs one piece of code to understand a task.\n\nIf a list must return a shorter form to stay small, make the short form a strict subset of the full one, with the same names and types. Never let a field mean one thing in a list and another in the item.",
+      "example": "task"
+    },
+    {
+      "kind": "explanation",
+      "title": "Types that survive the trip",
+      "text": "JSON has few types: text, number, true or false, null, lists and objects. Several everyday things have no type of their own, and each needs a decision.\n\n| Value | Send it as | Why |\n| --- | --- | --- |\n| Identifier | Text: `\"42\"` | Clients store it and send it back. Large numbers lose digits in some JSON readers. |\n| Moment in time | Text in ISO 8601, in UTC: `\"2025-03-01T14:30:00Z\"` | It is unambiguous, sorts correctly as text, and is understood everywhere. |\n| Calendar date | Text: `\"2025-03-01\"` | A due date has no time of day and no time zone. |\n| Money | A whole number of the smallest unit, plus a currency: `{\"amount\": 1999, \"currency\": \"USD\"}` | Decimal fractions are not stored exactly as floating point numbers, so sums drift. |\n| One of a fixed set | Text: `\"open\"`, `\"done\"` | It can be read without a lookup table, and new values can be added. |\n| Yes or no | `true` or `false`, with a positive name: `\"done\"` | A name like `\"not_disabled\"` forces the reader to think twice. |\n\nState the unit in the field name whenever a number has one: `duration_seconds`, `size_bytes`. A bare `timeout: 30` will be read as seconds by some clients and milliseconds by others."
+    },
+    {
+      "kind": "debugging",
+      "title": "A response to review",
+      "text": "This is how one early version of the tracker returned a task.",
+      "example": "bad-task",
+      "questions": [
+        "bad-task"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Missing, null and empty",
+      "text": "There are three ways for a field to hold nothing, and clients will treat them differently. Decide what each one means, and write it down.\n\n- **The field is absent.** In a response: not applicable, or not requested. In a request: no opinion, leave it alone.\n- **The field is `null`.** There is deliberately no value. This task has no assignee.\n- **The field is an empty list or empty text.** There is a value, and it is empty. This task has no labels.\n\nThe difference matters most in updates. In a `PATCH`, leaving `assignee` out means \"do not touch it\", and sending `\"assignee\": null` means \"remove the assignee\". If the API cannot tell the two apart, a client cannot clear a field without also sending every other one.\n\nFor lists, always return `[]` and never `null` or nothing. A client can loop over an empty list without a special case.",
+      "example": "patch-null"
+    },
+    {
+      "kind": "prediction",
+      "title": "Clearing a field",
+      "text": "Task 42 is assigned to Ana. A client sends `PATCH /tasks/42` with the body `{\"title\": \"Pack boxes\"}`.",
+      "questions": [
+        "absent"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Leave room to grow",
+      "text": "Two habits make a response easy to extend later.\n\n**Return an object at the top level, never a bare list.** A list has no place to put anything else. An object does: `{\"data\": [...]}` can later gain a cursor for the next page or a total, without breaking a client.\n\n**Publish only what you mean to keep.** Every field you return is a promise. Do not send a field because it happens to be in the database row. Internal flags, raw column names and values that are expensive to compute become things you can never remove.\n\nOn the way in, validate. Reject a value that breaks a rule and say which one. Decide on purpose what to do with a field you do not recognize in a request. Ignoring it silently hides spelling mistakes, such as a client that sends `titel` and wonders why nothing changed."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: a comment",
+      "text": "Design the JSON for one comment on a task, as the API would return it. A comment has an author, some text, the time it was written, and the time it was last edited, if it ever was.\n\nDecide the field names, the type of each field, and what an unedited comment looks like. Then continue."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "The identifiers are text. The author is a small object, so the client can show a name without a second request, and it uses the same field names as a user anywhere else in the API. The two times are ISO 8601 in UTC and end in `_at`, like every other timestamp. An unedited comment has `\"edited_at\": null`: the field is always present, so a client never has to check whether it exists, and `null` says clearly that no edit has happened.\n\nNotice what is missing: no database row number, no internal moderation flag, no `task` object repeating data the client already has.",
+      "example": "comment"
+    }
+  ],
+  "questions": [
+    {
+      "id": "bad-task",
+      "example": "bad-task",
+      "prompt": "Which problem will cause real bugs soonest?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "`due` could be 3 January or 1 March",
+          "feedback": "A date written as `03/01/2025` is read differently in different countries. ISO 8601 has only one reading."
+        },
+        {
+          "text": "The fields are not in alphabetical order",
+          "feedback": "Field order in a JSON object carries no meaning, and clients must not rely on it."
+        },
+        {
+          "text": "The response has too few fields",
+          "feedback": "A small response is fine. The trouble is in how the values are written."
+        }
+      ]
+    },
+    {
+      "id": "absent",
+      "prompt": "What should happen to the assignee?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "It is removed",
+          "feedback": "The body did not mention the assignee. In a `PATCH`, a field that is left out is left alone."
+        },
+        {
+          "text": "It stays Ana",
+          "feedback": "A field that is absent means \"no change\". Only `\"assignee\": null` would remove it."
+        },
+        {
+          "text": "The request is rejected because a field is missing",
+          "feedback": "A `PATCH` names only what it changes. Requiring every field would make it a `PUT`."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "task": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/task.txt"
+      },
+      "readOnly": true,
+      "fence": "json"
+    },
+    "bad-task": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/bad-task.txt"
+      },
+      "readOnly": true,
+      "fence": "json"
+    },
+    "patch-null": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/patch-null.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    },
+    "comment": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/comment.txt"
+      },
+      "readOnly": true,
+      "fence": "json"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

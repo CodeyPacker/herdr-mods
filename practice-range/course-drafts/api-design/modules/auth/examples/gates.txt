@@ -1,0 +1,10 @@
+                 Who is this?              May they do this,
+                                           to this thing?
+  Request  --->  AUTHENTICATION   --->     AUTHORIZATION    --->  handler
+                      |                          |
+                      | unknown or               | known, but
+                      | expired                  | not permitted
+                      v                          v
+                 401 Unauthorized           403 Forbidden
+                 "sign in again"            "signing in again
+                                             will not help"

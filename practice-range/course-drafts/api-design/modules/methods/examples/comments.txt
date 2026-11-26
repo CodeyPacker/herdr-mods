@@ -1,0 +1,7 @@
+                                              safe to send twice?
+1. GET    /tasks/42/comments                  yes
+2. POST   /tasks/42/comments                  no, it adds two
+3. GET    /tasks/42/comments/3                yes
+4. PATCH  /tasks/42/comments/3   {"body": …}  yes, same text each time
+5. DELETE /tasks/42/comments/3                yes
+6. PATCH  /tasks/42   {"accepted_comment_id": "3"}     yes

@@ -1,0 +1,15 @@
+# A normal response reports where the client stands.
+HTTP/1.1 200 OK
+RateLimit-Limit: 600
+RateLimit-Remaining: 12
+RateLimit-Reset: 20
+
+# Over the limit.
+HTTP/1.1 429 Too Many Requests
+Retry-After: 20
+RateLimit-Limit: 600
+RateLimit-Remaining: 0
+RateLimit-Reset: 20
+
+{ "code": "rate_limited",
+  "detail": "600 requests per minute are allowed. Try again in 20 s." }

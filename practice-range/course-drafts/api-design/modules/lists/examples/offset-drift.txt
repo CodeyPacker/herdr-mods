@@ -1,0 +1,11 @@
+  The list, newest first:      T9  T8  T7  T6  T5  T4  ...
+
+  Page 1   limit=3 offset=0    T9  T8  T7
+
+        ... a new task, T10, is created ...
+
+  The list is now:        T10  T9  T8  T7  T6  T5  T4  ...
+
+  Page 2   limit=3 offset=3    T7  T6  T5
+                               ^^
+                    T7 was already on page 1

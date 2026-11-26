@@ -1,0 +1,132 @@
+{
+  "id": "course:api-design/module/resources",
+  "title": "Model resources and name them",
+  "requires": [],
+  "outcomes": [],
+  "intro": "The first design decision is what the API is made of. In the style this course uses, an API offers resources: the things a client cares about, each with its own address. This module covers finding the resources in a problem and naming them so that the addresses can be guessed.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Resources and their addresses",
+      "text": "A **resource** is a thing the client can name: a project, a task, a comment. Each resource has an address, its URL. Resources come in two kinds.\n\n- A **collection** is a list of things of one kind, such as `/tasks`.\n- An **item** is one of those things, found by its identifier: `/tasks/42`.\n\nThe convention that most APIs follow is: plural nouns, lower case, words joined by hyphens, with the identifier directly after the collection. `/tasks/42` reads as \"task 42 from the tasks\".\n\nThe address says *what*. It does not say what to do with it. That job belongs to the method, which is the subject of the next module, so the address should hold nouns and no verbs.",
+      "example": "tree"
+    },
+    {
+      "kind": "explanation",
+      "title": "Showing that one thing belongs to another",
+      "text": "A comment belongs to a task. Nesting the address shows that: `/tasks/42/comments` is the comments of task 42. It reads naturally and it scopes the list for free.\n\nNesting has a cost, because every level is another identifier the client must already know. Two rules keep it under control.\n\n1. **Nest only for real ownership.** A comment cannot exist without its task. A task, on the other hand, can be moved to another project, so its own address should not depend on the project.\n2. **Stop after one level.** Anything with its own identity gets a short address of its own. Offer `/projects/7/tasks` to list a project's tasks, and `/tasks/42` to work with one. Avoid `/projects/7/tasks/42/comments/3`."
+    },
+    {
+      "kind": "prediction",
+      "title": "Choose an address",
+      "text": "The client wants the comments on task 42. The task belongs to project 7.",
+      "questions": [
+        "comment-address"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Resources are not tables",
+      "text": "It is tempting to publish one resource per database table. Resist it. The tables are how you store things today. The resources are what clients need, and they should survive a change of storage.\n\nSome useful resources have no table at all. The tracker might offer `/projects/7/summary` with counts of open and done tasks, worked out on request. Some tables should never appear, such as the one that links tasks to labels. A client wants \"the labels on this task\", not the rows of a join table.\n\nAsk what the client would call the thing, and name the resource that."
+    },
+    {
+      "kind": "explanation",
+      "title": "Identifiers",
+      "text": "An identifier appears in addresses that clients store, so it must never change and never be reused for something else.\n\n- **Treat it as text.** Send it as a string, even when it is made of digits. Clients should store it and send it back, not do arithmetic on it. That leaves you free to change its form later.\n- **Give it no meaning.** An identifier such as `7-urgent-2025` breaks the day the task stops being urgent.\n- **Know what it reveals.** Counting numbers show how many things exist and let anyone guess the next one. Guessing must never be what protects data, as the module on access explains, but random identifiers avoid giving the information away."
+    },
+    {
+      "kind": "debugging",
+      "title": "One idea, one name",
+      "text": "These five addresses and fields come from one API. Read them as a client trying to learn the pattern.",
+      "example": "inconsistent",
+      "questions": [
+        "inconsistent"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Consistency is the feature",
+      "text": "A client learns an API by pattern. Every exception is something to look up, remember and get wrong. Decide these once and apply them everywhere:\n\n- Plural or singular for collections. Plural is the common choice.\n- One style for field names. Either `created_at` or `createdAt`, never both.\n- One word for one idea. If the person responsible for a task is the `assignee`, it is not the `owner` somewhere else.\n- The same name for the same field on every resource: `id`, `created_at`, `updated_at`.\n\nWhich style you choose matters far less than choosing only one. Write the choices down, because the next person to add an endpoint will not guess them."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: labels",
+      "text": "Tasks can carry labels such as \"urgent\" or \"bug\". A label can be on many tasks, and a task can have many labels. The team wants clients to be able to:\n\n1. List every label that exists.\n2. See the labels on one task.\n3. Put a label on a task.\n4. Take a label off a task.\n5. List the tasks that carry a given label.\n\nWrite an address for each. You do not need methods yet. Then continue."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "- `/labels` lists every label, and `/labels/urgent` is one label.\n- `/tasks/42/labels` is the labels on task 42.\n- `/tasks/42/labels/urgent` is the fact that task 42 carries that label. Creating it attaches the label, and removing it detaches the label.\n- `/tasks?label=urgent` lists the tasks with that label. It is a filter on the tasks collection, which a later module covers.\n\nThere is no address for the linking table. The client thinks \"this task has this label\", and the address `/tasks/42/labels/urgent` says exactly that. The label is listed in two places, under `/labels` and under a task, and that is fine: one is the thing itself and the other is a relationship.",
+      "example": "labels"
+    }
+  ],
+  "questions": [
+    {
+      "id": "comment-address",
+      "prompt": "Which address is the best choice?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "`/projects/7/tasks/42/comments`",
+          "feedback": "The client must now know the project to reach a comment, and the address breaks if the task moves to another project."
+        },
+        {
+          "text": "`/tasks/42/comments`",
+          "feedback": "A comment belongs to its task, so one level of nesting says everything, and the task is reached by its own short address."
+        },
+        {
+          "text": "`/comments?task=42&project=7`",
+          "feedback": "A filter can work, but it hides that a comment cannot exist without its task, and the project adds nothing."
+        }
+      ]
+    },
+    {
+      "id": "inconsistent",
+      "example": "inconsistent",
+      "prompt": "How many different naming styles does a client have to learn here?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "One",
+          "feedback": "Look at plural against singular, at the verb in one address, and at the two field styles."
+        },
+        {
+          "text": "Two",
+          "feedback": "There are more: singular and plural collections, a verb in an address, and two styles of field name."
+        },
+        {
+          "text": "At least four",
+          "feedback": "Plural and singular collections, a verb in an address, snake_case and camelCase fields, and two words for the same person."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "tree": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/tree.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "inconsistent": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/inconsistent.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "labels": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/labels.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

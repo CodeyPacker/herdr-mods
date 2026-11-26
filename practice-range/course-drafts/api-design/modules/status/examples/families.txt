@@ -1,0 +1,10 @@
+  2xx   It worked.                    Carry on.
+
+  3xx   Look somewhere else.          Follow the Location header.
+
+  4xx   The request is wrong.         Fix the request.
+                                      Sending it again as it is
+                                      will fail again.
+
+  5xx   The server failed.            The request may be fine.
+                                      Wait, then try again.

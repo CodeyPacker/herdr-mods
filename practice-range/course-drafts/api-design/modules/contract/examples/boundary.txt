@@ -1,0 +1,9 @@
+  Web app -------+
+                 |
+  Phone app -----+----->  THE API  ----->  code, database,
+                 |     (the promise)       other services
+  Partner -------+                         (free to change)
+
+  Clients depend on the promise.   The server may change
+  They never see what is behind    anything behind it, as
+  it.                              long as the promise holds.

@@ -1,0 +1,141 @@
+{
+  "id": "course:api-design/module/methods",
+  "title": "Choose the method",
+  "requires": [],
+  "outcomes": [],
+  "intro": "An address names a thing. The method says what to do with it. HTTP has a small set of methods, and each one makes a promise that clients, browsers and the machines between them rely on. This module covers what those promises are and how to map an operation onto the right method.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Five methods",
+      "text": "Almost every API needs only five methods.\n\n| Method | Meaning | On a collection | On an item |\n| --- | --- | --- | --- |\n| `GET` | Read | List the items | Read one item |\n| `POST` | Create, or do something | Create a new item | Rarely used |\n| `PUT` | Replace | Rarely used | Replace the whole item |\n| `PATCH` | Change part | Rarely used | Change some fields |\n| `DELETE` | Remove | Rarely used | Remove the item |\n\nWith the addresses from the last module, the pattern covers most of an API. `GET /tasks` lists, `POST /tasks` creates, `GET /tasks/42` reads, `PATCH /tasks/42` changes and `DELETE /tasks/42` removes. A client who has seen this for tasks can guess it for comments."
+    },
+    {
+      "kind": "explanation",
+      "title": "Safe and idempotent",
+      "text": "Two words describe what a method promises.\n\nA method is **safe** when it only reads. Calling it changes nothing on the server. `GET` is safe.\n\nA method is **idempotent** when doing it twice leaves the server in the same state as doing it once. Setting a task to done twice leaves it done. Deleting a task twice leaves it deleted. `GET`, `PUT` and `DELETE` are idempotent.\n\n`POST` is neither. Sending \"create a task\" twice creates two tasks. `PATCH` is not promised to be idempotent, though a patch that sets fields to fixed values is in practice.\n\n| Method | Safe | Idempotent |\n| --- | --- | --- |\n| `GET` | Yes | Yes |\n| `PUT` | No | Yes |\n| `DELETE` | No | Yes |\n| `PATCH` | No | Not promised |\n| `POST` | No | No |"
+    },
+    {
+      "kind": "explanation",
+      "title": "Why the promises matter",
+      "text": "These are not labels for tidiness. Other software acts on them.\n\nBecause `GET` is safe, browsers load links ahead of time, caches store the answers, and crawlers follow every link they find. If a `GET` deletes or changes something, one of them will trigger it. Never change data in response to a `GET`.\n\nBecause some methods are idempotent, a client can retry them. Networks lose replies. When a request times out, the client cannot tell whether the server did the work. If the method is idempotent it can simply send the request again. If it is not, a retry may do the work twice.",
+      "example": "lost-reply"
+    },
+    {
+      "kind": "prediction",
+      "title": "Is it safe to retry?",
+      "text": "A phone app sends a request and the connection drops before the reply arrives. The app does not know whether the server handled it.",
+      "questions": [
+        "retry"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Replace or change",
+      "text": "`PUT` and `PATCH` both update an item, and mixing them up loses data.\n\n`PUT` replaces the whole item with what you send. A field you leave out is removed or reset. That makes it idempotent and simple to reason about, but a client must send everything, including fields it does not know about.\n\n`PATCH` changes only the fields you send and leaves the rest alone. It suits most updates, because the client sends just what it means to change.\n\nFor most APIs the practical choice is `PATCH` for updates, with `PUT` reserved for the cases where replacing really is the meaning, such as setting the full list of labels on a task.",
+      "example": "put-patch"
+    },
+    {
+      "kind": "explanation",
+      "title": "When the operation is not create, read, update or delete",
+      "text": "Some operations are verbs that do not fit the five: archive a project, send a reminder, cancel an export. There are three ways to model one. Try them in this order.\n\n1. **Is it really a change of state?** Archiving is setting a field. `PATCH /projects/7` with `{\"archived\": true}` needs nothing new.\n2. **Does it create a thing?** Sending a reminder creates a reminder. `POST /tasks/42/reminders` gives the action a noun, an address, and a record that can be listed later.\n3. **If neither fits, name the action.** `POST /exports/9/cancel` is acceptable. Use `POST`, because the action is neither safe nor promised to be idempotent, and keep such addresses rare.\n\nThe first two keep the API to its pattern. The third is an exception, and exceptions are what make an API hard to learn."
+    },
+    {
+      "kind": "debugging",
+      "title": "A link that deletes",
+      "text": "This request was added so that an email could contain a one-click \"remove\" link.",
+      "example": "get-delete",
+      "questions": [
+        "get-delete"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: comments",
+      "text": "Clients of the tracker need to do six things with comments on task 42. For each, write the method and the address.\n\n1. List the comments.\n2. Add a comment.\n3. Read comment 3.\n4. Fix a typing mistake in comment 3.\n5. Remove comment 3.\n6. Mark comment 3 as the accepted answer to the task.\n\nFor each one, also note whether a client can safely send it twice. Then continue."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "The first five follow the pattern, so a client could have guessed them. The sixth needs a decision. Being the accepted answer is a state, so it can be a field on the comment. If a task can have only one accepted answer, it reads even better as a field on the task: `PATCH /tasks/42` with `{\"accepted_comment_id\": \"3\"}`. Either is better than inventing `POST /comments/3/accept`.\n\nOnly adding a comment is unsafe to repeat. A later module shows how to make that safe too.",
+      "example": "comments"
+    }
+  ],
+  "questions": [
+    {
+      "id": "retry",
+      "prompt": "Which of these requests can the app send again without risk?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "`POST /tasks` to create a task",
+          "feedback": "If the first request did arrive, a second one creates a second task."
+        },
+        {
+          "text": "Neither kind can be retried",
+          "feedback": "An idempotent request can be repeated, because repeating it leaves the same state."
+        },
+        {
+          "text": "`PUT /tasks/42` to replace the task",
+          "feedback": "Replacing the task twice with the same content leaves it exactly as one replacement would."
+        }
+      ]
+    },
+    {
+      "id": "get-delete",
+      "example": "get-delete",
+      "prompt": "What is the most serious problem with this request?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "`GET` is treated as safe, so other software will send it",
+          "feedback": "Mail scanners, link previews and browsers fetch links ahead of time. Each of them would delete the task."
+        },
+        {
+          "text": "The address is too long",
+          "feedback": "Length is harmless. The harm is in what the method promises."
+        },
+        {
+          "text": "It should return the deleted task",
+          "feedback": "What it returns is a detail. A request that changes data must not be a `GET` at all."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "lost-reply": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/lost-reply.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "put-patch": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/put-patch.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    },
+    "get-delete": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/get-delete.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    },
+    "comments": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/comments.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

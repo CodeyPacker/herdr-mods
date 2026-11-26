@@ -1,0 +1,19 @@
+POST   /tasks/42/time-entries         record time on task 42
+GET    /tasks/42/time-entries         the entries of task 42
+GET    /time-entries/881              one entry
+PATCH  /time-entries/881              change it (author only)
+DELETE /time-entries/881              remove it (author only)
+GET    /time-entries?created_after=…  all entries, for payroll
+GET    /projects/7/time-summary?week=2025-W09
+                                      total minutes for each task
+
+{
+  "id": "881",
+  "task_id": "42",
+  "user": { "id": "ana", "name": "Ana Martinez" },
+  "worked_on": "2025-02-26",
+  "duration_minutes": 90,
+  "note": "Packed the first twelve boxes.",
+  "created_at": "2025-02-26T17:05:00Z",
+  "updated_at": "2025-02-26T17:05:00Z"
+}

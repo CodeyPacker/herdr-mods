@@ -1,0 +1,6 @@
+{
+  "id": "42",
+  "title": "Pack boxes",
+  "assignee": "ana",
+  "assignee_user": { "id": "ana", "name": "Ana Martinez" }
+}

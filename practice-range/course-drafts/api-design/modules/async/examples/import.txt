@@ -1,0 +1,22 @@
+POST /projects/7/imports
+Idempotency-Key: import-2025-03-01-a
+Content-Type: text/csv
+
+HTTP/1.1 202 Accepted
+Location: /imports/31
+{ "id": "31", "status": "running" }
+
+GET /imports/31
+
+HTTP/1.1 200 OK
+{
+  "id": "31",
+  "status": "succeeded",
+  "created": 49870,
+  "failed": 130,
+  "failures_url": "/imports/31/failures"
+}
+
+# The webhook, for clients that registered one
+{ "id": "evt_91aa", "type": "import.finished",
+  "created_at": "2025-03-01T02:14:09Z", "data": { "import_id": "31" } }

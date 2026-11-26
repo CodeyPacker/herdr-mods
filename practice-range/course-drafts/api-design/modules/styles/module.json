@@ -1,0 +1,108 @@
+{
+  "id": "course:api-design/module/styles",
+  "title": "Choose an API style",
+  "requires": [],
+  "outcomes": [],
+  "intro": "So far the course has used one style: resources reached with HTTP methods, often called REST. It is the most common style for public APIs, but not the only one. This module compares it with three others, so that you can recognize them and choose on purpose. The principles from the earlier modules apply to all of them.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Four styles",
+      "text": "- **Resources.** The API is a set of things with addresses, and a few standard methods act on them. This is the style of this course.\n- **Procedures.** The API is a set of named operations that the client calls, each with its own inputs and outputs, much like calling a function. It is usually called RPC, for remote procedure call. gRPC is a widely used form of it.\n- **Queries.** The API is one typed graph of data. The client sends a query that names exactly the fields it wants, and receives exactly those. GraphQL is the best known form.\n- **Events.** The API is a stream of things that have happened, which the client subscribes to. Webhooks, from the last module, are the simplest form.",
+      "example": "three-ways"
+    },
+    {
+      "kind": "explanation",
+      "title": "What each is good at",
+      "text": "| Style | Strong at | The price |\n| --- | --- | --- |\n| Resources | A uniform pattern that needs little explanation. Standard caching, status codes and tools. Suits third parties. | Reading a screen's worth of related data can take several requests. Operations that are not create, read, update or delete fit awkwardly. |\n| Procedures | Operations that are actions. Strict typed contracts, and clients generated from them. With gRPC, compact and fast messages. | No uniform pattern, so each operation is learned on its own. Standard caching does not apply. Harder to call from a browser. |\n| Queries | Many different screens, each needing a different slice of connected data, in one request. | The server becomes harder to build, to cache and to protect, because every query is different. |\n| Events | Telling clients about changes as they happen. | Delivery, repeats and order all need care, and the client needs a way to catch up after a gap. |"
+    },
+    {
+      "kind": "explanation",
+      "title": "How to choose",
+      "text": "Start with who the clients are, since the style exists to serve them.\n\n- **Outside developers you will never meet.** Prefer resources. It is the style most people already know, and the one with the most tools.\n- **Your own services calling each other.** Procedures suit this well. Both sides are yours, the operations are actions, and a typed contract catches mistakes when the code is built.\n- **Several of your own apps with very different screens.** A query style can save each of them from stitching together many requests.\n- **Clients that must react to changes.** Add events to whichever style you chose.\n\nMixtures are normal. A product can offer resources to the public, use procedures between its own services, and send events through webhooks. What matters is that each surface is consistent within itself."
+    },
+    {
+      "kind": "prediction",
+      "title": "Choose a style",
+      "text": "Two back-end services owned by one team exchange thousands of small messages a second. Both are deployed together. The operations are things like \"reserve stock\" and \"release stock\".",
+      "questions": [
+        "internal-style"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "What stays the same",
+      "text": "Changing the style changes the syntax. It does not remove any of the design questions.\n\n- **Names** still have to be consistent, whether they name resources, procedures or fields in a graph.\n- **Errors** still need a stable code, a readable message and a way to find the request. Some styles answer with a `200` at the HTTP level even for a failure and carry the error inside the body. The error still has to be designed.\n- **Change** still has to be additive, and removals still need a schedule.\n- **Retries** are still dangerous for operations that are not idempotent, so those still need a key.\n- **Access** still has to be checked for every object, on every request.\n- **Limits** still have to exist. A query style makes them harder, because one request can ask for very little or for a great deal.\n\nA team that designs resources carelessly will design procedures and queries carelessly too. The discipline is the same."
+    },
+    {
+      "kind": "debugging",
+      "title": "One request for everything",
+      "text": "A team replaces twelve resource endpoints with a single flexible query endpoint, so that any client can ask for any combination of fields and nested lists in one request.",
+      "questions": [
+        "query-cost"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: three situations",
+      "text": "Choose a style for each, with one sentence of reasoning.\n\n1. The tracker opens to customers, who will write their own integrations in whatever tools they have.\n2. The tracker's notification service needs to ask its user service, thousands of times a second, \"which of these users want an email?\".\n3. A customer's reporting system has to learn within seconds that a task was completed.\n\nThen continue."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. **Resources.** The customers are unknown, varied, and best served by the style with the lowest cost of learning and the widest tool support.\n2. **Procedures.** One team owns both sides, the operation is a question with a typed answer, and speed matters more than being easy to explore.\n3. **Events,** delivered by webhook, on top of the resource API. The reporting system is told when a task is completed, and it can still read the task whenever it needs the current state.\n\nThe tracker ends up offering all three, each where it fits."
+    }
+  ],
+  "questions": [
+    {
+      "id": "internal-style",
+      "prompt": "Which style fits best?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Resources, because it is the most common",
+          "feedback": "It would work, but neither of its main strengths, wide familiarity and standard caching, is needed here."
+        },
+        {
+          "text": "Procedures",
+          "feedback": "One team owns both ends, the operations are actions, and a typed, compact call suits a high volume of small messages."
+        },
+        {
+          "text": "Events only",
+          "feedback": "Reserving stock needs an answer: did it work? An event stream alone does not give one."
+        }
+      ]
+    },
+    {
+      "id": "query-cost",
+      "prompt": "What new problem has the team taken on?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Limits and caching, because every request is now different",
+          "feedback": "One query may be trivial and the next enormous. The server needs a way to measure and bound the cost of a query before running it."
+        },
+        {
+          "text": "Clients can no longer choose which fields they get",
+          "feedback": "They can. That is what the query style offers."
+        },
+        {
+          "text": "Nothing, because one endpoint is always simpler than twelve",
+          "feedback": "Simpler to list, harder to protect. The twelve endpoints each had a known cost."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "three-ways": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/three-ways.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

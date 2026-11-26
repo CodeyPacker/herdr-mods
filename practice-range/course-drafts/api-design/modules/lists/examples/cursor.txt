@@ -1,0 +1,13 @@
+GET /tasks?limit=3
+
+{
+  "data": [ { "id": "9", ... }, { "id": "8", ... }, { "id": "7", ... } ],
+  "next_cursor": "eyJhZnRlciI6IjcifQ"
+}
+
+GET /tasks?limit=3&cursor=eyJhZnRlciI6IjcifQ
+
+{
+  "data": [ { "id": "6", ... }, { "id": "5", ... }, { "id": "4", ... } ],
+  "next_cursor": null
+}

@@ -1,0 +1,4 @@
+  POST /tasks
+
+  Creates a task. Send the task as JSON.
+  Returns the task.

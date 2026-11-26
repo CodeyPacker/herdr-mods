@@ -1,0 +1,123 @@
+{
+  "id": "course:api-design/module/status",
+  "title": "Answer with the right status",
+  "requires": [],
+  "outcomes": [],
+  "intro": "Every response starts with a three-digit status code. It is the first thing a client reads, and often the only thing that code in the middle, such as a proxy or a monitoring tool, reads at all. This module covers what the codes mean and how to choose one.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "The first digit says who acts next",
+      "text": "You do not need to memorize a long list. Start with the first digit, because it answers the client's most important question: what do I do now?\n\nGetting the family right matters more than picking the perfect code inside it. A client that receives a 4xx knows that sending the same request again is pointless. A client that receives a 5xx knows the request may be fine and that trying later can work.",
+      "example": "families"
+    },
+    {
+      "kind": "explanation",
+      "title": "The codes for success",
+      "text": "| Code | Name | Use it when |\n| --- | --- | --- |\n| `200` | OK | The request worked and the answer is in the body. |\n| `201` | Created | A new resource was made. Put its address in the `Location` header and return it in the body. |\n| `202` | Accepted | The request is valid, but the work is not finished yet. |\n| `204` | No Content | The request worked and there is nothing to send back. |\n\nA `DELETE` that worked usually answers `204`. A `POST` that created something answers `201`, and returning the new resource saves the client a second request to learn its identifier."
+    },
+    {
+      "kind": "explanation",
+      "title": "The codes for a wrong request",
+      "text": "| Code | Name | Use it when |\n| --- | --- | --- |\n| `400` | Bad Request | The request cannot be understood: broken JSON, a wrong type. |\n| `401` | Unauthorized | The server does not know who is calling. |\n| `403` | Forbidden | The server knows who is calling, and they are not allowed. |\n| `404` | Not Found | Nothing exists at this address. |\n| `409` | Conflict | The request clashes with the current state. |\n| `422` | Unprocessable Content | The request is well formed, but its values are not acceptable. |\n| `429` | Too Many Requests | The client is sending too fast. |\n\n`400` and `422` are close. Many APIs use `400` for both. If you separate them, use `400` when the body cannot be read at all and `422` when it reads fine but a value breaks a rule, such as an empty title.\n\n`409` is for a clash with what is already there: creating a label that exists, or finishing a task that was deleted."
+    },
+    {
+      "kind": "explanation",
+      "title": "The codes for a server that failed",
+      "text": "| Code | Name | Use it when |\n| --- | --- | --- |\n| `500` | Internal Server Error | The server hit a bug or an unexpected condition. |\n| `503` | Service Unavailable | The server is overloaded or down for maintenance. Add a `Retry-After` header. |\n| `502`, `504` | Bad Gateway, Gateway Timeout | A server in front could not get an answer from the one behind it. |\n\nA 5xx always means: this is not your fault. Never use one for a mistake in the request, because clients and alerting systems treat 5xx as an outage. Equally, never answer 4xx when your own database is down, because the client will stop retrying something that would have worked."
+    },
+    {
+      "kind": "prediction",
+      "title": "Choose a code",
+      "text": "A client sends `POST /tasks` with valid JSON. The title is an empty string, and the tracker requires a title.",
+      "questions": [
+        "validation"
+      ]
+    },
+    {
+      "kind": "debugging",
+      "title": "Success that is not",
+      "text": "This response is sent when the client asks for a task that does not exist.",
+      "example": "false-ok",
+      "questions": [
+        "false-ok"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Always tell the truth in the status",
+      "text": "The response in the last step is a common mistake, usually defended as simpler for the client. It is not. The client must now read and understand every body before knowing whether a request worked. Everything that looks only at the status is misled: caches store the failure as a good answer, retry logic does nothing, and dashboards report that all is well.\n\nThe rule is short. **If the request did not do what was asked, the status is not 2xx.**\n\nOne refinement concerns privacy. Suppose task 42 exists, but the caller may not see it. Answering `403` confirms that it exists. When the existence of a thing is itself sensitive, answer `404` for both \"does not exist\" and \"not yours to see\"."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: six situations",
+      "text": "Write the status code you would return in each case.\n\n1. `GET /tasks/42`, and the task exists.\n2. `POST /projects/7/tasks` created task 99.\n3. `DELETE /tasks/42` removed the task.\n4. `PATCH /tasks/42` sets `done` to the text `\"maybe\"`.\n5. `GET /tasks/42`, and the request carries no credentials.\n6. `GET /projects/7/tasks`, and the database did not answer.\n\nThen continue."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. `200`, with the task in the body.\n2. `201`, with `Location: /tasks/99` and the new task in the body.\n3. `204`, with no body.\n4. `422`, or `400` if the API uses one code for all invalid input. The JSON is fine and the value is not.\n5. `401`. The server does not know who is asking.\n6. `503`, ideally with `Retry-After`. The request was fine and the server could not serve it.\n\nIn every case the first digit alone tells the client what to do: carry on, fix the request, or try again later."
+    }
+  ],
+  "questions": [
+    {
+      "id": "validation",
+      "prompt": "Which status fits best?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "`200`, with an error message in the body",
+          "feedback": "The task was not created, so the status must not say the request worked."
+        },
+        {
+          "text": "`422`",
+          "feedback": "The body is readable, but a value breaks a rule. `400` is also acceptable if the API uses it for all invalid input."
+        },
+        {
+          "text": "`500`",
+          "feedback": "A 5xx means the server failed. Here the request is at fault, and sending it again will never work."
+        }
+      ]
+    },
+    {
+      "id": "false-ok",
+      "example": "false-ok",
+      "prompt": "What goes wrong first when an API answers like this?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "The response body is larger than it needs to be",
+          "feedback": "Size is not the issue. The status is wrong."
+        },
+        {
+          "text": "The message is not translated",
+          "feedback": "Wording is a detail. Software that reads only the status has already been misled."
+        },
+        {
+          "text": "Anything that reads only the status treats the failure as a success",
+          "feedback": "Caches, retry logic and monitoring all see `200` and conclude that the request worked."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "families": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/families.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "false-ok": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/false-ok.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

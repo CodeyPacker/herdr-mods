@@ -1,0 +1,10 @@
+  attempt 1   fails
+              wait about 1 second    (1 s, plus a random part)
+  attempt 2   fails
+              wait about 2 seconds
+  attempt 3   fails
+              wait about 4 seconds
+  attempt 4   fails
+              give up and report the failure
+
+  If the response carries Retry-After, use that wait instead.

@@ -1,0 +1,346 @@
+{
+  "schemaVersion": "1-draft",
+  "contentVersion": "0.1.0-draft.1",
+  "kind": "reading",
+  "id": "course:api-design",
+  "title": "Design APIs people can rely on",
+  "audience": [
+    "Can read JSON and has called or built an API",
+    "Wants to design one well"
+  ],
+  "prerequisiteConcepts": [],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:api-design/module/contract",
+      "order": "listed"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/contract",
+      "description": "Explain what an API promises, who depends on it, and why its design is hard to change later.",
+      "assessment": "course:api-design/module/contract"
+    },
+    {
+      "id": "outcome/resources",
+      "description": "Turn a problem into resources with clear, consistent names and addresses.",
+      "assessment": "course:api-design/module/resources"
+    },
+    {
+      "id": "outcome/methods",
+      "description": "Choose a method by what it promises: safe, idempotent, or neither.",
+      "assessment": "course:api-design/module/methods"
+    },
+    {
+      "id": "outcome/status",
+      "description": "Choose a status code that tells the client who has to act next.",
+      "assessment": "course:api-design/module/status"
+    },
+    {
+      "id": "outcome/shapes",
+      "description": "Design request and response bodies that are consistent and hard to misread.",
+      "assessment": "course:api-design/module/shapes"
+    },
+    {
+      "id": "outcome/errors",
+      "description": "Design an error response that a program can branch on and a person can fix.",
+      "assessment": "course:api-design/module/errors"
+    },
+    {
+      "id": "outcome/lists",
+      "description": "Design filtering, sorting and pagination for a collection that keeps growing.",
+      "assessment": "course:api-design/module/lists"
+    },
+    {
+      "id": "outcome/writes",
+      "description": "Make creates safe to retry and stop two clients from overwriting each other.",
+      "assessment": "course:api-design/module/writes"
+    },
+    {
+      "id": "outcome/versioning",
+      "description": "Tell a breaking change from a safe one and plan how an API evolves.",
+      "assessment": "course:api-design/module/versioning"
+    },
+    {
+      "id": "outcome/auth",
+      "description": "Separate who the caller is from what they may do, and answer each failure correctly.",
+      "assessment": "course:api-design/module/auth"
+    },
+    {
+      "id": "outcome/limits",
+      "description": "Design limits and caching that protect the service and tell clients what to do.",
+      "assessment": "course:api-design/module/limits"
+    },
+    {
+      "id": "outcome/async",
+      "description": "Design for work that takes longer than a request, and for telling clients that something happened.",
+      "assessment": "course:api-design/module/async"
+    },
+    {
+      "id": "outcome/styles",
+      "description": "Compare resource, procedure, query and event styles and choose one for a situation.",
+      "assessment": "course:api-design/module/styles"
+    },
+    {
+      "id": "outcome/docs",
+      "description": "Describe an API precisely and review a design against a checklist.",
+      "assessment": "course:api-design/module/docs"
+    },
+    {
+      "id": "outcome/capstone",
+      "description": "Review a flawed API and design a small one from a brief, without help.",
+      "assessment": "course:api-design/module/capstone"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:api-design/module/contract",
+      "title": "An API is a promise",
+      "prerequisites": [],
+      "teaches": [
+        "contract",
+        "consumer"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/contract/module.json"
+      }
+    },
+    {
+      "id": "course:api-design/module/resources",
+      "title": "Model resources and name them",
+      "prerequisites": [
+        "course:api-design/module/contract"
+      ],
+      "teaches": [
+        "resource",
+        "naming"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/resources/module.json"
+      }
+    },
+    {
+      "id": "course:api-design/module/methods",
+      "title": "Choose the method",
+      "prerequisites": [
+        "course:api-design/module/resources"
+      ],
+      "teaches": [
+        "method",
+        "safe",
+        "idempotent"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/methods/module.json"
+      }
+    },
+    {
+      "id": "course:api-design/module/status",
+      "title": "Answer with the right status",
+      "prerequisites": [
+        "course:api-design/module/methods"
+      ],
+      "teaches": [
+        "status-code"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/status/module.json"
+      }
+    },
+    {
+      "id": "course:api-design/module/shapes",
+      "title": "Shape requests and responses",
+      "prerequisites": [
+        "course:api-design/module/resources",
+        "course:api-design/module/status"
+      ],
+      "teaches": [
+        "representation",
+        "field-types"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/shapes/module.json"
+      }
+    },
+    {
+      "id": "course:api-design/module/errors",
+      "title": "Design errors people can act on",
+      "prerequisites": [
+        "course:api-design/module/status",
+        "course:api-design/module/shapes"
+      ],
+      "teaches": [
+        "error-body"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/errors/module.json"
+      }
+    },
+    {
+      "id": "course:api-design/module/lists",
+      "title": "Return lists that scale",
+      "prerequisites": [
+        "course:api-design/module/shapes"
+      ],
+      "teaches": [
+        "filtering",
+        "pagination"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/lists/module.json"
+      }
+    },
+    {
+      "id": "course:api-design/module/writes",
+      "title": "Make writes safe to retry",
+      "prerequisites": [
+        "course:api-design/module/methods",
+        "course:api-design/module/errors"
+      ],
+      "teaches": [
+        "idempotency-key",
+        "concurrency"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/writes/module.json"
+      }
+    },
+    {
+      "id": "course:api-design/module/versioning",
+      "title": "Change without breaking",
+      "prerequisites": [
+        "course:api-design/module/shapes",
+        "course:api-design/module/errors"
+      ],
+      "teaches": [
+        "breaking-change",
+        "version"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/versioning/module.json"
+      }
+    },
+    {
+      "id": "course:api-design/module/auth",
+      "title": "Know who is calling",
+      "prerequisites": [
+        "course:api-design/module/status",
+        "course:api-design/module/errors"
+      ],
+      "teaches": [
+        "authentication",
+        "authorization"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/auth/module.json"
+      }
+    },
+    {
+      "id": "course:api-design/module/limits",
+      "title": "Protect the service",
+      "prerequisites": [
+        "course:api-design/module/auth",
+        "course:api-design/module/lists"
+      ],
+      "teaches": [
+        "rate-limit",
+        "caching"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/limits/module.json"
+      }
+    },
+    {
+      "id": "course:api-design/module/async",
+      "title": "Handle slow work and events",
+      "prerequisites": [
+        "course:api-design/module/writes",
+        "course:api-design/module/limits"
+      ],
+      "teaches": [
+        "long-running",
+        "webhook"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/async/module.json"
+      }
+    },
+    {
+      "id": "course:api-design/module/styles",
+      "title": "Choose an API style",
+      "prerequisites": [
+        "course:api-design/module/async"
+      ],
+      "teaches": [
+        "api-style"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/styles/module.json"
+      }
+    },
+    {
+      "id": "course:api-design/module/docs",
+      "title": "Describe and review an API",
+      "prerequisites": [
+        "course:api-design/module/styles",
+        "course:api-design/module/versioning"
+      ],
+      "teaches": [
+        "description",
+        "design-review"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/docs/module.json"
+      }
+    },
+    {
+      "id": "course:api-design/module/capstone",
+      "title": "Review and design a whole API",
+      "prerequisites": [
+        "course:api-design/module/docs"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/capstone/module.json"
+      }
+    }
+  ],
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  },
+  "runtimeContentVersion": "0.1.0-preview.1"
+}

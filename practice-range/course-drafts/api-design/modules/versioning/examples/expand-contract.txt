@@ -1,0 +1,12 @@
+  Step 1  Today             priority: 2
+
+  Step 2  Expand            priority: 2
+                            priority_level: "high"     <- added
+
+          Old clients keep working. New clients use the new field.
+
+  Step 3  Announce          priority is deprecated, with a date
+
+  Step 4  Contract          priority_level: "high"
+          (next version,
+           after the date)

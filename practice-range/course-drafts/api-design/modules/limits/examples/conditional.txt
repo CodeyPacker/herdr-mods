@@ -1,0 +1,15 @@
+Client                                        Server
+  |  GET /projects/7/tasks                      |
+  |-------------------------------------------->|
+  |  200 OK   ETag: "v12"   (the full list)     |
+  |<--------------------------------------------|
+  |                                             |
+  |  ... later ...                              |
+  |                                             |
+  |  GET /projects/7/tasks                      |
+  |  If-None-Match: "v12"                       |
+  |-------------------------------------------->|  nothing has changed
+  |  304 Not Modified       (no body)           |
+  |<--------------------------------------------|
+  |                                             |
+  The client keeps the copy it already has.

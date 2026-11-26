@@ -1,0 +1,141 @@
+{
+  "id": "course:api-design/module/limits",
+  "title": "Protect the service",
+  "requires": [],
+  "outcomes": [],
+  "intro": "A public API is shared. One client in a tight loop, or one enormous request, can slow it for everyone else. This module covers the limits that protect a service, how to tell clients about them so they can behave well, and how caching removes work that never needed doing.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Why limits are part of the design",
+      "text": "Without limits, the capacity of the service belongs to whoever asks most. That is rarely an attacker. It is usually a client with a bug: a retry loop with no pause, or a job that requests every page as fast as it can.\n\nA limit protects the other clients and the service itself. It is also part of the contract. A client developer has to know the limits to design around them, so publish every one: requests per minute, the largest page, the largest request body, and how long a request may run."
+    },
+    {
+      "kind": "explanation",
+      "title": "Rate limits",
+      "text": "A **rate limit** allows each caller a number of requests in a period, such as 600 per minute for each credential. Count per credential, not per network address, so that many users behind one office network are not treated as one.\n\nWhen a caller goes over, answer `429 Too Many Requests` and say when to come back, with a `Retry-After` header giving the number of seconds to wait.\n\nBetter still, tell clients where they stand on every response, so that a well written client slows down before it is refused. Three headers are in common use for this: the limit, how much of it remains, and when it resets.",
+      "example": "rate-limit"
+    },
+    {
+      "kind": "explanation",
+      "title": "How a client should retry",
+      "text": "A limit only works if clients respond to it sensibly, so say what you expect of them.\n\n- On a `429` or a `503`, wait for the time in `Retry-After` before trying again.\n- With no such header, wait a little, then twice as long, then twice as long again. This is called **exponential backoff**.\n- Add a small random amount to each wait. Otherwise a thousand clients that failed together all retry at the same instant and fail together again.\n- Give up after a few attempts and report the failure.\n- Never retry a 4xx other than `429`. The request is wrong, and sending it again will not make it right.",
+      "example": "backoff"
+    },
+    {
+      "kind": "prediction",
+      "title": "Over the limit",
+      "text": "A client has used its 600 requests for this minute, with 20 seconds of the minute left. It sends one more.",
+      "questions": [
+        "over-limit"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Other limits worth setting",
+      "text": "| Limit | Answer when it is exceeded |\n| --- | --- |\n| Size of a request body | `413 Content Too Large` |\n| Items in one page | Cap at the maximum, or `400` |\n| Items in one batch request | `400` or `422`, saying what the maximum is |\n| Time one request may run | `503` or `504`, and design slow work as a job, as the next module shows |\n\nSet each of these before the first release. A limit that is added later breaks the clients that had been relying on its absence."
+    },
+    {
+      "kind": "explanation",
+      "title": "Caching: the request you do not have to answer",
+      "text": "The cheapest request is one that is answered from a copy. HTTP lets a server say how long an answer stays good.\n\n`Cache-Control: max-age=60` means the response may be reused for 60 seconds without asking again. Add `private` when the answer is specific to one caller, so that a shared cache between the client and the server does not hand it to somebody else.\n\nFor data that changes at unpredictable times, use a **conditional request**. The server sends an `ETag` with the response, the same version marker used earlier for safe updates. The client sends it back in `If-None-Match`. If nothing has changed, the server answers `304 Not Modified` with no body. The client keeps its copy, and both sides have saved the work of sending it again.",
+      "example": "conditional"
+    },
+    {
+      "kind": "debugging",
+      "title": "A dashboard that polls",
+      "text": "A wall display wants to stay up to date, so it sends this request once every second, all day.",
+      "example": "polling",
+      "questions": [
+        "polling"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: limits for the tracker",
+      "text": "The tracker is about to open its API to customers. Decide the following and note your reasons.\n\n1. A rate limit, and what it is counted against.\n2. The exact response when the limit is exceeded.\n3. What a wall display that wants fresh data should do instead of requesting the full list every second.\n4. One other limit you would publish.\n\nThen continue."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. 600 requests per minute for each credential. It is generous for an interactive app and it stops a runaway loop within a second.\n2. `429`, with `Retry-After` in seconds, the three rate limit headers, and the usual error body with the code `rate_limited`.\n3. Request the list every ten seconds with `If-None-Match`. Most answers are then a `304` with no body. If the display needs changes at once, a webhook, covered in the next module, removes the polling altogether.\n4. A maximum page size of 200 items, and a maximum request body of 1 MB.\n\nThe numbers matter less than the fact that they exist, are published, and are reported in a way a program can act on."
+    }
+  ],
+  "questions": [
+    {
+      "id": "over-limit",
+      "prompt": "Which response serves the client best?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "`503 Service Unavailable`",
+          "feedback": "The service is working. A 5xx tells the client and your own monitoring that something is broken."
+        },
+        {
+          "text": "`429` with `Retry-After: 20`",
+          "feedback": "The status says the client is going too fast, and the header says exactly how long to wait."
+        },
+        {
+          "text": "`200` with an empty list",
+          "feedback": "The client would treat an empty list as a real answer and show the user that nothing exists."
+        }
+      ]
+    },
+    {
+      "id": "polling",
+      "example": "polling",
+      "prompt": "What is the best first improvement?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "Raise the display's rate limit",
+          "feedback": "That lets the waste continue. Nearly every one of those requests returns data that has not changed."
+        },
+        {
+          "text": "Return fewer fields",
+          "feedback": "A smaller body helps a little. The request itself is still sent and answered 86,400 times a day."
+        },
+        {
+          "text": "Use a conditional request and a longer interval",
+          "feedback": "With `If-None-Match`, an unchanged list costs a `304` with no body, and a ten second interval cuts the requests tenfold."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "rate-limit": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/rate-limit.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    },
+    "backoff": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/backoff.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "conditional": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/conditional.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "polling": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/polling.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

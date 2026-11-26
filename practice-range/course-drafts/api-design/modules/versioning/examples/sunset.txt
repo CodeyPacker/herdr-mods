@@ -1,0 +1,8 @@
+GET /v1/tasks/42
+
+HTTP/1.1 200 OK
+Deprecation: true
+Sunset: Sat, 01 Nov 2025 00:00:00 GMT
+Link: <https://api.example.com/docs/moving-to-v2>; rel="sunset"
+
+{ "id": "42", ... }

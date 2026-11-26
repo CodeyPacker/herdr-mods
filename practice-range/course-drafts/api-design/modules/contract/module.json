@@ -1,0 +1,118 @@
+{
+  "id": "course:api-design/module/contract",
+  "title": "An API is a promise",
+  "requires": [],
+  "outcomes": [],
+  "intro": "This course is about designing APIs: deciding what a service offers to other programs and how they ask for it. It has no code to write. Each module explains a few ideas, shows them as requests, responses and diagrams, asks you to judge some designs, and ends with a short design exercise and one possible answer. The examples use one running product, a task tracker with projects, tasks and comments, reached over HTTP with JSON.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "What an API is",
+      "text": "An API (application programming interface) is the set of requests one program can make of another, and the responses it gets back. The program that asks is the **client**. The program that answers is the **server**.\n\nThe important word is *interface*. The client sees only the requests and responses. It does not see the server's code, its database, or the other services behind it. That boundary is what lets the two sides change separately.\n\nAn API is therefore a promise: a request shaped like this gets a response shaped like that. Clients are written against the promise.",
+      "example": "boundary"
+    },
+    {
+      "kind": "explanation",
+      "title": "Why a design is hard to change",
+      "text": "Inside your own code, a bad name costs a rename. In an API it does not, because you do not control the clients. Other teams, other companies and old versions of your own app keep sending the old requests for years.\n\nOnce a client depends on something, changing it breaks that client. So every decision you publish is either kept forever or removed at real cost. This includes decisions you made by accident. Given enough clients, somebody depends on every behavior they can observe: the order of a list, the exact wording of an error, a field you meant to remove.\n\nThe cheapest moment to fix an API is before anyone uses it. That is why the design deserves more care than the code behind it."
+    },
+    {
+      "kind": "prediction",
+      "title": "The cost of a name",
+      "text": "A field was released a year ago as `usr_nm`. Forty client programs read it. The team now wants to call it `username`.",
+      "questions": [
+        "rename-cost"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Start from the client",
+      "text": "Good design starts outside the server. Before drawing any endpoint, answer three questions.\n\n1. **Who calls this, and what are they trying to get done?** List the tasks a client performs, such as showing a project's open tasks or marking one done. Do not start from your database tables.\n2. **What does the client need to know when it fails?** Failures are part of the interface, and a client has to act on them.\n3. **What is likely to change?** New fields, new kinds of task, more data. Leave room for those.\n\nA useful habit is to write the requests you wish you could send, and the responses you wish you got back, before building anything. If they read well, the design is probably sound. If you cannot guess the next request from the last one, it is not."
+    },
+    {
+      "kind": "debugging",
+      "title": "Two ways to offer the same thing",
+      "text": "Both groups of requests do the same two jobs: change a task, and list the open tasks of a project. Read them as a client who has never seen the documentation.",
+      "example": "two-styles",
+      "questions": [
+        "predictable"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "What good looks like",
+      "text": "The rest of the course builds on five qualities. A well designed API is:\n\n- **Predictable.** The same idea is expressed the same way everywhere, so knowing one part lets you guess the rest.\n- **Hard to misuse.** The easy request is the correct one, and a wrong request is refused with a clear reason.\n- **Clear about failure.** Every error says what went wrong and whether trying again can help.\n- **Able to change.** New things can be added without breaking the clients that exist.\n- **Described.** Someone can use it from its description and examples alone.\n\nNone of these needs clever technology. They come from consistency and from thinking about the client first."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: who calls the tracker?",
+      "text": "Take five minutes with a piece of paper. The task tracker will have an API.\n\n1. Name three different kinds of client that might call it.\n2. For each, write one thing it needs to get done, as a plain sentence.\n3. For each, write one thing it needs to know when the request fails.\n\nThen continue to compare with one possible answer."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "- **The team's web app.** It shows the open tasks of a project, newest first. On failure it needs to know whether to show \"not found\" or \"try again\".\n- **A phone app on a poor connection.** It marks a task done and may send the request twice when the first reply is lost. It needs repeating a request to be safe.\n- **Another company's integration.** It creates tasks from its own system every night, unattended. It needs errors a program can read, and a warning before anything changes.\n\nNotice that none of these mentions a table or a class. Each one is a job and a failure. The next modules turn jobs like these into addresses, methods and responses."
+    }
+  ],
+  "questions": [
+    {
+      "id": "rename-cost",
+      "prompt": "When was the cheapest time to choose the better name?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Before the first release",
+          "feedback": "Nothing depended on the name yet, so changing it would have cost a few minutes."
+        },
+        {
+          "text": "Now, with a rename",
+          "feedback": "A rename breaks all forty clients at once unless both names are kept, and then both must be supported for a long time."
+        },
+        {
+          "text": "It makes no difference",
+          "feedback": "The cost grows with every client that reads the field."
+        }
+      ]
+    },
+    {
+      "id": "predictable",
+      "example": "two-styles",
+      "prompt": "What makes the second group better for a new client?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "It has fewer characters",
+          "feedback": "Length is not the point. The first group could be short and still unguessable."
+        },
+        {
+          "text": "You can guess the next request from the ones you know",
+          "feedback": "The same pattern, a thing and an action on it, is used for every request, so one example teaches the rest."
+        },
+        {
+          "text": "It uses more HTTP methods",
+          "feedback": "Using more methods is a result of the design, not its goal. The gain is that the pattern is consistent."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "boundary": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/boundary.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "two-styles": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/two-styles.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

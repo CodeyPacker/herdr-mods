@@ -1,0 +1,127 @@
+{
+  "id": "course:api-design/module/errors",
+  "title": "Design errors people can act on",
+  "requires": [],
+  "outcomes": [],
+  "intro": "A client spends much of its code handling requests that did not work. The status code gives the family of the failure. The body has to give the rest: exactly what went wrong, in a form a program can act on and a person can read. This module covers the design of that body.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Who reads an error",
+      "text": "An error response has three readers, and each needs something different.\n\n- **The client program** needs to decide what to do: show a message beside a field, ask the user to sign in, wait and retry, or give up. It needs a value it can compare, and that value must never change.\n- **The developer** who is building the client needs to understand the mistake quickly. They need a sentence in plain words.\n- **The person supporting the API** needs to find this exact request in the logs. They need an identifier.\n\nAn error that is only a sentence serves one of the three. A program should never have to search inside a sentence to decide what to do, because sentences get reworded."
+    },
+    {
+      "kind": "explanation",
+      "title": "The parts of a good error",
+      "text": "| Part | Example | For |\n| --- | --- | --- |\n| Status code | `422` | Everything that reads only the status |\n| Error code | `\"validation_failed\"` | The client program. Stable text, never reworded. |\n| Message | `\"Two fields are not valid.\"` | The developer. May be reworded at any time. |\n| Details | Which field, and what is wrong with it | The program and the developer |\n| Request identifier | `\"req_8f3a2c\"` | Support, to find the request in the logs |\n\nThere is a published standard for this shape, called problem details (RFC 9457). It defines a few common fields, `type`, `title`, `status`, `detail` and `instance`, and lets you add your own. You do not have to adopt it, but it is a sound default, and a client that has seen it before will recognize it.",
+      "example": "error"
+    },
+    {
+      "kind": "explanation",
+      "title": "Rules that make errors usable",
+      "text": "1. **One shape for every error.** A missing task, a bad field and a server fault all use the same top-level fields. A client writes its error handling once.\n2. **The error code is part of the contract.** Clients compare it, so treat a change to it like a change to a field name. The message is free to improve.\n3. **Report every problem at once.** If three fields are wrong, say so in one response. Reporting them one at a time costs the user three round trips.\n4. **Point at the field.** Name the field that failed, so a client can show the message beside the right input.\n5. **Say whether trying again can help.** For a rate limit or an overloaded server, add a `Retry-After` header.\n6. **Say nothing about your insides.** No stack traces, no query text, no server names, no file paths."
+    },
+    {
+      "kind": "prediction",
+      "title": "Showing an error beside a field",
+      "text": "A form in the web app creates a task. When the title is too long, the app should show a message directly under the title box, in the user's own language.",
+      "questions": [
+        "field-error"
+      ]
+    },
+    {
+      "kind": "debugging",
+      "title": "An error that says too much",
+      "text": "This response was returned when a client sent a task with a missing project.",
+      "example": "leaky",
+      "questions": [
+        "leaky"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "What to keep to yourself",
+      "text": "The response in the last step is useful to the developer who wrote the server and to nobody else who should have it. It tells an attacker the database, the table and column names, the file layout and the framework. It also ties clients to wording that will change with the next refactoring.\n\nLog the full detail on the server, under the request identifier. Return the identifier and a message written for the caller. When the fault is yours, the honest message is short: something went wrong on our side, here is the identifier to quote.\n\nBe careful with detail that helps guessing. An error for a failed sign-in should not say whether the name or the password was wrong."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: two wrong fields",
+      "text": "A client sends this request. The tracker requires a title of 1 to 120 characters and a due date that is a real calendar date.\n\n`POST /projects/7/tasks` with the body `{\"title\": \"\", \"due_on\": \"2025-02-30\"}`\n\nDesign the complete response: the status line, any headers that matter, and the body. Then continue."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "The status is `422` because the JSON was readable and two values broke rules. Both problems are reported together. Each entry names its field, carries a code a program can compare, and has a message a developer can read. The top-level `code` lets a client that does not care about details handle all validation failures the same way. The request identifier lets support find the request.\n\nNothing in it depends on how the server is built.",
+      "example": "validation"
+    }
+  ],
+  "questions": [
+    {
+      "id": "field-error",
+      "prompt": "What must the error contain for the app to do this reliably?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "A clear English sentence",
+          "feedback": "The app would have to search inside the sentence to find the field, and it could not translate it."
+        },
+        {
+          "text": "The status code `422`",
+          "feedback": "The status says the input was invalid. It does not say which field, or why."
+        },
+        {
+          "text": "The name of the field and a stable code for the problem",
+          "feedback": "With `field: \"title\"` and `code: \"too_long\"`, the app knows where to show the message and can choose its own wording."
+        }
+      ]
+    },
+    {
+      "id": "leaky",
+      "example": "leaky",
+      "prompt": "What is the main problem with this response?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "It exposes how the server is built",
+          "feedback": "The query, the table and the file path help an attacker and mean nothing to an honest client."
+        },
+        {
+          "text": "It uses the wrong status code",
+          "feedback": "`500` is plausible here. The trouble is what the body reveals."
+        },
+        {
+          "text": "It is too long to read",
+          "feedback": "Length is not the harm. The content is."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "error": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/error.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    },
+    "leaky": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/leaky.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    },
+    "validation": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/validation.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

@@ -1,0 +1,15 @@
+  DESIGN REVIEW
+
+  Clients     Who calls this, and what job are they doing?
+  Resources   Are the addresses nouns, named like the rest of the API?
+  Methods     Does each method keep its promise: safe, idempotent?
+  Status      Does every outcome have a truthful status code?
+  Bodies      Are fields named and typed as elsewhere? Dates, ids?
+  Errors      One shape, a stable code, every problem at once?
+  Lists       Is there a page size, a complete order, a cursor?
+  Writes      Can a create be retried? Can two edits collide?
+  Change      Can this grow by adding? What could never be removed?
+  Access      Is each object checked? Which scope is needed?
+  Limits      What stops one client from using everything?
+  Slow work   Does anything take longer than a request should?
+  Described   Could a stranger use it from the description alone?

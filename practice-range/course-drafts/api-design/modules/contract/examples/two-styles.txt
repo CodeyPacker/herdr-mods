@@ -1,0 +1,7 @@
+# Group 1
+POST /api/doTaskUpdate?id=42&mode=2
+GET  /api/getTasksList2?prj=7&st=1
+
+# Group 2
+PATCH /tasks/42
+GET   /projects/7/tasks?status=open

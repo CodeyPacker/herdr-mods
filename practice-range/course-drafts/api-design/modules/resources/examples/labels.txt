@@ -1,0 +1,7 @@
+/labels                      every label
+/labels/urgent               one label
+
+/tasks/42/labels             the labels on task 42
+/tasks/42/labels/urgent      "task 42 carries the label urgent"
+
+/tasks?label=urgent          the tasks that carry the label

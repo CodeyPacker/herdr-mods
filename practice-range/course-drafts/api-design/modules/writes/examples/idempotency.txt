@@ -1,0 +1,15 @@
+Client                                       Server
+  |                                            |
+  | POST /tasks   Idempotency-Key: a1b2        |
+  |------------------------------------------->| key a1b2 is new:
+  |                                            |   create task 99
+  |      201 Created   (lost on the way)       |   remember a1b2 -> 201
+  |          x<--------------------------------|
+  |                                            |
+  | POST /tasks   Idempotency-Key: a1b2        |
+  |------------------------------------------->| key a1b2 is known:
+  |                                            |   create nothing
+  | 201 Created   { "id": "99", ... }          |   replay the 201
+  |<-------------------------------------------|
+
+  One task exists. The client got its answer.

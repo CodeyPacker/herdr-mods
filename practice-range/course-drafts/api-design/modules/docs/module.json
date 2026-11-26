@@ -1,0 +1,141 @@
+{
+  "id": "course:api-design/module/docs",
+  "title": "Describe and review an API",
+  "requires": [],
+  "outcomes": [],
+  "intro": "An API that cannot be understood from its description will be used wrongly, or not at all. The description is part of the product, and writing it early is one of the best ways to find design problems. This module covers what a description must contain, a standard format for it, and how to review a design before anyone builds it.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Three kinds of description",
+      "text": "People come to an API's description with different questions, and one document rarely answers them all.\n\n- **A reference** lists everything: each endpoint, each field, each error. It has to be complete and exact. People look things up in it.\n- **Guides** explain how to get a job done from start to finish: create a project, add tasks, receive an event when one is completed. People read these first.\n- **Examples** are real requests and real responses that can be copied. Most developers start by copying one.\n\nIf only one of the three can be done well, make it the examples. A correct example answers questions the prose forgot to cover."
+    },
+    {
+      "kind": "explanation",
+      "title": "What every endpoint needs",
+      "text": "For each operation, a client developer needs to be able to find:\n\n1. What it is for, in one sentence.\n2. The method and the address.\n3. Every parameter and field: its name, its type, whether it is required, its limits and its default.\n4. A complete example request and the response to it.\n5. Every error it can return, with the code and what the client should do about it.\n6. The permission it needs.\n7. Whether it is safe to retry, and which limits apply.\n\nItems 5 to 7 are the ones most often left out. They are also the ones a client cannot find out by trying, because failures and limits do not show up in a quick test."
+    },
+    {
+      "kind": "explanation",
+      "title": "A description a program can read",
+      "text": "For HTTP APIs there is a standard format for the reference, called **OpenAPI**. It is a text file that lists the addresses, methods, parameters, bodies and responses in a fixed structure.\n\nBecause a program can read it, one file can produce the reference pages, generate client code, drive a fake server for clients to build against, and check that the real server still answers as described.\n\nIt also makes **design first** practical. Write the description before the code, share it, and argue about it while changing it still costs nothing. That is the cheapest moment the first module talked about.",
+      "example": "openapi"
+    },
+    {
+      "kind": "debugging",
+      "title": "A reference entry",
+      "text": "This is the complete entry for one endpoint in an API's reference.",
+      "example": "thin-docs",
+      "questions": [
+        "thin-docs"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Write the rules down once",
+      "text": "Consistency across an API comes from decisions that are made once and recorded. A short **style guide** holds them. It is for the people who add endpoints, and it settles questions before they are argued again.\n\nA useful guide fits on a page or two and answers:\n\n- How are addresses and fields named?\n- Which methods and status codes are used, and for what?\n- What does every error look like?\n- How do lists page, filter and sort?\n- How are dates, money and identifiers written?\n- How are changes made, and how is something retired?\n- How does a caller prove who it is?\n\nEach module of this course has been one section of such a guide."
+    },
+    {
+      "kind": "explanation",
+      "title": "Review before building",
+      "text": "A design review is a short meeting, or a written exchange, in which someone who did not write the design reads it as a client would. It needs the description and a list of questions.\n\nThe list in the example is a starting point. It is one question for each module of this course. A design that passes all of them is not guaranteed to be good, but one that fails several will cause trouble that is expensive to repair later.",
+      "example": "checklist"
+    },
+    {
+      "kind": "prediction",
+      "title": "When to review",
+      "text": "A team has two weeks to add time tracking to the tracker's API.",
+      "questions": [
+        "when-review"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: describe one endpoint",
+      "text": "Write the reference entry for `POST /projects/{id}/tasks`, which creates a task in a project. Use plain words, not OpenAPI.\n\nCover the seven items from earlier in this module. Invent sensible limits where you need them. Then continue."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "The entry answers the questions a client developer would otherwise have to find out by experiment or by asking. In particular it says what each failure means and what to do about it, and that the request can be retried with a key.",
+      "example": "entry"
+    }
+  ],
+  "questions": [
+    {
+      "id": "thin-docs",
+      "example": "thin-docs",
+      "prompt": "What is the most important thing missing?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "A longer introduction",
+          "feedback": "More prose would not tell the client what it needs to build against."
+        },
+        {
+          "text": "The name of the programmer to contact",
+          "feedback": "Useful, perhaps, but a client should not need to ask a person how an endpoint behaves."
+        },
+        {
+          "text": "The fields, an example, and what can go wrong",
+          "feedback": "Without the body's fields, an example and the errors, a client can only guess, and it will find the failures in production."
+        }
+      ]
+    },
+    {
+      "id": "when-review",
+      "prompt": "When is the best time to review the design?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "In the first days, from a written description, before any code",
+          "feedback": "Changing a description costs minutes. The review can then shape what gets built."
+        },
+        {
+          "text": "After the code is finished and tested",
+          "feedback": "By then a design problem means rewriting code, and there is pressure to release it as it is."
+        },
+        {
+          "text": "After release, once customers give feedback",
+          "feedback": "After release, every fix is a breaking change or a permanent workaround."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "openapi": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/openapi.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "thin-docs": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/thin-docs.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "checklist": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/checklist.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "entry": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/entry.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

@@ -1,0 +1,10 @@
+{
+  "ID": 42,
+  "TaskTitle": "Pack boxes",
+  "st": 1,
+  "due": "03/01/2025",
+  "created": 1739178900,
+  "is_not_archived": true,
+  "labels": null,
+  "price": 19.99
+}

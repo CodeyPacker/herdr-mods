@@ -1,0 +1,16 @@
+GET /projects/7/tasks?status=open&sort=due_on&limit=20
+
+HTTP/1.1 200 OK
+{
+  "data": [
+    { "id": "42", "title": "Pack boxes", "due_on": "2025-03-01", ... },
+    { "id": "57", "title": "Print labels", "due_on": "2025-03-01", ... }
+  ],
+  "next_cursor": "eyJkdWUiOiIyMDI1LTAzLTAxIiwiaWQiOiI1NyJ9"
+}
+
+GET /projects/7/tasks?status=open&sort=due_on&limit=20
+    &cursor=eyJkdWUiOiIyMDI1LTAzLTAxIiwiaWQiOiI1NyJ9
+
+HTTP/1.1 200 OK
+{ "data": [ ... ], "next_cursor": null }

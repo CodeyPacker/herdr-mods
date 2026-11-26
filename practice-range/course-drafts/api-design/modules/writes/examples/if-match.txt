@@ -1,0 +1,15 @@
+GET /tasks/42
+
+HTTP/1.1 200 OK
+ETag: "v5"
+{ "id": "42", "title": "Pack", ... }
+
+PATCH /tasks/42
+If-Match: "v5"
+{ "title": "Pack all" }
+
+# Somebody else changed the task in between, so it is now "v6".
+
+HTTP/1.1 412 Precondition Failed
+{ "code": "version_mismatch",
+  "detail": "The task has changed since you read it." }

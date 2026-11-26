@@ -1,0 +1,11 @@
+# Change the title. The assignee is not mentioned, so it stays.
+PATCH /tasks/42
+{ "title": "Pack the boxes" }
+
+# Remove the assignee. null means "no value".
+PATCH /tasks/42
+{ "assignee": null }
+
+# Remove every label. An empty list is a value.
+PATCH /tasks/42
+{ "labels": [] }

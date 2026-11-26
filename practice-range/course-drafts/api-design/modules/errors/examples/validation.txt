@@ -1,0 +1,16 @@
+HTTP/1.1 422 Unprocessable Content
+Content-Type: application/problem+json
+
+{
+  "type": "https://api.example.com/problems/validation-failed",
+  "title": "Some fields are not valid",
+  "status": 422,
+  "code": "validation_failed",
+  "request_id": "req_41b7d0",
+  "errors": [
+    { "field": "title",  "code": "required",
+      "message": "The title must have 1 to 120 characters." },
+    { "field": "due_on", "code": "invalid_date",
+      "message": "2025-02-30 is not a calendar date." }
+  ]
+}

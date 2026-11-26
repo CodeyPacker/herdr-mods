@@ -1,0 +1,142 @@
+{
+  "id": "course:api-design/module/writes",
+  "title": "Make writes safe to retry",
+  "requires": [],
+  "outcomes": [],
+  "intro": "Reading twice is harmless. Writing twice can charge a card twice or create two tasks, and two clients writing at once can erase each other's work. This module covers two techniques that make writes safe: a key that lets a create be retried, and a version check that stops silent overwrites.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "The retry problem",
+      "text": "An earlier module showed that a client cannot tell a lost request from a lost reply. With `PUT` or `DELETE` it can simply retry. With `POST` it cannot, because each `POST` creates something new.\n\nTelling clients \"do not retry\" is not an answer. They retry anyway: on purpose, through a library, or because a user pressed the button again. The API has to make the retry harmless."
+    },
+    {
+      "kind": "explanation",
+      "title": "Idempotency keys",
+      "text": "The standard fix is an **idempotency key**. The client makes up a unique value for each operation it intends to perform, usually a random identifier, and sends it in a header such as `Idempotency-Key`. If it retries, it sends the same key.\n\nThe server remembers each key together with the response it gave.\n\n- A key it has not seen: do the work, store the response under the key, return it.\n- A key it has seen: do nothing, and return the stored response again.\n- A key it has seen with a different body: refuse, because the client has made a mistake. `422` is a common choice.\n\nThe client gets the same answer whether its first attempt arrived or not, and the work happens once. Keys only need to be kept for as long as a retry is plausible, often a day.",
+      "example": "idempotency"
+    },
+    {
+      "kind": "prediction",
+      "title": "The same key twice",
+      "text": "A client sends `POST /tasks` with `Idempotency-Key: a1b2`. The server creates task 99, but the reply is lost. The client sends the identical request again with the same key.",
+      "questions": [
+        "same-key"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Let the client choose the address",
+      "text": "Sometimes no key is needed, because the operation can be made idempotent by design. If the client decides the address, creating becomes a `PUT`.\n\n`PUT /tasks/42/labels/urgent` means \"task 42 carries the label urgent\". Sending it twice changes nothing the second time. The label module's design had this property without any extra machinery.\n\nWhenever a create can be phrased as \"make sure this exists at this address\", prefer that phrasing."
+    },
+    {
+      "kind": "explanation",
+      "title": "The lost update",
+      "text": "The second problem needs two clients. Both read the same task. Both change it and send their version back. The second write replaces the first, and nobody is told. This is called a **lost update**.",
+      "example": "lost-update"
+    },
+    {
+      "kind": "explanation",
+      "title": "Check the version before writing",
+      "text": "The fix is to let a write say which version it was based on. This is called **optimistic concurrency**: assume there is no clash, and check at the last moment.\n\n1. When the server returns a resource, it adds an `ETag` header: a short value that changes whenever the resource changes.\n2. When the client updates, it sends that value back in an `If-Match` header. It means \"apply this only if the resource is still the version I read\".\n3. If the version still matches, the server applies the change. If it does not, the server answers `412 Precondition Failed` and changes nothing.\n\nOn a `412`, the client reads the resource again, shows or merges the other change, and tries again. Nothing is lost silently.\n\nAn API can go further and require the header on every update, answering `428 Precondition Required` when it is missing. That is worth it for resources many people edit.",
+      "example": "if-match"
+    },
+    {
+      "kind": "debugging",
+      "title": "Two editors",
+      "text": "Read the lost-update diagram once more. Now suppose the API requires `If-Match` on every update.",
+      "example": "lost-update",
+      "questions": [
+        "if-match"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: exporting a project",
+      "text": "A client asks the tracker to build an export of a project. Building it is slow and costs money, so it must never be started twice by accident. The client is a nightly job that retries on any failure.\n\nDesign the request that starts an export so that a retry is safe. Say what the server stores, what the client sees on its first attempt, and what it sees on a retry. Then continue."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "The job makes up one key for each night's export and sends it with every attempt. The first attempt that arrives creates the export and stores the response under the key. Every later attempt with that key gets the same response back, with the same export identifier, and starts nothing.\n\nThe job does not need to know which of its attempts succeeded. It only needs to keep sending the same key until it gets an answer.",
+      "example": "export"
+    }
+  ],
+  "questions": [
+    {
+      "id": "same-key",
+      "prompt": "What should the server do with the second request?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Return the stored response for task 99 and create nothing",
+          "feedback": "The key shows this is a retry of work that was already done, so the client gets the original answer."
+        },
+        {
+          "text": "Create a second task",
+          "feedback": "That is the problem the key exists to prevent."
+        },
+        {
+          "text": "Answer `409 Conflict`",
+          "feedback": "The client did nothing wrong by retrying. It should receive the same success it would have received the first time."
+        }
+      ]
+    },
+    {
+      "id": "if-match",
+      "example": "lost-update",
+      "prompt": "What happens to Ben's write in that case?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "It replaces Ana's change, as before",
+          "feedback": "Ben's request names the version he read. The server sees that the task has changed since."
+        },
+        {
+          "text": "Both changes are merged automatically",
+          "feedback": "The server cannot know how to merge. It refuses and leaves the decision to the client."
+        },
+        {
+          "text": "It is refused with `412`, and Ana's change is kept",
+          "feedback": "The task is no longer the version Ben read, so the precondition fails. Ben's client reads again and decides what to do."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "idempotency": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/idempotency.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "lost-update": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/lost-update.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "if-match": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/if-match.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    },
+    "export": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/export.txt"
+      },
+      "readOnly": true,
+      "fence": "http"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}
