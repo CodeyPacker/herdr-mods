@@ -14,6 +14,7 @@ export { fake } from './fakes.mjs';
 export { element, findElement } from './elements.mjs';
 
 const MOD = new URL('../../mods/hey-chat/', import.meta.url).href;
+const ISLANDS = new URL('../../../islands/mods/', import.meta.url).href;
 const STUBS = new URL('./stubs/', import.meta.url).href;
 const FAKES = new URL('./fakes.mjs', import.meta.url).href;
 /** Herdr's own modules, for the mod's .js files (its .mjs files run in Node). */
@@ -56,7 +57,7 @@ function wrapper(name) {
 registerHooks({
   resolve(specifier, context, next) {
     const parent = context.parentURL ?? '';
-    if (!parent.startsWith(MOD)) return next(specifier, context);
+    if (!parent.startsWith(MOD) && !parent.startsWith(ISLANDS)) return next(specifier, context);
     const herdrSide = parent.split('?')[0].endsWith('.js');
     if (herdrSide && HERDR[specifier]) return { url: STUBS + HERDR[specifier], shortCircuit: true };
     if (FAKEABLE.has(specifier)) return { url: WRAPPED + specifier, shortCircuit: true };
