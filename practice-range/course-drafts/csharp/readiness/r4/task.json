@@ -1,0 +1,69 @@
+{
+  "id": "course:cs-foundations/task/readiness-r4",
+  "role": "readiness",
+  "title": "Readiness 4 · Generics through tracker",
+  "concepts": [
+    "generic",
+    "await",
+    "async-failure",
+    "tests",
+    "interface",
+    "list"
+  ],
+  "prompt": "IReader<T> and two readers are supplied. Write two methods. public static async Task<T> ReadOrAsync<T>(IReader<T> reader, T fallback) returns the value the reader reads. When the reader throws InvalidOperationException, it returns the fallback. A value of 0 or an empty string is a real result. public static bool LastOrCheck(Func<List<int>, int, int> candidate) is a check for a candidate that should return the last item of a list, or the given fallback for an empty list. Return true for a correct candidate. Return false for a faulty one that returns the first item, and for one that returns 0 for an empty list whatever the fallback is.",
+  "hints": [
+    "For ReadOrAsync, where does a failed read show up? For LastOrCheck, which inputs make each faulty candidate give a different answer?",
+    "A list with two different items exposes first versus last. An empty list with a fallback other than 0 exposes the second bug.",
+    "Await the read in a try and return fallback from catch (InvalidOperationException). In the check, compare candidate(list of 4 and 9, 0) with 9 and candidate(empty list, 7) with 7."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.ReadOrAsync(new MemoryReader<int>(5), -1).GetAwaiter().GetResult() == 5",
+    "Practice.ReadOrAsync(new MemoryReader<string>(\"Pack\"), \"none\").GetAwaiter().GetResult() == \"Pack\"",
+    "Practice.ReadOrAsync(new OfflineReader<int>(), -1).GetAwaiter().GetResult() == -1",
+    "Practice.ReadOrAsync(new MemoryReader<int>(0), -1).GetAwaiter().GetResult() == 0",
+    "Practice.LastOrCheck((items, fallback) => items.Count == 0 ? fallback : items[items.Count - 1]) == true",
+    "Practice.LastOrCheck((items, fallback) => items.Count == 0 ? fallback : items[0]) == false",
+    "Practice.LastOrCheck((items, fallback) => items.Count == 0 ? 0 : items[items.Count - 1]) == false"
+  ],
+  "checkLabels": [
+    "A reader holding 5 must give 5.",
+    "The same method must work for a reader of strings.",
+    "An offline reader must give the fallback.",
+    "A value of 0 is a real result, not a failure.",
+    "A correct candidate must pass your check.",
+    "A candidate that returns the first item must fail your check.",
+    "A candidate that returns 0 for an empty list must fail your check."
+  ],
+  "fixtures": [
+    {
+      "id": "readers",
+      "declarations": "fixture-readers.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-catch.cs",
+      "misconception": "Awaits the read with nothing to handle an offline reader.",
+      "witness": {
+        "fixture": "readers",
+        "kind": "result",
+        "detail": "InvalidOperationException"
+      }
+    },
+    {
+      "source": "wrong-one-item.cs",
+      "misconception": "Tests a list with one item, where first and last are the same.",
+      "witness": {
+        "fixture": "readers",
+        "kind": "result",
+        "detail": "Check 6 failed"
+      }
+    }
+  ],
+  "feedback": "For the reader, compare an offline reader with one that holds 0. For the check, find an input where each faulty candidate gives a different answer from a correct one."
+}

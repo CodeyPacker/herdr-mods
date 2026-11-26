@@ -72,4 +72,5 @@ An example is a `.cs` file of top-level statements, optionally followed by type 
 
 - L1: The checker compiles with nullable reference types switched off. `string?` compiles, but null-safety warnings never appear and cannot be checked. The editor project switches them on, so the learner's editor and the checker disagree.
 - L2: Printed numbers use the machine's culture. A `double` such as 3.5 prints as `3,5` on some systems. Examples and output checks avoid printing fractional numbers.
-- L3: Running the verifier with no module keys also checks the project and fails when the manifest has no `project`. Until the project exists, pass module keys.
+- L3: Every check starts two .NET processes, so a full verifier run takes many minutes. Pass module keys while writing. A run with no keys also checks the project and readiness tasks, and it needs the manifest's `project` entry to exist.
+- L4: In `members` and `types` mode the checks are compiled together with the answer. If an answer leaves out a type or member the checks name, the compiler error points at generated check code the learner cannot see. Where a task asks the learner to implement an interface or extend a class, the checks reach it through a `support` helper that casts through `object`, so a missing declaration fails at run time with a readable `InvalidCastException`.

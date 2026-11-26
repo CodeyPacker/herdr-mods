@@ -1,0 +1,68 @@
+{
+  "id": "course:cs-foundations/task/readiness-r1",
+  "role": "readiness",
+  "title": "Readiness 1 · Values through collections",
+  "concepts": [
+    "method",
+    "list",
+    "loop",
+    "branch",
+    "number-types"
+  ],
+  "prompt": "Write two methods. public static int FinalCount(int start, List<int> changes) starts from start, adds every change that is 0 or more, and ignores negative changes. An empty list returns start. public static double AverageChange(List<int> changes) returns the average of all the changes, negative ones included, keeping any fraction. An empty list returns 0.",
+  "hints": [
+    "Keep a running total. Where does it begin in each method?",
+    "FinalCount needs a test inside its loop. AverageChange needs a division that keeps its fraction.",
+    "In AverageChange, return 0 for an empty list, add the changes into a double, and divide by Count."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.FinalCount(3, new List<int>()) == 3",
+    "Practice.FinalCount(0, new List<int> { 0, 0 }) == 0",
+    "Practice.FinalCount(2, new List<int> { 1, -5, 4 }) == 7",
+    "Practice.FinalCount(5, new List<int> { -1, -1 }) == 5",
+    "Practice.AverageChange(new List<int> { 1, 2 }) == 1.5",
+    "Practice.AverageChange(new List<int>()) == 0",
+    "Practice.AverageChange(new List<int> { -4, 4 }) == 0"
+  ],
+  "checkLabels": [
+    "With no changes, FinalCount must return the start.",
+    "Changes of 0 must leave the count at 0.",
+    "Negative changes must be ignored: 2, 1 and 4 give 7.",
+    "Only negative changes must leave the start unchanged.",
+    "The average of 1 and 2 must be 1.5.",
+    "The average of no changes must be 0.",
+    "Negative changes count in the average: -4 and 4 give 0."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-adds-negative.cs",
+      "misconception": "Adds negative changes to the count.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    },
+    {
+      "source": "wrong-int-division.cs",
+      "misconception": "Divides two ints, so the average loses its fraction.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 5 failed"
+      }
+    }
+  ],
+  "feedback": "Compare an empty list, a list of zeros and a mix of positive and negative changes. For the average, check the types on both sides of the division."
+}

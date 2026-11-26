@@ -1,0 +1,41 @@
+{
+  "id": "course:cs-foundations/project/tracker",
+  "title": "Task tracker",
+  "checkpoints": [
+    {
+      "id": "course:cs-foundations/project/tracker/count",
+      "module": "course:cs-foundations/module/methods",
+      "status": "task",
+      "title": "Update the board count",
+      "task": "count/task.json"
+    },
+    {
+      "id": "course:cs-foundations/project/tracker/group",
+      "module": "course:cs-foundations/module/linq",
+      "status": "task",
+      "title": "Count tasks by status",
+      "task": "group/task.json"
+    },
+    {
+      "id": "course:cs-foundations/project/tracker/test-edit",
+      "module": "course:cs-foundations/module/checks",
+      "status": "task",
+      "title": "Catch a broken rename",
+      "task": "test-edit/task.json"
+    },
+    {
+      "id": "course:cs-foundations/project/tracker/local-reader",
+      "module": "course:cs-foundations/module/tracker",
+      "status": "task",
+      "title": "Read and validate local tasks",
+      "task": "local-reader/task.json"
+    },
+    {
+      "id": "course:cs-foundations/project/tracker/audit",
+      "module": "course:cs-foundations/module/report",
+      "status": "task",
+      "title": "Audit a task import",
+      "existingTask": "course:cs-foundations/task/report-audit"
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "id": "course:cs-foundations/task/project-group",
+  "role": "project",
+  "title": "Project 2 · Count tasks by status",
+  "concepts": [
+    "dictionary",
+    "linq-query",
+    "lambda",
+    "record",
+    "loop"
+  ],
+  "prompt": "TaskItem is supplied. Each task has a Status such as \"open\", \"done\" or \"blocked\". Write public static Dictionary<string, int> CountByStatus(List<TaskItem> tasks). Return each status that appears with the number of tasks that have it. A status with no tasks is not a key, and an empty list gives an empty dictionary.",
+  "hints": [
+    "Which value of a task decides the group it belongs to?",
+    "Each status needs one count that grows by 1 for every task with that status.",
+    "Group by Status and count each group, or loop and add 1 to a dictionary entry, starting a new status at 1."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "support": "static List<TaskItem> Board() => new List<TaskItem>\n{\n    new TaskItem(1, \"Pack\", \"open\", \"Ana\"),\n    new TaskItem(2, \"Ship\", \"open\", \"Ben\"),\n    new TaskItem(3, \"Label\", \"done\", \"Ana\"),\n    new TaskItem(4, \"Audit\", \"blocked\", \"Ana\"),\n    new TaskItem(5, \"Count\", \"open\", \"Ana\"),\n};\n",
+  "checks": [
+    "Practice.CountByStatus(Board())[\"open\"] == 3",
+    "Practice.CountByStatus(Board())[\"done\"] == 1",
+    "Practice.CountByStatus(Board())[\"blocked\"] == 1",
+    "Practice.CountByStatus(Board()).Count == 3",
+    "Practice.CountByStatus(Board()).ContainsKey(\"waiting\") == false",
+    "Practice.CountByStatus(new List<TaskItem>()).Count == 0"
+  ],
+  "checkLabels": [
+    "Three tasks are open.",
+    "One task is done.",
+    "One task is blocked.",
+    "Three different statuses appear, so there must be three keys.",
+    "A status that no task has must not be a key.",
+    "An empty list must give an empty dictionary."
+  ],
+  "fixtures": [
+    {
+      "id": "tasks",
+      "declarations": "fixture-tasks.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-by-owner.cs",
+      "misconception": "Groups by owner instead of status.",
+      "witness": {
+        "fixture": "tasks",
+        "kind": "result",
+        "detail": "KeyNotFoundException"
+      }
+    },
+    {
+      "source": "wrong-always-one.cs",
+      "misconception": "Stores 1 for a status however many tasks have it.",
+      "witness": {
+        "fixture": "tasks",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Count the open tasks in the failing list by hand, then check which value you group by and how each count grows."
+}

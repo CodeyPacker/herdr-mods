@@ -439,9 +439,56 @@
       }
     }
   ],
+  "project": "project/project.json",
   "compatibility": {
     "fromVersions": [],
     "replacements": []
   },
-  "runtimeContentVersion": "0.1.0-preview.1"
+  "runtimeContentVersion": "0.1.0-preview.1",
+  "readiness": [
+    {
+      "id": "R1",
+      "title": "Values through collections",
+      "modules": [
+        "course:cs-foundations/module/values",
+        "course:cs-foundations/module/decisions",
+        "course:cs-foundations/module/methods",
+        "course:cs-foundations/module/collections"
+      ],
+      "task": "readiness/r1/task.json"
+    },
+    {
+      "id": "R2",
+      "title": "Classes through lookups",
+      "modules": [
+        "course:cs-foundations/module/classes",
+        "course:cs-foundations/module/records",
+        "course:cs-foundations/module/nulls",
+        "course:cs-foundations/module/lookups"
+      ],
+      "task": "readiness/r2/task.json"
+    },
+    {
+      "id": "R3",
+      "title": "LINQ through exceptions",
+      "modules": [
+        "course:cs-foundations/module/linq",
+        "course:cs-foundations/module/interfaces",
+        "course:cs-foundations/module/patterns",
+        "course:cs-foundations/module/exceptions"
+      ],
+      "task": "readiness/r3/task.json"
+    },
+    {
+      "id": "R4",
+      "title": "Generics through tracker",
+      "modules": [
+        "course:cs-foundations/module/generics",
+        "course:cs-foundations/module/async",
+        "course:cs-foundations/module/checks",
+        "course:cs-foundations/module/tracker"
+      ],
+      "task": "readiness/r4/task.json"
+    }
+  ]
 }
