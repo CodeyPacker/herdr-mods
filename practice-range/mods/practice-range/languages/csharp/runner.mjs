@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile, stat, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { createHash, randomUUID } from "node:crypto";
 import { runProcess } from "../../process.mjs";
@@ -53,7 +54,9 @@ export async function buildChecker(root) {
   const project = await readFile(join(packDirectory, "checker/Checker.csproj"), "utf8");
   const program = await readFile(join(packDirectory, "checker/Program.cs"), "utf8");
   const fingerprint = createHash("sha256").update(project + program + sdk.version).digest("hex").slice(0, 16);
-  const build = join(root, "checker", fingerprint);
+  // MSBuild reads %3A in a path as an escaped character, and course folders are named with one.
+  // Build the checker outside such a folder. Practice folders have no % and are unchanged.
+  const build = join(root.includes("%") ? join(tmpdir(), "practice-range-csharp") : root, "checker", fingerprint);
   const assembly = join(build, "out/Checker.dll");
   try { await stat(assembly); return { assembly, sdk, target }; } catch {}
   await mkdir(build, { recursive: true });
