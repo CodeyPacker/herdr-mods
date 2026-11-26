@@ -1,0 +1,48 @@
+{
+  "id": "course:sql-foundations/task/nulls-no-email",
+  "role": "guided",
+  "title": "Find customers with no email",
+  "concepts": [
+    "null",
+    "is-null",
+    "filter"
+  ],
+  "prompt": "Return the first_name and last_name of every customer who has no email. The starter returns no rows.",
+  "hints": [
+    "What does a comparison with NULL give?",
+    "There is a special test for a missing value, and it does not use =.",
+    "WHERE email IS NULL"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-empty-text.sql",
+      "misconception": "Looks for empty text, which is a different thing from a missing value.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 3 rows, got 0."
+      }
+    },
+    {
+      "source": "wrong-opposite.sql",
+      "misconception": "Returns the customers who do have an email.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 3 rows, got 17."
+      }
+    }
+  ],
+  "feedback": "Count your rows. Three customers have no email, and only IS NULL finds them."
+}

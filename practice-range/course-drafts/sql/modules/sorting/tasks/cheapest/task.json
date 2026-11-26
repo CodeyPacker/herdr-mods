@@ -1,0 +1,49 @@
+{
+  "id": "course:sql-foundations/task/sorting-cheapest",
+  "role": "guided",
+  "title": "List the cheapest products",
+  "concepts": [
+    "order",
+    "limit",
+    "filter"
+  ],
+  "prompt": "Return the name and price of the five cheapest products that are not discontinued, cheapest first. The starter sorts in the wrong direction.",
+  "hints": [
+    "Which direction puts the smallest price first?",
+    "Ascending is the default. DESC reverses it.",
+    "Remove DESC, or write ASC."
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-limit.sql",
+      "misconception": "Sorts correctly but returns every product.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 5 rows, got 21."
+      }
+    },
+    {
+      "source": "wrong-no-filter.sql",
+      "misconception": "Includes discontinued products.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    }
+  ],
+  "feedback": "Check the first row and the number of rows. The cheapest product that is still sold comes first, and there are five rows."
+}

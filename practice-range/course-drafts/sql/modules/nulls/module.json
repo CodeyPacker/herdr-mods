@@ -1,0 +1,239 @@
+{
+  "id": "course:sql-foundations/module/nulls",
+  "title": "Handle missing values",
+  "requires": [
+    "filter",
+    "logic",
+    "expression",
+    "alias",
+    "column-list"
+  ],
+  "outcomes": [
+    {
+      "id": "find",
+      "can": "Find rows where a value is missing.",
+      "assessment": [
+        "equals-null",
+        "course:sql-foundations/task/nulls-no-email"
+      ]
+    },
+    {
+      "id": "spread",
+      "can": "Predict what NULL does to a calculation and to a comparison.",
+      "assessment": [
+        "null-math",
+        "not-equal"
+      ]
+    },
+    {
+      "id": "fallback",
+      "can": "Supply a fallback with COALESCE while keeping real values.",
+      "assessment": [
+        "course:sql-foundations/task/nulls-contact"
+      ]
+    },
+    {
+      "id": "transfer",
+      "can": "Use a fallback inside a calculation.",
+      "assessment": [
+        "course:sql-foundations/task/nulls-total-pay"
+      ]
+    }
+  ],
+  "intro": "Real data has gaps: a customer with no email, an employee with no bonus. SQL marks a missing value with NULL, and NULL behaves differently from every other value. This module covers finding it, what it does to comparisons and arithmetic, and how to supply a fallback.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "NULL means unknown",
+      "text": "NULL marks a value that is missing or unknown. It is not zero and it is not empty text. Because the value is unknown, a comparison with it is unknown too: email = NULL is never true, not even for a row whose email is NULL. WHERE keeps a row only when its condition is true, so such a row is dropped. To test for a missing value use IS NULL, and IS NOT NULL for the opposite.",
+      "example": "equals-null"
+    },
+    {
+      "kind": "prediction",
+      "title": "Compare with NULL",
+      "text": "Three customers have no email. Predict how many rows this query returns.",
+      "example": "equals-null",
+      "questions": [
+        "equals-null"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Why nothing came back",
+      "text": "The result has 0 rows. For every row, email = NULL is unknown, and unknown is not true. The fix is WHERE email IS NULL, which returns the three customers. The same trap works in the other direction: a test such as email <> 'noah.kim@example.com' also drops the three rows with no email, because the comparison is unknown for them.",
+      "example": "equals-null"
+    },
+    {
+      "kind": "explanation",
+      "title": "NULL spreads through calculations",
+      "text": "Arithmetic with NULL gives NULL: an unknown bonus percentage makes an unknown bonus. COALESCE(a, b) returns a when it is not NULL and b when it is. COALESCE(bonus_pct, 0) reads as: the bonus percentage, or 0 when there is none. Use it when a missing value should count as something. A real 0 and real empty text are values, and COALESCE leaves them alone.",
+      "example": "bonus"
+    },
+    {
+      "kind": "prediction",
+      "title": "Calculate with a missing value",
+      "text": "Mei has no bonus_pct. Predict what the bonus and pct columns show for her.",
+      "example": "bonus",
+      "questions": [
+        "null-math"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Follow the two columns",
+      "text": "Pete has a bonus_pct of 6.00, so his bonus is 5160. For Mei the percentage is NULL, so the multiplication is NULL and so is the rounded result. The pct column uses COALESCE, so it shows 0 where the percentage is missing and the real value where there is one.",
+      "example": "bonus"
+    },
+    {
+      "kind": "prediction",
+      "title": "Not equal, and NULL",
+      "text": "Twenty customers exist and three have no email. Predict the count.",
+      "example": "not-equal",
+      "questions": [
+        "not-equal"
+      ]
+    },
+    {
+      "kind": "modification",
+      "title": "Find customers with no email",
+      "text": "The starter returns no rows at all. Change the test.",
+      "task": "course:sql-foundations/task/nulls-no-email"
+    },
+    {
+      "kind": "independent",
+      "title": "Show a contact for every customer",
+      "text": "Work from the prompt. Every customer must appear.",
+      "task": "course:sql-foundations/task/nulls-contact"
+    }
+  ],
+  "questions": [
+    {
+      "id": "equals-null",
+      "example": "equals-null",
+      "prompt": "How many rows come back?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "0",
+          "feedback": "A comparison with NULL is unknown, never true, so no row passes."
+        },
+        {
+          "text": "3",
+          "feedback": "That is what IS NULL would return. = NULL is never true."
+        },
+        {
+          "text": "17",
+          "feedback": "Those are the customers with an email, and email = NULL is not true for them either."
+        }
+      ]
+    },
+    {
+      "id": "null-math",
+      "example": "bonus",
+      "prompt": "What do bonus and pct show for Mei?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "0 and 0",
+          "feedback": "Only the pct column uses COALESCE. The bonus calculation has no fallback."
+        },
+        {
+          "text": "NULL and NULL",
+          "feedback": "COALESCE(bonus_pct, 0) replaces the missing percentage with 0."
+        },
+        {
+          "text": "NULL and 0",
+          "feedback": "Arithmetic with NULL gives NULL, and COALESCE supplies 0 for the missing percentage."
+        }
+      ]
+    },
+    {
+      "id": "not-equal",
+      "example": "not-equal",
+      "prompt": "What count comes back?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "19",
+          "feedback": "The three customers with no email are dropped too, because the comparison is unknown for them."
+        },
+        {
+          "text": "16",
+          "feedback": "One customer has that email, and three have none. Neither group passes the test."
+        },
+        {
+          "text": "20",
+          "feedback": "The customer with that email does not pass, and neither do the three with no email."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "equals-null": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/equals-null.sql"
+      },
+      "stdout": [
+        "Your query returned:",
+        " first_name | email",
+        "------------+-------",
+        "(0 rows)"
+      ]
+    },
+    "bonus": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/bonus.sql"
+      },
+      "stdout": [
+        "Your query returned:",
+        " first_name | bonus_pct | bonus | pct",
+        "------------+-----------+-------+------",
+        " Pete       | 6.00      | 5160  | 6.00",
+        " Mei        | NULL      | NULL  | 0",
+        " Carlos     | NULL      | NULL  | 0",
+        " Ingrid     | NULL      | NULL  | 0",
+        "(4 rows)"
+      ]
+    },
+    "not-equal": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/not-equal.sql"
+      },
+      "stdout": [
+        "Your query returned:",
+        " customers",
+        "-----------",
+        " 16",
+        "(1 row)"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:sql-foundations/task/nulls-no-email",
+      "path": "tasks/no-email/task.json"
+    },
+    {
+      "id": "course:sql-foundations/task/nulls-contact",
+      "path": "tasks/contact/task.json"
+    },
+    {
+      "id": "course:sql-foundations/task/nulls-total-pay",
+      "path": "tasks/total-pay/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:sql-foundations/task/nulls-total-pay",
+    "afterModule": "course:sql-foundations/module/grouping",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [
+    "where/is-null",
+    "functions/coalesce",
+    "functions/nullif"
+  ],
+  "drillGap": "These drills practise one NULL tool each. They do not keep empty text apart from a missing value."
+}

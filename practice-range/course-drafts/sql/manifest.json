@@ -1,0 +1,391 @@
+{
+  "schemaVersion": "1-draft",
+  "contentVersion": "0.1.0-draft.1",
+  "id": "course:sql-foundations",
+  "languageId": "sql",
+  "runner": {
+    "registeredLanguage": "sql",
+    "compiler": {
+      "name": "PGlite",
+      "range": "=0.5.16"
+    }
+  },
+  "title": "Answer questions with SQL",
+  "audience": [
+    "New to programming",
+    "Already programs, new to SQL"
+  ],
+  "prerequisiteConcepts": [],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:sql-foundations/module/save",
+      "order": "listed"
+    },
+    {
+      "id": "experienced",
+      "start": "course:sql-foundations/module/save",
+      "readiness": [
+        "R1",
+        "R2",
+        "R3",
+        "R4"
+      ],
+      "description": "Try each group's readiness task or skip freely. A skip records navigation only."
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/save",
+      "description": "Run a query, read its result table, and find the line a SQL error names.",
+      "assessment": "course:sql-foundations/module/save"
+    },
+    {
+      "id": "outcome/select",
+      "description": "Return chosen columns, computed columns with clear names, and distinct values.",
+      "assessment": "course:sql-foundations/module/select"
+    },
+    {
+      "id": "outcome/where",
+      "description": "Filter rows with comparisons, AND, OR, IN, BETWEEN and LIKE, including the edge values.",
+      "assessment": "course:sql-foundations/module/where"
+    },
+    {
+      "id": "outcome/nulls",
+      "description": "Find missing values, predict what NULL does to a comparison or a calculation, and supply a fallback.",
+      "assessment": "course:sql-foundations/module/nulls"
+    },
+    {
+      "id": "outcome/sorting",
+      "description": "Sort by one or more columns, take the first rows, and place missing values on purpose.",
+      "assessment": "course:sql-foundations/module/sorting"
+    },
+    {
+      "id": "outcome/aggregates",
+      "description": "Count, total and average rows, and choose the right kind of COUNT.",
+      "assessment": "course:sql-foundations/module/aggregates"
+    },
+    {
+      "id": "outcome/grouping",
+      "description": "Produce one summary row per group and filter groups by their summary.",
+      "assessment": "course:sql-foundations/module/grouping"
+    },
+    {
+      "id": "outcome/joins",
+      "description": "Join tables on their keys and read columns from both.",
+      "assessment": "course:sql-foundations/module/joins"
+    },
+    {
+      "id": "outcome/outer",
+      "description": "Keep rows that have no match, and find the rows that have none.",
+      "assessment": "course:sql-foundations/module/outer"
+    },
+    {
+      "id": "outcome/subqueries",
+      "description": "Compare rows with a computed value and test whether related rows exist.",
+      "assessment": "course:sql-foundations/module/subqueries"
+    },
+    {
+      "id": "outcome/ctes",
+      "description": "Name the steps of a longer query with WITH and build on them.",
+      "assessment": "course:sql-foundations/module/ctes"
+    },
+    {
+      "id": "outcome/expressions",
+      "description": "Label rows with CASE, convert types, and take parts of a date.",
+      "assessment": "course:sql-foundations/module/expressions"
+    },
+    {
+      "id": "outcome/modify",
+      "description": "Insert, update and delete exactly the intended rows.",
+      "assessment": "course:sql-foundations/module/modify"
+    },
+    {
+      "id": "outcome/tables",
+      "description": "Create a table whose keys and constraints reject bad data.",
+      "assessment": "course:sql-foundations/module/tables"
+    },
+    {
+      "id": "outcome/windows",
+      "description": "Rank rows and compare each row with its group without collapsing the rows.",
+      "assessment": "course:sql-foundations/module/windows"
+    },
+    {
+      "id": "outcome/checks",
+      "description": "Test a query's result against a known count and repair a join that counts rows twice.",
+      "assessment": "course:sql-foundations/module/checks"
+    },
+    {
+      "id": "outcome/assemble",
+      "description": "Combine joins, grouping, steps and labels into one report.",
+      "assessment": "course:sql-foundations/module/assemble"
+    },
+    {
+      "id": "outcome/report",
+      "description": "Independently answer a new reporting request and prove the answer with a check.",
+      "assessment": "course:sql-foundations/module/report"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:sql-foundations/module/save",
+      "title": "Run a query, read the result",
+      "prerequisites": [],
+      "teaches": [
+        "run-query",
+        "read-result",
+        "sql-error"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/save/module.json"
+      }
+    },
+    {
+      "id": "course:sql-foundations/module/select",
+      "title": "Choose and name columns",
+      "prerequisites": [
+        "course:sql-foundations/module/save"
+      ],
+      "teaches": [
+        "column-list",
+        "alias",
+        "expression",
+        "distinct"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/select/module.json"
+      }
+    },
+    {
+      "id": "course:sql-foundations/module/where",
+      "title": "Keep the rows you want",
+      "prerequisites": [
+        "course:sql-foundations/module/select"
+      ],
+      "teaches": [
+        "filter",
+        "logic",
+        "pattern"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/where/module.json"
+      }
+    },
+    {
+      "id": "course:sql-foundations/module/nulls",
+      "title": "Handle missing values",
+      "prerequisites": [
+        "course:sql-foundations/module/where"
+      ],
+      "teaches": [
+        "null",
+        "is-null",
+        "coalesce"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/nulls/module.json"
+      }
+    },
+    {
+      "id": "course:sql-foundations/module/sorting",
+      "title": "Sort and limit",
+      "prerequisites": [
+        "course:sql-foundations/module/where",
+        "course:sql-foundations/module/nulls"
+      ],
+      "teaches": [
+        "order",
+        "limit"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/sorting/module.json"
+      }
+    },
+    {
+      "id": "course:sql-foundations/module/aggregates",
+      "title": "Summarize many rows",
+      "prerequisites": [
+        "course:sql-foundations/module/where",
+        "course:sql-foundations/module/nulls"
+      ],
+      "teaches": [
+        "aggregate",
+        "count-forms"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:sql-foundations/module/grouping",
+      "title": "Summarize by group",
+      "prerequisites": [
+        "course:sql-foundations/module/aggregates",
+        "course:sql-foundations/module/sorting"
+      ],
+      "teaches": [
+        "group",
+        "having"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:sql-foundations/module/joins",
+      "title": "Combine two tables",
+      "prerequisites": [
+        "course:sql-foundations/module/where",
+        "course:sql-foundations/module/sorting"
+      ],
+      "teaches": [
+        "join",
+        "key",
+        "table-alias"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:sql-foundations/module/outer",
+      "title": "Keep rows without a match",
+      "prerequisites": [
+        "course:sql-foundations/module/joins",
+        "course:sql-foundations/module/nulls"
+      ],
+      "teaches": [
+        "left-join",
+        "anti-join"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:sql-foundations/module/subqueries",
+      "title": "Use a query inside a query",
+      "prerequisites": [
+        "course:sql-foundations/module/joins",
+        "course:sql-foundations/module/aggregates"
+      ],
+      "teaches": [
+        "subquery",
+        "exists"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:sql-foundations/module/ctes",
+      "title": "Build a query in steps",
+      "prerequisites": [
+        "course:sql-foundations/module/subqueries",
+        "course:sql-foundations/module/grouping"
+      ],
+      "teaches": [
+        "cte"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:sql-foundations/module/expressions",
+      "title": "Compute new values",
+      "prerequisites": [
+        "course:sql-foundations/module/where",
+        "course:sql-foundations/module/nulls"
+      ],
+      "teaches": [
+        "case",
+        "cast",
+        "date-function"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:sql-foundations/module/modify",
+      "title": "Change data",
+      "prerequisites": [
+        "course:sql-foundations/module/where",
+        "course:sql-foundations/module/subqueries"
+      ],
+      "teaches": [
+        "insert",
+        "update",
+        "delete"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:sql-foundations/module/tables",
+      "title": "Design a table",
+      "prerequisites": [
+        "course:sql-foundations/module/modify"
+      ],
+      "teaches": [
+        "create-table",
+        "constraint",
+        "foreign-key"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:sql-foundations/module/windows",
+      "title": "Rank and compare rows",
+      "prerequisites": [
+        "course:sql-foundations/module/grouping",
+        "course:sql-foundations/module/ctes"
+      ],
+      "teaches": [
+        "window",
+        "partition"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:sql-foundations/module/checks",
+      "title": "Check that a query is right",
+      "prerequisites": [
+        "course:sql-foundations/module/outer",
+        "course:sql-foundations/module/grouping"
+      ],
+      "teaches": [
+        "verify-query",
+        "fan-out"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:sql-foundations/module/assemble",
+      "title": "Assemble a sales report",
+      "prerequisites": [
+        "course:sql-foundations/module/ctes",
+        "course:sql-foundations/module/expressions",
+        "course:sql-foundations/module/checks",
+        "course:sql-foundations/module/windows"
+      ],
+      "teaches": [
+        "project"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:sql-foundations/module/report",
+      "title": "Deliver an unfamiliar report",
+      "prerequisites": [
+        "course:sql-foundations/module/assemble",
+        "course:sql-foundations/module/modify"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "planned"
+    }
+  ],
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  },
+  "runtimeContentVersion": "0.1.0-preview.1"
+}

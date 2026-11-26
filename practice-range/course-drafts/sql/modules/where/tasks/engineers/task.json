@@ -1,0 +1,52 @@
+{
+  "id": "course:sql-foundations/task/where-engineers",
+  "role": "review",
+  "title": "Find mid-range engineers",
+  "concepts": [
+    "pattern",
+    "filter",
+    "logic"
+  ],
+  "prompt": "Return the first_name, title and salary of every employee whose title contains the word Engineer and whose salary is from 110000 to 160000, including both ends.",
+  "hints": [
+    "Senior Engineer contains Engineer but does not start with it.",
+    "% can go on both sides of the word. BETWEEN includes both ends.",
+    "WHERE title LIKE '%Engineer%' AND salary BETWEEN 110000 AND 160000"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    },
+    {
+      "id": "edge",
+      "declarations": "fixture-edge.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-starts-with.sql",
+      "misconception": "Matches only titles that start with Engineer.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-exclusive.sql",
+      "misconception": "Leaves out a salary that sits exactly on a limit.",
+      "witness": {
+        "fixture": "edge",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Check a Senior Engineer, and an engineer whose salary is exactly 110000."
+}

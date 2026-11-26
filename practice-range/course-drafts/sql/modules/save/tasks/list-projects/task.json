@@ -1,0 +1,47 @@
+{
+  "id": "course:sql-foundations/task/save-list-projects",
+  "role": "independent",
+  "title": "List the projects",
+  "concepts": [
+    "run-query",
+    "read-result"
+  ],
+  "prompt": "Return the name and started_on of every project, in that column order.",
+  "hints": [
+    "Which table holds projects, and what are its columns called?",
+    "List the two columns after SELECT, separated by a comma, then name the table after FROM.",
+    "SELECT name, started_on FROM projects;"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-column-order.sql",
+      "misconception": "Lists the columns in the wrong order.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Name the columns name, started_on"
+      }
+    },
+    {
+      "source": "wrong-every-column.sql",
+      "misconception": "Returns every column instead of the two that were asked for.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Return 2 columns"
+      }
+    }
+  ],
+  "feedback": "Compare the first line of your result with the prompt. The columns must be the ones asked for, in that order."
+}

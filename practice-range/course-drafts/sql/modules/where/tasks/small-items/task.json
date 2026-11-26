@@ -1,0 +1,52 @@
+{
+  "id": "course:sql-foundations/task/where-small-items",
+  "role": "independent",
+  "title": "Find small, cheap items",
+  "concepts": [
+    "logic",
+    "filter",
+    "column-list"
+  ],
+  "prompt": "Return the name and price of every product in category 4 or category 8 that costs 50 or less. A price of exactly 50 counts.",
+  "hints": [
+    "The price limit applies to both categories. Which test would be applied first without brackets?",
+    "Put the two categories together, with IN or with brackets, then add the price test with AND.",
+    "WHERE category_id IN (4, 8) AND price <= 50"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    },
+    {
+      "id": "edge",
+      "declarations": "fixture-edge.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-brackets.sql",
+      "misconception": "Mixes OR and AND without brackets, so the price test applies to one category only.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    },
+    {
+      "source": "wrong-below-only.sql",
+      "misconception": "Leaves out a price of exactly 50.",
+      "witness": {
+        "fixture": "edge",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Check a product in category 4 that costs more than 50, and a product that costs exactly 50."
+}

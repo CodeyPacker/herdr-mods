@@ -1,0 +1,47 @@
+{
+  "id": "course:sql-foundations/task/save-categories",
+  "role": "review",
+  "title": "List the categories",
+  "concepts": [
+    "run-query",
+    "read-result"
+  ],
+  "prompt": "Return the id and name of every category, in that column order.",
+  "hints": [
+    "Find the table in schema.sql and read its column names.",
+    "Two columns after SELECT, one table after FROM.",
+    "SELECT id, name FROM categories;"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-one-column.sql",
+      "misconception": "Leaves out one of the two columns.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Return 2 columns"
+      }
+    },
+    {
+      "source": "wrong-wrong-table.sql",
+      "misconception": "Reads a different table that has the same column names.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 12 rows, got 24."
+      }
+    }
+  ],
+  "feedback": "Check the table name, then the two column names and their order."
+}

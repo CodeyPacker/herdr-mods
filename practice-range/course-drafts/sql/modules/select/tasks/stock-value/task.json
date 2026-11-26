@@ -1,0 +1,48 @@
+{
+  "id": "course:sql-foundations/task/select-stock-value",
+  "role": "guided",
+  "title": "Name a computed column",
+  "concepts": [
+    "expression",
+    "alias",
+    "column-list"
+  ],
+  "prompt": "For every product, return its name and stock_value: its price multiplied by its stock. The starter computes the values, but the second column has no name. Name it stock_value.",
+  "hints": [
+    "Look at the header of the starter's result. What is the second column called?",
+    "AS goes right after the expression it names.",
+    "Write price * stock AS stock_value."
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-other-name.sql",
+      "misconception": "Names the column something other than what was asked.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Name the columns name, stock_value"
+      }
+    },
+    {
+      "source": "wrong-adds.sql",
+      "misconception": "Adds the price and the stock instead of multiplying them.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Check the header first: the two columns must be name and stock_value. Then work one row out by hand."
+}

@@ -1,0 +1,47 @@
+{
+  "id": "course:sql-foundations/task/select-countries",
+  "role": "review",
+  "title": "List each country once",
+  "concepts": [
+    "distinct",
+    "column-list"
+  ],
+  "prompt": "Return each country that customers live in, once, in a single column named country.",
+  "hints": [
+    "Many customers share a country. What removes repeated rows?",
+    "DISTINCT goes right after SELECT.",
+    "SELECT DISTINCT country FROM customers;"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-repeats.sql",
+      "misconception": "Returns the country of every customer, with repeats.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 9 rows, got 20."
+      }
+    },
+    {
+      "source": "wrong-with-city.sql",
+      "misconception": "Adds the city, so DISTINCT works on pairs instead of countries.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Return 1 column"
+      }
+    }
+  ],
+  "feedback": "Count your rows. There should be one for each different country and no more."
+}

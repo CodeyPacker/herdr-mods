@@ -1,0 +1,48 @@
+{
+  "id": "course:sql-foundations/task/sorting-signups",
+  "role": "independent",
+  "title": "Sort signups by country",
+  "concepts": [
+    "order",
+    "column-list"
+  ],
+  "prompt": "Return first_name, country and signup_date for every customer. Sort by country from A to Z. Inside each country, put the newest signup first.",
+  "hints": [
+    "There are two sort keys. Which one comes first?",
+    "Each key can have its own direction.",
+    "ORDER BY country, signup_date DESC"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-both-desc.sql",
+      "misconception": "Reverses the country order as well.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "not in the requested order"
+      }
+    },
+    {
+      "source": "wrong-date-only.sql",
+      "misconception": "Sorts by date alone and ignores the country.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "not in the requested order"
+      }
+    }
+  ],
+  "feedback": "Read your result from the top. Countries should run A to Z, and inside one country the dates should run from newest to oldest."
+}

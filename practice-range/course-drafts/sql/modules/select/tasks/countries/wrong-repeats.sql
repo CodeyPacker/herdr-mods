@@ -1,0 +1,2 @@
+SELECT country
+FROM customers;

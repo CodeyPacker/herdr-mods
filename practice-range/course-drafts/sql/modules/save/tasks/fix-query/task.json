@@ -1,0 +1,48 @@
+{
+  "id": "course:sql-foundations/task/save-fix-query",
+  "role": "guided",
+  "title": "Repair a query",
+  "concepts": [
+    "run-query",
+    "read-result",
+    "sql-error"
+  ],
+  "prompt": "The query should return the name and budget of every department. The starter has two misspelled names. Save it, read the error, fix the name it points at, and repeat until the query runs.",
+  "hints": [
+    "The error quotes the name PostgreSQL could not find. Compare it with schema.sql.",
+    "Fix one error, save, and read the next one. The table name is checked before the column names.",
+    "The table is departments and the column is name."
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-one-fix.sql",
+      "misconception": "Fixes the table name and stops, leaving the misspelled column.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "compile",
+        "detail": "error 42703"
+      }
+    },
+    {
+      "source": "wrong-extra-column.sql",
+      "misconception": "Returns a column that was not asked for.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Return 2 columns"
+      }
+    }
+  ],
+  "feedback": "Read the newest error from the top. It quotes the exact name that could not be found and says where it is."
+}

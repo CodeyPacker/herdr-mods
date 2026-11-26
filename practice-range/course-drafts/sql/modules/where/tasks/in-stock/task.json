@@ -1,0 +1,48 @@
+{
+  "id": "course:sql-foundations/task/where-in-stock",
+  "role": "guided",
+  "title": "List what can be sold",
+  "concepts": [
+    "filter",
+    "logic",
+    "column-list"
+  ],
+  "prompt": "Return the name and price of every product that can be sold: it has more than 0 in stock and it is not discontinued. The starter tests the stock only.",
+  "hints": [
+    "Is there a product with stock that is also discontinued? Look at the starter's result and at schema.sql.",
+    "Both tests must be true for a product to be kept.",
+    "Add AND discontinued = false to the WHERE clause."
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-or.sql",
+      "misconception": "Joins the two tests with OR, so one true test is enough.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    },
+    {
+      "source": "wrong-zero-stock.sql",
+      "misconception": "Lets through products with exactly 0 in stock.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    }
+  ],
+  "feedback": "Take one row named in the failure and test it by hand against both conditions."
+}

@@ -1,0 +1,243 @@
+{
+  "id": "course:sql-foundations/module/select",
+  "title": "Choose and name columns",
+  "requires": [
+    "run-query",
+    "read-result",
+    "sql-error"
+  ],
+  "outcomes": [
+    {
+      "id": "name",
+      "can": "Compute a column and give it a name.",
+      "assessment": [
+        "header",
+        "course:sql-foundations/task/select-stock-value"
+      ]
+    },
+    {
+      "id": "text",
+      "can": "Build a text column from other columns.",
+      "assessment": [
+        "course:sql-foundations/task/select-full-name"
+      ]
+    },
+    {
+      "id": "alias-scope",
+      "can": "Say where a column's new name can and cannot be used.",
+      "assessment": [
+        "bad-alias"
+      ]
+    },
+    {
+      "id": "transfer",
+      "can": "Return each distinct value once.",
+      "assessment": [
+        "distinct-count",
+        "course:sql-foundations/task/select-countries"
+      ]
+    }
+  ],
+  "intro": "The SELECT list decides what each result row contains. It can hold columns, calculations and joined text, and every one of them can be given a clear name. This module also covers returning each distinct value once.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Columns can be computed",
+      "text": "Each item in the SELECT list produces one column of the result, worked out separately for every row. An item can be a column, or an expression such as budget / 12. +, -, * and / work on numbers. ROUND(value, 2) rounds to two decimal places. The || operator joins pieces of text, and text you type yourself goes in single quotes, as in first_name || ' ' || last_name. AS gives a result column a name: budget / 12 AS monthly_budget. A computed column without a name is shown as ?column?, which tells a reader nothing, so always name them. AS changes only the result. The table is not changed.",
+      "example": "monthly"
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict the header",
+      "text": "Read the SELECT list and predict the first line of the result.",
+      "example": "monthly",
+      "questions": [
+        "header"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Follow one row",
+      "text": "The header shows the new names: department and monthly_budget. For the Sales row, budget is 1100000.00. Divided by 12 and rounded to two places that is 91666.67. Every row is worked out the same way, from its own budget.",
+      "example": "monthly"
+    },
+    {
+      "kind": "prediction",
+      "title": "Use a new name too early",
+      "text": "The second item uses the name the first item was just given. Read the example before checking.",
+      "example": "bad-alias",
+      "questions": [
+        "bad-alias"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Read the error",
+      "text": "Check the example. Error 42703 says column \"monthly\" does not exist. A name given with AS belongs to the result, and the other items in the same SELECT list cannot see it. Repeat the expression instead: budget / 12 * 2.",
+      "example": "bad-alias"
+    },
+    {
+      "kind": "explanation",
+      "title": "Each value once",
+      "text": "SELECT DISTINCT removes duplicate rows from the result. With one column, each value appears once. With several columns, DISTINCT looks at the whole row, so a row is dropped only when every column matches another row.",
+      "example": "locations"
+    },
+    {
+      "kind": "prediction",
+      "title": "Count the distinct values",
+      "text": "Six departments share a few locations. Predict how many rows come back.",
+      "example": "locations",
+      "questions": [
+        "distinct-count"
+      ]
+    },
+    {
+      "kind": "modification",
+      "title": "Name a computed column",
+      "text": "The starter computes the right values but leaves the column without a name.",
+      "task": "course:sql-foundations/task/select-stock-value"
+    },
+    {
+      "kind": "independent",
+      "title": "Build a full name",
+      "text": "Work from the prompt. Mind the space between the two names.",
+      "task": "course:sql-foundations/task/select-full-name"
+    }
+  ],
+  "questions": [
+    {
+      "id": "header",
+      "example": "monthly",
+      "prompt": "What is the first line of the result?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "department | monthly_budget",
+          "feedback": "AS gave both columns new names, and the header shows them."
+        },
+        {
+          "text": "name | budget",
+          "feedback": "Both columns were renamed with AS, so the original names are not shown."
+        },
+        {
+          "text": "department | ?column?",
+          "feedback": "The computed column was given the name monthly_budget."
+        }
+      ]
+    },
+    {
+      "id": "bad-alias",
+      "example": "bad-alias",
+      "prompt": "What happens when you check this example?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "It returns monthly and a second column twice as large.",
+          "feedback": "The second item cannot see the name monthly, so the statement fails."
+        },
+        {
+          "text": "PostgreSQL reports an error on line 1.",
+          "feedback": "monthly is a name for a result column. Items in the same SELECT list cannot use it (42703)."
+        },
+        {
+          "text": "It returns one column, because the second is ignored.",
+          "feedback": "A bad name is an error. Nothing is ignored, and nothing is returned."
+        }
+      ]
+    },
+    {
+      "id": "distinct-count",
+      "example": "locations",
+      "prompt": "How many rows come back?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "6",
+          "feedback": "DISTINCT removes the repeats, and several departments share a location."
+        },
+        {
+          "text": "1",
+          "feedback": "DISTINCT keeps one row for each different value, not one row in total."
+        },
+        {
+          "text": "3",
+          "feedback": "The departments are in Denver, Chicago and Austin, and each appears once."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "monthly": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/monthly.sql"
+      },
+      "stdout": [
+        "Your query returned:",
+        " department  | monthly_budget",
+        "-------------+----------------",
+        " Executive   | 75000.00",
+        " Engineering | 200000.00",
+        " Sales       | 91666.67",
+        " Marketing   | 54166.67",
+        " Support     | 40000.00",
+        " Legal       | 25000.00",
+        "(6 rows)"
+      ]
+    },
+    "bad-alias": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/bad-alias.sql"
+      },
+      "diagnostics": [
+        {
+          "code": "42703",
+          "line": 1
+        }
+      ]
+    },
+    "locations": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/locations.sql"
+      },
+      "stdout": [
+        "Your query returned:",
+        " location",
+        "----------",
+        " Austin",
+        " Chicago",
+        " Denver",
+        "(3 rows)"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:sql-foundations/task/select-stock-value",
+      "path": "tasks/stock-value/task.json"
+    },
+    {
+      "id": "course:sql-foundations/task/select-full-name",
+      "path": "tasks/full-name/task.json"
+    },
+    {
+      "id": "course:sql-foundations/task/select-countries",
+      "path": "tasks/countries/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:sql-foundations/task/select-countries",
+    "afterModule": "course:sql-foundations/module/nulls",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [
+    "select/column-alias",
+    "select/expression",
+    "select/concat",
+    "select/distinct",
+    "select/round"
+  ],
+  "drillGap": "These drills practise one SELECT feature each. They do not combine a computed column with a required name."
+}

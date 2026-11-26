@@ -1,0 +1,48 @@
+{
+  "id": "course:sql-foundations/task/nulls-total-pay",
+  "role": "review",
+  "title": "Work out total pay",
+  "concepts": [
+    "coalesce",
+    "null",
+    "expression"
+  ],
+  "prompt": "For every employee, return first_name and total_pay. total_pay is the salary plus the bonus, where the bonus is salary * bonus_pct / 100. An employee with no bonus_pct gets no bonus, so their total_pay is their salary.",
+  "hints": [
+    "What does the calculation give for an employee whose bonus_pct is NULL?",
+    "Replace a missing percentage with 0 before it is used.",
+    "salary + salary * COALESCE(bonus_pct, 0) / 100 AS total_pay"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-fallback.sql",
+      "misconception": "Lets a missing percentage turn the whole total into NULL.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-drops-rows.sql",
+      "misconception": "Leaves out the employees who have no bonus.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 24 rows, got 15."
+      }
+    }
+  ],
+  "feedback": "Find an employee with no bonus_pct in your result. Their total_pay should equal their salary."
+}

@@ -1,0 +1,52 @@
+{
+  "id": "course:sql-foundations/task/nulls-contact",
+  "role": "independent",
+  "title": "Show a contact for every customer",
+  "concepts": [
+    "coalesce",
+    "null",
+    "alias"
+  ],
+  "prompt": "For every customer, return first_name and contact. contact is the customer's email, or the text no email when the email is missing. An email that is empty text is a real value and must be shown as it is.",
+  "hints": [
+    "Every customer must appear, so this is not a job for WHERE.",
+    "Which function returns its first value unless that value is NULL?",
+    "COALESCE(email, 'no email') AS contact"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    },
+    {
+      "id": "blank",
+      "declarations": "fixture-blank.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-filters.sql",
+      "misconception": "Drops the customers with no email instead of labeling them.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 20 rows, got 17."
+      }
+    },
+    {
+      "source": "wrong-blank-missing.sql",
+      "misconception": "Treats empty text as a missing value.",
+      "witness": {
+        "fixture": "blank",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Check two things: every customer appears, and only a missing email becomes no email."
+}

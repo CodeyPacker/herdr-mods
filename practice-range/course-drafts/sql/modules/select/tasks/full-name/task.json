@@ -1,0 +1,48 @@
+{
+  "id": "course:sql-foundations/task/select-full-name",
+  "role": "independent",
+  "title": "Build a full name",
+  "concepts": [
+    "expression",
+    "alias",
+    "column-list"
+  ],
+  "prompt": "For every customer, return full_name and city. full_name is the first name, one space, then the last name, as in Ava Martinez.",
+  "hints": [
+    "Which operator joins pieces of text?",
+    "The space is a piece of text too. Text you type goes in single quotes.",
+    "first_name || ' ' || last_name AS full_name"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-space.sql",
+      "misconception": "Joins the two names with nothing between them.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-last-first.sql",
+      "misconception": "Puts the last name before the first name.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Compare one of your full names with the example in the prompt, character by character."
+}

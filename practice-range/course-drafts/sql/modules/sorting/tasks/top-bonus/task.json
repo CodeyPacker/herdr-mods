@@ -1,0 +1,50 @@
+{
+  "id": "course:sql-foundations/task/sorting-top-bonus",
+  "role": "review",
+  "title": "Find the highest bonuses",
+  "concepts": [
+    "order",
+    "limit",
+    "null",
+    "is-null"
+  ],
+  "prompt": "Return the first_name and bonus_pct of the three employees with the highest bonus_pct, highest first. Employees with no bonus_pct do not count. When two employees have the same bonus_pct, put them in first_name order, A to Z.",
+  "hints": [
+    "Where do rows with a missing bonus_pct land in descending order?",
+    "Keep the NULL rows away from the top, then decide what breaks a tie.",
+    "ORDER BY bonus_pct DESC NULLS LAST, first_name LIMIT 3"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-nulls-first.sql",
+      "misconception": "Sorts descending and lets the missing values come first.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-lowest.sql",
+      "misconception": "Sorts ascending and returns the lowest bonuses.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Look at the first row. It should hold a real bonus_pct, the highest one, and not NULL."
+}
