@@ -68,8 +68,9 @@ export async function bridgeRequest(saved, message, timeout = 15000) {
 }
 
 export class ChatLinks {
-  constructor({ state, chat, cwd, agent, model = null, title = '', session = null, launch = null, models = null }) {
+  constructor({ state, chat, cwd, agent, model = null, title = '', session = null, launch = null, models = null, permissions = () => null }) {
     if (!ID.test(chat)) throw new Error('Invalid chat id.');
+    this.permissions = permissions;
     this.state = state; this.chat = chat; this.root = join(dirname(state), 'links');
     this.launch = launch ?? (record => this.launchBridge(record));
     this.models = models ?? (async provider => {
@@ -159,7 +160,7 @@ export class ChatLinks {
   async launchBridge(record) {
     const args = ['run', '--bg', '--no-notify', '--outlive-parent', '--cwd', record.cwd, '--label', 'hey-chat=bridge'];
     if (!record.parentId || !process.env.HC_TERMINAL_ID) args.push('--no-parent');
-    args.push('--json', '--', process.execPath, SELF, ...bridgeArgs({ chat: record.id, agent: record.agent, cwd: record.cwd, state: this.state, model: record.selectedModel, session: record.session, title: record.title }));
+    args.push('--json', '--', process.execPath, SELF, ...bridgeArgs({ chat: record.id, agent: record.agent, cwd: record.cwd, state: this.state, model: record.selectedModel, session: record.session, title: record.title, permissions: this.permissions() }));
     const { stdout } = await exec('hc', args, { timeout: 15000, maxBuffer: 256 * 1024 });
     const result = JSON.parse(stdout);
     return result.address;

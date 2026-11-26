@@ -1,4 +1,4 @@
-// Settings has General preferences, a Theme tab for message colors, and configurable Shortcuts.
+// Settings has General preferences, a Theme tab for message colors, a Permissions tab, and configurable Shortcuts.
 import { div, svg } from "gpui-kit";
 import { h_flex, v_flex, Input } from "gpui-base";
 import { myPicture } from "../pictures.js";
@@ -45,6 +45,31 @@ function switchRow(t, id, name, detail, on, click) {
       .child(div().text_size(13).text_color(t.foreground).child(name))
       .child(div().text_size(11.5).text_color(t.dim).child(detail)))
     .child(toggle(t, on));
+}
+
+/** The permission levels, least to most freedom. */
+const PERMISSION_CHOICES = [
+  { level: "ask", name: "Ask first", detail: "Asks before actions your agent settings don't already allow." },
+  { level: "edits", name: "Allow edits", detail: "Edits files in the folder without asking. Asks before other commands." },
+  { level: "auto", name: "Auto", detail: "A safety check approves routine actions and asks only for risky ones." },
+  { level: "full", name: "Full access", detail: "Never asks. Can run any command and change any file." },
+];
+
+/** The Permissions tab: one row per level. The picked one is highlighted. @param {any} v @param {Theme} t */
+function permissionsTab(v, t) {
+  const current = v.permissionLevel();
+  return v_flex().id("settings-permissions").flex_1().min_h(0).overflow_y_scrollbar().gap(4).pr(4)
+    .child(div().pb(6).text_size(12).text_color(t.dim).child("How often agents ask before they act."))
+    .children(PERMISSION_CHOICES.map(({ level, name, detail }) => h_flex().id(`permissions-${level}`).px(10).py(7).gap(10).items_center().rounded(8).cursor_pointer()
+      .when(level === current, el => el.bg(t.selected))
+      .hover(s => s.bg(level === current ? t.selected : t.hover))
+      .on_click((_e, cx) => { v.setPermissionLevel(level); cx.notify(); })
+      .child(div().size(14).flex_none().rounded_full().border_2().border_color(level === current ? t.accent : t.muted)
+        .when(level === current, el => el.p(2).child(div().size_full().rounded_full().bg(t.accent))))
+      .child(v_flex().flex_1().min_w(0).gap(2)
+        .child(div().text_size(13).text_color(t.foreground).child(name))
+        .child(div().text_size(11.5).text_color(t.dim).child(detail)))))
+    .child(div().text_size(11.5).text_color(t.dim).child("Applies to every chat. Claude switches right away. Codex switches on its next turn."));
 }
 
 /** The General tab. @param {any} v @param {Theme} t */
@@ -173,10 +198,11 @@ export function settingsDialog(v, t) {
     .child(tabStrip(t, [
       { id: "settings-general", label: "General", on: tab === "general", click: (cx) => { v.setSettingsTab("general"); cx.notify(); } },
       { id: "settings-theme", label: "Theme", on: tab === "theme", click: (cx) => { v.setSettingsTab("theme"); cx.notify(); } },
+      { id: "settings-permissions", label: "Permissions", on: tab === "permissions", click: (cx) => { v.setSettingsTab("permissions"); cx.notify(); } },
       { id: "settings-shortcuts", label: "Shortcuts", on: tab === "shortcuts", click: (cx) => { v.setSettingsTab("shortcuts"); cx.notify(); } },
     ]))
     .child(divider(t))
-    .child(tab === "shortcuts" ? shortcutsTab(v, t) : tab === "theme" ? themeTab(v, t) : generalTab(v, t));
+    .child(tab === "shortcuts" ? shortcutsTab(v, t) : tab === "theme" ? themeTab(v, t) : tab === "permissions" ? permissionsTab(v, t) : generalTab(v, t));
   return h_flex().id("settings-around").absolute().top(0).left(0).size_full().items_center().justify_center().bg("#00000066")
     .on_mouse_down("left", (_e, cx) => { v.closeSettings(); cx.notify(); })
     .child(card);

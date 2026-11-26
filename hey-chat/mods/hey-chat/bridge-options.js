@@ -2,7 +2,23 @@
 export function bridgeArgs(o) {
   return ['serve', '--chat', o.chat, '--agent', o.agent, '--cwd', o.cwd, '--state', o.state,
     ...(o.session ? ['--resume', o.session] : []), ...(o.model ? ['--model', o.model] : []),
-    ...(o.title ? ['--title', o.title] : []), '--links', 'true'];
+    ...(o.title ? ['--title', o.title] : []), ...(o.permissions ? ['--permissions', o.permissions] : []), '--links', 'true'];
+}
+
+// How often agents ask before acting. Claude takes a permission mode. Codex takes an approval
+// policy, a sandbox and who reviews its requests (auto_review is Codex's own risk check).
+export const PERMISSION_LEVELS = ['ask', 'edits', 'auto', 'full'];
+export const DEFAULT_PERMISSIONS = 'ask';
+export function permissionLevel(value) {
+  return PERMISSION_LEVELS.includes(value) ? value : DEFAULT_PERMISSIONS;
+}
+export function claudePermissionMode(level) {
+  return { ask: 'default', edits: 'acceptEdits', auto: 'auto', full: 'bypassPermissions' }[permissionLevel(level)];
+}
+export function codexPermissions(level) {
+  const l = permissionLevel(level);
+  if (l === 'full') return { approvalPolicy: 'never', approvalsReviewer: 'user', sandboxPolicy: { type: 'dangerFullAccess' } };
+  return { approvalPolicy: 'on-request', approvalsReviewer: l === 'auto' ? 'auto_review' : 'user', sandboxPolicy: { type: 'workspaceWrite' } };
 }
 
 // Provider-native connections use the same local MCP server and tools.

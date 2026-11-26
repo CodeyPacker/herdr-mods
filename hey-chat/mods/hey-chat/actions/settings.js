@@ -1,7 +1,9 @@
 // Settings: General preferences, message colors in Theme, and configurable Shortcuts.
 import { saveMe, pickPhoto, importPhoto, dropPhoto } from "../me.js";
 import { keyLabel } from "../shortcuts.js";
-import { CONDENSE_CHAT, SHOW_PLAN, remember } from "../common.js";
+import { CONDENSE_CHAT, SHOW_PLAN, PERMISSIONS, remember } from "../common.js";
+import { shared } from "herdr";
+import { permissionLevel } from "../bridge-options.js";
 import { InputState } from "gpui-base";
 import { COLOR_FIELDS, loadMessageColors, saveMessageColor, resetMessageColors } from "../message-colors.js";
 
@@ -20,6 +22,15 @@ export const settings = {
   /** A shortcut's key as buttons and hints show it, or "" when it is off or key hints are hidden. @param {string} id */
   keyHint(id) {
     return keyLabel(this.shortcuts.shown(id));
+  },
+
+  /** How often agents ask before acting, the same for every chat. */
+  permissionLevel() { return permissionLevel(shared(PERMISSIONS)); },
+
+  /** Saves the level and gives it to every connected chat. A running Claude switches at once, Codex from its next turn. @param {string} level */
+  setPermissionLevel(level) {
+    remember(PERMISSIONS, permissionLevel(level));
+    for (const bridge of this.bridges?.values() ?? []) bridge.setPermissions?.(this.permissionLevel()).catch(() => {});
   },
 
   /** Shows only conversation and file edits, and remembers the setting. */
@@ -68,7 +79,7 @@ export const settings = {
     this.focusInput();
   },
 
-  /** Shows General, Theme or Shortcuts. The Shortcuts tab takes the keys while it shows. @param {string} tab */
+  /** Shows General, Theme, Permissions or Shortcuts. The Shortcuts tab takes the keys while it shows. @param {string} tab */
   setSettingsTab(tab) {
     this.settingsTab = tab;
     if (tab === "theme") this.prepareMessageColors();

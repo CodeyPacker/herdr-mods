@@ -19,7 +19,7 @@ export const talk = {
     const had = this.bridges.get(chat.id);
     if (had?.sock) return Promise.resolve(had);
     const connecting = new Promise((resolve) => {
-      const bridge = new Bridge({ chat: chat.linkId ?? chat.id, agent: chat.agent, cwd: chat.cwd, session: chat.session ?? null, title: chat.title, model: chat.selectedModel ?? null },
+      const bridge = new Bridge({ chat: chat.linkId ?? chat.id, agent: chat.agent, cwd: chat.cwd, session: chat.session ?? null, title: chat.title, model: chat.selectedModel ?? null, permissions: this.permissionLevel() },
         (ev, cx) => this.onEvent(chat, ev, cx),
         (cx) => { if (this.bridges.get(chat.id) === bridge) this.bridges.delete(chat.id); chat.working = false; this.syncing?.delete(chat.id); cx.notify(); });
       this.bridges.set(chat.id, bridge);
@@ -183,12 +183,13 @@ export const talk = {
         if (files.length) await checkDocuments(files);
         let bridge = await this.link(chat, cx, true);
         // A bridge from before the queue protocol is replaced once it is idle.
-        if (bridge?.protocol < 10 && !queued && !chat.working && !chat.thread.some(m => m.queued)) {
+        if (bridge?.protocol < 11 && !queued && !chat.working && !chat.thread.some(m => m.queued)) {
           await this.quitBridge(chat, bridge);
           bridge = await this.link(chat, cx, true);
         }
         if (!bridge) throw new Error("Couldn't connect. Your message wasn't sent.");
         if (files.length && bridge.protocol < 4) throw new Error("This running chat needs to finish its turn and queue before file attachments are available. Your draft has been restored.");
+        bridge.permissions = this.permissionLevel();
         await bridge.send(text, images, skill, `${chat.id}-${Date.now()}-${this.messageSequence = (this.messageSequence ?? 0) + 1}`, files);
       } catch (e) {
         this.addError(chat, e);

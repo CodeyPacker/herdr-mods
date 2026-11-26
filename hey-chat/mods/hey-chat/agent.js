@@ -234,6 +234,7 @@ export class Bridge {
   constructor(o, onEvent, onClose) {
     this.chat = o.chat; this.agent = o.agent; this.cwd = o.cwd; this.session = o.session;
     this.model = o.model ?? null;
+    this.permissions = o.permissions ?? null;
     this.title = o.title ?? "";
     this.onEvent = onEvent; this.onClose = onClose;
     /** @type {import("net").Socket | null} */
@@ -343,7 +344,7 @@ export class Bridge {
     let record;
     try { record = JSON.parse(await readTextFile(`${dataDir()}/links/${this.chat}.json`) ?? "null"); } catch { /* no saved link */ }
     if (record?.deleted) throw new Error("This chat was deleted. Choose another conversation.");
-    const args = bridgeArgs({ chat: this.chat, agent: this.agent, cwd: this.cwd, state: bridgeDir(), session: this.session, model: this.model, title: this.title });
+    const args = bridgeArgs({ chat: this.chat, agent: this.agent, cwd: this.cwd, state: bridgeDir(), session: this.session, model: this.model, title: this.title, permissions: this.permissions });
     const r = await hc(["run", "--bg", "--no-parent", "--outlive-parent", "--cwd", this.cwd, "--label", "hey-chat=bridge", "--json", "--",
       nodeRuntime, script("bridge.mjs"), ...args]);
     if (r.code !== 0) throw new Error(r.stderr.trim() || "Couldn't start the bridge.");
@@ -442,9 +443,11 @@ export class Bridge {
    * @param {string} text @param {{ path: string, w: number, h: number }[]} [images]
    * @param {{ name: string, path: string } | null} [skill] a Codex skill picked from the / menu
    */
-  send(text, images = [], skill = null, id = null, files = []) { return this.write({ type: "send", text, images, ...(files.length ? { files } : {}), ...(skill ? { skill } : {}), ...(id ? { id } : {}) }); }
+  send(text, images = [], skill = null, id = null, files = []) { return this.write({ type: "send", text, images, ...(this.permissions ? { permissions: this.permissions } : {}), ...(files.length ? { files } : {}), ...(skill ? { skill } : {}), ...(id ? { id } : {}) }); }
   /** Sends a queued message into the active turn. @param {string} id */
   sendNow(id) { return this.write({ type: "send_now", id }); }
+  /** How often the agent asks first: ask, edits, auto or full. @param {string} level */
+  setPermissions(level) { this.permissions = level; return this.write({ type: "permissions", level }); }
   markSeen() { return this.write({ type: "link_seen" }); }
   updateLinkMetadata(title) { return this.write({ type: "link_metadata", title }); }
   /** Retries a failed turn by its bridge-owned failure id. */

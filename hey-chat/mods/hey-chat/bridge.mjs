@@ -5,6 +5,7 @@
 // starts this program in a hidden Herdr terminal and talks to it over a local socket instead.
 //
 //   node bridge.mjs serve --chat <id> --cwd <folder> --state <dir> [--agent claude|codex] [--resume <session>]
+//       [--permissions ask|edits|auto|full]
 //       Listens on 127.0.0.1, writes { port, pid, token } to <state>/<chat>.json, and runs the chat's agent:
 //       Claude Code (`claude -p`, the default) or Codex (`codex app-server`). Ends on "quit", or after
 //       30 minutes with no pane connected and no turn running.
@@ -17,7 +18,8 @@
 // The socket carries one JSON object per line. The first line says who is talking and carries the
 // token from the bridge's file. Only you can read that file, so nothing else on the computer
 // (another account, a web page posting to the port) can send messages or answer for you:
-//   { role: "pane" }  the mod. It sends { type: "send", text, images, skill? }, { type: "stop" },
+//   { role: "pane" }  the mod. It sends { type: "send", text, images, skill?, permissions? }, { type: "stop" },
+//                     { type: "permissions", level },
 //                     { type: "answer", id, answers: { <question id>: [answer, …] } } for the agent's questions,
 //                     { type: "decide", id, behavior: "allow" | "deny", always }, { type: "quit" },
 //                     and gets every event since the bridge started (then { type: "replay_end" }
@@ -32,7 +34,7 @@ import { mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync } from "nod
 import { join, dirname } from "node:path";
 import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { chatMcpServer, codexMcpArgs, LINK_TOOL_NAMES } from "./bridge-options.js";
+import { chatMcpServer, codexMcpArgs, LINK_TOOL_NAMES, permissionLevel, claudePermissionMode, codexPermissions } from "./bridge-options.js";
 import { withSender } from "./link-messages.js";
 import { ChatLinks, CHAT_TOOLS, CHAT_INSTRUCTIONS } from "./chat-links.mjs";
 import { readDocuments } from "./documents.mjs";
@@ -215,10 +217,12 @@ export function serve(opts, dependencies = {}) {
   const outputStatus = dependencies.outputStatus ?? (value => process.stdout.write(value));
   const chat = opts.chat, cwd = opts.cwd, state = opts.state;
   const agent = opts.agent === "codex" ? "codex" : "claude";
-  const links = opts.links === "true" ? new ChatLinks({ state, chat, cwd, agent, model: opts.model || null, title: opts.title || "", session: opts.resume || null, launch: dependencies.launchBridge, models: dependencies.listModels }) : null;
+  const links = opts.links === "true" ? new ChatLinks({ state, chat, cwd, agent, model: opts.model || null, title: opts.title || "", session: opts.resume || null, permissions: () => permissions, launch: dependencies.launchBridge, models: dependencies.listModels }) : null;
   const savedLink = links?.get();
   let session = opts.resume || savedLink?.session || null;
   const selectedModel = opts.model || null;
+  /** How often the agent asks first (bridge-options.js). The pane sends changes. */
+  let permissions = permissionLevel(opts.permissions);
   let activeMessage = null;
   let failedMessage = null;
   let turn = false;         // a turn is running
@@ -367,6 +371,8 @@ export function serve(opts, dependencies = {}) {
         "--permission-prompt-tool", "mcp__heychat__approve", "--mcp-config", JSON.stringify(mcpConfig),
         "--allowedTools", "mcp__heychat__plan", ...(links ? LINK_TOOL_NAMES.map(name => `mcp__heychat__${name}`) : []),
         "--append-system-prompt", [PLAN_PROMPT, ...(links ? [CHAT_INSTRUCTIONS] : [])].join("\n\n"),
+        // Allows switching to Full access later. The mode itself comes from --permission-mode.
+        "--permission-mode", claudePermissionMode(permissions), "--allow-dangerously-skip-permissions",
         ...(session ? ["--resume", session] : []), ...(selectedModel ? ["--model", selectedModel] : [])];
       stderr = "";
       const child = spawnProcess("claude", args, { cwd, stdio: ["pipe", "pipe", "pipe"] });
@@ -451,7 +457,12 @@ export function serve(opts, dependencies = {}) {
       try { mkdirSync(join(cwd, ".claude"), { recursive: true }); writeFileSync(file, `${JSON.stringify(s, null, 2)}\n`); } catch { /* the run still allows it */ }
     };
 
+    let controlId = 0;
     return {
+      /** Changes a running Claude's permission mode. A new Claude starts with the current one. */
+      setPermissions() {
+        proc?.stdin?.write(`${JSON.stringify({ type: "control_request", request_id: `mode-${++controlId}`, request: { subtype: "set_permission_mode", mode: claudePermissionMode(permissions) } })}\n`);
+      },
       /** @param {string} text @param {{ path: string }[]} images */
       send(text, images) {
         if (!proc) start();
@@ -675,7 +686,7 @@ export function serve(opts, dependencies = {}) {
                 emit({ type: "user", text, images: [], at: Date.now() });
                 if (!active) emit({ type: "working" });
                 const input = [{ type: "text", text, text_elements: [] }];
-                call(active ? "turn/steer" : "turn/start", { threadId: session, input, ...(active ? { expectedTurnId: turnId } : selectedModel ? { model: selectedModel } : {}) })
+                call(active ? "turn/steer" : "turn/start", { threadId: session, input, ...(active ? { expectedTurnId: turnId } : { ...codexPermissions(permissions), ...(selectedModel ? { model: selectedModel } : {}) }) })
                   .then(r => { turnId = r?.turn?.id ?? turnId; })
                   .catch(e => endTurn(true, errorText(e)));
               }, true);
@@ -707,13 +718,15 @@ export function serve(opts, dependencies = {}) {
        * A skill you picked from the / menu goes in as a skill input, and its /name comes off the text.
        * @param {string} text @param {{ path: string }[]} images @param {{ name: string, path: string } | null} [skill]
        */
+      /** Codex takes the level with each turn/start, so a change applies from the next turn. */
+      setPermissions() {},
       send(text, images, skill = null) {
         if (!proc) start();
         const input = turnInput(text, images, skill);
         startingTurn = (async () => {
           try {
             await ready;
-            const r = await call("turn/start", { threadId: session, input, ...(selectedModel ? { model: selectedModel } : {}) });
+            const r = await call("turn/start", { threadId: session, input, ...codexPermissions(permissions), ...(selectedModel ? { model: selectedModel } : {}) });
             turnId = r?.turn?.id ?? turnId;
           } catch (e) {
             endTurn(true, errorText(e));
@@ -803,6 +816,8 @@ export function serve(opts, dependencies = {}) {
   const fromPane = (m) => {
     if (!m || quitting) return;
     if (m.type === "send" && typeof m.text === "string") {
+      // The pane's current level rides along, for a bridge that missed a change while unconnected.
+      if (m.permissions) fromPane({ type: "permissions", level: m.permissions });
       // Pictures you pasted: { path, w, h } each, already in the images folder.
       const images = (Array.isArray(m.images) ? m.images : []).filter((/** @type {any} */ i) => typeof i?.path === "string");
       const skill = m.skill && typeof m.skill.name === "string" && typeof m.skill.path === "string" ? m.skill : null;
@@ -860,6 +875,9 @@ export function serve(opts, dependencies = {}) {
         links?.saveQueue(queue);
         emit({ type: "queue_updated", id: entry.id, text: entry.text });
       }
+    } else if (m.type === "permissions") {
+      const level = permissionLevel(m.level);
+      if (level !== permissions) { permissions = level; driver.setPermissions(); }
     } else if (m.type === "stop") {
       if (turn) driver.stop();
     } else if (m.type === "decide") {
@@ -903,7 +921,7 @@ export function serve(opts, dependencies = {}) {
 
   const control = async m => {
     if (!links) throw new Error("This bridge does not support linked chats.");
-    if (m.type === "link_ping") return { chat, session, status: links.get().status, protocol: 10 };
+    if (m.type === "link_ping") return { chat, session, status: links.get().status, protocol: 11 };
     if (m.type === "link_tool") return runLinkedTool(m.name, m.arguments ?? {});
     if (m.type === "link_send") {
       links.related(m.source?.chat);
@@ -979,8 +997,8 @@ export function serve(opts, dependencies = {}) {
     // Made new each time and readable by you alone, since it holds the token.
     const file = join(state, `${chat}.json`);
     rmSync(file, { force: true });
-    writeFileSync(file, JSON.stringify({ port, pid: process.pid, cwd, agent, startedAt, protocol: 10, token }), { mode: 0o600 });
-    emit({ type: "ready", session, agent, protocol: 10 });
+    writeFileSync(file, JSON.stringify({ port, pid: process.pid, cwd, agent, startedAt, protocol: 11, token }), { mode: 0o600 });
+    emit({ type: "ready", session, agent, protocol: 11 });
     if (links && ["working", "blocked"].includes(savedLink?.status)) {
       const request = savedLink.lastRequest;
       if (request) { activeMessage = { ...request, id: request.queueId ?? request.id, images: request.images ?? [], files: request.files ?? [] }; turn = true; endTurn(true, "This turn was interrupted when its bridge stopped. You can retry the original request."); }
