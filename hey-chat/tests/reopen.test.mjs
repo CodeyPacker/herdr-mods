@@ -1,6 +1,10 @@
 import { mod, fake } from './support/mod.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { ChatLinks } from '../mods/hey-chat/chat-links.mjs';
 
 const { default: HeyChat } = await mod('main.js');
 
@@ -262,4 +266,41 @@ test('reopening keeps renamed and pinned empty chats available', async () => {
   assert.ok(v.chats.some(c => c.id === named.id));
   v.openChat(named.id, cx);
   assert.ok(v.chats.some(c => c.id === pinned.id));
+});
+
+for (const session of ['deleted-session', null]) test(`deleting a new parent before link discovery stays deleted on reopen (${session})`, async t => {
+  const root = await mkdtemp(join(tmpdir(), 'hey-chat-parent-delete-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const bridgeState = join(root, 'bridges');
+  const target = { id: 'new-parent', agent: 'claude', cwd: '/tmp', project: 'project', title: 'Mobile help', session, thread: [] };
+  new ChatLinks({ state: bridgeState, chat: target.id, cwd: target.cwd, agent: target.agent, title: target.title, session });
+  const { v, cx, jobs } = pane(stored('last'));
+  v.chats = [target, { ...stored('last').chats[0], project: 'project', thread: [] }];
+  v.chatId = target.id;
+  v.loaded = true;
+  v.links = new Map();
+  v.deleting = { id: target.id, back: 'chat' };
+  const calls = [];
+  fake('agent.js', {
+    Bridge: class { async quit() { calls.push('quit'); } close() {} },
+    deleteSession: async () => { calls.push('delete'); return { ok: true }; },
+    detachLinkedChat: async id => { calls.push('detach'); ChatLinks.detach(bridgeState, id); },
+  });
+  v.confirmDelete(cx);
+  await Promise.all(jobs);
+  assert.equal(v.deleting, null);
+  assert.equal(v.chats.some(c => c.id === target.id), false);
+  const record = JSON.parse(await readFile(join(root, 'links', `${target.id}.json`), 'utf8'));
+  // Even an older store snapshot and stale provider listing must not resurrect it.
+  const reopened = pane({ projects: [], chats: [target, ...stored('last').chats] });
+  fake('agent.js', {
+    listLinkedChats: async () => [record],
+    listSessions: async () => session ? [{ ...target, id: 'provider-copy' }] : [],
+  });
+  await reopened.v.loadChats(reopened.cx);
+  await Promise.all(reopened.jobs);
+  assert.equal(reopened.v.chats.some(c => c.id === target.id || (session && c.session === session)), false);
+  assert.equal(reopened.v.adoptLinkedChat({ ...record, deleted: false }), null);
+  assert.equal(record.deleted, true);
+  assert.deepEqual(calls, session ? ['quit', 'delete', 'detach'] : ['quit', 'detach']);
 });
