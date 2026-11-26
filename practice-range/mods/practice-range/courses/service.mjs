@@ -191,6 +191,16 @@ export async function courseCommand(root, action, request = {}) {
       state.position = { moduleId: lesson.id, step };
       state.activeTask = null;
       await persist();
+    } else if (action === "example") {
+      const lesson = lessonFor(pack, request.moduleId), example = Object.hasOwn(lesson.examples, request.exampleId) ? lesson.examples[request.exampleId] : null;
+      if (!example) throw new Error("Unknown lesson example.");
+      const { runner } = await runnerFor(pack), checks = join(directory, "checks");
+      await mkdir(checks, { recursive: true });
+      if (!runner.checkExample) throw new Error("This language pack does not support runnable course examples yet.");
+      const result = await runner.checkExample(checks, example);
+      const progress = state.modules[lesson.id] ??= { seen: [], questions: {} };
+      (progress.examples ??= {})[request.exampleId] = { ...result, at: Date.now() };
+      await persist();
     } else if (["seen", "question", "skip"].includes(action)) {
       const lesson = lessonFor(pack, request.moduleId);
       const progress = state.modules[lesson.id] ??= { seen: [], questions: {} };

@@ -252,8 +252,12 @@ export class CoursePanel {
     for (const id of [...(step.examples ?? []), ...(step.example ? [step.example] : [])]) {
       const example = lesson.examples[id];
       body.child(markdown(`course-example-${id}`, `\`\`\`typescript\n${example.code}\n\`\`\``));
-      body.child(div().text_color(t.muted).child(example.stdout ? `Output:\n${example.stdout.join("\n")}`
-        : `Expected compiler error: ${example.diagnostics.map(d => `TS${d.code} on line ${d.line}`).join(", ")}`));
+      body.child(keyButton(t, `course-run-example-${id}`, "", "Run example", !this.busy, cx => this.run("example", { moduleId: lesson.id, exampleId: id }, cx)));
+      const result = this.data.enrollment.modules[lesson.id]?.examples?.[id];
+      if (result) {
+        body.child(banner(t, result.title));
+        for (const [index, detail] of result.details.entries()) body.child(markdown(`course-example-result-${id}-${index}`, `\`\`\`text\n${detail}\n\`\`\``));
+      }
     }
     for (const id of step.questions ?? []) {
       const question = lesson.questions.find(question => question.id === id);

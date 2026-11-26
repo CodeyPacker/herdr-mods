@@ -33,6 +33,20 @@ export async function check(root, exercise, answer) {
   return checkAnswer(root, exercise, answer);
 }
 
+/** A read-only course example. It supplies no learner answer and awards no coding evidence. */
+export async function checkExample(root, example) {
+  const exercise = { id: "course-example", mode: "script", rules: [],
+    checks: example.stdout ? [`__same(__logs(), ${JSON.stringify(example.stdout)})`] : [] };
+  const result = await checkAnswer(root, exercise, example.code);
+  if (example.diagnostics) {
+    const expected = result.kind === "compile" && result.details.length === example.diagnostics.length &&
+      example.diagnostics.every(diagnostic => result.details.some(detail => new RegExp(`Exercise\\.ts:${diagnostic.line}:\\d+ - error TS${diagnostic.code}:`).test(detail)));
+    result.passed = expected;
+    result.title = expected ? "The expected compiler error occurred" : "This example did not produce its expected diagnostic";
+  } else if (result.passed) result.title = "The example ran and produced its expected output";
+  return result;
+}
+
 export function scratchStarter() {
   return "// Scratch: write any TypeScript and save to run it. Nothing is checked.\nconst greeting: string = \"Hello from scratch\";\nconsole.log(greeting);\n";
 }

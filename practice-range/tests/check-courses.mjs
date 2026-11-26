@@ -17,12 +17,13 @@ try {
   const modules = await request("open", { moduleId, step: 0 });
   const prediction = await request("open", { moduleId, step: 1 });
   const feedback = await request("question", { moduleId, questionId: "predict-count", choice: 1 });
+  const example = await request("example", { moduleId, exampleId: "board" });
   const task = await request("task", { taskId });
   const solution = await request("answer", { taskId });
   const project = await request("task", { taskId: `${courseId}/task/report-audit` });
   const review = structuredClone(task);
   review.enrollment.review = { ids: [taskId], index: 0 };
-  const cases = { catalog: ["catalog", null], versions: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules],
+  const cases = { catalog: ["catalog", null], versions: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules], "example-output": ["lesson", example],
     prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], review: ["task", review], "ai-lesson": ["lesson", modules], "ai-task": ["task", task], error: ["task", task] };
   const requested = process.argv.slice(2);
   for (const name of requested) if (!Object.hasOwn(cases, name)) throw new Error(`Unknown course fixture: ${name}`);

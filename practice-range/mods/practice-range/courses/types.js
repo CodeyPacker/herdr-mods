@@ -17,7 +17,7 @@
  *   answerShown: boolean, result?: CourseResult }} TaskProgress
  * @typedef {{ course: { id: string, title: string, languageId: string, contentVersion: string, preview: boolean,
  *   modules: Module[], lessons: Lesson[] }, enrollment: { position: {moduleId: string, step: number} | null,
- *   activeTask: string | null, review?: {ids: string[], index: number}, modules: Record<string, { seen: number[], skipped?: boolean, questions: Record<string, QuestionProgress> }>,
+ *   activeTask: string | null, review?: {ids: string[], index: number}, modules: Record<string, { seen: number[], skipped?: boolean, questions: Record<string, QuestionProgress>, examples?: Record<string, CourseResult> }>,
  *   tasks: Record<string, TaskProgress> }, file: string | null, folder: string | null, sourceHash: string | null,
  *   stale: boolean, pendingSave?: boolean, reviewReady: number,
  *   recommendation: {kind: string, reason: string, moduleId?: string, taskId?: string, step?: number} }} CourseSnapshot

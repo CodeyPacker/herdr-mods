@@ -35,6 +35,20 @@ test("course enrollment resumes reading and predictions without a repo, model, o
   await assert.rejects(readFile(join(root, "session.json")), { code: "ENOENT" });
 });
 
+test("running examples shows actual output and expected diagnostics without counting coding attempts", async t => {
+  const root = await rootFor(t);
+  await courseCommand(root, "enroll", { courseId });
+  await courseCommand(root, "open", { courseId, moduleId, step: 1 });
+  let state = await courseCommand(root, "example", { courseId, moduleId, exampleId: "board" });
+  assert.equal(state.enrollment.modules[moduleId].examples.board.passed, true);
+  assert.match(state.enrollment.modules[moduleId].examples.board.details.join("\n"), /4\n5/);
+  state = await courseCommand(root, "example", { courseId, moduleId, exampleId: "bad-count" });
+  assert.equal(state.enrollment.modules[moduleId].examples["bad-count"].passed, true);
+  assert.match(state.enrollment.modules[moduleId].examples["bad-count"].details.join("\n"), /TS2322/);
+  assert.deepEqual(state.enrollment.tasks, {});
+  assert.deepEqual(state.enrollment.modules[moduleId].seen, [], "Running code does not mark the lesson read");
+});
+
 test("course fixtures aggregate into one attempt, preserve assistance, and ignore generated or duplicate saves", { timeout: 120000 }, async t => {
   const root = await rootFor(t), pack = await loadCourse(courseId);
   const { task } = taskFor(pack, taskId);

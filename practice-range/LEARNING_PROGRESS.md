@@ -7,7 +7,7 @@ Implement the approved scope in `LEARNING_SCOPE.md`. Practice Range is the desti
 | Code | Capability | Evidence |
 | --- | --- | --- |
 | I1 | Bundled TypeScript preview with 18 authored modules and 56 tasks, including a two-file final assessment. | `course-drafts/typescript/verify.mjs` passed 19 runnable examples, two intentional diagnostics, 74 reference runs, 74 alternatives, and 113 named wrong-answer witnesses across 149 case runs. |
-| I2 | Course catalog, module navigation, predictions, reading position, save checks, hints, solution reveal, and reset backups. No repo or AI required. | `tests/course-pack.test.mjs` and `tests/course-session.test.mjs`. |
+| I2 | Course catalog, module navigation, predictions, runnable examples, reading position, save checks, hints, solution reveal, and reset backups. No repo or AI required. | `tests/course-pack.test.mjs` and `tests/course-session.test.mjs`. |
 | I3 | Bounded project workspaces with complete file snapshots, trusted supplied files, stale-result detection, and backups of both editable files. | `tests/course-project.test.mjs`. The final assessment checks both implementation correctness and the learner's regression test against correct and faulty candidates. |
 | I4 | Course review in fresh files, original-answer preservation, assistance tracking, review intervals, and explained next-action recommendations. | `tests/course-review.test.mjs` and the review session test. Reuses existing practice scheduling rules. |
 | I5 | Lesson links to matching language practice topics. Returning to Courses restores the lesson. | Native navigation assertions in `tests/check-courses.mjs`. |
@@ -36,7 +36,7 @@ The course remains a preview. Compiler correctness and native materialization do
 
 The full Practice Range Node suite ran with concurrency 3. It passed 94 of 96 tests, including the existing language reference-answer checks. The two editor tests failed under the sandbox's local-socket restrictions. Both editor files then passed all four tests outside the sandbox with `TMPDIR=/private/tmp`, avoiding macOS `/var` versus `/private/var` alias assertions.
 
-All original native panel states passed across the full run and targeted reruns. Some attempts were interrupted while loading the large SQL catalog. The native harness now accepts state names so only unresolved states need repeating. The expanded course harness passed all thirteen fixtures across full and targeted checks, including project, review and optional AI states. Native checks require access to macOS window services, which the sandbox denies even for an empty panel.
+All original native panel states passed across the full run and targeted reruns. Some attempts were interrupted while loading the large SQL catalog. The native harness now accepts state names so only unresolved states need repeating. The expanded course harness passed all fourteen fixtures across full and targeted checks, including project, review and optional AI states. Native checks require access to macOS window services, which the sandbox denies even for an empty panel.
 
 The mod type check still reports four pre-existing errors in `kit/open-as.js` at the two `shared(backKey(mod))` call sites. The same errors were reproduced using the pre-project main file in an isolated copy. Do not widen this project into a shared-kit cleanup.
 
