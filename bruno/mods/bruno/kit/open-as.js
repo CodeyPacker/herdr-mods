@@ -93,9 +93,12 @@ function modTab(mod) {
   return space ? { space: space.id, tab: pane.tab } : null;
 }
 
-/** True when that tab is still open. @param {any} spot */
+/** True when a saved location names a tab that is still open.
+ * @param {unknown} spot @returns {spot is {space: string, tab: string}}
+ */
 function stillOpen(spot) {
-  return Boolean(spot && typeof spot.tab === "string" && spaces().some((s) => s.tabs.some((t) => t.id === spot.tab)));
+  return typeof spot === "object" && spot !== null && "space" in spot && typeof spot.space === "string" &&
+    "tab" in spot && typeof spot.tab === "string" && spaces().some((s) => s.tabs.some((t) => t.id === spot.tab));
 }
 
 /** Shows a tab, in its space. @param {{ space: string, tab: string }} spot */
