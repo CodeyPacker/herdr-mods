@@ -1,0 +1,58 @@
+{
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "rules": [],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture.ts"
+    }
+  ],
+  "id": "course:ts-foundations/task/readiness-r1",
+  "role": "readiness",
+  "title": "Readiness 1 · Values through lists",
+  "concepts": [
+    "function",
+    "array",
+    "loop",
+    "branch",
+    "inference"
+  ],
+  "mode": "script",
+  "prompt": "Write finalCount(start: number, changes: number[]): number. Start from start, add every change that is zero or more, and ignore negative changes. An empty list returns start.",
+  "hints": [
+    "Keep a running total that begins at start.",
+    "Visit each change once.",
+    "Only add a change when it is not negative."
+  ],
+  "checks": [
+    "finalCount(3, []) === 3",
+    "finalCount(0, [0, 0]) === 0",
+    "finalCount(2, [1, -5, 4]) === 7",
+    "finalCount(5, [-1, -1]) === 5"
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Adds negative changes.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Ignores the starting count.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Compare an empty list, zeros and a mix of positive and negative changes."
+}

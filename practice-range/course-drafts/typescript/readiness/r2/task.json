@@ -1,0 +1,59 @@
+{
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "rules": [],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture.ts"
+    }
+  ],
+  "id": "course:ts-foundations/task/readiness-r2",
+  "role": "readiness",
+  "title": "Readiness 2 · Shapes through boundary",
+  "concepts": [
+    "unknown",
+    "validation",
+    "narrowing",
+    "map-set",
+    "discriminant",
+    "optional"
+  ],
+  "mode": "script",
+  "prompt": "Write ownersOf(input: unknown). If input is not an array, return \"invalid\". Otherwise return a Map from owner to the number of valid tasks they own, in first-seen order. A valid task is an object with kind \"task\" and a string id. owner is optional. Skip tasks without a string owner, but keep an empty owner string as its own owner. Skip anything else.",
+  "hints": [
+    "Check the outer value with Array.isArray first.",
+    "For each item, rule out null and non-objects before reading fields.",
+    "Check kind, then the id type, then whether owner is a string. Empty text is a string."
+  ],
+  "checks": [
+    "__same(ownersOf(null), \"invalid\")",
+    "__same(ownersOf([]), new Map())",
+    "__same(ownersOf([{kind:\"task\",id:\"a\",owner:\"sam\"},{kind:\"task\",id:\"b\",owner:\"\"},{kind:\"task\",id:\"c\"},{kind:\"task\",id:\"d\",owner:\"sam\"}]), new Map([[\"sam\",2],[\"\",1]]))",
+    "__same(ownersOf([{kind:\"note\",id:\"x\",owner:\"sam\"},{kind:\"task\",owner:\"sam\"},{kind:\"task\",id:\"y\",owner:7},null,\"task\"]), new Map())"
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Treats an empty owner as missing.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Never checks the kind tag.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 4 failed"
+      }
+    }
+  ],
+  "feedback": "A type alias cannot check data at runtime. Inspect each field before trusting it."
+}

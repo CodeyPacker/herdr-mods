@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "0.1.0-preview.1",
+  "contentVersion": "0.1.0-preview.2",
   "id": "course:ts-foundations",
   "languageId": "typescript",
   "runner": {
@@ -370,11 +370,246 @@
       "status": "available"
     }
   ],
-  "project": "project/project.json",
+  "project": {
+    "id": "course:ts-foundations/project/tracker",
+    "title": "Task tracker",
+    "checkpoints": [
+      {
+        "id": "course:ts-foundations/project/tracker/count",
+        "title": "Update the board count",
+        "module": "course:ts-foundations/module/functions",
+        "taskId": "course:ts-foundations/task/project-count"
+      },
+      {
+        "id": "course:ts-foundations/project/tracker/group",
+        "title": "Group tasks by status",
+        "module": "course:ts-foundations/module/collections",
+        "taskId": "course:ts-foundations/task/project-group"
+      },
+      {
+        "id": "course:ts-foundations/project/tracker/test-edit",
+        "title": "Separate modules and catch a broken edit",
+        "module": "course:ts-foundations/module/checks",
+        "taskId": "course:ts-foundations/task/project-test-edit"
+      },
+      {
+        "id": "course:ts-foundations/project/tracker/local-reader",
+        "title": "Read and validate local tasks",
+        "module": "course:ts-foundations/module/compose",
+        "taskId": "course:ts-foundations/task/project-local-reader"
+      },
+      {
+        "id": "course:ts-foundations/project/tracker/audit",
+        "title": "Audit a task import",
+        "module": "course:ts-foundations/module/report",
+        "taskId": "course:ts-foundations/task/report-audit"
+      }
+    ]
+  },
   "compatibility": {
-    "fromVersions": [],
+    "fromVersions": [
+      "0.1.0-preview.1"
+    ],
     "replacements": []
   },
+  "readiness": [
+    {
+      "id": "R1",
+      "title": "Values through lists",
+      "modules": [
+        "course:ts-foundations/module/values",
+        "course:ts-foundations/module/decisions",
+        "course:ts-foundations/module/functions",
+        "course:ts-foundations/module/lists"
+      ],
+      "task": {
+        "starter": "function finalCount(start: number, changes: number[]): number {\n  return start;\n}\n",
+        "solution": "function finalCount(start: number, changes: number[]): number {\n  let total = start;\n  for (const change of changes) {\n    if (change >= 0) total += change;\n  }\n  return total;\n}\n",
+        "rules": [],
+        "typeChecks": [],
+        "rejects": [],
+        "fixtures": [
+          {
+            "id": "cases",
+            "declarations": "// The checks call your code directly.\n"
+          }
+        ],
+        "id": "course:ts-foundations/task/readiness-r1",
+        "role": "readiness",
+        "title": "Readiness 1 · Values through lists",
+        "concepts": [
+          "function",
+          "array",
+          "loop",
+          "branch",
+          "inference"
+        ],
+        "mode": "script",
+        "prompt": "Write finalCount(start: number, changes: number[]): number. Start from start, add every change that is zero or more, and ignore negative changes. An empty list returns start.",
+        "hints": [
+          "Keep a running total that begins at start.",
+          "Visit each change once.",
+          "Only add a change when it is not negative."
+        ],
+        "checks": [
+          "finalCount(3, []) === 3",
+          "finalCount(0, [0, 0]) === 0",
+          "finalCount(2, [1, -5, 4]) === 7",
+          "finalCount(5, [-1, -1]) === 5"
+        ],
+        "feedback": "Compare an empty list, zeros and a mix of positive and negative changes."
+      }
+    },
+    {
+      "id": "R2",
+      "title": "Shapes through boundary",
+      "modules": [
+        "course:ts-foundations/module/shapes",
+        "course:ts-foundations/module/missing",
+        "course:ts-foundations/module/collections",
+        "course:ts-foundations/module/tagged",
+        "course:ts-foundations/module/boundary"
+      ],
+      "task": {
+        "starter": "function ownersOf(input: unknown): Map<string, number> | \"invalid\" {\n  return new Map();\n}\n",
+        "solution": "function ownersOf(input: unknown): Map<string, number> | \"invalid\" {\n  if (!Array.isArray(input)) return \"invalid\";\n  const counts = new Map<string, number>();\n  for (const item of input) {\n    if (typeof item !== \"object\" || item === null) continue;\n    const record = item as Record<string, unknown>;\n    if (record.kind !== \"task\" || typeof record.id !== \"string\") continue;\n    if (typeof record.owner === \"string\") counts.set(record.owner, (counts.get(record.owner) ?? 0) + 1);\n  }\n  return counts;\n}\n",
+        "rules": [],
+        "typeChecks": [],
+        "rejects": [],
+        "fixtures": [
+          {
+            "id": "cases",
+            "declarations": "// The checks call your code directly.\n"
+          }
+        ],
+        "id": "course:ts-foundations/task/readiness-r2",
+        "role": "readiness",
+        "title": "Readiness 2 · Shapes through boundary",
+        "concepts": [
+          "unknown",
+          "validation",
+          "narrowing",
+          "map-set",
+          "discriminant",
+          "optional"
+        ],
+        "mode": "script",
+        "prompt": "Write ownersOf(input: unknown). If input is not an array, return \"invalid\". Otherwise return a Map from owner to the number of valid tasks they own, in first-seen order. A valid task is an object with kind \"task\" and a string id. owner is optional. Skip tasks without a string owner, but keep an empty owner string as its own owner. Skip anything else.",
+        "hints": [
+          "Check the outer value with Array.isArray first.",
+          "For each item, rule out null and non-objects before reading fields.",
+          "Check kind, then the id type, then whether owner is a string. Empty text is a string."
+        ],
+        "checks": [
+          "__same(ownersOf(null), \"invalid\")",
+          "__same(ownersOf([]), new Map())",
+          "__same(ownersOf([{kind:\"task\",id:\"a\",owner:\"sam\"},{kind:\"task\",id:\"b\",owner:\"\"},{kind:\"task\",id:\"c\"},{kind:\"task\",id:\"d\",owner:\"sam\"}]), new Map([[\"sam\",2],[\"\",1]]))",
+          "__same(ownersOf([{kind:\"note\",id:\"x\",owner:\"sam\"},{kind:\"task\",owner:\"sam\"},{kind:\"task\",id:\"y\",owner:7},null,\"task\"]), new Map())"
+        ],
+        "feedback": "A type alias cannot check data at runtime. Inspect each field before trusting it."
+      }
+    },
+    {
+      "id": "R3",
+      "title": "Modules through async",
+      "modules": [
+        "course:ts-foundations/module/modules",
+        "course:ts-foundations/module/checks",
+        "course:ts-foundations/module/errors",
+        "course:ts-foundations/module/async"
+      ],
+      "task": {
+        "starter": "export async function loadReport(read: (name: string) => Promise<string[]>, name: string): Promise<{ kind: \"loaded\"; count: number } | { kind: \"missing\"; name: string }> {\n  return { kind: \"loaded\", count: 0 };\n}\n\nexport function catchesWrongCount(candidate: (lines: string[]) => number): boolean {\n  return true;\n}\n",
+        "solution": "export async function loadReport(read: (name: string) => Promise<string[]>, name: string): Promise<{ kind: \"loaded\"; count: number } | { kind: \"missing\"; name: string }> {\n  try {\n    const lines = await read(name);\n    return { kind: \"loaded\", count: lines.filter(line => line !== \"\").length };\n  } catch {\n    return { kind: \"missing\", name };\n  }\n}\n\nexport function catchesWrongCount(candidate: (lines: string[]) => number): boolean {\n  return candidate([\"a\", \"\", \"b\"]) === 2;\n}\n",
+        "rules": [],
+        "typeChecks": [],
+        "rejects": [],
+        "fixtures": [
+          {
+            "id": "cases",
+            "declarations": "// Checks import your exports as answer.\n"
+          }
+        ],
+        "id": "course:ts-foundations/task/readiness-r3",
+        "role": "readiness",
+        "title": "Readiness 3 · Modules through async",
+        "concepts": [
+          "import-export",
+          "tests",
+          "promise",
+          "await",
+          "failure",
+          "throw-catch"
+        ],
+        "mode": "module",
+        "prompt": "Export two functions. loadReport(read, name) awaits read(name) once. When it resolves, return { kind: \"loaded\", count } where count is the number of non-empty lines. When it rejects, return { kind: \"missing\", name }. catchesWrongCount(candidate) is a regression check for a line counter: return true for a counter that skips empty lines and false for one that counts every line.",
+        "hints": [
+          "Use try/catch around the await so a rejection becomes the missing result.",
+          "Count lines that are not empty text.",
+          "Your check needs an input containing an empty line, so the two counters disagree."
+        ],
+        "checks": [
+          "__same(await answer.loadReport(async () => [\"a\", \"\", \"b\"], \"x\"), { kind: \"loaded\", count: 2 })",
+          "__same(await answer.loadReport(async () => { throw new Error(\"no\"); }, \"notes\"), { kind: \"missing\", name: \"notes\" })",
+          "__same(await answer.loadReport(async () => [], \"x\"), { kind: \"loaded\", count: 0 })",
+          "answer.catchesWrongCount(lines => lines.filter(line => line !== \"\").length) === true",
+          "answer.catchesWrongCount(lines => lines.length) === false"
+        ],
+        "feedback": "Handle both promise outcomes, and choose a test input on which correct and broken code differ."
+      }
+    },
+    {
+      "id": "R4",
+      "title": "Generic through tracker",
+      "modules": [
+        "course:ts-foundations/module/generic",
+        "course:ts-foundations/module/compose",
+        "course:ts-foundations/module/tracker"
+      ],
+      "task": {
+        "starter": "function firstOr<T>(items: readonly T[], fallback: T): T {\n  return fallback;\n}\n\nfunction summaries(tasks: readonly TrackerTask[]): Pick<TrackerTask, \"id\" | \"title\">[] {\n  return [];\n}\n",
+        "solution": "function firstOr<T>(items: readonly T[], fallback: T): T {\n  return items.length > 0 ? items[0] : fallback;\n}\n\nfunction summaries(tasks: readonly TrackerTask[]): Pick<TrackerTask, \"id\" | \"title\">[] {\n  return tasks.filter(task => !task.done).map(task => ({ id: task.id, title: task.title }));\n}\n",
+        "rules": [],
+        "typeChecks": [
+          "__Equal<ReturnType<typeof firstOr<string>>, string>",
+          "__Equal<ReturnType<typeof summaries>, Pick<TrackerTask, \"id\" | \"title\">[]>"
+        ],
+        "rejects": [
+          "firstOr<number>([1], \"x\")"
+        ],
+        "fixtures": [
+          {
+            "id": "cases",
+            "declarations": "// Supplied tracker type. The checks call your code directly.\ninterface TrackerTask { id: string; title: string; done: boolean; owner?: string }\n"
+          }
+        ],
+        "id": "course:ts-foundations/task/readiness-r4",
+        "role": "readiness",
+        "title": "Readiness 4 · Generic through tracker",
+        "concepts": [
+          "generic",
+          "utility",
+          "callback",
+          "transform"
+        ],
+        "mode": "script",
+        "prompt": "Write firstOr<T>(items, fallback): return the first item when the list is nonempty, even if it is 0 or empty text, and the fallback otherwise. Write summaries(tasks): return { id, title } for each open task (done is false), in order, with no other fields. The two must work together: firstOr(summaries(tasks), fallback).",
+        "hints": [
+          "Use the list length, not truthiness, to decide whether a first item exists.",
+          "Filter open tasks, then build a new object with only id and title.",
+          "Pick<TrackerTask, \"id\" | \"title\"> describes the result shape."
+        ],
+        "checks": [
+          "__same(firstOr([0, 1], 9), 0)",
+          "__same(firstOr([], \"none\"), \"none\")",
+          "__same(summaries([{ id: \"a\", title: \"A\", done: false, owner: \"s\" }, { id: \"b\", title: \"B\", done: true }]), [{ id: \"a\", title: \"A\" }])",
+          "__same(summaries([]), [])",
+          "__same(firstOr(summaries([{ id: \"c\", title: \"\", done: false }]), { id: \"-\", title: \"none\" }), { id: \"c\", title: \"\" })"
+        ],
+        "feedback": "Check an empty list, a falsy first item, and that summaries contain only the requested fields."
+      }
+    }
+  ],
   "preview": true,
   "lessons": [
     {
@@ -1377,6 +1612,14 @@
           "title": "Calculate time beyond a booking",
           "text": "Use the contract in the exercise and check your answer on save.",
           "task": "course:ts-foundations/task/functions-extra-hours"
+        },
+        {
+          "kind": "independent",
+          "title": "Project 1 · Update the board count",
+          "text": "A tracker project checkpoint. Later checkpoints build on the same task data.",
+          "tasks": [
+            "course:ts-foundations/task/project-count"
+          ]
         }
       ],
       "questions": [
@@ -1526,6 +1769,41 @@
             }
           ],
           "feedback": "Trace a move from five to two."
+        },
+        {
+          "starter": "function remainingAfter(opening: number, arrivals: number, completed: number): number {\n  return opening;\n}\n",
+          "solution": "function remainingAfter(opening: number, arrivals: number, completed: number): number {\n  return opening + arrivals - completed;\n}\n",
+          "rules": [],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "id": "course:ts-foundations/task/project-count",
+          "role": "project",
+          "title": "Project 1 · Update the board count",
+          "concepts": [
+            "function",
+            "numeric-expression"
+          ],
+          "mode": "script",
+          "prompt": "Write remainingAfter(opening: number, arrivals: number, completed: number): number. Return the number of open tasks after adding arrivals and removing completed tasks. All inputs are whole numbers at least zero. The completed count is at most opening plus arrivals. An empty board and a fully completed board both have zero open tasks.",
+          "hints": [
+            "What would the count be if nobody finished a task?",
+            "The completed tasks can come from either the original group or new arrivals.",
+            "Calculate the combined group, then apply completions once."
+          ],
+          "checks": [
+            "remainingAfter(0, 0, 0) === 0",
+            "remainingAfter(6, 2, 3) === 5",
+            "remainingAfter(3, 2, 5) === 0",
+            "remainingAfter(0, 4, 0) === 4",
+            "remainingAfter(8, 0, 1) === 7"
+          ],
+          "feedback": "Combine the starting and arriving tasks before removing completed ones."
         }
       ],
       "review": {
@@ -2348,6 +2626,14 @@
           "title": "Count tasks per owner",
           "text": "Use the contract in the exercise and check your answer on save.",
           "task": "course:ts-foundations/task/collections-owner-counts"
+        },
+        {
+          "kind": "independent",
+          "title": "Project 2 · Group tasks by status",
+          "text": "A tracker project checkpoint. Later checkpoints build on the same task data.",
+          "tasks": [
+            "course:ts-foundations/task/project-group"
+          ]
         }
       ],
       "questions": [
@@ -2493,6 +2779,43 @@
             }
           ],
           "feedback": "Which occurrence decides a name’s position?"
+        },
+        {
+          "starter": "function countByStatus(tasks: TrackerTask[]): Map<TaskStatus, number> {\n  return new Map();\n}\n",
+          "solution": "function countByStatus(tasks: TrackerTask[]): Map<TaskStatus, number> {\n  const counts = new Map<TaskStatus, number>();\n  for (const task of tasks) counts.set(task.status, (counts.get(task.status) ?? 0) + 1);\n  return counts;\n}\n",
+          "rules": [],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// Supplied tracker types. The checks call your code directly.\ntype TaskStatus = \"open\" | \"blocked\" | \"done\";\ninterface TrackerTask { id: string; title: string; status: TaskStatus; owner?: string }\n"
+            }
+          ],
+          "id": "course:ts-foundations/task/project-group",
+          "role": "project",
+          "title": "Project 2 · Group tasks by status",
+          "concepts": [
+            "callback",
+            "transform",
+            "map-set",
+            "object-shape",
+            "literal-union"
+          ],
+          "mode": "script",
+          "prompt": "The tracker now stores tasks with an ID, title, status and optional owner. Write countByStatus(tasks: TrackerTask[]): Map<TaskStatus, number>. Count how many tasks have each status. Include only statuses that appear, in first-seen order. An empty list gives an empty Map. Do not change the input.",
+          "hints": [
+            "Start with an empty Map and visit each task once.",
+            "Read the current count for a status, defaulting to zero.",
+            "Store the count plus one under that status."
+          ],
+          "checks": [
+            "__same(countByStatus([]), new Map())",
+            "__same(countByStatus([{id:\"a\",title:\"A\",status:\"open\"},{id:\"b\",title:\"B\",status:\"done\"},{id:\"c\",title:\"C\",status:\"open\"}]), new Map([[\"open\",2],[\"done\",1]]))",
+            "__same(countByStatus([{id:\"x\",title:\"X\",status:\"blocked\",owner:\"sam\"},{id:\"y\",title:\"Y\",status:\"blocked\",owner:\"sam\"}]), new Map([[\"blocked\",2]]))",
+            "(() => { const list: TrackerTask[] = [{id:\"a\",title:\"A\",status:\"open\"}]; countByStatus(list); return list.length === 1 && list[0].status === \"open\"; })()"
+          ],
+          "feedback": "Each status needs a running count. Check an empty list and a status that repeats."
         }
       ],
       "review": {
@@ -3458,6 +3781,14 @@
           "title": "Test a faulty count",
           "text": "Use the contract in the exercise and check your answer on save.",
           "task": "course:ts-foundations/task/checks-choose-test"
+        },
+        {
+          "kind": "independent",
+          "title": "Project 3 · Catch a broken edit",
+          "text": "A tracker project checkpoint. Later checkpoints build on the same task data.",
+          "tasks": [
+            "course:ts-foundations/task/project-test-edit"
+          ]
         }
       ],
       "questions": [
@@ -3602,6 +3933,41 @@
             }
           ],
           "feedback": "Would two equal inputs distinguish the orders?"
+        },
+        {
+          "starter": "function catchesBrokenRename(rename: (task: TrackerTask, title: string) => TrackerTask): boolean {\n  return true;\n}\n",
+          "solution": "function catchesBrokenRename(rename: (task: TrackerTask, title: string) => TrackerTask): boolean {\n  const original: TrackerTask = { id: \"a\", title: \"Old\", status: \"open\" };\n  const renamed = rename(original, \"New\");\n  return renamed.title === \"New\" && renamed.id === \"a\" && original.title === \"Old\";\n}\n",
+          "rules": [],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// Supplied tracker types. The checks call your code directly.\ntype TaskStatus = \"open\" | \"blocked\" | \"done\";\ninterface TrackerTask { id: string; title: string; status: TaskStatus; owner?: string }\n"
+            }
+          ],
+          "id": "course:ts-foundations/task/project-test-edit",
+          "role": "project",
+          "title": "Project 3 · Catch a broken edit",
+          "concepts": [
+            "tests",
+            "debugging",
+            "object-shape"
+          ],
+          "mode": "script",
+          "prompt": "A correct rename returns a new task with the new title and the same ID, and leaves the original task unchanged. Write catchesBrokenRename(rename): boolean. Call the supplied rename on a task you create. Return true when it behaves correctly and false when it changes the original task or loses the ID.",
+          "hints": [
+            "Create a task and keep a reference to it.",
+            "Check the returned title and ID.",
+            "After the call, check that the original title did not change."
+          ],
+          "checks": [
+            "catchesBrokenRename((task, title) => ({ ...task, title })) === true",
+            "catchesBrokenRename((task, title) => { task.title = title; return task; }) === false",
+            "catchesBrokenRename((task, title) => ({ id: \"\", title, status: task.status })) === false",
+            "(() => { let calls = 0; catchesBrokenRename((task, title) => { calls++; return { ...task, title }; }); return calls > 0; })()"
+          ],
+          "feedback": "A good regression check fails on each broken behavior. Check the returned task and the original."
         }
       ],
       "review": {
@@ -4422,6 +4788,14 @@
           "title": "Compose read label",
           "text": "Use the stated contract. Save to check the complete submission. Equivalent correct implementations are accepted.",
           "task": "course:ts-foundations/task/compose-read-label"
+        },
+        {
+          "kind": "independent",
+          "title": "Project 4 · Read and validate local tasks",
+          "text": "A tracker project checkpoint. Later checkpoints build on the same task data.",
+          "tasks": [
+            "course:ts-foundations/task/project-local-reader"
+          ]
         }
       ],
       "questions": [
@@ -4555,6 +4929,49 @@
           "feedback": "Read the public title and call the public method.",
           "modules": {
             "counter.ts": "export class Counter { constructor(public readonly title: string, private count: number) {} value(): number { return this.count; } }\n"
+          }
+        },
+        {
+          "starter": "import { TaskStore } from \"./store.js\";\n\nexport async function openTitles(store: TaskStore): Promise<string[] | \"unavailable\" | \"invalid\"> {\n  return [];\n}\n",
+          "solution": "import { TaskStore } from \"./store.js\";\n\nexport async function openTitles(store: TaskStore): Promise<string[] | \"unavailable\" | \"invalid\"> {\n  let data: unknown;\n  try {\n    data = await store.read();\n  } catch {\n    return \"unavailable\";\n  }\n  if (!Array.isArray(data)) return \"invalid\";\n  const titles: string[] = [];\n  for (const item of data) {\n    if (typeof item === \"object\" && item !== null && \"title\" in item && \"done\" in item && typeof item.title === \"string\" && item.done === false) titles.push(item.title);\n  }\n  return titles;\n}\n",
+          "rules": [],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "import { TaskStore } from \"./store.js\";\n"
+            }
+          ],
+          "id": "course:ts-foundations/task/project-local-reader",
+          "role": "project",
+          "title": "Project 4 · Read and validate local tasks",
+          "concepts": [
+            "composition",
+            "class-reading",
+            "unknown",
+            "validation",
+            "promise",
+            "await",
+            "failure"
+          ],
+          "mode": "module",
+          "prompt": "Import TaskStore from ./store.js and export async function openTitles(store: TaskStore). Call store.read() once. If it rejects, return \"unavailable\". If the result is not an array, return \"invalid\". Otherwise return the titles of items that are objects with a string title and done set to false, in order. Skip malformed items. An empty title is still a title.",
+          "hints": [
+            "Wrap the read in try/catch so a rejection becomes an expected result.",
+            "Use Array.isArray before treating the result as a list.",
+            "For each item, check typeof title and that done is exactly false."
+          ],
+          "checks": [
+            "__same(await answer.openTitles(new TaskStore(async () => [{ title: \"A\", done: false }, { title: \"B\", done: true }])), [\"A\"])",
+            "__same(await answer.openTitles(new TaskStore(async () => [null, { title: \"C\" }, { title: 5, done: false }, { title: \"\", done: false }])), [\"\"])",
+            "__same(await answer.openTitles(new TaskStore(async () => { throw new Error(\"lost\"); })), \"unavailable\")",
+            "__same(await answer.openTitles(new TaskStore(async () => ({ title: \"A\" }))), \"invalid\")",
+            "await (async () => { let calls = 0; await answer.openTitles(new TaskStore(async () => { calls++; return []; })); return calls === 1; })()"
+          ],
+          "feedback": "Separate a failed read, data that is not a list, and individual malformed items.",
+          "modules": {
+            "store.ts": "// A supplied class. It reads from a local source and never touches the network.\nexport class TaskStore {\n  constructor(private readonly source: () => Promise<unknown>) {}\n  async read(): Promise<unknown> {\n    return this.source();\n  }\n}\n"
           }
         }
       ],

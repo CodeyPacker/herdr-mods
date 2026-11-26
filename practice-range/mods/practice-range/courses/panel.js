@@ -216,6 +216,7 @@ export class CoursePanel {
         if (action === "enroll") this.page = "modules";
         if (action === "open") { this.page = "lesson"; this.pause(); }
         if (action === "task") { this.page = "task"; this.startWatch(cx); }
+        if (result.migrated) { this.data = await courseCommand("status", result.migrated); this.page = "modules"; this.pause(); }
         if (action === "status" && this.page === "task") { this.startWatch(cx); if (result.stale) this.queueSave(cx); }
         if (["review-start", "review-next", "review-end"].includes(action)) {
           this.page = result.enrollment.activeTask ? "task" : "modules";
@@ -265,7 +266,10 @@ export class CoursePanel {
   }
 
   lesson() { return this.data?.course.lessons.find(lesson => lesson.id === this.data.enrollment.position?.moduleId); }
-  task() { return this.data?.course.lessons.flatMap(lesson => [...lesson.tasks, ...(lesson.extraTasks ?? [])]).find(task => task.id === this.data.enrollment.activeTask); }
+  task() { return [...(this.data?.course.lessons.flatMap(lesson => [...lesson.tasks, ...(lesson.extraTasks ?? [])]) ?? []), ...(this.data?.course.readiness ?? []).map(group => group.task)].find(task => task.id === this.data.enrollment.activeTask); }
+
+  /** Readiness checks belong to no lesson. @param {string | null | undefined} id */
+  isReadiness(id) { return Boolean(id && this.data?.course.readiness?.some(group => group.task.id === id)); }
 
   /** @param {string} id */
   isExtra(id) { return Boolean(this.data?.course.lessons.some(lesson => lesson.extraTasks?.some(task => task.id === id))); }
@@ -275,6 +279,8 @@ export class CoursePanel {
     if (!position || !["lesson", "task"].includes(this.page)) return null;
     const taskId = this.page === "task" ? this.data.enrollment.activeTask : null;
     const lesson = taskId ? this.data.course.lessons.find(lesson => [...lesson.tasks, ...(lesson.extraTasks ?? [])].some(task => task.id === taskId)) : this.lesson();
+    // Readiness checks are assessments, so they offer no AI help.
+    if (!lesson) return null;
     return { courseId: this.data.course.id, contentVersion: this.data.course.contentVersion, moduleId: lesson.id, step: lesson.id === position.moduleId ? position.step : 0, taskId };
   }
 
@@ -343,6 +349,7 @@ export class CoursePanel {
     else if(this.page==="imports") this.page="catalog";
     else if (this.page === "source") this.page = this.sourceReturnPage;
     else if (this.page !== "catalog" && this.data?.enrollment.review) this.run("review-end", {}, cx);
+    else if (this.page === "task" && this.isReadiness(this.data?.enrollment.activeTask)) { this.page = "modules"; this.pause(); }
     else if (this.page === "task" && this.data?.enrollment.position) this.run("open", this.data.enrollment.position, cx);
     else if (this.page === "lesson" || this.page === "repo-lesson") { this.page = "modules"; this.pause(); }
     else if (this.page === "modules") { this.page = "catalog"; this.pause(); }
@@ -394,7 +401,7 @@ export class CoursePanel {
       }));
     }
     const backLabel = this.page === "catalog" ? `Back to ${this.returnScreen === "setup" ? "setup" : this.returnScreen === "languages" ? "languages" : "practice"}`
-      : ["imports","import-preview"].includes(this.page) ? "Back" : this.data?.enrollment.review ? "End review" : this.page === "task" ? "Return to lesson" : "Back";
+      : ["imports","import-preview"].includes(this.page) ? "Back" : this.data?.enrollment.review ? "End review" : this.page === "task" && !this.isReadiness(this.data?.enrollment.activeTask) ? "Return to lesson" : "Back";
     return v_flex().flex_1().min_h(0).child(body).child(paneBar(t)
       .child(keyButton(t, "course-back", "esc", backLabel, !this.busy, cx => this.back(cx))));
   }
@@ -430,6 +437,9 @@ export class CoursePanel {
   modules(body, t) {
     const position = this.data.enrollment.position;
     const repo = this.data.attachment;
+    this.updateView(body, t);
+    this.readinessView(body, t);
+    this.projectView(body, t);
     this.profileView(body,t);
     body.child(sectionLabel(t, "Optional repo examples"));
     if (repo) body.child(div().text_color(t.muted).child(repo.available ? `${repo.name} · pinned at ${repo.commit.slice(0, 10)}` : repo.detail));
@@ -572,6 +582,55 @@ export class CoursePanel {
       .child(div().text_size(11).text_color(t.muted).child(this.host.tutor.enabled
         ? "Optional. Each exercise is saved only after its reference passes and its starter and known wrong answers fail. Extra practice does not count toward module status or course review."
         : "Enable the AI tutor in Setup to write extra practice."));
+  }
+
+  /** @param {import("gpui-kit").Element} body @param {Theme} t */
+  updateView(body, t) {
+    const update = this.data.update, migration = this.data.migration;
+    if (migration?.retiredTasks?.length) body.child(div().text_size(11).text_color(t.muted).child(`Updated from ${migration.from}. ${migration.retiredTasks.length} removed exercises keep their answers and history.`));
+    if (!update) return;
+    if (update.started) { body.child(banner(t, `Version ${update.to} is already started. Resume it from Courses.`)); return; }
+    if (!update.compatible) { body.child(banner(t, `Version ${update.to} cannot take progress from this version. You can start it separately from Courses.`)); return; }
+    body.child(banner(t, `Version ${update.to} adds ${update.newTasks} exercises. Your reading, answers, results and backups carry over. This version stays available.`))
+      .child(keyButton(t, "course-update", "", `Update to ${update.to}`, !this.busy && !this.data.enrollment.review, cx => this.run("update-version", { to: update.to }, cx)));
+  }
+
+  /** Readiness results name the modules to revisit. A pass covers that task only. @param {import("gpui-kit").Element} body @param {Theme} t */
+  readinessView(body, t) {
+    const groups = this.data.course.readiness ?? [];
+    const tried = groups.some(group => this.data.enrollment.tasks[group.task.id]?.attempts);
+    if (!groups.length || (this.data.enrollment.entryPath !== "experienced" && !tried)) return;
+    body.child(sectionLabel(t, "Readiness checks"))
+      .child(div().text_size(12).text_color(t.muted).child("Each check is a new problem covering several modules. Use the result to choose where to start. Skipping a check records nothing."));
+    const title = (/** @type {string} */ id) => this.data.course.modules.find(module => module.id === id)?.title ?? id;
+    for (const group of groups) {
+      const progress = this.data.enrollment.tasks[group.task.id];
+      const names = group.modules.map(title).join(", ");
+      const result = !progress?.attempts ? `Covers ${names}.`
+        : progress.independentPasses ? `Passed without help. You could skim ${names}.`
+        : progress.passes ? `Passed with help. Review ${title(group.modules[0])} first.`
+        : `Not passed yet. Start with ${title(group.modules[0])}.`;
+      body.child(h_flex().gap(8).flex_wrap()
+        .child(keyButton(t, `course-readiness-${group.id}`, "", `${group.id} · ${group.title}`, !this.busy && !this.data.enrollment.review, cx => this.run("task", { taskId: group.task.id }, cx)))
+        .child(div().text_size(11).text_color(t.dim).child(result)));
+    }
+  }
+
+  /** @param {import("gpui-kit").Element} body @param {Theme} t */
+  projectView(body, t) {
+    const project = this.data.course.project;
+    if (!project?.checkpoints.length) return;
+    body.child(sectionLabel(t, project.title));
+    for (const [index, checkpoint] of project.checkpoints.entries()) {
+      const progress = checkpoint.taskId ? this.data.enrollment.tasks[checkpoint.taskId] : null;
+      const module = this.data.course.modules.find(module => module.id === checkpoint.module);
+      const state = !checkpoint.taskId ? "Planned" : progress?.independentPasses ? "Passed without help" : progress?.passes ? "Passed with help" : progress?.attempts ? "Started" : "Not started";
+      const taskId = checkpoint.taskId;
+      body.child(h_flex().gap(8).flex_wrap()
+        .child(keyButton(t, `course-checkpoint-${index}`, "", `${index + 1}. ${checkpoint.title}`, !this.busy && !this.data.enrollment.review && Boolean(taskId) && module?.status === "available",
+          cx => { if (taskId) this.run("task", { taskId }, cx); }))
+        .child(div().text_size(11).text_color(t.dim).child(`${module?.title ?? ""} · ${state}`)));
+    }
   }
 
   /** @param {string} moduleId @param {number} seen */

@@ -100,18 +100,19 @@ test("course progress, answers and backups sync while local course artifacts sta
     [`${course}/repo-lessons.json`]: '{"version":1,"lessons":[]}',
     [`${course}/generation.json`]: '{"version":1,"sourceVersion":"1.0.0-import.example"}',
     [`${course}/extra-practice.json`]: '{"version":1,"lessons":{}}',
+    [`${course}/migration.json`]: '{"version":1,"from":"0.1.0","to":"0.2.0"}',
     ".course-authoring/partial/pack.json": "{}",
     [`${course}/answers/remaining/node_modules/internal.js`]: "dependency",
   };
   // Existing users have the old generated allow-list. Upgrade that exact version only.
-  await writeFile(join(first, ".gitignore"), GITIGNORE.replace("!/courses/*/*/extra-practice.json\n", ""));
+  await writeFile(join(first, ".gitignore"), GITIGNORE.replace("!/courses/*/*/migration.json\n", ""));
   for (const [path, text] of Object.entries(files)) {
     await mkdir(join(first, path, ".."), { recursive: true });
     await writeFile(join(first, path), text);
   }
   await push(first);
   assert.deepEqual(git(first, "ls-files").trim().split("\n").sort(), [".gitignore",
-    `${course}/answers/remaining/Exercise.ts`, `${course}/enrollment.json`, `${course}/extra-practice.json`, `${course}/generation.json`, `${course}/history/remaining/1.ts`, `${course}/repo-lessons.json`]);
+    `${course}/answers/remaining/Exercise.ts`, `${course}/enrollment.json`, `${course}/extra-practice.json`, `${course}/generation.json`, `${course}/history/remaining/1.ts`, `${course}/migration.json`, `${course}/repo-lessons.json`]);
   await pull(second);
   assert.equal(await readFile(join(second, course, "answers/remaining/Exercise.ts"), "utf8"), files[`${course}/answers/remaining/Exercise.ts`]);
   assert.equal(await readFile(join(second, course, "repo-lessons.json"), "utf8"), files[`${course}/repo-lessons.json`]);

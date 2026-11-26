@@ -61,6 +61,13 @@ try {
   evidence.evidence=Object.fromEntries(evidenceIds.map((id,index)=>[id,{status:["demonstrated","independent-once","practiced","read","skipped","started","new"][index%7],independent:index%3,practiced:index%4,reviewed:index===0}]));
   evidence.recommendation={kind:"practice-review",count:2,reason:"2 practice drills linked to this course are due for review."};
   const drillError=structuredClone(evidence);drillError.drillError="Practice progress could not be read, so linked drills are not included in course evidence.";
+  const readinessId=modules.course.readiness[0].task.id;
+  const readiness=structuredClone(modules);readiness.enrollment.entryPath="experienced";
+  readiness.enrollment.tasks[readinessId]={attempts:1,passes:1,independentPasses:1,hintCount:0,history:[]};
+  const readinessTask=await request("task",{taskId:readinessId});
+  const updateAvailable=structuredClone(modules);updateAvailable.update={to:"0.1.0-preview.3",compatible:true,started:false,newTasks:2};
+  updateAvailable.migration={from:"0.1.0-preview.1",to:modules.course.contentVersion,retiredTasks:["course:ts-foundations/task/old"]};
+  const updateBlocked=structuredClone(modules);updateBlocked.update={to:"0.2.0",compatible:false,started:false,newTasks:0};
   const extraId=`${courseId}/task/extra-fixture-1`, extraLesson=lesson=>lesson.id===moduleId;
   const extras=structuredClone(modules), extraView={...structuredClone(task.course.lessons.find(extraLesson).tasks.find(item=>item.id===taskId)),id:extraId,title:"Add arrivals",generated:true,role:"generated"};
   extras.course.lessons.find(extraLesson).extraTasks=[extraView];
@@ -78,7 +85,7 @@ try {
     "learning-profile":["catalog",null], "learning-profile-error":["modules",modules],
     "imported-authoring":["modules",authoring], "module-generating":["modules",authoring], "module-error":["modules",authoring],
     "generated-module":["lesson",generated], "generated-quiz":["lesson",generatedQuiz], "generated-modules":["modules",generated],
-    "exercise-authoring":["modules",generated], "module-evidence":["modules",evidence], "extra-practice":["lesson",extras], "extras-error":["lesson",extrasError], "extra-task":["task",extraTask], "extra-generating":["lesson",extras], "drill-error":["modules",drillError], "generated-exercise":["task",generatedTask], "generated-exercise-modules":["modules",generatedTask],
+    "exercise-authoring":["modules",generated], "module-evidence":["modules",evidence], readiness:["modules",readiness], "readiness-task":["task",readinessTask], "update-available":["modules",updateAvailable], "update-blocked":["modules",updateBlocked], "extra-practice":["lesson",extras], "extras-error":["lesson",extrasError], "extra-task":["task",extraTask], "extra-generating":["lesson",extras], "drill-error":["modules",drillError], "generated-exercise":["task",generatedTask], "generated-exercise-modules":["modules",generatedTask],
     imports:["imports",null], "import-preview":["import-preview",null], "import-preferences":["import-preview",null], "import-error":["imports",null],
     "imported-catalog":["catalog",null], "imported-modules":["modules",importedModules], "imported-lesson":["lesson",importedLesson], "imported-quiz":["lesson",importedQuiz], "imported-task":["task",importedTask] };
   const requested = process.argv.slice(2);

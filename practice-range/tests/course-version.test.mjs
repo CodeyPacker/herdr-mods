@@ -17,7 +17,7 @@ test("course updates retain old content and reject changes under an existing ver
   changed.title = "Updated foundations";
   await assert.rejects(writeCoursePack(file, changed), /Bump runtimeContentVersion/);
   assert.deepEqual(JSON.parse(await readFile(file, "utf8")), original);
-  changed.contentVersion = "0.1.0-preview.2";
+  changed.contentVersion = "8.0.0-test.1";
   await writeCoursePack(file, changed);
   assert.deepEqual(await readCoursePack(file, original.id), changed);
   assert.deepEqual(await readCoursePack(file, original.id, original.contentVersion), original);

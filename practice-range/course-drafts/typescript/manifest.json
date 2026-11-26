@@ -444,8 +444,56 @@
   ],
   "project": "project/project.json",
   "compatibility": {
-    "fromVersions": [],
+    "fromVersions": [
+      "0.1.0-preview.1"
+    ],
     "replacements": []
   },
-  "runtimeContentVersion": "0.1.0-preview.1"
+  "runtimeContentVersion": "0.1.0-preview.2",
+  "readiness": [
+    {
+      "id": "R1",
+      "title": "Values through lists",
+      "modules": [
+        "course:ts-foundations/module/values",
+        "course:ts-foundations/module/decisions",
+        "course:ts-foundations/module/functions",
+        "course:ts-foundations/module/lists"
+      ],
+      "task": "readiness/r1/task.json"
+    },
+    {
+      "id": "R2",
+      "title": "Shapes through boundary",
+      "modules": [
+        "course:ts-foundations/module/shapes",
+        "course:ts-foundations/module/missing",
+        "course:ts-foundations/module/collections",
+        "course:ts-foundations/module/tagged",
+        "course:ts-foundations/module/boundary"
+      ],
+      "task": "readiness/r2/task.json"
+    },
+    {
+      "id": "R3",
+      "title": "Modules through async",
+      "modules": [
+        "course:ts-foundations/module/modules",
+        "course:ts-foundations/module/checks",
+        "course:ts-foundations/module/errors",
+        "course:ts-foundations/module/async"
+      ],
+      "task": "readiness/r3/task.json"
+    },
+    {
+      "id": "R4",
+      "title": "Generic through tracker",
+      "modules": [
+        "course:ts-foundations/module/generic",
+        "course:ts-foundations/module/compose",
+        "course:ts-foundations/module/tracker"
+      ],
+      "task": "readiness/r4/task.json"
+    }
+  ]
 }

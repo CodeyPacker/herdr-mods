@@ -17,15 +17,17 @@
  *   answerShown: boolean, assistanceUnknown?: boolean, legacy?: {passed?: boolean, runs?: number, hints?: number, gaveUp?: boolean}, result?: CourseResult }} TaskProgress
  * @typedef {{ course: { id: string, title: string, languageId: string, contentVersion: string, preview: boolean,
  *   modules: Module[], lessons: Lesson[], codeFence?: string,
+ *   readiness?: {id: string, title: string, modules: string[], task: Task}[], project?: {id: string, title: string, checkpoints: {id: string, title: string, module: string, taskId: string | null}[]} | null,
  *   legacy?: {source: string, known: string[], parts: {id: string,title: string}[]} }, enrollment: { position: {moduleId: string, step: number} | null,
- *   activeTask: string | null, review?: {ids: string[], index: number}, modules: Record<string, { seen: number[], resumeStep?: number, skipped?: boolean, questions: Record<string, QuestionProgress>, examples?: Record<string, CourseResult> }>,
+ *   activeTask: string | null, entryPath?: string, review?: {ids: string[], index: number}, modules: Record<string, { seen: number[], resumeStep?: number, skipped?: boolean, questions: Record<string, QuestionProgress>, examples?: Record<string, CourseResult> }>,
  *   tasks: Record<string, TaskProgress>, legacy?: {modules: Record<string,{doneAt?: string,quiz?: {best?: number,passed?: boolean}}>} }, file: string | null, folder: string | null, sourceHash: string | null,
  *   stale: boolean, pendingSave?: boolean, reviewReady: number,
  *   attachment?: {name?: string, commit?: string, available: boolean, detail?: string},
  *   repoLessons?: {error?: string, lessons: RepoLesson[]},
  *   profile?: LearningProfile,
  *   recommendation: {kind: string, reason: string, moduleId?: string, taskId?: string, step?: number, count?: number},
- *   evidence?: Record<string, {status: import("./evidence.js").ModuleStatus, independent: number, practiced: number, reviewed: boolean}>, drillError?: string | null, extrasError?: string | null }} CourseSnapshot
+ *   evidence?: Record<string, {status: import("./evidence.js").ModuleStatus, independent: number, practiced: number, reviewed: boolean}>, drillError?: string | null, extrasError?: string | null,
+ *   update?: {to: string, compatible: boolean, started: boolean, newTasks: number} | null, migration?: {from: string, to: string, retiredTasks: string[]} | null }} CourseSnapshot
  * @typedef {{slug: string,title: string,error?: string,courseId?: string,contentVersion?: string,fingerprint?: string,
  *   languageId?: string,modules?: number,written?: number,questions?: number,exercises?: number,answers?: number,
  *   orphanAnswers?: number,warnings?: string[],known?: string[],alreadyImported?: boolean,

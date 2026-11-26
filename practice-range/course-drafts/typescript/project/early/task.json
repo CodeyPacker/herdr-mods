@@ -1,0 +1,56 @@
+{
+  "starter": "learner/count.ts",
+  "solution": "author/solution.ts",
+  "alternative": "author/alternative.ts",
+  "rules": [],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "trusted/fixture.ts"
+    }
+  ],
+  "id": "course:ts-foundations/task/project-count",
+  "role": "project",
+  "title": "Project 1 · Update the board count",
+  "concepts": [
+    "function",
+    "numeric-expression"
+  ],
+  "mode": "script",
+  "prompt": "Write remainingAfter(opening: number, arrivals: number, completed: number): number. Return the number of open tasks after adding arrivals and removing completed tasks. All inputs are whole numbers at least zero. The completed count is at most opening plus arrivals. An empty board and a fully completed board both have zero open tasks.",
+  "hints": [
+    "What would the count be if nobody finished a task?",
+    "The completed tasks can come from either the original group or new arrivals.",
+    "Calculate the combined group, then apply completions once."
+  ],
+  "checks": [
+    "remainingAfter(0, 0, 0) === 0",
+    "remainingAfter(6, 2, 3) === 5",
+    "remainingAfter(3, 2, 5) === 0",
+    "remainingAfter(0, 4, 0) === 4",
+    "remainingAfter(8, 0, 1) === 7"
+  ],
+  "wrongAnswers": [
+    {
+      "source": "author/wrong-count.ts",
+      "misconception": "Drops the starting count.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "author/wrong-sign.ts",
+      "misconception": "Adds completed tasks.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Combine the starting and arriving tasks before removing completed ones."
+}

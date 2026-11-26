@@ -1,0 +1,60 @@
+{
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "rules": [],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture.ts"
+    }
+  ],
+  "id": "course:ts-foundations/task/readiness-r3",
+  "role": "readiness",
+  "title": "Readiness 3 · Modules through async",
+  "concepts": [
+    "import-export",
+    "tests",
+    "promise",
+    "await",
+    "failure",
+    "throw-catch"
+  ],
+  "mode": "module",
+  "prompt": "Export two functions. loadReport(read, name) awaits read(name) once. When it resolves, return { kind: \"loaded\", count } where count is the number of non-empty lines. When it rejects, return { kind: \"missing\", name }. catchesWrongCount(candidate) is a regression check for a line counter: return true for a counter that skips empty lines and false for one that counts every line.",
+  "hints": [
+    "Use try/catch around the await so a rejection becomes the missing result.",
+    "Count lines that are not empty text.",
+    "Your check needs an input containing an empty line, so the two counters disagree."
+  ],
+  "checks": [
+    "__same(await answer.loadReport(async () => [\"a\", \"\", \"b\"], \"x\"), { kind: \"loaded\", count: 2 })",
+    "__same(await answer.loadReport(async () => { throw new Error(\"no\"); }, \"notes\"), { kind: \"missing\", name: \"notes\" })",
+    "__same(await answer.loadReport(async () => [], \"x\"), { kind: \"loaded\", count: 0 })",
+    "answer.catchesWrongCount(lines => lines.filter(line => line !== \"\").length) === true",
+    "answer.catchesWrongCount(lines => lines.length) === false"
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Counts empty lines.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Tests only lines that are never empty.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 5 failed"
+      }
+    }
+  ],
+  "feedback": "Handle both promise outcomes, and choose a test input on which correct and broken code differ."
+}

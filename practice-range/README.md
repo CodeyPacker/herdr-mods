@@ -8,7 +8,9 @@ Choose a language and topic, write a short exercise, save, and check it. Each la
 SQL runs on real PostgreSQL, from SELECT and joins to window functions, recursive CTEs, JSON, and MERGE.
 Each hint adds a little more help. Another exercise stays in the same topic until you choose to switch.
 
-Courses are available from **Courses** in the header. The bundled TypeScript preview has 18 modules and 56 tasks, including runnable examples and a two-file final project. Lessons need no repo or AI connection. Coding checks use the language pack’s compiler. Reading position, answers, hints, and review progress are saved separately from direct practice. Course updates preserve older enrollments and their content.
+Courses are available from **Courses** in the header. The bundled TypeScript preview has 18 modules and 60 tasks, including runnable examples, four tracker project checkpoints and a two-file final project. The module list shows the project checkpoints in order. Choosing **I know another language** adds four readiness checks. Each result suggests which modules to skim or revisit, and none of them count as passing a module.
+
+When a newer compatible course version ships, the module list offers **Update to** that version. Your reading, answers, results and backups move to it, new exercises start fresh, and the earlier version stays available from Courses. Lessons need no repo or AI connection. Coding checks use the language pack’s compiler. Reading position, answers, hints, and review progress are saved separately from direct practice. Course updates preserve older enrollments and their content.
 
 Each module in the module list shows how far you've gone, from Read and Practiced with help to Shown independently. Shown independently means you passed two different exercises or linked practice drills without hints or the solution, or passed one and later passed it again in a clean review. Reading, skipping and passes with help never count. When linked practice drills are due, the suggested next step opens Practice topics, where **Review** includes them.
 

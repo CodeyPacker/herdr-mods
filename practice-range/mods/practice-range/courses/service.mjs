@@ -15,6 +15,7 @@ import { courseSource } from "./source.mjs";
 import { knownLanguages, readLearningProfile } from "./learning-profile.mjs";
 import { publishImportedModule } from "./authoring.mjs";
 import { readExtras, withExtras, isExtraTask, saveExtras } from "./extras.mjs";
+import { canMigrate, migrateEnrollment, readMigration } from "./migrate.mjs";
 
 const hash = source => createHash("sha256").update(typeof source === "string" ? source : JSON.stringify(source)).digest("hex");
 export const enrollmentDirectory = (root, pack) => join(root, "courses", courseFolderName(pack.id), pack.contentVersion);
@@ -190,6 +191,11 @@ export async function courseCommand(root, action, request = {}, options = {}) {
     validateState(state, pack);
     if (state.activeTask && !state.review) { try { taskFor(pack, state.activeTask); } catch { state.activeTask = null; } }
     if (action === "save-extras") return saveExtras(root, pack, directory, request, options);
+    if (action === "update-version") {
+      const target = await loadCourse(shipped.id, request.to, root);
+      await migrateEnrollment(directory, enrollmentDirectory(root, target), state, shipped, target, { selection: preferred });
+      return { migrated: { courseId: target.id, contentVersion: target.contentVersion } };
+    }
     if (action === "publish-module") return publishImportedModule(root,pack,directory,state,request,options);
     if (action === "source") return { source: await courseSource(pack, directory, request) };
     const persist = async () => { await save(file, state); };
@@ -264,8 +270,8 @@ export async function courseCommand(root, action, request = {}, options = {}) {
       if (action === "task") {
         await prepareTask(directory, pack, task, state);
         state.activeTask = task.id;
-        // Entering an exercise retains the lesson position for Return to lesson.
-        if (state.position?.moduleId !== lesson.id) state.position = { moduleId: lesson.id, step: 0 };
+        // Entering an exercise retains the lesson position for Return to lesson. Readiness checks have no lesson.
+        if (lesson && state.position?.moduleId !== lesson.id) state.position = { moduleId: lesson.id, step: 0 };
         progress.initialHash ??= hash(starters(task));
       } else if (action === "hint") progress.hintCount = Math.min(task.hints.length, progress.hintCount + 1);
       else if (action === "answer") progress.answerShown = true;
@@ -309,7 +315,7 @@ export async function courseCommand(root, action, request = {}, options = {}) {
       }
       await persist();
     } else if (action !== "status") throw new Error(`Unknown course action: ${action}`);
-    return snapshot(root, pack, state, directory, extras?.error);
+    return snapshot(root, pack, state, directory, extras?.error, shipped.legacy ? null : await updateFor(root, shipped));
   });
 }
 
@@ -333,7 +339,17 @@ async function drillProgress(root, languageId) {
   }
 }
 
-async function snapshot(root, pack, state, directory, extrasError) {
+/** A newer bundled version, and whether this enrollment's progress can move to it. */
+async function updateFor(root, pinned) {
+  const newest = await loadCourse(pinned.id, undefined, root);
+  if (newest.contentVersion === pinned.contentVersion) return null;
+  const started = await stat(join(enrollmentDirectory(root, newest), "enrollment.json")).then(() => true, () => false);
+  return { to: newest.contentVersion, compatible: canMigrate(pinned, newest), started,
+    newTasks: newest.lessons.reduce((n, lesson) => n + lesson.tasks.filter(task => !pinned.lessons.some(old => old.tasks.some(item => item.id === task.id))).length, 0) +
+      (newest.readiness ?? []).filter(group => !(pinned.readiness ?? []).some(old => old.task.id === group.task.id)).length };
+}
+
+async function snapshot(root, pack, state, directory, extrasError, update = null) {
   const drills = await drillProgress(root, pack.languageId);
   const active = state.activeTask ? taskFor(pack, state.activeTask).task : null;
   const language = findLanguage(pack.languageId);
@@ -350,9 +366,12 @@ async function snapshot(root, pack, state, directory, extrasError) {
       solution: task.id === active?.id && progress.answerShown ? file.solution : null })) } } : {}),
   });
   const lessons = (await restoreRepoExcerpts(directory,pack.lessons)).map(lesson => ({ ...lesson, tasks: lesson.tasks.map(view), extraTasks: (lesson.extraTasks ?? []).map(view) }));
+  const readiness = (pack.readiness ?? []).map(group => ({ ...group, task: view(group.task) }));
   const sourceHash = file ? hash(await readAnswer(file, active)) : null;
   return { course: { id: pack.id, title: pack.title, contentVersion: pack.contentVersion, languageId: pack.languageId, codeFence: language.codeFence,
-    preview: pack.preview === true, legacy: pack.legacy, modules: pack.modules, lessons },
+    preview: pack.preview === true, legacy: pack.legacy, modules: pack.modules, lessons, readiness,
+    project: pack.project && typeof pack.project === "object" ? pack.project : null },
+    update, migration: await readMigration(directory),
     enrollment: state.review && active ? { ...state, tasks: { ...state.tasks, [active.id]: progress } } : state,
     reviewReady: courseReview(pack, state, Date.now()).ids.length, recommendation: nextCourseAction(pack, state, Date.now(), drills),
     evidence: moduleEvidence(pack, state, drills), drillError: drills.error ?? null, extrasError: extrasError ?? null,

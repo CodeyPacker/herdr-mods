@@ -144,12 +144,26 @@ async function checkModule(entry, manifest) {
   for (const t of module.tasks) await checkTask(dir, t, new Set([...earlier, ...entry.teaches]));
 }
 
+function conceptsThrough(manifest, moduleId) {
+  const known = new Set();
+  const collect = id => {
+    const entry = manifest.modules.find(m => m.id === id);
+    entry.teaches.forEach(c => known.add(c));
+    entry.prerequisites.forEach(collect);
+  };
+  collect(moduleId);
+  return known;
+}
+
 async function checkProject(manifest) {
   const project = await json(root, manifest.project);
   const dir = dirname(join(root, manifest.project));
   for (const p of project.checkpoints) {
     unique(p.id);
     assert.ok(ids.has(p.module));
+    if (p.existingTask) assert.ok(ids.has(p.existingTask), "Unknown project task " + p.existingTask);
+    // A checkpoint task may use only concepts taught by its module or earlier.
+    if (p.task) await checkTask(dir, { id: (await json(dir, p.task)).id, path: p.task }, conceptsThrough(manifest, p.module));
     if (!p.workspace) continue;
     const names = [...p.workspace.editable, ...p.workspace.supplied];
     assert.equal(new Set(names.map(f => f.file)).size, names.length);
@@ -229,6 +243,12 @@ try {
   }
   manifest.outcomes.forEach(o => assert.ok(ids.has(o.assessment)));
   if (!candidates.size) await checkProject(manifest);
+  if (!candidates.size) for (const group of manifest.readiness ?? []) {
+    // Each readiness check is a fresh problem using only concepts from its group and earlier.
+    group.modules.forEach(id => assert.ok(ids.has(id), "Unknown readiness module " + id));
+    const concepts = new Set(group.modules.flatMap(id => [...conceptsThrough(manifest, id)]));
+    await checkTask(root, { id: (await json(root, group.task)).id, path: group.task }, concepts);
+  }
   console.log(JSON.stringify(counts));
 } finally {
   await rm(tmp, { recursive: true, force: true });

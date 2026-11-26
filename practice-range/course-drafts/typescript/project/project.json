@@ -5,7 +5,7 @@
     {
       "id": "course:ts-foundations/project/tracker/count",
       "module": "course:ts-foundations/module/functions",
-      "status": "sample",
+      "status": "task",
       "title": "Update the board count",
       "prompt": "Write remainingAfter(opening: number, arrivals: number, completed: number): number. Return the number of open tasks after adding arrivals and removing completed tasks. All inputs are whole numbers at least zero. The completed count is at most opening plus arrivals. An empty board and a fully completed board both have zero open tasks.",
       "hints": [
@@ -49,25 +49,29 @@
             }
           }
         ]
-      }
+      },
+      "task": "early/task.json"
     },
     {
       "id": "course:ts-foundations/project/tracker/group",
       "module": "course:ts-foundations/module/collections",
-      "status": "planned",
-      "title": "Group tasks by status"
+      "status": "task",
+      "title": "Group tasks by status",
+      "task": "group/task.json"
     },
     {
       "id": "course:ts-foundations/project/tracker/test-edit",
       "module": "course:ts-foundations/module/checks",
-      "status": "planned",
-      "title": "Separate modules and catch a broken edit"
+      "status": "task",
+      "title": "Separate modules and catch a broken edit",
+      "task": "test-edit/task.json"
     },
     {
       "id": "course:ts-foundations/project/tracker/local-reader",
       "module": "course:ts-foundations/module/compose",
-      "status": "planned",
-      "title": "Read and validate local tasks"
+      "status": "task",
+      "title": "Read and validate local tasks",
+      "task": "local-reader/task.json"
     },
     {
       "id": "course:ts-foundations/project/tracker/audit",
@@ -114,7 +118,8 @@
           "Count reader invocations.",
           "Run the learner test against the verified implementation and a duplicate-counting variant."
         ]
-      }
+      },
+      "existingTask": "course:ts-foundations/task/report-audit"
     }
   ]
 }
