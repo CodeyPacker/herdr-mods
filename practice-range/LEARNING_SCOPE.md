@@ -30,6 +30,7 @@ Status: in progress. Phase acceptance criteria below define completion, rather t
 | D6 | Preserve lesson completion and demonstrated skill as separate records. Keep recommendations optional and explain why a lesson or review is suggested. |
 | D7 | Pilot TypeScript first. Preserve C# and SQL practice throughout. Add their courses after validating the TypeScript teaching format. |
 | D8 | Do not import Tutor courses. Tutor stays a separate, unchanged mod. Tourist stays separate. Changed on 2026-11-26: the import was built, then removed, because only the project owner had Tutor data and did not need it. |
+| D10 | A course does not have to be about a language. A reading course teaches a subject with text, plain-text diagrams, questions and design exercises. It names no language and no runner, holds no checked exercises, and needs no dependency. Its modules can be read but never count as demonstrated skill. API design is the first. Decided on 2026-11-26. |
 | D9 | A course teaches its language on its own terms. Lesson text, hints and feedback never compare it with another language or assume the learner knows one. The experienced entry path and readiness checks stay, because they only let a learner skip modules. Decided on 2026-11-26. |
 
 ## Current implementation

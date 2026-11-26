@@ -29,7 +29,9 @@ Implement the approved scope in `LEARNING_SCOPE.md`. All courses live inside Pra
 
 | I23 | Bundled SQL preview (`course:sql-foundations`, content version 0.1.0-preview.1) with 18 authored modules and 56 lesson tasks, including four project checkpoints and a final report, plus four readiness checks. It runs on the practice database with the pinned PGlite engine and teaches SQL alone (D9). Course tasks are checked against a reference answer, by the state a change leaves, or by rows a new table must reject. | `scripts/verify-course.mjs sql` passed 40 examples with matching results, 12 expected SQL errors, 72 reference runs, 72 alternatives and 122 named wrong-answer witnesses across 148 case runs. `tests/course-sql.test.mjs` drives a real enrollment through examples, a two-case query, a data change, a table design and the final report. Five native fixtures cover the SQL module list, a lesson, two kinds of task and a readiness check. |
 
-All three courses remain previews. Compiler correctness and native materialization do not establish teaching effectiveness or verify layout and paint.
+| I24 | Reading courses: a pack with `kind: "reading"` has no language, runner, exercises or readiness checks, and each example names its own code fence. The catalog, module list and lesson hide the actions that need a language or a repo. The first one is API design (`course:api-design`, content version 0.1.0-preview.1): 15 modules, 131 steps, 30 questions, 48 read-only examples including plain-text diagrams, and 16 design exercises with worked answers. | `tests/course-api-design.test.mjs` checks the built pack's shape, diagram width, questions and the absence of credential-like text, rejects a reading pack that carries a language, an exercise or a runnable example, and drives an enrollment through the course service. Three native fixtures cover the module list, a lesson with a diagram and an answered question. Nobody has viewed the rendered lessons yet. |
+
+All four courses remain previews. Compiler correctness and native materialization do not establish teaching effectiveness or verify layout and paint.
 
 ## Phase status and next work
 
@@ -84,6 +86,7 @@ node practice-range/scripts/verify-course.mjs csharp
 node practice-range/scripts/build-course.mjs csharp
 node practice-range/scripts/verify-course.mjs sql
 node practice-range/scripts/build-course.mjs sql
+node practice-range/scripts/build-course.mjs api-design
 node --test practice-range/tests/course-*.test.mjs practice-range/tests/tutor.test.mjs practice-range/tests/sync.test.mjs
 node practice-range/tests/check-courses.mjs
 node practice-range/tests/check-panels.mjs tutor-off tutor-chat tutor-thinking tutor-error tutor-setup

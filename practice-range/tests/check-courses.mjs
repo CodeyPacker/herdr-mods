@@ -68,7 +68,15 @@ try {
   const sqlReadiness = await sql("task", { taskId: `${sqlId}/task/readiness-r1` });
   const sqlCases = { "sql-modules": ["modules", sqlModules], "sql-lesson": ["lesson", sqlExample], "sql-task": ["task", sqlTask],
     "sql-table-task": ["task", sqlTable], "sql-readiness-task": ["task", sqlReadiness] };
-  const cases = { ...csharpCases, ...sqlCases, catalog: ["catalog", null], versions: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules], "example-output": ["lesson", example],
+  // A reading course: text diagrams, questions and no exercises, language or repo section.
+  const readingId = "course:api-design", readingModule = `${readingId}/module/methods`;
+  const reading = (action, value = {}) => courseCommand(join(root, "data"), action, { courseId: readingId, ...value });
+  await reading("enroll");
+  const readingModules = await reading("open", { moduleId: readingModule, step: 0 });
+  const readingDiagram = await reading("open", { moduleId: readingModule, step: 2 });
+  const readingQuestion = await reading("question", { moduleId: readingModule, questionId: "retry", choice: 2 });
+  const readingCases = { "reading-modules": ["modules", readingModules], "reading-lesson": ["lesson", readingDiagram], "reading-question": ["lesson", readingQuestion] };
+  const cases = { ...csharpCases, ...sqlCases, ...readingCases, catalog: ["catalog", null], versions: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules], "example-output": ["lesson", example],
     prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], review: ["task", review], "ai-lesson": ["lesson", modules], "ai-task": ["task", task], attached: ["modules", attached], "repo-missing": ["modules", missing], error: ["task", task],
     "repo-supplement":["repo-lesson",attached], "repo-generating":["modules",attached],
     "repo-source":["source",attached], "repo-source-cached":["source",attached], "repo-source-missing":["source",attached],
@@ -165,11 +173,13 @@ export default class Fixture extends Syntax {
       this.courses.key("escape", cx);
       if (this.courses.page !== "modules") throw new Error("Escape must return to modules");
       this.courses.page = "lesson";
+      if (!${name.startsWith("reading-")}) {
       this.enabledLanguages = [${JSON.stringify(language)}];
       this.courses.practiceTopic(${JSON.stringify(drill)}, cx);
       if (this.screen !== "topics" || this.pendingTopic !== ${JSON.stringify(drill.split("/")[0])} || this.lastPerformed?.value !== ${JSON.stringify(language)}) throw new Error("Lesson practice links must choose the matching language and topic");
       if (this.state !== prior) throw new Error("Lesson links must not replace direct-practice state while loading");
       this.screen = "courses";
+      }
     }
     if (${name === "extra-generating"}) {
       this.tutorRequestId="extra-fixture";this.tutorBusy=true;this.courses.generatingExtras=true;

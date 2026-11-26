@@ -1,0 +1,2132 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": "0.1.0-preview.1",
+  "kind": "reading",
+  "id": "course:api-design",
+  "title": "Design APIs people can rely on",
+  "audience": [
+    "Can read JSON and has called or built an API",
+    "Wants to design one well"
+  ],
+  "prerequisiteConcepts": [],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:api-design/module/contract",
+      "order": "listed"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/contract",
+      "description": "Explain what an API promises, who depends on it, and why its design is hard to change later.",
+      "assessment": "course:api-design/module/contract"
+    },
+    {
+      "id": "outcome/resources",
+      "description": "Turn a problem into resources with clear, consistent names and addresses.",
+      "assessment": "course:api-design/module/resources"
+    },
+    {
+      "id": "outcome/methods",
+      "description": "Choose a method by what it promises: safe, idempotent, or neither.",
+      "assessment": "course:api-design/module/methods"
+    },
+    {
+      "id": "outcome/status",
+      "description": "Choose a status code that tells the client who has to act next.",
+      "assessment": "course:api-design/module/status"
+    },
+    {
+      "id": "outcome/shapes",
+      "description": "Design request and response bodies that are consistent and hard to misread.",
+      "assessment": "course:api-design/module/shapes"
+    },
+    {
+      "id": "outcome/errors",
+      "description": "Design an error response that a program can branch on and a person can fix.",
+      "assessment": "course:api-design/module/errors"
+    },
+    {
+      "id": "outcome/lists",
+      "description": "Design filtering, sorting and pagination for a collection that keeps growing.",
+      "assessment": "course:api-design/module/lists"
+    },
+    {
+      "id": "outcome/writes",
+      "description": "Make creates safe to retry and stop two clients from overwriting each other.",
+      "assessment": "course:api-design/module/writes"
+    },
+    {
+      "id": "outcome/versioning",
+      "description": "Tell a breaking change from a safe one and plan how an API evolves.",
+      "assessment": "course:api-design/module/versioning"
+    },
+    {
+      "id": "outcome/auth",
+      "description": "Separate who the caller is from what they may do, and answer each failure correctly.",
+      "assessment": "course:api-design/module/auth"
+    },
+    {
+      "id": "outcome/limits",
+      "description": "Design limits and caching that protect the service and tell clients what to do.",
+      "assessment": "course:api-design/module/limits"
+    },
+    {
+      "id": "outcome/async",
+      "description": "Design for work that takes longer than a request, and for telling clients that something happened.",
+      "assessment": "course:api-design/module/async"
+    },
+    {
+      "id": "outcome/styles",
+      "description": "Compare resource, procedure, query and event styles and choose one for a situation.",
+      "assessment": "course:api-design/module/styles"
+    },
+    {
+      "id": "outcome/docs",
+      "description": "Describe an API precisely and review a design against a checklist.",
+      "assessment": "course:api-design/module/docs"
+    },
+    {
+      "id": "outcome/capstone",
+      "description": "Review a flawed API and design a small one from a brief, without help.",
+      "assessment": "course:api-design/module/capstone"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:api-design/module/contract",
+      "title": "An API is a promise",
+      "prerequisites": [],
+      "teaches": [
+        "contract",
+        "consumer"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:api-design/module/resources",
+      "title": "Model resources and name them",
+      "prerequisites": [
+        "course:api-design/module/contract"
+      ],
+      "teaches": [
+        "resource",
+        "naming"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:api-design/module/methods",
+      "title": "Choose the method",
+      "prerequisites": [
+        "course:api-design/module/resources"
+      ],
+      "teaches": [
+        "method",
+        "safe",
+        "idempotent"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:api-design/module/status",
+      "title": "Answer with the right status",
+      "prerequisites": [
+        "course:api-design/module/methods"
+      ],
+      "teaches": [
+        "status-code"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:api-design/module/shapes",
+      "title": "Shape requests and responses",
+      "prerequisites": [
+        "course:api-design/module/resources",
+        "course:api-design/module/status"
+      ],
+      "teaches": [
+        "representation",
+        "field-types"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:api-design/module/errors",
+      "title": "Design errors people can act on",
+      "prerequisites": [
+        "course:api-design/module/status",
+        "course:api-design/module/shapes"
+      ],
+      "teaches": [
+        "error-body"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:api-design/module/lists",
+      "title": "Return lists that scale",
+      "prerequisites": [
+        "course:api-design/module/shapes"
+      ],
+      "teaches": [
+        "filtering",
+        "pagination"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:api-design/module/writes",
+      "title": "Make writes safe to retry",
+      "prerequisites": [
+        "course:api-design/module/methods",
+        "course:api-design/module/errors"
+      ],
+      "teaches": [
+        "idempotency-key",
+        "concurrency"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:api-design/module/versioning",
+      "title": "Change without breaking",
+      "prerequisites": [
+        "course:api-design/module/shapes",
+        "course:api-design/module/errors"
+      ],
+      "teaches": [
+        "breaking-change",
+        "version"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:api-design/module/auth",
+      "title": "Know who is calling",
+      "prerequisites": [
+        "course:api-design/module/status",
+        "course:api-design/module/errors"
+      ],
+      "teaches": [
+        "authentication",
+        "authorization"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:api-design/module/limits",
+      "title": "Protect the service",
+      "prerequisites": [
+        "course:api-design/module/auth",
+        "course:api-design/module/lists"
+      ],
+      "teaches": [
+        "rate-limit",
+        "caching"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:api-design/module/async",
+      "title": "Handle slow work and events",
+      "prerequisites": [
+        "course:api-design/module/writes",
+        "course:api-design/module/limits"
+      ],
+      "teaches": [
+        "long-running",
+        "webhook"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:api-design/module/styles",
+      "title": "Choose an API style",
+      "prerequisites": [
+        "course:api-design/module/async"
+      ],
+      "teaches": [
+        "api-style"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:api-design/module/docs",
+      "title": "Describe and review an API",
+      "prerequisites": [
+        "course:api-design/module/styles",
+        "course:api-design/module/versioning"
+      ],
+      "teaches": [
+        "description",
+        "design-review"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:api-design/module/capstone",
+      "title": "Review and design a whole API",
+      "prerequisites": [
+        "course:api-design/module/docs"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "available"
+    }
+  ],
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  },
+  "preview": true,
+  "readiness": [],
+  "lessons": [
+    {
+      "id": "course:api-design/module/contract",
+      "title": "An API is a promise",
+      "requires": [],
+      "outcomes": [],
+      "intro": "This course is about designing APIs: deciding what a service offers to other programs and how they ask for it. It has no code to write. Each module explains a few ideas, shows them as requests, responses and diagrams, asks you to judge some designs, and ends with a short design exercise and one possible answer. The examples use one running product, a task tracker with projects, tasks and comments, reached over HTTP with JSON.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "What an API is",
+          "text": "An API (application programming interface) is the set of requests one program can make of another, and the responses it gets back. The program that asks is the **client**. The program that answers is the **server**.\n\nThe important word is *interface*. The client sees only the requests and responses. It does not see the server's code, its database, or the other services behind it. That boundary is what lets the two sides change separately.\n\nAn API is therefore a promise: a request shaped like this gets a response shaped like that. Clients are written against the promise.",
+          "example": "boundary"
+        },
+        {
+          "kind": "explanation",
+          "title": "Why a design is hard to change",
+          "text": "Inside your own code, a bad name costs a rename. In an API it does not, because you do not control the clients. Other teams, other companies and old versions of your own app keep sending the old requests for years.\n\nOnce a client depends on something, changing it breaks that client. So every decision you publish is either kept forever or removed at real cost. This includes decisions you made by accident. Given enough clients, somebody depends on every behavior they can observe: the order of a list, the exact wording of an error, a field you meant to remove.\n\nThe cheapest moment to fix an API is before anyone uses it. That is why the design deserves more care than the code behind it."
+        },
+        {
+          "kind": "prediction",
+          "title": "The cost of a name",
+          "text": "A field was released a year ago as `usr_nm`. Forty client programs read it. The team now wants to call it `username`.",
+          "questions": [
+            "rename-cost"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Start from the client",
+          "text": "Good design starts outside the server. Before drawing any endpoint, answer three questions.\n\n1. **Who calls this, and what are they trying to get done?** List the tasks a client performs, such as showing a project's open tasks or marking one done. Do not start from your database tables.\n2. **What does the client need to know when it fails?** Failures are part of the interface, and a client has to act on them.\n3. **What is likely to change?** New fields, new kinds of task, more data. Leave room for those.\n\nA useful habit is to write the requests you wish you could send, and the responses you wish you got back, before building anything. If they read well, the design is probably sound. If you cannot guess the next request from the last one, it is not."
+        },
+        {
+          "kind": "debugging",
+          "title": "Two ways to offer the same thing",
+          "text": "Both groups of requests do the same two jobs: change a task, and list the open tasks of a project. Read them as a client who has never seen the documentation.",
+          "example": "two-styles",
+          "questions": [
+            "predictable"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "What good looks like",
+          "text": "The rest of the course builds on five qualities. A well designed API is:\n\n- **Predictable.** The same idea is expressed the same way everywhere, so knowing one part lets you guess the rest.\n- **Hard to misuse.** The easy request is the correct one, and a wrong request is refused with a clear reason.\n- **Clear about failure.** Every error says what went wrong and whether trying again can help.\n- **Able to change.** New things can be added without breaking the clients that exist.\n- **Described.** Someone can use it from its description and examples alone.\n\nNone of these needs clever technology. They come from consistency and from thinking about the client first."
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: who calls the tracker?",
+          "text": "Take five minutes with a piece of paper. The task tracker will have an API.\n\n1. Name three different kinds of client that might call it.\n2. For each, write one thing it needs to get done, as a plain sentence.\n3. For each, write one thing it needs to know when the request fails.\n\nThen continue to compare with one possible answer."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "- **The team's web app.** It shows the open tasks of a project, newest first. On failure it needs to know whether to show \"not found\" or \"try again\".\n- **A phone app on a poor connection.** It marks a task done and may send the request twice when the first reply is lost. It needs repeating a request to be safe.\n- **Another company's integration.** It creates tasks from its own system every night, unattended. It needs errors a program can read, and a warning before anything changes.\n\nNotice that none of these mentions a table or a class. Each one is a job and a failure. The next modules turn jobs like these into addresses, methods and responses."
+        }
+      ],
+      "questions": [
+        {
+          "id": "rename-cost",
+          "prompt": "When was the cheapest time to choose the better name?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "Before the first release",
+              "feedback": "Nothing depended on the name yet, so changing it would have cost a few minutes."
+            },
+            {
+              "text": "Now, with a rename",
+              "feedback": "A rename breaks all forty clients at once unless both names are kept, and then both must be supported for a long time."
+            },
+            {
+              "text": "It makes no difference",
+              "feedback": "The cost grows with every client that reads the field."
+            }
+          ]
+        },
+        {
+          "id": "predictable",
+          "example": "two-styles",
+          "prompt": "What makes the second group better for a new client?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "It has fewer characters",
+              "feedback": "Length is not the point. The first group could be short and still unguessable."
+            },
+            {
+              "text": "You can guess the next request from the ones you know",
+              "feedback": "The same pattern, a thing and an action on it, is used for every request, so one example teaches the rest."
+            },
+            {
+              "text": "It uses more HTTP methods",
+              "feedback": "Using more methods is a result of the design, not its goal. The gain is that the pattern is consistent."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "boundary": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  Web app -------+\n                 |\n  Phone app -----+----->  THE API  ----->  code, database,\n                 |     (the promise)       other services\n  Partner -------+                         (free to change)\n\n  Clients depend on the promise.   The server may change\n  They never see what is behind    anything behind it, as\n  it.                              long as the promise holds.\n"
+        },
+        "two-styles": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "# Group 1\nPOST /api/doTaskUpdate?id=42&mode=2\nGET  /api/getTasksList2?prj=7&st=1\n\n# Group 2\nPATCH /tasks/42\nGET   /projects/7/tasks?status=open\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:api-design/module/resources",
+      "title": "Model resources and name them",
+      "requires": [],
+      "outcomes": [],
+      "intro": "The first design decision is what the API is made of. In the style this course uses, an API offers resources: the things a client cares about, each with its own address. This module covers finding the resources in a problem and naming them so that the addresses can be guessed.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Resources and their addresses",
+          "text": "A **resource** is a thing the client can name: a project, a task, a comment. Each resource has an address, its URL. Resources come in two kinds.\n\n- A **collection** is a list of things of one kind, such as `/tasks`.\n- An **item** is one of those things, found by its identifier: `/tasks/42`.\n\nThe convention that most APIs follow is: plural nouns, lower case, words joined by hyphens, with the identifier directly after the collection. `/tasks/42` reads as \"task 42 from the tasks\".\n\nThe address says *what*. It does not say what to do with it. That job belongs to the method, which is the subject of the next module, so the address should hold nouns and no verbs.",
+          "example": "tree"
+        },
+        {
+          "kind": "explanation",
+          "title": "Showing that one thing belongs to another",
+          "text": "A comment belongs to a task. Nesting the address shows that: `/tasks/42/comments` is the comments of task 42. It reads naturally and it scopes the list for free.\n\nNesting has a cost, because every level is another identifier the client must already know. Two rules keep it under control.\n\n1. **Nest only for real ownership.** A comment cannot exist without its task. A task, on the other hand, can be moved to another project, so its own address should not depend on the project.\n2. **Stop after one level.** Anything with its own identity gets a short address of its own. Offer `/projects/7/tasks` to list a project's tasks, and `/tasks/42` to work with one. Avoid `/projects/7/tasks/42/comments/3`."
+        },
+        {
+          "kind": "prediction",
+          "title": "Choose an address",
+          "text": "The client wants the comments on task 42. The task belongs to project 7.",
+          "questions": [
+            "comment-address"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Resources are not tables",
+          "text": "It is tempting to publish one resource per database table. Resist it. The tables are how you store things today. The resources are what clients need, and they should survive a change of storage.\n\nSome useful resources have no table at all. The tracker might offer `/projects/7/summary` with counts of open and done tasks, worked out on request. Some tables should never appear, such as the one that links tasks to labels. A client wants \"the labels on this task\", not the rows of a join table.\n\nAsk what the client would call the thing, and name the resource that."
+        },
+        {
+          "kind": "explanation",
+          "title": "Identifiers",
+          "text": "An identifier appears in addresses that clients store, so it must never change and never be reused for something else.\n\n- **Treat it as text.** Send it as a string, even when it is made of digits. Clients should store it and send it back, not do arithmetic on it. That leaves you free to change its form later.\n- **Give it no meaning.** An identifier such as `7-urgent-2025` breaks the day the task stops being urgent.\n- **Know what it reveals.** Counting numbers show how many things exist and let anyone guess the next one. Guessing must never be what protects data, as the module on access explains, but random identifiers avoid giving the information away."
+        },
+        {
+          "kind": "debugging",
+          "title": "One idea, one name",
+          "text": "These five addresses and fields come from one API. Read them as a client trying to learn the pattern.",
+          "example": "inconsistent",
+          "questions": [
+            "inconsistent"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Consistency is the feature",
+          "text": "A client learns an API by pattern. Every exception is something to look up, remember and get wrong. Decide these once and apply them everywhere:\n\n- Plural or singular for collections. Plural is the common choice.\n- One style for field names. Either `created_at` or `createdAt`, never both.\n- One word for one idea. If the person responsible for a task is the `assignee`, it is not the `owner` somewhere else.\n- The same name for the same field on every resource: `id`, `created_at`, `updated_at`.\n\nWhich style you choose matters far less than choosing only one. Write the choices down, because the next person to add an endpoint will not guess them."
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: labels",
+          "text": "Tasks can carry labels such as \"urgent\" or \"bug\". A label can be on many tasks, and a task can have many labels. The team wants clients to be able to:\n\n1. List every label that exists.\n2. See the labels on one task.\n3. Put a label on a task.\n4. Take a label off a task.\n5. List the tasks that carry a given label.\n\nWrite an address for each. You do not need methods yet. Then continue."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "- `/labels` lists every label, and `/labels/urgent` is one label.\n- `/tasks/42/labels` is the labels on task 42.\n- `/tasks/42/labels/urgent` is the fact that task 42 carries that label. Creating it attaches the label, and removing it detaches the label.\n- `/tasks?label=urgent` lists the tasks with that label. It is a filter on the tasks collection, which a later module covers.\n\nThere is no address for the linking table. The client thinks \"this task has this label\", and the address `/tasks/42/labels/urgent` says exactly that. The label is listed in two places, under `/labels` and under a task, and that is fine: one is the thing itself and the other is a relationship.",
+          "example": "labels"
+        }
+      ],
+      "questions": [
+        {
+          "id": "comment-address",
+          "prompt": "Which address is the best choice?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "`/projects/7/tasks/42/comments`",
+              "feedback": "The client must now know the project to reach a comment, and the address breaks if the task moves to another project."
+            },
+            {
+              "text": "`/tasks/42/comments`",
+              "feedback": "A comment belongs to its task, so one level of nesting says everything, and the task is reached by its own short address."
+            },
+            {
+              "text": "`/comments?task=42&project=7`",
+              "feedback": "A filter can work, but it hides that a comment cannot exist without its task, and the project adds nothing."
+            }
+          ]
+        },
+        {
+          "id": "inconsistent",
+          "example": "inconsistent",
+          "prompt": "How many different naming styles does a client have to learn here?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "One",
+              "feedback": "Look at plural against singular, at the verb in one address, and at the two field styles."
+            },
+            {
+              "text": "Two",
+              "feedback": "There are more: singular and plural collections, a verb in an address, and two styles of field name."
+            },
+            {
+              "text": "At least four",
+              "feedback": "Plural and singular collections, a verb in an address, snake_case and camelCase fields, and two words for the same person."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "tree": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "/projects                    every project\n/projects/7                  one project\n/projects/7/tasks            the tasks of project 7\n\n/tasks/42                    one task, by its own address\n/tasks/42/comments           the comments on task 42\n/tasks/42/comments/3         one comment\n\n/users/ana                   one user\n"
+        },
+        "inconsistent": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "GET /projects/7/tasks        -> { \"created_at\": ..., \"assignee\": ... }\nGET /task/42                 -> { \"createdAt\": ..., \"owner\": ... }\nGET /getComments?task=42\nGET /users/ana\nGET /label\n"
+        },
+        "labels": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "/labels                      every label\n/labels/urgent               one label\n\n/tasks/42/labels             the labels on task 42\n/tasks/42/labels/urgent      \"task 42 carries the label urgent\"\n\n/tasks?label=urgent          the tasks that carry the label\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:api-design/module/methods",
+      "title": "Choose the method",
+      "requires": [],
+      "outcomes": [],
+      "intro": "An address names a thing. The method says what to do with it. HTTP has a small set of methods, and each one makes a promise that clients, browsers and the machines between them rely on. This module covers what those promises are and how to map an operation onto the right method.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Five methods",
+          "text": "Almost every API needs only five methods.\n\n| Method | Meaning | On a collection | On an item |\n| --- | --- | --- | --- |\n| `GET` | Read | List the items | Read one item |\n| `POST` | Create, or do something | Create a new item | Rarely used |\n| `PUT` | Replace | Rarely used | Replace the whole item |\n| `PATCH` | Change part | Rarely used | Change some fields |\n| `DELETE` | Remove | Rarely used | Remove the item |\n\nWith the addresses from the last module, the pattern covers most of an API. `GET /tasks` lists, `POST /tasks` creates, `GET /tasks/42` reads, `PATCH /tasks/42` changes and `DELETE /tasks/42` removes. A client who has seen this for tasks can guess it for comments."
+        },
+        {
+          "kind": "explanation",
+          "title": "Safe and idempotent",
+          "text": "Two words describe what a method promises.\n\nA method is **safe** when it only reads. Calling it changes nothing on the server. `GET` is safe.\n\nA method is **idempotent** when doing it twice leaves the server in the same state as doing it once. Setting a task to done twice leaves it done. Deleting a task twice leaves it deleted. `GET`, `PUT` and `DELETE` are idempotent.\n\n`POST` is neither. Sending \"create a task\" twice creates two tasks. `PATCH` is not promised to be idempotent, though a patch that sets fields to fixed values is in practice.\n\n| Method | Safe | Idempotent |\n| --- | --- | --- |\n| `GET` | Yes | Yes |\n| `PUT` | No | Yes |\n| `DELETE` | No | Yes |\n| `PATCH` | No | Not promised |\n| `POST` | No | No |"
+        },
+        {
+          "kind": "explanation",
+          "title": "Why the promises matter",
+          "text": "These are not labels for tidiness. Other software acts on them.\n\nBecause `GET` is safe, browsers load links ahead of time, caches store the answers, and crawlers follow every link they find. If a `GET` deletes or changes something, one of them will trigger it. Never change data in response to a `GET`.\n\nBecause some methods are idempotent, a client can retry them. Networks lose replies. When a request times out, the client cannot tell whether the server did the work. If the method is idempotent it can simply send the request again. If it is not, a retry may do the work twice.",
+          "example": "lost-reply"
+        },
+        {
+          "kind": "prediction",
+          "title": "Is it safe to retry?",
+          "text": "A phone app sends a request and the connection drops before the reply arrives. The app does not know whether the server handled it.",
+          "questions": [
+            "retry"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Replace or change",
+          "text": "`PUT` and `PATCH` both update an item, and mixing them up loses data.\n\n`PUT` replaces the whole item with what you send. A field you leave out is removed or reset. That makes it idempotent and simple to reason about, but a client must send everything, including fields it does not know about.\n\n`PATCH` changes only the fields you send and leaves the rest alone. It suits most updates, because the client sends just what it means to change.\n\nFor most APIs the practical choice is `PATCH` for updates, with `PUT` reserved for the cases where replacing really is the meaning, such as setting the full list of labels on a task.",
+          "example": "put-patch"
+        },
+        {
+          "kind": "explanation",
+          "title": "When the operation is not create, read, update or delete",
+          "text": "Some operations are verbs that do not fit the five: archive a project, send a reminder, cancel an export. There are three ways to model one. Try them in this order.\n\n1. **Is it really a change of state?** Archiving is setting a field. `PATCH /projects/7` with `{\"archived\": true}` needs nothing new.\n2. **Does it create a thing?** Sending a reminder creates a reminder. `POST /tasks/42/reminders` gives the action a noun, an address, and a record that can be listed later.\n3. **If neither fits, name the action.** `POST /exports/9/cancel` is acceptable. Use `POST`, because the action is neither safe nor promised to be idempotent, and keep such addresses rare.\n\nThe first two keep the API to its pattern. The third is an exception, and exceptions are what make an API hard to learn."
+        },
+        {
+          "kind": "debugging",
+          "title": "A link that deletes",
+          "text": "This request was added so that an email could contain a one-click \"remove\" link.",
+          "example": "get-delete",
+          "questions": [
+            "get-delete"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: comments",
+          "text": "Clients of the tracker need to do six things with comments on task 42. For each, write the method and the address.\n\n1. List the comments.\n2. Add a comment.\n3. Read comment 3.\n4. Fix a typing mistake in comment 3.\n5. Remove comment 3.\n6. Mark comment 3 as the accepted answer to the task.\n\nFor each one, also note whether a client can safely send it twice. Then continue."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "The first five follow the pattern, so a client could have guessed them. The sixth needs a decision. Being the accepted answer is a state, so it can be a field on the comment. If a task can have only one accepted answer, it reads even better as a field on the task: `PATCH /tasks/42` with `{\"accepted_comment_id\": \"3\"}`. Either is better than inventing `POST /comments/3/accept`.\n\nOnly adding a comment is unsafe to repeat. A later module shows how to make that safe too.",
+          "example": "comments"
+        }
+      ],
+      "questions": [
+        {
+          "id": "retry",
+          "prompt": "Which of these requests can the app send again without risk?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "`POST /tasks` to create a task",
+              "feedback": "If the first request did arrive, a second one creates a second task."
+            },
+            {
+              "text": "Neither kind can be retried",
+              "feedback": "An idempotent request can be repeated, because repeating it leaves the same state."
+            },
+            {
+              "text": "`PUT /tasks/42` to replace the task",
+              "feedback": "Replacing the task twice with the same content leaves it exactly as one replacement would."
+            }
+          ]
+        },
+        {
+          "id": "get-delete",
+          "example": "get-delete",
+          "prompt": "What is the most serious problem with this request?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "`GET` is treated as safe, so other software will send it",
+              "feedback": "Mail scanners, link previews and browsers fetch links ahead of time. Each of them would delete the task."
+            },
+            {
+              "text": "The address is too long",
+              "feedback": "Length is harmless. The harm is in what the method promises."
+            },
+            {
+              "text": "It should return the deleted task",
+              "feedback": "What it returns is a detail. A request that changes data must not be a `GET` at all."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "lost-reply": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "Client                                Server\n  |                                     |\n  |  PUT /tasks/42  {\"done\": true}      |\n  |------------------------------------>|  task 42 is done\n  |                                     |\n  |      200 OK   (lost on the way)     |\n  |        x<---------------------------|\n  |                                     |\n  |  ... no reply, so try again ...     |\n  |                                     |\n  |  PUT /tasks/42  {\"done\": true}      |\n  |------------------------------------>|  task 42 is still done\n  |                                     |\n  |  200 OK                             |\n  |<------------------------------------|\n\n  The retry did no harm, because PUT is idempotent.\n  With POST /tasks, the retry would have made a second task.\n"
+        },
+        "put-patch": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "# The stored task\n{ \"id\": \"42\", \"title\": \"Pack boxes\", \"done\": false, \"assignee\": \"ana\" }\n\n# PUT replaces everything. The assignee was left out, so it is gone.\nPUT /tasks/42\n{ \"title\": \"Pack boxes\", \"done\": true }\n  ->  { \"id\": \"42\", \"title\": \"Pack boxes\", \"done\": true, \"assignee\": null }\n\n# PATCH changes what it names and leaves the rest.\nPATCH /tasks/42\n{ \"done\": true }\n  ->  { \"id\": \"42\", \"title\": \"Pack boxes\", \"done\": true, \"assignee\": \"ana\" }\n"
+        },
+        "get-delete": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "GET /tasks/42/delete\n"
+        },
+        "comments": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "                                              safe to send twice?\n1. GET    /tasks/42/comments                  yes\n2. POST   /tasks/42/comments                  no, it adds two\n3. GET    /tasks/42/comments/3                yes\n4. PATCH  /tasks/42/comments/3   {\"body\": …}  yes, same text each time\n5. DELETE /tasks/42/comments/3                yes\n6. PATCH  /tasks/42   {\"accepted_comment_id\": \"3\"}     yes\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:api-design/module/status",
+      "title": "Answer with the right status",
+      "requires": [],
+      "outcomes": [],
+      "intro": "Every response starts with a three-digit status code. It is the first thing a client reads, and often the only thing that code in the middle, such as a proxy or a monitoring tool, reads at all. This module covers what the codes mean and how to choose one.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "The first digit says who acts next",
+          "text": "You do not need to memorize a long list. Start with the first digit, because it answers the client's most important question: what do I do now?\n\nGetting the family right matters more than picking the perfect code inside it. A client that receives a 4xx knows that sending the same request again is pointless. A client that receives a 5xx knows the request may be fine and that trying later can work.",
+          "example": "families"
+        },
+        {
+          "kind": "explanation",
+          "title": "The codes for success",
+          "text": "| Code | Name | Use it when |\n| --- | --- | --- |\n| `200` | OK | The request worked and the answer is in the body. |\n| `201` | Created | A new resource was made. Put its address in the `Location` header and return it in the body. |\n| `202` | Accepted | The request is valid, but the work is not finished yet. |\n| `204` | No Content | The request worked and there is nothing to send back. |\n\nA `DELETE` that worked usually answers `204`. A `POST` that created something answers `201`, and returning the new resource saves the client a second request to learn its identifier."
+        },
+        {
+          "kind": "explanation",
+          "title": "The codes for a wrong request",
+          "text": "| Code | Name | Use it when |\n| --- | --- | --- |\n| `400` | Bad Request | The request cannot be understood: broken JSON, a wrong type. |\n| `401` | Unauthorized | The server does not know who is calling. |\n| `403` | Forbidden | The server knows who is calling, and they are not allowed. |\n| `404` | Not Found | Nothing exists at this address. |\n| `409` | Conflict | The request clashes with the current state. |\n| `422` | Unprocessable Content | The request is well formed, but its values are not acceptable. |\n| `429` | Too Many Requests | The client is sending too fast. |\n\n`400` and `422` are close. Many APIs use `400` for both. If you separate them, use `400` when the body cannot be read at all and `422` when it reads fine but a value breaks a rule, such as an empty title.\n\n`409` is for a clash with what is already there: creating a label that exists, or finishing a task that was deleted."
+        },
+        {
+          "kind": "explanation",
+          "title": "The codes for a server that failed",
+          "text": "| Code | Name | Use it when |\n| --- | --- | --- |\n| `500` | Internal Server Error | The server hit a bug or an unexpected condition. |\n| `503` | Service Unavailable | The server is overloaded or down for maintenance. Add a `Retry-After` header. |\n| `502`, `504` | Bad Gateway, Gateway Timeout | A server in front could not get an answer from the one behind it. |\n\nA 5xx always means: this is not your fault. Never use one for a mistake in the request, because clients and alerting systems treat 5xx as an outage. Equally, never answer 4xx when your own database is down, because the client will stop retrying something that would have worked."
+        },
+        {
+          "kind": "prediction",
+          "title": "Choose a code",
+          "text": "A client sends `POST /tasks` with valid JSON. The title is an empty string, and the tracker requires a title.",
+          "questions": [
+            "validation"
+          ]
+        },
+        {
+          "kind": "debugging",
+          "title": "Success that is not",
+          "text": "This response is sent when the client asks for a task that does not exist.",
+          "example": "false-ok",
+          "questions": [
+            "false-ok"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Always tell the truth in the status",
+          "text": "The response in the last step is a common mistake, usually defended as simpler for the client. It is not. The client must now read and understand every body before knowing whether a request worked. Everything that looks only at the status is misled: caches store the failure as a good answer, retry logic does nothing, and dashboards report that all is well.\n\nThe rule is short. **If the request did not do what was asked, the status is not 2xx.**\n\nOne refinement concerns privacy. Suppose task 42 exists, but the caller may not see it. Answering `403` confirms that it exists. When the existence of a thing is itself sensitive, answer `404` for both \"does not exist\" and \"not yours to see\"."
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: six situations",
+          "text": "Write the status code you would return in each case.\n\n1. `GET /tasks/42`, and the task exists.\n2. `POST /projects/7/tasks` created task 99.\n3. `DELETE /tasks/42` removed the task.\n4. `PATCH /tasks/42` sets `done` to the text `\"maybe\"`.\n5. `GET /tasks/42`, and the request carries no credentials.\n6. `GET /projects/7/tasks`, and the database did not answer.\n\nThen continue."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. `200`, with the task in the body.\n2. `201`, with `Location: /tasks/99` and the new task in the body.\n3. `204`, with no body.\n4. `422`, or `400` if the API uses one code for all invalid input. The JSON is fine and the value is not.\n5. `401`. The server does not know who is asking.\n6. `503`, ideally with `Retry-After`. The request was fine and the server could not serve it.\n\nIn every case the first digit alone tells the client what to do: carry on, fix the request, or try again later."
+        }
+      ],
+      "questions": [
+        {
+          "id": "validation",
+          "prompt": "Which status fits best?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "`200`, with an error message in the body",
+              "feedback": "The task was not created, so the status must not say the request worked."
+            },
+            {
+              "text": "`422`",
+              "feedback": "The body is readable, but a value breaks a rule. `400` is also acceptable if the API uses it for all invalid input."
+            },
+            {
+              "text": "`500`",
+              "feedback": "A 5xx means the server failed. Here the request is at fault, and sending it again will never work."
+            }
+          ]
+        },
+        {
+          "id": "false-ok",
+          "example": "false-ok",
+          "prompt": "What goes wrong first when an API answers like this?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "The response body is larger than it needs to be",
+              "feedback": "Size is not the issue. The status is wrong."
+            },
+            {
+              "text": "The message is not translated",
+              "feedback": "Wording is a detail. Software that reads only the status has already been misled."
+            },
+            {
+              "text": "Anything that reads only the status treats the failure as a success",
+              "feedback": "Caches, retry logic and monitoring all see `200` and conclude that the request worked."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "families": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  2xx   It worked.                    Carry on.\n\n  3xx   Look somewhere else.          Follow the Location header.\n\n  4xx   The request is wrong.         Fix the request.\n                                      Sending it again as it is\n                                      will fail again.\n\n  5xx   The server failed.            The request may be fine.\n                                      Wait, then try again.\n"
+        },
+        "false-ok": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "GET /tasks/999\n\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{ \"success\": false, \"error\": \"Task not found\" }\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:api-design/module/shapes",
+      "title": "Shape requests and responses",
+      "requires": [],
+      "outcomes": [],
+      "intro": "Addresses, methods and statuses are the frame. The body is what the client actually reads and writes. This module covers the shape of the JSON a client sends and receives: how to name fields, which types to use for dates, money and choices, and how to treat a value that is missing.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "One shape per resource",
+          "text": "A task should look the same wherever it appears: when read on its own, inside a list, and in the reply to a create or an update. A client then needs one piece of code to understand a task.\n\nIf a list must return a shorter form to stay small, make the short form a strict subset of the full one, with the same names and types. Never let a field mean one thing in a list and another in the item.",
+          "example": "task"
+        },
+        {
+          "kind": "explanation",
+          "title": "Types that survive the trip",
+          "text": "JSON has few types: text, number, true or false, null, lists and objects. Several everyday things have no type of their own, and each needs a decision.\n\n| Value | Send it as | Why |\n| --- | --- | --- |\n| Identifier | Text: `\"42\"` | Clients store it and send it back. Large numbers lose digits in some JSON readers. |\n| Moment in time | Text in ISO 8601, in UTC: `\"2025-03-01T14:30:00Z\"` | It is unambiguous, sorts correctly as text, and is understood everywhere. |\n| Calendar date | Text: `\"2025-03-01\"` | A due date has no time of day and no time zone. |\n| Money | A whole number of the smallest unit, plus a currency: `{\"amount\": 1999, \"currency\": \"USD\"}` | Decimal fractions are not stored exactly as floating point numbers, so sums drift. |\n| One of a fixed set | Text: `\"open\"`, `\"done\"` | It can be read without a lookup table, and new values can be added. |\n| Yes or no | `true` or `false`, with a positive name: `\"done\"` | A name like `\"not_disabled\"` forces the reader to think twice. |\n\nState the unit in the field name whenever a number has one: `duration_seconds`, `size_bytes`. A bare `timeout: 30` will be read as seconds by some clients and milliseconds by others."
+        },
+        {
+          "kind": "debugging",
+          "title": "A response to review",
+          "text": "This is how one early version of the tracker returned a task.",
+          "example": "bad-task",
+          "questions": [
+            "bad-task"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Missing, null and empty",
+          "text": "There are three ways for a field to hold nothing, and clients will treat them differently. Decide what each one means, and write it down.\n\n- **The field is absent.** In a response: not applicable, or not requested. In a request: no opinion, leave it alone.\n- **The field is `null`.** There is deliberately no value. This task has no assignee.\n- **The field is an empty list or empty text.** There is a value, and it is empty. This task has no labels.\n\nThe difference matters most in updates. In a `PATCH`, leaving `assignee` out means \"do not touch it\", and sending `\"assignee\": null` means \"remove the assignee\". If the API cannot tell the two apart, a client cannot clear a field without also sending every other one.\n\nFor lists, always return `[]` and never `null` or nothing. A client can loop over an empty list without a special case.",
+          "example": "patch-null"
+        },
+        {
+          "kind": "prediction",
+          "title": "Clearing a field",
+          "text": "Task 42 is assigned to Ana. A client sends `PATCH /tasks/42` with the body `{\"title\": \"Pack boxes\"}`.",
+          "questions": [
+            "absent"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Leave room to grow",
+          "text": "Two habits make a response easy to extend later.\n\n**Return an object at the top level, never a bare list.** A list has no place to put anything else. An object does: `{\"data\": [...]}` can later gain a cursor for the next page or a total, without breaking a client.\n\n**Publish only what you mean to keep.** Every field you return is a promise. Do not send a field because it happens to be in the database row. Internal flags, raw column names and values that are expensive to compute become things you can never remove.\n\nOn the way in, validate. Reject a value that breaks a rule and say which one. Decide on purpose what to do with a field you do not recognize in a request. Ignoring it silently hides spelling mistakes, such as a client that sends `titel` and wonders why nothing changed."
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: a comment",
+          "text": "Design the JSON for one comment on a task, as the API would return it. A comment has an author, some text, the time it was written, and the time it was last edited, if it ever was.\n\nDecide the field names, the type of each field, and what an unedited comment looks like. Then continue."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "The identifiers are text. The author is a small object, so the client can show a name without a second request, and it uses the same field names as a user anywhere else in the API. The two times are ISO 8601 in UTC and end in `_at`, like every other timestamp. An unedited comment has `\"edited_at\": null`: the field is always present, so a client never has to check whether it exists, and `null` says clearly that no edit has happened.\n\nNotice what is missing: no database row number, no internal moderation flag, no `task` object repeating data the client already has.",
+          "example": "comment"
+        }
+      ],
+      "questions": [
+        {
+          "id": "bad-task",
+          "example": "bad-task",
+          "prompt": "Which problem will cause real bugs soonest?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "`due` could be 3 January or 1 March",
+              "feedback": "A date written as `03/01/2025` is read differently in different countries. ISO 8601 has only one reading."
+            },
+            {
+              "text": "The fields are not in alphabetical order",
+              "feedback": "Field order in a JSON object carries no meaning, and clients must not rely on it."
+            },
+            {
+              "text": "The response has too few fields",
+              "feedback": "A small response is fine. The trouble is in how the values are written."
+            }
+          ]
+        },
+        {
+          "id": "absent",
+          "prompt": "What should happen to the assignee?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "It is removed",
+              "feedback": "The body did not mention the assignee. In a `PATCH`, a field that is left out is left alone."
+            },
+            {
+              "text": "It stays Ana",
+              "feedback": "A field that is absent means \"no change\". Only `\"assignee\": null` would remove it."
+            },
+            {
+              "text": "The request is rejected because a field is missing",
+              "feedback": "A `PATCH` names only what it changes. Requiring every field would make it a `PUT`."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "task": {
+          "readOnly": true,
+          "fence": "json",
+          "code": "{\n  \"id\": \"42\",\n  \"title\": \"Pack boxes\",\n  \"status\": \"open\",\n  \"assignee\": { \"id\": \"ana\", \"name\": \"Ana Martinez\" },\n  \"labels\": [\"urgent\"],\n  \"due_on\": \"2025-03-01\",\n  \"created_at\": \"2025-02-10T09:15:00Z\",\n  \"updated_at\": \"2025-02-12T16:40:00Z\"\n}\n"
+        },
+        "bad-task": {
+          "readOnly": true,
+          "fence": "json",
+          "code": "{\n  \"ID\": 42,\n  \"TaskTitle\": \"Pack boxes\",\n  \"st\": 1,\n  \"due\": \"03/01/2025\",\n  \"created\": 1739178900,\n  \"is_not_archived\": true,\n  \"labels\": null,\n  \"price\": 19.99\n}\n"
+        },
+        "patch-null": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "# Change the title. The assignee is not mentioned, so it stays.\nPATCH /tasks/42\n{ \"title\": \"Pack the boxes\" }\n\n# Remove the assignee. null means \"no value\".\nPATCH /tasks/42\n{ \"assignee\": null }\n\n# Remove every label. An empty list is a value.\nPATCH /tasks/42\n{ \"labels\": [] }\n"
+        },
+        "comment": {
+          "readOnly": true,
+          "fence": "json",
+          "code": "{\n  \"id\": \"3\",\n  \"task_id\": \"42\",\n  \"author\": { \"id\": \"ben\", \"name\": \"Ben Carter\" },\n  \"body\": \"The boxes arrived this morning.\",\n  \"created_at\": \"2025-02-12T16:40:00Z\",\n  \"edited_at\": null\n}\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:api-design/module/errors",
+      "title": "Design errors people can act on",
+      "requires": [],
+      "outcomes": [],
+      "intro": "A client spends much of its code handling requests that did not work. The status code gives the family of the failure. The body has to give the rest: exactly what went wrong, in a form a program can act on and a person can read. This module covers the design of that body.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Who reads an error",
+          "text": "An error response has three readers, and each needs something different.\n\n- **The client program** needs to decide what to do: show a message beside a field, ask the user to sign in, wait and retry, or give up. It needs a value it can compare, and that value must never change.\n- **The developer** who is building the client needs to understand the mistake quickly. They need a sentence in plain words.\n- **The person supporting the API** needs to find this exact request in the logs. They need an identifier.\n\nAn error that is only a sentence serves one of the three. A program should never have to search inside a sentence to decide what to do, because sentences get reworded."
+        },
+        {
+          "kind": "explanation",
+          "title": "The parts of a good error",
+          "text": "| Part | Example | For |\n| --- | --- | --- |\n| Status code | `422` | Everything that reads only the status |\n| Error code | `\"validation_failed\"` | The client program. Stable text, never reworded. |\n| Message | `\"Two fields are not valid.\"` | The developer. May be reworded at any time. |\n| Details | Which field, and what is wrong with it | The program and the developer |\n| Request identifier | `\"req_8f3a2c\"` | Support, to find the request in the logs |\n\nThere is a published standard for this shape, called problem details (RFC 9457). It defines a few common fields, `type`, `title`, `status`, `detail` and `instance`, and lets you add your own. You do not have to adopt it, but it is a sound default, and a client that has seen it before will recognize it.",
+          "example": "error"
+        },
+        {
+          "kind": "explanation",
+          "title": "Rules that make errors usable",
+          "text": "1. **One shape for every error.** A missing task, a bad field and a server fault all use the same top-level fields. A client writes its error handling once.\n2. **The error code is part of the contract.** Clients compare it, so treat a change to it like a change to a field name. The message is free to improve.\n3. **Report every problem at once.** If three fields are wrong, say so in one response. Reporting them one at a time costs the user three round trips.\n4. **Point at the field.** Name the field that failed, so a client can show the message beside the right input.\n5. **Say whether trying again can help.** For a rate limit or an overloaded server, add a `Retry-After` header.\n6. **Say nothing about your insides.** No stack traces, no query text, no server names, no file paths."
+        },
+        {
+          "kind": "prediction",
+          "title": "Showing an error beside a field",
+          "text": "A form in the web app creates a task. When the title is too long, the app should show a message directly under the title box, in the user's own language.",
+          "questions": [
+            "field-error"
+          ]
+        },
+        {
+          "kind": "debugging",
+          "title": "An error that says too much",
+          "text": "This response was returned when a client sent a task with a missing project.",
+          "example": "leaky",
+          "questions": [
+            "leaky"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "What to keep to yourself",
+          "text": "The response in the last step is useful to the developer who wrote the server and to nobody else who should have it. It tells an attacker the database, the table and column names, the file layout and the framework. It also ties clients to wording that will change with the next refactoring.\n\nLog the full detail on the server, under the request identifier. Return the identifier and a message written for the caller. When the fault is yours, the honest message is short: something went wrong on our side, here is the identifier to quote.\n\nBe careful with detail that helps guessing. An error for a failed sign-in should not say whether the name or the password was wrong."
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: two wrong fields",
+          "text": "A client sends this request. The tracker requires a title of 1 to 120 characters and a due date that is a real calendar date.\n\n`POST /projects/7/tasks` with the body `{\"title\": \"\", \"due_on\": \"2025-02-30\"}`\n\nDesign the complete response: the status line, any headers that matter, and the body. Then continue."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "The status is `422` because the JSON was readable and two values broke rules. Both problems are reported together. Each entry names its field, carries a code a program can compare, and has a message a developer can read. The top-level `code` lets a client that does not care about details handle all validation failures the same way. The request identifier lets support find the request.\n\nNothing in it depends on how the server is built.",
+          "example": "validation"
+        }
+      ],
+      "questions": [
+        {
+          "id": "field-error",
+          "prompt": "What must the error contain for the app to do this reliably?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "A clear English sentence",
+              "feedback": "The app would have to search inside the sentence to find the field, and it could not translate it."
+            },
+            {
+              "text": "The status code `422`",
+              "feedback": "The status says the input was invalid. It does not say which field, or why."
+            },
+            {
+              "text": "The name of the field and a stable code for the problem",
+              "feedback": "With `field: \"title\"` and `code: \"too_long\"`, the app knows where to show the message and can choose its own wording."
+            }
+          ]
+        },
+        {
+          "id": "leaky",
+          "example": "leaky",
+          "prompt": "What is the main problem with this response?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "It exposes how the server is built",
+              "feedback": "The query, the table and the file path help an attacker and mean nothing to an honest client."
+            },
+            {
+              "text": "It uses the wrong status code",
+              "feedback": "`500` is plausible here. The trouble is what the body reveals."
+            },
+            {
+              "text": "It is too long to read",
+              "feedback": "Length is not the harm. The content is."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "error": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "HTTP/1.1 404 Not Found\nContent-Type: application/problem+json\n\n{\n  \"type\": \"https://api.example.com/problems/task-not-found\",\n  \"title\": \"Task not found\",\n  \"status\": 404,\n  \"code\": \"task_not_found\",\n  \"detail\": \"There is no task with the id 999.\",\n  \"request_id\": \"req_8f3a2c\"\n}\n"
+        },
+        "leaky": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "HTTP/1.1 500 Internal Server Error\n\n{\n  \"error\": \"NullReferenceException at TaskService.cs:line 88\",\n  \"query\": \"INSERT INTO tasks (project_id, title) VALUES (NULL, 'Pack')\",\n  \"host\": \"db-primary-02.internal\",\n  \"stack\": \"at Tracker.Data.TaskRepository.Insert(Task task) ...\"\n}\n"
+        },
+        "validation": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "HTTP/1.1 422 Unprocessable Content\nContent-Type: application/problem+json\n\n{\n  \"type\": \"https://api.example.com/problems/validation-failed\",\n  \"title\": \"Some fields are not valid\",\n  \"status\": 422,\n  \"code\": \"validation_failed\",\n  \"request_id\": \"req_41b7d0\",\n  \"errors\": [\n    { \"field\": \"title\",  \"code\": \"required\",\n      \"message\": \"The title must have 1 to 120 characters.\" },\n    { \"field\": \"due_on\", \"code\": \"invalid_date\",\n      \"message\": \"2025-02-30 is not a calendar date.\" }\n  ]\n}\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:api-design/module/lists",
+      "title": "Return lists that scale",
+      "requires": [],
+      "outcomes": [],
+      "intro": "A collection that returns ten items in testing returns ten thousand in production. A list endpoint has to let the client ask for the part it wants, in the order it wants, a piece at a time. This module covers filtering, sorting and the two main ways to page through results.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Never return everything",
+          "text": "`GET /tasks` cannot mean \"all tasks\". Sooner or later that response is too large to build, to send and to read, and one careless client can slow the service for everyone.\n\nEvery list endpoint needs a page size from its first release. Choose a default, such as 50, and a maximum, such as 200. Let the client ask for fewer or more with `limit`. A request above the maximum should get the maximum, or a clear `400`. It should never get an unlimited response.\n\nAdding a limit later is a breaking change, because existing clients believe they received everything. Design it in from the start."
+        },
+        {
+          "kind": "explanation",
+          "title": "Filtering and sorting",
+          "text": "Filters go in the query string and are named after the fields they test.\n\n- `GET /tasks?status=open` keeps the open tasks.\n- `GET /tasks?status=open&assignee=ana` combines two filters. A task must pass both.\n- `GET /tasks?due_before=2025-03-01` shows a simple way to express a range.\n\nReject a filter you do not recognize with a `400`. Ignoring it returns far more than the client expected, and a client that then deletes \"the filtered tasks\" will delete the wrong ones.\n\nFor sorting, one parameter is enough: `sort=due_on` for ascending, and `sort=-due_on`, with a minus sign, for descending. Always define a default order, and make it complete by ending with a unique field such as the identifier. Without that, two items with the same due date can swap places between requests, and paging breaks."
+        },
+        {
+          "kind": "explanation",
+          "title": "Paging by position",
+          "text": "The simplest scheme is **offset paging**. The client says how many items to skip: `?limit=3&offset=3` means \"skip three, then give me three\".\n\nIt is easy to build and to understand, and a client can jump straight to page 40. It has two weaknesses. Deep pages are slow, because the server has to walk past everything it skips. And the pages shift when the data changes while a client is reading.",
+          "example": "offset-drift"
+        },
+        {
+          "kind": "prediction",
+          "title": "A filter with a typing mistake",
+          "text": "A client means to list the open tasks, and sends `GET /tasks?staus=open`. The parameter name is misspelled.",
+          "questions": [
+            "unknown-filter"
+          ]
+        },
+        {
+          "kind": "prediction",
+          "title": "A shifting list",
+          "text": "Look at the diagram again. A client reads page 1, a new task arrives, and the client reads page 2.",
+          "questions": [
+            "drift"
+          ],
+          "example": "offset-drift"
+        },
+        {
+          "kind": "explanation",
+          "title": "Paging by cursor",
+          "text": "**Cursor paging** fixes both weaknesses. Instead of a position, the client sends a marker for the last item it saw, and the server returns the items after it.\n\nThe first response includes a `next_cursor`. The client sends it back as `?cursor=...` to get the next page. When there are no more items, `next_cursor` is `null`.\n\nThe cursor is **opaque**: the client must not look inside it or build one. That leaves the server free to change what it contains. Because the server continues from a known item, new arrivals cannot shift the page, and the database can jump straight to the right place.\n\nThe cost is that a client cannot jump to an arbitrary page, only forward. For most lists that is a good trade. Use offset paging for small, stable collections where jumping to a page matters. Use cursors for anything large or busy.",
+          "example": "cursor"
+        },
+        {
+          "kind": "explanation",
+          "title": "What the response carries",
+          "text": "The top level is an object, as an earlier module advised, so there is a place for paging information beside the items.\n\n- `data` holds the items of this page. It is `[]` when there are none.\n- `next_cursor` holds the marker for the next page, or `null` at the end.\n\nA total count is tempting and expensive. Counting every match can cost more than fetching the page. Offer it only if clients truly need it, and consider making it something the client must ask for.\n\nKeep the filters and the sort the same while paging. A cursor belongs to one query, and a server should reject a cursor that is sent with different filters."
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: the tasks of a project",
+          "text": "Design the request a client uses to read the open tasks of project 7, soonest due date first, 20 at a time.\n\nWrite the first request, the shape of the response, and the request for the second page. Decide what happens for two tasks with the same due date, and what the last page looks like. Then continue."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "The filter and the sort are plain query parameters. The server adds the identifier as a silent second sort key, so that tasks due on the same day always come in the same order. The response is an object with the items and a cursor. The second request repeats the filter and the sort and adds the cursor. The last page has `\"next_cursor\": null`, which is how the client knows to stop. It does not need a total to know that.",
+          "example": "project-tasks"
+        }
+      ],
+      "questions": [
+        {
+          "id": "unknown-filter",
+          "prompt": "What should the API do?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "Answer `400` and name the parameter it does not recognize",
+              "feedback": "The client learns of the mistake at once, instead of receiving every task and treating them as open."
+            },
+            {
+              "text": "Ignore the unknown parameter and return all tasks",
+              "feedback": "The client would believe it holds only open tasks. Anything it does next is done to the wrong set."
+            },
+            {
+              "text": "Return an empty list",
+              "feedback": "An empty list says there are no open tasks, which is false, and hides the mistake."
+            }
+          ]
+        },
+        {
+          "id": "drift",
+          "example": "offset-drift",
+          "prompt": "What does the client see on page 2?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Tasks T6, T5 and T4, as expected",
+              "feedback": "Every task moved down one place when T10 arrived, so skipping three no longer skips the same three."
+            },
+            {
+              "text": "Task T7 again, and it never sees the task that would have ended the page",
+              "feedback": "The new task pushed every item down by one. Offset 3 now starts at T7, which was already on page 1."
+            },
+            {
+              "text": "An error, because the list changed",
+              "feedback": "The server has no idea the client is in the middle of reading. It answers the request as asked."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "offset-drift": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  The list, newest first:      T9  T8  T7  T6  T5  T4  ...\n\n  Page 1   limit=3 offset=0    T9  T8  T7\n\n        ... a new task, T10, is created ...\n\n  The list is now:        T10  T9  T8  T7  T6  T5  T4  ...\n\n  Page 2   limit=3 offset=3    T7  T6  T5\n                               ^^\n                    T7 was already on page 1\n"
+        },
+        "cursor": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "GET /tasks?limit=3\n\n{\n  \"data\": [ { \"id\": \"9\", ... }, { \"id\": \"8\", ... }, { \"id\": \"7\", ... } ],\n  \"next_cursor\": \"eyJhZnRlciI6IjcifQ\"\n}\n\nGET /tasks?limit=3&cursor=eyJhZnRlciI6IjcifQ\n\n{\n  \"data\": [ { \"id\": \"6\", ... }, { \"id\": \"5\", ... }, { \"id\": \"4\", ... } ],\n  \"next_cursor\": null\n}\n"
+        },
+        "project-tasks": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "GET /projects/7/tasks?status=open&sort=due_on&limit=20\n\nHTTP/1.1 200 OK\n{\n  \"data\": [\n    { \"id\": \"42\", \"title\": \"Pack boxes\", \"due_on\": \"2025-03-01\", ... },\n    { \"id\": \"57\", \"title\": \"Print labels\", \"due_on\": \"2025-03-01\", ... }\n  ],\n  \"next_cursor\": \"eyJkdWUiOiIyMDI1LTAzLTAxIiwiaWQiOiI1NyJ9\"\n}\n\nGET /projects/7/tasks?status=open&sort=due_on&limit=20\n    &cursor=eyJkdWUiOiIyMDI1LTAzLTAxIiwiaWQiOiI1NyJ9\n\nHTTP/1.1 200 OK\n{ \"data\": [ ... ], \"next_cursor\": null }\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:api-design/module/writes",
+      "title": "Make writes safe to retry",
+      "requires": [],
+      "outcomes": [],
+      "intro": "Reading twice is harmless. Writing twice can charge a card twice or create two tasks, and two clients writing at once can erase each other's work. This module covers two techniques that make writes safe: a key that lets a create be retried, and a version check that stops silent overwrites.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "The retry problem",
+          "text": "An earlier module showed that a client cannot tell a lost request from a lost reply. With `PUT` or `DELETE` it can simply retry. With `POST` it cannot, because each `POST` creates something new.\n\nTelling clients \"do not retry\" is not an answer. They retry anyway: on purpose, through a library, or because a user pressed the button again. The API has to make the retry harmless."
+        },
+        {
+          "kind": "explanation",
+          "title": "Idempotency keys",
+          "text": "The standard fix is an **idempotency key**. The client makes up a unique value for each operation it intends to perform, usually a random identifier, and sends it in a header such as `Idempotency-Key`. If it retries, it sends the same key.\n\nThe server remembers each key together with the response it gave.\n\n- A key it has not seen: do the work, store the response under the key, return it.\n- A key it has seen: do nothing, and return the stored response again.\n- A key it has seen with a different body: refuse, because the client has made a mistake. `422` is a common choice.\n\nThe client gets the same answer whether its first attempt arrived or not, and the work happens once. Keys only need to be kept for as long as a retry is plausible, often a day.",
+          "example": "idempotency"
+        },
+        {
+          "kind": "prediction",
+          "title": "The same key twice",
+          "text": "A client sends `POST /tasks` with `Idempotency-Key: a1b2`. The server creates task 99, but the reply is lost. The client sends the identical request again with the same key.",
+          "questions": [
+            "same-key"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Let the client choose the address",
+          "text": "Sometimes no key is needed, because the operation can be made idempotent by design. If the client decides the address, creating becomes a `PUT`.\n\n`PUT /tasks/42/labels/urgent` means \"task 42 carries the label urgent\". Sending it twice changes nothing the second time. The label module's design had this property without any extra machinery.\n\nWhenever a create can be phrased as \"make sure this exists at this address\", prefer that phrasing."
+        },
+        {
+          "kind": "explanation",
+          "title": "The lost update",
+          "text": "The second problem needs two clients. Both read the same task. Both change it and send their version back. The second write replaces the first, and nobody is told. This is called a **lost update**.",
+          "example": "lost-update"
+        },
+        {
+          "kind": "explanation",
+          "title": "Check the version before writing",
+          "text": "The fix is to let a write say which version it was based on. This is called **optimistic concurrency**: assume there is no clash, and check at the last moment.\n\n1. When the server returns a resource, it adds an `ETag` header: a short value that changes whenever the resource changes.\n2. When the client updates, it sends that value back in an `If-Match` header. It means \"apply this only if the resource is still the version I read\".\n3. If the version still matches, the server applies the change. If it does not, the server answers `412 Precondition Failed` and changes nothing.\n\nOn a `412`, the client reads the resource again, shows or merges the other change, and tries again. Nothing is lost silently.\n\nAn API can go further and require the header on every update, answering `428 Precondition Required` when it is missing. That is worth it for resources many people edit.",
+          "example": "if-match"
+        },
+        {
+          "kind": "debugging",
+          "title": "Two editors",
+          "text": "Read the lost-update diagram once more. Now suppose the API requires `If-Match` on every update.",
+          "example": "lost-update",
+          "questions": [
+            "if-match"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: exporting a project",
+          "text": "A client asks the tracker to build an export of a project. Building it is slow and costs money, so it must never be started twice by accident. The client is a nightly job that retries on any failure.\n\nDesign the request that starts an export so that a retry is safe. Say what the server stores, what the client sees on its first attempt, and what it sees on a retry. Then continue."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "The job makes up one key for each night's export and sends it with every attempt. The first attempt that arrives creates the export and stores the response under the key. Every later attempt with that key gets the same response back, with the same export identifier, and starts nothing.\n\nThe job does not need to know which of its attempts succeeded. It only needs to keep sending the same key until it gets an answer.",
+          "example": "export"
+        }
+      ],
+      "questions": [
+        {
+          "id": "same-key",
+          "prompt": "What should the server do with the second request?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "Return the stored response for task 99 and create nothing",
+              "feedback": "The key shows this is a retry of work that was already done, so the client gets the original answer."
+            },
+            {
+              "text": "Create a second task",
+              "feedback": "That is the problem the key exists to prevent."
+            },
+            {
+              "text": "Answer `409 Conflict`",
+              "feedback": "The client did nothing wrong by retrying. It should receive the same success it would have received the first time."
+            }
+          ]
+        },
+        {
+          "id": "if-match",
+          "example": "lost-update",
+          "prompt": "What happens to Ben's write in that case?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "It replaces Ana's change, as before",
+              "feedback": "Ben's request names the version he read. The server sees that the task has changed since."
+            },
+            {
+              "text": "Both changes are merged automatically",
+              "feedback": "The server cannot know how to merge. It refuses and leaves the decision to the client."
+            },
+            {
+              "text": "It is refused with `412`, and Ana's change is kept",
+              "feedback": "The task is no longer the version Ben read, so the precondition fails. Ben's client reads again and decides what to do."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "idempotency": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "Client                                       Server\n  |                                            |\n  | POST /tasks   Idempotency-Key: a1b2        |\n  |------------------------------------------->| key a1b2 is new:\n  |                                            |   create task 99\n  |      201 Created   (lost on the way)       |   remember a1b2 -> 201\n  |          x<--------------------------------|\n  |                                            |\n  | POST /tasks   Idempotency-Key: a1b2        |\n  |------------------------------------------->| key a1b2 is known:\n  |                                            |   create nothing\n  | 201 Created   { \"id\": \"99\", ... }          |   replay the 201\n  |<-------------------------------------------|\n\n  One task exists. The client got its answer.\n"
+        },
+        "lost-update": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  Ana                      Server                      Ben\n   |                         |                          |\n   | GET /tasks/42           |          GET /tasks/42   |\n   |------------------------>|<-------------------------|\n   | title: \"Pack\"           |          title: \"Pack\"   |\n   |<------------------------|------------------------->|\n   |                         |                          |\n   | PATCH title: \"Pack 12\"  |                          |\n   |------------------------>|  stored: \"Pack 12\"       |\n   |                         |                          |\n   |                         |  PATCH title: \"Pack all\" |\n   |                         |<-------------------------|\n   |                         |  stored: \"Pack all\"      |\n   |                         |                          |\n   Ana's change is gone, and nobody was told.\n"
+        },
+        "if-match": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "GET /tasks/42\n\nHTTP/1.1 200 OK\nETag: \"v5\"\n{ \"id\": \"42\", \"title\": \"Pack\", ... }\n\nPATCH /tasks/42\nIf-Match: \"v5\"\n{ \"title\": \"Pack all\" }\n\n# Somebody else changed the task in between, so it is now \"v6\".\n\nHTTP/1.1 412 Precondition Failed\n{ \"code\": \"version_mismatch\",\n  \"detail\": \"The task has changed since you read it.\" }\n"
+        },
+        "export": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "POST /projects/7/exports\nIdempotency-Key: nightly-2025-03-01\n\n# First attempt that arrives\nHTTP/1.1 201 Created\nLocation: /exports/9\n{ \"id\": \"9\", \"status\": \"running\" }\n\n# Any retry with the same key: nothing new is started\nHTTP/1.1 201 Created\nLocation: /exports/9\n{ \"id\": \"9\", \"status\": \"running\" }\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:api-design/module/versioning",
+      "title": "Change without breaking",
+      "requires": [],
+      "outcomes": [],
+      "intro": "An API that people use will need to change. New features arrive, mistakes are found, and the business moves. The skill is to change it without breaking the clients that already exist. This module covers what counts as a breaking change, how to avoid most of them, and what to do when one cannot be avoided.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "What breaks a client",
+          "text": "A change is **breaking** when a client that worked yesterday can fail today without having changed anything itself. The test is always from the client's side.\n\n| Usually safe | Breaking |\n| --- | --- |\n| Adding a new endpoint | Removing or renaming an endpoint |\n| Adding an optional field to a request | Adding a required field to a request |\n| Adding a field to a response | Removing or renaming a response field |\n| Adding an optional query parameter | Changing the type or the meaning of a field |\n| Accepting input that used to be refused | Refusing input that used to be accepted |\n| | Changing a default, such as the sort order |\n| | Changing an error code that clients compare |\n\nThe left column is only safe if clients are written to tolerate it. That is a rule you have to state."
+        },
+        {
+          "kind": "explanation",
+          "title": "The tolerant reader",
+          "text": "Adding a field to a response is safe only for a client that ignores fields it does not know. A client that fails on anything unexpected turns every addition into a breaking change.\n\nSo an API should publish what clients must tolerate. A common set of rules is:\n\n- Ignore fields you do not recognize.\n- Do not rely on the order of fields in an object.\n- Expect new values in a field with a fixed set of values, and handle an unknown one sensibly.\n- Expect new error codes, and fall back on the status family.\n\nThe third rule is the one most often missed. If `status` can be `open` or `done` and you add `blocked`, a client that handles exactly two values may fail. Say from the start that the set can grow."
+        },
+        {
+          "kind": "prediction",
+          "title": "Classify a change",
+          "text": "The tracker returns `\"priority\": 2` on a task, a number from 1 to 3. The team wants to return `\"priority\": \"high\"` instead, because the numbers confuse people.",
+          "questions": [
+            "type-change"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Grow first, version last",
+          "text": "Most changes can be made by adding. Instead of changing a field, add a new one beside it and keep the old one working. This is sometimes called **expand and contract**: first expand the API so that the old way and the new way both work, give clients time to move, and contract only later.\n\nFor the priority example: add `priority_level` with the text value, and keep `priority` with the number. Old clients are untouched. New clients use the new field. The old field can be retired on a published schedule.\n\nA new version of the whole API is the last resort, for a change that cannot be made by adding. Versions are expensive. Each one is a second API to run, test, document and secure.",
+          "example": "expand-contract"
+        },
+        {
+          "kind": "explanation",
+          "title": "Where a version goes",
+          "text": "When a version is needed, there are three common places to put it.\n\n| Where | Example | For | Against |\n| --- | --- | --- | --- |\n| In the address | `/v2/tasks` | Visible, easy to try, easy to route | The address of a thing changes between versions |\n| In a header | `Accept: application/vnd.tracker.v2+json` | Addresses stay stable | Harder to see and to test by hand |\n| By date | `Tracker-Version: 2025-03-01` | Each client stays on the behavior of the day it started | The server has to keep many small differences alive |\n\nAll three work. The version in the address is the most common and the easiest for clients. Whichever you choose, version the API as a whole, start at version 1 on the first day, and raise it only for breaking changes."
+        },
+        {
+          "kind": "explanation",
+          "title": "Retiring something",
+          "text": "Removing a field, an endpoint or a version is a process with a schedule, and the schedule belongs in the contract.\n\n1. **Announce it,** with a date, well in advance. Months, not days.\n2. **Mark it** in the description and in responses. Two standard headers exist for this: `Deprecation`, which says the thing is on its way out, and `Sunset`, which gives the date it stops working.\n3. **Measure** who still uses it, and contact them.\n4. **Remove it** on the date, and answer `410 Gone` with an error that points to the replacement.\n\nSkipping the measuring step is how a removal turns into an outage for somebody else.",
+          "example": "sunset"
+        },
+        {
+          "kind": "debugging",
+          "title": "A small improvement",
+          "text": "A developer tidies the tracker's API in one release. The notes list five changes.",
+          "example": "release-notes",
+          "questions": [
+            "release-notes"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: a richer assignee",
+          "text": "Today a task returns the assignee as a user identifier: `\"assignee\": \"ana\"`. Clients have asked for the name too, so that they need not fetch each user separately. The obvious change is to return an object: `\"assignee\": {\"id\": \"ana\", \"name\": \"Ana Martinez\"}`.\n\nExplain why that change is breaking. Then design a way to give clients the name without breaking anyone, and a plan for what happens to the old field. Then continue."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "Changing a text value into an object changes the field's type. A client that reads `assignee` as text and uses it to build an address will fail.\n\nThe safe path is to add a field and leave the old one alone. The task gains `assignee_user`, an object with the identifier and the name. `assignee` keeps returning the identifier. Clients that want the name start reading the new field when they are ready.\n\nThe old field is then marked as deprecated in the description, its use is measured, and it is removed only in the next version of the API, on a date announced in advance. If nobody ever needs it removed, it can stay. A spare field costs little. A broken client costs a lot.",
+          "example": "assignee"
+        }
+      ],
+      "questions": [
+        {
+          "id": "type-change",
+          "prompt": "What kind of change is this?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Safe, because the meaning is the same",
+              "feedback": "The meaning is the same, but a client that reads a number now receives text and fails."
+            },
+            {
+              "text": "Breaking, because the type of an existing field changes",
+              "feedback": "Clients compare or calculate with the number. The safe route is a new field beside the old one."
+            },
+            {
+              "text": "Safe, as long as the documentation is updated",
+              "feedback": "Documentation does not update the clients that are already running."
+            }
+          ]
+        },
+        {
+          "id": "release-notes",
+          "example": "release-notes",
+          "prompt": "How many of the five changes can break an existing client?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "One",
+              "feedback": "Look again at the rename, the new required field, and the changed default order."
+            },
+            {
+              "text": "Two",
+              "feedback": "There are three: a renamed field, a newly required field, and a different default order."
+            },
+            {
+              "text": "Three",
+              "feedback": "Renaming `due` breaks readers, a required `project_id` breaks creators, and a new default order breaks anyone who relied on the old one. The two additions are safe for tolerant clients."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "expand-contract": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  Step 1  Today             priority: 2\n\n  Step 2  Expand            priority: 2\n                            priority_level: \"high\"     <- added\n\n          Old clients keep working. New clients use the new field.\n\n  Step 3  Announce          priority is deprecated, with a date\n\n  Step 4  Contract          priority_level: \"high\"\n          (next version,\n           after the date)\n"
+        },
+        "sunset": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "GET /v1/tasks/42\n\nHTTP/1.1 200 OK\nDeprecation: true\nSunset: Sat, 01 Nov 2025 00:00:00 GMT\nLink: <https://api.example.com/docs/moving-to-v2>; rel=\"sunset\"\n\n{ \"id\": \"42\", ... }\n"
+        },
+        "release-notes": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  Release 1.8\n\n  1. Tasks now include a \"labels\" list.\n  2. The field \"due\" is now called \"due_on\".\n  3. Creating a task now requires \"project_id\".\n  4. Lists of tasks are now sorted by due date instead of by creation.\n  5. New endpoint: GET /projects/{id}/summary\n"
+        },
+        "assignee": {
+          "readOnly": true,
+          "fence": "json",
+          "code": "{\n  \"id\": \"42\",\n  \"title\": \"Pack boxes\",\n  \"assignee\": \"ana\",\n  \"assignee_user\": { \"id\": \"ana\", \"name\": \"Ana Martinez\" }\n}\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:api-design/module/auth",
+      "title": "Know who is calling",
+      "requires": [],
+      "outcomes": [],
+      "intro": "An API has to know who is calling and what that caller is allowed to do. These are two separate questions, and mixing them up is behind many of the most damaging API faults. This module covers how a caller proves who it is, how permissions are expressed, and how to answer when either check fails. It is general guidance. A real product should also follow its organization's security policy and have its design reviewed.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Two questions",
+          "text": "**Authentication** asks: who is this? The caller presents something that proves its identity.\n\n**Authorization** asks: may this caller do this, to this thing? It can only be answered after the first.\n\nThe two fail with different status codes, and the difference tells the client what to do.\n\n- `401 Unauthorized` means the server does not know who is calling. No credentials were sent, or they are invalid or expired. The client should sign in again.\n- `403 Forbidden` means the server knows who is calling, and the answer is no. Signing in again will not help.",
+          "example": "gates"
+        },
+        {
+          "kind": "explanation",
+          "title": "How a caller proves who it is",
+          "text": "Two kinds of credential cover most APIs.\n\nAn **API key** is a long random secret issued to an application. It is simple: the client sends it with each request. It usually lasts until someone revokes it, so it suits one server talking to another. Treat it like a password. It should be possible to create several, to limit what each can do, and to replace one without downtime.\n\nA **bearer token** is a short-lived credential a client obtains by signing in, most often through the OAuth 2.0 standard. Its main advantage is delegation. A user can let another application act for them without ever giving that application their password, and can withdraw that permission later. Because the token expires quickly, a leaked one is useful only briefly.\n\nEither kind is sent in the `Authorization` header.",
+          "example": "header"
+        },
+        {
+          "kind": "debugging",
+          "title": "A key in the address",
+          "text": "An integration guide tells clients to authenticate like this.",
+          "example": "key-in-url",
+          "questions": [
+            "key-in-url"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Where secrets must not go",
+          "text": "An address is not private. It is written to server logs, proxy logs and browser history, shown in monitoring tools, and passed along when a page links to another site. A secret in the address ends up in all of those places.\n\nThree rules follow.\n\n1. Send credentials in the `Authorization` header, never in the address.\n2. Use encrypted connections (HTTPS) for every request, with no exceptions. A credential sent unencrypted is readable by everything on the path.\n3. Never return a secret in a response after the moment it is created. Show a new key once, and afterwards show only enough of it to recognize."
+        },
+        {
+          "kind": "explanation",
+          "title": "Scopes and least privilege",
+          "text": "A credential should allow only what its holder needs. This is the principle of **least privilege**. A reporting tool that reads tasks should hold a credential that cannot delete them, so that a mistake or a leak does limited damage.\n\nThe usual mechanism is **scopes**: named permissions attached to a key or a token, such as `tasks:read` and `tasks:write`. Each endpoint declares the scope it needs. A request whose credential lacks that scope gets `403`.\n\nKeep scopes few and named after what the client can do. Publish which scope each endpoint needs, because a client developer has to choose them before writing any code."
+        },
+        {
+          "kind": "explanation",
+          "title": "Check every object, every time",
+          "text": "Scopes answer \"may this caller read tasks?\". They do not answer \"may this caller read *this* task?\". That second check is where APIs most often fail.\n\nSuppose Ana's client requests `GET /tasks/42` and gets her task. If she changes the address to `/tasks/43` and receives a task from another company, the API has no real access control, whatever credentials it demands. This fault is common enough to top published lists of API security risks.\n\nThe rule is that every request that names an object must check that the caller may access that particular object. The check belongs on the server, on every endpoint, including the ones that update and delete.\n\nIdentifiers that are hard to guess do not replace this check. They make guessing slower. They do not make it forbidden."
+        },
+        {
+          "kind": "prediction",
+          "title": "Someone else's task",
+          "text": "Ben is signed in with a valid token that carries `tasks:read`. He requests `GET /tasks/43`. Task 43 exists and belongs to a different company's account.",
+          "questions": [
+            "other-task"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: three credentials",
+          "text": "Three clients need access to the tracker. The API has four scopes: `tasks:read`, `tasks:write`, `projects:read` and `projects:write`.\n\n1. A wall display that shows the open tasks of each project.\n2. A script that creates a task whenever a customer reports a problem.\n3. An administration tool that sets up new projects and archives old ones.\n\nFor each, choose the kind of credential and the smallest set of scopes that lets it work. Then continue."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. **The wall display** runs unattended and only reads. An API key with `tasks:read` and `projects:read`. It cannot change anything, so a leaked key exposes data but cannot damage it.\n2. **The script** is one server talking to another. An API key with `tasks:write` only. It does not need to read tasks or see projects beyond the one it writes to.\n3. **The administration tool** is used by people. Bearer tokens obtained by signing in, with `projects:read` and `projects:write`, so that each change is tied to a person and a token that leaks expires soon.\n\nNone of the three holds every scope. If one credential is exposed, the damage stops at what that client was allowed to do."
+        }
+      ],
+      "questions": [
+        {
+          "id": "key-in-url",
+          "example": "key-in-url",
+          "prompt": "Why is this a poor way to send a key?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "Addresses are recorded in logs, history and monitoring tools",
+              "feedback": "The key would be stored in many places that were never meant to hold secrets."
+            },
+            {
+              "text": "The key makes the address too long",
+              "feedback": "Length is not the issue. Where the address ends up is."
+            },
+            {
+              "text": "Query parameters cannot hold random text",
+              "feedback": "They can. The problem is that the address is not private."
+            }
+          ]
+        },
+        {
+          "id": "other-task",
+          "prompt": "How should the API answer?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "`200`, because the token is valid and has the right scope",
+              "feedback": "The scope allows reading tasks in general. This task is not his to read."
+            },
+            {
+              "text": "`401`, because he is not allowed",
+              "feedback": "The server knows exactly who he is. `401` would tell his client to sign in again, which would not help."
+            },
+            {
+              "text": "`404`, or `403` if the existence of the task is not sensitive",
+              "feedback": "He is known and not permitted. Answering `404` avoids confirming to an outsider that task 43 exists."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "gates": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "                 Who is this?              May they do this,\n                                           to this thing?\n  Request  --->  AUTHENTICATION   --->     AUTHORIZATION    --->  handler\n                      |                          |\n                      | unknown or               | known, but\n                      | expired                  | not permitted\n                      v                          v\n                 401 Unauthorized           403 Forbidden\n                 \"sign in again\"            \"signing in again\n                                             will not help\"\n"
+        },
+        "header": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "GET /tasks/42\nAuthorization: Bearer <the token the client was given>\n\n# With no header, or an expired token:\nHTTP/1.1 401 Unauthorized\nWWW-Authenticate: Bearer\n\n# With a valid token that lacks the scope:\nHTTP/1.1 403 Forbidden\n{ \"code\": \"missing_scope\", \"detail\": \"This request needs tasks:read.\" }\n"
+        },
+        "key-in-url": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "GET /tasks?api_key=EXAMPLE-KEY-NOT-REAL\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:api-design/module/limits",
+      "title": "Protect the service",
+      "requires": [],
+      "outcomes": [],
+      "intro": "A public API is shared. One client in a tight loop, or one enormous request, can slow it for everyone else. This module covers the limits that protect a service, how to tell clients about them so they can behave well, and how caching removes work that never needed doing.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Why limits are part of the design",
+          "text": "Without limits, the capacity of the service belongs to whoever asks most. That is rarely an attacker. It is usually a client with a bug: a retry loop with no pause, or a job that requests every page as fast as it can.\n\nA limit protects the other clients and the service itself. It is also part of the contract. A client developer has to know the limits to design around them, so publish every one: requests per minute, the largest page, the largest request body, and how long a request may run."
+        },
+        {
+          "kind": "explanation",
+          "title": "Rate limits",
+          "text": "A **rate limit** allows each caller a number of requests in a period, such as 600 per minute for each credential. Count per credential, not per network address, so that many users behind one office network are not treated as one.\n\nWhen a caller goes over, answer `429 Too Many Requests` and say when to come back, with a `Retry-After` header giving the number of seconds to wait.\n\nBetter still, tell clients where they stand on every response, so that a well written client slows down before it is refused. Three headers are in common use for this: the limit, how much of it remains, and when it resets.",
+          "example": "rate-limit"
+        },
+        {
+          "kind": "explanation",
+          "title": "How a client should retry",
+          "text": "A limit only works if clients respond to it sensibly, so say what you expect of them.\n\n- On a `429` or a `503`, wait for the time in `Retry-After` before trying again.\n- With no such header, wait a little, then twice as long, then twice as long again. This is called **exponential backoff**.\n- Add a small random amount to each wait. Otherwise a thousand clients that failed together all retry at the same instant and fail together again.\n- Give up after a few attempts and report the failure.\n- Never retry a 4xx other than `429`. The request is wrong, and sending it again will not make it right.",
+          "example": "backoff"
+        },
+        {
+          "kind": "prediction",
+          "title": "Over the limit",
+          "text": "A client has used its 600 requests for this minute, with 20 seconds of the minute left. It sends one more.",
+          "questions": [
+            "over-limit"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Other limits worth setting",
+          "text": "| Limit | Answer when it is exceeded |\n| --- | --- |\n| Size of a request body | `413 Content Too Large` |\n| Items in one page | Cap at the maximum, or `400` |\n| Items in one batch request | `400` or `422`, saying what the maximum is |\n| Time one request may run | `503` or `504`, and design slow work as a job, as the next module shows |\n\nSet each of these before the first release. A limit that is added later breaks the clients that had been relying on its absence."
+        },
+        {
+          "kind": "explanation",
+          "title": "Caching: the request you do not have to answer",
+          "text": "The cheapest request is one that is answered from a copy. HTTP lets a server say how long an answer stays good.\n\n`Cache-Control: max-age=60` means the response may be reused for 60 seconds without asking again. Add `private` when the answer is specific to one caller, so that a shared cache between the client and the server does not hand it to somebody else.\n\nFor data that changes at unpredictable times, use a **conditional request**. The server sends an `ETag` with the response, the same version marker used earlier for safe updates. The client sends it back in `If-None-Match`. If nothing has changed, the server answers `304 Not Modified` with no body. The client keeps its copy, and both sides have saved the work of sending it again.",
+          "example": "conditional"
+        },
+        {
+          "kind": "debugging",
+          "title": "A dashboard that polls",
+          "text": "A wall display wants to stay up to date, so it sends this request once every second, all day.",
+          "example": "polling",
+          "questions": [
+            "polling"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: limits for the tracker",
+          "text": "The tracker is about to open its API to customers. Decide the following and note your reasons.\n\n1. A rate limit, and what it is counted against.\n2. The exact response when the limit is exceeded.\n3. What a wall display that wants fresh data should do instead of requesting the full list every second.\n4. One other limit you would publish.\n\nThen continue."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. 600 requests per minute for each credential. It is generous for an interactive app and it stops a runaway loop within a second.\n2. `429`, with `Retry-After` in seconds, the three rate limit headers, and the usual error body with the code `rate_limited`.\n3. Request the list every ten seconds with `If-None-Match`. Most answers are then a `304` with no body. If the display needs changes at once, a webhook, covered in the next module, removes the polling altogether.\n4. A maximum page size of 200 items, and a maximum request body of 1 MB.\n\nThe numbers matter less than the fact that they exist, are published, and are reported in a way a program can act on."
+        }
+      ],
+      "questions": [
+        {
+          "id": "over-limit",
+          "prompt": "Which response serves the client best?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "`503 Service Unavailable`",
+              "feedback": "The service is working. A 5xx tells the client and your own monitoring that something is broken."
+            },
+            {
+              "text": "`429` with `Retry-After: 20`",
+              "feedback": "The status says the client is going too fast, and the header says exactly how long to wait."
+            },
+            {
+              "text": "`200` with an empty list",
+              "feedback": "The client would treat an empty list as a real answer and show the user that nothing exists."
+            }
+          ]
+        },
+        {
+          "id": "polling",
+          "example": "polling",
+          "prompt": "What is the best first improvement?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "Raise the display's rate limit",
+              "feedback": "That lets the waste continue. Nearly every one of those requests returns data that has not changed."
+            },
+            {
+              "text": "Return fewer fields",
+              "feedback": "A smaller body helps a little. The request itself is still sent and answered 86,400 times a day."
+            },
+            {
+              "text": "Use a conditional request and a longer interval",
+              "feedback": "With `If-None-Match`, an unchanged list costs a `304` with no body, and a ten second interval cuts the requests tenfold."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "rate-limit": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "# A normal response reports where the client stands.\nHTTP/1.1 200 OK\nRateLimit-Limit: 600\nRateLimit-Remaining: 12\nRateLimit-Reset: 20\n\n# Over the limit.\nHTTP/1.1 429 Too Many Requests\nRetry-After: 20\nRateLimit-Limit: 600\nRateLimit-Remaining: 0\nRateLimit-Reset: 20\n\n{ \"code\": \"rate_limited\",\n  \"detail\": \"600 requests per minute are allowed. Try again in 20 s.\" }\n"
+        },
+        "backoff": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  attempt 1   fails\n              wait about 1 second    (1 s, plus a random part)\n  attempt 2   fails\n              wait about 2 seconds\n  attempt 3   fails\n              wait about 4 seconds\n  attempt 4   fails\n              give up and report the failure\n\n  If the response carries Retry-After, use that wait instead.\n"
+        },
+        "conditional": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "Client                                        Server\n  |  GET /projects/7/tasks                      |\n  |-------------------------------------------->|\n  |  200 OK   ETag: \"v12\"   (the full list)     |\n  |<--------------------------------------------|\n  |                                             |\n  |  ... later ...                              |\n  |                                             |\n  |  GET /projects/7/tasks                      |\n  |  If-None-Match: \"v12\"                       |\n  |-------------------------------------------->|  nothing has changed\n  |  304 Not Modified       (no body)           |\n  |<--------------------------------------------|\n  |                                             |\n  The client keeps the copy it already has.\n"
+        },
+        "polling": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "GET /projects/7/tasks?status=open        (once every second)\n\nHTTP/1.1 200 OK\n{ \"data\": [ ... 180 tasks, the same as one second ago ... ] }\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:api-design/module/async",
+      "title": "Handle slow work and events",
+      "requires": [],
+      "outcomes": [],
+      "intro": "Some work takes longer than a client should wait for a reply: building an export, importing a file, sending a thousand notifications. And sometimes the server is the one with news. This module covers two designs: a job the client can check on, and a webhook through which the server tells the client that something happened.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Do not make the client wait",
+          "text": "A request that stays open for minutes fails in practice. Connections time out, proxies give up, and phones lose signal. The client then cannot tell whether the work finished, so it tries again, and the slow work starts a second time.\n\nThe fix is to separate asking from finishing. The request that asks returns at once. The work continues, and the client learns the result another way."
+        },
+        {
+          "kind": "explanation",
+          "title": "A job the client can check",
+          "text": "Model the slow work as a resource. Starting it creates a **job**, and the job has an address the client can read.\n\n1. The client sends `POST /projects/7/exports`.\n2. The server records the job and answers `202 Accepted` straight away, with the job's address in the `Location` header. `202` means: your request is fine, and the work is not finished.\n3. The client reads `GET /exports/9` from time to time. The response has a `status` of `running`, `succeeded` or `failed`.\n4. When the job has succeeded, the response says where the result is. When it has failed, the response carries an error in the API's usual shape.\n\nAdd a `Retry-After` header to tell the client how long to wait before looking again. Otherwise each client picks its own interval, and some pick zero.\n\nThe job is an ordinary resource. It can be listed, it can be cancelled with a `DELETE`, and with an idempotency key it can be started safely.",
+          "example": "job"
+        },
+        {
+          "kind": "prediction",
+          "title": "Starting slow work",
+          "text": "A client asks for an export that will take about three minutes to build.",
+          "questions": [
+            "accepted"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Webhooks: the server calls the client",
+          "text": "Checking again and again is wasteful when nothing has changed for hours. A **webhook** turns the direction round. The client registers an address of its own, and the server sends a request to that address when something happens.\n\nEach delivery is a small JSON document describing one **event**: a unique identifier, a type such as `task.completed`, the time it happened, and the data.\n\nKeep the type names consistent: a noun, a dot, and a verb in the past tense. Send enough data for the receiver to act, or at least the identifier of the thing that changed, so that it can fetch the current state.",
+          "example": "event"
+        },
+        {
+          "kind": "explanation",
+          "title": "Four rules for webhooks",
+          "text": "A webhook reverses who is the client, and the same care is needed in the other direction.\n\n1. **Deliver at least once, and say so.** If the receiver does not answer with a 2xx, try again later, with growing waits. This means a receiver can get the same event twice. Tell receivers to remember the event identifiers they have handled and to ignore repeats.\n2. **Sign every delivery.** The receiver's address is public, so anyone can send a request to it. Compute a signature over the body with a secret that only the two sides know, and send it in a header. The receiver recomputes it and rejects anything that does not match.\n3. **Do not promise order.** A retry can arrive after a newer event. Put a time in every event, and advise receivers to fetch the current state when order matters.\n4. **Expect a quick answer.** A receiver should store the event, answer 2xx at once, and do its work afterwards. Say how long you wait before treating a delivery as failed."
+        },
+        {
+          "kind": "debugging",
+          "title": "The same event twice",
+          "text": "A receiver records a payment each time it gets a `task.completed` event, because completed tasks are billed. One event is delivered, the receiver's reply is lost, and the event is delivered again.",
+          "questions": [
+            "duplicate-event"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Poll or be told",
+          "text": "| | Checking a job | Webhook |\n| --- | --- | --- |\n| Who starts the request | The client | The server |\n| The client needs | Nothing extra | A public address that accepts requests |\n| News arrives | At the next check | Almost at once |\n| Cost when nothing happens | A request per check | Nothing |\n| Works for a script or a phone app | Yes | Not directly |\n\nThe two are often offered together. A client behind a firewall, or one that is only a script, cannot receive webhooks and has to check. A server-side integration is better served by being told. Even then, a client that receives webhooks should be able to ask for the current state, because a delivery can be missed."
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: an import",
+          "text": "A client uploads a file of 50,000 tasks to be created in project 7. Validating and creating them takes several minutes. Some rows may be invalid.\n\nDesign the flow: the request that starts the import, what comes back, how the client learns the outcome by checking and by webhook, and how it finds out which rows failed. Then continue."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "The import is a job. Starting it returns `202` and the job's address at once, and an idempotency key makes the upload safe to retry. Reading the job shows its status and counts while it runs. When it finishes, the job reports how many rows were created and how many failed, with a link to a list of the failures in the usual error shape, one entry per row.\n\nA client that registered a webhook also receives one event, `import.finished`, with the job's identifier. It then reads the job to get the details, so the event can stay small and a repeated delivery does no harm.",
+          "example": "import"
+        }
+      ],
+      "questions": [
+        {
+          "id": "accepted",
+          "prompt": "What should the first response be?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "`200` after three minutes, with the export in the body",
+              "feedback": "Few connections survive that long, and a client that times out will start the export again."
+            },
+            {
+              "text": "`202`, at once, with the address of a job to check",
+              "feedback": "The request is accepted and the work continues. The client reads the job to follow it."
+            },
+            {
+              "text": "`201`, at once, with the finished export",
+              "feedback": "The export does not exist yet, so it cannot be returned. `202` says honestly that the work has only begun."
+            }
+          ]
+        },
+        {
+          "id": "duplicate-event",
+          "prompt": "How should this have been prevented?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "The receiver records each event identifier and ignores one it has seen",
+              "feedback": "Deliveries can repeat, so the receiver has to make handling an event idempotent."
+            },
+            {
+              "text": "The sender should never retry a delivery",
+              "feedback": "Then a single lost reply would mean a lost event, which is worse than a repeated one."
+            },
+            {
+              "text": "The sender should send events in order",
+              "feedback": "Order would not help. This is the same event arriving twice."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "job": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "Client                                         Server\n  |  POST /projects/7/exports                    |\n  |--------------------------------------------->|  job 9 is recorded\n  |  202 Accepted                                |\n  |  Location: /exports/9                        |\n  |<---------------------------------------------|\n  |                                              |  ... working ...\n  |  GET /exports/9                              |\n  |--------------------------------------------->|\n  |  200  { \"status\": \"running\" }                |\n  |  Retry-After: 10                             |\n  |<---------------------------------------------|\n  |                                              |  ... finished ...\n  |  GET /exports/9                              |\n  |--------------------------------------------->|\n  |  200  { \"status\": \"succeeded\",               |\n  |         \"result_url\": \"/exports/9/file\" }    |\n  |<---------------------------------------------|\n"
+        },
+        "event": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "POST https://client.example.com/hooks/tracker\nContent-Type: application/json\nTracker-Signature: sha256=5d41402abc4b2a76b9719d911017c592...\n\n{\n  \"id\": \"evt_7c1e\",\n  \"type\": \"task.completed\",\n  \"created_at\": \"2025-03-01T14:30:00Z\",\n  \"data\": { \"task_id\": \"42\", \"project_id\": \"7\" }\n}\n"
+        },
+        "import": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "POST /projects/7/imports\nIdempotency-Key: import-2025-03-01-a\nContent-Type: text/csv\n\nHTTP/1.1 202 Accepted\nLocation: /imports/31\n{ \"id\": \"31\", \"status\": \"running\" }\n\nGET /imports/31\n\nHTTP/1.1 200 OK\n{\n  \"id\": \"31\",\n  \"status\": \"succeeded\",\n  \"created\": 49870,\n  \"failed\": 130,\n  \"failures_url\": \"/imports/31/failures\"\n}\n\n# The webhook, for clients that registered one\n{ \"id\": \"evt_91aa\", \"type\": \"import.finished\",\n  \"created_at\": \"2025-03-01T02:14:09Z\", \"data\": { \"import_id\": \"31\" } }\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:api-design/module/styles",
+      "title": "Choose an API style",
+      "requires": [],
+      "outcomes": [],
+      "intro": "So far the course has used one style: resources reached with HTTP methods, often called REST. It is the most common style for public APIs, but not the only one. This module compares it with three others, so that you can recognize them and choose on purpose. The principles from the earlier modules apply to all of them.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Four styles",
+          "text": "- **Resources.** The API is a set of things with addresses, and a few standard methods act on them. This is the style of this course.\n- **Procedures.** The API is a set of named operations that the client calls, each with its own inputs and outputs, much like calling a function. It is usually called RPC, for remote procedure call. gRPC is a widely used form of it.\n- **Queries.** The API is one typed graph of data. The client sends a query that names exactly the fields it wants, and receives exactly those. GraphQL is the best known form.\n- **Events.** The API is a stream of things that have happened, which the client subscribes to. Webhooks, from the last module, are the simplest form.",
+          "example": "three-ways"
+        },
+        {
+          "kind": "explanation",
+          "title": "What each is good at",
+          "text": "| Style | Strong at | The price |\n| --- | --- | --- |\n| Resources | A uniform pattern that needs little explanation. Standard caching, status codes and tools. Suits third parties. | Reading a screen's worth of related data can take several requests. Operations that are not create, read, update or delete fit awkwardly. |\n| Procedures | Operations that are actions. Strict typed contracts, and clients generated from them. With gRPC, compact and fast messages. | No uniform pattern, so each operation is learned on its own. Standard caching does not apply. Harder to call from a browser. |\n| Queries | Many different screens, each needing a different slice of connected data, in one request. | The server becomes harder to build, to cache and to protect, because every query is different. |\n| Events | Telling clients about changes as they happen. | Delivery, repeats and order all need care, and the client needs a way to catch up after a gap. |"
+        },
+        {
+          "kind": "explanation",
+          "title": "How to choose",
+          "text": "Start with who the clients are, since the style exists to serve them.\n\n- **Outside developers you will never meet.** Prefer resources. It is the style most people already know, and the one with the most tools.\n- **Your own services calling each other.** Procedures suit this well. Both sides are yours, the operations are actions, and a typed contract catches mistakes when the code is built.\n- **Several of your own apps with very different screens.** A query style can save each of them from stitching together many requests.\n- **Clients that must react to changes.** Add events to whichever style you chose.\n\nMixtures are normal. A product can offer resources to the public, use procedures between its own services, and send events through webhooks. What matters is that each surface is consistent within itself."
+        },
+        {
+          "kind": "prediction",
+          "title": "Choose a style",
+          "text": "Two back-end services owned by one team exchange thousands of small messages a second. Both are deployed together. The operations are things like \"reserve stock\" and \"release stock\".",
+          "questions": [
+            "internal-style"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "What stays the same",
+          "text": "Changing the style changes the syntax. It does not remove any of the design questions.\n\n- **Names** still have to be consistent, whether they name resources, procedures or fields in a graph.\n- **Errors** still need a stable code, a readable message and a way to find the request. Some styles answer with a `200` at the HTTP level even for a failure and carry the error inside the body. The error still has to be designed.\n- **Change** still has to be additive, and removals still need a schedule.\n- **Retries** are still dangerous for operations that are not idempotent, so those still need a key.\n- **Access** still has to be checked for every object, on every request.\n- **Limits** still have to exist. A query style makes them harder, because one request can ask for very little or for a great deal.\n\nA team that designs resources carelessly will design procedures and queries carelessly too. The discipline is the same."
+        },
+        {
+          "kind": "debugging",
+          "title": "One request for everything",
+          "text": "A team replaces twelve resource endpoints with a single flexible query endpoint, so that any client can ask for any combination of fields and nested lists in one request.",
+          "questions": [
+            "query-cost"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: three situations",
+          "text": "Choose a style for each, with one sentence of reasoning.\n\n1. The tracker opens to customers, who will write their own integrations in whatever tools they have.\n2. The tracker's notification service needs to ask its user service, thousands of times a second, \"which of these users want an email?\".\n3. A customer's reporting system has to learn within seconds that a task was completed.\n\nThen continue."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. **Resources.** The customers are unknown, varied, and best served by the style with the lowest cost of learning and the widest tool support.\n2. **Procedures.** One team owns both sides, the operation is a question with a typed answer, and speed matters more than being easy to explore.\n3. **Events,** delivered by webhook, on top of the resource API. The reporting system is told when a task is completed, and it can still read the task whenever it needs the current state.\n\nThe tracker ends up offering all three, each where it fits."
+        }
+      ],
+      "questions": [
+        {
+          "id": "internal-style",
+          "prompt": "Which style fits best?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Resources, because it is the most common",
+              "feedback": "It would work, but neither of its main strengths, wide familiarity and standard caching, is needed here."
+            },
+            {
+              "text": "Procedures",
+              "feedback": "One team owns both ends, the operations are actions, and a typed, compact call suits a high volume of small messages."
+            },
+            {
+              "text": "Events only",
+              "feedback": "Reserving stock needs an answer: did it work? An event stream alone does not give one."
+            }
+          ]
+        },
+        {
+          "id": "query-cost",
+          "prompt": "What new problem has the team taken on?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "Limits and caching, because every request is now different",
+              "feedback": "One query may be trivial and the next enormous. The server needs a way to measure and bound the cost of a query before running it."
+            },
+            {
+              "text": "Clients can no longer choose which fields they get",
+              "feedback": "They can. That is what the query style offers."
+            },
+            {
+              "text": "Nothing, because one endpoint is always simpler than twelve",
+              "feedback": "Simpler to list, harder to protect. The twelve endpoints each had a known cost."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "three-ways": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  The same job, \"mark task 42 as done\", in three styles.\n\n  Resources     PATCH /tasks/42\n                { \"status\": \"done\" }\n\n  Procedures    POST /tracker.TaskService/CompleteTask\n                { \"task_id\": \"42\" }\n\n  Queries       POST /graphql\n                mutation {\n                  completeTask(id: \"42\") { id status }\n                }\n\n  And as an event, sent to subscribers afterwards:\n\n                { \"type\": \"task.completed\",\n                  \"data\": { \"task_id\": \"42\" } }\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:api-design/module/docs",
+      "title": "Describe and review an API",
+      "requires": [],
+      "outcomes": [],
+      "intro": "An API that cannot be understood from its description will be used wrongly, or not at all. The description is part of the product, and writing it early is one of the best ways to find design problems. This module covers what a description must contain, a standard format for it, and how to review a design before anyone builds it.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Three kinds of description",
+          "text": "People come to an API's description with different questions, and one document rarely answers them all.\n\n- **A reference** lists everything: each endpoint, each field, each error. It has to be complete and exact. People look things up in it.\n- **Guides** explain how to get a job done from start to finish: create a project, add tasks, receive an event when one is completed. People read these first.\n- **Examples** are real requests and real responses that can be copied. Most developers start by copying one.\n\nIf only one of the three can be done well, make it the examples. A correct example answers questions the prose forgot to cover."
+        },
+        {
+          "kind": "explanation",
+          "title": "What every endpoint needs",
+          "text": "For each operation, a client developer needs to be able to find:\n\n1. What it is for, in one sentence.\n2. The method and the address.\n3. Every parameter and field: its name, its type, whether it is required, its limits and its default.\n4. A complete example request and the response to it.\n5. Every error it can return, with the code and what the client should do about it.\n6. The permission it needs.\n7. Whether it is safe to retry, and which limits apply.\n\nItems 5 to 7 are the ones most often left out. They are also the ones a client cannot find out by trying, because failures and limits do not show up in a quick test."
+        },
+        {
+          "kind": "explanation",
+          "title": "A description a program can read",
+          "text": "For HTTP APIs there is a standard format for the reference, called **OpenAPI**. It is a text file that lists the addresses, methods, parameters, bodies and responses in a fixed structure.\n\nBecause a program can read it, one file can produce the reference pages, generate client code, drive a fake server for clients to build against, and check that the real server still answers as described.\n\nIt also makes **design first** practical. Write the description before the code, share it, and argue about it while changing it still costs nothing. That is the cheapest moment the first module talked about.",
+          "example": "openapi"
+        },
+        {
+          "kind": "debugging",
+          "title": "A reference entry",
+          "text": "This is the complete entry for one endpoint in an API's reference.",
+          "example": "thin-docs",
+          "questions": [
+            "thin-docs"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Write the rules down once",
+          "text": "Consistency across an API comes from decisions that are made once and recorded. A short **style guide** holds them. It is for the people who add endpoints, and it settles questions before they are argued again.\n\nA useful guide fits on a page or two and answers:\n\n- How are addresses and fields named?\n- Which methods and status codes are used, and for what?\n- What does every error look like?\n- How do lists page, filter and sort?\n- How are dates, money and identifiers written?\n- How are changes made, and how is something retired?\n- How does a caller prove who it is?\n\nEach module of this course has been one section of such a guide."
+        },
+        {
+          "kind": "explanation",
+          "title": "Review before building",
+          "text": "A design review is a short meeting, or a written exchange, in which someone who did not write the design reads it as a client would. It needs the description and a list of questions.\n\nThe list in the example is a starting point. It is one question for each module of this course. A design that passes all of them is not guaranteed to be good, but one that fails several will cause trouble that is expensive to repair later.",
+          "example": "checklist"
+        },
+        {
+          "kind": "prediction",
+          "title": "When to review",
+          "text": "A team has two weeks to add time tracking to the tracker's API.",
+          "questions": [
+            "when-review"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: describe one endpoint",
+          "text": "Write the reference entry for `POST /projects/{id}/tasks`, which creates a task in a project. Use plain words, not OpenAPI.\n\nCover the seven items from earlier in this module. Invent sensible limits where you need them. Then continue."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "The entry answers the questions a client developer would otherwise have to find out by experiment or by asking. In particular it says what each failure means and what to do about it, and that the request can be retried with a key.",
+          "example": "entry"
+        }
+      ],
+      "questions": [
+        {
+          "id": "thin-docs",
+          "example": "thin-docs",
+          "prompt": "What is the most important thing missing?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "A longer introduction",
+              "feedback": "More prose would not tell the client what it needs to build against."
+            },
+            {
+              "text": "The name of the programmer to contact",
+              "feedback": "Useful, perhaps, but a client should not need to ask a person how an endpoint behaves."
+            },
+            {
+              "text": "The fields, an example, and what can go wrong",
+              "feedback": "Without the body's fields, an example and the errors, a client can only guess, and it will find the failures in production."
+            }
+          ]
+        },
+        {
+          "id": "when-review",
+          "prompt": "When is the best time to review the design?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "In the first days, from a written description, before any code",
+              "feedback": "Changing a description costs minutes. The review can then shape what gets built."
+            },
+            {
+              "text": "After the code is finished and tested",
+              "feedback": "By then a design problem means rewriting code, and there is pressure to release it as it is."
+            },
+            {
+              "text": "After release, once customers give feedback",
+              "feedback": "After release, every fix is a breaking change or a permanent workaround."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "openapi": {
+          "readOnly": true,
+          "fence": "yaml",
+          "code": "paths:\n  /tasks/{id}:\n    get:\n      summary: Read one task\n      parameters:\n        - name: id\n          in: path\n          required: true\n          schema: { type: string }\n      responses:\n        \"200\":\n          description: The task\n          content:\n            application/json:\n              schema: { $ref: \"#/components/schemas/Task\" }\n        \"404\":\n          description: No task has this id\n          content:\n            application/problem+json:\n              schema: { $ref: \"#/components/schemas/Problem\" }\n"
+        },
+        "thin-docs": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  POST /tasks\n\n  Creates a task. Send the task as JSON.\n  Returns the task.\n"
+        },
+        "checklist": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  DESIGN REVIEW\n\n  Clients     Who calls this, and what job are they doing?\n  Resources   Are the addresses nouns, named like the rest of the API?\n  Methods     Does each method keep its promise: safe, idempotent?\n  Status      Does every outcome have a truthful status code?\n  Bodies      Are fields named and typed as elsewhere? Dates, ids?\n  Errors      One shape, a stable code, every problem at once?\n  Lists       Is there a page size, a complete order, a cursor?\n  Writes      Can a create be retried? Can two edits collide?\n  Change      Can this grow by adding? What could never be removed?\n  Access      Is each object checked? Which scope is needed?\n  Limits      What stops one client from using everything?\n  Slow work   Does anything take longer than a request should?\n  Described   Could a stranger use it from the description alone?\n"
+        },
+        "entry": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  POST /projects/{id}/tasks        Create a task in a project.\n\n  Needs       the scope tasks:write\n  Retry       safe when sent with an Idempotency-Key header\n  Limits      counts toward the rate limit; body up to 64 KB\n\n  Body        title      text, required, 1 to 120 characters\n              due_on     date (YYYY-MM-DD), optional\n              assignee   user id, optional; null for nobody\n              labels     list of label names, optional, default []\n\n  Example     POST /projects/7/tasks\n              { \"title\": \"Pack boxes\", \"due_on\": \"2025-03-01\" }\n\n              201 Created\n              Location: /tasks/42\n              { \"id\": \"42\", \"title\": \"Pack boxes\", \"status\": \"open\", … }\n\n  Errors      401 not_authenticated   sign in again\n              403 missing_scope       the credential lacks tasks:write\n              404 project_not_found   no project with this id\n              422 validation_failed   see \"errors\" for each field\n              429 rate_limited        wait for Retry-After seconds\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:api-design/module/capstone",
+      "title": "Review and design a whole API",
+      "requires": [],
+      "outcomes": [],
+      "intro": "This last module has no new ideas. It asks you to use the earlier ones twice: first to review an API that somebody else designed, and then to design a small one yourself from a short brief. Both are done on paper. Reading the worked answers can explain an approach, but the value is in making the attempt first.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "How to use this module",
+          "text": "There are two exercises. Each one has a page that sets the task and a page that gives one possible answer.\n\nGive each a real attempt before reading on. Twenty minutes for the review and forty for the design is about right. Write your answers down, because a design that only exists in your head has not been tested.\n\nThe checklist from the last module is repeated here to work from.",
+          "example": "checklist"
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise 1: review this API",
+          "text": "A small company has published this API for its task tracker. Read it as a client developer who has to build against it.\n\nFind at least eight problems. For each, say which principle it breaks and what you would change. Then continue.",
+          "example": "flawed"
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible review",
+          "text": "There are more than eight. These are the ones that would hurt clients soonest.\n\n1. **Verbs in addresses, and no pattern.** `getAllTasks`, `task/create`, `deleteTask`. Use `/tasks` and `/tasks/{id}` with methods.\n2. **A `GET` that deletes.** Anything that fetches links will delete tasks. Use `DELETE /tasks/{id}`.\n3. **The list has no page size.** It returns every task and will fail as data grows. Add `limit` and a cursor, and return an object, not a bare list.\n4. **Creating answers `200` with no address.** Answer `201` with a `Location` header.\n5. **Errors return `200`.** Clients, caches and monitoring will all read failures as successes. Use the 4xx and 5xx families.\n6. **The error is a sentence and leaks a query.** Give a stable code, a field, a message and a request identifier, and keep the query in the logs.\n7. **The key is in the address.** It will be written to every log. Use the `Authorization` header.\n8. **Field names follow no rule.** `ID`, `task_title`, `dueDate`, `Done`. Choose one style.\n9. **Types that will be misread.** A date as `3/1/25`, an identifier as a number, a status as `1`. Use ISO 8601 dates, text identifiers and named values.\n10. **The update replaces everything through `POST`.** Use `PATCH` for a partial change, and let clients send a version to avoid overwriting each other.\n11. **Nothing can be retried safely.** Creating a task twice makes two. Accept an idempotency key.\n12. **No version and no way to change.** Start at version 1 and state what clients must tolerate.\n\nNone of these needs new technology to fix. Each is a decision that was not made on purpose.",
+          "example": "flawed"
+        },
+        {
+          "kind": "prediction",
+          "title": "The most urgent fix",
+          "text": "The company can only fix one thing before its next customer starts building.",
+          "questions": [
+            "urgent"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise 2: design time tracking",
+          "text": "The tracker is adding time tracking. This is the brief.\n\n- A user records a **time entry** against a task: a date, a number of minutes, and an optional note.\n- A user can change or remove their own entries. Nobody can change another person's.\n- A project manager wants the total time for each task of a project, for a given week.\n- The phone app is often on a poor connection.\n- A customer's payroll system reads all new entries once a night.\n\nDesign the API. Cover the resources and their addresses, the methods, the JSON for one entry, what happens when input is wrong, how lists are read, how the phone app and the payroll system are kept safe, who may do what, and how the design could grow. Then continue."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible design: resources and bodies",
+          "text": "A time entry belongs to a task, so it is created under the task. It has its own identity, so it is read, changed and removed at its own short address. The weekly totals are a computed resource under the project.\n\nThe entry uses the conventions of the rest of the API. The identifiers are text. The day is a calendar date, because an entry has no time of day. The duration says its unit in its name. The author is a small object, and the timestamps end in `_at`.",
+          "example": "design-resources"
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible design: behavior",
+          "text": "**Wrong input** gets `422` with the usual error body, naming each field: minutes must be from 1 to 1440, and the date must be real and not in the future.\n\n**Lists** are paged with a cursor and can be filtered by date. The payroll system asks for entries created after the last moment it saw, with `created_after`, and follows the cursor until it is `null`. It does not need a webhook, because it runs once a night.\n\n**The phone app** sends an idempotency key with each new entry, so that a retry after a lost reply does not record the time twice. Changes are sent with `If-Match`, so that an edit made on another device is not overwritten silently.\n\n**Access.** Recording time needs the scope `time:write`, and reading needs `time:read`. Beyond the scope, every change or removal checks that the entry belongs to the caller, and answers `403` otherwise. Reading the totals checks that the caller may see the project.\n\n**Growth.** The response is an object, so fields such as a billable flag can be added later. The set of filters can grow. The totals resource takes its week as a parameter, so other periods can be added without a new address.",
+          "example": "design-behavior"
+        },
+        {
+          "kind": "prediction",
+          "title": "One last judgement",
+          "text": "The team considers letting the client send the total directly: `PUT /tasks/42/time` with the total number of minutes for the task, instead of separate entries.",
+          "questions": [
+            "total"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "What to take with you",
+          "text": "The ideas of this course reduce to a few habits.\n\n1. **Design from the client's side.** Write the requests and responses before the code.\n2. **Be consistent.** One way to name, one way to page, one shape for errors.\n3. **Keep the promises of the protocol.** Safe methods read. Status codes tell the truth.\n4. **Make failure usable.** A stable code, a field, a way to find the request, and whether to retry.\n5. **Assume retries and collisions.** Give creates a key and updates a version.\n6. **Grow by adding.** Remove only on a published schedule.\n7. **Check access for every object.** Give each credential the least it needs.\n8. **Set limits and publish them.**\n9. **Describe it, and have someone else read the description** before it is built.\n\nWhen a new situation comes up that this course did not cover, the first habit is the one to fall back on: ask who is calling, what they are trying to do, and what they need to know when it does not work."
+        }
+      ],
+      "questions": [
+        {
+          "id": "urgent",
+          "prompt": "Which fix matters most to make first?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Renaming the fields to one style",
+              "feedback": "Inconsistent names are a nuisance and will be costly to change later, but they do not destroy data."
+            },
+            {
+              "text": "The `GET` that deletes, and the key in the address",
+              "feedback": "One lets ordinary software delete tasks by fetching a link. The other writes every customer's key into logs. Both cause harm that cannot be undone."
+            },
+            {
+              "text": "Adding a version number",
+              "feedback": "A version helps with later changes. It does nothing about the damage the current design can do today."
+            }
+          ]
+        },
+        {
+          "id": "total",
+          "prompt": "What would be lost by storing only a total for each task?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "Nothing. It is simpler and holds the same information",
+              "feedback": "A single total cannot say who worked, or on which day."
+            },
+            {
+              "text": "Only the notes",
+              "feedback": "The notes go, but so do the date and the person for each piece of work."
+            },
+            {
+              "text": "Who worked when, which the weekly report and payroll both need",
+              "feedback": "The brief asks for totals by week and for entries that belong to a user. A bare total cannot answer either, and two people saving at once would overwrite each other."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "checklist": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  DESIGN REVIEW\n\n  Clients     Who calls this, and what job are they doing?\n  Resources   Are the addresses nouns, named like the rest of the API?\n  Methods     Does each method keep its promise: safe, idempotent?\n  Status      Does every outcome have a truthful status code?\n  Bodies      Are fields named and typed as elsewhere? Dates, ids?\n  Errors      One shape, a stable code, every problem at once?\n  Lists       Is there a page size, a complete order, a cursor?\n  Writes      Can a create be retried? Can two edits collide?\n  Change      Can this grow by adding? What could never be removed?\n  Access      Is each object checked? Which scope is needed?\n  Limits      What stops one client from using everything?\n  Slow work   Does anything take longer than a request should?\n  Described   Could a stranger use it from the description alone?\n"
+        },
+        "flawed": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "GET  /api/getAllTasks?key=EXAMPLE-KEY-NOT-REAL\n  -> 200  [ { \"ID\": 42, \"task_title\": \"Pack\", \"dueDate\": \"3/1/25\",\n              \"Done\": 0, \"status\": 1 }, ... every task ... ]\n\nPOST /api/task/create?key=EXAMPLE-KEY-NOT-REAL\n     { \"task_title\": \"Pack\", \"dueDate\": \"3/1/25\" }\n  -> 200  { \"ID\": 43 }\n\nPOST /api/updateTask?id=42&key=EXAMPLE-KEY-NOT-REAL\n     { \"task_title\": \"Pack\", \"dueDate\": \"3/1/25\", \"Done\": 1 }\n  -> 200  \"OK\"          (fields that are left out are cleared)\n\nGET  /api/deleteTask?id=42&key=EXAMPLE-KEY-NOT-REAL\n  -> 200  \"OK\"\n\nAny failure:\n  -> 200  { \"ok\": false,\n            \"msg\": \"Error in query: UPDATE tasks SET ... WHERE id=42\" }\n"
+        },
+        "design-resources": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "POST   /tasks/42/time-entries         record time on task 42\nGET    /tasks/42/time-entries         the entries of task 42\nGET    /time-entries/881              one entry\nPATCH  /time-entries/881              change it (author only)\nDELETE /time-entries/881              remove it (author only)\nGET    /time-entries?created_after=…  all entries, for payroll\nGET    /projects/7/time-summary?week=2025-W09\n                                      total minutes for each task\n\n{\n  \"id\": \"881\",\n  \"task_id\": \"42\",\n  \"user\": { \"id\": \"ana\", \"name\": \"Ana Martinez\" },\n  \"worked_on\": \"2025-02-26\",\n  \"duration_minutes\": 90,\n  \"note\": \"Packed the first twelve boxes.\",\n  \"created_at\": \"2025-02-26T17:05:00Z\",\n  \"updated_at\": \"2025-02-26T17:05:00Z\"\n}\n"
+        },
+        "design-behavior": {
+          "readOnly": true,
+          "fence": "http",
+          "code": "# The phone app records time. The key makes a retry harmless.\nPOST /tasks/42/time-entries\nAuthorization: Bearer <token>\nIdempotency-Key: 5f0c1c1e-7a52-4d0b-9d8e-2f6a9b1c3d4e\n{ \"worked_on\": \"2025-02-26\", \"duration_minutes\": 90 }\n\nHTTP/1.1 201 Created\nLocation: /time-entries/881\nETag: \"v1\"\n\n# Wrong input\nHTTP/1.1 422 Unprocessable Content\n{ \"code\": \"validation_failed\", \"request_id\": \"req_2a9c\",\n  \"errors\": [ { \"field\": \"duration_minutes\", \"code\": \"out_of_range\",\n                \"message\": \"Minutes must be from 1 to 1440.\" } ] }\n\n# Somebody else's entry\nPATCH /time-entries/902\nHTTP/1.1 403 Forbidden\n{ \"code\": \"not_your_entry\", \"request_id\": \"req_2a9d\" }\n\n# Payroll reads what is new, a page at a time\nGET /time-entries?created_after=2025-02-25T02:00:00Z&limit=200\n{ \"data\": [ ... ], \"next_cursor\": \"eyJpZCI6Ijg4MSJ9\" }\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    }
+  ]
+}

@@ -10,7 +10,7 @@ Ship the TypeScript course preview (content version 0.1.0-preview.2) the C# cour
 
 | Feature | Needs |
 | --- | --- |
-| Reading lessons, quizzes, readiness results, project list | Node.js 20 or newer. No compiler, repo or AI. |
+| Reading lessons, quizzes, readiness results, project list, and the whole API design course | Node.js 20 or newer. No compiler, repo or AI. |
 | TypeScript course and practice checks | The pack's pinned TypeScript 6.0.3 (`npm ci` in `languages/typescript`, or Install on the Languages screen). |
 | C# course and practice checks | .NET SDK 8 or newer. |
 | SQL course and practice checks | The pack's pinned PGlite (`npm ci` in `languages/sql`). |
@@ -70,6 +70,7 @@ Tutor stays a separate mod and is unchanged. Practice Range does not import Tuto
 - **Courses.** Practice Range has a TypeScript course preview with 18 modules, 60 lesson tasks, a five-step tracker project and four readiness checks. Lessons work without a repo or AI.
 - **C# course.** A C# course preview with 18 modules, 61 lesson tasks, a five-step tracker project and four readiness checks. It teaches C# on its own terms and needs a .NET SDK 8 or newer for coding checks.
 - **SQL course.** A SQL course preview with 18 modules, 56 lesson tasks, a five-step sales report project and four readiness checks. It runs on the practice database and needs the pinned PGlite engine for checks.
+- **API design course.** A reading course preview with 15 modules on designing APIs: resources, methods, status codes, bodies, errors, lists, safe writes, versioning, access, limits, slow work, styles and review. It has diagrams, questions and design exercises, no code to write, and needs no compiler, repo or AI.
 - **Setup.** Setup and every language card offer that language's course. Reading works before the compiler is installed.
 - **Updates.** A newer compatible course version is offered from the module list. Progress moves only when you choose Update. The earlier version stays available.
 - **Optional AI.** With AI help on, lessons can add checked extra practice, repo examples and architecture reading.
