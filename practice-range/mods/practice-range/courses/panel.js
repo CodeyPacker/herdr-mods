@@ -7,6 +7,7 @@ import { courseCommand, importTutorPreferences } from "./bridge.js";
 import { configuredEditor, configuredTutor, generateRepoLesson, generateImportedModule, generateImportedExercises } from "../bridge.js";
 import { tutorChat } from "../tutor/panel.js";
 import { findLanguage } from "../languages/index.js";
+import { statusLabels } from "./evidence.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("../kit/theme.js").Theme} Theme */
@@ -268,6 +269,18 @@ export class CoursePanel {
     this.host.perform("language", languageId, cx);
   }
 
+  /** Opens Practice topics, where Review shows every due drill. @param {Context} cx */
+  practiceReview(cx) {
+    if (!this.data || this.busy) return;
+    const languageId = this.data.course.languageId;
+    if (!this.host.enabledLanguages.includes(languageId)) {
+      this.error = "Enable this language in Setup before opening practice review."; cx.notify(); return;
+    }
+    this.pause();
+    this.host.screen = "topics";
+    this.host.perform("language", languageId, cx);
+  }
+
   /** @param {number} by @param {Context} cx */
   advance(by, cx) {
     const position = this.data?.enrollment.position, lesson = this.lesson();
@@ -402,10 +415,12 @@ export class CoursePanel {
     if (!this.host.tutor.enabled) body.child(div().text_size(12).text_color(t.muted).child("Enable the AI tutor in Setup to generate repo lessons."));
     if (this.data.repoLessons?.error) body.child(banner(t,this.data.repoLessons.error));
     for (const lesson of this.data.repoLessons?.lessons ?? []) body.child(keyButton(t,`repo-lesson-${lesson.id}`,"",`${lesson.title} · ${lesson.commit.slice(0,10)}`,!this.busy,cx=>{this.repoLessonId=lesson.id;this.page="repo-lesson";cx.notify();}));
+    if (this.data.drillError) body.child(banner(t, this.data.drillError));
     const next = this.data.recommendation;
     if (next) body.child(v_flex().gap(6).child(div().text_color(t.muted).child(next.reason))
       .child(keyButton(t, "course-recommendation", "", "Suggested next step", !this.busy && next.kind !== "practice", cx => {
         if (next.kind === "review") this.run("review-start", {}, cx);
+        else if (next.kind === "practice-review") this.practiceReview(cx);
         else if (next.kind === "task") this.run("task", { taskId: next.taskId }, cx);
         else this.run("open", { moduleId: next.moduleId, step: next.step }, cx);
       })));
@@ -422,7 +437,7 @@ export class CoursePanel {
       const seen = this.data.enrollment.modules[module.id]?.seen.length ?? 0;
       body.child(h_flex().gap(8).items_center().flex_wrap()
         .child(keyButton(t, module.id, "", module.title, !this.busy && module.status === "available", cx => this.run("open", { moduleId: module.id, step:this.data.enrollment.modules[module.id]?.resumeStep??0 }, cx)))
-        .child(div().text_size(11).text_color(t.dim).child(module.status === "planned" ? "Planned" : this.data.enrollment.modules[module.id]?.skipped ? "Skipped" : `${seen} steps read`))
+        .child(div().text_size(11).text_color(t.dim).child(module.status === "planned" ? "Planned" : this.evidenceLabel(module.id, seen)))
         .child(keyButton(t, `skip-${module.id}`, "", this.data.enrollment.modules[module.id]?.skipped ? "Include" : "Skip", !this.busy && module.status === "available", cx => this.run("skip", { moduleId: module.id }, cx))));
       if(module.generated) body.child(div().text_size(11).text_color(t.muted).child("AI-generated reading and quiz"));
       if(module.generatedExercises) body.child(div().text_size(11).text_color(t.muted).child("AI-generated exercises, checked before saving"));
@@ -522,6 +537,13 @@ export class CoursePanel {
     for (const topic of [...new Set((lesson.drills ?? []).map(id => id.split("/")[0]))]) {
       body.child(keyButton(t, `course-drill-${topic}`, "", `Practice ${topic}`, !this.busy && !this.data.enrollment.review, cx => this.practiceTopic(topic, cx)));
     }
+  }
+
+  /** @param {string} moduleId @param {number} seen */
+  evidenceLabel(moduleId, seen) {
+    const evidence = this.data?.evidence?.[moduleId];
+    if (!evidence) return `${seen} steps read`;
+    return `${statusLabels[evidence.status]} · ${seen} steps read${evidence.practiced ? ` · ${evidence.independent} of ${evidence.practiced} practiced without help` : ""}`;
   }
 
   /** @param {import("gpui-kit").Element} body @param {Theme} t */

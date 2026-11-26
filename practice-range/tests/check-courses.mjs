@@ -57,6 +57,10 @@ try {
   generated.enrollment.position={moduleId:generatedId,step:0};generated.enrollment.activeTask=null;
   generated.enrollment.modules[generatedId]={seen:[],questions:{}};
   const generatedQuiz=structuredClone(generated);generatedQuiz.enrollment.position.step=1;
+  const evidence=structuredClone(modules), evidenceIds=evidence.course.modules.filter(module=>module.status==="available").map(module=>module.id);
+  evidence.evidence=Object.fromEntries(evidenceIds.map((id,index)=>[id,{status:["demonstrated","independent-once","practiced","read","skipped","started","new"][index%7],independent:index%3,practiced:index%4,reviewed:index===0}]));
+  evidence.recommendation={kind:"practice-review",count:2,reason:"2 practice drills linked to this course are due for review."};
+  const drillError=structuredClone(evidence);drillError.drillError="Practice progress could not be read, so linked drills are not included in course evidence.";
   const generatedTask=structuredClone(importedTask);
   Object.assign(generatedTask.course.lessons[0].tasks[0],{generated:true,role:"generated"});generatedTask.course.modules[0].generatedExercises=true;
   const importedCatalog=(await request("list")).courses;
@@ -68,7 +72,7 @@ try {
     "learning-profile":["catalog",null], "learning-profile-error":["modules",modules],
     "imported-authoring":["modules",authoring], "module-generating":["modules",authoring], "module-error":["modules",authoring],
     "generated-module":["lesson",generated], "generated-quiz":["lesson",generatedQuiz], "generated-modules":["modules",generated],
-    "exercise-authoring":["modules",generated], "generated-exercise":["task",generatedTask], "generated-exercise-modules":["modules",generatedTask],
+    "exercise-authoring":["modules",generated], "module-evidence":["modules",evidence], "drill-error":["modules",drillError], "generated-exercise":["task",generatedTask], "generated-exercise-modules":["modules",generatedTask],
     imports:["imports",null], "import-preview":["import-preview",null], "import-preferences":["import-preview",null], "import-error":["imports",null],
     "imported-catalog":["catalog",null], "imported-modules":["modules",importedModules], "imported-lesson":["lesson",importedLesson], "imported-quiz":["lesson",importedQuiz], "imported-task":["task",importedTask] };
   const requested = process.argv.slice(2);

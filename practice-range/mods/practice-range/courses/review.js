@@ -1,5 +1,6 @@
 // Course review uses the same intervals and set size as direct practice.
 import { neededHelp, restingTime, reviewSet } from "../review.js";
+import { dueDrills } from "./evidence.js";
 
 /** @param {any} progress */
 function evidence(progress) {
@@ -23,8 +24,8 @@ export function courseReview(pack, state, now) {
   return { ready, ids: reviewSet(ready) };
 }
 
-/** @param {any} pack @param {any} state @param {number} now */
-export function nextCourseAction(pack, state, now) {
+/** @param {any} pack @param {any} state @param {number} now @param {import("./evidence.js").Drills} [drills] */
+export function nextCourseAction(pack, state, now, drills) {
   if (state.review) return { kind: "review", reason: "Continue your review in fresh files." };
   for (const lesson of pack.lessons) for (const task of lesson.tasks) {
     const progress = state.tasks[task.id], last = progress?.history?.at(-1);
@@ -35,6 +36,9 @@ export function nextCourseAction(pack, state, now) {
     }
   }
   if (courseReview(pack, state, now).ids.length) return { kind: "review", reason: "Previously practiced exercises are due for review." };
+  const drillsDue = drills ? dueDrills(pack, drills, now) : [];
+  if (drillsDue.length) return { kind: "practice-review", count: drillsDue.length,
+    reason: `${drillsDue.length} practice ${drillsDue.length === 1 ? "drill" : "drills"} linked to this course ${drillsDue.length === 1 ? "is" : "are"} due for review. Practice review mixes them with other due drills.` };
   for (const entry of pack.modules) {
     const lesson = pack.lessons.find(lesson => lesson.id === entry.id);
     if (!lesson || state.modules[lesson.id]?.skipped) continue;

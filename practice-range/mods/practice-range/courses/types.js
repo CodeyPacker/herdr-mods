@@ -24,7 +24,8 @@
  *   attachment?: {name?: string, commit?: string, available: boolean, detail?: string},
  *   repoLessons?: {error?: string, lessons: RepoLesson[]},
  *   profile?: LearningProfile,
- *   recommendation: {kind: string, reason: string, moduleId?: string, taskId?: string, step?: number} }} CourseSnapshot
+ *   recommendation: {kind: string, reason: string, moduleId?: string, taskId?: string, step?: number, count?: number},
+ *   evidence?: Record<string, {status: import("./evidence.js").ModuleStatus, independent: number, practiced: number, reviewed: boolean}>, drillError?: string | null }} CourseSnapshot
  * @typedef {{slug: string,title: string,error?: string,courseId?: string,contentVersion?: string,fingerprint?: string,
  *   languageId?: string,modules?: number,written?: number,questions?: number,exercises?: number,answers?: number,
  *   orphanAnswers?: number,warnings?: string[],known?: string[],alreadyImported?: boolean,

@@ -10,6 +10,8 @@ Each hint adds a little more help. Another exercise stays in the same topic unti
 
 Courses are available from **Courses** in the header. The bundled TypeScript preview has 18 modules and 56 tasks, including runnable examples and a two-file final project. Lessons need no repo or AI connection. Coding checks use the language pack’s compiler. Reading position, answers, hints, and review progress are saved separately from direct practice. Course updates preserve older enrollments and their content.
 
+Each module in the module list shows how far you've gone, from Read and Practiced with help to Shown independently. Shown independently means you passed two different exercises or linked practice drills without hints or the solution, or passed one and later passed it again in a clean review. Reading, skipping and passes with help never count. When linked practice drills are due, the suggested next step opens Practice topics, where **Review** includes them.
+
 Setup also offers **Browse courses**, and the TypeScript language card offers **Start or resume course**. Reading is available before installing a compiler or choosing an editor. Coding checks still require the compiler. Back returns to the setup or language screen you came from.
 
 In the course catalog or module list, save the languages you already know to give AI questions familiar-language context. Leave the list empty if you are new to programming. These preferences sync between devices and do not change course progress. Imported Tutor comparisons remain available until you save your own preferences.

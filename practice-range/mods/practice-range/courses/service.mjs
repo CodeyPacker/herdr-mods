@@ -8,6 +8,7 @@ import { loadCourse, listCourses, lessonFor, taskFor, courseFolderName } from ".
 import { findLanguage } from "../languages/index.js";
 import { loadLanguageRunner } from "../languages/runner.mjs";
 import { courseReview, nextCourseAction } from "./review.js";
+import { moduleEvidence } from "./evidence.js";
 import { attachRepo, detachRepo, repoStatus, restoreRepoExcerpts } from "./repo.mjs";
 import { readRepoLessons, saveRepoLesson } from "./supplements.mjs";
 import { courseSource } from "./source.mjs";
@@ -305,7 +306,22 @@ export async function courseCommand(root, action, request = {}, options = {}) {
   });
 }
 
+/** Direct-practice progress for linked drills. Read only: the practice session owns this file. */
+async function drillProgress(root, languageId) {
+  const empty = { progress: {}, currentTopic: null };
+  try {
+    const session = JSON.parse(await readFile(join(root, findLanguage(languageId).dataDirectory, "session.json"), "utf8"));
+    if (!session || typeof session.progress !== "object" || Array.isArray(session.progress)) throw new Error("damaged");
+    const current = session.review?.returnTo?.exerciseId ?? session.exerciseId;
+    return { progress: session.progress, currentTopic: typeof current === "string" ? current.split("/")[0] : null };
+  } catch (error) {
+    if (error.code === "ENOENT") return empty;
+    return { ...empty, error: "Practice progress could not be read, so linked drills are not included in course evidence." };
+  }
+}
+
 async function snapshot(root, pack, state, directory) {
+  const drills = await drillProgress(root, pack.languageId);
   const active = state.activeTask ? taskFor(pack, state.activeTask).task : null;
   const language = findLanguage(pack.languageId);
   const file = active ? answerPath(directory, active, language, state.review) : null;
@@ -324,7 +340,8 @@ async function snapshot(root, pack, state, directory) {
   return { course: { id: pack.id, title: pack.title, contentVersion: pack.contentVersion, languageId: pack.languageId, codeFence: language.codeFence,
     preview: pack.preview === true, legacy: pack.legacy, modules: pack.modules, lessons },
     enrollment: state.review && active ? { ...state, tasks: { ...state.tasks, [active.id]: progress } } : state,
-    reviewReady: courseReview(pack, state, Date.now()).ids.length, recommendation: nextCourseAction(pack, state, Date.now()),
+    reviewReady: courseReview(pack, state, Date.now()).ids.length, recommendation: nextCourseAction(pack, state, Date.now(), drills),
+    evidence: moduleEvidence(pack, state, drills), drillError: drills.error ?? null,
     attachment: await repoStatus(directory),
     profile: await readLearningProfile(root),
     repoLessons: await readRepoLessons(directory),
