@@ -45,7 +45,19 @@ try {
   const extrasError=structuredClone(modules);extrasError.extrasError="Extra practice could not be read, so it is hidden.";
   const extraTask=structuredClone(task);extraTask.course.lessons.find(extraLesson).extraTasks=[extraView];
   extraTask.enrollment.tasks[extraId]=extraTask.enrollment.tasks[taskId];extraTask.enrollment.activeTask=extraId;
-  const cases = { catalog: ["catalog", null], versions: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules], "example-output": ["lesson", example],
+  // The C# course goes through the same panels with its own runner, case boxes and practice links.
+  const csharpId = "course:cs-foundations", csharpModule = `${csharpId}/module/values`;
+  const csharp = (action, value = {}) => courseCommand(join(root, "data"), action, { courseId: csharpId, ...value });
+  await csharp("enroll");
+  const csharpModules = await csharp("open", { moduleId: csharpModule, step: 0 });
+  const csharpExample = await csharp("example", { moduleId: csharpModule, exampleId: "board" });
+  const csharpTask = await csharp("task", { taskId: `${csharpId}/task/values-arrival-log` });
+  const csharpMembers = await csharp("task", { taskId: `${csharpId}/task/patterns-lane` });
+  const csharpProject = await csharp("task", { taskId: `${csharpId}/task/report-audit` });
+  const csharpReadiness = await csharp("task", { taskId: `${csharpId}/task/readiness-r1` });
+  const csharpCases = { "csharp-modules": ["modules", csharpModules], "csharp-lesson": ["lesson", csharpExample], "csharp-task": ["task", csharpTask],
+    "csharp-members-task": ["task", csharpMembers], "csharp-project": ["task", csharpProject], "csharp-readiness-task": ["task", csharpReadiness] };
+  const cases = { ...csharpCases, catalog: ["catalog", null], versions: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules], "example-output": ["lesson", example],
     prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], review: ["task", review], "ai-lesson": ["lesson", modules], "ai-task": ["task", task], attached: ["modules", attached], "repo-missing": ["modules", missing], error: ["task", task],
     "repo-supplement":["repo-lesson",attached], "repo-generating":["modules",attached],
     "repo-source":["source",attached], "repo-source-cached":["source",attached], "repo-source-missing":["source",attached],
@@ -56,6 +68,7 @@ try {
   for (const name of requested) if (!Object.hasOwn(cases, name)) throw new Error(`Unknown course fixture: ${name}`);
   for (const [name, [page, data]] of Object.entries(cases).filter(([name]) => !requested.length || requested.includes(name))) {
     const folder = join(root, name);
+    const language = name.startsWith("csharp-") ? "csharp" : "typescript", drill = language === "csharp" ? "variables/integer" : "variables/const-number";
     await cp(source, folder, { recursive: true, filter: path => !path.split(/[\\/]/).includes("node_modules") });
     await rename(join(folder, "main.js"), join(folder, "practice-panel.js"));
     await writeFile(join(folder, "main.js"), `import Syntax from "./practice-panel.js";
@@ -140,9 +153,9 @@ export default class Fixture extends Syntax {
       this.courses.key("escape", cx);
       if (this.courses.page !== "modules") throw new Error("Escape must return to modules");
       this.courses.page = "lesson";
-      this.enabledLanguages = ["typescript"];
-      this.courses.practiceTopic("variables/const-number", cx);
-      if (this.screen !== "topics" || this.pendingTopic !== "variables" || this.lastPerformed?.value !== "typescript") throw new Error("Lesson practice links must choose the matching language and topic");
+      this.enabledLanguages = [${JSON.stringify(language)}];
+      this.courses.practiceTopic(${JSON.stringify(drill)}, cx);
+      if (this.screen !== "topics" || this.pendingTopic !== "variables" || this.lastPerformed?.value !== ${JSON.stringify(language)}) throw new Error("Lesson practice links must choose the matching language and topic");
       if (this.state !== prior) throw new Error("Lesson links must not replace direct-practice state while loading");
       this.screen = "courses";
     }
