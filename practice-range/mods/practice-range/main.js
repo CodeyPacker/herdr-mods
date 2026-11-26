@@ -15,6 +15,7 @@ import { setupPanel } from "./setup-panel.js";
 import { languagePanel } from "./language-panel.js";
 import { tutorSettings, tutorChat } from "./tutor/panel.js";
 import { startTopic } from "./start-topic.js";
+import { CoursePanel } from "./courses/panel.js";
 import { Shortcuts } from "./kit/shortcuts.js";
 import { closeTab, sharedStorage, openAsOption, onOpenAsChange } from "./kit/open-as.js";
 
@@ -136,6 +137,7 @@ export default class Syntax extends View {
     this.handle = cx.focus_handle();
     /** @type {import("./types.js").Session | null} */
     this.state = null;
+    this.courses = new CoursePanel(this);
     /** @type {import("./languages/types.js").LanguagePack} */
     this.language = defaultLanguage;
     this.catalog = catalogFor(this.language);
@@ -257,6 +259,7 @@ export default class Syntax extends View {
   /** @param {Context} cx */
   close(cx) {
     if (this.toggleOnly) return;
+    this.courses.pause();
     if (this.dialog) {
       this.saveSpot();
       if (shared(DIALOG_KEY) === props()?.overlay) setShared(DIALOG_KEY, null);
@@ -604,7 +607,7 @@ export default class Syntax extends View {
 
   /** Coalesce save events and wait for an in-flight action without losing newer saves. @param {Context} cx */
   checkSavedAnswer(cx) {
-    if (["setup", "languages"].includes(this.screen) || !this.state) return;
+    if (["setup", "languages", "courses"].includes(this.screen) || !this.state) return;
     if (this.state.scratch ? this.state.scratchResult : this.state.result) this.state.stale = true;
     this.pendingSaveCheck ??= { languageId: this.state.languageId, exerciseId: this.state.exerciseId, sourceHash: this.state.sourceHash };
     cx.notify();
@@ -625,7 +628,12 @@ export default class Syntax extends View {
 
   /** @param {string} action @param {Context} cx */
   action(action, cx) {
-    if (this.busy || this.practicePending) return;
+    if (this.busy || this.practicePending || this.courses.busy) return;
+    if (action === "courses") { this.courses.show(cx); return; }
+    if (this.screen === "courses") {
+      if (!["setup", "languages", "topics"].includes(action)) return;
+      this.courses.pause();
+    }
     if (action === "setup") { this.screen = "setup"; this.setupStep = 0; this.setupLanguage = this.language; this.requirements = null; this.pendingSaveCheck = null; this.confirmRepeat = false; this.error = ""; cx.notify(); return; }
     if (action.startsWith("setup-")) { this.setupAction(action, cx); return; }
     if (action === "languages" && this.setupCompleted) { this.showLanguages(cx); return; }
@@ -762,10 +770,15 @@ export default class Syntax extends View {
   /**
    * Open the current file, or with `diff`, your answer beside the read-only reference in the
    * editor's own diff view (a new Neovim tab, or VS Code's diff editor).
-   * @param {Context} cx @param {{ answerFile: string, referenceFile: string } | null} [diff]
    */
+  editorTarget() {
+    return this.screen === "courses" && this.courses.page === "task" ? this.courses.data : this.state;
+  }
+
+  /** @param {Context} cx @param {{answerFile: string, referenceFile: string} | null} [diff] */
   openEditor(cx, diff = null) {
-    if (["setup", "languages"].includes(this.screen) || !this.state || !this.editor || this.offerEditorDefault || this.busy || this.practicePending) return;
+    const target = this.editorTarget();
+    if (["setup", "languages"].includes(this.screen) || !target || !this.editor || this.offerEditorDefault || this.busy || this.practicePending) return;
     if (this.dialog) { this.openInDialog(cx, diff); return; }
     if (!props()?.practiceTab) {
       run("tab.new", { name: "Practice Range", mod: "practice-range", props: { practiceTab: true } });
@@ -773,14 +786,14 @@ export default class Syntax extends View {
     }
     const panel = this.ownPane();
     if (!panel) { this.error = "Could not find this practice tab. Reopen Practice Range from its shortcut."; cx.notify(); return; }
-    const file = this.state.file;
+    const file = target.file;
     this.automaticEditorStarted = true;
     this.busy = `${diff ? "Comparing in" : "Opening"} ${this.editor === "neovim" ? "Neovim" : "VS Code"}…`;
     this.error = "";
     cx.notify();
     cx.spawn(async cx => {
       try {
-        if (this.editor === "vscode") await (diff ? openVSCodeDiff(diff.answerFile, diff.referenceFile) : openVSCode(this.state.folder, file));
+        if (this.editor === "vscode") await (diff ? openVSCodeDiff(diff.answerFile, diff.referenceFile) : openVSCode(target.folder, file));
         else {
           const existing = panes().find(pane => pane.terminal === this.editorTerminal && pane.tab === panel.tab);
           const reused = existing && this.server && await (diff ? neovimDiff(this.server, neovimDiffExpression(diff.answerFile, diff.referenceFile)) : reuseNeovim(this.server, file));
@@ -870,7 +883,7 @@ export default class Syntax extends View {
 
   /** Remembers the language and screen, so the next dialog opens here. Setup is not kept. */
   saveSpot() {
-    if (!this.setupCompleted || this.restoreSpot || this.screen === "setup" || this.screen === "languages") return;
+    if (!this.setupCompleted || this.restoreSpot || ["setup", "languages", "courses"].includes(this.screen)) return;
     const spot = JSON.stringify({ languageId: this.language.id, screen: this.screen, pickerTopicId: this.pickerTopicId });
     if (spot === this.lastSpot) return;
     this.lastSpot = spot;
@@ -893,8 +906,9 @@ export default class Syntax extends View {
    * @param {Context} cx @param {{ answerFile: string, referenceFile: string } | null} diff
    */
   openInDialog(cx, diff) {
-    if (!this.state || !this.editor) return;
-    const file = this.state.file;
+    const target = this.editorTarget();
+    if (!target || !this.editor) return;
+    const file = target.file;
     const editor = this.editor === "neovim" ? liveEditor() : null;
     this.automaticEditorStarted = true;
     if (this.editor === "neovim" && !editor) {
@@ -907,7 +921,7 @@ export default class Syntax extends View {
     cx.notify();
     cx.spawn(async cx => {
       try {
-        if (this.editor === "vscode") await (diff ? openVSCodeDiff(diff.answerFile, diff.referenceFile) : openVSCode(this.state.folder, file));
+        if (this.editor === "vscode") await (diff ? openVSCodeDiff(diff.answerFile, diff.referenceFile) : openVSCode(target.folder, file));
         else if (editor) {
           const shown = await (diff ? neovimDiff(editor.server, neovimDiffExpression(diff.answerFile, diff.referenceFile)) : reuseNeovim(editor.server, file));
           if (!shown) this.error = "Neovim beside Practice Range did not answer. Close it (:qa) and press the toggle key twice to start a new one.";
@@ -937,6 +951,7 @@ export default class Syntax extends View {
     const held = event.modifiers.control || event.modifiers.platform || event.modifiers.alt;
     if (held && !this.shortcutFor(event.keystroke)) return;
     if (this.shortcuts.key(event, cx)) return;
+    if (this.screen === "courses") { this.courses.key(event.key, cx); cx.stop_propagation(); return; }
     // The keys that are not shortcuts are plain keys.
     const key = held ? "" : event.key;
     if (this.screen === "exercises" && this.shortcuts.matches("shuffle", event.keystroke)) {
@@ -1178,12 +1193,13 @@ export default class Syntax extends View {
       .when(this.dialog, element => element.key_context(ESC_CONTEXT).on_action(ESC_ACTION, (_event, cx) => { this.escape(cx); cx.notify(); }))
       .child(paneHeader(t).flex_wrap()
         .child(paneTitle(t, "Practice Range"))
-        .child(paneDetail(t, this.screen === "setup" ? "Getting started" : this.screen === "languages" ? "Languages" : this.screen === "scratch" ? `${this.language.name} scratch` : `${this.language.name} repetition`))
+        .child(keyButton(t, "choose-courses", "", "Courses", !this.busy && !this.courses.busy, cx => this.action("courses", cx)))
+        .child(paneDetail(t, this.screen === "setup" ? "Getting started" : this.screen === "languages" ? "Languages" : this.screen === "courses" ? "Courses" : this.screen === "scratch" ? `${this.language.name} scratch` : `${this.language.name} repetition`))
         .child(keyButton(t, "choose-languages", this.shown("languages", "l"), "Languages", !this.busy && this.setupCompleted, cx => this.action("languages", cx)))
         .child(keyButton(t, "open-setup", this.shown("setup", "?"), "Setup", !this.busy, cx => this.action("setup", cx)))
         .child(keyButton(t, "choose-topics", this.shown("topics", "t"), "Topics", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state), cx => this.action("topics", cx)))
-        .child(keyButton(t, "choose-exercises", this.shown("exercises", "e"), "Exercises", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state) && (Boolean(this.pickerTopicId) || this.screen === "practice"), cx => this.action("exercises", cx)))
-        .child(keyButton(t, "toggle-scratch", this.shown("scratch", "x"), this.screen === "scratch" ? "Back to exercise" : "Scratch", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state), cx => this.action("scratch", cx)))
+        .child(keyButton(t, "choose-exercises", this.shown("exercises", "e"), "Exercises", !this.busy && !["setup", "languages", "courses"].includes(this.screen) && Boolean(this.state) && (Boolean(this.pickerTopicId) || this.screen === "practice"), cx => this.action("exercises", cx)))
+        .child(keyButton(t, "toggle-scratch", this.shown("scratch", "x"), this.screen === "scratch" ? "Back to exercise" : "Scratch", !this.busy && !["setup", "languages", "courses"].includes(this.screen) && Boolean(this.state), cx => this.action("scratch", cx)))
         .child(this.shortcuts.button(t)))
       .when(Boolean(this.error), element => element.child(v_flex().flex_none().px(SIZE.panePad).py(8).gap(8)
         .child(banner(t, this.error, t.blocked))
@@ -1192,7 +1208,7 @@ export default class Syntax extends View {
         .child(banner(t, this.syncError, t.blocked))))
       .when(Boolean(this.busy), element => element.child(h_flex().flex_none().px(SIZE.panePad).py(8).gap(8).items_center()
         .child(spinner(t)).child(div().text_color(t.muted).child(this.busy))))
-      .child(this.screen === "setup" ? setupPanel(t, { step: this.setupStep, busy: Boolean(this.busy), requirements: this.requirements,
+      .child(this.screen === "courses" ? this.courses.render(t) : this.screen === "setup" ? setupPanel(t, { step: this.setupStep, busy: Boolean(this.busy), requirements: this.requirements,
         editor: this.editor, offerDefault: this.offerEditorDefault, language: this.setupLanguage, activeLanguageId: this.language.id,
         enabled: this.enabledLanguages, completed: this.setupCompleted, keyOf: id => this.keyOf(id), tutorContent: () => tutorSettings(t, { config: this.tutor, busy: this.tutorSettingBusy, error: this.tutorSettingsError, change: (provider, cx) => this.changeTutor(provider, cx) }), editorContent: () => this.editorControls(t), action: (action, cx) => this.action(action, cx) })
         : this.screen === "languages" ? languagePanel(t, { enabled: this.enabledLanguages, selected: this.selected, busy: Boolean(this.busy), languagesKey: this.keyOf("languages"), choose: (id, cx) => this.chooseLanguage(id, cx) })
