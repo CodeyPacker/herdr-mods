@@ -47,7 +47,7 @@ export async function tutorContext(root, request) {
     conversation: messages, question: request.question.trim() };
 }
 
-export async function askTutor(root, configPath, request, { run, pollMs = 150, buildContext = tutorContext, instructions } = {}) {
+export async function askTutor(root, configPath, request, { run, pollMs = 150, buildContext = tutorContext, instructions, finish } = {}) {
   const config = await settings(configPath);
   if (!config.enabled || !config.provider) throw new Error("The AI tutor is off. Enable it in Setup to ask a question.");
   const cancelled = cancelFile(root, request.id);
@@ -58,6 +58,10 @@ export async function askTutor(root, configPath, request, { run, pollMs = 150, b
       const stopped = await stat(cancelled).then(() => true, () => false);
       if (!latest.enabled || latest.provider !== config.provider || stopped) controller.abort();
     } catch { controller.abort(); }
+  };
+  const ensureActive = async () => {
+    await inspect();
+    if (controller.signal.aborted) throw new Error("Tutor request cancelled.");
   };
   await inspect();
   if (controller.signal.aborted) throw new Error("Tutor request cancelled.");
@@ -72,7 +76,7 @@ export async function askTutor(root, configPath, request, { run, pollMs = 150, b
     const reply = await requestReply(config.provider, JSON.stringify(context), directory, controller.signal, run, instructions);
     await inspect();
     if (controller.signal.aborted) throw new Error("Tutor request cancelled.");
-    return { reply };
+    return finish ? await finish(reply, ensureActive) : { reply };
   } finally {
     clearTimeout(timer);
     controller.abort();
@@ -95,6 +99,10 @@ if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToP
     else if (action === "generate-repo-lesson") {
       const { generateRepoLesson } = await import("../courses/supplements.mjs");
       result = await generateRepoLesson(root, configPath, JSON.parse(value));
+    }
+    else if (action === "generate-imported-module") {
+      const { generateImportedModule } = await import("../courses/authoring.mjs");
+      result = await generateImportedModule(root, configPath, JSON.parse(value));
     }
     else throw new Error("Unknown tutor action.");
     console.log(JSON.stringify(result));

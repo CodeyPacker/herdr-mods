@@ -129,3 +129,13 @@ test("Windows finds codex and claude outside Herdr's PATH, and npm installs thro
   assert.deepEqual(windowsCommand("claude", { ...options, exists: file => file === entry }), { command: process.execPath, args: [entry] });
   assert.equal(windowsCommand("claude", { ...options, exists: () => false }), null);
 });
+
+test("turning AI off during result validation cancels before publication",async t=>{
+  const {root,configPath,request}=await fixture(t);
+  let finished=false;
+  await assert.rejects(askTutor(root,configPath,request,{run:async()=>({code:0,stdout:JSON.stringify({result:"reading"})}),finish:async (_reply,ensureActive)=>{
+    await writeFile(configPath,'{"tutor":{"enabled":false}}');
+    await ensureActive();finished=true;
+  }}),/cancelled/);
+  assert.equal(finished,false);
+});

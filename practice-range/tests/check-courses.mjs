@@ -43,6 +43,20 @@ try {
   const importedLesson=await importRequest("open",{moduleId:importedModules.course.modules[0].id,step:0});
   const importedQuiz=await importRequest("open",{moduleId:importedModules.course.modules[0].id,step:1});
   const importedTask=await importRequest("task",{taskId:importedModules.course.lessons[0].tasks[0].id});
+  const authoring=structuredClone(importedModules);
+  authoring.attachment={name:"Example repo",commit:"a".repeat(40),available:true};
+  const generated=structuredClone(authoring), generatedId=generated.course.modules[1].id;
+  generated.course.contentVersion="1.0.0-generated.example";
+  generated.enrollment.contentVersion=generated.course.contentVersion;
+  generated.course.modules[1].status="available";generated.course.modules[1].generated=true;
+  generated.course.lessons.push({id:generatedId,title:"More counts",intro:"A generated explanation of counts.",
+    generated:{source:"ai",baseVersion:importedModules.course.contentVersion,commit:"a".repeat(40),scope:"Sampled 1 of 12 source files."},
+    steps:[{kind:"walkthrough",title:"A count",text:"The declaration stores a count.",examples:["source-0-0"]},{kind:"prediction",title:"Check your understanding",text:"This generated quiz checks reading, not independent coding ability.",questions:["generated-q-1"]}],
+    examples:{"source-0-0":{code:"export const count = 1;",readOnly:true,repoRef:{path:"src/count.ts",start:1,end:1,commit:"a".repeat(40)}}},
+    questions:[{id:"generated-q-1",prompt:"What does it store?",choices:[{text:"A count",feedback:"The declaration stores a count."},{text:"A path",feedback:"The declaration stores a count."}],answer:0}],tasks:[]});
+  generated.enrollment.position={moduleId:generatedId,step:0};generated.enrollment.activeTask=null;
+  generated.enrollment.modules[generatedId]={seen:[],questions:{}};
+  const generatedQuiz=structuredClone(generated);generatedQuiz.enrollment.position.step=1;
   const importedCatalog=(await request("list")).courses;
   const cases = { catalog: ["catalog", null], versions: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules], "example-output": ["lesson", example],
     prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], review: ["task", review], "ai-lesson": ["lesson", modules], "ai-task": ["task", task], attached: ["modules", attached], "repo-missing": ["modules", missing], error: ["task", task],
@@ -50,6 +64,8 @@ try {
     "repo-source":["source",attached], "repo-source-cached":["source",attached], "repo-source-missing":["source",attached],
     "language-course-entry":["catalog",review], "setup-course-entry":["catalog",review],
     "learning-profile":["catalog",null], "learning-profile-error":["modules",modules],
+    "imported-authoring":["modules",authoring], "module-generating":["modules",authoring], "module-error":["modules",authoring],
+    "generated-module":["lesson",generated], "generated-quiz":["lesson",generatedQuiz], "generated-modules":["modules",generated],
     imports:["imports",null], "import-preview":["import-preview",null], "import-preferences":["import-preview",null], "import-error":["imports",null],
     "imported-catalog":["catalog",null], "imported-modules":["modules",importedModules], "imported-lesson":["lesson",importedLesson], "imported-quiz":["lesson",importedQuiz], "imported-task":["task",importedTask] };
   const requested = process.argv.slice(2);
@@ -77,6 +93,7 @@ export default class Fixture extends Syntax {
     if (${name === "versions"}) this.courses.catalog[0] = { ...this.courses.catalog[0], enrolledVersion: "0.0.1", versions: ["0.0.1", "0.1.0-preview.1"] };
     this.courses.data = ${JSON.stringify(data)};
     this.courses.page = ${JSON.stringify(page)};
+    if (${["imported-authoring","module-generating"].includes(name)}) this.tutor={enabled:true,provider:"claude"};
     if (${name === "learning-profile"}) {
       this.courses.profile={configured:true,knownLanguages:["Python","JavaScript"]};
       this.courses.knownInput.set_value("Python, JavaScript");
@@ -109,6 +126,7 @@ export default class Fixture extends Syntax {
       if (this.tutorKey() !== this.courses.helpKey()) throw new Error("Course chat must use a separate conversation key");
     }
     this.courses.error = ${JSON.stringify(name === "error" ? "The TypeScript compiler is missing. Open Setup to install it." : "")};
+    if (${name === "module-error"}) this.courses.error="No lesson was saved. The sample does not cover this module.";
     const prior = this.state;
     if (this.courses.data?.file && this.courses.page === "task" && this.editorTarget().file !== this.courses.data.file) throw new Error("Course editor must target the course answer");
     if (this.state !== prior) throw new Error("Course rendering must preserve direct practice");
@@ -133,6 +151,10 @@ export default class Fixture extends Syntax {
     this.action("topics", cx);
     if (this.screen !== "courses") throw new Error("Course checks must block navigation until the snapshot is saved");
     this.courses.busy = "";
+    if (${name === "module-generating"}) {
+      this.tutorRequestId="module-fixture";this.tutorBusy=true;this.courses.generatingModule=true;
+      this.courses.busy="Writing the unfinished lesson and quiz…";
+    }
     if (${name === "repo-generating"}) {
       this.tutor={enabled:true,provider:"claude"};
       this.tutorRequestId="repo-fixture";

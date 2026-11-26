@@ -178,3 +178,5 @@ export function askTutorQuestion(request) { return tutorCommand("ask", JSON.stri
 export function askCourseQuestion(request) { return tutorCommand("ask-course", JSON.stringify(request)); }
 /** @param {Record<string, unknown>} request @returns {Promise<any>} */
 export function generateRepoLesson(request) { return tutorCommand("generate-repo-lesson", JSON.stringify(request)); }
+/** @param {Record<string, unknown>} request @returns {Promise<any>} */
+export function generateImportedModule(request) { return tutorCommand("generate-imported-module", JSON.stringify(request)); }

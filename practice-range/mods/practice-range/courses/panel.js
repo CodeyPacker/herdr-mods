@@ -4,7 +4,7 @@ import { watchFolder, window as appWindow } from "herdr";
 import { keyButton, spinner, textInput } from "../kit/controls.js";
 import { banner, paneBar, sectionLabel } from "../kit/pane.js";
 import { courseCommand, importTutorPreferences } from "./bridge.js";
-import { configuredEditor, configuredTutor, generateRepoLesson } from "../bridge.js";
+import { configuredEditor, configuredTutor, generateRepoLesson, generateImportedModule } from "../bridge.js";
 import { tutorChat } from "../tutor/panel.js";
 import { findLanguage } from "../languages/index.js";
 
@@ -32,6 +32,7 @@ export class CoursePanel {
     this.error = "";
     this.repoLessonId = "";
     this.generatingRepoLesson = false;
+    this.generatingModule = false;
     /** @type {import("./types.js").RepoSource | null} */
     this.source = null;
     /** @type {Record<string, unknown>} */
@@ -117,6 +118,35 @@ export class CoursePanel {
       } finally {
         if (this.host.tutorRequestId === id) { this.host.tutorRequestId = null; this.host.tutorBusy = false; }
         this.generatingRepoLesson = false; this.busy = ""; cx.notify();
+      }
+    });
+  }
+
+  /** @param {string} moduleId @param {Context} cx */
+  generateImportedModule(moduleId,cx) {
+    if(this.busy || !this.data || !this.host.tutor.enabled) return;
+    this.host.cancelTutor(cx);
+    const id=`module-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const request={id,courseId:this.data.course.id,contentVersion:this.data.course.contentVersion,moduleId};
+    this.host.tutorRequestId=id; this.host.tutorBusy=true; this.generatingModule=true;
+    this.busy="Writing the unfinished lesson and quiz…"; this.error=""; cx.notify();
+    cx.spawn(async cx=>{
+      try {
+        const result=await generateImportedModule(request);
+        if(this.host.tutorRequestId!==id) return;
+        this.generatingModule=false; this.host.tutorRequestId=null; this.host.tutorBusy=false;
+        this.busy="Opening the generated course version…"; cx.notify();
+        try {
+          await courseCommand("enroll",result.generated);
+          this.data=await courseCommand("open",{...result.generated,step:0});
+          this.page="lesson"; this.pause();
+        } catch(error) { throw new Error(`The new version was saved, but opening it failed. Open Courses to resume it. ${error instanceof Error?error.message:String(error)}`); }
+        if(this.host.sync) this.host.pushSoon(cx);
+      } catch(error) {
+        if(this.host.tutorRequestId===id || !this.generatingModule) this.error=error instanceof Error?error.message:String(error);
+      } finally {
+        if(this.host.tutorRequestId===id) {this.host.tutorRequestId=null;this.host.tutorBusy=false;}
+        this.generatingModule=false;this.busy="";cx.notify();
       }
     });
   }
@@ -287,7 +317,7 @@ export class CoursePanel {
   render(t) {
     const body = v_flex().id("course-body").flex_1().min_h(0).overflow_y_scroll().p(16).gap(12);
     if (this.busy) body.child(h_flex().gap(8).child(spinner(t)).child(div().child(this.busy)));
-    if (this.generatingRepoLesson) body.child(keyButton(t,"cancel-repo-lesson","","Cancel generation",Boolean(this.host.tutorRequestId),cx=>this.host.cancelTutor(cx)));
+    if (this.generatingRepoLesson || this.generatingModule) body.child(keyButton(t,"cancel-repo-lesson","","Cancel generation",Boolean(this.host.tutorRequestId),cx=>this.host.cancelTutor(cx)));
     if (this.error) body.child(banner(t, this.error, t.blocked));
     if (this.page === "catalog") {
       body.child(div().font_semibold().child(this.languageFilter ? `${findLanguage(this.languageFilter).name} courses` : "Courses"))
@@ -394,6 +424,9 @@ export class CoursePanel {
         .child(keyButton(t, module.id, "", module.title, !this.busy && module.status === "available", cx => this.run("open", { moduleId: module.id, step:this.data.enrollment.modules[module.id]?.resumeStep??0 }, cx)))
         .child(div().text_size(11).text_color(t.dim).child(module.status === "planned" ? "Planned" : this.data.enrollment.modules[module.id]?.skipped ? "Skipped" : `${seen} steps read`))
         .child(keyButton(t, `skip-${module.id}`, "", this.data.enrollment.modules[module.id]?.skipped ? "Include" : "Skip", !this.busy && module.status === "available", cx => this.run("skip", { moduleId: module.id }, cx))));
+      if(module.generated) body.child(div().text_size(11).text_color(t.muted).child("AI-generated reading and quiz"));
+      if(module.status==="planned" && this.data.course.legacy) body.child(keyButton(t,`write-module-${module.id}`,"","Write lesson and quiz",!this.busy && !this.data.enrollment.review && this.host.tutor.enabled && Boolean(repo?.available),cx=>this.generateImportedModule(module.id,cx)))
+        .child(div().text_size(11).text_color(t.muted).child("Uses the imported course's pinned source. Saves a new version with your progress and answers. The original stays available."));
       const legacy=this.data.enrollment.legacy?.modules[module.id];
       if(legacy) body.child(div().text_size(11).text_color(t.muted).child(`${legacy.doneAt?"Completed in Tutor. ":""}${legacy.quiz?.best!==undefined?`Tutor quiz best: ${legacy.quiz.best}${legacy.quiz.passed?" · passed":""}`:""}`));
     }
@@ -448,6 +481,7 @@ export class CoursePanel {
   lessonView(body, t) {
     const lesson = this.lesson(), position = this.data.enrollment.position;
     if (!lesson || !position) return;
+    if(lesson.generated) body.child(banner(t,`AI-generated lesson and quiz. Source locations are checked. Explanations and quiz answers may need correction. ${lesson.generated.scope}`));
     body.child(keyButton(t,"course-repo-module","","Explain this topic using my repo",!this.busy && Boolean(this.data.attachment?.available) && this.host.tutor.enabled,cx=>this.generateRepoLesson(lesson.id,cx)));
     const step = lesson.steps[position.step];
     body.child(sectionLabel(t, `${lesson.title} · ${position.step + 1} of ${lesson.steps.length}`));

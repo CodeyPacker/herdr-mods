@@ -12,6 +12,7 @@ import { attachRepo, detachRepo, repoStatus, restoreRepoExcerpts } from "./repo.
 import { readRepoLessons, saveRepoLesson } from "./supplements.mjs";
 import { courseSource } from "./source.mjs";
 import { knownLanguages, readLearningProfile } from "./learning-profile.mjs";
+import { publishImportedModule } from "./authoring.mjs";
 
 const hash = source => createHash("sha256").update(typeof source === "string" ? source : JSON.stringify(source)).digest("hex");
 export const enrollmentDirectory = (root, pack) => join(root, "courses", courseFolderName(pack.id), pack.contentVersion);
@@ -149,7 +150,7 @@ export async function checkTask(root, pack, task, source, run) {
     details: fixtures.flatMap(result => result.passed ? [] : [`Case ${result.id}: ${result.title}`, ...result.details]), fixtures };
 }
 
-export async function courseCommand(root, action, request = {}) {
+export async function courseCommand(root, action, request = {}, options = {}) {
   if (action === "profile-save") return locked(root, async () => {
     const profile = await readLearningProfile(root);
     if (profile.error) throw new Error(profile.error);
@@ -181,6 +182,7 @@ export async function courseCommand(root, action, request = {}) {
       state = fresh(pack, request.entryPath ?? "beginner");
     }
     validateState(state, pack);
+    if (action === "publish-module") return publishImportedModule(root,pack,directory,state,request,options.ensureActive);
     if (action === "source") return { source: await courseSource(pack, directory, request) };
     const persist = async () => { await save(file, state); };
     if (action === "enroll") { await persist(); await save(preferred, { courseId: pack.id, contentVersion: pack.contentVersion }); }

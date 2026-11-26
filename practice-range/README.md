@@ -45,7 +45,7 @@ Earlier practice results remain historical evidence. An imported answer does not
 
 Reimporting unchanged content reopens the existing copy without overwriting newer work. Revised lessons get a separate enrollment, and the earlier version stays available. If a repo was missing, attach a local clone from the imported course's module list to restore its pinned excerpts. With device sync enabled, imported course content and progress travel together. Local repo paths and incomplete import staging stay on this computer.
 
-Keep Tutor available for generating imported modules that have not been written yet. Supplemental repo reading is available in Practice Range. Writing unfinished imported modules and the remaining Tutor authoring flow are still in development.
+Planned imported modules can be written from the module list with **Write lesson and quiz** when AI help is enabled and a clone containing the course's pinned commit is attached. This writes reading and a quiz only, never coding exercises. Source references are checked against the pinned commit. The result is saved as a new course version that carries your progress and answers. The original version stays available. Repeating the request for the same module reopens the saved version.
 
 ## Updating an existing install
 

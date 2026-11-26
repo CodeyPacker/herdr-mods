@@ -2,7 +2,21 @@
 
 Practice Range becomes the single learning mod for structured courses, direct practice, and review. It absorbs Tutor's course teaching and optional repo examples. The default course requires no repo and no model. Premade, reviewed course packs provide the foundation. The user's model provides optional personal help.
 
-Status: implementation scope. Product code is unchanged. Phase acceptance criteria below define completion, rather than promises about learning effectiveness.
+Status: in progress. Phase acceptance criteria below define completion, rather than promises about learning effectiveness. `LEARNING_PROGRESS.md` holds test evidence for each capability.
+
+## Completion status
+
+| Phase | Status | Completed | Remaining |
+| --- | --- | --- | --- |
+| P0 | Done | Baselines, Tutor migration map and test commands recorded. | None. |
+| P1 | Done except learner review | TypeScript outline, concept map, schema and samples verified with the real checker. | Learner observation of pacing and clarity. |
+| P2 | Done | Loader, pinned enrollment, retained versions, shared checker adapter and lesson flow. | None. |
+| P3 | Mostly done | All 18 modules, 56 tasks and the two-file final project pass reference, alternative and wrong-answer checks. | Standalone project checkpoints, experienced-learner readiness checks, learner pacing review. |
+| P4 | Mostly done | Course UI, setup and language-card entry, linked practice, optional AI, known-language preferences, shared editor opening. | Progress migration between pack versions. Real editor flow with a learner. |
+| P5 | Mostly done | Pinned repo excerpts, repo module and architecture lessons, source browsing, Tutor import, and writing unfinished imported modules as reading and quizzes. | Validated generated exercises for imported modules. Learner review of generated explanations. |
+| P6 | Partly done | Course review, assistance tracking, explained recommendations. | Combined drill and course evidence, optional validated generated exercises, content-version transition tests. |
+| P7 | Not started | | Learner pilot and fixes, then C# and SQL courses. |
+| P8 | Not started | | Release checks, install and migration docs, Tutor launch transition. |
 
 ## Product decisions
 
@@ -186,4 +200,4 @@ Excluded: Tourist changes, remote course marketplace, community course upload, m
 
 Critical path: P0, P1 sample, P2 working sample, P3 and P4 completion, P5, P6, P7 TypeScript pilot, then P8 TypeScript release. Additional language authoring follows the pilot gate. Estimate implementation effort after P1 and P2 expose content conversion and project workspace costs.
 
-Next action: give Astra `TYPESCRIPT_COURSE_BRIEF.md` for the P1 sample deliverables. Use that sample to exercise the actual checker before commissioning the full course. The brief is ready to hand off. No Astra course output or implementation is included in this scope.
+Next action: finish the remaining P3 to P6 items in the completion table, then run the P7 TypeScript learner pilot.

@@ -112,10 +112,14 @@ export async function repoStatus(directory) {
 }
 
 /** A bounded sample, not a claim to have analyzed the entire repository. No absolute path is sent. */
-export async function repositoryContext(directory) {
+export async function repositoryContext(directory, pinnedCommit) {
   try {
     const record = await attachment(directory);
     if (!record) return null;
+    if (pinnedCommit !== undefined) {
+      if (!/^[a-f0-9]{40}(?:[a-f0-9]{24})?$/.test(pinnedCommit)) throw new Error("Invalid pinned commit.");
+      record.commit = pinnedCommit;
+    }
     const paths = sourcePaths((await git(record.root, ["ls-tree", "-r", "-z", "--name-only", record.commit], 2000)).split("\0").filter(Boolean), record.languageId);
     const files = [];
     let budget = 48000;

@@ -9,8 +9,8 @@
  *   workspace?: {editable: {file: string, solution: string | null}[]} }} Task
  * @typedef {{ id: string, title: string, intro: string, steps: Step[], questions: Question[],
  *   examples: Record<string, {code: string, readOnly?: boolean, sourceError?: string, repoRef?: {path: string, start: number, end: number, commit: string}, stdout?: string[], diagnostics?: {code: number, line: number}[]}>,
- *   tasks: Task[], drills?: string[] }} Lesson
- * @typedef {{ id: string, title: string, status: string, part?: string }} Module
+ *   tasks: Task[], drills?: string[], generated?: {source: string, baseVersion: string, commit: string, scope: string} }} Lesson
+ * @typedef {{ id: string, title: string, status: string, part?: string, generated?: boolean }} Module
  * @typedef {{ choice: number, correct: boolean, attempts: number, at: number }} QuestionProgress
  * @typedef {{ passed: boolean, title: string, details: string[], assisted: boolean, assistanceUnknown?: boolean }} CourseResult
  * @typedef {{ attempts: number, passes: number, independentPasses: number, hintCount: number,
