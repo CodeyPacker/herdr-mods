@@ -45,7 +45,7 @@ export async function tutorContext(root, request) {
     conversation: messages, question: request.question.trim() };
 }
 
-export async function askTutor(root, configPath, request, { run, pollMs = 150 } = {}) {
+export async function askTutor(root, configPath, request, { run, pollMs = 150, buildContext = tutorContext } = {}) {
   const config = await settings(configPath);
   if (!config.enabled || !config.provider) throw new Error("The AI tutor is off. Enable it in Setup to ask a question.");
   const cancelled = cancelFile(root, request.id);
@@ -59,7 +59,7 @@ export async function askTutor(root, configPath, request, { run, pollMs = 150 } 
   };
   await inspect();
   if (controller.signal.aborted) throw new Error("Tutor request cancelled.");
-  const context = await tutorContext(root, request);
+  const context = await buildContext(root, request);
   const directory = await mkdtemp(join(tmpdir(), "syntax-tutor-"));
   let timer;
   const monitor = async () => { await inspect(); if (!controller.signal.aborted) timer = setTimeout(monitor, pollMs); };
@@ -86,6 +86,10 @@ if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToP
     if (action === "connect") result = await checkProvider(value);
     else if (action === "cancel") result = await cancelRequest(root, value);
     else if (action === "ask") result = await askTutor(root, configPath, JSON.parse(value));
+    else if (action === "ask-course") {
+      const { askCourseTutor } = await import("../courses/help.mjs");
+      result = await askCourseTutor(root, configPath, JSON.parse(value));
+    }
     else throw new Error("Unknown tutor action.");
     console.log(JSON.stringify(result));
   } catch (error) { console.log(JSON.stringify({ error: error.message })); process.exitCode = 1; }

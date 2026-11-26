@@ -12,7 +12,7 @@ import { courseReview, nextCourseAction } from "./review.js";
 const hash = source => createHash("sha256").update(typeof source === "string" ? source : JSON.stringify(source)).digest("hex");
 export const enrollmentDirectory = (root, pack) => join(root, "courses", encodeURIComponent(pack.id), pack.contentVersion);
 const answerPath = (directory, task, language, review) => join(directory, "answers", ...(review ? ["_review", review.id] : []), task.id.split("/").at(-1), task.workspace?.editable[0].file ?? language.answerFile);
-const newTaskProgress = () => ({ attempts: 0, passes: 0, independentPasses: 0, hintCount: 0, answerShown: false, history: [] });
+const newTaskProgress = () => ({ attempts: 0, passes: 0, independentPasses: 0, hintCount: 0, answerShown: false, aiHelp: false, history: [] });
 const taskProgress = (state, id) => state.review ? state.review.progress : state.tasks[id];
 const starters = task => task.workspace ? Object.fromEntries(task.workspace.editable.map(file => [file.file, file.starter])) : task.starter;
 async function readAnswer(file, task) {
@@ -196,7 +196,7 @@ export async function courseCommand(root, action, request = {}) {
           attempts: (previous?.attempts ?? 0) + 1, at: Date.now() };
       }
       await persist();
-    } else if (["task", "check", "check-saved", "hint", "answer", "reset"].includes(action)) {
+    } else if (["task", "check", "check-saved", "hint", "answer", "reset", "ai-help"].includes(action)) {
       const { task, lesson } = taskFor(pack, request.taskId);
       if (state.review && action === "task") throw new Error("End or finish your review before choosing another exercise.");
       const language = findLanguage(pack.languageId), answer = answerPath(directory, task, language, state.review);
@@ -211,6 +211,7 @@ export async function courseCommand(root, action, request = {}) {
         progress.initialHash ??= hash(starters(task));
       } else if (action === "hint") progress.hintCount = Math.min(task.hints.length, progress.hintCount + 1);
       else if (action === "answer") progress.answerShown = true;
+      else if (action === "ai-help") progress.aiHelp = true;
       else if (action === "reset") {
         const backup = join(directory, "history", task.id.split("/").at(-1));
         await mkdir(backup, { recursive: true });
@@ -220,7 +221,7 @@ export async function courseCommand(root, action, request = {}) {
           for (const editable of task.workspace.editable) await copyFile(join(dirname(answer), editable.file), join(backup, stamp, editable.file));
         } else await copyFile(answer, join(backup, `${stamp}${language.fileExtension}`));
         await writeStarters(answer, task);
-        progress.hintCount = 0; progress.answerShown = false; progress.result = null; progress.checkedHash = null;
+        progress.hintCount = 0; progress.answerShown = false; progress.aiHelp = false; progress.result = null; progress.checkedHash = null;
         progress.initialHash = hash(starters(task));
       } else {
         const source = await readAnswer(answer, task), sourceHash = hash(source);
@@ -232,9 +233,9 @@ export async function courseCommand(root, action, request = {}) {
           const currentHash = hash(await readAnswer(answer, task));
           // A newer save will be checked next. Never record a stale verdict as a current pass.
           if (currentHash !== sourceHash) return { ...await snapshot(pack, state, directory), pendingSave: true };
-          const assisted = progress.hintCount > 0 || progress.answerShown;
+          const assisted = progress.hintCount > 0 || progress.answerShown || Boolean(progress.aiHelp);
           const attempt = { at: Date.now(), sourceHash, passed: result.passed, assisted,
-            hintCount: progress.hintCount, answerShown: progress.answerShown };
+            hintCount: progress.hintCount, answerShown: progress.answerShown, aiHelp: Boolean(progress.aiHelp) };
           progress.attempts++; if (result.passed) progress.passes++;
           if (result.passed && !assisted) progress.independentPasses++;
           progress.history.push(attempt);

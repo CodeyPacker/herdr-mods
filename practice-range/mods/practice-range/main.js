@@ -9,7 +9,7 @@ import { legend } from "./kit/legend.js";
 import { listRow, rowText, listNote } from "./kit/list.js";
 import { catalogFor } from "./catalog.js";
 import { topicProgress, filteredTopics, visibleHints, savedExercise } from "./practice.js";
-import { practiceCommand, appCommand, appCommands, openVSCode, openVSCodeDiff, neovimDiff, neovimCommands, reuseNeovim, configuredEditor, saveEditorPreference, setupStatus, completeSetup, configuredTutor, saveTutorPreference, checkTutorProvider, askTutorQuestion, cancelTutorRequest, syncEnabled, syncProgress, configuredLayout, saveLayoutPreference, openUrl } from "./bridge.js";
+import { practiceCommand, appCommand, appCommands, openVSCode, openVSCodeDiff, neovimDiff, neovimCommands, reuseNeovim, configuredEditor, saveEditorPreference, setupStatus, completeSetup, configuredTutor, saveTutorPreference, checkTutorProvider, askTutorQuestion, cancelTutorRequest, syncEnabled, syncProgress, configuredLayout, saveLayoutPreference, openUrl, askCourseQuestion } from "./bridge.js";
 import { findPracticePane, neovimDiffCommands, neovimDiffExpression, neovimPanelKeyCommands } from "./editor-pane.js";
 import { defaultLanguage, findLanguage, languages } from "./languages/index.js";
 import { languagePanel, packAction } from "./language-panel.js";
@@ -267,7 +267,7 @@ export default class Syntax extends View {
     });
   }
 
-  tutorKey() { return this.state ? `${this.state.languageId}/${this.state.exerciseId}` : ""; }
+  tutorKey() { if (this.screen === "courses") return this.courses.helpKey(); return this.state ? `${this.state.languageId}/${this.state.exerciseId}` : ""; }
 
   /**
    * The background. In a tab over a background picture with see-through terminals, it matches
@@ -355,7 +355,8 @@ export default class Syntax extends View {
 
   /** @param {Context} cx */
   askTutor(cx) {
-    if (!this.tutor.enabled || !this.tutor.provider || !this.state || this.screen !== "practice" || this.tutorBusy || this.tutorSettingBusy) return;
+    const courseRequest = this.screen === "courses" ? this.courses.helpRequest() : null;
+    if (!this.tutor.enabled || !this.tutor.provider || (!courseRequest && (!this.state || this.screen !== "practice")) || this.tutorBusy || this.tutorSettingBusy) return;
     const question = this.tutorInput.value().trim();
     if (!question) return;
     if (question.length > 4000) { this.tutorError = "Keep your question under 4,000 characters."; cx.notify(); return; }
@@ -365,7 +366,7 @@ export default class Syntax extends View {
     // Keep the CLI request small enough for command-line limits on supported editors' platforms.
     while (JSON.stringify(messages).length > 16000) messages.shift();
     const id = `question-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-    const request = { id, languageId: this.state.languageId, exerciseId: this.state.exerciseId, question, messages };
+    const request = { id, languageId: this.state?.languageId, exerciseId: this.state?.exerciseId, question, messages, ...courseRequest };
     this.tutorThreads[key] = [...previous, { role: "user", content: question }];
     this.tutorRequestId = id;
     this.tutorBusy = true;
@@ -374,7 +375,8 @@ export default class Syntax extends View {
     cx.notify();
     cx.spawn(async cx => {
       try {
-        const { reply } = await askTutorQuestion(request);
+        const { reply } = await (courseRequest ? askCourseQuestion(request) : askTutorQuestion(request));
+        if (courseRequest && this.tutorRequestId === id) this.courses.run("status", {}, cx);
         if (this.tutorRequestId === id && this.tutor.enabled) this.tutorThreads[key].push({ role: "assistant", content: reply });
       } catch (error) {
         if (this.tutorRequestId === id) {

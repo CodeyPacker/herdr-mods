@@ -1,0 +1,48 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { courseCommand } from "../mods/practice-range/courses/service.mjs";
+import { loadCourse, taskFor } from "../mods/practice-range/courses/loader.mjs";
+import { askCourseTutor, courseTutorContext } from "../mods/practice-range/courses/help.mjs";
+
+test("course questions use current lesson and saved answer without trusted checks or hidden solutions", async t => {
+  const root = await mkdtemp(join(tmpdir(), "herdr-course-help-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const courseId = "course:ts-foundations", moduleId = `${courseId}/module/values`, taskId = `${courseId}/task/remaining`;
+  const pack = await loadCourse(courseId), { task } = taskFor(pack, taskId);
+  const config = join(root, "config.json");
+  await writeFile(config, JSON.stringify({ tutor: {enabled:true,provider:"claude"} }));
+  const run = action => courseCommand(root, action, {courseId,taskId});
+  await run("enroll");
+  await courseCommand(root,"open",{courseId,moduleId,step:1});
+  const request = { id:"course-question",courseId,moduleId,step:1,question:"Why is this a number?",messages:[] };
+  const lesson = await courseTutorContext(root,request);
+  assert.equal(lesson.lesson.step,pack.lessons.find(lesson=>lesson.id===moduleId).steps[1].title);
+  assert.equal(lesson.savedAnswer,undefined);
+  await assert.rejects(courseTutorContext(root,{...request,step:0}),/lesson changed/);
+  let state = await run("task");
+  await writeFile(state.file,task.solution);
+  const exerciseRequest = {...request,taskId};
+  let captured;
+  const reply = await askCourseTutor(root,config,exerciseRequest,{run:async (_provider,_args,options)=>{
+    captured=JSON.parse(options.input);
+    return {code:0,stdout:JSON.stringify({result:"The initial numeric value gives remaining its number type."}),stderr:"",problem:""};
+  }});
+  assert.match(reply.reply,/initial numeric/);
+  assert.equal(captured.revealedAnswer,null);
+  assert.equal(captured.exercise.checks,undefined);
+  assert.equal(captured.exercise.solution,undefined);
+  assert.equal(captured.savedAnswer["Exercise.ts"],task.solution);
+  state=await run("check");
+  assert.equal(state.enrollment.tasks[taskId].result.passed,true);
+  assert.equal(state.enrollment.tasks[taskId].result.aiHelp,true);
+  assert.equal(state.enrollment.tasks[taskId].independentPasses,0);
+  await run("reset");
+  await assert.rejects(askCourseTutor(root,config,exerciseRequest,{run:async()=>({code:1,stdout:"",stderr:"",problem:"provider unavailable"})}),/provider unavailable/);
+  await writeFile(state.file,task.solution);
+  state=await run("check");
+  assert.equal(state.enrollment.tasks[taskId].result.aiHelp,false,"An unavailable provider did not give assistance");
+  assert.equal(state.enrollment.tasks[taskId].independentPasses,1);
+});

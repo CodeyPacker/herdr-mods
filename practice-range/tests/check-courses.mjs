@@ -23,7 +23,7 @@ try {
   const review = structuredClone(task);
   review.enrollment.review = { ids: [taskId], index: 0 };
   const cases = { catalog: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules],
-    prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], review: ["task", review], error: ["task", task] };
+    prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], review: ["task", review], "ai-lesson": ["lesson", modules], "ai-task": ["task", task], error: ["task", task] };
   for (const [name, [page, data]] of Object.entries(cases)) {
     const folder = join(root, name);
     await cp(source, folder, { recursive: true, filter: path => !path.split(/[\\/]/).includes("node_modules") });
@@ -41,6 +41,11 @@ export default class Fixture extends Syntax {
     this.courses.catalog = ${JSON.stringify(catalog)};
     this.courses.data = ${JSON.stringify(data)};
     this.courses.page = ${JSON.stringify(page)};
+    if (${name.startsWith("ai-")}) {
+      this.tutor = { enabled: true, provider: "claude" };
+      this.tutorThreads[this.courses.helpKey()] = [{ role: "assistant", content: "TypeScript infers a number from the initial value." }];
+      if (this.tutorKey() !== this.courses.helpKey()) throw new Error("Course chat must use a separate conversation key");
+    }
     this.courses.error = ${JSON.stringify(name === "error" ? "The TypeScript compiler is missing. Open Setup to install it." : "")};
     const prior = this.state;
     if (this.courses.data?.file && this.courses.page === "task" && this.editorTarget().file !== this.courses.data.file) throw new Error("Course editor must target the course answer");

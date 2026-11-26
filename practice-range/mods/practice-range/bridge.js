@@ -174,3 +174,5 @@ export function checkTutorProvider(provider) { return tutorCommand("connect", pr
 export function cancelTutorRequest(id) { return tutorCommand("cancel", id); }
 /** @param {{ id: string, languageId: string, exerciseId: string, question: string, messages: import("./tutor/panel.js").TutorMessage[] }} request @returns {Promise<{reply: string}>} */
 export function askTutorQuestion(request) { return tutorCommand("ask", JSON.stringify(request)); }
+/** @param {Record<string, unknown>} request @returns {Promise<{reply: string}>} */
+export function askCourseQuestion(request) { return tutorCommand("ask-course", JSON.stringify(request)); }

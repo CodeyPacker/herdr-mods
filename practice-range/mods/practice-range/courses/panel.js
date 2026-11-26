@@ -4,6 +4,7 @@ import { watchFolder, window as appWindow } from "herdr";
 import { keyButton, spinner } from "../kit/controls.js";
 import { banner, paneBar, sectionLabel } from "../kit/pane.js";
 import { courseCommand } from "./bridge.js";
+import { tutorChat } from "../tutor/panel.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("../kit/theme.js").Theme} Theme */
@@ -54,6 +55,7 @@ export class CoursePanel {
   /** @param {string} action @param {Record<string, unknown>} value @param {Context} cx */
   async dispatch(action, value, cx) {
     if (this.busy) return;
+    if (["list", "enroll", "open", "task", "review-start", "review-next", "review-end"].includes(action)) this.host.cancelTutor(cx);
     this.busy = ["check", "check-saved"].includes(action) ? "Checking every case…" : "Loading course…";
     this.error = ""; cx.notify();
     try {
@@ -117,6 +119,19 @@ export class CoursePanel {
 
   lesson() { return this.data?.course.lessons.find(lesson => lesson.id === this.data.enrollment.position?.moduleId); }
   task() { return this.data?.course.lessons.flatMap(lesson => lesson.tasks).find(task => task.id === this.data.enrollment.activeTask); }
+
+  helpRequest() {
+    const position = this.data?.enrollment.position;
+    if (!position || !["lesson", "task"].includes(this.page)) return null;
+    const taskId = this.page === "task" ? this.data.enrollment.activeTask : null;
+    const lesson = taskId ? this.data.course.lessons.find(lesson => lesson.tasks.some(task => task.id === taskId)) : this.lesson();
+    return { courseId: this.data.course.id, moduleId: lesson.id, step: lesson.id === position.moduleId ? position.step : 0, taskId };
+  }
+
+  helpKey() {
+    const request = this.helpRequest();
+    return request ? `${request.courseId}/${request.moduleId}/${request.taskId ?? request.step}` : "";
+  }
 
   /** @param {string} id @param {Context} cx */
   practiceTopic(id, cx) {
@@ -191,6 +206,10 @@ export class CoursePanel {
       if (this.page === "modules") this.modules(body, t);
       else if (this.page === "lesson") this.lessonView(body, t);
       else if (this.page === "task") this.taskView(body, t);
+      if (["lesson", "task"].includes(this.page) && this.host.tutor.enabled) body.child(tutorChat(t, {
+        messages: this.host.tutorThreads[this.helpKey()] ?? [], busy: this.host.tutorBusy, error: this.host.tutorError,
+        input: this.host.tutorInput, typing: this.host.typing, send: cx => this.host.askTutor(cx),
+      }));
     }
     return v_flex().flex_1().min_h(0).child(body).child(paneBar(t)
       .child(keyButton(t, "course-back", "esc", this.data?.enrollment.review ? "End review" : this.page === "task" ? "Return to lesson" : this.page === "catalog" ? "Back to practice" : "Back", !this.busy, cx => this.back(cx))));
