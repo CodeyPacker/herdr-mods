@@ -41,7 +41,7 @@ The course remains a preview. Compiler correctness and native materialization do
 | P4 | Core course UI, setup/language entry points, known-language preferences for AI comparisons, linked practice, optional AI, shared editor opening and explicit version migration implemented. | Verification of real editor flows with a learner. |
 | P5 | Optional pinned repo context, saved module/architecture supplements, source navigation, previewable Tutor course import, writing of unfinished imported modules and validated generated exercises implemented. Existing settings and original Tutor files are preserved. | Generated explanations and exercises need learner review. Tutor launch compatibility remains for P8. |
 | P6 | Course review, deterministic recommendations, combined module evidence, linked drill review recommendations and validated extra practice for bundled courses implemented. | Check with learners that the evidence rules match observed skill and that generated exercises are useful. |
-| P7 | Not started. | Learner pilot and corrections, then C# and SQL course packs. Their existing direct practice remains supported. |
+| P7 | Pilot kit ready: guide, notes template, three verified transfer tasks and a checker script. | Run sessions with learners, record findings and fix blocking problems. Then C# and SQL course packs. Their existing direct practice remains supported. |
 | P8 | Release checklist, requirements, tested platform, release notes and Tutor move notice prepared in `RELEASE.md`. | Rerun checks after P7, stop recommending new Tutor installs, then release. No source mod removal in the first release. |
 
 ## Verification record

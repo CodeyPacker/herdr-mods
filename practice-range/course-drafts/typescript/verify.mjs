@@ -249,6 +249,22 @@ try {
     const concepts = new Set(group.modules.flatMap(id => [...conceptsThrough(manifest, id)]));
     await checkTask(root, { id: (await json(root, group.task)).id, path: group.task }, concepts);
   }
+  if (!candidates.size) {
+    // Pilot tasks are handed out by an observer, not shipped in the pack. Each uses concepts taught up to its module.
+    const all = new Set(manifest.modules.flatMap(m => m.teaches));
+    for (const key of ["new-task", "type-error", "debug"]) {
+      const path = "pilot/" + key + "/task.json", spec = await json(root, path);
+      const concepts = conceptsThrough(manifest, manifest.id + "/module/" + spec.after);
+      assert.ok(spec.concepts.every(c => all.has(c)));
+      await checkTask(root, { id: spec.id, path }, concepts);
+      if (spec.starterDiagnostic) {
+        const result = await checkAnswer(tmp, { rules: [], checks: spec.checks, declarations: await source(root, "pilot/" + key + "/" + spec.fixtures[0].declarations) }, await source(root, "pilot/" + key + "/" + spec.starter));
+        assert.equal(result.kind, "compile", JSON.stringify(result));
+        assert.ok(result.details.some(line => new RegExp("Exercise\\.ts:" + spec.starterDiagnostic.line + ":\\d+ - error TS" + spec.starterDiagnostic.code + ":").test(line)), JSON.stringify(result));
+        console.log(spec.id + " · starter shows TS" + spec.starterDiagnostic.code + " on line " + spec.starterDiagnostic.line);
+      }
+    }
+  }
   console.log(JSON.stringify(counts));
 } finally {
   await rm(tmp, { recursive: true, force: true });

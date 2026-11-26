@@ -1,0 +1,59 @@
+{
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture.ts"
+    }
+  ],
+  "id": "course:ts-foundations/pilot/peak-hour",
+  "role": "pilot",
+  "title": "Find the busiest hour",
+  "after": "lists",
+  "concepts": [
+    "function",
+    "array",
+    "loop",
+    "branch"
+  ],
+  "prompt": "Write peakHour(counts: number[]): number. counts[i] is the number of tasks opened during hour i. Return the hour (the index) with the most tasks. If two hours tie, return the earlier one. Return -1 for an empty list.",
+  "hints": [
+    "Track the best index seen so far.",
+    "Only replace it when a count is strictly larger.",
+    "Decide what an empty list returns before the loop."
+  ],
+  "checks": [
+    "peakHour([]) === -1",
+    "peakHour([2, 7, 3]) === 1",
+    "peakHour([4, 4, 1]) === 0",
+    "peakHour([0]) === 0",
+    "peakHour([1, 3, 3, 5]) === 3"
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Returns the largest count instead of its hour.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Returns the later hour on a tie.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "Return a position, not a count. Check an empty list and a tie."
+}

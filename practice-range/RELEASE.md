@@ -28,7 +28,7 @@ Ship the TypeScript course preview (content version 0.1.0-preview.2) with existi
 | .NET SDK | 10.0.301 |
 | Editors | Neovim 0.12.6 and VS Code, through the editor tests below |
 
-Not tested: Windows, Linux, Node.js 20 to 24, .NET 8 or 9, and a live Claude or Codex request. Provider behavior is tested with controlled responses. Neither editor has been used by a learner through a whole course.
+Not tested: Windows, Linux, Node.js 20 to 24 (the Homebrew `node@20` and `node@22` links on the test machine point to Node 25, so no older runtime was available without a download), .NET 8 or 9, and a live Claude or Codex request. Provider behavior is tested with controlled responses. Neither editor has been used by a learner through a whole course.
 
 ## Checks
 
@@ -36,7 +36,7 @@ Run from the repository root. The results column is the last recorded run.
 
 | Code | Check | Command | Last result |
 | --- | --- | --- | --- |
-| V1 | Course pack: manifest, IDs, prerequisites, concepts, file references, compiler version | `node practice-range/course-drafts/typescript/verify.mjs` | Passed. 64 tasks (60 in lessons, 4 readiness checks), 19 examples, 2 diagnostics, 82 references, 82 alternatives, 129 wrong-answer witnesses. |
+| V1 | Course pack: manifest, IDs, prerequisites, concepts, file references, compiler version | `node practice-range/course-drafts/typescript/verify.mjs` | Passed. 64 course tasks (60 in lessons, 4 readiness checks) and 3 pilot tasks, 19 examples, 2 diagnostics, 85 references, 85 alternatives, 135 wrong-answer witnesses. |
 | V1 | Rebuild is unchanged | `node practice-range/scripts/build-course.mjs` then `git status` | Passed. preview.1 is archived under `courses/packs/archive/`. Ship that archive. |
 | V2 | Examples, references, starters, wrong answers | Same as the course verifier | Passed. |
 | V3–V7 | All Practice Range tests, including editors, catalogs, sessions, courses, import, migration, sync and AI flows | `env TMPDIR=/private/tmp node --test --test-concurrency=3 practice-range/tests/*.test.mjs` | Passed 150 of 150. |
@@ -48,13 +48,13 @@ Run from the repository root. The results column is the last recorded run.
 | V7 | Herdr mod checks | `herdr-app check practice-range/mods/practice-range` and `herdr-app check tutor/mods/tutor` | Both passed. |
 | V7 | Type and whitespace checks | `node practice-range/mods/practice-range/languages/typescript/node_modules/typescript/bin/tsc -p practice-range/mods/practice-range/tsconfig.json --pretty false` and `git diff --check` | Passed. |
 | V7 | Tutor baseline | `node --import ./tutor/tests/stubs/register.mjs --test tutor/tests/*.test.mjs` | 14 of 18, unchanged. The four TypeScript runner tests need Tutor's own compiler install. |
-| V8 | Learner observation | P7 pilot notes | Not done. Blocks release. |
+| V8 | Learner observation | Run `course-drafts/typescript/pilot/PILOT.md` and record notes | Kit ready. Not run. Blocks release. |
 
 Native checks verify that panels build and selected navigation works. They do not verify layout, paint or a real learner session.
 
 ## Before release
 
-1. Finish the P7 TypeScript pilot and fix the blocking confusion it finds.
+1. Finish the P7 TypeScript pilot using `course-drafts/typescript/pilot/PILOT.md` and fix the blocking confusion it finds.
 2. Rerun every check above and update the results column.
 3. If course content changed, bump `runtimeContentVersion`, declare `compatibility.fromVersions` and any ID replacements, rebuild, and ship the new archive file.
 4. Repeat an import on a copy of real Tutor data if a tester has some. Confirm the original folder is byte-identical afterward.

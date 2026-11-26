@@ -1,0 +1,63 @@
+{
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture.ts"
+    }
+  ],
+  "id": "course:ts-foundations/pilot/total-minutes",
+  "role": "pilot",
+  "title": "Explain and fix a type error",
+  "after": "shapes",
+  "concepts": [
+    "function",
+    "array",
+    "loop",
+    "object-shape",
+    "inference",
+    "diagnostic"
+  ],
+  "prompt": "Before editing, read the compiler error for this file and explain in your own words what it means and which line causes it. Then fix totalMinutes so it returns the total number of minutes across all entries as a number.",
+  "hints": [
+    "Find the line the error points to and the type it expected.",
+    "Look at how total is first declared. What type does TypeScript infer from that value?",
+    "Start the total from a number, not text."
+  ],
+  "starterDiagnostic": {
+    "code": 2322,
+    "line": 6
+  },
+  "checks": [
+    "totalMinutes([]) === 0",
+    "totalMinutes([{ label: \"Plan\", minutes: 15 }, { label: \"Build\", minutes: 30 }]) === 45",
+    "totalMinutes([{ label: \"Rest\", minutes: 0 }]) === 0"
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Counts entries instead of minutes.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Keeps only the last entry.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "The value you start with decides the inferred type of the variable."
+}

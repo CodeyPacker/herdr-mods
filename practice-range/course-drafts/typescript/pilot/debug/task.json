@@ -1,0 +1,58 @@
+{
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture.ts"
+    }
+  ],
+  "id": "course:ts-foundations/pilot/describe-update",
+  "role": "pilot",
+  "title": "Debug a wrong status line",
+  "after": "tagged",
+  "concepts": [
+    "discriminant",
+    "object-union",
+    "branch",
+    "truthiness"
+  ],
+  "prompt": "describe should return \"Progress: N%\" for a progress update and \"Blocked: REASON\" for a blocked one. If a blocked update has an empty reason, return \"Blocked: no reason given\". The code compiles, but some updates get the wrong text. Find the cases that fail, explain why, and fix it.",
+  "hints": [
+    "Try a progress update of 0 percent.",
+    "Which values does an if (!value) check treat as missing?",
+    "Use the kind tag to choose the branch, then handle the empty reason separately."
+  ],
+  "checks": [
+    "describe({ kind: \"progress\", percent: 40 }) === \"Progress: 40%\"",
+    "describe({ kind: \"progress\", percent: 0 }) === \"Progress: 0%\"",
+    "describe({ kind: \"blocked\", reason: \"waiting on review\" }) === \"Blocked: waiting on review\"",
+    "describe({ kind: \"blocked\", reason: \"\" }) === \"Blocked: no reason given\""
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Fixes zero percent but drops the empty-reason rule.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 4 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Treats zero percent as missing.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Zero and empty text are real values. Branch on the tag, not on truthiness."
+}
