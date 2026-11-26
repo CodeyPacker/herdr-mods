@@ -9,6 +9,7 @@ import { findLanguage } from "../languages/index.js";
 import { loadLanguageRunner } from "../languages/runner.mjs";
 import { courseReview, nextCourseAction } from "./review.js";
 import { attachRepo, detachRepo, repoStatus, restoreRepoExcerpts } from "./repo.mjs";
+import { readRepoLessons, saveRepoLesson } from "./supplements.mjs";
 
 const hash = source => createHash("sha256").update(typeof source === "string" ? source : JSON.stringify(source)).digest("hex");
 export const enrollmentDirectory = (root, pack) => join(root, "courses", courseFolderName(pack.id), pack.contentVersion);
@@ -176,6 +177,8 @@ export async function courseCommand(root, action, request = {}) {
     else if (action === "attach-repo" || action === "detach-repo") {
       if (action === "attach-repo") await attachRepo(directory, pack.languageId, request.path);
       else await detachRepo(directory);
+    } else if (action === "save-repo-lesson") {
+      await saveRepoLesson(pack, directory, request);
     } else if (["review-start", "review-next", "review-end"].includes(action)) {
       if (action === "review-start" && !state.review) {
         const ids = courseReview(pack, state, Date.now()).ids;
@@ -311,6 +314,7 @@ async function snapshot(pack, state, directory) {
     enrollment: state.review && active ? { ...state, tasks: { ...state.tasks, [active.id]: progress } } : state,
     reviewReady: courseReview(pack, state, Date.now()).ids.length, recommendation: nextCourseAction(pack, state, Date.now()),
     attachment: await repoStatus(directory),
+    repoLessons: await readRepoLessons(directory),
     file, folder: file ? dirname(file) : null, sourceHash,
     stale: Boolean(progress?.result && progress.result.sourceHash !== sourceHash) };
 }

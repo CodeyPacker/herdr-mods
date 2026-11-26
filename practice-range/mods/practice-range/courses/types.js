@@ -22,10 +22,13 @@
  *   tasks: Record<string, TaskProgress>, legacy?: {modules: Record<string,{doneAt?: string,quiz?: {best?: number,passed?: boolean}}>} }, file: string | null, folder: string | null, sourceHash: string | null,
  *   stale: boolean, pendingSave?: boolean, reviewReady: number,
  *   attachment?: {name?: string, commit?: string, available: boolean, detail?: string},
+ *   repoLessons?: {error?: string, lessons: RepoLesson[]},
  *   recommendation: {kind: string, reason: string, moduleId?: string, taskId?: string, step?: number} }} CourseSnapshot
  * @typedef {{slug: string,title: string,error?: string,courseId?: string,contentVersion?: string,fingerprint?: string,
  *   languageId?: string,modules?: number,written?: number,questions?: number,exercises?: number,answers?: number,
  *   orphanAnswers?: number,warnings?: string[],known?: string[],alreadyImported?: boolean,
  *   preferences?: {editor?: string,agent?: string}}} TutorImport
+ * @typedef {{id: string, target: string, title: string, name: string, commit: string, scope: string,
+ *   sections: {title: string, text: string, references: {path: string, start: number, end: number, code: string}[]}[]}} RepoLesson
  */
 export {};

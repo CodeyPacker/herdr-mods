@@ -10,7 +10,7 @@ Each hint adds a little more help. Another exercise stays in the same topic unti
 
 Courses are available from **Courses** in the header. The bundled TypeScript preview has 18 modules and 56 tasks, including runnable examples and a two-file final project. Lessons need no repo or AI connection. Coding checks use the language pack’s compiler. Reading position, answers, hints, and review progress are saved separately from direct practice. Course updates preserve older enrollments and their content.
 
-You can optionally attach a local repo from the course’s module list. Course questions can use bounded code excerpts from its pinned commit when AI help is enabled. The repo is never edited, and its local path does not sync. C# and SQL course packs are still in development. Their existing direct practice remains available.
+You can optionally attach a local repo from the course’s module list. When AI help is enabled, **Explain repo architecture** creates supplemental reading from a bounded sample. From a lesson, **Explain this topic using my repo** adds examples for that module. Generation sends those source excerpts to your configured model. File paths and line ranges are checked against the pinned commit, but explanations still need your judgment. Saved lessons retain their source excerpts and travel with device sync, even if the repo later becomes unavailable. The repo is never edited, and its local path does not sync. C# and SQL course packs are still in development. Their existing direct practice remains available.
 
 ```sh
 herdr-app do tab.new '{"name":"Practice Range","mod":"practice-range","props":{"practiceTab":true}}'
@@ -39,7 +39,7 @@ Earlier practice results remain historical evidence. An imported answer does not
 
 Reimporting unchanged content reopens the existing copy without overwriting newer work. Revised lessons get a separate enrollment, and the earlier version stays available. If a repo was missing, attach a local clone from the imported course's module list to restore its pinned excerpts. With device sync enabled, imported course content and progress travel together. Local repo paths and incomplete import staging stay on this computer.
 
-Keep Tutor available for generating modules that have not been written yet. Generating repo architecture lessons and the remaining Tutor authoring flow inside Practice Range is still in development.
+Keep Tutor available for generating imported modules that have not been written yet. Supplemental repo reading is available in Practice Range. Writing unfinished imported modules and the remaining Tutor authoring flow are still in development.
 
 ## Updating an existing install
 

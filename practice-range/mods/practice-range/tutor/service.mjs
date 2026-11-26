@@ -45,7 +45,7 @@ export async function tutorContext(root, request) {
     conversation: messages, question: request.question.trim() };
 }
 
-export async function askTutor(root, configPath, request, { run, pollMs = 150, buildContext = tutorContext } = {}) {
+export async function askTutor(root, configPath, request, { run, pollMs = 150, buildContext = tutorContext, instructions } = {}) {
   const config = await settings(configPath);
   if (!config.enabled || !config.provider) throw new Error("The AI tutor is off. Enable it in Setup to ask a question.");
   const cancelled = cancelFile(root, request.id);
@@ -67,7 +67,7 @@ export async function askTutor(root, configPath, request, { run, pollMs = 150, b
     await inspect();
     if (controller.signal.aborted) throw new Error("Tutor request cancelled.");
     timer = setTimeout(monitor, pollMs);
-    const reply = await requestReply(config.provider, JSON.stringify(context), directory, controller.signal, run);
+    const reply = await requestReply(config.provider, JSON.stringify(context), directory, controller.signal, run, instructions);
     await inspect();
     if (controller.signal.aborted) throw new Error("Tutor request cancelled.");
     return { reply };
@@ -89,6 +89,10 @@ if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToP
     else if (action === "ask-course") {
       const { askCourseTutor } = await import("../courses/help.mjs");
       result = await askCourseTutor(root, configPath, JSON.parse(value));
+    }
+    else if (action === "generate-repo-lesson") {
+      const { generateRepoLesson } = await import("../courses/supplements.mjs");
+      result = await generateRepoLesson(root, configPath, JSON.parse(value));
     }
     else throw new Error("Unknown tutor action.");
     console.log(JSON.stringify(result));

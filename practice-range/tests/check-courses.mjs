@@ -25,6 +25,7 @@ try {
   review.enrollment.review = { ids: [taskId], index: 0 };
   const attached = structuredClone(modules);
   attached.attachment = { name: "example-project", commit: "a".repeat(40), available: true };
+  attached.repoLessons = {lessons:[{id:"b".repeat(64),target:moduleId,title:"Values in this repo",name:"example-project",commit:"a".repeat(40),scope:"Sampled 1 of 12 source files. Other files were not examined.",sections:[{title:"A value",text:"The exported count starts at one.",references:[{path:"src/count.ts",start:1,end:1,code:"export const count = 1;"}]}]}]};
   const missing = structuredClone(modules);
   missing.attachment = { name: "example-project", commit: "a".repeat(40), available: false, detail: "The repo is unavailable. Bundled lessons still work." };
   const put=async(path,value)=>{const file=join(root,"tutor",path);await mkdir(dirname(file),{recursive:true});await writeFile(file,typeof value==="string"?value:JSON.stringify(value));};
@@ -45,6 +46,7 @@ try {
   const importedCatalog=(await request("list")).courses;
   const cases = { catalog: ["catalog", null], versions: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules], "example-output": ["lesson", example],
     prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], review: ["task", review], "ai-lesson": ["lesson", modules], "ai-task": ["task", task], attached: ["modules", attached], "repo-missing": ["modules", missing], error: ["task", task],
+    "repo-supplement":["repo-lesson",attached], "repo-generating":["modules",attached],
     imports:["imports",null], "import-preview":["import-preview",null], "import-preferences":["import-preview",null], "import-error":["imports",null],
     "imported-catalog":["catalog",null], "imported-modules":["modules",importedModules], "imported-lesson":["lesson",importedLesson], "imported-quiz":["lesson",importedQuiz], "imported-task":["task",importedTask] };
   const requested = process.argv.slice(2);
@@ -72,6 +74,12 @@ export default class Fixture extends Syntax {
     if (${name === "versions"}) this.courses.catalog[0] = { ...this.courses.catalog[0], enrolledVersion: "0.0.1", versions: ["0.0.1", "0.1.0-preview.1"] };
     this.courses.data = ${JSON.stringify(data)};
     this.courses.page = ${JSON.stringify(page)};
+    if (${name === "repo-supplement"}) {
+      this.courses.repoLessonId="b".repeat(64);
+      this.courses.back(cx);
+      if(this.courses.page!=="modules") throw new Error("Repo lesson must return to modules");
+      this.courses.page="repo-lesson";
+    }
     if (${name.startsWith("ai-")}) {
       this.tutor = { enabled: true, provider: "claude" };
       this.tutorThreads[this.courses.helpKey()] = [{ role: "assistant", content: "TypeScript infers a number from the initial value." }];
@@ -87,6 +95,13 @@ export default class Fixture extends Syntax {
     this.action("topics", cx);
     if (this.screen !== "courses") throw new Error("Course checks must block navigation until the snapshot is saved");
     this.courses.busy = "";
+    if (${name === "repo-generating"}) {
+      this.tutor={enabled:true,provider:"claude"};
+      this.tutorRequestId="repo-fixture";
+      this.tutorBusy=true;
+      this.courses.generatingRepoLesson=true;
+      this.courses.busy="Writing a lesson from sampled repo files…";
+    }
     if(${JSON.stringify(page)} === "import-preview") {
       this.courses.back(cx);
       if(this.courses.page!=="imports") throw new Error("Import preview must return to the course list");

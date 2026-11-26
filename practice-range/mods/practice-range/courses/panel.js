@@ -4,7 +4,7 @@ import { watchFolder, window as appWindow } from "herdr";
 import { keyButton, spinner, textInput } from "../kit/controls.js";
 import { banner, paneBar, sectionLabel } from "../kit/pane.js";
 import { courseCommand, importTutorPreferences } from "./bridge.js";
-import { configuredEditor, configuredTutor } from "../bridge.js";
+import { configuredEditor, configuredTutor, generateRepoLesson } from "../bridge.js";
 import { tutorChat } from "../tutor/panel.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
@@ -25,6 +25,8 @@ export class CoursePanel {
     this.page = "catalog";
     this.busy = "";
     this.error = "";
+    this.repoLessonId = "";
+    this.generatingRepoLesson = false;
     this.pendingSave = false;
     this.saveLoop = false;
     this.watchTurn = 0;
@@ -66,6 +68,34 @@ export class CoursePanel {
   run(action, value, cx) {
     if (this.busy) return;
     cx.spawn(async cx => { await this.dispatch(action, value, cx); });
+  }
+
+  /** @param {string | null} moduleId @param {Context} cx */
+  generateRepoLesson(moduleId, cx) {
+    if (this.busy || !this.data || !this.host.tutor.enabled) return;
+    this.host.cancelTutor(cx);
+    const id = `repo-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const request = { id, courseId: this.data.course.id, contentVersion: this.data.course.contentVersion, ...(moduleId ? {moduleId} : {}) };
+    this.host.tutorRequestId = id;
+    this.host.tutorBusy = true;
+    this.generatingRepoLesson = true;
+    this.busy = "Writing a lesson from sampled repo files…";
+    this.error = ""; cx.notify();
+    cx.spawn(async cx => {
+      try {
+        const result = await generateRepoLesson(request);
+        if (this.host.tutorRequestId !== id) return;
+        this.data = result;
+        const lesson = this.data.repoLessons?.lessons.find(lesson => lesson.target === (moduleId ?? "architecture") && lesson.commit === this.data.attachment?.commit);
+        if (lesson) { this.repoLessonId = lesson.id; this.page = "repo-lesson"; }
+        if (this.host.sync) this.host.pushSoon(cx);
+      } catch (error) {
+        if (this.host.tutorRequestId === id) this.error = error instanceof Error ? error.message : String(error);
+      } finally {
+        if (this.host.tutorRequestId === id) { this.host.tutorRequestId = null; this.host.tutorBusy = false; }
+        this.generatingRepoLesson = false; this.busy = ""; cx.notify();
+      }
+    });
   }
 
   /** @param {string} action @param {Record<string, unknown>} value @param {Context} cx */
@@ -210,7 +240,7 @@ export class CoursePanel {
     else if(this.page==="imports") this.page="catalog";
     else if (this.data?.enrollment.review) this.run("review-end", {}, cx);
     else if (this.page === "task" && this.data?.enrollment.position) this.run("open", this.data.enrollment.position, cx);
-    else if (this.page === "lesson") { this.page = "modules"; this.pause(); }
+    else if (this.page === "lesson" || this.page === "repo-lesson") { this.page = "modules"; this.pause(); }
     else if (this.page === "modules") { this.page = "catalog"; this.pause(); }
     else { this.pause(); this.host.screen = "topics"; }
     cx.notify();
@@ -220,6 +250,7 @@ export class CoursePanel {
   render(t) {
     const body = v_flex().id("course-body").flex_1().min_h(0).overflow_y_scroll().p(16).gap(12);
     if (this.busy) body.child(h_flex().gap(8).child(spinner(t)).child(div().child(this.busy)));
+    if (this.generatingRepoLesson) body.child(keyButton(t,"cancel-repo-lesson","","Cancel generation",Boolean(this.host.tutorRequestId),cx=>this.host.cancelTutor(cx)));
     if (this.error) body.child(banner(t, this.error, t.blocked));
     if (this.page === "catalog") {
       body.child(div().font_semibold().child("Courses"))
@@ -245,6 +276,7 @@ export class CoursePanel {
       else if (this.data.course.preview) body.child(banner(t, "Course preview. Lesson pacing still needs learner testing. You can explore available modules without completing their prerequisites."));
       if (this.page === "modules") this.modules(body, t);
       else if (this.page === "lesson") this.lessonView(body, t);
+      else if (this.page === "repo-lesson") this.repoLessonView(body, t);
       else if (this.page === "task") this.taskView(body, t);
       if (["lesson", "task"].includes(this.page) && this.host.tutor.enabled) body.child(tutorChat(t, {
         messages: this.host.tutorThreads[this.helpKey()] ?? [], busy: this.host.tutorBusy, error: this.host.tutorError,
@@ -288,11 +320,15 @@ export class CoursePanel {
     const repo = this.data.attachment;
     body.child(sectionLabel(t, "Optional repo examples"));
     if (repo) body.child(div().text_color(t.muted).child(repo.available ? `${repo.name} · pinned at ${repo.commit.slice(0, 10)}` : repo.detail));
-    body.child(div().text_size(12).text_color(t.muted).child("Attach a repo in this language to include code excerpts in AI questions. The standard lessons stay available."))
+    body.child(div().text_size(12).text_color(t.muted).child("Attach a repo in this language for optional AI lessons and questions. Generation sends a bounded source sample to your configured model."))
       .child(textInput(t, this.repoInput, this.host.typing))
       .child(h_flex().gap(8).flex_wrap()
         .child(keyButton(t, "course-attach-repo", "", "Attach repo", !this.busy && Boolean(this.repoInput.value().trim()), cx => this.run("attach-repo", { path: this.repoInput.value() }, cx)))
         .child(keyButton(t, "course-detach-repo", "", "Detach", !this.busy && Boolean(repo), cx => this.run("detach-repo", {}, cx))));
+    body.child(keyButton(t,"course-repo-architecture","","Explain repo architecture",!this.busy && Boolean(repo?.available) && this.host.tutor.enabled,cx=>this.generateRepoLesson(null,cx)));
+    if (!this.host.tutor.enabled) body.child(div().text_size(12).text_color(t.muted).child("Enable the AI tutor in Setup to generate repo lessons."));
+    if (this.data.repoLessons?.error) body.child(banner(t,this.data.repoLessons.error));
+    for (const lesson of this.data.repoLessons?.lessons ?? []) body.child(keyButton(t,`repo-lesson-${lesson.id}`,"",`${lesson.title} · ${lesson.commit.slice(0,10)}`,!this.busy,cx=>{this.repoLessonId=lesson.id;this.page="repo-lesson";cx.notify();}));
     const next = this.data.recommendation;
     if (next) body.child(v_flex().gap(6).child(div().text_color(t.muted).child(next.reason))
       .child(keyButton(t, "course-recommendation", "", "Suggested next step", !this.busy && next.kind !== "practice", cx => {
@@ -321,9 +357,24 @@ export class CoursePanel {
   }
 
   /** @param {import("gpui-kit").Element} body @param {Theme} t */
+  repoLessonView(body, t) {
+    const lesson=this.data.repoLessons?.lessons.find(lesson=>lesson.id===this.repoLessonId);
+    if (!lesson) return;
+    body.child(sectionLabel(t,lesson.title))
+      .child(div().text_color(t.muted).child(`AI-generated reading · ${lesson.name} · ${lesson.commit.slice(0,10)}`))
+      .child(banner(t,`${lesson.scope} Source references are checked. The explanation may still contain mistakes.`));
+    for (const [index,section] of lesson.sections.entries()) {
+      body.child(sectionLabel(t,section.title)).child(markdown(`repo-text-${lesson.id}-${index}`,section.text));
+      for (const [refIndex,ref] of section.references.entries()) body.child(div().text_size(11).text_color(t.muted).child(`${ref.path}:${ref.start}-${ref.end}`))
+        .child(markdown(`repo-code-${lesson.id}-${index}-${refIndex}`,`\`\`\`${this.data.course.codeFence??"text"}\n${ref.code}\n\`\`\``));
+    }
+  }
+
+  /** @param {import("gpui-kit").Element} body @param {Theme} t */
   lessonView(body, t) {
     const lesson = this.lesson(), position = this.data.enrollment.position;
     if (!lesson || !position) return;
+    body.child(keyButton(t,"course-repo-module","","Explain this topic using my repo",!this.busy && Boolean(this.data.attachment?.available) && this.host.tutor.enabled,cx=>this.generateRepoLesson(lesson.id,cx)));
     const step = lesson.steps[position.step];
     body.child(sectionLabel(t, `${lesson.title} · ${position.step + 1} of ${lesson.steps.length}`));
     if (position.step === 0 && lesson.intro !== step.text) body.child(markdown("course-intro", lesson.intro));

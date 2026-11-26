@@ -176,3 +176,5 @@ export function cancelTutorRequest(id) { return tutorCommand("cancel", id); }
 export function askTutorQuestion(request) { return tutorCommand("ask", JSON.stringify(request)); }
 /** @param {Record<string, unknown>} request @returns {Promise<{reply: string}>} */
 export function askCourseQuestion(request) { return tutorCommand("ask-course", JSON.stringify(request)); }
+/** @param {Record<string, unknown>} request @returns {Promise<any>} */
+export function generateRepoLesson(request) { return tutorCommand("generate-repo-lesson", JSON.stringify(request)); }

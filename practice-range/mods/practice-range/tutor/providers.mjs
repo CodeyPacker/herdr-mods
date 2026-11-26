@@ -21,14 +21,14 @@ export async function checkProvider(provider, run = runTutorProcess) {
   return { ready: true };
 }
 
-export function providerArguments(provider, directory) {
+export function providerArguments(provider, directory, instructions = tutorInstructions) {
   if (provider === "codex") return ["exec", "--ignore-user-config", "--ephemeral", "--skip-git-repo-check", "--sandbox", "read-only", "--config", "approval_policy=\"never\"", "--config", "features.shell_tool=false", "--config", "features.apply_patch_freeform=false", "--config", "features.multi_agent=false", "--config", "features.apps=false", "--config", "features.plugins=false", "--config", "web_search=\"disabled\"", "--config", "project_doc_max_bytes=0", "--cd", directory, "--output-last-message", join(directory, "reply.txt"), "-"];
-  if (provider === "claude") return ["--print", "--safe-mode", "--tools", "", "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}', "--disable-slash-commands", "--permission-mode", "dontAsk", "--no-session-persistence", "--output-format", "json", "--system-prompt", tutorInstructions];
+  if (provider === "claude") return ["--print", "--safe-mode", "--tools", "", "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}', "--disable-slash-commands", "--permission-mode", "dontAsk", "--no-session-persistence", "--output-format", "json", "--system-prompt", instructions];
   throw new Error("Choose Codex or Claude.");
 }
 
-export async function requestReply(provider, prompt, directory, signal, run = runTutorProcess) {
-  const result = await run(provider, providerArguments(provider, directory), { cwd: directory, signal, input: provider === "codex" ? `${tutorInstructions}\n\n${prompt}` : prompt });
+export async function requestReply(provider, prompt, directory, signal, run = runTutorProcess, instructions = tutorInstructions) {
+  const result = await run(provider, providerArguments(provider, directory, instructions), { cwd: directory, signal, input: provider === "codex" ? `${instructions}\n\n${prompt}` : prompt });
   if (result.problem) throw new Error(result.problem);
   if (result.code !== 0) throw new Error(`${provider === "codex" ? "Codex" : "Claude"} could not answer. Check your CLI sign-in and account limits, then try again.`);
   let reply;
