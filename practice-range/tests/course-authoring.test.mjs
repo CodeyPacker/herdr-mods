@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { previewTutor, applyTutor } from "../mods/practice-range/courses/importer.mjs";
 import { courseCommand, enrollmentDirectory } from "../mods/practice-range/courses/service.mjs";
 import { loadCourse } from "../mods/practice-range/courses/loader.mjs";
-import { generateImportedModule, importedModuleContext } from "../mods/practice-range/courses/authoring.mjs";
+import { generateImportedModule, generateImportedExercises, importedModuleContext, exerciseContext } from "../mods/practice-range/courses/authoring.mjs";
 import { cancelRequest } from "../mods/practice-range/tutor/service.mjs";
 
 const git=(root,...args)=>execFileSync("git",["-C",root,...args],{encoding:"utf8"}).trim();
@@ -143,4 +143,75 @@ test("switching course versions while a provider runs preserves the newly select
   }}),/selected course version changed/);
   assert.deepEqual(await versions(f),before);
   assert.equal(JSON.parse(await readFile(join(f.parent,"current.json"),"utf8")).contentVersion,first.generated.contentVersion);
+});
+
+const ts={title:"Add two values",prompt:"Print the sum of 3 and 4. The output must be exactly `7`.",concept:"Values",starter:"// Print the sum\n",
+  solution:"console.log(3 + 4);\n",expected:"7",hints:["Use console.log.","Add with +."],wrong:[{code:"console.log(3 - 4);\n",why:"Subtracts instead of adding."}]};
+const cs={...ts,starter:"// Print the sum\n",solution:"System.Console.WriteLine(3 + 4);\n",wrong:[{code:"System.Console.WriteLine(3 * 4);\n",why:"Multiplies instead of adding."}]};
+async function readingVersion(t,language) {
+  const f=await fixture(t,language);
+  const reading=await generateImportedModule(f.data,f.config,f.request,{run:async()=>response(document(f.file))});
+  await courseCommand(f.data,"enroll",reading.generated);
+  return {...f,exerciseRequest:{...f.request,id:"write-exercises",contentVersion:reading.generated.contentVersion},readingVersion:reading.generated.contentVersion};
+}
+
+test("generated TypeScript exercises publish only after real reference, starter and wrong-answer checks",async t=>{
+  const f=await readingVersion(t,"typescript");
+  let calls=0,captured;
+  const result=await generateImportedExercises(f.data,f.config,f.exerciseRequest,{run:async(_provider,args,options)=>{
+    calls++;captured=JSON.parse(options.input);
+    assert.match(args[args.indexOf("--system-prompt")+1],/printed output/);
+    return response({exercises:[ts]});
+  }});
+  assert.equal(captured.module.id,f.request.moduleId);assert.equal(JSON.stringify(captured).includes(f.root),false);
+  const pack=await loadCourse(f.pack.id,result.generated.contentVersion,f.data),lesson=pack.lessons.find(lesson=>lesson.id===f.request.moduleId);
+  assert.equal(lesson.tasks.length,1);assert.equal(lesson.tasks[0].role,"generated");assert.equal(lesson.tasks[0].generated.baseVersion,f.readingVersion);
+  assert.equal(lesson.steps.at(-1).title,"Generated practice");assert.equal(pack.modules[1].generatedExercises,true);
+  assert.equal(JSON.parse(await readFile(join(f.parent,"current.json"),"utf8")).contentVersion,f.readingVersion,"Publication does not select the new version");
+  await courseCommand(f.data,"enroll",result.generated);
+  let state=await courseCommand(f.data,"task",{...result.generated,taskId:lesson.tasks[0].id});
+  assert.equal(state.course.lessons.find(item=>item.id===lesson.id).tasks[0].generated,true);
+  assert.equal(JSON.stringify(state.course).includes("Subtracts"),false,"Known wrong answers stay out of the panel snapshot");
+  await writeFile(state.file,ts.solution);
+  state=await courseCommand(f.data,"check",{...result.generated,taskId:lesson.tasks[0].id});
+  assert.equal(state.enrollment.tasks[lesson.tasks[0].id].independentPasses,1);
+  const reused=await generateImportedExercises(f.data,f.config,f.exerciseRequest,{run:async()=>{calls++;throw new Error("Must reuse");}});
+  assert.equal(reused.reused,true);assert.equal(reused.generated.contentVersion,result.generated.contentVersion);assert.equal(calls,1);
+  await assert.rejects(generateImportedExercises(f.data,f.config,{...f.exerciseRequest,contentVersion:result.generated.contentVersion},{run:async()=>{throw new Error("Must not run");}}),/already has exercises/);
+});
+
+test("exercises that fail validation, are unsuitable or skip validation save nothing",async t=>{
+  const f=await readingVersion(t,"typescript"),before=await versions(f);
+  const cases=[[{exercises:[{...ts,solution:"console.log(8);\n"}]},/reference answer did not pass/],
+    [{exercises:[{...ts,starter:ts.solution+"// start\n"}]},/starter already passes/],
+    [{exercises:[{...ts,wrong:[{code:"console.log(7);\n",why:"Same output."}]}]},/wrong answer passed/],
+    [{exercises:[{...ts,wrong:[{code:"console.log(3 +);\n",why:"Broken."}]}]},/does not compile/],
+    [{exercises:[{...ts,wrong:[{code:ts.solution,why:"Duplicate."}]}]},/invalid/],
+    [{exercises:[{...ts,hints:[]}]},/invalid/],
+    [{status:"unsuitable",reason:"Nothing to print."},/Nothing to print/]];
+  for(const [doc,pattern] of cases) {
+    await assert.rejects(generateImportedExercises(f.data,f.config,f.exerciseRequest,{run:async()=>response(doc)}),pattern);
+    assert.deepEqual(await versions(f),before);
+  }
+  const pack=await loadCourse(f.pack.id,f.readingVersion,f.data);
+  const context=await exerciseContext(f.data,pack,f.exerciseRequest);
+  const request={...f.exerciseRequest,kind:"exercises",contextHash:createHash("sha256").update(JSON.stringify(context)).digest("hex"),document:{exercises:[ts]}};
+  await assert.rejects(courseCommand(f.data,"publish-module",request),/must pass validation/);
+  await assert.rejects(courseCommand(f.data,"publish-module",request,{validated:"0".repeat(64)}),/must pass validation/);
+  assert.deepEqual(await versions(f),before);assert.deepEqual(await readdir(join(f.data,".course-authoring")),[]);
+});
+
+test("cancelling during exercise validation publishes nothing",async t=>{
+  const f=await readingVersion(t,"typescript"),before=await versions(f);
+  await assert.rejects(generateImportedExercises(f.data,f.config,f.exerciseRequest,{run:async()=>response({exercises:[ts]}),
+    check:async()=>{await cancelRequest(f.data,f.exerciseRequest.id);return {passed:true,kind:"passed",title:"",details:[]};}}),/cancelled/);
+  assert.deepEqual(await versions(f),before);
+});
+
+test("generated C# exercises run through the registered .NET program checker",async t=>{
+  const f=await readingVersion(t,"csharp");
+  const result=await generateImportedExercises(f.data,f.config,f.exerciseRequest,{run:async()=>response({exercises:[cs]})});
+  const pack=await loadCourse(f.pack.id,result.generated.contentVersion,f.data);
+  assert.equal(pack.lessons[1].tasks[0].mode,"program");assert.equal(pack.lessons[1].tasks[0].role,"generated");
+  await assert.rejects(generateImportedExercises(f.data,f.config,{...f.exerciseRequest,moduleId:f.pack.modules[0].id},{run:async()=>{throw new Error("Must not run");}}),/already has exercises/);
 });

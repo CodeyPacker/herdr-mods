@@ -104,6 +104,10 @@ if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToP
       const { generateImportedModule } = await import("../courses/authoring.mjs");
       result = await generateImportedModule(root, configPath, JSON.parse(value));
     }
+    else if (action === "generate-imported-exercises") {
+      const { generateImportedExercises } = await import("../courses/authoring.mjs");
+      result = await generateImportedExercises(root, configPath, JSON.parse(value));
+    }
     else throw new Error("Unknown tutor action.");
     console.log(JSON.stringify(result));
   } catch (error) { console.log(JSON.stringify({ error: error.message })); process.exitCode = 1; }

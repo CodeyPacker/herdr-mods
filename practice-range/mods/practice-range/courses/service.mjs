@@ -182,7 +182,7 @@ export async function courseCommand(root, action, request = {}, options = {}) {
       state = fresh(pack, request.entryPath ?? "beginner");
     }
     validateState(state, pack);
-    if (action === "publish-module") return publishImportedModule(root,pack,directory,state,request,options.ensureActive);
+    if (action === "publish-module") return publishImportedModule(root,pack,directory,state,request,options);
     if (action === "source") return { source: await courseSource(pack, directory, request) };
     const persist = async () => { await save(file, state); };
     if (action === "enroll") { await persist(); await save(preferred, { courseId: pack.id, contentVersion: pack.contentVersion }); }
@@ -312,7 +312,7 @@ async function snapshot(root, pack, state, directory) {
   const progress = active ? taskProgress(state, active.id) : null;
   // Reference content is returned only after an explicit reveal. Checks stay in the Node process.
   const lessons = (await restoreRepoExcerpts(directory,pack.lessons)).map(lesson => ({ ...lesson, tasks: lesson.tasks.map(task => ({
-    id: task.id, title: task.title, prompt: task.prompt, role: task.role, feedback: task.feedback,
+    id: task.id, title: task.title, prompt: task.prompt, role: task.role, feedback: task.feedback, generated: Boolean(task.generated),
     fixtures: task.fixtures.map(fixture => ({ id: fixture.id, declarations: fixture.declarations })),
     hints: task.id === active?.id ? task.hints.slice(0, progress.hintCount) : [],
     hintTotal: task.hints.length,

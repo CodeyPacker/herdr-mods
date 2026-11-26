@@ -57,6 +57,8 @@ try {
   generated.enrollment.position={moduleId:generatedId,step:0};generated.enrollment.activeTask=null;
   generated.enrollment.modules[generatedId]={seen:[],questions:{}};
   const generatedQuiz=structuredClone(generated);generatedQuiz.enrollment.position.step=1;
+  const generatedTask=structuredClone(importedTask);
+  Object.assign(generatedTask.course.lessons[0].tasks[0],{generated:true,role:"generated"});generatedTask.course.modules[0].generatedExercises=true;
   const importedCatalog=(await request("list")).courses;
   const cases = { catalog: ["catalog", null], versions: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules], "example-output": ["lesson", example],
     prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], review: ["task", review], "ai-lesson": ["lesson", modules], "ai-task": ["task", task], attached: ["modules", attached], "repo-missing": ["modules", missing], error: ["task", task],
@@ -66,6 +68,7 @@ try {
     "learning-profile":["catalog",null], "learning-profile-error":["modules",modules],
     "imported-authoring":["modules",authoring], "module-generating":["modules",authoring], "module-error":["modules",authoring],
     "generated-module":["lesson",generated], "generated-quiz":["lesson",generatedQuiz], "generated-modules":["modules",generated],
+    "exercise-authoring":["modules",generated], "generated-exercise":["task",generatedTask], "generated-exercise-modules":["modules",generatedTask],
     imports:["imports",null], "import-preview":["import-preview",null], "import-preferences":["import-preview",null], "import-error":["imports",null],
     "imported-catalog":["catalog",null], "imported-modules":["modules",importedModules], "imported-lesson":["lesson",importedLesson], "imported-quiz":["lesson",importedQuiz], "imported-task":["task",importedTask] };
   const requested = process.argv.slice(2);
@@ -93,7 +96,7 @@ export default class Fixture extends Syntax {
     if (${name === "versions"}) this.courses.catalog[0] = { ...this.courses.catalog[0], enrolledVersion: "0.0.1", versions: ["0.0.1", "0.1.0-preview.1"] };
     this.courses.data = ${JSON.stringify(data)};
     this.courses.page = ${JSON.stringify(page)};
-    if (${["imported-authoring","module-generating"].includes(name)}) this.tutor={enabled:true,provider:"claude"};
+    if (${["imported-authoring","module-generating","exercise-authoring"].includes(name)}) this.tutor={enabled:true,provider:"claude"};
     if (${name === "learning-profile"}) {
       this.courses.profile={configured:true,knownLanguages:["Python","JavaScript"]};
       this.courses.knownInput.set_value("Python, JavaScript");

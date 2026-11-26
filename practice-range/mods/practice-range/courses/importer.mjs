@@ -53,7 +53,7 @@ function safeReference(source, commit) {
   return { path, start:source.start, end:source.end, anchor:typeof source.anchor==="string"?source.anchor:"", commit };
 }
 
-function convertTask(ex,id,languageId) {
+export function convertTask(ex,id,languageId) {
   if (!segment(ex.id) || !["title","prompt","starter","solution"].every(field=>text(ex[field]))) fail("an exercise is missing its ID, prompt, starter or reference answer");
   const checks=[], labels=[];
   if (ex.kind === "program") {

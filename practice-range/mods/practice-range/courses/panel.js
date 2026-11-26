@@ -4,7 +4,7 @@ import { watchFolder, window as appWindow } from "herdr";
 import { keyButton, spinner, textInput } from "../kit/controls.js";
 import { banner, paneBar, sectionLabel } from "../kit/pane.js";
 import { courseCommand, importTutorPreferences } from "./bridge.js";
-import { configuredEditor, configuredTutor, generateRepoLesson, generateImportedModule } from "../bridge.js";
+import { configuredEditor, configuredTutor, generateRepoLesson, generateImportedModule, generateImportedExercises } from "../bridge.js";
 import { tutorChat } from "../tutor/panel.js";
 import { findLanguage } from "../languages/index.js";
 
@@ -122,17 +122,17 @@ export class CoursePanel {
     });
   }
 
-  /** @param {string} moduleId @param {Context} cx */
-  generateImportedModule(moduleId,cx) {
+  /** @param {string} moduleId @param {Context} cx @param {"reading" | "exercises"} [kind] */
+  generateImportedModule(moduleId,cx,kind="reading") {
     if(this.busy || !this.data || !this.host.tutor.enabled) return;
     this.host.cancelTutor(cx);
     const id=`module-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const request={id,courseId:this.data.course.id,contentVersion:this.data.course.contentVersion,moduleId};
     this.host.tutorRequestId=id; this.host.tutorBusy=true; this.generatingModule=true;
-    this.busy="Writing the unfinished lesson and quiz…"; this.error=""; cx.notify();
+    this.busy=kind==="exercises"?"Writing exercises, then checking every answer…":"Writing the unfinished lesson and quiz…"; this.error=""; cx.notify();
     cx.spawn(async cx=>{
       try {
-        const result=await generateImportedModule(request);
+        const result=await (kind==="exercises"?generateImportedExercises:generateImportedModule)(request);
         if(this.host.tutorRequestId!==id) return;
         this.generatingModule=false; this.host.tutorRequestId=null; this.host.tutorBusy=false;
         this.busy="Opening the generated course version…"; cx.notify();
@@ -425,6 +425,10 @@ export class CoursePanel {
         .child(div().text_size(11).text_color(t.dim).child(module.status === "planned" ? "Planned" : this.data.enrollment.modules[module.id]?.skipped ? "Skipped" : `${seen} steps read`))
         .child(keyButton(t, `skip-${module.id}`, "", this.data.enrollment.modules[module.id]?.skipped ? "Include" : "Skip", !this.busy && module.status === "available", cx => this.run("skip", { moduleId: module.id }, cx))));
       if(module.generated) body.child(div().text_size(11).text_color(t.muted).child("AI-generated reading and quiz"));
+      if(module.generatedExercises) body.child(div().text_size(11).text_color(t.muted).child("AI-generated exercises, checked before saving"));
+      const written=this.data.course.lessons.find(lesson=>lesson.id===module.id);
+      if(written && !written.tasks.length && this.data.course.legacy) body.child(keyButton(t,`write-exercises-${module.id}`,"","Write practice exercises",!this.busy && !this.data.enrollment.review && this.host.tutor.enabled,cx=>this.generateImportedModule(module.id,cx,"exercises")))
+        .child(div().text_size(11).text_color(t.muted).child("Every reference answer must pass and every starter and known wrong answer must fail before anything is saved. Needs the language's compiler. Saves a new version with your progress."));
       if(module.status==="planned" && this.data.course.legacy) body.child(keyButton(t,`write-module-${module.id}`,"","Write lesson and quiz",!this.busy && !this.data.enrollment.review && this.host.tutor.enabled && Boolean(repo?.available),cx=>this.generateImportedModule(module.id,cx)))
         .child(div().text_size(11).text_color(t.muted).child("Uses the imported course's pinned source. Saves a new version with your progress and answers. The original stays available."));
       const legacy=this.data.enrollment.legacy?.modules[module.id];
@@ -525,6 +529,7 @@ export class CoursePanel {
     const task = this.task();
     if (!task) return;
     const progress = this.data.enrollment.tasks[task.id];
+    if(task.generated) body.child(banner(t,"AI-generated exercise. Its reference passed and known wrong answers failed before saving. It checks printed output only."));
     if(progress.assistanceUnknown) body.child(banner(t,"This answer was imported. Earlier assistance is unknown. Use Start fresh before recording independent success."));
     if(progress.legacy) body.child(div().text_size(11).text_color(t.muted).child(`Tutor history: ${progress.legacy.runs??0} runs · ${progress.legacy.passed?"passed":"not passed"} · ${progress.legacy.hints??0} hints`));
     const review = this.data.enrollment.review;

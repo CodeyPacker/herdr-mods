@@ -47,6 +47,8 @@ Reimporting unchanged content reopens the existing copy without overwriting newe
 
 Planned imported modules can be written from the module list with **Write lesson and quiz** when AI help is enabled and a clone containing the course's pinned commit is attached. This writes reading and a quiz only, never coding exercises. Source references are checked against the pinned commit. The result is saved as a new course version that carries your progress and answers. The original version stays available. Repeating the request for the same module reopens the saved version.
 
+Imported modules with reading but no exercises offer **Write practice exercises**. Each generated exercise is a small program checked by its printed output. Before anything is saved, the reference answer must pass, and the starter and each known wrong answer must fail, using the language's own compiler. Exercises that fail this are discarded. Saved exercises are labeled as AI-generated and also go into a new course version.
+
 ## Updating an existing install
 
 1. Pull the latest `main`, or apply the patch.

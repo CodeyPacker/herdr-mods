@@ -6,11 +6,11 @@
  * @typedef {{ id: string, prompt: string, choices: {text: string, feedback: string}[], answer: number }} Question
  * @typedef {{ id: string, title: string, prompt: string, role: string, feedback: string,
  *   hints: string[], hintTotal?: number, solution: string | null, fixtures: {id: string, declarations: string}[],
- *   workspace?: {editable: {file: string, solution: string | null}[]} }} Task
+ *   workspace?: {editable: {file: string, solution: string | null}[]}, generated?: boolean }} Task
  * @typedef {{ id: string, title: string, intro: string, steps: Step[], questions: Question[],
  *   examples: Record<string, {code: string, readOnly?: boolean, sourceError?: string, repoRef?: {path: string, start: number, end: number, commit: string}, stdout?: string[], diagnostics?: {code: number, line: number}[]}>,
  *   tasks: Task[], drills?: string[], generated?: {source: string, baseVersion: string, commit: string, scope: string} }} Lesson
- * @typedef {{ id: string, title: string, status: string, part?: string, generated?: boolean }} Module
+ * @typedef {{ id: string, title: string, status: string, part?: string, generated?: boolean, generatedExercises?: boolean }} Module
  * @typedef {{ choice: number, correct: boolean, attempts: number, at: number }} QuestionProgress
  * @typedef {{ passed: boolean, title: string, details: string[], assisted: boolean, assistanceUnknown?: boolean }} CourseResult
  * @typedef {{ attempts: number, passes: number, independentPasses: number, hintCount: number,

@@ -161,7 +161,9 @@ export async function saveTutorPreference(provider) {
 
 /** @param {string} action @param {string} value */
 async function tutorCommand(action, value) {
-  const result = await exec("node", [`${appHome()}/mods/practice-range/tutor/service.mjs`, practiceDirectory(), `${appHome()}/practice-range.json`, action, value], { timeout: 150000 });
+  // Generated exercises run every reference, starter and wrong answer after the model replies.
+  const timeout = action === "generate-imported-exercises" ? 360000 : 150000;
+  const result = await exec("node", [`${appHome()}/mods/practice-range/tutor/service.mjs`, practiceDirectory(), `${appHome()}/practice-range.json`, action, value], { timeout });
   let data;
   try { data = JSON.parse(result.stdout); } catch { throw new Error("The tutor could not respond. Check your CLI installation and sign-in."); }
   if (result.code !== 0 || data.error) throw new Error(data.error || "The tutor request failed.");
@@ -180,3 +182,5 @@ export function askCourseQuestion(request) { return tutorCommand("ask-course", J
 export function generateRepoLesson(request) { return tutorCommand("generate-repo-lesson", JSON.stringify(request)); }
 /** @param {Record<string, unknown>} request @returns {Promise<any>} */
 export function generateImportedModule(request) { return tutorCommand("generate-imported-module", JSON.stringify(request)); }
+/** @param {Record<string, unknown>} request @returns {Promise<any>} */
+export function generateImportedExercises(request) { return tutorCommand("generate-imported-exercises", JSON.stringify(request)); }

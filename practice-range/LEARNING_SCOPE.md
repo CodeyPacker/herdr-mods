@@ -13,7 +13,7 @@ Status: in progress. Phase acceptance criteria below define completion, rather t
 | P2 | Done | Loader, pinned enrollment, retained versions, shared checker adapter and lesson flow. | None. |
 | P3 | Mostly done | All 18 modules, 56 tasks and the two-file final project pass reference, alternative and wrong-answer checks. | Standalone project checkpoints, experienced-learner readiness checks, learner pacing review. |
 | P4 | Mostly done | Course UI, setup and language-card entry, linked practice, optional AI, known-language preferences, shared editor opening. | Progress migration between pack versions. Real editor flow with a learner. |
-| P5 | Mostly done | Pinned repo excerpts, repo module and architecture lessons, source browsing, Tutor import, and writing unfinished imported modules as reading and quizzes. | Validated generated exercises for imported modules. Learner review of generated explanations. |
+| P5 | Done except learner review | Pinned repo excerpts, repo module and architecture lessons, source browsing, Tutor import, writing unfinished imported modules as reading and quizzes, and validated generated exercises for imported modules. | Learner review of generated explanations and exercises. |
 | P6 | Partly done | Course review, assistance tracking, explained recommendations. | Combined drill and course evidence, optional validated generated exercises, content-version transition tests. |
 | P7 | Not started | | Learner pilot and fixes, then C# and SQL courses. |
 | P8 | Not started | | Release checks, install and migration docs, Tutor launch transition. |
