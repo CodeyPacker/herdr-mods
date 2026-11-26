@@ -9,7 +9,10 @@ const packDirectory = dirname(fileURLToPath(import.meta.url));
 const processEnvironment = { DOTNET_CLI_TELEMETRY_OPTOUT: "1", DOTNET_NOLOGO: "1", DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1" };
 
 function runDotnetProcess(command, args, options = {}) {
-  return runProcess(command, args, { ...options, env: { ...processEnvironment, ...options.env } });
+  const run = runProcess(command, args, { ...options, env: { ...processEnvironment, ...options.env } });
+  if (process.platform !== "win32") return run;
+  // On Windows .NET ends printed lines with \r\n. The callers split and compare on \n.
+  return run.then(result => ({ ...result, stdout: result.stdout.replaceAll("\r\n", "\n"), stderr: result.stderr.replaceAll("\r\n", "\n") }));
 }
 
 async function writeJson(path, value) {
