@@ -9,7 +9,7 @@ const CHAT_TABS = "hey-chat.projectTabs";
 
 /** A chat tab's name. @param {string} folder */
 function tabName(folder) {
-  return `Chat · ${folderName(folder)}`;
+  return folderName(folder);
 }
 
 /**
@@ -80,7 +80,7 @@ export async function toggle(cx, folder) {
 }
 
 /** A quick chat's tab name. */
-export const QUICK_TAB = "Chat · Quick";
+export const QUICK_TAB = "Quick";
 
 /** Opens a quick chat: a new tab whose chat isn't saved, in an empty folder (main.js). */
 export function openQuick() {

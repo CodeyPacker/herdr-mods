@@ -24,7 +24,7 @@ export const deleting = {
     // is closed: a tab.close with no id would close whichever tab is focused.
     this.learnPane();
     const tab = this.ownPane()?.tab;
-    const isQuick = tab && spaces().some((s) => s.tabs.some((t) => t.id === tab && t.name === QUICK_TAB));
+    const isQuick = tab && spaces().some((s) => s.tabs.some((t) => t.id === tab && t.name.replace(/^Chat · /, "") === QUICK_TAB));
     if (isQuick) run("tab.close", { id: tab });
   },
 

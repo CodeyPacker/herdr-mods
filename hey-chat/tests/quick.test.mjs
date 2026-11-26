@@ -54,8 +54,11 @@ test('the quick chat trash closes its own tab, and never a project chat tab', as
   const v = await view({ quick: true, folder: '/q' });
   v.closeQuick();
   assert.deepEqual(closed, ['quick']);
+  tabs[0].name = 'Quick';
+  v.closeQuick();
+  assert.deepEqual(closed, ['quick', 'quick']);
   const other = await view({ quick: true, folder: '/q' });
   focusedPane = 'pp';
   other.closeQuick();
-  assert.deepEqual(closed, ['quick'], 'a project tab is left alone');
+  assert.deepEqual(closed, ['quick', 'quick'], 'a project tab is left alone');
 });

@@ -37,7 +37,7 @@ function setup({ legacy = false, otherSpace = false } = {}) {
 test('shortcut creates one dedicated chat tab and switches back without destroying it', async () => {
   const s = setup();
   await s.toggle();
-  assert.deepEqual(s.commands[0], { name: 'tab.new', args: { name: 'Chat · project', space: 'work', mod: 'hey-chat', props: { folder: '/project' } } });
+  assert.deepEqual(s.commands[0], { name: 'tab.new', args: { name: 'project', space: 'work', mod: 'hey-chat', props: { folder: '/project' } } });
   assert.deepEqual(s.saved(), { chat: { folder: '/project', previous: 'terminal' } });
   const chatPane = s.panes.find(p => p.mod === 'hey-chat');
   await s.toggle();
