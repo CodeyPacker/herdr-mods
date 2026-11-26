@@ -223,6 +223,7 @@ export default class HeyChat extends View {
     if (this.quick) forgetQuick(this.chats, this.folder).catch(() => {});
     this.scroll.release(); this.treeScroll.release(); this.searchInput.release(); this.initialsInput.release(); this.chatSearchInput.release();
     this.shortcuts.scroll.release();
+    for (const input of Object.values(this.messageColorInputs ?? {})) input.release();
     for (const box of Object.values(this.inputs)) box.release();
   }
 

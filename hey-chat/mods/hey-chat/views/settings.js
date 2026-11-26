@@ -1,6 +1,4 @@
-// The Settings dialog, centered over the pane. General: your picture (upload or drop a photo),
-// your initials and their color, how the chat shows, and agent setup. Shortcuts: each key, which
-// can be changed or turned off, and whether key hints show.
+// Settings has General preferences, a Theme tab for message colors, and configurable Shortcuts.
 import { div, svg } from "gpui-kit";
 import { h_flex, v_flex, Input } from "gpui-base";
 import { myPicture } from "../pictures.js";
@@ -13,6 +11,7 @@ import { divider } from "../kit/frame.js";
 import { listRow } from "../kit/list.js";
 import { legend } from "../kit/legend.js";
 import { sectionLabel } from "../kit/pane.js";
+import { MESSAGE_PALETTE, loadMessageColors, messageColors } from "../message-colors.js";
 
 /** @typedef {import("../kit/theme.js").Theme} Theme */
 
@@ -85,6 +84,38 @@ function generalTab(v, t) {
       .on_click((_e, cx) => { v.closeSettings(); v.setupOpen = true; v.refreshSetup(cx); cx.notify(); }).child("Agent setup"));
 }
 
+/** Independent message colors, with exact hex values and a live conversation preview. */
+function themeTab(v, t) {
+  const saved = loadMessageColors(), colors = messageColors(t, false);
+  const colorRow = (field, name) => v_flex().gap(6)
+    .child(h_flex().items_center().justify_between()
+      .child(label(t, name))
+      .child(div().id(`default-${field}`).text_size(11).text_color(t.muted).cursor_pointer()
+        .on_click((_e, cx) => { v.setMessageColor(field, ""); cx.notify(); }).child("Default")))
+    .child(h_flex().gap(10).items_center()
+      .child(h_flex().flex_1().min_w(0).flex_wrap().gap(4).children(MESSAGE_PALETTE.map(color =>
+        choice(t, `${field}-${color.slice(1)}`, saved[field] === color, div().size(18).rounded_full().bg(color), () => v.setMessageColor(field, color)))))
+      .child(h_flex().w(132).h(34).px(8).items_center().rounded(8).bg(t.background).border_1().border_color(v.messageColorErrors?.[field] ? t.blocked : t.border)
+        .child(Input.new(v.messageColorInputs[field]).flex_1().text_size(12).text_color(t.foreground))))
+    .when(Boolean(v.messageColorErrors?.[field]), el => el.child(div().text_size(11).text_color(t.blocked).child(v.messageColorErrors[field])));
+  return v_flex().id("settings-theme").flex_1().min_h(0).overflow_y_scrollbar().gap(14).pr(4)
+    .child(div().text_size(12).text_color(t.dim).child("Applies to all HeyChat conversations. Clear a color to follow the current Herdr theme."))
+    .child(sectionLabel(t, "Your messages"))
+    .child(colorRow("userBackground", "Background"))
+    .child(colorRow("userText", "Text"))
+    .child(divider(t))
+    .child(sectionLabel(t, "Agent messages"))
+    .child(colorRow("agentBackground", "Background"))
+    .child(colorRow("agentText", "Text"))
+    .child(divider(t))
+    .child(label(t, "Preview"))
+    .child(v_flex().id("message-color-preview").p(12).gap(8).rounded(12).bg(t.background)
+      .child(h_flex().justify_end().child(div().px(12).py(8).rounded(12).text_size(13).bg(colors.userBackground).text_color(colors.userText).child("Can you review these changes?")))
+      .child(h_flex().child(div().px(12).py(8).rounded(12).text_size(13).bg(colors.agentBackground).text_color(colors.agentText).child("I’ll review the changes."))))
+    .child(div().id("reset-message-colors").py(6).text_size(12).text_color(t.accent).cursor_pointer()
+      .on_click((_e, cx) => { v.resetMessageColors(); cx.notify(); }).child("Use theme defaults"));
+}
+
 /**
  * The Shortcuts tab: the key hints switch, then each shortcut with its key and whether it is on.
  * A click on a row turns it on or off. A click on a key waits for a new one. The keys work as
@@ -141,10 +172,11 @@ export function settingsDialog(v, t) {
       .child(roundButton(t, "settings-close", `${ICONS}/close.svg`, 30, (cx) => { v.closeSettings(); cx.notify(); })))
     .child(tabStrip(t, [
       { id: "settings-general", label: "General", on: tab === "general", click: (cx) => { v.setSettingsTab("general"); cx.notify(); } },
+      { id: "settings-theme", label: "Theme", on: tab === "theme", click: (cx) => { v.setSettingsTab("theme"); cx.notify(); } },
       { id: "settings-shortcuts", label: "Shortcuts", on: tab === "shortcuts", click: (cx) => { v.setSettingsTab("shortcuts"); cx.notify(); } },
     ]))
     .child(divider(t))
-    .child(tab === "shortcuts" ? shortcutsTab(v, t) : generalTab(v, t));
+    .child(tab === "shortcuts" ? shortcutsTab(v, t) : tab === "theme" ? themeTab(v, t) : generalTab(v, t));
   return h_flex().id("settings-around").absolute().top(0).left(0).size_full().items_center().justify_center().bg("#00000066")
     .on_mouse_down("left", (_e, cx) => { v.closeSettings(); cx.notify(); })
     .child(card);

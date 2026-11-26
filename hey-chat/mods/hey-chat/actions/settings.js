@@ -1,8 +1,9 @@
-// The Settings dialog: its General tab (your picture, initials and color, and how the chat
-// shows) and its Shortcuts tab, where each key can be changed or turned off.
+// Settings: General preferences, message colors in Theme, and configurable Shortcuts.
 import { saveMe, pickPhoto, importPhoto, dropPhoto } from "../me.js";
 import { keyLabel } from "../shortcuts.js";
 import { CONDENSE_CHAT, SHOW_PLAN, remember } from "../common.js";
+import { InputState } from "gpui-base";
+import { COLOR_FIELDS, loadMessageColors, saveMessageColor, resetMessageColors } from "../message-colors.js";
 
 /** The kit's option for whether key hints show. */
 const HINTS = "hints";
@@ -57,6 +58,7 @@ export const settings = {
     this.zone = "dialog";
     this.handle.focus();
     if (this.settingsTab === "shortcuts") this.shortcuts.show();
+    if (this.settingsTab === "theme") this.prepareMessageColors();
   },
 
   /** Closes Settings and gives the message box the keyboard back. */
@@ -66,11 +68,40 @@ export const settings = {
     this.focusInput();
   },
 
-  /** Shows a tab: "general" or "shortcuts". The Shortcuts tab takes the keys while it shows. @param {string} tab */
+  /** Shows General, Theme or Shortcuts. The Shortcuts tab takes the keys while it shows. @param {string} tab */
   setSettingsTab(tab) {
     this.settingsTab = tab;
+    if (tab === "theme") this.prepareMessageColors();
     if (tab === "shortcuts") { this.shortcuts.show(); this.zone = "dialog"; this.handle.focus(); }
     else this.shortcuts.hide();
+  },
+
+  prepareMessageColors() {
+    const saved = loadMessageColors();
+    this.messageColorErrors = {};
+    this.messageColorInputs ??= Object.fromEntries(COLOR_FIELDS.map(field => {
+      const input = InputState.new({placeholder:"Theme default"});
+      input.on("focus", (_e, cx) => { this.zone = "dialog"; cx.notify(); });
+      input.on("change", (_e, cx) => { this.setMessageColor(field, input.value()); cx.notify(); });
+      return [field, input];
+    }));
+    for (const field of COLOR_FIELDS) this.messageColorInputs[field].set_value(saved[field] ?? "");
+  },
+
+  setMessageColor(field, value) {
+    this.messageColorErrors ??= {};
+    if (!saveMessageColor(field, value)) {
+      this.messageColorErrors[field] = "Use a hex color, such as #2563eb or #2563eb80.";
+      return;
+    }
+    delete this.messageColorErrors[field];
+    const input = this.messageColorInputs?.[field];
+    if (input && input.value() !== value) input.set_value(value);
+  },
+
+  resetMessageColors() {
+    resetMessageColors();
+    this.prepareMessageColors();
   },
 
   /** Your picture: a built-in one's path, or null for initials. @param {string | null} picture */
