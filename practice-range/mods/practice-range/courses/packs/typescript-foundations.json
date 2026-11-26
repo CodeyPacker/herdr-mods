@@ -1,0 +1,1169 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": "0.1.0-preview.1",
+  "id": "course:ts-foundations",
+  "languageId": "typescript",
+  "runner": {
+    "registeredLanguage": "typescript",
+    "compiler": {
+      "name": "typescript",
+      "range": "=6.0.3"
+    },
+    "node": ">=20"
+  },
+  "title": "Build a task tracker with TypeScript",
+  "audience": [
+    "New to programming",
+    "Experienced in another language, new to TypeScript"
+  ],
+  "prerequisiteConcepts": [],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:ts-foundations/module/save",
+      "order": "listed"
+    },
+    {
+      "id": "experienced",
+      "start": "course:ts-foundations/module/save",
+      "readiness": [
+        "R1",
+        "R2",
+        "R3",
+        "R4"
+      ],
+      "description": "Try each group’s readiness task or skip freely. A skip records navigation only."
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/save",
+      "description": "Save a two-line script and identify the output and the line of an error.",
+      "assessment": "course:ts-foundations/module/save"
+    },
+    {
+      "id": "outcome/values",
+      "description": "Trace assignments, compute a number, construct a label, and repair a type mismatch.",
+      "assessment": "course:ts-foundations/module/values"
+    },
+    {
+      "id": "outcome/decisions",
+      "description": "Choose a branch using equality, ordering and boolean operators. Distinguish empty text and zero from absent data.",
+      "assessment": "course:ts-foundations/module/decisions"
+    },
+    {
+      "id": "outcome/functions",
+      "description": "Write a typed function with a return value and local state. Explain why a name is out of scope.",
+      "assessment": "course:ts-foundations/module/functions"
+    },
+    {
+      "id": "outcome/lists",
+      "description": "Build and traverse an array with a for-of loop and an accumulator.",
+      "assessment": "course:ts-foundations/module/lists"
+    },
+    {
+      "id": "outcome/shapes",
+      "description": "Describe a task with a type alias or interface, read a property and update an object while keeping its input intact.",
+      "assessment": "course:ts-foundations/module/shapes"
+    },
+    {
+      "id": "outcome/missing",
+      "description": "Represent a missing owner or due date. Use string literal unions, null checks and typeof to narrow a value.",
+      "assessment": "course:ts-foundations/module/missing"
+    },
+    {
+      "id": "outcome/collections",
+      "description": "Select and transform tasks with callbacks. Build a Map of groups and a Set of unique owners.",
+      "assessment": "course:ts-foundations/module/collections"
+    },
+    {
+      "id": "outcome/tagged",
+      "description": "Model tag/payload pairs, use the tag to compute a result, and repair a field read.",
+      "assessment": "course:ts-foundations/module/tagged"
+    },
+    {
+      "id": "outcome/boundary",
+      "description": "Accept unknown input, distinguish it from unchecked any, and inspect real properties before accepting a task.",
+      "assessment": "course:ts-foundations/module/boundary"
+    },
+    {
+      "id": "outcome/modules",
+      "description": "Import and export values and types. Locate strict and target in supplied compiler settings and predict their roles.",
+      "assessment": "course:ts-foundations/module/modules"
+    },
+    {
+      "id": "outcome/checks",
+      "description": "Interpret expected and actual values, isolate an off-by-one defect, and write a distinguishing test.",
+      "assessment": "course:ts-foundations/module/checks"
+    },
+    {
+      "id": "outcome/errors",
+      "description": "Separate an expected business outcome from an exception and safely explain an unknown thrown value.",
+      "assessment": "course:ts-foundations/module/errors"
+    },
+    {
+      "id": "outcome/async",
+      "description": "Return a promise, await a local source and handle fulfillment and rejection.",
+      "assessment": "course:ts-foundations/module/async"
+    },
+    {
+      "id": "outcome/generic",
+      "description": "Preserve input/output types with a generic function and describe task projections with Pick, Omit and Partial.",
+      "assessment": "course:ts-foundations/module/generic"
+    },
+    {
+      "id": "outcome/compose",
+      "description": "Read fields, constructors and methods in an existing class, then compose its local reader with pure functions.",
+      "assessment": "course:ts-foundations/module/compose"
+    },
+    {
+      "id": "outcome/tracker",
+      "description": "Join task edits, input checks and a local asynchronous reader through module boundaries.",
+      "assessment": "course:ts-foundations/module/tracker"
+    },
+    {
+      "id": "outcome/report",
+      "description": "Independently combine validation, reporting, error handling, local async behavior and regression tests.",
+      "assessment": "course:ts-foundations/module/report"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:ts-foundations/module/save",
+      "title": "Save, run, read output",
+      "prerequisites": [],
+      "teaches": [
+        "save-run",
+        "read-output"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/values",
+      "title": "Values, variables and inference",
+      "prerequisites": [
+        "course:ts-foundations/module/save"
+      ],
+      "teaches": [
+        "binding",
+        "numeric-expression",
+        "text-expression",
+        "inference",
+        "diagnostic"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:ts-foundations/module/decisions",
+      "title": "Make a decision",
+      "prerequisites": [
+        "course:ts-foundations/module/values"
+      ],
+      "teaches": [
+        "branch",
+        "truthiness",
+        "boolean"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/functions",
+      "title": "Give a calculation a name",
+      "prerequisites": [
+        "course:ts-foundations/module/decisions"
+      ],
+      "teaches": [
+        "function",
+        "scope",
+        "annotation"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/lists",
+      "title": "Work through a list",
+      "prerequisites": [
+        "course:ts-foundations/module/functions"
+      ],
+      "teaches": [
+        "array",
+        "loop"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/shapes",
+      "title": "Describe a task",
+      "prerequisites": [
+        "course:ts-foundations/module/functions",
+        "course:ts-foundations/module/lists"
+      ],
+      "teaches": [
+        "object-shape",
+        "type-alias",
+        "interface"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/missing",
+      "title": "Handle a missing value",
+      "prerequisites": [
+        "course:ts-foundations/module/shapes",
+        "course:ts-foundations/module/decisions"
+      ],
+      "teaches": [
+        "optional",
+        "nullish",
+        "literal-union",
+        "narrowing"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/collections",
+      "title": "Group and transform tasks",
+      "prerequisites": [
+        "course:ts-foundations/module/lists",
+        "course:ts-foundations/module/shapes",
+        "course:ts-foundations/module/missing"
+      ],
+      "teaches": [
+        "callback",
+        "transform",
+        "map-set"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/tagged",
+      "title": "Choose fields by case",
+      "prerequisites": [
+        "course:ts-foundations/module/missing",
+        "course:ts-foundations/module/functions",
+        "course:ts-foundations/module/shapes",
+        "course:ts-foundations/module/decisions"
+      ],
+      "teaches": [
+        "discriminant",
+        "object-union"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:ts-foundations/module/boundary",
+      "title": "Read unknown data",
+      "prerequisites": [
+        "course:ts-foundations/module/tagged",
+        "course:ts-foundations/module/collections"
+      ],
+      "teaches": [
+        "unknown",
+        "validation",
+        "erasure"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/modules",
+      "title": "Split code into modules",
+      "prerequisites": [
+        "course:ts-foundations/module/functions",
+        "course:ts-foundations/module/shapes"
+      ],
+      "teaches": [
+        "import-export",
+        "compiler-config"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/checks",
+      "title": "Read and write checks",
+      "prerequisites": [
+        "course:ts-foundations/module/modules",
+        "course:ts-foundations/module/collections"
+      ],
+      "teaches": [
+        "tests",
+        "debugging"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/errors",
+      "title": "Recover from errors",
+      "prerequisites": [
+        "course:ts-foundations/module/boundary",
+        "course:ts-foundations/module/checks"
+      ],
+      "teaches": [
+        "throw-catch",
+        "failure"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/async",
+      "title": "Wait for local data",
+      "prerequisites": [
+        "course:ts-foundations/module/errors",
+        "course:ts-foundations/module/modules"
+      ],
+      "teaches": [
+        "promise",
+        "await",
+        "async-fixture"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/generic",
+      "title": "Keep a type relationship",
+      "prerequisites": [
+        "course:ts-foundations/module/functions",
+        "course:ts-foundations/module/missing",
+        "course:ts-foundations/module/collections"
+      ],
+      "teaches": [
+        "generic",
+        "utility"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/compose",
+      "title": "Connect small pieces",
+      "prerequisites": [
+        "course:ts-foundations/module/async",
+        "course:ts-foundations/module/generic",
+        "course:ts-foundations/module/checks"
+      ],
+      "teaches": [
+        "composition",
+        "class-reading"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/tracker",
+      "title": "Assemble the tracker",
+      "prerequisites": [
+        "course:ts-foundations/module/compose",
+        "course:ts-foundations/module/boundary",
+        "course:ts-foundations/module/tagged"
+      ],
+      "teaches": [
+        "project-workspace"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:ts-foundations/module/report",
+      "title": "Deliver an unfamiliar report",
+      "prerequisites": [
+        "course:ts-foundations/module/tracker"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "planned"
+    }
+  ],
+  "project": "project/project.json",
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  },
+  "preview": true,
+  "lessons": [
+    {
+      "id": "course:ts-foundations/module/values",
+      "title": "Values that stay and values that change",
+      "requires": [
+        "save-run",
+        "read-output"
+      ],
+      "outcomes": [
+        {
+          "id": "trace",
+          "can": "Predict the order and values printed after a numeric update.",
+          "assessment": [
+            "predict-count",
+            "course:ts-foundations/task/arrival-log"
+          ]
+        },
+        {
+          "id": "infer",
+          "can": "Declare a numeric variable with an inferred type and calculate the number remaining.",
+          "assessment": [
+            "course:ts-foundations/task/remaining"
+          ]
+        },
+        {
+          "id": "label",
+          "can": "Use a fixed text binding and combine supplied text in order.",
+          "assessment": [
+            "course:ts-foundations/task/shelf-label"
+          ]
+        },
+        {
+          "id": "repair",
+          "can": "Identify a number assigned to a text variable and repair the numeric count.",
+          "assessment": [
+            "predict-error",
+            "course:ts-foundations/task/repair-count"
+          ]
+        },
+        {
+          "id": "transfer",
+          "can": "Preserve a starting value when calculating a changed value in another setting.",
+          "assessment": [
+            "course:ts-foundations/task/seat-snapshot"
+          ]
+        }
+      ],
+      "intro": "A task board starts the day with some open tasks. When more arrive, its count changes. How can a program keep the original count and show the new one?",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Give a value a name",
+          "text": "A value is a piece of data. 4 is a number. \"Desk\" is text (a string). true and false are the two boolean values. A variable is a name for a value. const opening = 4 gives a fixed name its first value. let open = opening gives a second name the same number and allows us to assign it a new value later. Read = as “gets.” A semicolon ends a statement. The program runs these statements from top to bottom."
+        },
+        {
+          "kind": "prediction",
+          "title": "Trace the count",
+          "text": "Read the example before running it. console.log(value) prints the current value on its own line. The + between two numbers adds them. On a line such as open = open + 1, calculate the right side first.",
+          "example": "board",
+          "questions": [
+            "predict-count"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Run the board",
+          "text": "Run the example and compare each printed line with your prediction. The first line of output shows the opening count. The next print sees the updated open count. Assigning open a new value leaves opening at 4. For numbers, subtraction uses -. For text, + joins the pieces in order. In the second example the spaces inside the quotes become part of the label.",
+          "examples": [
+            "board",
+            "label"
+          ]
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict a type error",
+          "text": "TypeScript uses the initial value to work out a type (inference). In let count = 4, count can hold another number. Writing : number after the name would state the type explicitly (an annotation). Quoted digits are text. Look at the marked error example before you check it.",
+          "example": "bad-count",
+          "questions": [
+            "predict-error"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Read the diagnostic",
+          "text": "Check the marked file. TS2322 is the compiler’s way of saying the value on the right has a type the name on the left cannot hold. The checker stops before running this answer. At runtime JavaScript uses the values themselves. In the label example it joins strings. A type annotation would not convert quoted digits into a number.",
+          "example": "bad-count"
+        },
+        {
+          "kind": "modification",
+          "title": "Update a delivery",
+          "text": "Read the supplied opening and change values above the editor. Each check can supply different values. An input declaration such as const opening: number = 6 supplies a number you can read. Edit the starter, save, and compare both prints.",
+          "task": "course:ts-foundations/task/arrival-log"
+        },
+        {
+          "kind": "independent",
+          "title": "Write two small answers",
+          "text": "Work from the prompt, then save each answer. One computes a changing number. The other constructs a fixed text label.",
+          "tasks": [
+            "course:ts-foundations/task/remaining",
+            "course:ts-foundations/task/shelf-label"
+          ]
+        },
+        {
+          "kind": "debugging",
+          "title": "Repair a broken count",
+          "text": "Read the compiler message before editing. Trace the value in the starter back to the line that gave it its type.",
+          "task": "course:ts-foundations/task/repair-count"
+        }
+      ],
+      "questions": [
+        {
+          "id": "predict-count",
+          "prompt": "What are the two output lines, in order?",
+          "example": "board",
+          "choices": [
+            {
+              "text": "4 then 5",
+              "feedback": "The first print runs before the assignment, the second after it."
+            },
+            {
+              "text": "5 then 5",
+              "feedback": "The later assignment cannot change a line that has already printed."
+            },
+            {
+              "text": "4 then 4",
+              "feedback": "open is a separate variable and receives the new number."
+            }
+          ],
+          "answer": 0
+        },
+        {
+          "id": "predict-error",
+          "prompt": "What happens when the Practice Range checker checks this file?",
+          "example": "bad-count",
+          "choices": [
+            {
+              "text": "It prints 5.",
+              "feedback": "The checker checks types before running the file, and there is no print call."
+            },
+            {
+              "text": "It converts the text to a number.",
+              "feedback": "Assignment does not parse text."
+            },
+            {
+              "text": "It reports an error on the assignment.",
+              "feedback": "count was inferred as number. The quotes make the new value a string."
+            }
+          ],
+          "answer": 2
+        }
+      ],
+      "examples": {
+        "board": {
+          "stdout": [
+            "4",
+            "5"
+          ],
+          "code": "const opening = 4;\nlet open = opening;\nconsole.log(open);\nopen = open + 1;\nconsole.log(open);\n"
+        },
+        "label": {
+          "stdout": [
+            "Desk shelf"
+          ],
+          "code": "const area = \"Desk\";\nconst label = area + \" shelf\";\nconsole.log(label);\n"
+        },
+        "bad-count": {
+          "diagnostics": [
+            {
+              "code": 2322,
+              "line": 2
+            }
+          ],
+          "code": "let count = 4;\ncount = \"5\";\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/arrival-log",
+          "role": "guided",
+          "title": "Show a delivery arriving",
+          "concepts": [
+            "binding",
+            "numeric-expression"
+          ],
+          "prompt": "The supplied numbers opening and change tell you how many tasks were open and how many just arrived. The starter prints the opening count and an outdated final count. Update the let variable total between the two print lines. With 6 open and 2 arriving, print 6 then 8, one number per line.",
+          "hints": [
+            "Read the print lines from top to bottom. Which one should see the new value?",
+            "An assignment calculates its right side before updating the name on its left.",
+            "Use the current total and the arrival count in one addition between the prints."
+          ],
+          "starter": "let total = opening;\nconsole.log(total);\nconsole.log(total);\n",
+          "solution": "let total = opening;\nconsole.log(total);\ntotal = total + change;\nconsole.log(total);\n",
+          "mode": "script",
+          "rules": [
+            {
+              "kind": "VariableDeclaration",
+              "name": "total",
+              "declaration": "let",
+              "message": "Use let for total so another number can be assigned."
+            }
+          ],
+          "checks": [
+            "__same(__logs(), [String(opening), String(opening + change)])",
+            "total === opening + change"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "morning",
+              "declarations": "const opening: number = 6;\nconst change: number = 2;\n"
+            },
+            {
+              "id": "empty",
+              "declarations": "const opening: number = 0;\nconst change: number = 0;\n"
+            },
+            {
+              "id": "busy",
+              "declarations": "const opening: number = 9;\nconst change: number = 3;\n"
+            }
+          ],
+          "feedback": "Compare the two printed lines with the opening count and the updated count, in that order."
+        },
+        {
+          "id": "course:ts-foundations/task/remaining",
+          "role": "independent",
+          "title": "Count unfinished tasks",
+          "concepts": [
+            "inference",
+            "numeric-expression",
+            "binding"
+          ],
+          "prompt": "The supplied number opening is the number of tasks at the start. change is how many finished, between zero and opening. Declare a let variable named remaining. Its value must be the number still unfinished and its inferred type must be number. Leave off the type annotation. With 6 tasks and 2 finished, remaining is 4.",
+          "hints": [
+            "Which input is the whole group?",
+            "Finishing tasks makes the group smaller. A let declaration can calculate its initial value.",
+            "Use the two supplied names in the calculation. The compiler can infer the result of subtracting numbers."
+          ],
+          "starter": "// Declare remaining here.\n",
+          "solution": "let remaining = opening - change;\n",
+          "mode": "script",
+          "rules": [
+            {
+              "kind": "VariableDeclaration",
+              "name": "remaining",
+              "declaration": "let",
+              "message": "Use let for remaining so another number can be assigned."
+            },
+            {
+              "kind": "VariableDeclaration",
+              "name": "remaining",
+              "has": "type",
+              "max": 0,
+              "message": "Leave off the annotation on remaining so the compiler infers its type."
+            }
+          ],
+          "checks": [
+            "remaining === opening - change"
+          ],
+          "typeChecks": [
+            "__Equal<typeof remaining, number>"
+          ],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "morning",
+              "declarations": "const opening: number = 6;\nconst change: number = 2;\n"
+            },
+            {
+              "id": "empty",
+              "declarations": "const opening: number = 0;\nconst change: number = 0;\n"
+            },
+            {
+              "id": "busy",
+              "declarations": "const opening: number = 9;\nconst change: number = 3;\n"
+            }
+          ],
+          "feedback": "Check the value with an empty queue, and check whether the declaration lets TypeScript infer number."
+        },
+        {
+          "id": "course:ts-foundations/task/shelf-label",
+          "role": "independent",
+          "title": "Label a task shelf",
+          "concepts": [
+            "text-expression",
+            "binding"
+          ],
+          "prompt": "Two supplied text values, area and owner, identify a shelf. Give the fixed label the name label using const. It must contain the area, a slash with one space on each side, and the owner, in that order. For area \"Desk\" and owner \"Jo\", produce \"Desk / Jo\". Keep empty text and all input spaces exactly as supplied.",
+          "hints": [
+            "Write down the three pieces of text in their final order.",
+            "The slash and its two spaces are themselves a text value.",
+            "Use + between text values. Quoting a variable name would put that name in the label."
+          ],
+          "starter": "// Declare label here.\n",
+          "solution": "const label = area + \" / \" + owner;\n",
+          "mode": "script",
+          "rules": [
+            {
+              "kind": "VariableDeclaration",
+              "name": "label",
+              "declaration": "const",
+              "message": "Use const for the fixed label."
+            }
+          ],
+          "checks": [
+            "label === area + \" / \" + owner"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "desk",
+              "declarations": "const area: string = \"Desk\";\nconst owner: string = \"Jo\";\n"
+            },
+            {
+              "id": "empty",
+              "declarations": "const area: string = \"\";\nconst owner: string = \"Li \";\n"
+            },
+            {
+              "id": "other",
+              "declarations": "const area: string = \" Garden\";\nconst owner: string = \"\";\n"
+            }
+          ],
+          "feedback": "Compare the order and spaces against the two inputs in the failed case."
+        },
+        {
+          "id": "course:ts-foundations/task/repair-count",
+          "role": "debug",
+          "title": "Repair a number stored as text",
+          "concepts": [
+            "inference",
+            "numeric-expression",
+            "diagnostic"
+          ],
+          "prompt": "The supplied opening and change are numbers of tasks and new arrivals. The starter should keep a numeric variable called count and add the arrivals. Read its diagnostic, repair it, then save. The final value must be a number even when there are no arrivals.",
+          "hints": [
+            "Read the line number first. Which line gave count its starting type?",
+            "Quotation marks make text. The characters inside quotes do not read a variable.",
+            "Start from the supplied numeric opening count. Then add the supplied change."
+          ],
+          "starter": "let count = \"opening\";\ncount = opening + change;\n",
+          "solution": "let count = opening;\ncount = count + change;\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "count === opening + change"
+          ],
+          "typeChecks": [
+            "__Equal<typeof count, number>"
+          ],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "morning",
+              "declarations": "const opening: number = 6;\nconst change: number = 2;\n"
+            },
+            {
+              "id": "empty",
+              "declarations": "const opening: number = 0;\nconst change: number = 0;\n"
+            },
+            {
+              "id": "busy",
+              "declarations": "const opening: number = 9;\nconst change: number = 3;\n"
+            }
+          ],
+          "feedback": "Trace the first value assigned to count and check the resulting number includes both inputs."
+        },
+        {
+          "id": "course:ts-foundations/task/seat-snapshot",
+          "role": "review",
+          "title": "Save a before-and-after seat count",
+          "concepts": [
+            "binding",
+            "numeric-expression",
+            "inference"
+          ],
+          "prompt": "A small workshop supplies two numbers, seats and booked. booked is between zero and seats. Save the original seat count as before and the free count after booking as after. The two values must be numbers. With 9 seats and 4 bookings the values are 9 and 5. This time no output is required.",
+          "hints": [
+            "A name can hold the value of another name at a particular point.",
+            "Use the original seat count for the first value.",
+            "Calculate the second value from the original count and the bookings."
+          ],
+          "starter": "// Save before and after here.\n",
+          "solution": "const before = seats;\nconst after = before - booked;\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "before === seats",
+            "after === seats - booked"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "workshop",
+              "declarations": "const seats: number = 9;\nconst booked: number = 4;\n"
+            },
+            {
+              "id": "sold",
+              "declarations": "const seats: number = 7;\nconst booked: number = 7;\n"
+            },
+            {
+              "id": "quiet",
+              "declarations": "const seats: number = 5;\nconst booked: number = 0;\n"
+            }
+          ],
+          "feedback": "Compare the original number to before, then account for every booking in after."
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/seat-snapshot",
+        "afterModule": "course:ts-foundations/module/functions",
+        "evidence": "Open a fresh starter after Functions, with the prior answer closed. A first unaided pass on both counts is later evidence of tracing and arithmetic. A hinted pass remains assisted."
+      },
+      "drills": [
+        "variables/const-number",
+        "variables/let-reassign",
+        "variables/infer-let"
+      ],
+      "drillGap": "These drills isolate declaration forms. They do not check a snapshot against changing supplied input pairs."
+    },
+    {
+      "id": "course:ts-foundations/module/tagged",
+      "title": "Choose the fields that belong to a case",
+      "requires": [
+        "binding",
+        "text-expression",
+        "numeric-expression",
+        "diagnostic",
+        "branch",
+        "function",
+        "object-shape",
+        "type-alias",
+        "interface",
+        "literal-union",
+        "narrowing",
+        "truthiness"
+      ],
+      "outcomes": [
+        {
+          "id": "trace",
+          "can": "Trace a tag check and identify which fields exist on the remaining path.",
+          "assessment": [
+            "predict-output",
+            "predict-property",
+            "course:ts-foundations/task/describe-update"
+          ]
+        },
+        {
+          "id": "model",
+          "can": "Describe two object shapes that require different payloads and reject invalid tag/payload pairs.",
+          "assessment": [
+            "course:ts-foundations/task/model-delivery"
+          ]
+        },
+        {
+          "id": "branch",
+          "can": "Compute the correct result for each of three variants, including zero.",
+          "assessment": [
+            "course:ts-foundations/task/apply-edit"
+          ]
+        },
+        {
+          "id": "debug",
+          "can": "Move a payload read to a path where the field exists.",
+          "assessment": [
+            "course:ts-foundations/task/repair-caption"
+          ]
+        },
+        {
+          "id": "transfer",
+          "can": "Use a boolean tag to handle a fresh pair of shapes and preserve zero and empty text.",
+          "assessment": [
+            "course:ts-foundations/task/sensor-display"
+          ]
+        }
+      ],
+      "intro": "The board can show a task waiting in a queue or a task that is finished. Only a finished task has a duration. A shared field can tell the program which details are available.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "One field identifies the shape",
+          "text": "Notice is a type alias for two object types joined with |. Each has a kind field whose type is one exact string. This field is the tag (discriminant). A value can have either shape (a discriminated union). The waiting notice has a place. The finished notice has a title. The program receives one actual object at a time.",
+          "example": "board"
+        },
+        {
+          "kind": "prediction",
+          "title": "Follow one notice",
+          "text": "Read the function and both calls before running it. Choose the two output lines in order.",
+          "example": "board",
+          "questions": [
+            "predict-output"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Follow the return",
+          "text": "The comparison reads an ordinary JavaScript field at runtime. Inside the waiting branch, TypeScript can narrow n to the shape with place. String(n.place) produces text, including for zero. A return ends this call. A value reaching the last line must be finished, so title is available there. The type alias disappears during compilation. JavaScript still receives the kind field on each object. Notice can require a different field for each tag because each side of the union describes one complete shape. Making both fields optional on one object would also allow a waiting notice with no place.",
+          "example": "board"
+        },
+        {
+          "kind": "prediction",
+          "title": "Read a field too soon",
+          "text": "Which line will the compiler flag? Read the marked file before checking it.",
+          "example": "bad-field",
+          "questions": [
+            "predict-property"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Choose the branch using the tag",
+          "text": "Check the marked file and read TS2339. Both shapes have kind. Only waiting has place. A truthiness test would also treat a valid place of zero as false. Checking the tag works for every valid place. This example starts with a known Notice. Accepting outside data and verifying its shape is a separate skill.",
+          "example": "bad-field"
+        },
+        {
+          "kind": "modification",
+          "title": "Finish the second branch",
+          "text": "Change the starter so finished tasks display their actual duration.",
+          "task": "course:ts-foundations/task/describe-update"
+        },
+        {
+          "kind": "independent",
+          "title": "Model messages and apply edits",
+          "text": "First describe which delivery messages are valid. The checker evaluates types for that task. Then write a function for counter edits. It runs on several different inputs.",
+          "tasks": [
+            "course:ts-foundations/task/model-delivery",
+            "course:ts-foundations/task/apply-edit"
+          ]
+        },
+        {
+          "kind": "debugging",
+          "title": "Locate an unsafe read",
+          "text": "Use the diagnostic and the promised behavior to repair the caption function.",
+          "task": "course:ts-foundations/task/repair-caption"
+        }
+      ],
+      "questions": [
+        {
+          "id": "predict-output",
+          "prompt": "What does the board example print?",
+          "example": "board",
+          "choices": [
+            {
+              "text": "Waiting then Done",
+              "feedback": "The code returns a field value as part of each result."
+            },
+            {
+              "text": "Place 0 then Pack",
+              "feedback": "The tag selects the waiting branch even when place is zero. The finished branch returns the title."
+            },
+            {
+              "text": "Pack then Place 0",
+              "feedback": "Function calls run in their written order."
+            }
+          ],
+          "answer": 1
+        },
+        {
+          "id": "predict-property",
+          "prompt": "What happens when checking the marked file?",
+          "example": "bad-field",
+          "choices": [
+            {
+              "text": "It compiles because one shape has place.",
+              "feedback": "The parameter can receive either shape at this line."
+            },
+            {
+              "text": "It fails on the type alias because the shapes have different fields.",
+              "feedback": "A union can combine shapes with different fields."
+            },
+            {
+              "text": "It fails on the return line because finished notices have no place.",
+              "feedback": "A read before a tag check must be valid for every possible shape."
+            }
+          ],
+          "answer": 2
+        }
+      ],
+      "examples": {
+        "board": {
+          "stdout": [
+            "Place 0",
+            "Pack"
+          ],
+          "code": "type Notice = { kind: \"waiting\"; place: number } | { kind: \"finished\"; title: string };\n\nfunction line(n: Notice): string {\n  if (n.kind === \"waiting\") return \"Place \" + String(n.place);\n  return n.title;\n}\n\nconsole.log(line({ kind: \"waiting\", place: 0 }));\nconsole.log(line({ kind: \"finished\", title: \"Pack\" }));\n"
+        },
+        "bad-field": {
+          "diagnostics": [
+            {
+              "code": 2339,
+              "line": 4
+            }
+          ],
+          "code": "type Notice = { kind: \"waiting\"; place: number } | { kind: \"finished\"; title: string };\n\nfunction placeOf(n: Notice): number {\n  return n.place;\n}\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/describe-update",
+          "role": "guided",
+          "title": "Print the actual duration",
+          "concepts": [
+            "discriminant",
+            "narrowing"
+          ],
+          "prompt": "Update has two shapes. A queued update carries title, and a done update carries minutes. The supplied starter handles queued updates. Complete describe so a done update produces \"Minutes: \" followed by its minutes, including zero. Preserve \"Next: \" followed by the title for queued updates, including an empty title.",
+          "hints": [
+            "Which shape reaches the final return after the early return?",
+            "Look at the field paired with the done tag.",
+            "Combine the required prefix with the numeric field. String(value) converts a number to text."
+          ],
+          "starter": "function describe(update: Update): string {\n  if (update.kind === \"queued\") return \"Next: \" + update.title;\n  return \"Done\";\n}\n",
+          "solution": "function describe(update: Update): string {\n  if (update.kind === \"queued\") return \"Next: \" + update.title;\n  return \"Minutes: \" + String(update.minutes);\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "describe({ kind: \"queued\", title: \"Paint\" }) === \"Next: Paint\"",
+            "describe({ kind: \"done\", minutes: 0 }) === \"Minutes: 0\"",
+            "describe({ kind: \"done\", minutes: 23 }) === \"Minutes: 23\"",
+            "describe({ kind: \"queued\", title: \"\" }) === \"Next: \""
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "updates",
+              "declarations": "type Update = { kind: \"queued\"; title: string } | { kind: \"done\"; minutes: number };\n"
+            }
+          ],
+          "feedback": "Look at the tag in the failing input and use the value that belongs to that shape."
+        },
+        {
+          "id": "course:ts-foundations/task/model-delivery",
+          "role": "independent",
+          "title": "Describe a successful or failed delivery",
+          "concepts": [
+            "discriminant",
+            "object-union"
+          ],
+          "prompt": "Declare the type Delivery for exactly two message shapes. { kind: \"sent\", receipt: string } describes success. { kind: \"failed\", reason: string } describes failure. Require the matching field for each tag and reject other tag values. These are ordinary structural object types. Extra keys on existing objects are outside the task. No runtime code is required.",
+          "hints": [
+            "Each shape has a required kind and one required text field.",
+            "A type with two optional fields permits a message missing both fields.",
+            "Define each shape, then combine the alternatives using the union operator."
+          ],
+          "starter": "type Delivery = { kind: string };\n",
+          "solution": "type Delivery =\n  | { kind: \"sent\"; receipt: string }\n  | { kind: \"failed\"; reason: string };\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [],
+          "typeChecks": [
+            "__Extends<{ kind: \"sent\"; receipt: string }, Delivery>",
+            "__Extends<{ kind: \"failed\"; reason: string }, Delivery>",
+            "__Extends<Delivery, { kind: \"sent\"; receipt: string } | { kind: \"failed\"; reason: string }>"
+          ],
+          "rejects": [
+            "const missing: Delivery = { kind: \"sent\" }",
+            "const mismatched: Delivery = { kind: \"failed\", receipt: \"A\" }",
+            "const unrecognized: Delivery = { kind: \"pending\", reason: \"later\" }",
+            "const numeric: Delivery = { kind: \"sent\", receipt: 42 }"
+          ],
+          "fixtures": [
+            {
+              "id": "messages",
+              "declarations": "// This type-only task needs no supplied runtime values.\n"
+            }
+          ],
+          "feedback": "Try assigning a failed delivery with a reason, and a sent delivery missing its receipt. Only the first should fit."
+        },
+        {
+          "id": "course:ts-foundations/task/apply-edit",
+          "role": "independent",
+          "title": "Apply a counter edit",
+          "concepts": [
+            "discriminant",
+            "narrowing",
+            "numeric-expression"
+          ],
+          "prompt": "Write nextCount(count: number, edit: Edit): number. An add edit increases count by its amount. A set edit replaces count with its value. A keep edit returns count. Zero and negative counts, amounts and values are valid. Edit is supplied. Return the calculated number.",
+          "hints": [
+            "Describe the change each tag makes to the original count.",
+            "The variant with amount adds. The variant with value replaces.",
+            "Handle the distinct cases before you reach for a payload field. The keep case needs only count."
+          ],
+          "starter": "function nextCount(count: number, edit: Edit): number {\n  return count;\n}\n",
+          "solution": "function nextCount(count: number, edit: Edit): number {\n  if (edit.kind === \"add\") return count + edit.amount;\n  if (edit.kind === \"set\") return edit.value;\n  return count;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "nextCount(7, { kind: \"keep\" }) === 7",
+            "nextCount(4, { kind: \"add\", amount: -3 }) === 1",
+            "nextCount(9, { kind: \"set\", value: 0 }) === 0",
+            "nextCount(-5, { kind: \"add\", amount: 0 }) === -5",
+            "nextCount(11, { kind: \"set\", value: -2 }) === -2",
+            "nextCount(-2, { kind: \"add\", amount: 8 }) === 6"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "edits",
+              "declarations": "type Edit =\n  | { kind: \"add\"; amount: number }\n  | { kind: \"set\"; value: number }\n  | { kind: \"keep\" };\n"
+            }
+          ],
+          "feedback": "Use the failing case to decide whether this tag adds to, replaces, or preserves the previous count."
+        },
+        {
+          "id": "course:ts-foundations/task/repair-caption",
+          "role": "debug",
+          "title": "Repair a blocked task caption",
+          "concepts": [
+            "narrowing",
+            "diagnostic"
+          ],
+          "prompt": "caption takes an Entry. A blocked entry should return its reason exactly, including empty text. A ready entry should return \"Ready\". Repair the starter diagnostic while keeping this function safe for both shapes.",
+          "hints": [
+            "The diagnostic points to a field found on just one member of Entry.",
+            "Look for the field present on every Entry.",
+            "Read reason inside the branch where the tag guarantees that field exists."
+          ],
+          "starter": "function caption(entry: Entry): string {\n  const text = entry.reason;\n  if (entry.kind === \"blocked\") return text;\n  return \"Ready\";\n}\n",
+          "solution": "function caption(entry: Entry): string {\n  if (entry.kind === \"blocked\") return entry.reason;\n  return \"Ready\";\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "caption({ kind: \"ready\" }) === \"Ready\"",
+            "caption({ kind: \"blocked\", reason: \"Waiting on Lee\" }) === \"Waiting on Lee\"",
+            "caption({ kind: \"blocked\", reason: \"\" }) === \"\"",
+            "caption({ kind: \"blocked\", reason: \"No key\" }) === \"No key\""
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "entries",
+              "declarations": "type Entry = { kind: \"ready\" } | { kind: \"blocked\"; reason: string };\n"
+            }
+          ],
+          "feedback": "Use the tag to distinguish blocked entries. An empty reason is still a valid blocked reason."
+        },
+        {
+          "id": "course:ts-foundations/task/sensor-display",
+          "role": "review",
+          "title": "Report a sensor reading",
+          "concepts": [
+            "discriminant",
+            "narrowing"
+          ],
+          "prompt": "A sensor returns Reading. Its boolean tag ok identifies a measurement or a failure. Implement display(reading: Reading): string. For a measurement return its degrees as text followed by \" C\". For a failure return its message exactly. Zero and negative degrees and an empty message are valid.",
+          "hints": [
+            "Find the field present in both shapes.",
+            "The boolean tag tells you which payload exists even if its value is zero or empty.",
+            "In the measurement branch convert the number to text before appending the unit."
+          ],
+          "starter": "function display(reading: Reading): string {\n  return \"\";\n}\n",
+          "solution": "function display(reading: Reading): string {\n  if (reading.ok) return String(reading.degrees) + \" C\";\n  return reading.message;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "display({ ok: true, degrees: 0 }) === \"0 C\"",
+            "display({ ok: false, message: \"offline\" }) === \"offline\"",
+            "display({ ok: true, degrees: -7 }) === \"-7 C\"",
+            "display({ ok: false, message: \"\" }) === \"\"",
+            "display({ ok: true, degrees: 10.5 }) === \"10.5 C\""
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "readings",
+              "declarations": "type Reading = { ok: true; degrees: number } | { ok: false; message: string };\n"
+            }
+          ],
+          "feedback": "Branch on ok. Preserve the payload even when its number or text would be false in an if test."
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/sensor-display",
+        "afterModule": "course:ts-foundations/module/errors",
+        "evidence": "Use a fresh sensor task after Errors. Record an unaided first pass as evidence that tag-based branching transfers to boolean tags and new payloads. Record hint use or a shown solution separately."
+      },
+      "drills": [
+        "guards/discriminant-if",
+        "guards/three-variants",
+        "narrowing/boolean-discriminant"
+      ],
+      "drillGap": "The linked drills practice prescribed forms. This sample accepts equivalent branches and tests invalid delivery shapes and zero-valued payloads."
+    }
+  ]
+}
