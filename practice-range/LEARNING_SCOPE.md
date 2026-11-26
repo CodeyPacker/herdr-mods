@@ -15,7 +15,7 @@ Status: in progress. Phase acceptance criteria below define completion, rather t
 | P4 | Done except learner review | Course UI, setup and language-card entry, linked practice, optional AI, known-language preferences, shared editor opening, and explicit progress migration to a newer compatible pack version. | Real editor flow with a learner. |
 | P5 | Done except learner review | Pinned repo excerpts, repo module and architecture lessons, and source browsing. Tutor import was built, then removed (D8). | Learner review of generated explanations. |
 | P6 | Done except learner review | Course review, assistance tracking, explained recommendations, module evidence combining course exercises with linked drills, recommendations for due linked drills, and optional validated AI extra practice for bundled courses. Fixtures cover hinted passes, revealed solutions, later independent passes, overdue review, changed versions and mixed sessions. | Learner review of the evidence rules and generated exercises. |
-| P7 | C# course next | TypeScript pilot kit ready but not run. Course plumbing, verifier and builder support C#. `CSHARP_COURSE_BRIEF.md` scopes the C# course. | Write and verify the C# course, then the owner takes it on the experienced path. TypeScript pilot later. No other testers are available. |
+| P7 | C# course written, owner test next | TypeScript pilot kit ready but not run. The C# course is written, verified and registered: 18 modules, 61 lesson tasks including four project checkpoints, and four readiness checks. | The owner takes the C# course on the experienced path. TypeScript pilot later. No other testers are available. |
 | P8 | Prepared, blocked on P7 | `RELEASE.md` records requirements, the tested platform, every check with its last result and release notes. All 129 tests and 82 native panel checks passed. | Rerun checks after the pilot, then release. |
 
 ## Product decisions
@@ -30,6 +30,7 @@ Status: in progress. Phase acceptance criteria below define completion, rather t
 | D6 | Preserve lesson completion and demonstrated skill as separate records. Keep recommendations optional and explain why a lesson or review is suggested. |
 | D7 | Pilot TypeScript first. Preserve C# and SQL practice throughout. Add their courses after validating the TypeScript teaching format. |
 | D8 | Do not import Tutor courses. Tutor stays a separate, unchanged mod. Tourist stays separate. Changed on 2026-11-26: the import was built, then removed, because only the project owner had Tutor data and did not need it. |
+| D9 | A course teaches its language on its own terms. Lesson text, hints and feedback never compare it with another language or assume the learner knows one. The experienced entry path and readiness checks stay, because they only let a learner skip modules. Decided on 2026-11-26. |
 
 ## Current implementation
 

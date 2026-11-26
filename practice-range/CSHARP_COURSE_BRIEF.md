@@ -2,6 +2,8 @@
 
 Build a C# foundations course pack for Practice Range. Work in this repository on branch `wip/learning-scope`. The TypeScript course is the model to follow. Copy its format and its quality bar, not its lesson sequence.
 
+Status: done on 2026-11-26. All four steps under "How to work" are complete. `course-drafts/csharp/VALIDATION.md` records the run, and `course-drafts/csharp/FORMAT.md` lists what the code required that this brief did not say. Content changes from here need a new `runtimeContentVersion`.
+
 ## Read first
 
 1. `practice-range/LEARNING_SCOPE.md` for decisions D1–D8, the course pack contract (C1–C7) and the release checks (V1–V8). All courses live inside Practice Range. Tutor is not involved.

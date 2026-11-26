@@ -25,7 +25,9 @@ Implement the approved scope in `LEARNING_SCOPE.md`. All courses live inside Pra
 | I20 | Readiness checks R1–R4 for the experienced entry path. Each is a fresh problem stored outside any lesson. A result names modules to skim or revisit. It never counts as module evidence, never enters course review, and offers no AI help. | Verifier limits concepts to each group. The readiness test checks hidden references, unchanged lesson position, unchanged module evidence and review exclusion. Two native fixtures cover results and the task view. |
 | I21 | Explicit update of an enrollment to a newer compatible pack version. The new version declares accepted earlier versions and ID replacements. Progress, reading, question results, answers, backups and extras carry over. Replaced assessments that changed meaning keep history but need a fresh pass. Unmatched work is retired, never credited. The old enrollment stays unchanged and selectable. | `tests/course-migration.test.mjs` migrates a real 0.1.0-preview.1 enrollment to preview.2 and covers replacements, retired work, dropped reading positions, removed questions, active reviews and repeated updates. Sync tests transfer the receipt. Two native fixtures cover the update banner and an incompatible version. |
 
-The course remains a preview. Compiler correctness and native materialization do not establish teaching effectiveness or verify layout and paint.
+| I22 | Bundled C# preview (`course:cs-foundations`, content version 0.1.0-preview.1) with 18 authored modules and 61 lesson tasks, including four project checkpoints and a single-file final assessment, plus four readiness checks outside the lessons. It teaches C# alone, with no comparisons to another language (D9). | `scripts/verify-course.mjs csharp` passed 24 runnable examples, 11 intentional diagnostics, 85 reference runs, 85 alternatives and 134 named wrong-answer witnesses across 176 case runs. `tests/course-csharp.test.mjs` drives a real enrollment through examples, a three-case task, a task with supplied records and the final assessment. Six native fixtures cover the C# module list, a lesson, three kinds of task and a readiness check. |
+
+Both courses remain previews. Compiler correctness and native materialization do not establish teaching effectiveness or verify layout and paint.
 
 ## Phase status and next work
 
@@ -38,7 +40,7 @@ The course remains a preview. Compiler correctness and native materialization do
 | P4 | Core course UI, setup/language entry points, known-language preferences for AI comparisons, linked practice, optional AI, shared editor opening and explicit version migration implemented. | Verification of real editor flows with a learner. |
 | P5 | Optional pinned repo context, saved module/architecture supplements and source navigation implemented. Tutor import was built, then removed on 2026-11-26 (D8). | Generated explanations need learner review. |
 | P6 | Course review, deterministic recommendations, combined module evidence, linked drill review recommendations and validated extra practice for bundled courses implemented. | Check with learners that the evidence rules match observed skill and that generated exercises are useful. |
-| P7 | Pilot kit ready for TypeScript. C# course plumbing done: C# compiler rule and task modes in the loader, runnable C# examples, printed-output checks, and a shared verifier and builder (`scripts/verify-course.mjs`, `scripts/build-course.mjs`). A one-module C# draft verified and built. | Write the C# course from `CSHARP_COURSE_BRIEF.md`. The owner tests it. Running a C# course inside the app is not tested yet. |
+| P7 | Pilot kit ready for TypeScript. C# course plumbing done: C# compiler rule and task modes in the loader, runnable C# examples, printed-output checks, and a shared verifier and builder (`scripts/verify-course.mjs`, `scripts/build-course.mjs`). The C# course is written, verified, built and registered (I22). | The owner takes the C# course on the experienced path. Opening it from the panel and checking on save in a real editor has not been done by a person yet. |
 | P8 | Release checklist, requirements, tested platform and release notes prepared in `RELEASE.md`. | Rerun checks after P7, then release. |
 
 ## Verification record
@@ -67,11 +69,15 @@ The Tutor import removal run passed all 129 Practice Range tests, all 35 remaini
 
 Tutor's baseline suite passed 14 of 18 tests. Its four TypeScript runner tests report that Tutor's own compiler dependency is absent. Tutor code and dependencies have not been changed to hide this baseline limitation.
 
+The C# course run was the first on Windows 11, with .NET SDK 10.0.404 and Node.js 26.13.0. The course verifier passed all 65 C# tasks. The full Node suite passed 128 of 131 tests. The two Neovim editor tests failed on Windows, where the remote call returned terminal escape codes. The 800-drill reference test was cancelled at its own 10-minute limit, because each C# check starts two processes and the machine could not finish in time. None of the three touches course code. All 44 course and sync tests passed, type checking passed, the Herdr mod check passed, and nine native course fixtures passed (six new C# ones, plus catalog, lesson and task). Three problems found by running C# on Windows and inside a course folder were fixed: the runner now reads `\r\n` output, the checker is built outside any folder with `%` in its path, and new course folders are named without `%` so the C# editor project loads. The first TypeScript course keeps its original folder name. Running the installed service the way the panel does listed both courses, enrolled, opened a task and passed a saved answer. Still open: the editor project for a course answer does not include the case's supplied code, so an editor shows unknown-name errors for supplied values, as it does for supplied types in C# practice. Checks are not affected. Extra AI practice remains TypeScript-only, and its button on a C# lesson reports that.
+
 Useful commands from the repository root:
 
 ```sh
 node practice-range/course-drafts/typescript/verify.mjs
 node practice-range/scripts/build-course.mjs
+node practice-range/scripts/verify-course.mjs csharp
+node practice-range/scripts/build-course.mjs csharp
 node --test practice-range/tests/course-*.test.mjs practice-range/tests/tutor.test.mjs practice-range/tests/sync.test.mjs
 node practice-range/tests/check-courses.mjs
 node practice-range/tests/check-panels.mjs tutor-off tutor-chat tutor-thinking tutor-error tutor-setup
