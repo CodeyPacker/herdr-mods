@@ -1,0 +1,182 @@
+// Course commands never change the direct-practice session or its answer files.
+import { readFile, writeFile, mkdir, rename, unlink, open, copyFile, stat } from "node:fs/promises";
+import { join, dirname } from "node:path";
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { createHash, randomUUID } from "node:crypto";
+import { loadCourse, listCourses, lessonFor, taskFor } from "./loader.mjs";
+import { findLanguage } from "../languages/index.js";
+import { loadLanguageRunner } from "../languages/runner.mjs";
+
+const hash = text => createHash("sha256").update(text).digest("hex");
+export const enrollmentDirectory = (root, pack) => join(root, "courses", encodeURIComponent(pack.id), pack.contentVersion);
+const answerPath = (directory, task, language) => join(directory, "answers", task.id.split("/").at(-1), language.answerFile);
+async function readJson(file) {
+  try { return JSON.parse(await readFile(file, "utf8")); }
+  catch (error) { if (error.code === "ENOENT") return null; throw new Error(`Cannot read course progress: ${error.message}`); }
+}
+async function save(file, data) {
+  const temporary = `${file}.${randomUUID()}.tmp`;
+  try { await writeFile(temporary, JSON.stringify(data, null, 2) + "\n"); await rename(temporary, file); }
+  finally { await unlink(temporary).catch(error => { if (error.code !== "ENOENT") throw error; }); }
+}
+async function locked(directory, run) {
+  await mkdir(directory, { recursive: true });
+  const path = join(directory, "course.lock");
+  let handle;
+  try { handle = await open(path, "wx"); }
+  catch (error) {
+    if (error.code !== "EEXIST") throw error;
+    // Every course check is bounded by the bridge timeout. Recover locks left by a killed CLI.
+    if (Date.now() - (await stat(path)).mtimeMs > 10 * 60 * 1000) {
+      await unlink(path);
+      return locked(directory, run);
+    }
+    throw new Error("Another course action is running. Retry when it finishes. An interrupted action unlocks after ten minutes.");
+  }
+  try { return await run(); }
+  finally { await handle.close(); await unlink(path); }
+}
+function fresh(pack, entryPath) {
+  if (!pack.entryPaths.some(path => path.id === entryPath)) throw new Error("Unknown course entry path.");
+  return { version: 1, courseId: pack.id, contentVersion: pack.contentVersion, entryPath,
+    position: null, activeTask: null, modules: {}, tasks: {} };
+}
+function validateState(state, pack) {
+  if (state.version !== 1 || state.courseId !== pack.id || state.contentVersion !== pack.contentVersion ||
+      !state.modules || typeof state.modules !== "object" || !state.tasks || typeof state.tasks !== "object") {
+    throw new Error("Course progress is incompatible or damaged. The saved file has been preserved.");
+  }
+}
+async function runnerFor(pack) {
+  const runner = await loadLanguageRunner(pack.languageId);
+  const runtime = await runner.environment();
+  const expected = pack.runner.compiler.range.slice(1);
+  if (!runtime.version.includes(` ${expected}`)) throw new Error(`This course needs ${pack.runner.compiler.name} ${expected}. ${runtime.version} is installed.`);
+  return { runner, runtime };
+}
+
+/** Every fixture checks the same source snapshot. The caller records just one attempt. */
+export async function checkTask(root, pack, task, source, run) {
+  const runner = run ?? (await runnerFor(pack)).runner.check;
+  const fixtures = [];
+  for (const fixture of task.fixtures) {
+    const { fixtures: _fixtures, ...exercise } = task;
+    const result = await runner(root, { ...exercise, declarations: fixture.declarations }, source);
+    fixtures.push({ id: fixture.id, ...result });
+  }
+  const passed = fixtures.every(result => result.passed);
+  return { passed, kind: passed ? "pass" : "course", title: passed ? "All cases passed" : "Some cases need a correction",
+    details: fixtures.flatMap(result => result.passed ? [] : [`Case ${result.id}: ${result.title}`, ...result.details]), fixtures };
+}
+
+export async function courseCommand(root, action, request = {}) {
+  if (action === "list") return { courses: await listCourses() };
+  const pack = await loadCourse(request.courseId);
+  const directory = enrollmentDirectory(root, pack), file = join(directory, "enrollment.json");
+  return locked(directory, async () => {
+    let state = await readJson(file);
+    if (!state) {
+      if (action !== "enroll") throw new Error("Start this course before saving progress.");
+      state = fresh(pack, request.entryPath ?? "beginner");
+    }
+    validateState(state, pack);
+    const persist = async () => { await save(file, state); };
+    if (action === "enroll") await persist();
+    else if (action === "open") {
+      const lesson = lessonFor(pack, request.moduleId);
+      const step = request.step ?? 0;
+      if (!Number.isInteger(step) || !lesson.steps[step]) throw new Error("Unknown lesson step.");
+      state.position = { moduleId: lesson.id, step };
+      state.activeTask = null;
+      await persist();
+    } else if (action === "seen" || action === "question") {
+      const lesson = lessonFor(pack, request.moduleId);
+      const progress = state.modules[lesson.id] ??= { seen: [], questions: {} };
+      if (action === "seen") {
+        if (!Number.isInteger(request.step) || !lesson.steps[request.step]) throw new Error("Unknown lesson step.");
+        progress.seen = [...new Set([...progress.seen, request.step])].sort((a, b) => a - b);
+      } else {
+        const question = lesson.questions.find(question => question.id === request.questionId);
+        if (!question || !Number.isInteger(request.choice) || !question.choices[request.choice]) throw new Error("Unknown question or choice.");
+        const previous = progress.questions[question.id];
+        progress.questions[question.id] = { choice: request.choice, correct: question.answer === request.choice,
+          attempts: (previous?.attempts ?? 0) + 1, at: Date.now() };
+      }
+      await persist();
+    } else if (["task", "check", "check-saved", "hint", "answer", "reset"].includes(action)) {
+      const { task, lesson } = taskFor(pack, request.taskId);
+      const language = findLanguage(pack.languageId), answer = answerPath(directory, task, language);
+      const progress = state.tasks[task.id] ??= { attempts: 0, passes: 0, independentPasses: 0, hintCount: 0, answerShown: false, history: [] };
+      if (action !== "task" && state.activeTask !== task.id) throw new Error("This exercise is no longer selected. Reopen it before checking.");
+      if (action === "task") {
+        const { runner, runtime } = await runnerFor(pack);
+        await mkdir(dirname(answer), { recursive: true });
+        try { await writeFile(answer, task.starter, { flag: "wx" }); }
+        catch (error) { if (error.code !== "EEXIST") throw error; }
+        await runner.prepareWorkspace(answer, runtime, { ...task, declarations: task.fixtures[0].declarations });
+        state.activeTask = task.id;
+        // Entering an exercise retains the lesson position for Return to lesson.
+        if (state.position?.moduleId !== lesson.id) state.position = { moduleId: lesson.id, step: 0 };
+        progress.initialHash ??= hash(task.starter);
+      } else if (action === "hint") progress.hintCount = Math.min(task.hints.length, progress.hintCount + 1);
+      else if (action === "answer") progress.answerShown = true;
+      else if (action === "reset") {
+        const backup = join(directory, "history", task.id.split("/").at(-1));
+        await mkdir(backup, { recursive: true });
+        await copyFile(answer, join(backup, `${Date.now()}-${randomUUID()}${language.fileExtension}`));
+        await writeFile(answer, task.starter);
+        progress.hintCount = 0; progress.answerShown = false; progress.result = null; progress.checkedHash = null;
+        progress.initialHash = hash(task.starter);
+      } else {
+        const source = await readFile(answer, "utf8"), sourceHash = hash(source);
+        const duplicate = progress.checkedHash === sourceHash;
+        if (!duplicate && !(action === "check-saved" && !progress.checkedHash && sourceHash === progress.initialHash)) {
+          const checks = join(directory, "checks");
+          await mkdir(checks, { recursive: true });
+          const result = await checkTask(checks, pack, task, source);
+          const currentHash = hash(await readFile(answer, "utf8"));
+          // A newer save will be checked next. Never record a stale verdict as a current pass.
+          if (currentHash !== sourceHash) return { ...await snapshot(pack, state, directory), pendingSave: true };
+          const assisted = progress.hintCount > 0 || progress.answerShown;
+          const attempt = { at: Date.now(), sourceHash, passed: result.passed, assisted,
+            hintCount: progress.hintCount, answerShown: progress.answerShown };
+          progress.attempts++; if (result.passed) progress.passes++;
+          if (result.passed && !assisted) progress.independentPasses++;
+          progress.history.push(attempt);
+          progress.checkedHash = sourceHash;
+          progress.result = { ...result, ...attempt };
+        }
+      }
+      await persist();
+    } else if (action !== "status") throw new Error(`Unknown course action: ${action}`);
+    return snapshot(pack, state, directory);
+  });
+}
+
+async function snapshot(pack, state, directory) {
+  const active = state.activeTask ? taskFor(pack, state.activeTask).task : null;
+  const language = findLanguage(pack.languageId);
+  const file = active ? answerPath(directory, active, language) : null;
+  const progress = active ? state.tasks[active.id] : null;
+  // Reference content is returned only after an explicit reveal. Checks stay in the Node process.
+  const lessons = pack.lessons.map(lesson => ({ ...lesson, tasks: lesson.tasks.map(task => ({
+    id: task.id, title: task.title, prompt: task.prompt, role: task.role, feedback: task.feedback,
+    fixtures: task.fixtures.map(fixture => ({ id: fixture.id, declarations: fixture.declarations })),
+    hints: task.id === active?.id ? task.hints.slice(0, progress.hintCount) : [],
+    solution: task.id === active?.id && progress.answerShown ? task.solution : null,
+  })) }));
+  const sourceHash = file ? hash(await readFile(file, "utf8")) : null;
+  return { course: { id: pack.id, title: pack.title, contentVersion: pack.contentVersion, languageId: pack.languageId,
+    preview: pack.preview === true, modules: pack.modules, lessons }, enrollment: state,
+    file, folder: file ? dirname(file) : null, sourceHash,
+    stale: Boolean(progress?.result && progress.result.sourceHash !== sourceHash) };
+}
+
+if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
+  try {
+    const [root, action, value] = process.argv.slice(2);
+    if (!root || !action) throw new Error("Usage: node courses/service.mjs <practice folder> <action> [request JSON]");
+    process.stdout.write(JSON.stringify(await courseCommand(root, action, value ? JSON.parse(value) : {})));
+  } catch (error) { process.stdout.write(JSON.stringify({ error: error.message })); process.exitCode = 1; }
+}

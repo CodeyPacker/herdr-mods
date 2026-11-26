@@ -30,4 +30,6 @@ test("course validation rejects broken prerequisites, question answers, and exer
   invalid(pack => pack.lessons[1].tasks[0].id = pack.lessons[0].tasks[0].id, /task identity/);
   invalid(pack => pack.runner.registeredLanguage = "untrusted-module.mjs", /registered language/);
   invalid(pack => pack.schemaVersion = 2, /unsupported schema/);
+  invalid(pack => pack.lessons[0].tasks[0].id = `${pack.id}/task/..`, /task identity/);
+  invalid(pack => pack.preview = false, /labeled previews/);
 });

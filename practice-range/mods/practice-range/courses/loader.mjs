@@ -15,6 +15,7 @@ function unique(items, label) {
   return ids;
 }
 const strings = (value, label) => { list(value, label); requireValue(value.every(text), `${label} contains empty text`); };
+const localId = value => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
 
 /** Validate references and prerequisites before a pack can create any user state. */
 export function validatePack(pack) {
@@ -30,12 +31,13 @@ export function validatePack(pack) {
   const ids = unique(entries, "modules");
   const byId = new Map(entries.map(entry => [entry.id, entry]));
   for (const entry of entries) {
-    requireValue(entry.id.startsWith(`${pack.id}/module/`) && text(entry.title), "module identity");
+    requireValue(entry.id.startsWith(`${pack.id}/module/`) && localId(entry.id.slice(`${pack.id}/module/`.length)) && text(entry.title), "module identity");
     requireValue(["available", "planned"].includes(entry.status), "module status");
     strings(entry.prerequisites, "prerequisites");
     strings(entry.teaches, "concepts");
     requireValue(entry.prerequisites.every(id => ids.has(id)), "missing prerequisite");
   }
+  requireValue(pack.preview === true || entries.every(entry => entry.status === "available"), "unfinished courses must be labeled previews");
   const visited = new Set(), visiting = new Set();
   function visit(id) {
     requireValue(!visiting.has(id), "cyclic prerequisites");
@@ -66,7 +68,7 @@ export function validatePack(pack) {
       if (question.example) requireValue(Object.hasOwn(lesson.examples, question.example), "question example");
     }
     for (const task of tasks) {
-      requireValue(task.id.startsWith(`${pack.id}/task/`) && !taskIds.has(task.id), "duplicate or invalid task identity");
+      requireValue(task.id.startsWith(`${pack.id}/task/`) && localId(task.id.slice(`${pack.id}/task/`.length)) && !taskIds.has(task.id), "duplicate or invalid task identity");
       taskIds.add(task.id);
       for (const field of ["title", "prompt", "starter", "solution", "feedback"]) requireValue(text(task[field]), `task ${field}`);
       strings(task.hints, "hints"); strings(task.concepts, "task concepts");
