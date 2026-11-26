@@ -42,7 +42,13 @@ export const chats = {
    */
   async loadChats(cx) {
     const initialChat = this.chatId;
-    const [s, sessions] = await Promise.all([loadStore(), listSessions()]);
+    // Listing every session takes about a second. The chats saved here don't wait for it: their
+    // bridges start replaying at once, and a session file is read once the list says where it is.
+    const listing = listSessions();
+    /** @type {(value?: any) => void} */
+    let listed = () => {};
+    this.sessionsListed = new Promise((resolve) => { listed = resolve; });
+    const s = await loadStore();
     for (const p of s.projects) {
       if (!p?.path || (this.folder && expand(p.path) !== this.folder)) continue;
       const id = this.addProject(expand(p.path), p.id);
@@ -55,6 +61,8 @@ export const chats = {
       resetThread(chat);
       this.chats.push(chat);
     }
+    this.linkAll(cx);
+    const sessions = await listing;
     for (const x of sessions) {
       x.cwd = x.cwd.replace(/\\/g, "/");
       if (this.folder && x.cwd !== this.folder) continue;
@@ -66,6 +74,7 @@ export const chats = {
       resetThread(chat);
       this.chats.push(chat);
     }
+    listed();
     const active = s.activeChats?.[this.folder] ?? s.activeChat;
     // Do not replace a conversation the user chose, or started typing in, while sessions were loading.
     const startup = this.chat(initialChat);
@@ -79,14 +88,23 @@ export const chats = {
     this.loaded = true;
     this.starting = false;
     this.saveChats();
-    // A running bridge replays its chat, which changes the sidebar many times over. The sidebar
-    // shows "Syncing chats…" until each one is done: no bridge, its replay ended, or its link closed.
-    for (const c of this.chats) if (c.session) {
+    this.linkAll(cx);
+    cx.notify();
+  },
+
+  /**
+   * Links each chat with a session that isn't linked or linking yet. A running bridge replays its
+   * chat, which changes the sidebar many times over. The sidebar shows "Syncing chats…" until each
+   * one is done: no bridge, its replay ended, or its link closed.
+   * @param {any} cx
+   */
+  linkAll(cx) {
+    for (const c of this.chats) if (c.session && !c.linkTried && !this.bridges.has(c.id) && !this.links?.has(c.id)) {
+      c.linkTried = true;
       this.syncing.add(c.id);
       const linking = this.link(c, cx, false);
       cx.spawn(async (/** @type {any} */ cx) => { if (!(await linking) && this.syncing.delete(c.id)) cx.notify(); });
     }
-    cx.notify();
   },
 
   /** True while the sidebar waits: the sessions aren't listed yet, or a chat is still syncing. */
@@ -100,6 +118,8 @@ export const chats = {
    * @param {any} chat @param {number} before @param {any} cx
    */
   async loadHistory(chat, before, cx) {
+    // A chat saved before its session file's place was kept learns it from the session list.
+    if (!chat.file) await this.sessionsListed;
     if (!chat.file) return;
     chat.loading = true; cx.notify();
     const events = await readSession(chat.agent, chat.file, before);

@@ -1,5 +1,5 @@
 // What Hey, chat keeps on disk: <appHome>/data/hey-chat/chats.json holds each
-// real chat's id, folder, agent, title, the agent's session id and when it last changed, and the
+// real chat's id, folder, agent, title, the agent's session id and file, when it last changed, and the
 // folders you chat in. Messages aren't copied: a running bridge replays them, and the
 // agent's own session file has them.
 import { readTextFile, writeTextFile, home, checking } from "herdr";
@@ -44,7 +44,7 @@ let saving = Promise.resolve();
 export async function saveStore(chats, projects, activeChat, folder) {
   if (checking()) return;
   const real = chats.filter((c) => c.session).map((c) => ({
-    id: c.id, project: c.project, cwd: c.cwd, agent: c.agent, model: c.model ?? null, selectedModel: c.selectedModel ?? null, title: c.title, outputs: c.outputs ?? [], session: c.session ?? null, stamp: c.stamp, time: c.time,
+    id: c.id, project: c.project, cwd: c.cwd, agent: c.agent, model: c.model ?? null, selectedModel: c.selectedModel ?? null, title: c.title, outputs: c.outputs ?? [], session: c.session ?? null, file: c.file ?? null, stamp: c.stamp, time: c.time,
   }));
   const used = new Set(real.map((c) => c.project));
   // Folders with chats, and the projects you made (kept while they have none yet).
