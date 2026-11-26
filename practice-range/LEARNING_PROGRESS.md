@@ -27,7 +27,9 @@ Implement the approved scope in `LEARNING_SCOPE.md`. All courses live inside Pra
 
 | I22 | Bundled C# preview (`course:cs-foundations`, content version 0.1.0-preview.1) with 18 authored modules and 61 lesson tasks, including four project checkpoints and a single-file final assessment, plus four readiness checks outside the lessons. It teaches C# alone, with no comparisons to another language (D9). | `scripts/verify-course.mjs csharp` passed 24 runnable examples, 11 intentional diagnostics, 85 reference runs, 85 alternatives and 134 named wrong-answer witnesses across 176 case runs. `tests/course-csharp.test.mjs` drives a real enrollment through examples, a three-case task, a task with supplied records and the final assessment. Six native fixtures cover the C# module list, a lesson, three kinds of task and a readiness check. |
 
-Both courses remain previews. Compiler correctness and native materialization do not establish teaching effectiveness or verify layout and paint.
+| I23 | Bundled SQL preview (`course:sql-foundations`, content version 0.1.0-preview.1) with 18 authored modules and 56 lesson tasks, including four project checkpoints and a final report, plus four readiness checks. It runs on the practice database with the pinned PGlite engine and teaches SQL alone (D9). Course tasks are checked against a reference answer, by the state a change leaves, or by rows a new table must reject. | `scripts/verify-course.mjs sql` passed 40 examples with matching results, 12 expected SQL errors, 72 reference runs, 72 alternatives and 122 named wrong-answer witnesses across 148 case runs. `tests/course-sql.test.mjs` drives a real enrollment through examples, a two-case query, a data change, a table design and the final report. Five native fixtures cover the SQL module list, a lesson, two kinds of task and a readiness check. |
+
+All three courses remain previews. Compiler correctness and native materialization do not establish teaching effectiveness or verify layout and paint.
 
 ## Phase status and next work
 
@@ -71,6 +73,8 @@ Tutor's baseline suite passed 14 of 18 tests. Its four TypeScript runner tests r
 
 The C# course run was the first on Windows 11, with .NET SDK 10.0.404 and Node.js 26.13.0. The course verifier passed all 65 C# tasks. The full Node suite passed 128 of 131 tests. The two Neovim editor tests failed on Windows, where the remote call returned terminal escape codes. The 800-drill reference test was cancelled at its own 10-minute limit, because each C# check starts two processes and the machine could not finish in time. None of the three touches course code. All 44 course and sync tests passed, type checking passed, the Herdr mod check passed, and nine native course fixtures passed (six new C# ones, plus catalog, lesson and task). Three problems found by running C# on Windows and inside a course folder were fixed: the runner now reads `\r\n` output, the checker is built outside any folder with `%` in its path, and new course folders are named without `%` so the C# editor project loads. The first TypeScript course keeps its original folder name. Running the installed service the way the panel does listed both courses, enrolled, opened a task and passed a saved answer. The editor project beside a C# course answer now also gets a `Supplied.cs` with the checker's usings and the first case's supplied code, and `statements` tasks build as a program, so an editor no longer reports supplied names as unknown. The C# test builds that project for a `statements` answer and a `types` starter. Still open: a `members` answer is a set of methods with no class around them, so an editor reports errors on it, as it does in C# practice. Checks are not affected. Extra AI practice remains TypeScript-only, and its button on a C# lesson reports that.
 
+The SQL course needed four changes to shared code. The loader accepts the `query` task mode. The course service accepts the SQL engine's version label. The SQL runner runs a course case's SQL before each answer, runs course examples, and accepts errors that have no line. The SQL checker no longer stops when a check query names a table the answer has yet to create. SQL practice drills take the same paths as before.
+
 Useful commands from the repository root:
 
 ```sh
@@ -78,6 +82,8 @@ node practice-range/course-drafts/typescript/verify.mjs
 node practice-range/scripts/build-course.mjs
 node practice-range/scripts/verify-course.mjs csharp
 node practice-range/scripts/build-course.mjs csharp
+node practice-range/scripts/verify-course.mjs sql
+node practice-range/scripts/build-course.mjs sql
 node --test practice-range/tests/course-*.test.mjs practice-range/tests/tutor.test.mjs practice-range/tests/sync.test.mjs
 node practice-range/tests/check-courses.mjs
 node practice-range/tests/check-panels.mjs tutor-off tutor-chat tutor-thinking tutor-error tutor-setup

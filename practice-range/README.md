@@ -8,7 +8,7 @@ Choose a language and topic, write a short exercise, save, and check it. Each la
 SQL runs on real PostgreSQL, from SELECT and joins to window functions, recursive CTEs, JSON, and MERGE.
 Each hint adds a little more help. Another exercise stays in the same topic until you choose to switch.
 
-Courses are available from **Courses** in the header. There are two previews. The C# course has 18 modules and 61 tasks, with runnable examples, four tracker project checkpoints, a final assessment and four readiness checks, and it teaches C# without comparing it to any other language. The bundled TypeScript preview has 18 modules and 60 tasks, including runnable examples, four tracker project checkpoints and a two-file final project. The module list shows the project checkpoints in order. Choosing **I know another language** adds four readiness checks. Each result suggests which modules to skim or revisit, and none of them count as passing a module.
+Courses are available from **Courses** in the header. There are three previews. The SQL course has 18 modules and 56 tasks on the practice database, from a first SELECT to a multi-step sales report, with result tables as examples and four readiness checks. The C# course has 18 modules and 61 tasks, with runnable examples, four tracker project checkpoints, a final assessment and four readiness checks, and it teaches C# without comparing it to any other language. The bundled TypeScript preview has 18 modules and 60 tasks, including runnable examples, four tracker project checkpoints and a two-file final project. The module list shows the project checkpoints in order. Choosing **I know another language** adds four readiness checks. Each result suggests which modules to skim or revisit, and none of them count as passing a module.
 
 When a newer compatible course version ships, the module list offers **Update to** that version. Your reading, answers, results and backups move to it, new exercises start fresh, and the earlier version stays available from Courses. Lessons need no repo or AI connection. Coding checks use the language pack’s compiler. Reading position, answers, hints, and review progress are saved separately from direct practice. Course updates preserve older enrollments and their content.
 
@@ -16,7 +16,7 @@ Each module in the module list shows how far you've gone, from Read and Practice
 
 With AI help enabled, a lesson's **Write extra practice** adds up to six short AI-written exercises to that lesson. Each one is saved only after its reference answer passes and its starter and known wrong answers fail. Extra practice is labeled, syncs with your progress, and does not count toward module status or course review. The shipped course is never changed.
 
-Setup also offers **Browse courses**, and the TypeScript and C# language cards offer **Start or resume course**. Reading is available before installing a compiler or choosing an editor. Coding checks still require the compiler. Back returns to the setup or language screen you came from.
+Setup also offers **Browse courses**, and every language card offers **Start or resume course**. Reading is available before installing a compiler or choosing an editor. Coding checks still require the compiler. Back returns to the setup or language screen you came from.
 
 In the course catalog or module list, save the languages you already know to give AI questions familiar-language context. Leave the list empty if you are new to programming. These preferences sync between devices and do not change course progress.
 

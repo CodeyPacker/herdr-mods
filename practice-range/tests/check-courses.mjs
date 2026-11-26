@@ -57,7 +57,18 @@ try {
   const csharpReadiness = await csharp("task", { taskId: `${csharpId}/task/readiness-r1` });
   const csharpCases = { "csharp-modules": ["modules", csharpModules], "csharp-lesson": ["lesson", csharpExample], "csharp-task": ["task", csharpTask],
     "csharp-members-task": ["task", csharpMembers], "csharp-project": ["task", csharpProject], "csharp-readiness-task": ["task", csharpReadiness] };
-  const cases = { ...csharpCases, catalog: ["catalog", null], versions: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules], "example-output": ["lesson", example],
+  // The SQL course: result tables as example output, data cases, and a task checked by the state it leaves.
+  const sqlId = "course:sql-foundations", sqlModule = `${sqlId}/module/where`;
+  const sql = (action, value = {}) => courseCommand(join(root, "data"), action, { courseId: sqlId, ...value });
+  await sql("enroll");
+  const sqlModules = await sql("open", { moduleId: sqlModule, step: 0 });
+  const sqlExample = await sql("example", { moduleId: sqlModule, exampleId: "sales" });
+  const sqlTask = await sql("task", { taskId: `${sqlId}/task/where-small-items` });
+  const sqlTable = await sql("task", { taskId: `${sqlId}/task/tables-shipments` });
+  const sqlReadiness = await sql("task", { taskId: `${sqlId}/task/readiness-r1` });
+  const sqlCases = { "sql-modules": ["modules", sqlModules], "sql-lesson": ["lesson", sqlExample], "sql-task": ["task", sqlTask],
+    "sql-table-task": ["task", sqlTable], "sql-readiness-task": ["task", sqlReadiness] };
+  const cases = { ...csharpCases, ...sqlCases, catalog: ["catalog", null], versions: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules], "example-output": ["lesson", example],
     prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], review: ["task", review], "ai-lesson": ["lesson", modules], "ai-task": ["task", task], attached: ["modules", attached], "repo-missing": ["modules", missing], error: ["task", task],
     "repo-supplement":["repo-lesson",attached], "repo-generating":["modules",attached],
     "repo-source":["source",attached], "repo-source-cached":["source",attached], "repo-source-missing":["source",attached],
@@ -68,7 +79,8 @@ try {
   for (const name of requested) if (!Object.hasOwn(cases, name)) throw new Error(`Unknown course fixture: ${name}`);
   for (const [name, [page, data]] of Object.entries(cases).filter(([name]) => !requested.length || requested.includes(name))) {
     const folder = join(root, name);
-    const language = name.startsWith("csharp-") ? "csharp" : "typescript", drill = language === "csharp" ? "variables/integer" : "variables/const-number";
+    const language = name.startsWith("csharp-") ? "csharp" : name.startsWith("sql-") ? "sql" : "typescript";
+    const drill = { csharp: "variables/integer", sql: "where/equals-number", typescript: "variables/const-number" }[language];
     await cp(source, folder, { recursive: true, filter: path => !path.split(/[\\/]/).includes("node_modules") });
     await rename(join(folder, "main.js"), join(folder, "practice-panel.js"));
     await writeFile(join(folder, "main.js"), `import Syntax from "./practice-panel.js";
@@ -155,7 +167,7 @@ export default class Fixture extends Syntax {
       this.courses.page = "lesson";
       this.enabledLanguages = [${JSON.stringify(language)}];
       this.courses.practiceTopic(${JSON.stringify(drill)}, cx);
-      if (this.screen !== "topics" || this.pendingTopic !== "variables" || this.lastPerformed?.value !== ${JSON.stringify(language)}) throw new Error("Lesson practice links must choose the matching language and topic");
+      if (this.screen !== "topics" || this.pendingTopic !== ${JSON.stringify(drill.split("/")[0])} || this.lastPerformed?.value !== ${JSON.stringify(language)}) throw new Error("Lesson practice links must choose the matching language and topic");
       if (this.state !== prior) throw new Error("Lesson links must not replace direct-practice state while loading");
       this.screen = "courses";
     }

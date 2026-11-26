@@ -4,7 +4,7 @@ Status: not ready to release. The TypeScript course still needs the P7 learner p
 
 ## Release scope
 
-Ship the TypeScript course preview (content version 0.1.0-preview.2) and the C# course preview (content version 0.1.0-preview.1) with existing C#, TypeScript and SQL direct practice unchanged. A SQL course pack is not part of this release. Tutor is a separate mod and is not affected.
+Ship the TypeScript course preview (content version 0.1.0-preview.2) the C# course preview and the SQL course preview (both content version 0.1.0-preview.1), with existing C#, TypeScript and SQL direct practice unchanged. Tutor is a separate mod and is not affected.
 
 ## Requirements
 
@@ -13,7 +13,7 @@ Ship the TypeScript course preview (content version 0.1.0-preview.2) and the C# 
 | Reading lessons, quizzes, readiness results, project list | Node.js 20 or newer. No compiler, repo or AI. |
 | TypeScript course and practice checks | The pack's pinned TypeScript 6.0.3 (`npm ci` in `languages/typescript`, or Install on the Languages screen). |
 | C# course and practice checks | .NET SDK 8 or newer. |
-| SQL practice | The pack's pinned PGlite (`npm ci` in `languages/sql`). |
+| SQL course and practice checks | The pack's pinned PGlite (`npm ci` in `languages/sql`). |
 | AI questions, repo lessons, generated modules and exercises | The `claude` or `codex` CLI, signed in, with AI help turned on in Setup. |
 | Repo examples and architecture lessons | git and a local clone containing the pinned commit. |
 | Device sync | git and a private remote repo. |
@@ -40,6 +40,7 @@ Run from the repository root. The results column is the last recorded run.
 | --- | --- | --- | --- |
 | V1 | Course pack: manifest, IDs, prerequisites, concepts, file references, compiler version | `node practice-range/course-drafts/typescript/verify.mjs` | Passed. 64 course tasks (60 in lessons, 4 readiness checks) and 3 pilot tasks, 19 examples, 2 diagnostics, 85 references, 85 alternatives, 135 wrong-answer witnesses. |
 | V1, V2 | C# course pack and every C# example, reference, starter and wrong answer | `node practice-range/scripts/verify-course.mjs csharp` (about 20 minutes) | Passed on Windows. 65 tasks (61 in lessons, 4 readiness checks), 24 examples, 11 diagnostics, 85 references, 85 alternatives, 134 wrong-answer witnesses. |
+| V1, V2 | SQL course pack and every SQL example, reference, starter and wrong answer | `node practice-range/scripts/verify-course.mjs sql` (about 5 minutes) | Passed on Windows. 60 tasks (56 in lessons, 4 readiness checks), 40 examples, 12 expected errors, 72 references, 72 alternatives, 122 wrong-answer witnesses. |
 | V1 | Rebuild is unchanged | `node practice-range/scripts/build-course.mjs` then `git status` | Passed. preview.1 is archived under `courses/packs/archive/`. Ship that archive. |
 | V2 | Examples, references, starters, wrong answers | Same as the course verifier | Passed. |
 | V3–V7 | All Practice Range tests, including editors, catalogs, sessions, courses, version updates, sync and AI flows | `env TMPDIR=/private/tmp node --test --test-concurrency=3 practice-range/tests/*.test.mjs` | macOS: passed 129 of 129, before the C# course. Windows, with the C# course: passed 128 of 131. Two Neovim editor tests failed and the 800-drill C# reference test hit its 10-minute limit. All 44 course and sync tests passed. |
@@ -68,7 +69,8 @@ Tutor stays a separate mod and is unchanged. Practice Range does not import Tuto
 
 - **Courses.** Practice Range has a TypeScript course preview with 18 modules, 60 lesson tasks, a five-step tracker project and four readiness checks. Lessons work without a repo or AI.
 - **C# course.** A C# course preview with 18 modules, 61 lesson tasks, a five-step tracker project and four readiness checks. It teaches C# on its own terms and needs a .NET SDK 8 or newer for coding checks.
-- **Setup.** Setup and the TypeScript and C# language cards offer their course. Reading works before the compiler is installed.
+- **SQL course.** A SQL course preview with 18 modules, 56 lesson tasks, a five-step sales report project and four readiness checks. It runs on the practice database and needs the pinned PGlite engine for checks.
+- **Setup.** Setup and every language card offer that language's course. Reading works before the compiler is installed.
 - **Updates.** A newer compatible course version is offered from the module list. Progress moves only when you choose Update. The earlier version stays available.
 - **Optional AI.** With AI help on, lessons can add checked extra practice, repo examples and architecture reading.
 - **Unchanged.** C#, TypeScript and SQL direct practice, review, scratch, compare, editors and sync work as before.
