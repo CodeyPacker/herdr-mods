@@ -298,7 +298,11 @@
         "validation",
         "erasure"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/boundary/module.json"
+      }
     },
     {
       "id": "course:ts-foundations/module/modules",
@@ -311,7 +315,11 @@
         "import-export",
         "compiler-config"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/modules/module.json"
+      }
     },
     {
       "id": "course:ts-foundations/module/checks",
@@ -324,7 +332,11 @@
         "tests",
         "debugging"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/checks/module.json"
+      }
     },
     {
       "id": "course:ts-foundations/module/errors",
@@ -337,7 +349,11 @@
         "throw-catch",
         "failure"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/errors/module.json"
+      }
     },
     {
       "id": "course:ts-foundations/module/async",
@@ -351,7 +367,11 @@
         "await",
         "async-fixture"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/async/module.json"
+      }
     },
     {
       "id": "course:ts-foundations/module/generic",
@@ -365,7 +385,11 @@
         "generic",
         "utility"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/generic/module.json"
+      }
     },
     {
       "id": "course:ts-foundations/module/compose",
@@ -379,7 +403,11 @@
         "composition",
         "class-reading"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/compose/module.json"
+      }
     },
     {
       "id": "course:ts-foundations/module/tracker",
@@ -392,7 +420,11 @@
       "teaches": [
         "project-workspace"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/tracker/module.json"
+      }
     },
     {
       "id": "course:ts-foundations/module/report",
@@ -403,7 +435,11 @@
       "teaches": [
         "transfer"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/report/module.json"
+      }
     }
   ],
   "project": "project/project.json",

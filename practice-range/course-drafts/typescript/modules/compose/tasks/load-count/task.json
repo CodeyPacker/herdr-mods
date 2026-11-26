@@ -1,0 +1,55 @@
+{
+  "id": "course:ts-foundations/task/compose-load-count",
+  "role": "independent",
+  "title": "Compose a reader and a calculation",
+  "concepts": [
+    "composition",
+    "class-reading"
+  ],
+  "prompt": "Export async countFrom(read: () => Promise<readonly boolean[]>): Promise<number>. Await the reader once, then count the false values. Propagate a rejected read.",
+  "hints": [
+    "Keep reading and counting as separate operations.",
+    "Await the reader, then inspect its returned list.",
+    "An uncaught rejection propagates to the caller."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "module",
+  "rules": [],
+  "checks": [
+    "await answer.countFrom(async () => []) === 0",
+    "await answer.countFrom(async () => [false,true,false]) === 2",
+    "await __rejects(answer.countFrom(async () => { throw new Error(\"lost\"); }))",
+    "await (async () => { let calls = 0; await answer.countFrom(async () => { calls++; return []; }); return calls === 1; })()"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Counts all statuses.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Hides a failed read as an empty board.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "Keep reading and counting as separate operations."
+}

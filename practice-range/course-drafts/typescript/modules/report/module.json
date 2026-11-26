@@ -1,0 +1,88 @@
+{
+  "id": "course:ts-foundations/module/report",
+  "title": "Deliver an unfamiliar report",
+  "requires": [
+    "project-workspace"
+  ],
+  "intro": "This assessment combines ideas already taught. You will validate data, keep separate counts, handle an asynchronous failure, and write a test that detects a specific bug. Reading a finished solution can explain an approach, but it does not establish that you can solve the task independently. Use the acceptance criteria to decide when your work is complete.",
+  "outcomes": [
+    {
+      "id": "1",
+      "can": "report audit",
+      "assessment": [
+        "course:ts-foundations/task/report-audit"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Deliver an unfamiliar report",
+      "text": "This assessment combines ideas already taught. You will validate data, keep separate counts, handle an asynchronous failure, and write a test that detects a specific bug. Reading a finished solution can explain an approach, but it does not establish that you can solve the task independently. Use the acceptance criteria to decide when your work is complete."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict the result",
+      "text": "Read each line before revealing the output.",
+      "example": "trace",
+      "questions": [
+        "predict"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Trace the result",
+      "text": "A duplicate counter and a total counter measure different things. The example counts one repeated ID without adding a second unique ID. The final task adds validation and status counts. Its regression test must detect a faulty candidate as well as accept a correct one.",
+      "example": "trace"
+    },
+    {
+      "kind": "independent",
+      "title": "Report audit",
+      "text": "Use the stated contract. Save to check the complete submission. Equivalent correct implementations are accepted.",
+      "task": "course:ts-foundations/task/report-audit"
+    }
+  ],
+  "questions": [
+    {
+      "id": "predict",
+      "prompt": "Which counts print?",
+      "example": "trace",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "2 then 1",
+          "feedback": "Two unique IDs and one repeated occurrence are counted separately."
+        },
+        {
+          "text": "3 then 0",
+          "feedback": "That would count every occurrence as unique."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "trace": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/trace.ts"
+      },
+      "stdout": [
+        "2",
+        "1"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:ts-foundations/task/report-audit",
+      "path": "tasks/audit/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:ts-foundations/task/report-audit",
+    "evidence": "Attempt from a fresh workspace on a later visit. Record hints separately from independent success.",
+    "afterCompletion": true
+  },
+  "drills": [],
+  "drillGap": "These tasks combine concepts. Use the language topic browser for additional isolated syntax practice."
+}

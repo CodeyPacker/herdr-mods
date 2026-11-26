@@ -69,22 +69,29 @@ async function checkTask(dir, entry, concepts) {
   let failedStarter = false;
   const modules = {};
   for (const [name, path] of Object.entries(spec.moduleSources ?? {})) modules[name] = await source(taskDir, path);
+  const projectSolutions = {}, projectStarters = {};
+  for (const editable of spec.workspace?.editable ?? []) {
+    projectSolutions[editable.file] = await source(taskDir, editable.solution);
+    projectStarters[editable.file] = await source(taskDir, editable.starter);
+  }
   for (const fixture of spec.fixtures) {
     const exercise = {
       id: spec.id, mode: spec.mode, rules: spec.rules, checks: spec.checks,
       typeChecks: spec.typeChecks, rejects: spec.rejects,
       declarations: await source(taskDir, fixture.declarations), modules
     };
-    const check = answer => checkAnswer(tmp, exercise, answer);
+    const check = (answer, file) => checkAnswer(tmp, spec.workspace ? { ...exercise,
+      modules: { ...modules, ...projectSolutions, [file ?? spec.workspace.editable[0].file]: answer } } : exercise,
+      spec.workspace ? spec.workspace.entry : answer);
     expectResult(await check(solution), true, spec.id + " solution " + fixture.id);
     counts.references++;
     expectResult(await check(alternative), true, spec.id + " alternative " + fixture.id);
     counts.alternatives++;
-    const first = await check(starter);
+    const first = spec.workspace ? await checkAnswer(tmp, { ...exercise, modules: { ...modules, ...projectStarters } }, spec.workspace.entry) : await check(starter);
     if (!first.passed) failedStarter = true;
     counts.starters++;
     for (const wrong of spec.wrongAnswers) {
-      const result = await check(await source(taskDir, wrong.source));
+      const result = await check(await source(taskDir, wrong.source), wrong.file);
       counts.wrongCaseRuns++;
       if (wrong.witness.fixture === fixture.id) {
         expectFailure(result, wrong.witness);
@@ -184,6 +191,14 @@ async function checkProject(manifest) {
       })() === 1`;
       expectFailure(await check([readCount]), { kind: "result", detail: "Check 1 failed" });
       console.log(p.id + " · supplied local readers and starter contracts compile/run · starter matches " + matchingReports + "/" + cases.length + " reports and fails the read-count check");
+      modules["audit.ts"] = await source(dir, "final/author/audit.ts");
+      modules["audit.test.ts"] = await source(dir, "final/author/audit.test.ts");
+      const reportChecks = cases.map(fixture => {
+        const reader = fixture.source === "reject" ? "answer.unavailable()" : "answer.localBatch(" + JSON.stringify(fixture.value) + ")";
+        return "__same(await answer.audit(" + reader + "), " + JSON.stringify(fixture.expected) + ")";
+      });
+      expectResult(await check([...reportChecks, readCount, 'await answer.testAudit(answer.audit)']), true, "Final project reference and learner test");
+      console.log(p.id + " · reference passes all " + cases.length + " reports, reader-count check and learner-authored regression");
       continue;
     }
     assert.equal(p.verification.kind, "singleScript");
