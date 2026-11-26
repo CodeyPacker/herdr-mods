@@ -162,7 +162,7 @@ export async function saveTutorPreference(provider) {
 /** @param {string} action @param {string} value */
 async function tutorCommand(action, value) {
   // Generated exercises run every reference, starter and wrong answer after the model replies.
-  const timeout = action === "generate-imported-exercises" ? 360000 : 150000;
+  const timeout = ["generate-imported-exercises", "generate-extra-practice"].includes(action) ? 360000 : 150000;
   const result = await exec("node", [`${appHome()}/mods/practice-range/tutor/service.mjs`, practiceDirectory(), `${appHome()}/practice-range.json`, action, value], { timeout });
   let data;
   try { data = JSON.parse(result.stdout); } catch { throw new Error("The tutor could not respond. Check your CLI installation and sign-in."); }
@@ -184,3 +184,5 @@ export function generateRepoLesson(request) { return tutorCommand("generate-repo
 export function generateImportedModule(request) { return tutorCommand("generate-imported-module", JSON.stringify(request)); }
 /** @param {Record<string, unknown>} request @returns {Promise<any>} */
 export function generateImportedExercises(request) { return tutorCommand("generate-imported-exercises", JSON.stringify(request)); }
+/** @param {Record<string, unknown>} request @returns {Promise<any>} */
+export function generateExtraPractice(request) { return tutorCommand("generate-extra-practice", JSON.stringify(request)); }

@@ -12,6 +12,8 @@ Courses are available from **Courses** in the header. The bundled TypeScript pre
 
 Each module in the module list shows how far you've gone, from Read and Practiced with help to Shown independently. Shown independently means you passed two different exercises or linked practice drills without hints or the solution, or passed one and later passed it again in a clean review. Reading, skipping and passes with help never count. When linked practice drills are due, the suggested next step opens Practice topics, where **Review** includes them.
 
+With AI help enabled, a lesson's **Write extra practice** adds up to six short AI-written exercises to that lesson. Each one is saved only after its reference answer passes and its starter and known wrong answers fail. Extra practice is labeled, syncs with your progress, and does not count toward module status or course review. The shipped course is never changed.
+
 Setup also offers **Browse courses**, and the TypeScript language card offers **Start or resume course**. Reading is available before installing a compiler or choosing an editor. Coding checks still require the compiler. Back returns to the setup or language screen you came from.
 
 In the course catalog or module list, save the languages you already know to give AI questions familiar-language context. Leave the list empty if you are new to programming. These preferences sync between devices and do not change course progress. Imported Tutor comparisons remain available until you save your own preferences.

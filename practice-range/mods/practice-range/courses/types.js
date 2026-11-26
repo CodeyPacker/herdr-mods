@@ -9,7 +9,7 @@
  *   workspace?: {editable: {file: string, solution: string | null}[]}, generated?: boolean }} Task
  * @typedef {{ id: string, title: string, intro: string, steps: Step[], questions: Question[],
  *   examples: Record<string, {code: string, readOnly?: boolean, sourceError?: string, repoRef?: {path: string, start: number, end: number, commit: string}, stdout?: string[], diagnostics?: {code: number, line: number}[]}>,
- *   tasks: Task[], drills?: string[], generated?: {source: string, baseVersion: string, commit: string, scope: string} }} Lesson
+ *   tasks: Task[], extraTasks?: Task[], drills?: string[], generated?: {source: string, baseVersion: string, commit: string, scope: string} }} Lesson
  * @typedef {{ id: string, title: string, status: string, part?: string, generated?: boolean, generatedExercises?: boolean }} Module
  * @typedef {{ choice: number, correct: boolean, attempts: number, at: number }} QuestionProgress
  * @typedef {{ passed: boolean, title: string, details: string[], assisted: boolean, assistanceUnknown?: boolean }} CourseResult
@@ -25,7 +25,7 @@
  *   repoLessons?: {error?: string, lessons: RepoLesson[]},
  *   profile?: LearningProfile,
  *   recommendation: {kind: string, reason: string, moduleId?: string, taskId?: string, step?: number, count?: number},
- *   evidence?: Record<string, {status: import("./evidence.js").ModuleStatus, independent: number, practiced: number, reviewed: boolean}>, drillError?: string | null }} CourseSnapshot
+ *   evidence?: Record<string, {status: import("./evidence.js").ModuleStatus, independent: number, practiced: number, reviewed: boolean}>, drillError?: string | null, extrasError?: string | null }} CourseSnapshot
  * @typedef {{slug: string,title: string,error?: string,courseId?: string,contentVersion?: string,fingerprint?: string,
  *   languageId?: string,modules?: number,written?: number,questions?: number,exercises?: number,answers?: number,
  *   orphanAnswers?: number,warnings?: string[],known?: string[],alreadyImported?: boolean,

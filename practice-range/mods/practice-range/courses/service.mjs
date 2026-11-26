@@ -14,6 +14,7 @@ import { readRepoLessons, saveRepoLesson } from "./supplements.mjs";
 import { courseSource } from "./source.mjs";
 import { knownLanguages, readLearningProfile } from "./learning-profile.mjs";
 import { publishImportedModule } from "./authoring.mjs";
+import { readExtras, withExtras, isExtraTask, saveExtras } from "./extras.mjs";
 
 const hash = source => createHash("sha256").update(typeof source === "string" ? source : JSON.stringify(source)).digest("hex");
 export const enrollmentDirectory = (root, pack) => join(root, "courses", courseFolderName(pack.id), pack.contentVersion);
@@ -86,7 +87,8 @@ function validateState(state, pack) {
     }
   }
   for (const [id, progress] of Object.entries(state.tasks)) {
-    taskFor(pack, id);
+    // Progress on hidden extra practice is preserved until its file is restored.
+    try { taskFor(pack, id); } catch (error) { if (isExtraTask(pack, id)) continue; throw error; }
     if (!record(progress) || !Array.isArray(progress.history) ||
         ![progress.attempts, progress.passes, progress.independentPasses, progress.hintCount].every(n => Number.isInteger(n) && n >= 0)) {
       throw new Error("Saved exercise progress is damaged. The saved file has been preserved.");
@@ -174,8 +176,11 @@ export async function courseCommand(root, action, request = {}, options = {}) {
   const latest = await loadCourse(request.courseId, request.contentVersion, root);
   const preferred = join(root, "courses", courseFolderName(latest.id), "current.json");
   const selected = await readJson(preferred);
-  const pack = await loadCourse(request.courseId, request.contentVersion ?? selected?.contentVersion ?? latest.contentVersion, root);
-  const directory = enrollmentDirectory(root, pack), file = join(directory, "enrollment.json");
+  const shipped = await loadCourse(request.courseId, request.contentVersion ?? selected?.contentVersion ?? latest.contentVersion, root);
+  const directory = enrollmentDirectory(root, shipped), file = join(directory, "enrollment.json");
+  // Imported courses gain exercises through new versions. Bundled packs keep extras beside the enrollment.
+  const extras = shipped.legacy ? null : await readExtras(shipped, directory);
+  const pack = extras ? withExtras(shipped, extras) : shipped;
   return locked(directory, async () => {
     let state = await readJson(file);
     if (!state) {
@@ -183,6 +188,8 @@ export async function courseCommand(root, action, request = {}, options = {}) {
       state = fresh(pack, request.entryPath ?? "beginner");
     }
     validateState(state, pack);
+    if (state.activeTask && !state.review) { try { taskFor(pack, state.activeTask); } catch { state.activeTask = null; } }
+    if (action === "save-extras") return saveExtras(root, pack, directory, request, options);
     if (action === "publish-module") return publishImportedModule(root,pack,directory,state,request,options);
     if (action === "source") return { source: await courseSource(pack, directory, request) };
     const persist = async () => { await save(file, state); };
@@ -302,8 +309,14 @@ export async function courseCommand(root, action, request = {}, options = {}) {
       }
       await persist();
     } else if (action !== "status") throw new Error(`Unknown course action: ${action}`);
-    return snapshot(root, pack, state, directory);
+    return snapshot(root, pack, state, directory, extras?.error);
   });
+}
+
+/** The pack a course action sees, including any extra practice. */
+export async function coursePack(root, id, version) {
+  const shipped = await loadCourse(id, version, root);
+  return shipped.legacy ? shipped : withExtras(shipped, await readExtras(shipped, enrollmentDirectory(root, shipped)));
 }
 
 /** Direct-practice progress for linked drills. Read only: the practice session owns this file. */
@@ -320,14 +333,14 @@ async function drillProgress(root, languageId) {
   }
 }
 
-async function snapshot(root, pack, state, directory) {
+async function snapshot(root, pack, state, directory, extrasError) {
   const drills = await drillProgress(root, pack.languageId);
   const active = state.activeTask ? taskFor(pack, state.activeTask).task : null;
   const language = findLanguage(pack.languageId);
   const file = active ? answerPath(directory, active, language, state.review) : null;
   const progress = active ? taskProgress(state, active.id) : null;
   // Reference content is returned only after an explicit reveal. Checks stay in the Node process.
-  const lessons = (await restoreRepoExcerpts(directory,pack.lessons)).map(lesson => ({ ...lesson, tasks: lesson.tasks.map(task => ({
+  const view = (/** @type {any} */ task) => ({
     id: task.id, title: task.title, prompt: task.prompt, role: task.role, feedback: task.feedback, generated: Boolean(task.generated),
     fixtures: task.fixtures.map(fixture => ({ id: fixture.id, declarations: fixture.declarations })),
     hints: task.id === active?.id ? task.hints.slice(0, progress.hintCount) : [],
@@ -335,13 +348,14 @@ async function snapshot(root, pack, state, directory) {
     solution: task.id === active?.id && progress.answerShown ? task.solution : null,
     ...(task.workspace ? { workspace: { editable: task.workspace.editable.map(file => ({ file: file.file,
       solution: task.id === active?.id && progress.answerShown ? file.solution : null })) } } : {}),
-  })) }));
+  });
+  const lessons = (await restoreRepoExcerpts(directory,pack.lessons)).map(lesson => ({ ...lesson, tasks: lesson.tasks.map(view), extraTasks: (lesson.extraTasks ?? []).map(view) }));
   const sourceHash = file ? hash(await readAnswer(file, active)) : null;
   return { course: { id: pack.id, title: pack.title, contentVersion: pack.contentVersion, languageId: pack.languageId, codeFence: language.codeFence,
     preview: pack.preview === true, legacy: pack.legacy, modules: pack.modules, lessons },
     enrollment: state.review && active ? { ...state, tasks: { ...state.tasks, [active.id]: progress } } : state,
     reviewReady: courseReview(pack, state, Date.now()).ids.length, recommendation: nextCourseAction(pack, state, Date.now(), drills),
-    evidence: moduleEvidence(pack, state, drills), drillError: drills.error ?? null,
+    evidence: moduleEvidence(pack, state, drills), drillError: drills.error ?? null, extrasError: extrasError ?? null,
     attachment: await repoStatus(directory),
     profile: await readLearningProfile(root),
     repoLessons: await readRepoLessons(directory),

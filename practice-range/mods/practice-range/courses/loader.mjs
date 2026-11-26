@@ -148,7 +148,8 @@ export function lessonFor(pack, id) {
 
 export function taskFor(pack, id) {
   for (const lesson of pack.lessons) {
-    const task = lesson.tasks.find(task => task.id === id);
+    // Extra practice is listed separately so module evidence and review only see shipped tasks.
+    const task = lesson.tasks.find(task => task.id === id) ?? lesson.extraTasks?.find(task => task.id === id);
     if (task) return { task, lesson };
   }
   throw new Error(`Unknown course exercise: ${id}`);

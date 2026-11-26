@@ -44,7 +44,8 @@ const VERSIONED_GITIGNORE = COURSE_GITIGNORE + "!/courses/*/current.json\n";
 const IMPORT_GITIGNORE = VERSIONED_GITIGNORE + "!/courses/*/*/pack.json\n!/courses/*/*/import.json\n";
 const REPO_GITIGNORE = IMPORT_GITIGNORE + "!/courses/*/*/repo-lessons.json\n";
 const PROFILE_GITIGNORE = REPO_GITIGNORE + "!/learning.json\n";
-export const GITIGNORE = PROFILE_GITIGNORE + "!/courses/*/*/generation.json\n";
+const GENERATION_GITIGNORE = PROFILE_GITIGNORE + "!/courses/*/*/generation.json\n";
+export const GITIGNORE = GENERATION_GITIGNORE + "!/courses/*/*/extra-practice.json\n";
 
 /** @param {string} folder @param {string[]} args @returns {Promise<{ code: number, stdout: string, stderr: string }>} */
 function git(folder, args) {
@@ -76,7 +77,7 @@ async function ensureGitignore(folder) {
   const path = join(folder, ".gitignore");
   try {
     const existing = await readFile(path, "utf8");
-    if ([LEGACY_GITIGNORE, COURSE_GITIGNORE, VERSIONED_GITIGNORE, IMPORT_GITIGNORE, REPO_GITIGNORE, PROFILE_GITIGNORE].includes(existing)) await writeFile(path, GITIGNORE);
+    if ([LEGACY_GITIGNORE, COURSE_GITIGNORE, VERSIONED_GITIGNORE, IMPORT_GITIGNORE, REPO_GITIGNORE, PROFILE_GITIGNORE, GENERATION_GITIGNORE].includes(existing)) await writeFile(path, GITIGNORE);
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
     await writeFile(path, GITIGNORE);

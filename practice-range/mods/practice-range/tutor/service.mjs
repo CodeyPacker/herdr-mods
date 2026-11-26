@@ -104,6 +104,10 @@ if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToP
       const { generateImportedModule } = await import("../courses/authoring.mjs");
       result = await generateImportedModule(root, configPath, JSON.parse(value));
     }
+    else if (action === "generate-extra-practice") {
+      const { generateExtraPractice } = await import("../courses/extras.mjs");
+      result = await generateExtraPractice(root, configPath, JSON.parse(value));
+    }
     else if (action === "generate-imported-exercises") {
       const { generateImportedExercises } = await import("../courses/authoring.mjs");
       result = await generateImportedExercises(root, configPath, JSON.parse(value));

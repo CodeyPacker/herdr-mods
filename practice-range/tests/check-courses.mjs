@@ -61,6 +61,12 @@ try {
   evidence.evidence=Object.fromEntries(evidenceIds.map((id,index)=>[id,{status:["demonstrated","independent-once","practiced","read","skipped","started","new"][index%7],independent:index%3,practiced:index%4,reviewed:index===0}]));
   evidence.recommendation={kind:"practice-review",count:2,reason:"2 practice drills linked to this course are due for review."};
   const drillError=structuredClone(evidence);drillError.drillError="Practice progress could not be read, so linked drills are not included in course evidence.";
+  const extraId=`${courseId}/task/extra-fixture-1`, extraLesson=lesson=>lesson.id===moduleId;
+  const extras=structuredClone(modules), extraView={...structuredClone(task.course.lessons.find(extraLesson).tasks.find(item=>item.id===taskId)),id:extraId,title:"Add arrivals",generated:true,role:"generated"};
+  extras.course.lessons.find(extraLesson).extraTasks=[extraView];
+  const extrasError=structuredClone(modules);extrasError.extrasError="Extra practice could not be read, so it is hidden.";
+  const extraTask=structuredClone(task);extraTask.course.lessons.find(extraLesson).extraTasks=[extraView];
+  extraTask.enrollment.tasks[extraId]=extraTask.enrollment.tasks[taskId];extraTask.enrollment.activeTask=extraId;
   const generatedTask=structuredClone(importedTask);
   Object.assign(generatedTask.course.lessons[0].tasks[0],{generated:true,role:"generated"});generatedTask.course.modules[0].generatedExercises=true;
   const importedCatalog=(await request("list")).courses;
@@ -72,7 +78,7 @@ try {
     "learning-profile":["catalog",null], "learning-profile-error":["modules",modules],
     "imported-authoring":["modules",authoring], "module-generating":["modules",authoring], "module-error":["modules",authoring],
     "generated-module":["lesson",generated], "generated-quiz":["lesson",generatedQuiz], "generated-modules":["modules",generated],
-    "exercise-authoring":["modules",generated], "module-evidence":["modules",evidence], "drill-error":["modules",drillError], "generated-exercise":["task",generatedTask], "generated-exercise-modules":["modules",generatedTask],
+    "exercise-authoring":["modules",generated], "module-evidence":["modules",evidence], "extra-practice":["lesson",extras], "extras-error":["lesson",extrasError], "extra-task":["task",extraTask], "extra-generating":["lesson",extras], "drill-error":["modules",drillError], "generated-exercise":["task",generatedTask], "generated-exercise-modules":["modules",generatedTask],
     imports:["imports",null], "import-preview":["import-preview",null], "import-preferences":["import-preview",null], "import-error":["imports",null],
     "imported-catalog":["catalog",null], "imported-modules":["modules",importedModules], "imported-lesson":["lesson",importedLesson], "imported-quiz":["lesson",importedQuiz], "imported-task":["task",importedTask] };
   const requested = process.argv.slice(2);
@@ -100,7 +106,7 @@ export default class Fixture extends Syntax {
     if (${name === "versions"}) this.courses.catalog[0] = { ...this.courses.catalog[0], enrolledVersion: "0.0.1", versions: ["0.0.1", "0.1.0-preview.1"] };
     this.courses.data = ${JSON.stringify(data)};
     this.courses.page = ${JSON.stringify(page)};
-    if (${["imported-authoring","module-generating","exercise-authoring"].includes(name)}) this.tutor={enabled:true,provider:"claude"};
+    if (${["imported-authoring","module-generating","exercise-authoring","extra-practice","extra-generating"].includes(name)}) this.tutor={enabled:true,provider:"claude"};
     if (${name === "learning-profile"}) {
       this.courses.profile={configured:true,knownLanguages:["Python","JavaScript"]};
       this.courses.knownInput.set_value("Python, JavaScript");
@@ -188,6 +194,10 @@ export default class Fixture extends Syntax {
       if (this.screen !== "topics" || this.pendingTopic !== "variables" || this.lastPerformed?.value !== "typescript") throw new Error("Lesson practice links must choose the matching language and topic");
       if (this.state !== prior) throw new Error("Lesson links must not replace direct-practice state while loading");
       this.screen = "courses";
+    }
+    if (${name === "extra-generating"}) {
+      this.tutorRequestId="extra-fixture";this.tutorBusy=true;this.courses.generatingExtras=true;
+      this.courses.busy="Writing extra practice, then checking every answer…";
     }
   }
 }

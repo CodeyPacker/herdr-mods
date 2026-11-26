@@ -4,7 +4,7 @@ import { watchFolder, window as appWindow } from "herdr";
 import { keyButton, spinner, textInput } from "../kit/controls.js";
 import { banner, paneBar, sectionLabel } from "../kit/pane.js";
 import { courseCommand, importTutorPreferences } from "./bridge.js";
-import { configuredEditor, configuredTutor, generateRepoLesson, generateImportedModule, generateImportedExercises } from "../bridge.js";
+import { configuredEditor, configuredTutor, generateRepoLesson, generateImportedModule, generateImportedExercises, generateExtraPractice } from "../bridge.js";
 import { tutorChat } from "../tutor/panel.js";
 import { findLanguage } from "../languages/index.js";
 import { statusLabels } from "./evidence.js";
@@ -34,6 +34,7 @@ export class CoursePanel {
     this.repoLessonId = "";
     this.generatingRepoLesson = false;
     this.generatingModule = false;
+    this.generatingExtras = false;
     /** @type {import("./types.js").RepoSource | null} */
     this.source = null;
     /** @type {Record<string, unknown>} */
@@ -119,6 +120,29 @@ export class CoursePanel {
       } finally {
         if (this.host.tutorRequestId === id) { this.host.tutorRequestId = null; this.host.tutorBusy = false; }
         this.generatingRepoLesson = false; this.busy = ""; cx.notify();
+      }
+    });
+  }
+
+  /** Extra practice is saved beside the enrollment, so the lesson stays open. @param {string} moduleId @param {Context} cx */
+  generateExtraPractice(moduleId, cx) {
+    if (this.busy || !this.data || !this.host.tutor.enabled) return;
+    this.host.cancelTutor(cx);
+    const id = `extra-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const request = { id, courseId: this.data.course.id, contentVersion: this.data.course.contentVersion, moduleId };
+    this.host.tutorRequestId = id; this.host.tutorBusy = true; this.generatingExtras = true;
+    this.busy = "Writing extra practice, then checking every answer…"; this.error = ""; cx.notify();
+    cx.spawn(async cx => {
+      try {
+        await generateExtraPractice(request);
+        if (this.host.tutorRequestId !== id) return;
+        this.data = await courseCommand("status", { courseId: request.courseId, contentVersion: request.contentVersion });
+        if (this.host.sync) this.host.pushSoon(cx);
+      } catch (error) {
+        if (this.host.tutorRequestId === id) this.error = error instanceof Error ? error.message : String(error);
+      } finally {
+        if (this.host.tutorRequestId === id) { this.host.tutorRequestId = null; this.host.tutorBusy = false; }
+        this.generatingExtras = false; this.busy = ""; cx.notify();
       }
     });
   }
@@ -241,13 +265,16 @@ export class CoursePanel {
   }
 
   lesson() { return this.data?.course.lessons.find(lesson => lesson.id === this.data.enrollment.position?.moduleId); }
-  task() { return this.data?.course.lessons.flatMap(lesson => lesson.tasks).find(task => task.id === this.data.enrollment.activeTask); }
+  task() { return this.data?.course.lessons.flatMap(lesson => [...lesson.tasks, ...(lesson.extraTasks ?? [])]).find(task => task.id === this.data.enrollment.activeTask); }
+
+  /** @param {string} id */
+  isExtra(id) { return Boolean(this.data?.course.lessons.some(lesson => lesson.extraTasks?.some(task => task.id === id))); }
 
   helpRequest() {
     const position = this.data?.enrollment.position;
     if (!position || !["lesson", "task"].includes(this.page)) return null;
     const taskId = this.page === "task" ? this.data.enrollment.activeTask : null;
-    const lesson = taskId ? this.data.course.lessons.find(lesson => lesson.tasks.some(task => task.id === taskId)) : this.lesson();
+    const lesson = taskId ? this.data.course.lessons.find(lesson => [...lesson.tasks, ...(lesson.extraTasks ?? [])].some(task => task.id === taskId)) : this.lesson();
     return { courseId: this.data.course.id, contentVersion: this.data.course.contentVersion, moduleId: lesson.id, step: lesson.id === position.moduleId ? position.step : 0, taskId };
   }
 
@@ -330,7 +357,7 @@ export class CoursePanel {
   render(t) {
     const body = v_flex().id("course-body").flex_1().min_h(0).overflow_y_scroll().p(16).gap(12);
     if (this.busy) body.child(h_flex().gap(8).child(spinner(t)).child(div().child(this.busy)));
-    if (this.generatingRepoLesson || this.generatingModule) body.child(keyButton(t,"cancel-repo-lesson","","Cancel generation",Boolean(this.host.tutorRequestId),cx=>this.host.cancelTutor(cx)));
+    if (this.generatingRepoLesson || this.generatingModule || this.generatingExtras) body.child(keyButton(t,"cancel-repo-lesson","","Cancel generation",Boolean(this.host.tutorRequestId),cx=>this.host.cancelTutor(cx)));
     if (this.error) body.child(banner(t, this.error, t.blocked));
     if (this.page === "catalog") {
       body.child(div().font_semibold().child(this.languageFilter ? `${findLanguage(this.languageFilter).name} courses` : "Courses"))
@@ -537,6 +564,14 @@ export class CoursePanel {
     for (const topic of [...new Set((lesson.drills ?? []).map(id => id.split("/")[0]))]) {
       body.child(keyButton(t, `course-drill-${topic}`, "", `Practice ${topic}`, !this.busy && !this.data.enrollment.review, cx => this.practiceTopic(topic, cx)));
     }
+    if (this.data.course.legacy) return;
+    if (this.data.extrasError) body.child(banner(t, this.data.extrasError));
+    if ((lesson.extraTasks ?? []).length) body.child(sectionLabel(t, "Extra practice"));
+    for (const task of lesson.extraTasks ?? []) body.child(keyButton(t, `course-extra-${task.id}`, "", `${task.title} · AI-generated`, !this.busy && !this.data.enrollment.review, cx => this.run("task", { taskId: task.id }, cx)));
+    if ((lesson.extraTasks ?? []).length < 6) body.child(keyButton(t, "course-write-extra", "", "Write extra practice", !this.busy && !this.data.enrollment.review && this.host.tutor.enabled && !this.data.extrasError, cx => this.generateExtraPractice(lesson.id, cx)))
+      .child(div().text_size(11).text_color(t.muted).child(this.host.tutor.enabled
+        ? "Optional. Each exercise is saved only after its reference passes and its starter and known wrong answers fail. Extra practice does not count toward module status or course review."
+        : "Enable the AI tutor in Setup to write extra practice."));
   }
 
   /** @param {string} moduleId @param {number} seen */
@@ -551,7 +586,7 @@ export class CoursePanel {
     const task = this.task();
     if (!task) return;
     const progress = this.data.enrollment.tasks[task.id];
-    if(task.generated) body.child(banner(t,"AI-generated exercise. Its reference passed and known wrong answers failed before saving. It checks printed output only."));
+    if(task.generated) body.child(banner(t,`AI-generated exercise. Its reference passed and known wrong answers failed before saving. It checks printed output only.${this.isExtra(task.id) ? " Extra practice does not count toward module status or course review." : ""}`));
     if(progress.assistanceUnknown) body.child(banner(t,"This answer was imported. Earlier assistance is unknown. Use Start fresh before recording independent success."));
     if(progress.legacy) body.child(div().text_size(11).text_color(t.muted).child(`Tutor history: ${progress.legacy.runs??0} runs · ${progress.legacy.passed?"passed":"not passed"} · ${progress.legacy.hints??0} hints`));
     const review = this.data.enrollment.review;
