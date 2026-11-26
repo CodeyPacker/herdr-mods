@@ -53,11 +53,37 @@ export async function environment() {
 export async function prepareWorkspace(file, _runtime, exercise) {
   const folder = dirname(file);
   await writeIfChanged(join(folder, "schema.sql"), datasetSql());
-  if (exercise.setup) await writeIfChanged(join(folder, "setup.sql"), `-- Runs after schema.sql for this exercise only.\n${exercise.setup.trim()}\n`);
+  const setup = setupSql(exercise);
+  if (setup) await writeIfChanged(join(folder, "setup.sql"), `-- Runs after schema.sql for this exercise only.\n${setup.trim()}\n`);
+}
+
+/**
+ * The SQL that runs after the dataset and before the answer. A course task (mode "query") also runs
+ * the SQL its current case supplies. A practice drill's declarations are table text for display only.
+ */
+function setupSql(exercise) {
+  if (exercise.mode !== "query") return exercise.setup ?? "";
+  return [exercise.setup, exercise.declarations].filter(part => part && part.trim()).join("\n");
 }
 
 export async function check(root, exercise, answer) {
-  return checkAnswer(root, exercise, answer);
+  return checkAnswer(root, exercise.mode === "query" ? { ...exercise, setup: setupSql(exercise) } : exercise, answer);
+}
+
+/**
+ * A read-only course example. With `stdout`, what the SQL shows must match those lines exactly.
+ * With `diagnostics`, it must fail with that PostgreSQL error code on that line.
+ */
+export async function checkExample(root, example) {
+  const result = await runScratch(root, example.code);
+  if (example.diagnostics) {
+    const expected = result.kind === "compile" && example.diagnostics.length === 1 &&
+      new RegExp(`^Scratch\\.sql:${example.diagnostics[0].line}:\\d+ - error ${example.diagnostics[0].code}:`).test(result.details[0] ?? "");
+    return { ...result, passed: expected, title: expected ? "The expected SQL error occurred" : "This example did not produce its expected error" };
+  }
+  if (result.kind !== "output") return { ...result, passed: false };
+  const passed = JSON.stringify(result.details.join("\n").split("\n")) === JSON.stringify(example.stdout ?? []);
+  return { ...result, passed, title: passed ? "The example ran and produced its expected output" : "The example returned something unexpected" };
 }
 
 /** Cached seeded database, keyed by the dataset and the engine version. */

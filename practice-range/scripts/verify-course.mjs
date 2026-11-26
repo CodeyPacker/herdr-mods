@@ -1,5 +1,5 @@
 // Authoring-only validation of a course draft. Run from any directory:
-//   node practice-range/scripts/verify-course.mjs <typescript|csharp> [module keys...]
+//   node practice-range/scripts/verify-course.mjs <typescript|csharp|sql> [module keys...]
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -7,7 +7,7 @@ import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const [language, ...moduleKeys] = process.argv.slice(2);
-if (!["typescript", "csharp"].includes(language)) throw new Error("Usage: verify-course.mjs <typescript|csharp> [module keys...]");
+if (!["typescript", "csharp", "sql"].includes(language)) throw new Error("Usage: verify-course.mjs <typescript|csharp|sql> [module keys...]");
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../course-drafts", language);
 const runner = await import(`../mods/practice-range/languages/${language}/runner.mjs`);
 const { exercises: drills } = await import(`../mods/practice-range/languages/${language}/catalog.js`);
@@ -72,7 +72,9 @@ async function checkTask(dir, entry, concepts) {
     const exercise = {
       id: spec.id, mode: spec.mode, rules: spec.rules, checks: spec.checks,
       typeChecks: spec.typeChecks, rejects: spec.rejects, captureOutput: spec.captureOutput, support: spec.support,
-      declarations: await source(taskDir, fixture.declarations), modules
+      declarations: await source(taskDir, fixture.declarations), modules,
+      // SQL checks compare the answer with the reference answer on the same data.
+      solution, setup: spec.setup, verify: spec.verify, ordered: spec.ordered, result: spec.result
     };
     const check = (answer, file) => checkAnswer(tmp, spec.workspace ? { ...exercise,
       modules: { ...modules, ...projectSolutions, [file ?? spec.workspace.editable[0].file]: answer } } : exercise,
@@ -223,6 +225,7 @@ async function checkProject(manifest) {
 try {
   const manifest = await json(root, "manifest.json");
   if (manifest.runner.compiler.minimumMajor) assert.ok(compiler.major >= manifest.runner.compiler.minimumMajor, "Installed .NET SDK is older than the course requires");
+  else if (language === "sql") assert.ok(compiler.version.includes(" " + manifest.runner.compiler.range.slice(1) + " "), "Installed PGlite differs from the course's pinned version");
   else assert.equal(manifest.runner.compiler.range, "=" + compiler.version.split(" ").at(-1));
   console.log(compiler.label ?? compiler.version, process.version);
   const candidates = new Set(moduleKeys);

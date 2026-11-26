@@ -6,9 +6,9 @@ import { validatePack } from "../mods/practice-range/courses/loader.mjs";
 import { writeCoursePack } from "../mods/practice-range/courses/storage.mjs";
 
 const base = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-// node practice-range/scripts/build-course.mjs [typescript|csharp]
+// node practice-range/scripts/build-course.mjs [typescript|csharp|sql]
 const language = process.argv[2] ?? "typescript";
-if (!["typescript", "csharp"].includes(language)) throw new Error("Usage: build-course.mjs [typescript|csharp]");
+if (!["typescript", "csharp", "sql"].includes(language)) throw new Error("Usage: build-course.mjs [typescript|csharp|sql]");
 const draft = resolve(base, "course-drafts", language);
 async function source(folder, path) {
   const file = resolve(folder, path);

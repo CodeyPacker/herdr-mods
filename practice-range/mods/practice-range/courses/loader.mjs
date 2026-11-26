@@ -24,7 +24,7 @@ function validateTask(pack, task, taskIds) {
   taskIds.add(task.id);
   for (const field of ["title", "prompt", "starter", "solution", "feedback"]) requireValue(text(task[field]), `task ${field}`);
   strings(task.hints, "hints"); strings(task.concepts, "task concepts");
-  requireValue((pack.languageId === "csharp" ? ["statements", "members", "types"] : ["script", "module"]).includes(task.mode), "task mode");
+  requireValue((pack.languageId === "csharp" ? ["statements", "members", "types"] : pack.languageId === "sql" ? ["query"] : ["script", "module"]).includes(task.mode), "task mode");
   list(task.rules, "syntax rules");
   for (const field of ["checks", "typeChecks", "rejects"]) strings(task[field] ?? [], field);
   const fixtures = list(task.fixtures, "fixtures");

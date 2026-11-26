@@ -108,7 +108,7 @@ async function runnerFor(pack) {
     return { runner, runtime };
   }
   const expected = pack.runner.compiler.range.slice(1);
-  if (!runtime.version.endsWith(` ${expected}`)) throw new Error(`This course needs ${pack.runner.compiler.name} ${expected}. ${runtime.version} is installed.`);
+  if (!runtime.version.endsWith(` ${expected}`) && !runtime.version.includes(` ${expected} `)) throw new Error(`This course needs ${pack.runner.compiler.name} ${expected}. ${runtime.version} is installed.`);
   return { runner, runtime };
 }
 
