@@ -319,7 +319,7 @@ export class CoursePanel {
       for (const course of this.catalog.filter(course=>!this.languageFilter || course.languageId===this.languageFilter)) {
         const actions=h_flex().gap(8).flex_wrap()
           .child(keyButton(t, `course-beginner-${course.id}`, "", "Start or resume", !this.busy && !course.error, cx => this.run("enroll", { courseId: course.id, entryPath: "beginner" }, cx)));
-        actions.child(keyButton(t, `course-experienced-${course.id}`, "", "I know another language", !this.busy && !course.error, cx => this.run("enroll", { courseId: course.id, entryPath: "experienced" }, cx)));
+        if (!course.reading) actions.child(keyButton(t, `course-experienced-${course.id}`, "", "I know another language", !this.busy && !course.error, cx => this.run("enroll", { courseId: course.id, entryPath: "experienced" }, cx)));
         body.child(v_flex().gap(8).child(div().font_semibold().child(course.title ?? course.id))
           .child(div().text_color(t.muted).child(course.error ?? `${course.preview ? "Preview · " : ""}${course.available} of ${course.total} modules available`))
           .child(actions));
@@ -355,6 +355,8 @@ export class CoursePanel {
     this.readinessView(body, t);
     this.projectView(body, t);
     this.profileView(body,t);
+    // Repo examples match source files in the course's language. A reading course has none.
+    if (this.data.course.reading) return;
     body.child(sectionLabel(t, "Optional repo examples"));
     if (repo) body.child(div().text_color(t.muted).child(repo.available ? `${repo.name} · pinned at ${repo.commit.slice(0, 10)}` : repo.detail));
     body.child(div().text_size(12).text_color(t.muted).child("Attach a repo in this language for optional AI lessons and questions. Generation sends a bounded source sample to your configured model."))
@@ -436,14 +438,15 @@ export class CoursePanel {
   lessonView(body, t) {
     const lesson = this.lesson(), position = this.data.enrollment.position;
     if (!lesson || !position) return;
-    body.child(keyButton(t,"course-repo-module","","Explain this topic using my repo",!this.busy && Boolean(this.data.attachment?.available) && this.host.tutor.enabled,cx=>this.generateRepoLesson(lesson.id,cx)));
+    if (!this.data.course.reading) body.child(keyButton(t,"course-repo-module","","Explain this topic using my repo",!this.busy && Boolean(this.data.attachment?.available) && this.host.tutor.enabled,cx=>this.generateRepoLesson(lesson.id,cx)));
     const step = lesson.steps[position.step];
     body.child(sectionLabel(t, `${lesson.title} · ${position.step + 1} of ${lesson.steps.length}`));
     if (position.step === 0 && lesson.intro !== step.text) body.child(markdown("course-intro", lesson.intro));
     body.child(div().font_semibold().child(step.title)).child(markdown("course-step", step.text));
     for (const id of [...(step.examples ?? []), ...(step.example ? [step.example] : [])]) {
       const example = lesson.examples[id];
-      body.child(markdown(`course-example-${id}`, `\`\`\`${this.data.course.codeFence??"typescript"}\n${example.code}\n\`\`\``));
+      // An example can name its own fence, such as http or json. Otherwise it is in the course's language.
+      body.child(markdown(`course-example-${id}`, `\`\`\`${example.fence ?? this.data.course.codeFence ?? "typescript"}\n${example.code}\n\`\`\``));
       if(!example.readOnly) body.child(keyButton(t, `course-run-example-${id}`, "", "Run example", !this.busy, cx => this.run("example", { moduleId: lesson.id, exampleId: id }, cx)));
       const result = this.data.enrollment.modules[lesson.id]?.examples?.[id];
       if (result) {
@@ -472,6 +475,7 @@ export class CoursePanel {
     if (this.data.extrasError) body.child(banner(t, this.data.extrasError));
     if ((lesson.extraTasks ?? []).length) body.child(sectionLabel(t, "Extra practice"));
     for (const task of lesson.extraTasks ?? []) body.child(keyButton(t, `course-extra-${task.id}`, "", `${task.title} · AI-generated`, !this.busy && !this.data.enrollment.review, cx => this.run("task", { taskId: task.id }, cx)));
+    if (this.data.course.reading) return;
     if ((lesson.extraTasks ?? []).length < 6) body.child(keyButton(t, "course-write-extra", "", "Write extra practice", !this.busy && !this.data.enrollment.review && this.host.tutor.enabled && !this.data.extrasError, cx => this.generateExtraPractice(lesson.id, cx)))
       .child(div().text_size(11).text_color(t.muted).child(this.host.tutor.enabled
         ? "Optional. Each exercise is saved only after its reference passes and its starter and known wrong answers fail. Extra practice does not count toward module status or course review."

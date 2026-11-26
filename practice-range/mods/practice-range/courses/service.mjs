@@ -195,6 +195,7 @@ export async function courseCommand(root, action, request = {}, options = {}) {
     const persist = async () => { await save(file, state); };
     if (action === "enroll") { await persist(); await save(preferred, { courseId: pack.id, contentVersion: pack.contentVersion }); }
     else if (action === "attach-repo" || action === "detach-repo") {
+      if (action === "attach-repo" && !pack.languageId) throw new Error("This course has no code, so there is nothing to match against a repo.");
       if (action === "attach-repo") await attachRepo(directory, pack.languageId, request.path);
       else await detachRepo(directory);
     } else if (action === "save-repo-lesson") {
@@ -343,9 +344,10 @@ async function updateFor(root, pinned) {
 }
 
 async function snapshot(root, pack, state, directory, extrasError, update = null) {
-  const drills = await drillProgress(root, pack.languageId);
+  // A reading course has no language, so it has no linked drills and no answer files.
+  const drills = pack.languageId ? await drillProgress(root, pack.languageId) : { progress: {}, currentTopic: null };
   const active = state.activeTask ? taskFor(pack, state.activeTask).task : null;
-  const language = findLanguage(pack.languageId);
+  const language = pack.languageId ? findLanguage(pack.languageId) : null;
   const file = active ? answerPath(directory, active, language, state.review) : null;
   const progress = active ? taskProgress(state, active.id) : null;
   // Reference content is returned only after an explicit reveal. Checks stay in the Node process.
@@ -361,7 +363,7 @@ async function snapshot(root, pack, state, directory, extrasError, update = null
   const lessons = pack.lessons.map(lesson => ({ ...lesson, tasks: lesson.tasks.map(view), extraTasks: (lesson.extraTasks ?? []).map(view) }));
   const readiness = (pack.readiness ?? []).map(group => ({ ...group, task: view(group.task) }));
   const sourceHash = file ? hash(await readAnswer(file, active)) : null;
-  return { course: { id: pack.id, title: pack.title, contentVersion: pack.contentVersion, languageId: pack.languageId, codeFence: language.codeFence,
+  return { course: { id: pack.id, title: pack.title, contentVersion: pack.contentVersion, languageId: pack.languageId, codeFence: language?.codeFence ?? "text", reading: pack.kind === "reading",
     preview: pack.preview === true, modules: pack.modules, lessons, readiness,
     project: pack.project && typeof pack.project === "object" ? pack.project : null },
     update, migration: await readMigration(directory),

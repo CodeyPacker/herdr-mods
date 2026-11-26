@@ -6,9 +6,9 @@ import { validatePack } from "../mods/practice-range/courses/loader.mjs";
 import { writeCoursePack } from "../mods/practice-range/courses/storage.mjs";
 
 const base = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-// node practice-range/scripts/build-course.mjs [typescript|csharp|sql]
+// node practice-range/scripts/build-course.mjs [typescript|csharp|sql|api-design]
 const language = process.argv[2] ?? "typescript";
-if (!["typescript", "csharp", "sql"].includes(language)) throw new Error("Usage: build-course.mjs [typescript|csharp|sql]");
+if (!["typescript", "csharp", "sql", "api-design"].includes(language)) throw new Error("Usage: build-course.mjs [typescript|csharp|sql|api-design]");
 const draft = resolve(base, "course-drafts", language);
 async function source(folder, path) {
   const file = resolve(folder, path);
@@ -68,6 +68,7 @@ const pack = {
   lessons: modules,
 };
 validatePack(pack);
-const destination = resolve(base, `mods/practice-range/courses/packs/${language}-foundations.json`);
+// A language course is named for its language. A reading course has none and keeps its draft folder's name.
+const destination = resolve(base, `mods/practice-range/courses/packs/${manifest.kind === "reading" ? language : `${language}-foundations`}.json`);
 await writeCoursePack(destination, pack);
 console.log(`Built ${pack.id}: ${modules.length} preview modules, ${modules.reduce((n, m) => n + m.tasks.length, 0)} tasks.`);

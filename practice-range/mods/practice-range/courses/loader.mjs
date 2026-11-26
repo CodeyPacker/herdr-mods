@@ -49,11 +49,17 @@ export function validatePack(pack) {
   requireValue(/^course:[a-z0-9-]+$/.test(pack.id), "course ID");
   requireValue(/^\d+\.\d+\.\d+(?:-[a-z0-9.]+)?$/.test(pack.contentVersion), "content version");
   requireValue(text(pack.title), "title");
-  findLanguage(pack.languageId);
-  requireValue(pack.runner?.registeredLanguage === pack.languageId, "runner must match registered language");
-  // TypeScript packs pin an exact compiler. C# uses the installed .NET SDK at or above a major version.
-  requireValue(/^=\d+\.\d+\.\d+$/.test(pack.runner?.compiler?.range) ||
-    (pack.languageId === "csharp" && Number.isInteger(pack.runner?.compiler?.minimumMajor) && pack.runner.compiler.minimumMajor >= 8), "compiler must name an exact supported version or a minimum .NET SDK");
+  // A reading course teaches a subject with text, diagrams and questions. It has no code to run,
+  // so it names no language and no runner, and it holds no exercises.
+  const reading = pack.kind === "reading";
+  if (reading) requireValue(pack.languageId === undefined && pack.runner === undefined, "a reading course names no language or runner");
+  else {
+    findLanguage(pack.languageId);
+    requireValue(pack.runner?.registeredLanguage === pack.languageId, "runner must match registered language");
+    // TypeScript packs pin an exact compiler. C# uses the installed .NET SDK at or above a major version.
+    requireValue(/^=\d+\.\d+\.\d+$/.test(pack.runner?.compiler?.range) ||
+      (pack.languageId === "csharp" && Number.isInteger(pack.runner?.compiler?.minimumMajor) && pack.runner.compiler.minimumMajor >= 8), "compiler must name an exact supported version or a minimum .NET SDK");
+  }
   const entries = list(pack.modules, "modules");
   requireValue(entries.length > 0, "empty course");
   const ids = unique(entries, "modules");
@@ -95,6 +101,7 @@ export function validatePack(pack) {
       requireValue(Number.isInteger(question.answer) && question.answer >= 0 && question.answer < question.choices.length, "answer index");
       if (question.example) requireValue(Object.hasOwn(lesson.examples, question.example), "question example");
     }
+    if (reading) requireValue(tasks.length === 0 && Object.values(lesson.examples).every(example => example.readOnly === true), "a reading course has no exercises or runnable examples");
     for (const task of tasks) validateTask(pack, task, taskIds);
     const steps = list(lesson.steps, "steps");
     requireValue(steps.length > 0, "empty lesson");
@@ -106,6 +113,7 @@ export function validatePack(pack) {
       for (const id of [...(step.examples ?? []), ...(step.example ? [step.example] : [])]) requireValue(Object.hasOwn(lesson.examples, id), "step example");
     }
   }
+  if (reading) requireValue((pack.readiness ?? []).length === 0, "a reading course has no readiness checks");
   for (const group of list(pack.readiness ?? [], "readiness")) {
     requireValue(text(group.id) && text(group.title) && list(group.modules, "readiness modules").every(id => ids.has(id)), "readiness group");
     requireValue(group.task?.role === "readiness", "readiness task role");
@@ -136,7 +144,7 @@ export async function listCourses() {
     try {
       const pack = await loadCourse(id);
       return { id, title: pack.title, languageId: pack.languageId, contentVersion: pack.contentVersion,
-        preview: pack.preview === true, available: pack.lessons.length, total: pack.modules.length };
+        preview: pack.preview === true, available: pack.lessons.length, total: pack.modules.length, reading: pack.kind === "reading" };
     } catch (error) { return { id, languageId: bundledCourses.find(course=>course.id===id)?.languageId, error: error.message }; }
   }));
 }
