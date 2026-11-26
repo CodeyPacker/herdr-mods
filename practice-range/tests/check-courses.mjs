@@ -19,8 +19,9 @@ try {
   const feedback = await request("question", { moduleId, questionId: "predict-count", choice: 1 });
   const task = await request("task", { taskId });
   const solution = await request("answer", { taskId });
+  const project = await request("task", { taskId: `${courseId}/task/report-audit` });
   const cases = { catalog: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules],
-    prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], error: ["task", task] };
+    prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], error: ["task", task] };
   for (const [name, [page, data]] of Object.entries(cases)) {
     const folder = join(root, name);
     await cp(source, folder, { recursive: true, filter: path => !path.split(/[\\/]/).includes("node_modules") });

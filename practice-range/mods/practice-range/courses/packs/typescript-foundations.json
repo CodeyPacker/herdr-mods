@@ -262,7 +262,7 @@
         "validation",
         "erasure"
       ],
-      "status": "planned"
+      "status": "available"
     },
     {
       "id": "course:ts-foundations/module/modules",
@@ -275,7 +275,7 @@
         "import-export",
         "compiler-config"
       ],
-      "status": "planned"
+      "status": "available"
     },
     {
       "id": "course:ts-foundations/module/checks",
@@ -288,7 +288,7 @@
         "tests",
         "debugging"
       ],
-      "status": "planned"
+      "status": "available"
     },
     {
       "id": "course:ts-foundations/module/errors",
@@ -301,7 +301,7 @@
         "throw-catch",
         "failure"
       ],
-      "status": "planned"
+      "status": "available"
     },
     {
       "id": "course:ts-foundations/module/async",
@@ -315,7 +315,7 @@
         "await",
         "async-fixture"
       ],
-      "status": "planned"
+      "status": "available"
     },
     {
       "id": "course:ts-foundations/module/generic",
@@ -329,7 +329,7 @@
         "generic",
         "utility"
       ],
-      "status": "planned"
+      "status": "available"
     },
     {
       "id": "course:ts-foundations/module/compose",
@@ -343,7 +343,7 @@
         "composition",
         "class-reading"
       ],
-      "status": "planned"
+      "status": "available"
     },
     {
       "id": "course:ts-foundations/module/tracker",
@@ -356,7 +356,7 @@
       "teaches": [
         "project-workspace"
       ],
-      "status": "planned"
+      "status": "available"
     },
     {
       "id": "course:ts-foundations/module/report",
@@ -367,7 +367,7 @@
       "teaches": [
         "transfer"
       ],
-      "status": "planned"
+      "status": "available"
     }
   ],
   "project": "project/project.json",
@@ -2873,6 +2873,2063 @@
         "narrowing/boolean-discriminant"
       ],
       "drillGap": "The linked drills practice prescribed forms. This sample accepts equivalent branches and tests invalid delivery shapes and zero-valued payloads."
+    },
+    {
+      "id": "course:ts-foundations/module/boundary",
+      "title": "Check data before trusting its type",
+      "requires": [
+        "discriminant",
+        "map-set",
+        "narrowing"
+      ],
+      "outcomes": [
+        {
+          "id": "predict",
+          "can": "Predict runtime validation results and explain why an assertion cannot validate a field.",
+          "assessment": [
+            "predict",
+            "explain"
+          ]
+        },
+        {
+          "id": "safe-title",
+          "can": "Read only a valid title",
+          "assessment": [
+            "course:ts-foundations/task/boundary-safe-title"
+          ]
+        },
+        {
+          "id": "valid-task",
+          "can": "Accept only complete imported tasks",
+          "assessment": [
+            "course:ts-foundations/task/boundary-valid-task"
+          ]
+        },
+        {
+          "id": "safe-list",
+          "can": "Validate a list of labels",
+          "assessment": [
+            "course:ts-foundations/task/boundary-safe-list"
+          ]
+        }
+      ],
+      "intro": "An outside value can be anything. unknown lets you hold it while requiring evidence before reading fields. any turns off those checks. A type assertion written with as tells the compiler what to assume. Neither an assertion nor a type annotation examines the actual data. Validate the parts your program will use.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Check data before trusting its type",
+          "text": "An outside value can be anything. unknown lets you hold it while requiring evidence before reading fields. any turns off those checks. A type assertion written with as tells the compiler what to assume. Neither an assertion nor a type annotation examines the actual data. Validate the parts your program will use."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict before running",
+          "text": "Read the example and predict what happens before checking your answer.",
+          "example": "trace",
+          "questions": [
+            "predict"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the example",
+          "text": "typeof null is \"object\", and arrays are objects too. The guard rejects null and arrays before inspecting properties. The in operator checks whether an object has a property. After checking typeof value.title, TypeScript knows the field is text. The JavaScript comparisons still execute after the type annotations disappear.",
+          "example": "trace"
+        },
+        {
+          "kind": "prediction",
+          "title": "Check your explanation",
+          "text": "Read the indicated code and choose the explanation that accounts for its behavior.",
+          "example": "trace",
+          "questions": [
+            "explain"
+          ]
+        },
+        {
+          "kind": "modification",
+          "title": "Read only a valid title",
+          "text": "Return the title of a non-null, non-array object when title is a string, including empty text. For every other JSON value return null.",
+          "task": "course:ts-foundations/task/boundary-safe-title"
+        },
+        {
+          "kind": "independent",
+          "title": "Accept only complete imported tasks",
+          "text": "Use the contract in the exercise and check your answer on save.",
+          "task": "course:ts-foundations/task/boundary-valid-task"
+        }
+      ],
+      "questions": [
+        {
+          "id": "predict",
+          "example": "trace",
+          "prompt": "Which results print?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "true then false",
+              "feedback": "An empty string is still text and seven is a number."
+            },
+            {
+              "text": "false then true",
+              "feedback": "The check examines the type, not the truthiness."
+            }
+          ]
+        },
+        {
+          "id": "explain",
+          "example": "trace",
+          "prompt": "Would an assertion as { title: string } change a numeric title to text?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Yes. It converts the field.",
+              "feedback": "Conversion requires runtime code."
+            },
+            {
+              "text": "No. Runtime data stays the same.",
+              "feedback": "Assertions are erased during compilation."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "trace": {
+          "stdout": [
+            "true",
+            "false"
+          ],
+          "code": "function hasTitle(value: unknown): boolean {\n  return typeof value === \"object\" && value !== null && !Array.isArray(value)\n    && \"title\" in value && typeof value.title === \"string\";\n}\nconsole.log(hasTitle({ title: \"\" }));\nconsole.log(hasTitle({ title: 7 }));\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/boundary-safe-title",
+          "role": "guided",
+          "title": "Read only a valid title",
+          "concepts": [
+            "unknown",
+            "validation",
+            "erasure"
+          ],
+          "prompt": "Return the title of a non-null, non-array object when title is a string, including empty text. For every other JSON value return null.",
+          "hints": [
+            "Trace the input with a numeric title.",
+            "Check the surrounding object before reading its field.",
+            "Check the field type without discarding empty text."
+          ],
+          "starter": "function safeTitle(value: unknown): string | null {\n  return (value as {title: string}).title;\n}\n",
+          "solution": "function safeTitle(value: unknown): string | null {\n  if (typeof value !== \"object\" || value === null || Array.isArray(value)) return null;\n  if (\"title\" in value && typeof value.title === \"string\") return value.title;\n  return null;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(safeTitle({title:\"\"}), \"\")",
+            "__same(safeTitle({title:4}), null)",
+            "__same(safeTitle(null), null)",
+            "__same(safeTitle([]), null)",
+            "__same(safeTitle(\"hello\"), null)",
+            "__same(safeTitle({}), null)",
+            "__same(safeTitle({title:\"Mail\"}), \"Mail\")"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Trace the input with a numeric title."
+        },
+        {
+          "id": "course:ts-foundations/task/boundary-valid-task",
+          "role": "independent",
+          "title": "Accept only complete imported tasks",
+          "concepts": [
+            "unknown",
+            "validation",
+            "erasure"
+          ],
+          "prompt": "For JSON input return true only for a non-null, non-array object with a nonempty string id and boolean done. Extra fields are allowed. A space is a nonempty id.",
+          "hints": [
+            "Test a valid open task first.",
+            "Both the presence and type of each required property matter.",
+            "Validate the ID length and allow either boolean value."
+          ],
+          "starter": "function validTask(value: unknown): boolean {\n  return false;\n}\n",
+          "solution": "function validTask(value: unknown): boolean {\n  if (value === null || typeof value !== \"object\" || Array.isArray(value)) return false;\n  return \"id\" in value && typeof value.id === \"string\" && value.id.length > 0\n    && \"done\" in value && typeof value.done === \"boolean\";\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(validTask({id:\"A\",done:false}), true)",
+            "__same(validTask({id:\"\",done:true}), false)",
+            "__same(validTask({id:\"A\",done:1}), false)",
+            "__same(validTask(null), false)",
+            "__same(validTask([]), false)",
+            "__same(validTask({id:\" \",done:true,note:\"ok\"}), true)",
+            "__same(validTask({done:false}), false)",
+            "__same(validTask(\"x\"), false)"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Test a valid open task first."
+        },
+        {
+          "id": "course:ts-foundations/task/boundary-safe-list",
+          "role": "review",
+          "title": "Validate a list of labels",
+          "concepts": [
+            "unknown",
+            "validation",
+            "erasure"
+          ],
+          "prompt": "Return true for an array containing only strings. An empty array qualifies. A plain string or an array with any non-string fails.",
+          "hints": [
+            "Check the container before inspecting any item.",
+            "Each item needs its own type check.",
+            "An empty list has no invalid item."
+          ],
+          "starter": "function labelsOnly(value: unknown): boolean {\n  return Array.isArray(value);\n}\n",
+          "solution": "function labelsOnly(value: unknown): boolean {\n  if (!Array.isArray(value)) return false;\n  return value.every(item => typeof item === \"string\");\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(labelsOnly([]), true)",
+            "__same(labelsOnly([\"\", \"x\"]), true)",
+            "__same(labelsOnly([\"x\", 0]), false)",
+            "__same(labelsOnly(\"x\"), false)",
+            "__same(labelsOnly(null), false)"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Check the container before inspecting any item."
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/boundary-safe-list",
+        "afterModule": "course:ts-foundations/module/errors",
+        "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
+      },
+      "drills": [
+        "guards/validate-unknown",
+        "narrowing/object-check"
+      ],
+      "drillGap": "The linked drills isolate syntax. This module checks the combined behavior on varied inputs."
+    },
+    {
+      "id": "course:ts-foundations/module/modules",
+      "title": "Connect two local files",
+      "requires": [
+        "function",
+        "object-shape",
+        "annotation"
+      ],
+      "outcomes": [
+        {
+          "id": "predict",
+          "can": "Explain a local export and distinguish strict null checking from the emission target.",
+          "assessment": [
+            "predict",
+            "explain"
+          ]
+        },
+        {
+          "id": "named",
+          "can": "Repair a named import",
+          "assessment": [
+            "course:ts-foundations/task/modules-named"
+          ]
+        },
+        {
+          "id": "export-task",
+          "can": "Publish a typed task constructor",
+          "assessment": [
+            "course:ts-foundations/task/modules-export-task"
+          ]
+        },
+        {
+          "id": "config",
+          "can": "Read a project configuration",
+          "assessment": [
+            "course:ts-foundations/task/modules-config"
+          ]
+        }
+      ],
+      "intro": "A file can expose a named value with export. Another file imports that name from a relative path, such as ./numbers.js. The pack compiles .ts sources to JavaScript modules and runs the emitted .js files locally. import type brings in a type for checking, and that import disappears from emitted code.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Connect two local files",
+          "text": "A file can expose a named value with export. Another file imports that name from a relative path, such as ./numbers.js. The pack compiles .ts sources to JavaScript modules and runs the emitted .js files locally. import type brings in a type for checking, and that import disappears from emitted code."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict before running",
+          "text": "Read the example and predict what happens before checking your answer.",
+          "example": "trace",
+          "questions": [
+            "predict"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the example",
+          "text": "The example exports a function and then calls it in the same file. In the guided task the helper lives in supplied numbers.ts and is called through an import. The editor’s tsconfig.json describes checking settings. strict enables stricter diagnostics including null checks. target selects the JavaScript version to generate. Changing target does not turn off null checks.",
+          "example": "trace"
+        },
+        {
+          "kind": "prediction",
+          "title": "Check your explanation",
+          "text": "Read the indicated code and choose the explanation that accounts for its behavior.",
+          "example": "trace",
+          "questions": [
+            "explain"
+          ]
+        },
+        {
+          "kind": "modification",
+          "title": "Repair a named import",
+          "text": "The supplied numbers.ts exports starting and add. Export next(delta: number): number. Return add(starting, delta). The starter asks for the wrong export. Use \"./numbers.js\" as the import path.",
+          "task": "course:ts-foundations/task/modules-named"
+        },
+        {
+          "kind": "independent",
+          "title": "Publish a typed task constructor",
+          "text": "Use the contract in the exercise and check your answer on save.",
+          "task": "course:ts-foundations/task/modules-export-task"
+        }
+      ],
+      "questions": [
+        {
+          "id": "predict",
+          "example": "trace",
+          "prompt": "What is printed by the call?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "6",
+              "feedback": "Export makes the name available to other files and does not stop this file from using it."
+            },
+            {
+              "text": "Nothing because the function is exported.",
+              "feedback": "The local call still executes."
+            }
+          ]
+        },
+        {
+          "id": "explain",
+          "example": "trace",
+          "prompt": "Which setting makes the compiler flag a possibly null access in this pack?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "target",
+              "feedback": "target selects an output language level."
+            },
+            {
+              "text": "strict through strictNullChecks",
+              "feedback": "strict enables this checking unless specifically overridden."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "trace": {
+          "stdout": [
+            "6"
+          ],
+          "code": "export function double(n: number): number {\n  return n * 2;\n}\nconsole.log(double(3));\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/modules-named",
+          "role": "guided",
+          "title": "Repair a named import",
+          "concepts": [
+            "import-export",
+            "compiler-config"
+          ],
+          "prompt": "The supplied numbers.ts exports starting and add. Export next(delta: number): number. Return add(starting, delta). The starter asks for the wrong export. Use \"./numbers.js\" as the import path.",
+          "hints": [
+            "Inspect the supplied file’s exported names.",
+            "A named import must match the original export or explicitly rename it.",
+            "Read the supplied starting value and pass both numbers to the helper."
+          ],
+          "starter": "import { start, add } from \"./numbers.js\";\nexport function next(delta: number): number { return add(start, delta); }\n",
+          "solution": "import { starting, add } from \"./numbers.js\";\nexport function next(delta: number): number {\n  return add(starting, delta);\n}\n",
+          "mode": "module",
+          "rules": [
+            {
+              "kind": "ImportDeclaration",
+              "message": "Import the supplied helper module."
+            }
+          ],
+          "checks": [
+            "__same(answer.next(-3), 0)",
+            "__same(answer.next(4), 7)"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Inspect the supplied file’s exported names.",
+          "modules": {
+            "numbers.ts": "export const starting = 3;\nexport function add(a: number, b: number): number {\n  return a + b;\n}\n"
+          }
+        },
+        {
+          "id": "course:ts-foundations/task/modules-export-task",
+          "role": "independent",
+          "title": "Publish a typed task constructor",
+          "concepts": [
+            "import-export",
+            "compiler-config"
+          ],
+          "prompt": "The supplied model.ts exports the type Task with id and title fields. Import this type and export makeTask(id: number, title: string): Task. Return exactly those two fields.",
+          "hints": [
+            "Read the type declaration in model.ts.",
+            "Keep the named function or value visible to other files.",
+            "Build the return object from the two parameters."
+          ],
+          "starter": "export {};\n",
+          "solution": "import type { Task } from \"./model.js\";\nexport function makeTask(id: number, title: string): Task {\n  return { id, title };\n}\n",
+          "mode": "module",
+          "rules": [
+            {
+              "kind": "ImportDeclaration",
+              "message": "Import the supplied Task type."
+            }
+          ],
+          "checks": [
+            "__same(answer.makeTask(8,\"\"), {id:8,title:\"\"})",
+            "__same(answer.makeTask(0,\"Open\"), {id:0,title:\"Open\"})"
+          ],
+          "typeChecks": [
+            "__Equal<typeof answer.makeTask, (id: number, title: string) => { id: number; title: string }>"
+          ],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Read the type declaration in model.ts.",
+          "modules": {
+            "model.ts": "export interface Task { id: number; title: string }\n"
+          }
+        },
+        {
+          "id": "course:ts-foundations/task/modules-config",
+          "role": "review",
+          "title": "Read a project configuration",
+          "concepts": [
+            "import-export",
+            "compiler-config"
+          ],
+          "prompt": "Return a Settings object for a project that checks null access and emits ES2022. The supplied Settings type contains strictNullChecks (boolean) and target (text). This exercise asks for a description of settings and leaves the course's real configuration intact.",
+          "hints": [
+            "Name the option that checks null access.",
+            "Keep the checking choice separate from the emitted language level.",
+            "The requested target is an exact string."
+          ],
+          "starter": "function settings(): Settings {\n  return { strictNullChecks: false, target: \"ES2022\" };\n}\n",
+          "solution": "function settings(): Settings {\n  return { strictNullChecks: true, target: \"ES2022\" };\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(settings(), {strictNullChecks:true,target:\"ES2022\"})"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "type Settings = { strictNullChecks: boolean; target: string };\n"
+            }
+          ],
+          "feedback": "Name the option that checks null access."
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/modules-config",
+        "afterModule": "course:ts-foundations/module/async",
+        "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
+      },
+      "drills": [
+        "modules/import-named",
+        "modules/export-function"
+      ],
+      "drillGap": "The linked drills isolate syntax. This module checks the combined behavior on varied inputs."
+    },
+    {
+      "id": "course:ts-foundations/module/checks",
+      "title": "Write a check that finds a defect",
+      "requires": [
+        "function",
+        "import-export",
+        "array"
+      ],
+      "outcomes": [
+        {
+          "id": "predict",
+          "can": "Explain which boundary test distinguishes a defect from its fix.",
+          "assessment": [
+            "predict",
+            "explain"
+          ]
+        },
+        {
+          "id": "threshold",
+          "can": "Repair a threshold",
+          "assessment": [
+            "course:ts-foundations/task/checks-threshold"
+          ]
+        },
+        {
+          "id": "choose-test",
+          "can": "Test a faulty count",
+          "assessment": [
+            "course:ts-foundations/task/checks-choose-test"
+          ]
+        },
+        {
+          "id": "test-order",
+          "can": "Catch a reversed pair",
+          "assessment": [
+            "course:ts-foundations/task/checks-test-order"
+          ]
+        }
+      ],
+      "intro": "A test calls a program with known input and compares its actual result with the expected result. A useful boundary case sits just where a rule changes. Reading the first failed comparison tells you which input to trace. A regression test is a test kept to catch a previously fixed defect.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Write a check that finds a defect",
+          "text": "A test calls a program with known input and compares its actual result with the expected result. A useful boundary case sits just where a rule changes. Reading the first failed comparison tells you which input to trace. A regression test is a test kept to catch a previously fixed defect."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict before running",
+          "text": "Read the example and predict what happens before checking your answer.",
+          "example": "trace",
+          "questions": [
+            "predict"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the example",
+          "text": "The rule is “three or more.” With input 3 the expected result is true, but the candidate returns false. At 4 both the faulty and corrected versions would return true. For a useful regression, run your test on both versions and confirm only the faulty one fails. Passing a candidate function as an argument lets the same test exercise multiple implementations.",
+          "example": "trace"
+        },
+        {
+          "kind": "prediction",
+          "title": "Check your explanation",
+          "text": "Read the indicated code and choose the explanation that accounts for its behavior.",
+          "example": "trace",
+          "questions": [
+            "explain"
+          ]
+        },
+        {
+          "kind": "modification",
+          "title": "Repair a threshold",
+          "text": "Return true for at least limit tasks. Inputs are nonnegative numbers. The failing case has count equal to limit.",
+          "task": "course:ts-foundations/task/checks-threshold"
+        },
+        {
+          "kind": "independent",
+          "title": "Test a faulty count",
+          "text": "Use the contract in the exercise and check your answer on save.",
+          "task": "course:ts-foundations/task/checks-choose-test"
+        }
+      ],
+      "questions": [
+        {
+          "id": "predict",
+          "example": "trace",
+          "prompt": "Which check fails?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "The first comparison",
+              "feedback": "Three is the excluded boundary."
+            },
+            {
+              "text": "The second comparison",
+              "feedback": "Four already passes the strict comparison."
+            }
+          ]
+        },
+        {
+          "id": "explain",
+          "example": "trace",
+          "prompt": "Would testing only four detect the defect?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Yes, four is above the limit.",
+              "feedback": "The defect occurs at the boundary."
+            },
+            {
+              "text": "No, both versions return true.",
+              "feedback": "An input that produces identical outputs cannot distinguish the versions."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "trace": {
+          "stdout": [
+            "false",
+            "true"
+          ],
+          "code": "function busy(n: number): boolean {\n  return n > 3;\n}\nconsole.log(busy(3) === true);\nconsole.log(busy(4) === true);\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/checks-threshold",
+          "role": "guided",
+          "title": "Repair a threshold",
+          "concepts": [
+            "tests",
+            "debugging"
+          ],
+          "prompt": "Return true for at least limit tasks. Inputs are nonnegative numbers. The failing case has count equal to limit.",
+          "hints": [
+            "Read the expected boolean at count 3.",
+            "Compare one below, exactly at and one above the limit.",
+            "Choose the comparison that includes the limit."
+          ],
+          "starter": "function isBusy(count: number, limit: number): boolean {\n  return count > limit;\n}\n",
+          "solution": "function isBusy(count: number, limit: number): boolean {\n  return count >= limit;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(isBusy(3, 3), true)",
+            "__same(isBusy(2, 3), false)",
+            "__same(isBusy(4, 3), true)",
+            "__same(isBusy(0, 0), true)"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Read the expected boolean at count 3."
+        },
+        {
+          "id": "course:ts-foundations/task/checks-choose-test",
+          "role": "independent",
+          "title": "Test a faulty count",
+          "concepts": [
+            "tests",
+            "debugging"
+          ],
+          "prompt": "Write catchesMissingLast(candidate): boolean. A correct candidate sums a number array; the broken candidate sums every element except the last. Return true when your test sees the correct result and false when it detects the defect. Call the supplied candidate on a distinguishing input.",
+          "hints": [
+            "Compare the two behaviors on an empty list.",
+            "Choose an input where the final entry affects the answer.",
+            "Compute the expected answer independently of the candidate."
+          ],
+          "starter": "function catchesMissingLast(candidate: (values: number[]) => number): boolean {\n  return true;\n}\n",
+          "solution": "function catchesMissingLast(candidate: (values: number[]) => number): boolean {\n  return candidate([2, 5]) === 7;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "catchesMissingLast(xs => xs.reduce((sum,x) => sum+x,0)) === true",
+            "catchesMissingLast(xs => xs.slice(0,-1).reduce((sum,x) => sum+x,0)) === false",
+            "(() => { let calls = 0; catchesMissingLast(xs => { calls++; return 0; }); return calls > 0; })()"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Compare the two behaviors on an empty list."
+        },
+        {
+          "id": "course:ts-foundations/task/checks-test-order",
+          "role": "review",
+          "title": "Catch a reversed pair",
+          "concepts": [
+            "tests",
+            "debugging"
+          ],
+          "prompt": "Implement orderTest(candidate). A correct candidate joins two strings in argument order with a slash, and the faulty version joins them in reverse. Return true for correct behavior and false for the defect.",
+          "hints": [
+            "Would two equal inputs distinguish the orders?",
+            "Choose different first and second strings.",
+            "Specify the expected text for that input."
+          ],
+          "starter": "function orderTest(candidate: (first: string, second: string) => string): boolean {\n  return false;\n}\n",
+          "solution": "function orderTest(candidate: (first: string, second: string) => string): boolean {\n  return candidate(\"west\", \"east\") === \"west/east\";\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "orderTest((a,b)=>a+\"/\"+b) === true",
+            "orderTest((a,b)=>b+\"/\"+a) === false"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Would two equal inputs distinguish the orders?"
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/checks-test-order",
+        "afterModule": "course:ts-foundations/module/async",
+        "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
+      },
+      "drills": [
+        "callbacks/predicate",
+        "narrowing/guard-clause"
+      ],
+      "drillGap": "The linked drills isolate syntax. This module checks the combined behavior on varied inputs."
+    },
+    {
+      "id": "course:ts-foundations/module/errors",
+      "title": "Handle expected and unexpected failures",
+      "requires": [
+        "unknown",
+        "narrowing",
+        "tests"
+      ],
+      "outcomes": [
+        {
+          "id": "predict",
+          "can": "Tell a thrown error from a successfully returned empty value.",
+          "assessment": [
+            "predict",
+            "explain"
+          ]
+        },
+        {
+          "id": "error-text",
+          "can": "Explain a caught value",
+          "assessment": [
+            "course:ts-foundations/task/errors-error-text"
+          ]
+        },
+        {
+          "id": "read-result",
+          "can": "Keep successes and exceptions distinct",
+          "assessment": [
+            "course:ts-foundations/task/errors-read-result"
+          ]
+        },
+        {
+          "id": "lookup",
+          "can": "Return an expected miss",
+          "assessment": [
+            "course:ts-foundations/task/errors-lookup"
+          ]
+        }
+      ],
+      "intro": "A missing task can be an ordinary result your callers expect. A failed reader may instead throw an exception. A throw interrupts ordinary execution until a catch handles it. try surrounds the operation that might throw. In strict TypeScript the caught value is unknown: JavaScript permits throwing strings as well as Error objects.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Handle expected and unexpected failures",
+          "text": "A missing task can be an ordinary result your callers expect. A failed reader may instead throw an exception. A throw interrupts ordinary execution until a catch handles it. try surrounds the operation that might throw. In strict TypeScript the caught value is unknown: JavaScript permits throwing strings as well as Error objects."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict before running",
+          "text": "Read the example and predict what happens before checking your answer.",
+          "example": "trace",
+          "questions": [
+            "predict"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the example",
+          "text": "If the reader returns an empty string, the try block returns that value normally. Only a throw enters catch. instanceof Error narrows to the class with a message field. A typeof check can separately recognize a thrown string. Other values need a fallback. Returning inside try or catch finishes the current call.",
+          "example": "trace"
+        },
+        {
+          "kind": "prediction",
+          "title": "Check your explanation",
+          "text": "Read the indicated code and choose the explanation that accounts for its behavior.",
+          "example": "trace",
+          "questions": [
+            "explain"
+          ]
+        },
+        {
+          "kind": "modification",
+          "title": "Explain a caught value",
+          "text": "Return the Error message for an Error, the original text for a string, and \"Unknown\" otherwise. Preserve empty messages.",
+          "task": "course:ts-foundations/task/errors-error-text"
+        },
+        {
+          "kind": "independent",
+          "title": "Keep successes and exceptions distinct",
+          "text": "Use the contract in the exercise and check your answer on save.",
+          "task": "course:ts-foundations/task/errors-read-result"
+        }
+      ],
+      "questions": [
+        {
+          "id": "predict",
+          "example": "trace",
+          "prompt": "What prints on the first line?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "true",
+              "feedback": "Returning empty text is a successful return."
+            },
+            {
+              "text": "Unknown",
+              "feedback": "Only a thrown value enters catch."
+            }
+          ]
+        },
+        {
+          "id": "explain",
+          "example": "trace",
+          "prompt": "If the reader throws the string \"No file\", which text does this example return?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "No file",
+              "feedback": "Only the Error path reads .message."
+            },
+            {
+              "text": "Unknown",
+              "feedback": "A string is not an Error instance."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "trace": {
+          "stdout": [
+            "true",
+            "No file"
+          ],
+          "code": "function read(source: () => string): string {\n  try {\n    return source();\n  } catch (problem) {\n    if (problem instanceof Error) return problem.message;\n    return \"Unknown\";\n  }\n}\nconsole.log(read(() => \"\" ) === \"\");\nconsole.log(read(() => { throw new Error(\"No file\"); }));\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/errors-error-text",
+          "role": "guided",
+          "title": "Explain a caught value",
+          "concepts": [
+            "throw-catch",
+            "failure"
+          ],
+          "prompt": "Return the Error message for an Error, the original text for a string, and \"Unknown\" otherwise. Preserve empty messages.",
+          "hints": [
+            "Check the runtime kind before reading a field.",
+            "An empty string still carries a string message.",
+            "Use the fallback only after the two known cases."
+          ],
+          "starter": "function issueText(problem: unknown): string {\n  return String(problem);\n}\n",
+          "solution": "function issueText(problem: unknown): string {\n  if (problem instanceof Error) return problem.message;\n  if (typeof problem === \"string\") return problem;\n  return \"Unknown\";\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(issueText(new Error(\"Denied\")), \"Denied\")",
+            "__same(issueText(\"\"), \"\")",
+            "__same(issueText(42), \"Unknown\")",
+            "__same(issueText(null), \"Unknown\")"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Check the runtime kind before reading a field."
+        },
+        {
+          "id": "course:ts-foundations/task/errors-read-result",
+          "role": "independent",
+          "title": "Keep successes and exceptions distinct",
+          "concepts": [
+            "throw-catch",
+            "failure"
+          ],
+          "prompt": "Run source once. Return {kind:\"ok\", text} when it returns a string, including empty text. If it throws, return {kind:\"error\", message} using the Error message, thrown string, or \"Unknown\".",
+          "hints": [
+            "Separate the success path from the catch path.",
+            "Use the returned string even when it is empty.",
+            "Narrow caught data before building the error result."
+          ],
+          "starter": "function readText(source: () => string): Result {\n  return {kind:\"ok\", text:source()};\n}\n",
+          "solution": "function readText(source: () => string): Result {\n  try {\n    return {kind:\"ok\", text:source()};\n  } catch (problem) {\n    const message = problem instanceof Error ? problem.message : typeof problem === \"string\" ? problem : \"Unknown\";\n    return {kind:\"error\", message};\n  }\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(readText(() => \"\"), {kind:\"ok\",text:\"\"})",
+            "__same(readText(() => \"Mail\"), {kind:\"ok\",text:\"Mail\"})",
+            "__same(readText(() => { throw new Error(\"Busy\") }), {kind:\"error\",message:\"Busy\"})",
+            "__same(readText(() => { throw \"\" }), {kind:\"error\",message:\"\"})",
+            "__same(readText(() => { throw null }), {kind:\"error\",message:\"Unknown\"})",
+            "(() => { let n=0; readText(()=>{n++;return \"x\"}); return n===1; })()"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "type Result = {kind:\"ok\";text:string} | {kind:\"error\";message:string};\n"
+            }
+          ],
+          "feedback": "Separate the success path from the catch path."
+        },
+        {
+          "id": "course:ts-foundations/task/errors-lookup",
+          "role": "review",
+          "title": "Return an expected miss",
+          "concepts": [
+            "throw-catch",
+            "failure"
+          ],
+          "prompt": "Use a Map of titles by numeric ID. Return the existing title, including empty text, or null when the key is absent. A missing key is an ordinary outcome.",
+          "hints": [
+            "An existing value may be empty.",
+            "Read the value for the requested key.",
+            "Handle the Map’s missing-key result explicitly."
+          ],
+          "starter": "function lookup(titles: Map<number, string>, id: number): string | null {\n  return null;\n}\n",
+          "solution": "function lookup(titles: Map<number, string>, id: number): string | null {\n  return titles.get(id) ?? null;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(lookup(new Map([[2,\"\"]]), 2), \"\")",
+            "__same(lookup(new Map(), 7), null)",
+            "__same(lookup(new Map([[1,\"Post\"]]), 1), \"Post\")"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "An existing value may be empty."
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/errors-lookup",
+        "afterModule": "course:ts-foundations/module/compose",
+        "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
+      },
+      "drills": [
+        "narrowing/instanceof-narrowing",
+        "guards/unwrap-result"
+      ],
+      "drillGap": "The linked drills isolate syntax. This module checks the combined behavior on varied inputs."
+    },
+    {
+      "id": "course:ts-foundations/module/async",
+      "title": "Wait for a local reader",
+      "requires": [
+        "throw-catch",
+        "import-export"
+      ],
+      "outcomes": [
+        {
+          "id": "predict",
+          "can": "Distinguish the promise from its resolved value and identify where to catch rejection.",
+          "assessment": [
+            "predict",
+            "explain"
+          ]
+        },
+        {
+          "id": "double",
+          "can": "Wait before multiplying",
+          "assessment": [
+            "course:ts-foundations/task/async-double"
+          ]
+        },
+        {
+          "id": "read-batch",
+          "can": "Report a rejected local read",
+          "assessment": [
+            "course:ts-foundations/task/async-read-batch"
+          ]
+        },
+        {
+          "id": "in-order",
+          "can": "Read two notes in order",
+          "assessment": [
+            "course:ts-foundations/task/async-in-order"
+          ]
+        }
+      ],
+      "intro": "A promise represents a result that may arrive later. A fulfilled promise carries a value and a rejected one carries a reason. An async function always returns a promise. Inside it, await obtains the fulfilled value or throws the rejection where you awaited it. A local async fixture can return known data with no network or timer.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Wait for a local reader",
+          "text": "A promise represents a result that may arrive later. A fulfilled promise carries a value and a rejected one carries a reason. An async function always returns a promise. Inside it, await obtains the fulfilled value or throws the rejection where you awaited it. A local async fixture can return known data with no network or timer."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict before running",
+          "text": "Read the example and predict what happens before checking your answer.",
+          "example": "trace",
+          "questions": [
+            "predict"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the example",
+          "text": "The first await gets the text from readName. Only after that does the concatenation produce Hello Jo. Await a possibly rejected reader inside try to let its catch handle the failure. Returning a promise directly from inside try can move its rejection past that catch.",
+          "example": "trace"
+        },
+        {
+          "kind": "prediction",
+          "title": "Check your explanation",
+          "text": "Read the indicated code and choose the explanation that accounts for its behavior.",
+          "example": "trace",
+          "questions": [
+            "explain"
+          ]
+        },
+        {
+          "kind": "modification",
+          "title": "Wait before multiplying",
+          "text": "The local source returns Promise<number>. Read it once and resolve with twice its value, including zero and negative numbers.",
+          "task": "course:ts-foundations/task/async-double"
+        },
+        {
+          "kind": "independent",
+          "title": "Report a rejected local read",
+          "text": "Use the contract in the exercise and check your answer on save.",
+          "task": "course:ts-foundations/task/async-read-batch"
+        }
+      ],
+      "questions": [
+        {
+          "id": "predict",
+          "example": "trace",
+          "prompt": "What reaches the print call?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "Hello Jo",
+              "feedback": "await obtains the returned text."
+            },
+            {
+              "text": "An unresolved promise",
+              "feedback": "The promise is awaited before concatenation."
+            }
+          ]
+        },
+        {
+          "id": "explain",
+          "example": "trace",
+          "prompt": "If readName rejects, where can this function handle that failure?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Inside an ordinary if on the promise",
+              "feedback": "The promise object does not tell that if its eventual result."
+            },
+            {
+              "text": "In a catch around the await",
+              "feedback": "A rejection at await acts like a throw."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "trace": {
+          "stdout": [
+            "Hello Jo"
+          ],
+          "code": "async function readName(): Promise<string> {\n  return \"Jo\";\n}\nconst name = await readName();\nconsole.log(\"Hello \" + name);\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/async-double",
+          "role": "guided",
+          "title": "Wait before multiplying",
+          "concepts": [
+            "promise",
+            "await",
+            "async-fixture"
+          ],
+          "prompt": "The local source returns Promise<number>. Read it once and resolve with twice its value, including zero and negative numbers.",
+          "hints": [
+            "Read the compiler message about the arithmetic operand.",
+            "Which expression returns the future result?",
+            "Get the number with await before multiplying."
+          ],
+          "starter": "async function doubled(source: () => Promise<number>): Promise<number> {\n  return 2 * source();\n}\n",
+          "solution": "async function doubled(source: () => Promise<number>): Promise<number> {\n  const n = await source();\n  return 2 * n;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(await doubled(async()=>3), 6)",
+            "__same(await doubled(async()=>-2), -4)",
+            "__same(await doubled(async()=>0), 0)",
+            "await (async()=>{let calls=0; await doubled(async()=>++calls); return calls===1;})()"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Read the compiler message about the arithmetic operand."
+        },
+        {
+          "id": "course:ts-foundations/task/async-read-batch",
+          "role": "independent",
+          "title": "Report a rejected local read",
+          "concepts": [
+            "promise",
+            "await",
+            "async-fixture"
+          ],
+          "prompt": "Call the supplied source once. Resolve with {kind:\"loaded\", items} when it returns a string array, including an empty array. Resolve with {kind:\"failed\"} if it rejects for any reason.",
+          "hints": [
+            "A fulfilled empty array still counts as a loaded batch.",
+            "Wait for the reader inside a try block.",
+            "Build different tagged results for fulfillment and rejection."
+          ],
+          "starter": "async function loadBatch(source: () => Promise<string[]>): Promise<Batch> {\n  return {kind:\"loaded\",items:[]};\n}\n",
+          "solution": "async function loadBatch(source: () => Promise<string[]>): Promise<Batch> {\n  try {\n    const items = await source();\n    return {kind:\"loaded\",items};\n  } catch {\n    return {kind:\"failed\"};\n  }\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(await loadBatch(async()=>[\"a\",\"b\"]),{kind:\"loaded\",items:[\"a\",\"b\"]})",
+            "__same(await loadBatch(async()=>[]),{kind:\"loaded\",items:[]})",
+            "__same(await loadBatch(async()=>{throw \"offline\"}),{kind:\"failed\"})",
+            "await (async()=>{let calls=0; await loadBatch(async()=>{calls++;return []}); return calls===1;})()"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "type Batch = {kind:\"loaded\";items:string[]} | {kind:\"failed\"};\n"
+            }
+          ],
+          "feedback": "A fulfilled empty array still counts as a loaded batch."
+        },
+        {
+          "id": "course:ts-foundations/task/async-in-order",
+          "role": "review",
+          "title": "Read two notes in order",
+          "concepts": [
+            "promise",
+            "await",
+            "async-fixture"
+          ],
+          "prompt": "Return the first source’s text followed by a slash and the second source’s text. Call each exactly once, and call the second only after the first resolves. If the first rejects, propagate the rejection and leave the second uncalled.",
+          "hints": [
+            "Sequence matters for starting the readers as well as combining text.",
+            "Wait for the first result before invoking the second reader.",
+            "A rejected first await exits before the next call unless it is caught."
+          ],
+          "starter": "async function joinNotes(first: () => Promise<string>, second: () => Promise<string>): Promise<string> {\n  return \"\";\n}\n",
+          "solution": "async function joinNotes(first: () => Promise<string>, second: () => Promise<string>): Promise<string> {\n  const left = await first();\n  const right = await second();\n  return left + \"/\" + right;\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(await joinNotes(async()=>\"a\",async()=>\"\"),\"a/\")",
+            "await (async()=>{const order:string[]=[]; await joinNotes(async()=>{order.push(\"first\");await Promise.resolve();order.push(\"ready\");return \"a\"},async()=>{order.push(\"second\");return \"b\"});return __same(order,[\"first\",\"ready\",\"second\"]);})()",
+            "await (async()=>{let calls=0;const rejected=await __rejects(joinNotes(async()=>{throw \"no\"},async()=>{calls++;return \"\"}));return rejected&&calls===0;})()"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Sequence matters for starting the readers as well as combining text."
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/async-in-order",
+        "afterModule": "course:ts-foundations/module/tracker",
+        "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
+      },
+      "drills": [
+        "async/await",
+        "async/try-catch"
+      ],
+      "drillGap": "The linked drills isolate syntax. This module checks the combined behavior on varied inputs."
+    },
+    {
+      "id": "course:ts-foundations/module/generic",
+      "title": "Preserve the caller’s type",
+      "requires": [
+        "function",
+        "array",
+        "optional",
+        "transform"
+      ],
+      "outcomes": [
+        {
+          "id": "predict",
+          "can": "Identify the runtime values returned by a generic function and explain a type-only projection.",
+          "assessment": [
+            "predict",
+            "explain"
+          ]
+        },
+        {
+          "id": "first",
+          "can": "Keep the first value even when falsey",
+          "assessment": [
+            "course:ts-foundations/task/generic-first"
+          ]
+        },
+        {
+          "id": "edit-shapes",
+          "can": "Describe a task preview and patch",
+          "assessment": [
+            "course:ts-foundations/task/generic-edit-shapes"
+          ]
+        },
+        {
+          "id": "pair",
+          "can": "Keep both sides of a pair",
+          "assessment": [
+            "course:ts-foundations/task/generic-pair"
+          ]
+        }
+      ],
+      "intro": "A generic type parameter connects types across positions. In choose<T>(value: T): T the caller supplies one type and receives that same type back. The type parameter is erased when JavaScript runs. Pick<Task, \"id\"> keeps named fields, Omit<Task, \"id\"> removes them, and Partial<…> makes the remaining fields optional in the type.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Preserve the caller’s type",
+          "text": "A generic type parameter connects types across positions. In choose<T>(value: T): T the caller supplies one type and receives that same type back. The type parameter is erased when JavaScript runs. Pick<Task, \"id\"> keeps named fields, Omit<Task, \"id\"> removes them, and Partial<…> makes the remaining fields optional in the type."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict before running",
+          "text": "Read the example and predict what happens before checking your answer.",
+          "example": "trace",
+          "questions": [
+            "predict"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the example",
+          "text": "The same function handles a number and a string. Inference picks a type from the arguments at each call. A broad return type such as unknown loses the connection. Utility types describe compile-time shapes. Creating a projection at runtime still requires code that selects its actual fields.",
+          "example": "trace"
+        },
+        {
+          "kind": "prediction",
+          "title": "Check your explanation",
+          "text": "Read the indicated code and choose the explanation that accounts for its behavior.",
+          "example": "trace",
+          "questions": [
+            "explain"
+          ]
+        },
+        {
+          "kind": "modification",
+          "title": "Keep the first value even when falsey",
+          "text": "Write firstOr<T>. Return the first item when the array is nonempty and the supplied fallback when empty. Preserve the relationship to T, including null or empty-string items.",
+          "task": "course:ts-foundations/task/generic-first"
+        },
+        {
+          "kind": "independent",
+          "title": "Describe a task preview and patch",
+          "text": "Use the contract in the exercise and check your answer on save.",
+          "task": "course:ts-foundations/task/generic-edit-shapes"
+        }
+      ],
+      "questions": [
+        {
+          "id": "predict",
+          "example": "trace",
+          "prompt": "Which values print?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "0 then Mail",
+              "feedback": "The function returns the actual parameter."
+            },
+            {
+              "text": "A type name then Mail",
+              "feedback": "Type parameters disappear in emitted JavaScript."
+            }
+          ]
+        },
+        {
+          "id": "explain",
+          "example": "trace",
+          "prompt": "Does Pick automatically remove properties from a JavaScript object?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Yes. It deletes all unselected keys.",
+              "feedback": "Type transformations have no runtime behavior."
+            },
+            {
+              "text": "No. It describes a type.",
+              "feedback": "Build a new object to remove runtime fields."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "trace": {
+          "stdout": [
+            "0",
+            "Mail"
+          ],
+          "code": "function choose<T>(value: T): T {\n  return value;\n}\nconsole.log(choose(0));\nconsole.log(choose(\"Mail\"));\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/generic-first",
+          "role": "guided",
+          "title": "Keep the first value even when falsey",
+          "concepts": [
+            "generic",
+            "utility"
+          ],
+          "prompt": "Write firstOr<T>. Return the first item when the array is nonempty and the supplied fallback when empty. Preserve the relationship to T, including null or empty-string items.",
+          "hints": [
+            "Check whether a position exists.",
+            "The first item can be zero, empty or null.",
+            "Use the array length to distinguish empty input."
+          ],
+          "starter": "function firstOr<T>(items: T[], fallback: T): T {\n  return items[0] || fallback;\n}\n",
+          "solution": "function firstOr<T>(items: T[], fallback: T): T {\n  if (items.length === 0) return fallback;\n  return items[0];\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(firstOr([0,2], 7), 0)",
+            "__same(firstOr([], \"none\"), \"none\")",
+            "__same(firstOr([\"\"], \"none\"), \"\")",
+            "__same(firstOr([null], \"next\"), null)"
+          ],
+          "typeChecks": [
+            "__Equal<ReturnType<typeof firstOr<number>>, number>",
+            "__Equal<ReturnType<typeof firstOr<string>>, string>"
+          ],
+          "rejects": [
+            "firstOr<number>([3], \"x\")"
+          ],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Check whether a position exists."
+        },
+        {
+          "id": "course:ts-foundations/task/generic-edit-shapes",
+          "role": "independent",
+          "title": "Describe a task preview and patch",
+          "concepts": [
+            "generic",
+            "utility"
+          ],
+          "prompt": "The supplied Task has id, title and done. Define Preview containing only id and title, and Patch accepting optional title and done fields. A patch cannot set id. Use the supplied field types. No runtime transformation is requested.",
+          "hints": [
+            "Describe the visible preview fields first.",
+            "A patch can leave both editable fields absent.",
+            "Remove id before making the editable fields optional."
+          ],
+          "starter": "type Preview = Task;\ntype Patch = Task;\n",
+          "solution": "type Preview = Pick<Task, \"id\" | \"title\">;\ntype Patch = Partial<Omit<Task, \"id\">>;\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [],
+          "typeChecks": [
+            "__Extends<{id:number;title:string},Preview>",
+            "__Extends<Preview,{id:number;title:string}>",
+            "__Extends<{},Patch>",
+            "__Extends<{title:string;done:boolean},Patch>"
+          ],
+          "rejects": [
+            "const p: Patch = {id: 4}",
+            "const p: Patch = {done: \"yes\"}",
+            "const p: Preview = {id: 2}",
+            "const p: Preview = {id: 2,title:\"\",done:false}"
+          ],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "type Task = {id:number;title:string;done:boolean};\n"
+            }
+          ],
+          "feedback": "Describe the visible preview fields first."
+        },
+        {
+          "id": "course:ts-foundations/task/generic-pair",
+          "role": "review",
+          "title": "Keep both sides of a pair",
+          "concepts": [
+            "generic",
+            "utility"
+          ],
+          "prompt": "Return {left,right} with each field retaining the type of its corresponding argument. Left and right may have different types.",
+          "hints": [
+            "Each type parameter belongs to one input and one field.",
+            "Check the expected return shape.",
+            "Keep the original inputs paired with their original field names."
+          ],
+          "starter": "function pair<L, R>(left: L, right: R): { left: L; right: R } {\n  throw new Error(\"unfinished\");\n}\n",
+          "solution": "function pair<L, R>(left: L, right: R): { left: L; right: R } {\n  return {left,right};\n}\n",
+          "mode": "script",
+          "rules": [],
+          "checks": [
+            "__same(pair(0,\"x\"), {left:0,right:\"x\"})",
+            "__same(pair(false,3), {left:false,right:3})"
+          ],
+          "typeChecks": [
+            "__Equal<ReturnType<typeof pair<number,string>>,{left:number;right:string}>"
+          ],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// The checks call the learner's code directly.\n"
+            }
+          ],
+          "feedback": "Each type parameter belongs to one input and one field."
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/generic-pair",
+        "afterModule": "course:ts-foundations/module/tracker",
+        "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
+      },
+      "drills": [
+        "generics/first",
+        "utility/pick",
+        "utility/omit",
+        "utility/partial"
+      ],
+      "drillGap": "The linked drills isolate syntax. This module checks the combined behavior on varied inputs."
+    },
+    {
+      "id": "course:ts-foundations/module/compose",
+      "title": "Connect readers and calculations",
+      "requires": [
+        "promise",
+        "generic",
+        "debugging"
+      ],
+      "intro": "A class groups state and methods. new Board(tasks) calls its constructor and creates an instance. A public method is part of the interface you can call. private fields are implementation details. You can read class-based code without choosing classes for every new function. Composition means combining small operations with clear inputs and outputs.",
+      "outcomes": [
+        {
+          "id": "1",
+          "can": "compose open count",
+          "assessment": [
+            "course:ts-foundations/task/compose-open-count"
+          ]
+        },
+        {
+          "id": "2",
+          "can": "compose load count",
+          "assessment": [
+            "course:ts-foundations/task/compose-load-count"
+          ]
+        },
+        {
+          "id": "3",
+          "can": "compose read label",
+          "assessment": [
+            "course:ts-foundations/task/compose-read-label"
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Connect readers and calculations",
+          "text": "A class groups state and methods. new Board(tasks) calls its constructor and creates an instance. A public method is part of the interface you can call. private fields are implementation details. You can read class-based code without choosing classes for every new function. Composition means combining small operations with clear inputs and outputs."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict the result",
+          "text": "Read each line before revealing the output.",
+          "example": "trace",
+          "questions": [
+            "predict"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the result",
+          "text": "The constructor stores the original count. value() returns it. The field title is public and readonly. The code calls value(), then passes its result to a normal function. This separates retrieving data from transforming it. An async reader follows the same division, with await at the boundary.",
+          "example": "trace"
+        },
+        {
+          "kind": "independent",
+          "title": "Compose open count",
+          "text": "Use the stated contract. Save to check the complete submission. Equivalent correct implementations are accepted.",
+          "task": "course:ts-foundations/task/compose-open-count"
+        },
+        {
+          "kind": "independent",
+          "title": "Compose load count",
+          "text": "Use the stated contract. Save to check the complete submission. Equivalent correct implementations are accepted.",
+          "task": "course:ts-foundations/task/compose-load-count"
+        },
+        {
+          "kind": "independent",
+          "title": "Compose read label",
+          "text": "Use the stated contract. Save to check the complete submission. Equivalent correct implementations are accepted.",
+          "task": "course:ts-foundations/task/compose-read-label"
+        }
+      ],
+      "questions": [
+        {
+          "id": "predict",
+          "prompt": "Which two lines print?",
+          "example": "trace",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "Open then 4",
+              "feedback": "value() returns 2 and double computes 4."
+            },
+            {
+              "text": "Open then 2",
+              "feedback": "The retrieved number is passed to double before printing."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "trace": {
+          "stdout": [
+            "Open",
+            "4"
+          ],
+          "code": "class Counter {\n constructor(public readonly title: string, private count: number) {}\n value(): number { return this.count; }\n}\nconst counter = new Counter(\"Open\", 2);\nconst double = (value: number): number => value * 2;\nconsole.log(counter.title);\nconsole.log(double(counter.value()));\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/compose-open-count",
+          "role": "independent",
+          "title": "Read an existing class",
+          "concepts": [
+            "composition",
+            "class-reading"
+          ],
+          "prompt": "Import Board from ./board.js. Export countOpen(board: Board): number. Use its all() method and count the tasks whose done flag is false. Do not change the board.",
+          "hints": [
+            "Read the method contract, then decide which tasks count.",
+            "all() returns the tasks. Each task has a boolean done field.",
+            "Count only tasks for which done is false."
+          ],
+          "starter": "import { Board } from \"./board.js\";\nexport function countOpen(_board: Board): number { return 0; }\n",
+          "solution": "import { Board } from \"./board.js\";\nexport function countOpen(board: Board): number { return board.all().filter(task => !task.done).length; }\n",
+          "mode": "module",
+          "rules": [],
+          "checks": [
+            "answer.countOpen(new Board([])) === 0",
+            "answer.countOpen(new Board([{title:\"A\",done:false},{title:\"B\",done:true},{title:\"C\",done:false}])) === 2",
+            "(() => { const tasks = Object.freeze([Object.freeze({title:\"A\",done:false})]); answer.countOpen(new Board(tasks)); return tasks.length === 1; })()"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "import { Board } from \"./board.js\";\n"
+            }
+          ],
+          "feedback": "Read the method contract, then decide which tasks count.",
+          "modules": {
+            "board.ts": "export type Task = { title: string; done: boolean };\nexport class Board {\n  constructor(private readonly tasks: readonly Task[]) {}\n  all(): readonly Task[] { return this.tasks; }\n}\n"
+          }
+        },
+        {
+          "id": "course:ts-foundations/task/compose-load-count",
+          "role": "independent",
+          "title": "Compose a reader and a calculation",
+          "concepts": [
+            "composition",
+            "class-reading"
+          ],
+          "prompt": "Export async countFrom(read: () => Promise<readonly boolean[]>): Promise<number>. Await the reader once, then count the false values. Propagate a rejected read.",
+          "hints": [
+            "Keep reading and counting as separate operations.",
+            "Await the reader, then inspect its returned list.",
+            "An uncaught rejection propagates to the caller."
+          ],
+          "starter": "export async function countFrom(_read: () => Promise<readonly boolean[]>): Promise<number> { return 0; }\n",
+          "solution": "export async function countFrom(read: () => Promise<readonly boolean[]>): Promise<number> { const flags = await read(); return flags.filter(done => !done).length; }\n",
+          "mode": "module",
+          "rules": [],
+          "checks": [
+            "await answer.countFrom(async () => []) === 0",
+            "await answer.countFrom(async () => [false,true,false]) === 2",
+            "await __rejects(answer.countFrom(async () => { throw new Error(\"lost\"); }))",
+            "await (async () => { let calls = 0; await answer.countFrom(async () => { calls++; return []; }); return calls === 1; })()"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// Trusted checks use varied local inputs.\n"
+            }
+          ],
+          "feedback": "Keep reading and counting as separate operations."
+        },
+        {
+          "id": "course:ts-foundations/task/compose-read-label",
+          "role": "independent",
+          "title": "Read fields and methods together",
+          "concepts": [
+            "composition",
+            "class-reading"
+          ],
+          "prompt": "Import Counter from ./counter.js. Export label(counter: Counter): string. Return its title, a colon, one space, then the number from value(). Do not change the object.",
+          "hints": [
+            "Read the public title and call the public method.",
+            "A zero count is a valid value.",
+            "Construct the text using both values and the exact punctuation."
+          ],
+          "starter": "import { Counter } from \"./counter.js\";\nexport function label(_counter: Counter): string { return \"\"; }\n",
+          "solution": "import { Counter } from \"./counter.js\";\nexport function label(counter: Counter): string { return `${counter.title}: ${counter.value()}`; }\n",
+          "mode": "module",
+          "rules": [],
+          "checks": [
+            "answer.label(new Counter(\"Open\",0)) === \"Open: 0\"",
+            "answer.label(new Counter(\"Done\",3)) === \"Done: 3\""
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "import { Counter } from \"./counter.js\";\n"
+            }
+          ],
+          "feedback": "Read the public title and call the public method.",
+          "modules": {
+            "counter.ts": "export class Counter { constructor(public readonly title: string, private count: number) {} value(): number { return this.count; } }\n"
+          }
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/compose-read-label",
+        "evidence": "Attempt from a fresh workspace on a later visit. Record hints separately from independent success.",
+        "afterModule": "course:ts-foundations/module/report"
+      },
+      "drills": [],
+      "drillGap": "These tasks combine concepts. Use the language topic browser for additional isolated syntax practice."
+    },
+    {
+      "id": "course:ts-foundations/module/tracker",
+      "title": "Assemble a small tracker",
+      "requires": [
+        "composition",
+        "validation",
+        "discriminant"
+      ],
+      "intro": "A project combines files with explicit contracts. Keep validation at the input boundary. Keep transformations separate so their behavior is easy to test. Imported helpers can provide a stable contract while you implement one feature. Changes to a returned task should not silently change the original input.",
+      "outcomes": [
+        {
+          "id": "1",
+          "can": "tracker valid rows",
+          "assessment": [
+            "course:ts-foundations/task/tracker-valid-rows"
+          ]
+        },
+        {
+          "id": "2",
+          "can": "tracker apply edit",
+          "assessment": [
+            "course:ts-foundations/task/tracker-apply-edit"
+          ]
+        },
+        {
+          "id": "3",
+          "can": "tracker read open",
+          "assessment": [
+            "course:ts-foundations/task/tracker-read-open"
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Assemble a small tracker",
+          "text": "A project combines files with explicit contracts. Keep validation at the input boundary. Keep transformations separate so their behavior is easy to test. Imported helpers can provide a stable contract while you implement one feature. Changes to a returned task should not silently change the original input."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict the result",
+          "text": "Read each line before revealing the output.",
+          "example": "trace",
+          "questions": [
+            "predict"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the result",
+          "text": "The spread syntax creates a new object with the original fields and a replaced done value. The original variable still points to the old object. In the exercises, local model.ts supplies validation so the answer can concentrate on composition. A checker reconstructs trusted helper files for each run.",
+          "example": "trace"
+        },
+        {
+          "kind": "independent",
+          "title": "Tracker valid rows",
+          "text": "Use the stated contract. Save to check the complete submission. Equivalent correct implementations are accepted.",
+          "task": "course:ts-foundations/task/tracker-valid-rows"
+        },
+        {
+          "kind": "independent",
+          "title": "Tracker apply edit",
+          "text": "Use the stated contract. Save to check the complete submission. Equivalent correct implementations are accepted.",
+          "task": "course:ts-foundations/task/tracker-apply-edit"
+        },
+        {
+          "kind": "independent",
+          "title": "Tracker read open",
+          "text": "Use the stated contract. Save to check the complete submission. Equivalent correct implementations are accepted.",
+          "task": "course:ts-foundations/task/tracker-read-open"
+        }
+      ],
+      "questions": [
+        {
+          "id": "predict",
+          "prompt": "What happens to the original task?",
+          "example": "trace",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "It stays false and the copy is true.",
+              "feedback": "The object spread creates a different object."
+            },
+            {
+              "text": "Both become true.",
+              "feedback": "That would require mutating the original object."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "trace": {
+          "stdout": [
+            "false",
+            "true"
+          ],
+          "code": "const original = {id:\"A\",done:false};\nconst updated = {...original, done:true};\nconsole.log(original.done);\nconsole.log(updated.done);\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/tracker-valid-rows",
+          "role": "independent",
+          "title": "Validate imported rows",
+          "concepts": [
+            "project-workspace"
+          ],
+          "prompt": "Import Task and isTask from ./model.js. Export rows(value: unknown): Task[]. A non-array yields an empty array. In an array retain valid tasks in input order, including duplicates. Do not alter the input.",
+          "hints": [
+            "The supplied guard validates one row. You must first decide whether the batch is an array.",
+            "Array.filter can retain the rows accepted by the guard.",
+            "Do not deduplicate in this task."
+          ],
+          "starter": "import { isTask, type Task } from \"./model.js\";\nexport function rows(_value: unknown): Task[] { return []; }\n",
+          "solution": "import { isTask, type Task } from \"./model.js\";\nexport function rows(value: unknown): Task[] { return Array.isArray(value) ? value.filter(isTask) : []; }\n",
+          "mode": "module",
+          "rules": [],
+          "checks": [
+            "__same(answer.rows(null), [])",
+            "__same(answer.rows([null,{id:\"\",done:false},{id:\"A\",done:false},{id:\"A\",done:true},{id:\"B\",done:\"yes\"}]), [{id:\"A\",done:false},{id:\"A\",done:true}])",
+            "__same(answer.rows({id:\"A\",done:false}), [])"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// Trusted checks use varied local inputs.\n"
+            }
+          ],
+          "feedback": "The supplied guard validates one row. You must first decide whether the batch is an array.",
+          "modules": {
+            "model.ts": "export type Task = { id: string; done: boolean };\nexport function isTask(value: unknown): value is Task { return typeof value === \"object\" && value !== null && !Array.isArray(value) && \"id\" in value && typeof value.id === \"string\" && value.id.length > 0 && \"done\" in value && typeof value.done === \"boolean\"; }\n"
+          }
+        },
+        {
+          "id": "course:ts-foundations/task/tracker-apply-edit",
+          "role": "independent",
+          "title": "Apply one edit without changing the source",
+          "concepts": [
+            "project-workspace"
+          ],
+          "prompt": "Export edit(tasks: readonly Task[], id: string, done: boolean): Task[]. Task has id:string and done:boolean. Return tasks in the same order, replacing done for every matching id. Unmatched tasks keep their values. Do not mutate the source array or its objects.",
+          "hints": [
+            "Select rows by exact ID before changing their status.",
+            "Mapping creates a new array but does not itself copy its objects.",
+            "Create a new object when replacing a matching row."
+          ],
+          "starter": "export type Task = {id:string; done:boolean};\nexport function edit(tasks: readonly Task[], _id: string, _done: boolean): Task[] { return [...tasks]; }\n",
+          "solution": "export type Task = {id:string; done:boolean};\nexport function edit(tasks: readonly Task[], id: string, done: boolean): Task[] { return tasks.map(task => task.id === id ? {...task, done} : task); }\n",
+          "mode": "module",
+          "rules": [],
+          "checks": [
+            "__same(answer.edit([], \"A\", true), [])",
+            "__same(answer.edit([{id:\"A\",done:false},{id:\"B\",done:false}], \"A\", true), [{id:\"A\",done:true},{id:\"B\",done:false}])",
+            "(() => { const tasks = Object.freeze([Object.freeze({id:\"A\",done:false})]); return __same(answer.edit(tasks,\"A\",true), [{id:\"A\",done:true}]) && tasks[0].done === false; })()"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// Trusted checks use varied local inputs.\n"
+            }
+          ],
+          "feedback": "Select rows by exact ID before changing their status."
+        },
+        {
+          "id": "course:ts-foundations/task/tracker-read-open",
+          "role": "independent",
+          "title": "Connect a local reader and validation",
+          "concepts": [
+            "project-workspace"
+          ],
+          "prompt": "Import isTask from ./model.js. Export async openIds(read: () => Promise<unknown>): Promise<string[]>. Read once. A non-array yields []. Retain IDs of valid open tasks in order. Propagate a reader rejection.",
+          "hints": [
+            "Combine the reader, guard and open-status check.",
+            "Await exactly one result before examining the list.",
+            "Filter valid rows before reading done or id."
+          ],
+          "starter": "import { isTask } from \"./model.js\";\nexport async function openIds(_read: () => Promise<unknown>): Promise<string[]> { return []; }\n",
+          "solution": "import { isTask } from \"./model.js\";\nexport async function openIds(read: () => Promise<unknown>): Promise<string[]> { const value = await read(); return Array.isArray(value) ? value.filter(isTask).filter(task => !task.done).map(task => task.id) : []; }\n",
+          "mode": "module",
+          "rules": [],
+          "checks": [
+            "__same(await answer.openIds(async () => null), [])",
+            "__same(await answer.openIds(async () => [{id:\"A\",done:false},{id:\"B\",done:true},{id:\"C\",done:\"no\"}]), [\"A\"])",
+            "await __rejects(answer.openIds(async () => { throw new Error(\"lost\"); }))",
+            "await (async () => { let calls=0; await answer.openIds(async () => { calls++; return []; }); return calls===1; })()"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// Trusted checks use varied local inputs.\n"
+            }
+          ],
+          "feedback": "Combine the reader, guard and open-status check.",
+          "modules": {
+            "model.ts": "export type Task = { id: string; done: boolean };\nexport function isTask(value: unknown): value is Task { return typeof value === \"object\" && value !== null && !Array.isArray(value) && \"id\" in value && typeof value.id === \"string\" && value.id.length > 0 && \"done\" in value && typeof value.done === \"boolean\"; }\n"
+          }
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/tracker-read-open",
+        "evidence": "Attempt from a fresh workspace on a later visit. Record hints separately from independent success.",
+        "afterModule": "course:ts-foundations/module/report"
+      },
+      "drills": [],
+      "drillGap": "These tasks combine concepts. Use the language topic browser for additional isolated syntax practice."
+    },
+    {
+      "id": "course:ts-foundations/module/report",
+      "title": "Deliver an unfamiliar report",
+      "requires": [
+        "project-workspace"
+      ],
+      "intro": "This assessment combines ideas already taught. You will validate data, keep separate counts, handle an asynchronous failure, and write a test that detects a specific bug. Reading a finished solution can explain an approach, but it does not establish that you can solve the task independently. Use the acceptance criteria to decide when your work is complete.",
+      "outcomes": [
+        {
+          "id": "1",
+          "can": "report audit",
+          "assessment": [
+            "course:ts-foundations/task/report-audit"
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Deliver an unfamiliar report",
+          "text": "This assessment combines ideas already taught. You will validate data, keep separate counts, handle an asynchronous failure, and write a test that detects a specific bug. Reading a finished solution can explain an approach, but it does not establish that you can solve the task independently. Use the acceptance criteria to decide when your work is complete."
+        },
+        {
+          "kind": "prediction",
+          "title": "Predict the result",
+          "text": "Read each line before revealing the output.",
+          "example": "trace",
+          "questions": [
+            "predict"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace the result",
+          "text": "A duplicate counter and a total counter measure different things. The example counts one repeated ID without adding a second unique ID. The final task adds validation and status counts. Its regression test must detect a faulty candidate as well as accept a correct one.",
+          "example": "trace"
+        },
+        {
+          "kind": "independent",
+          "title": "Report audit",
+          "text": "Use the stated contract. Save to check the complete submission. Equivalent correct implementations are accepted.",
+          "task": "course:ts-foundations/task/report-audit"
+        }
+      ],
+      "questions": [
+        {
+          "id": "predict",
+          "prompt": "Which counts print?",
+          "example": "trace",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "2 then 1",
+              "feedback": "Two unique IDs and one repeated occurrence are counted separately."
+            },
+            {
+              "text": "3 then 0",
+              "feedback": "That would count every occurrence as unique."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "trace": {
+          "stdout": [
+            "2",
+            "1"
+          ],
+          "code": "const ids = [\"A\",\"A\",\"B\"];\nconst seen = new Set<string>();\nlet duplicates = 0;\nfor (const id of ids) { if(seen.has(id)) duplicates++; else seen.add(id); }\nconsole.log(seen.size);\nconsole.log(duplicates);\n"
+        }
+      },
+      "tasks": [
+        {
+          "id": "course:ts-foundations/task/report-audit",
+          "role": "independent",
+          "title": "Audit a task import",
+          "concepts": [
+            "transfer"
+          ],
+          "prompt": "A team wants to know what a saved task batch contains before importing it. Implement audit and write a regression test for duplicate IDs. Deliver the two editable files using the supplied contracts. Your code will receive an asynchronous local reader. All inputs are JSON values. The task is complete when both the audit and your regression test meet the acceptance criteria.\n\nCall the supplied reader once per audit. A rejected read returns { kind: \"unavailable\" }. A fulfilled non-array returns { kind: \"invalid-batch\" }.\nAn array returns kind \"report\" and four numeric counts. Every valid first occurrence with done false increments open. Every valid first occurrence with done true increments done.\nA valid row is a non-null, non-array object with a nonempty string id and boolean done. Extra fields are allowed. Match ID strings exactly, including spaces and case.\nEach invalid row increments rejected and never reserves an ID. Each later valid row with an already counted ID increments duplicates, even if its done flag differs. The first valid row sets the status. Empty lists yield four zero counts.\nExport testAudit(candidate: Audit): Promise<boolean>. Call the supplied candidate on your own example. The test must return true for a correct report and false for a candidate that counts every valid duplicate as another task. The test may use localBatch; it must be repeatable.",
+          "hints": [
+            "Trace how one invalid row and two valid rows sharing an ID affect the four counts.",
+            "Validate a row before reserving its ID. Only the first valid occurrence supplies the status.",
+            "Your regression test must distinguish a correct implementation from one that counts duplicates as tasks."
+          ],
+          "starter": "import type { Audit } from \"./contract.js\";\n\nexport const audit: Audit = async (_read) => {\n  return { kind: \"unavailable\" };\n};\n",
+          "solution": "import type { Audit } from \"./contract.js\";\nexport const audit: Audit = async (read) => {\n let input: unknown;\n try { input = await read(); } catch { return {kind:\"unavailable\"}; }\n if (!Array.isArray(input)) return {kind:\"invalid-batch\"};\n const seen = new Set<string>();\n let open=0, done=0, rejected=0, duplicates=0;\n for (const row of input) {\n  if (typeof row !== \"object\" || row === null || Array.isArray(row) || !(\"id\" in row) || typeof row.id !== \"string\" || row.id.length===0 || !(\"done\" in row) || typeof row.done !== \"boolean\") { rejected++; continue; }\n  if (seen.has(row.id)) { duplicates++; continue; }\n  seen.add(row.id);\n  if (row.done) done++; else open++;\n }\n return {kind:\"report\",open,done,rejected,duplicates};\n};\n",
+          "mode": "module",
+          "rules": [],
+          "checks": [
+            "__same(await answer.audit(answer.unavailable()), {\"kind\": \"unavailable\"})",
+            "__same(await answer.audit(answer.localBatch(null)), {\"kind\": \"invalid-batch\"})",
+            "__same(await answer.audit(answer.localBatch({\"id\": \"A\", \"done\": false})), {\"kind\": \"invalid-batch\"})",
+            "__same(await answer.audit(answer.localBatch([])), {\"kind\": \"report\", \"open\": 0, \"done\": 0, \"rejected\": 0, \"duplicates\": 0})",
+            "__same(await answer.audit(answer.localBatch([{\"id\": \"A\", \"done\": false}, {\"id\": \"A\", \"done\": true}, {\"id\": \"B\", \"done\": true}, {\"id\": \"A\", \"done\": false}])), {\"kind\": \"report\", \"open\": 1, \"done\": 1, \"rejected\": 0, \"duplicates\": 2})",
+            "__same(await answer.audit(answer.localBatch([{\"id\": \"A\", \"done\": \"yes\"}, {\"id\": \"A\", \"done\": true}, {\"id\": \"A\", \"done\": 1}, null, [], false, {\"id\": \"\", \"done\": false}])), {\"kind\": \"report\", \"open\": 0, \"done\": 1, \"rejected\": 6, \"duplicates\": 0})",
+            "__same(await answer.audit(answer.localBatch([{\"id\": \"a\", \"done\": false}, {\"id\": \"A\", \"done\": true}, {\"id\": \" \", \"done\": false}, {\"id\": \"a\", \"done\": true, \"notes\": \"extra\"}])), {\"kind\": \"report\", \"open\": 2, \"done\": 1, \"rejected\": 0, \"duplicates\": 1})",
+            "__same(await answer.audit(answer.localBatch([{}, {\"id\": \"x\"}, {\"done\": true}, {\"id\": 1, \"done\": true}, {\"id\": \"x\", \"done\": false, \"notes\": \"ok\"}])), {\"kind\": \"report\", \"open\": 1, \"done\": 0, \"rejected\": 4, \"duplicates\": 0})",
+            "await (async () => { let calls=0; await answer.audit(async () => { calls++; return []; }); return calls===1; })()",
+            "await (async () => { const correct: typeof answer.audit = async (read) => {\n let input: unknown;\n try { input = await read(); } catch { return {kind:\"unavailable\"}; }\n if (!Array.isArray(input)) return {kind:\"invalid-batch\"};\n const seen = new Set<string>();\n let open=0, done=0, rejected=0, duplicates=0;\n for (const row of input) {\n  if (typeof row !== \"object\" || row === null || Array.isArray(row) || !(\"id\" in row) || typeof row.id !== \"string\" || row.id.length===0 || !(\"done\" in row) || typeof row.done !== \"boolean\") { rejected++; continue; }\n  if (seen.has(row.id)) { duplicates++; continue; }\n  seen.add(row.id);\n  if (row.done) done++; else open++;\n }\n return {kind:\"report\",open,done,rejected,duplicates};\n};; return await answer.testAudit(correct); })()",
+            "await (async () => { const correct: typeof answer.audit = async (read) => {\n let input: unknown;\n try { input = await read(); } catch { return {kind:\"unavailable\"}; }\n if (!Array.isArray(input)) return {kind:\"invalid-batch\"};\n const seen = new Set<string>();\n let open=0, done=0, rejected=0, duplicates=0;\n for (const row of input) {\n  if (typeof row !== \"object\" || row === null || Array.isArray(row) || !(\"id\" in row) || typeof row.id !== \"string\" || row.id.length===0 || !(\"done\" in row) || typeof row.done !== \"boolean\") { rejected++; continue; }\n  if (seen.has(row.id)) { duplicates++; }\n  seen.add(row.id);\n  if (row.done) done++; else open++;\n }\n return {kind:\"report\",open,done,rejected,duplicates};\n};; return !(await answer.testAudit(correct)); })()"
+          ],
+          "checkLabels": [
+            "Lost local snapshot",
+            "Null batch",
+            "Object instead of list",
+            "Empty list",
+            "First valid task wins",
+            "Invalid records never reserve an ID",
+            "Case-sensitive IDs are used exactly",
+            "Missing fields and extra keys",
+            "Read the batch exactly once",
+            "Your regression accepts a correct implementation",
+            "Your regression rejects duplicate counting"
+          ],
+          "typeChecks": [],
+          "rejects": [],
+          "fixtures": [
+            {
+              "id": "cases",
+              "declarations": "// Each trusted check supplies a fresh local reader.\n"
+            }
+          ],
+          "feedback": "Compare the row classification rules and counts. A passing implementation and a useful regression test are both required.",
+          "modules": {
+            "contract.ts": "export type ReadBatch = () => Promise<unknown>;\n\nexport type Report =\n  | { kind: \"unavailable\" }\n  | { kind: \"invalid-batch\" }\n  | { kind: \"report\"; open: number; done: number; rejected: number; duplicates: number };\n\nexport type Audit = (read: ReadBatch) => Promise<Report>;\n",
+            "sources.ts": "import type { ReadBatch } from \"./contract.js\";\n\nexport function localBatch(value: unknown): ReadBatch {\n  return async () => value;\n}\n\nexport function unavailable(): ReadBatch {\n  return async () => { throw new Error(\"Local snapshot unavailable\"); };\n}\n"
+          },
+          "workspace": {
+            "entry": "export { audit } from \"./audit.js\";\nexport { testAudit } from \"./audit.test.js\";\nexport { localBatch, unavailable } from \"./sources.js\";",
+            "editable": [
+              {
+                "file": "audit.ts",
+                "starter": "import type { Audit } from \"./contract.js\";\n\nexport const audit: Audit = async (_read) => {\n  return { kind: \"unavailable\" };\n};\n",
+                "solution": "import type { Audit } from \"./contract.js\";\nexport const audit: Audit = async (read) => {\n let input: unknown;\n try { input = await read(); } catch { return {kind:\"unavailable\"}; }\n if (!Array.isArray(input)) return {kind:\"invalid-batch\"};\n const seen = new Set<string>();\n let open=0, done=0, rejected=0, duplicates=0;\n for (const row of input) {\n  if (typeof row !== \"object\" || row === null || Array.isArray(row) || !(\"id\" in row) || typeof row.id !== \"string\" || row.id.length===0 || !(\"done\" in row) || typeof row.done !== \"boolean\") { rejected++; continue; }\n  if (seen.has(row.id)) { duplicates++; continue; }\n  seen.add(row.id);\n  if (row.done) done++; else open++;\n }\n return {kind:\"report\",open,done,rejected,duplicates};\n};\n"
+              },
+              {
+                "file": "audit.test.ts",
+                "starter": "import type { Audit } from \"./contract.js\";\n\nexport async function testAudit(_candidate: Audit): Promise<boolean> {\n  return false;\n}\n",
+                "solution": "import type { Audit } from \"./contract.js\";\nimport { localBatch } from \"./sources.js\";\nexport async function testAudit(candidate: Audit): Promise<boolean> {\n const report = await candidate(localBatch([{id:\"A\",done:false},{id:\"A\",done:true}]));\n return report.kind === \"report\" && report.open===1 && report.done===0 && report.duplicates===1 && report.rejected===0;\n}\n"
+              }
+            ]
+          }
+        }
+      ],
+      "review": {
+        "task": "course:ts-foundations/task/report-audit",
+        "evidence": "Attempt from a fresh workspace on a later visit. Record hints separately from independent success.",
+        "afterCompletion": true
+      },
+      "drills": [],
+      "drillGap": "These tasks combine concepts. Use the language topic browser for additional isolated syntax practice."
     }
   ]
 }

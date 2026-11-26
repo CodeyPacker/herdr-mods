@@ -98,4 +98,8 @@ test("damaged progress is preserved instead of silently replaced", async t => {
   await writeFile(file, "{broken");
   await assert.rejects(courseCommand(root, "enroll", { courseId }), /Cannot read course progress/);
   assert.equal(await readFile(file, "utf8"), "{broken");
+  const damaged = { version: 1, courseId, contentVersion: pack.contentVersion, entryPath: "beginner", modules: [], tasks: {} };
+  await writeFile(file, JSON.stringify(damaged));
+  await assert.rejects(courseCommand(root, "enroll", { courseId }), /incompatible or damaged/);
+  assert.deepEqual(JSON.parse(await readFile(file, "utf8")), damaged);
 });

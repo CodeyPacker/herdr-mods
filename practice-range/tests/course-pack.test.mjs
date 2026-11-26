@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { loadCourse, listCourses, validatePack, taskFor, lessonFor } from "../mods/practice-range/courses/loader.mjs";
 
-test("the bundled preview distinguishes written lessons from the planned course", async () => {
+test("the bundled course stays labeled as a preview before learner validation", async () => {
   const pack = await loadCourse("course:ts-foundations");
   assert.equal(pack.schemaVersion, 1);
   assert.equal(pack.preview, true);
@@ -34,5 +34,5 @@ test("course validation rejects broken prerequisites, question answers, and exer
   invalid(pack => pack.runner.registeredLanguage = "untrusted-module.mjs", /registered language/);
   invalid(pack => pack.schemaVersion = 2, /unsupported schema/);
   invalid(pack => pack.lessons[0].tasks[0].id = `${pack.id}/task/..`, /task identity/);
-  invalid(pack => pack.preview = false, /labeled previews/);
+  invalid(pack => { pack.preview = false; pack.modules[0].status = "planned"; pack.lessons = pack.lessons.filter(lesson => lesson.id !== pack.modules[0].id); }, /labeled previews/);
 });

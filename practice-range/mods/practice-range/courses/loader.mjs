@@ -16,6 +16,7 @@ function unique(items, label) {
 }
 const strings = (value, label) => { list(value, label); requireValue(value.every(text), `${label} contains empty text`); };
 const localId = value => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+const workspaceName = value => /^[a-zA-Z][a-zA-Z0-9.-]*\.ts$/.test(value) && !["Exercise.ts", "check.ts", "harness.ts", "globals.d.ts", "supplied.ts"].includes(value);
 
 /** Validate references and prerequisites before a pack can create any user state. */
 export function validatePack(pack) {
@@ -78,6 +79,17 @@ export function validatePack(pack) {
       const fixtures = list(task.fixtures, "fixtures");
       requireValue(fixtures.length > 0, "empty fixture suite"); unique(fixtures, "fixtures");
       for (const fixture of fixtures) requireValue(typeof fixture.declarations === "string", "fixture declarations");
+      for (const [name, code] of Object.entries(task.modules ?? {})) requireValue(workspaceName(name) && typeof code === "string", "supplied module filename or source");
+      if (task.workspace) {
+        const editable = list(task.workspace.editable, "editable project files");
+        requireValue(editable.length > 0 && text(task.workspace.entry), "project entry or editable files");
+        const names = new Set();
+        for (const file of editable) {
+          requireValue(workspaceName(file.file) && !names.has(file.file) && !Object.hasOwn(task.modules ?? {}, file.file), "editable project filename");
+          requireValue(typeof file.starter === "string" && text(file.solution), "project starter or solution");
+          names.add(file.file);
+        }
+      }
     }
     const steps = list(lesson.steps, "steps");
     requireValue(steps.length > 0, "empty lesson");

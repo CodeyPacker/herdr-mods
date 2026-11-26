@@ -84,7 +84,8 @@ export class CoursePanel {
           this.watch = watchFolder(directory);
           const changes = await this.watch;
           if (turn !== this.watchTurn) return;
-          if (changes.some(path => [normalized(file), normalized(directory)].includes(normalized(path)))) this.queueSave(cx);
+          const files = this.task()?.workspace?.editable.map(entry => `${directory}/${entry.file}`) ?? [file];
+          if (changes.some(path => [normalized(directory), ...files.map(normalized)].includes(normalized(path)))) this.queueSave(cx);
         } catch { return; }
       }
     });
@@ -166,7 +167,7 @@ export class CoursePanel {
       }
     } else if (this.data) {
       body.child(div().font_semibold().child(this.data.course.title));
-      if (this.data.course.preview) body.child(banner(t, "Course preview. Unwritten modules are shown as planned. You can explore available modules without completing their prerequisites."));
+      if (this.data.course.preview) body.child(banner(t, "Course preview. Lesson pacing still needs learner testing. You can explore available modules without completing their prerequisites."));
       if (this.page === "modules") this.modules(body, t);
       else if (this.page === "lesson") this.lessonView(body, t);
       else if (this.page === "task") this.taskView(body, t);
@@ -223,6 +224,7 @@ export class CoursePanel {
     if (!task) return;
     const progress = this.data.enrollment.tasks[task.id];
     body.child(sectionLabel(t, task.title)).child(markdown("course-task-prompt", task.prompt));
+    if (task.workspace) body.child(div().text_color(t.muted).child(`Edit these files in the same folder: ${task.workspace.editable.map(entry => entry.file).join(", ")}. Saving either checks the whole project.`));
     for (const fixture of task.fixtures) body.child(markdown(`course-fixture-${fixture.id}`, `Case ${fixture.id}\n\n\`\`\`typescript\n${fixture.declarations}\n\`\`\``));
     body.child(div().text_color(t.muted).child("Save your answer to check every case. Your answer must pass them all."))
       .when(!this.host.editor || this.host.offerEditorDefault, element => element.child(banner(t, "Choose and confirm your editor in Setup before opening this file.")))
@@ -237,7 +239,10 @@ export class CoursePanel {
       .child(keyButton(t, "course-reset-confirm", "", "Reset saved file", !this.busy, cx => { this.confirmReset = false; this.run("reset", { taskId: task.id }, cx); }))
       .child(keyButton(t, "course-reset-cancel", "", "Cancel", true, cx => { this.confirmReset = false; cx.notify(); })));
     for (const [index, hint] of task.hints.entries()) body.child(markdown(`course-hint-${index}`, hint));
-    if (task.solution) body.child(markdown("course-solution", `\`\`\`typescript\n${task.solution}\n\`\`\``));
+    if (task.solution) {
+      if (task.workspace) for (const file of task.workspace.editable) body.child(markdown(`course-solution-${file.file}`, `${file.file}\n\n\`\`\`typescript\n${file.solution}\n\`\`\``));
+      else body.child(markdown("course-solution", `\`\`\`typescript\n${task.solution}\n\`\`\``));
+    }
     if (progress.result) {
       body.child(banner(t, `${this.data.stale ? "Saved code changed. " : ""}${progress.result.title}${progress.result.assisted ? " · with help" : ""}`, !this.data.stale && progress.result.passed ? t.done : t.foreground));
       for (const [index, detail] of progress.result.details.entries()) body.child(markdown(`course-result-${index}`, detail));

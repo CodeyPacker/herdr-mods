@@ -14,8 +14,10 @@ states.push("exercises-shuffle", "ts-exercises-shuffle");
 states.push("tutor-empty", "tutor-off", "tutor-chat", "tutor-thinking", "tutor-error", "tutor-setup");
 // TypeScript fixtures render the same panel with the TypeScript pack selected.
 const typescriptExercise = { "ts-exercises-advanced": "mappedTypes/getters", "ts-module": "modules/import-named" };
+const requested = process.argv.slice(2);
+for (const state of requested) if (!states.includes(state)) throw new Error(`Unknown native panel fixture: ${state}`);
 try {
-  for (const state of states) {
+  for (const state of states.filter(state => !requested.length || requested.includes(state))) {
     const typescript = state.startsWith("ts-");
     const screen = state.startsWith("topics") || state === "ts-topics" ? "topics" : state.startsWith("exercises") || state === "ts-exercises-advanced" ? "exercises" : "practice";
     const exerciseId = typescript ? typescriptExercise[state] ?? "loops/for-of" : state === "advanced" ? "async/async-dispose" : state === "advanced-patterns" ? "patterns/extended-property" : state === "advanced-types" ? "typeMembers/static-abstract" : "loops/for";

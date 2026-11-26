@@ -5,7 +5,8 @@
  *   questions?: string[], task?: string, tasks?: string[] }} Step
  * @typedef {{ id: string, prompt: string, choices: {text: string, feedback: string}[], answer: number }} Question
  * @typedef {{ id: string, title: string, prompt: string, role: string, feedback: string,
- *   hints: string[], solution: string | null, fixtures: {id: string, declarations: string}[] }} Task
+ *   hints: string[], solution: string | null, fixtures: {id: string, declarations: string}[],
+ *   workspace?: {editable: {file: string, solution: string | null}[]} }} Task
  * @typedef {{ id: string, title: string, intro: string, steps: Step[], questions: Question[],
  *   examples: Record<string, {code: string, stdout?: string[], diagnostics?: {code: number, line: number}[]}>,
  *   tasks: Task[] }} Lesson

@@ -8,9 +8,23 @@ import { loadCourse, listCourses, lessonFor, taskFor } from "./loader.mjs";
 import { findLanguage } from "../languages/index.js";
 import { loadLanguageRunner } from "../languages/runner.mjs";
 
-const hash = text => createHash("sha256").update(text).digest("hex");
+const hash = source => createHash("sha256").update(typeof source === "string" ? source : JSON.stringify(source)).digest("hex");
 export const enrollmentDirectory = (root, pack) => join(root, "courses", encodeURIComponent(pack.id), pack.contentVersion);
-const answerPath = (directory, task, language) => join(directory, "answers", task.id.split("/").at(-1), language.answerFile);
+const answerPath = (directory, task, language) => join(directory, "answers", task.id.split("/").at(-1), task.workspace?.editable[0].file ?? language.answerFile);
+const starters = task => task.workspace ? Object.fromEntries(task.workspace.editable.map(file => [file.file, file.starter])) : task.starter;
+async function readAnswer(file, task) {
+  if (!task.workspace) return readFile(file, "utf8");
+  const files = {};
+  for (const editable of task.workspace.editable) files[editable.file] = await readFile(join(dirname(file), editable.file), "utf8");
+  return files;
+}
+async function writeStarters(file, task, createOnly = false) {
+  const files = task.workspace ? task.workspace.editable : [{ file: file.split(/[\\/]/).at(-1), starter: task.starter }];
+  for (const editable of files) {
+    try { await writeFile(join(dirname(file), editable.file), editable.starter, createOnly ? { flag: "wx" } : {}); }
+    catch (error) { if (!createOnly || error.code !== "EEXIST") throw error; }
+  }
+}
 async function readJson(file) {
   try { return JSON.parse(await readFile(file, "utf8")); }
   catch (error) { if (error.code === "ENOENT") return null; throw new Error(`Cannot read course progress: ${error.message}`); }
@@ -43,16 +57,39 @@ function fresh(pack, entryPath) {
     position: null, activeTask: null, modules: {}, tasks: {} };
 }
 function validateState(state, pack) {
+  const record = value => value && typeof value === "object" && !Array.isArray(value);
   if (state.version !== 1 || state.courseId !== pack.id || state.contentVersion !== pack.contentVersion ||
-      !state.modules || typeof state.modules !== "object" || !state.tasks || typeof state.tasks !== "object") {
+      !record(state.modules) || !record(state.tasks) || !pack.entryPaths.some(path => path.id === state.entryPath)) {
     throw new Error("Course progress is incompatible or damaged. The saved file has been preserved.");
   }
+  if (state.position) {
+    const lesson = lessonFor(pack, state.position.moduleId);
+    if (!Number.isInteger(state.position.step) || !lesson.steps[state.position.step]) throw new Error("The saved lesson position is damaged. Course progress has been preserved.");
+  }
+  for (const [id, progress] of Object.entries(state.modules)) {
+    const lesson = lessonFor(pack, id);
+    if (!record(progress) || !Array.isArray(progress.seen) || !record(progress.questions) ||
+        !progress.seen.every(step => Number.isInteger(step) && lesson.steps[step])) throw new Error("Saved lesson progress is damaged. The saved file has been preserved.");
+    for (const [questionId, result] of Object.entries(progress.questions)) {
+      const question = lesson.questions.find(question => question.id === questionId);
+      if (!question || !record(result) || !Number.isInteger(result.choice) || !question.choices[result.choice] ||
+          result.correct !== (question.answer === result.choice)) throw new Error("Saved question progress is damaged. The saved file has been preserved.");
+    }
+  }
+  for (const [id, progress] of Object.entries(state.tasks)) {
+    taskFor(pack, id);
+    if (!record(progress) || !Array.isArray(progress.history) ||
+        ![progress.attempts, progress.passes, progress.independentPasses, progress.hintCount].every(n => Number.isInteger(n) && n >= 0)) {
+      throw new Error("Saved exercise progress is damaged. The saved file has been preserved.");
+    }
+  }
+  if (state.activeTask && !Object.hasOwn(state.tasks, state.activeTask)) throw new Error("The saved exercise selection is damaged. Course progress has been preserved.");
 }
 async function runnerFor(pack) {
   const runner = await loadLanguageRunner(pack.languageId);
   const runtime = await runner.environment();
   const expected = pack.runner.compiler.range.slice(1);
-  if (!runtime.version.includes(` ${expected}`)) throw new Error(`This course needs ${pack.runner.compiler.name} ${expected}. ${runtime.version} is installed.`);
+  if (!runtime.version.endsWith(` ${expected}`)) throw new Error(`This course needs ${pack.runner.compiler.name} ${expected}. ${runtime.version} is installed.`);
   return { runner, runtime };
 }
 
@@ -62,8 +99,13 @@ export async function checkTask(root, pack, task, source, run) {
   const fixtures = [];
   for (const fixture of task.fixtures) {
     const { fixtures: _fixtures, ...exercise } = task;
-    const result = await runner(root, { ...exercise, declarations: fixture.declarations }, source);
-    fixtures.push({ id: fixture.id, ...result });
+    const result = await runner(root, { ...exercise, declarations: fixture.declarations,
+      modules: { ...task.modules, ...(task.workspace ? source : {}) } }, task.workspace ? task.workspace.entry : source);
+    fixtures.push({ id: fixture.id, ...result, details: result.details.map(detail => {
+      const match = detail.match(/^Check (\d+) failed:/);
+      const label = match && task.checkLabels?.[Number(match[1]) - 1];
+      return label ? `Check ${match[1]} failed: ${label}` : detail;
+    }) });
   }
   const passed = fixtures.every(result => result.passed);
   return { passed, kind: passed ? "pass" : "course", title: passed ? "All cases passed" : "Some cases need a correction",
@@ -112,30 +154,33 @@ export async function courseCommand(root, action, request = {}) {
       if (action === "task") {
         const { runner, runtime } = await runnerFor(pack);
         await mkdir(dirname(answer), { recursive: true });
-        try { await writeFile(answer, task.starter, { flag: "wx" }); }
-        catch (error) { if (error.code !== "EEXIST") throw error; }
+        await writeStarters(answer, task, true);
         await runner.prepareWorkspace(answer, runtime, { ...task, declarations: task.fixtures[0].declarations });
         state.activeTask = task.id;
         // Entering an exercise retains the lesson position for Return to lesson.
         if (state.position?.moduleId !== lesson.id) state.position = { moduleId: lesson.id, step: 0 };
-        progress.initialHash ??= hash(task.starter);
+        progress.initialHash ??= hash(starters(task));
       } else if (action === "hint") progress.hintCount = Math.min(task.hints.length, progress.hintCount + 1);
       else if (action === "answer") progress.answerShown = true;
       else if (action === "reset") {
         const backup = join(directory, "history", task.id.split("/").at(-1));
         await mkdir(backup, { recursive: true });
-        await copyFile(answer, join(backup, `${Date.now()}-${randomUUID()}${language.fileExtension}`));
-        await writeFile(answer, task.starter);
+        const stamp = `${Date.now()}-${randomUUID()}`;
+        if (task.workspace) {
+          await mkdir(join(backup, stamp));
+          for (const editable of task.workspace.editable) await copyFile(join(dirname(answer), editable.file), join(backup, stamp, editable.file));
+        } else await copyFile(answer, join(backup, `${stamp}${language.fileExtension}`));
+        await writeStarters(answer, task);
         progress.hintCount = 0; progress.answerShown = false; progress.result = null; progress.checkedHash = null;
-        progress.initialHash = hash(task.starter);
+        progress.initialHash = hash(starters(task));
       } else {
-        const source = await readFile(answer, "utf8"), sourceHash = hash(source);
+        const source = await readAnswer(answer, task), sourceHash = hash(source);
         const duplicate = progress.checkedHash === sourceHash;
         if (!duplicate && !(action === "check-saved" && !progress.checkedHash && sourceHash === progress.initialHash)) {
           const checks = join(directory, "checks");
           await mkdir(checks, { recursive: true });
           const result = await checkTask(checks, pack, task, source);
-          const currentHash = hash(await readFile(answer, "utf8"));
+          const currentHash = hash(await readAnswer(answer, task));
           // A newer save will be checked next. Never record a stale verdict as a current pass.
           if (currentHash !== sourceHash) return { ...await snapshot(pack, state, directory), pendingSave: true };
           const assisted = progress.hintCount > 0 || progress.answerShown;
@@ -165,8 +210,10 @@ async function snapshot(pack, state, directory) {
     fixtures: task.fixtures.map(fixture => ({ id: fixture.id, declarations: fixture.declarations })),
     hints: task.id === active?.id ? task.hints.slice(0, progress.hintCount) : [],
     solution: task.id === active?.id && progress.answerShown ? task.solution : null,
+    ...(task.workspace ? { workspace: { editable: task.workspace.editable.map(file => ({ file: file.file,
+      solution: task.id === active?.id && progress.answerShown ? file.solution : null })) } } : {}),
   })) }));
-  const sourceHash = file ? hash(await readFile(file, "utf8")) : null;
+  const sourceHash = file ? hash(await readAnswer(file, active)) : null;
   return { course: { id: pack.id, title: pack.title, contentVersion: pack.contentVersion, languageId: pack.languageId,
     preview: pack.preview === true, modules: pack.modules, lessons }, enrollment: state,
     file, folder: file ? dirname(file) : null, sourceHash,
