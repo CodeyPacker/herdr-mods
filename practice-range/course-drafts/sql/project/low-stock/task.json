@@ -1,0 +1,54 @@
+{
+  "id": "course:sql-foundations/task/project-low-stock",
+  "role": "project",
+  "title": "Project 1 · List what is running low",
+  "concepts": [
+    "filter",
+    "logic",
+    "order",
+    "column-list"
+  ],
+  "prompt": "Return the name and stock of every product that is not discontinued and has fewer than 10 in stock. Put the lowest stock first, and sort products with the same stock by name.",
+  "hints": [
+    "Two tests decide which products appear. Two columns decide their order.",
+    "Join the tests with AND. List both sort columns after ORDER BY.",
+    "WHERE discontinued = false AND stock < 10 ORDER BY stock, name"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    },
+    {
+      "id": "edge",
+      "declarations": "fixture-edge.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-includes-ten.sql",
+      "misconception": "Includes a product with exactly 10 in stock.",
+      "witness": {
+        "fixture": "edge",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    },
+    {
+      "source": "wrong-discontinued.sql",
+      "misconception": "Leaves out the test on discontinued products.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    }
+  ],
+  "feedback": "Check a discontinued product with no stock, and a product with exactly 10 in stock. Neither belongs in the list."
+}

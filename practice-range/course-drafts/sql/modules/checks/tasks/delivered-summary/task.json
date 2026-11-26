@@ -1,0 +1,49 @@
+{
+  "id": "course:sql-foundations/task/checks-delivered-summary",
+  "role": "review",
+  "title": "Summarize delivered orders",
+  "concepts": [
+    "fan-out",
+    "verify-query",
+    "join",
+    "aggregate"
+  ],
+  "prompt": "Return one row with two columns: orders, the number of delivered orders, and revenue, the total of quantity * unit_price over the items of those orders.",
+  "hints": [
+    "After joining orders to their items, what does one row stand for?",
+    "The revenue needs every item row. The order count must count each order once.",
+    "count(DISTINCT o.id) AS orders, sum(i.quantity * i.unit_price) AS revenue"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-counts-items.sql",
+      "misconception": "Counts item rows and reports them as orders.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-joins-reviews.sql",
+      "misconception": "Joins a table the question does not need, which repeats the items.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Test the order count with a plain query on orders alone. It must give the same number."
+}

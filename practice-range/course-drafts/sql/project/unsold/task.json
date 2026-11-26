@@ -1,0 +1,54 @@
+{
+  "id": "course:sql-foundations/task/project-unsold",
+  "role": "project",
+  "title": "Project 3 · Find products that never sold",
+  "concepts": [
+    "anti-join",
+    "left-join",
+    "is-null",
+    "order"
+  ],
+  "prompt": "Return the name of every product that does not appear in any order item, sorted by name.",
+  "hints": [
+    "Which join keeps a product that has no order items?",
+    "After a LEFT JOIN, an unsold product has NULL in the item's columns.",
+    "LEFT JOIN order_items AS i ON i.product_id = p.id WHERE i.product_id IS NULL"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    },
+    {
+      "id": "added",
+      "declarations": "fixture-added.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-out-of-stock.sql",
+      "misconception": "Looks for products with no stock, which is a different question.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    },
+    {
+      "source": "wrong-inner-join.sql",
+      "misconception": "Uses an inner join, which has already removed the products it is looking for.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected"
+      }
+    }
+  ],
+  "feedback": "A product that has sold must not appear, and a product with no order items must. Check one of each."
+}

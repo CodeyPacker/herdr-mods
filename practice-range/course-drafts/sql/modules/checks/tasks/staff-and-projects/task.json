@@ -1,0 +1,50 @@
+{
+  "id": "course:sql-foundations/task/checks-staff-and-projects",
+  "role": "guided",
+  "title": "Count staff and projects",
+  "concepts": [
+    "fan-out",
+    "verify-query",
+    "count-forms",
+    "left-join"
+  ],
+  "prompt": "For every department, return department (its name), staff (how many employees it has) and projects (how many projects it has). A department with none shows 0. Sort by department. The starter's numbers are too large for departments that have both employees and projects.",
+  "hints": [
+    "How many rows does the join produce for a department with 3 employees and 2 projects?",
+    "Each employee appears once for every project. Count each employee and each project only once.",
+    "count(DISTINCT e.id) AS staff, count(DISTINCT p.id) AS projects"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-counts-rows.sql",
+      "misconception": "Counts joined rows, so a department with nothing still shows 1.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-inner-joins.sql",
+      "misconception": "Uses inner joins, which drop departments that lack employees or projects.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 6 rows"
+      }
+    }
+  ],
+  "feedback": "Test one department with a plain query: count its employees in the employees table alone, and compare."
+}

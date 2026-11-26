@@ -1,0 +1,55 @@
+{
+  "id": "course:sql-foundations/task/readiness-r1",
+  "role": "readiness",
+  "title": "Readiness 1 · Select through sorting",
+  "concepts": [
+    "filter",
+    "logic",
+    "coalesce",
+    "order",
+    "alias"
+  ],
+  "prompt": "For every customer who lives in the USA or Canada and signed up during 2024, return first_name, city and contact. contact is the customer's email, or the text none when the email is missing. Put the newest signup first.",
+  "hints": [
+    "Three things are needed: a filter with two parts, a fallback for a missing value, and an order.",
+    "Keep the two countries together so the date test applies to both. BETWEEN includes both ends.",
+    "WHERE country IN ('USA', 'Canada') AND signup_date BETWEEN '2024-01-01' AND '2024-12-31' ORDER BY signup_date DESC"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    },
+    {
+      "id": "missing",
+      "declarations": "fixture-missing.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-brackets.sql",
+      "misconception": "Mixes OR and AND without brackets, so the date test applies to one country only.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    },
+    {
+      "source": "wrong-no-fallback.sql",
+      "misconception": "Returns the email as it is, so a missing one shows NULL.",
+      "witness": {
+        "fixture": "missing",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Check a customer from the USA who signed up in 2023, and a customer whose email is missing."
+}

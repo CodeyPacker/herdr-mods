@@ -1,0 +1,50 @@
+{
+  "id": "course:sql-foundations/task/windows-above-own-average",
+  "role": "review",
+  "title": "Find who earns above their department's average",
+  "concepts": [
+    "window",
+    "partition",
+    "cte",
+    "filter"
+  ],
+  "prompt": "For every employee who has a department and earns more than the average salary of that department, return first_name, salary and department_avg, the department's average salary rounded to a whole number. Sort by first_name. An employee who earns exactly the average does not qualify.",
+  "hints": [
+    "Each employee has to be compared with a number that belongs to their group.",
+    "Put the department's average beside every employee in a WITH step, then filter in the main query.",
+    "avg(salary) OVER (PARTITION BY department_id) AS department_avg, then WHERE salary > department_avg"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-company-average.sql",
+      "misconception": "Compares with the average of all employees instead of the department's.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-includes-equal.sql",
+      "misconception": "Includes an employee who earns exactly the average.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    }
+  ],
+  "feedback": "Check a department with a single employee. That person earns exactly the average and must not appear."
+}

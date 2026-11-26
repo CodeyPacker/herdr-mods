@@ -1,0 +1,54 @@
+{
+  "id": "course:sql-foundations/task/windows-top-per-category",
+  "role": "independent",
+  "title": "Find the dearest product in each category",
+  "concepts": [
+    "window",
+    "partition",
+    "cte",
+    "filter"
+  ],
+  "prompt": "For every category_id that has products, return category_id, name and price of its most expensive product. Leave out products with no category. If two products in a category share the highest price, return the one whose name comes first from A to Z. Sort by category_id.",
+  "hints": [
+    "A WHERE cannot use a window function. Where can the numbering happen instead?",
+    "Number the products inside each category in a WITH step, most expensive first. Then keep number 1.",
+    "ROW_NUMBER() OVER (PARTITION BY category_id ORDER BY price DESC, name) AS position, then WHERE position = 1"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    },
+    {
+      "id": "tie",
+      "declarations": "fixture-tie.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-cheapest.sql",
+      "misconception": "Numbers the cheapest product first.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-keeps-ties.sql",
+      "misconception": "Uses RANK, which gives tied products the same number, so both are returned.",
+      "witness": {
+        "fixture": "tie",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    }
+  ],
+  "feedback": "There must be exactly one row per category. Check a category where two products share the highest price."
+}

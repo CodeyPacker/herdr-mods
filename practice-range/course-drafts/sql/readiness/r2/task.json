@@ -1,0 +1,52 @@
+{
+  "id": "course:sql-foundations/task/readiness-r2",
+  "role": "readiness",
+  "title": "Readiness 2 · Aggregates through outer joins",
+  "concepts": [
+    "left-join",
+    "group",
+    "aggregate",
+    "count-forms",
+    "coalesce",
+    "order"
+  ],
+  "prompt": "For every department, including any that has no employees, return department (its name), staff (how many employees it has) and payroll (the total of their salaries, or 0 when it has none). Put the highest payroll first, and sort departments with the same payroll by department.",
+  "hints": [
+    "Which table must keep all its rows, and what does a department with no employees look like after the join?",
+    "Count something that is NULL when nobody matched, and give the missing total a value.",
+    "LEFT JOIN employees ... count(e.id) AS staff, COALESCE(sum(e.salary), 0) AS payroll"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-inner-join.sql",
+      "misconception": "Uses an inner join, which leaves out the department with no employees.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 6 rows"
+      }
+    },
+    {
+      "source": "wrong-counts-rows.sql",
+      "misconception": "Counts joined rows, so the empty department shows a staff of 1.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Find the department with no employees in your result. It must be there, with a staff of 0 and a payroll of 0."
+}

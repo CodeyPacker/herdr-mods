@@ -1,0 +1,50 @@
+{
+  "id": "course:sql-foundations/task/checks-orders-per-customer",
+  "role": "independent",
+  "title": "Count orders for every customer",
+  "concepts": [
+    "verify-query",
+    "count-forms",
+    "left-join",
+    "group"
+  ],
+  "prompt": "For every customer, return first_name and orders, the number of orders they have placed. A customer who has never ordered shows 0. Put the most orders first, and sort customers with the same number by first_name.",
+  "hints": [
+    "Which join keeps a customer who has no orders, and what does that customer's row hold?",
+    "Count something that is NULL when there was no order.",
+    "LEFT JOIN orders AS o ON o.customer_id = c.id ... count(o.id) AS orders"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-counts-rows.sql",
+      "misconception": "Counts joined rows, so a customer with no orders shows 1.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-inner-join.sql",
+      "misconception": "Uses an inner join, which leaves out customers with no orders.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 20 rows"
+      }
+    }
+  ],
+  "feedback": "Check two things: all 20 customers appear, and the ones who never ordered show 0."
+}

@@ -1,0 +1,49 @@
+{
+  "id": "course:sql-foundations/task/windows-rank-in-department",
+  "role": "guided",
+  "title": "Rank salaries inside each department",
+  "concepts": [
+    "window",
+    "partition",
+    "order"
+  ],
+  "prompt": "For every employee who has a department, return first_name, department_id, salary and position: the employee's rank by salary inside their own department, where the highest salary is 1. Sort by department_id, then position. The starter ranks all employees in a single list.",
+  "hints": [
+    "What should the top earner of every department have as their position?",
+    "The window needs to be split by department before it is sorted.",
+    "RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS position"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-lowest-first.sql",
+      "misconception": "Ranks the lowest salary as 1.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-no-department.sql",
+      "misconception": "Includes the employee who has no department.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    }
+  ],
+  "feedback": "Check the first row of each department. Its position should be 1 and its salary the highest in that department."
+}

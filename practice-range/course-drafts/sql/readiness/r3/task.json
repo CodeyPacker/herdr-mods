@@ -1,0 +1,51 @@
+{
+  "id": "course:sql-foundations/task/readiness-r3",
+  "role": "readiness",
+  "title": "Readiness 3 · Subqueries through changing data",
+  "concepts": [
+    "subquery",
+    "case",
+    "filter",
+    "order",
+    "is-null"
+  ],
+  "prompt": "For every product that costs more than the average price of its own category, return name, price and band. band is high when the price is 500 or more, and standard otherwise. Leave out products with no category. Sort by name.",
+  "hints": [
+    "The average to compare with is different for each product. What decides it?",
+    "A subquery that refers to the outer product's category_id gives that category's average.",
+    "WHERE p.price > (SELECT avg(x.price) FROM products AS x WHERE x.category_id = p.category_id)"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-overall-average.sql",
+      "misconception": "Compares with the average of all products instead of the product's own category.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-no-else.sql",
+      "misconception": "Leaves out ELSE, so cheaper products get NULL as their band.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Pick one category, work out its average price by hand, and check which of its products appear."
+}

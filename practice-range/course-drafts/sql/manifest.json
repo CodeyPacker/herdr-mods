@@ -378,20 +378,29 @@
         "window",
         "partition"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/windows/module.json"
+      }
     },
     {
       "id": "course:sql-foundations/module/checks",
       "title": "Check that a query is right",
       "prerequisites": [
         "course:sql-foundations/module/outer",
-        "course:sql-foundations/module/grouping"
+        "course:sql-foundations/module/grouping",
+        "course:sql-foundations/module/ctes"
       ],
       "teaches": [
         "verify-query",
         "fan-out"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/checks/module.json"
+      }
     },
     {
       "id": "course:sql-foundations/module/assemble",
@@ -405,7 +414,11 @@
       "teaches": [
         "project"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/assemble/module.json"
+      }
     },
     {
       "id": "course:sql-foundations/module/report",
@@ -417,12 +430,63 @@
       "teaches": [
         "transfer"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/report/module.json"
+      }
     }
   ],
+  "project": "project/project.json",
   "compatibility": {
     "fromVersions": [],
     "replacements": []
   },
-  "runtimeContentVersion": "0.1.0-preview.1"
+  "runtimeContentVersion": "0.1.0-preview.1",
+  "readiness": [
+    {
+      "id": "R1",
+      "title": "Select through sorting",
+      "modules": [
+        "course:sql-foundations/module/select",
+        "course:sql-foundations/module/where",
+        "course:sql-foundations/module/nulls",
+        "course:sql-foundations/module/sorting"
+      ],
+      "task": "readiness/r1/task.json"
+    },
+    {
+      "id": "R2",
+      "title": "Aggregates through outer joins",
+      "modules": [
+        "course:sql-foundations/module/aggregates",
+        "course:sql-foundations/module/grouping",
+        "course:sql-foundations/module/joins",
+        "course:sql-foundations/module/outer"
+      ],
+      "task": "readiness/r2/task.json"
+    },
+    {
+      "id": "R3",
+      "title": "Subqueries through changing data",
+      "modules": [
+        "course:sql-foundations/module/subqueries",
+        "course:sql-foundations/module/ctes",
+        "course:sql-foundations/module/expressions",
+        "course:sql-foundations/module/modify"
+      ],
+      "task": "readiness/r3/task.json"
+    },
+    {
+      "id": "R4",
+      "title": "Tables through assembling",
+      "modules": [
+        "course:sql-foundations/module/tables",
+        "course:sql-foundations/module/windows",
+        "course:sql-foundations/module/checks",
+        "course:sql-foundations/module/assemble"
+      ],
+      "task": "readiness/r4/task.json"
+    }
+  ]
 }

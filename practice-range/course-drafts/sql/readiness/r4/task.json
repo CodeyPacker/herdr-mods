@@ -1,0 +1,52 @@
+{
+  "id": "course:sql-foundations/task/readiness-r4",
+  "role": "readiness",
+  "title": "Readiness 4 · Tables through assembling",
+  "concepts": [
+    "window",
+    "partition",
+    "cte",
+    "fan-out",
+    "join",
+    "group"
+  ],
+  "prompt": "Leave out cancelled orders. An order's total is the sum of quantity * unit_price over its items. For every customer who has at least one such order, return first_name, order_id and total of that customer's largest order. If a customer has two orders with the same largest total, return the one with the lower order id. Put the largest total first, and sort rows with the same total by first_name.",
+  "hints": [
+    "Three steps: a total per order, a position for each order inside its customer, then the first of each.",
+    "Total the orders in one step. Number them per customer in the next, largest first. Filter in the main query.",
+    "ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY total DESC, id) AS position, then WHERE position = 1"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-with-cancelled.sql",
+      "misconception": "Includes cancelled orders when looking for the largest.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-smallest.sql",
+      "misconception": "Numbers the smallest order first.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Pick one customer, total each of their orders that is not cancelled by hand, and check which one your result shows."
+}
