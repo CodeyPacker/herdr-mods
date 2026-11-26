@@ -134,7 +134,7 @@ export async function listCourses(root) {
     try {
       const pack = await loadCourse(id, undefined, root);
       return { id, title: pack.title, languageId: pack.languageId, contentVersion: pack.contentVersion,
-        preview: pack.preview === true, available: pack.lessons.length, total: pack.modules.length };
+        preview: pack.preview === true, imported: pack.legacy?.source === "tutor", available: pack.lessons.length, total: pack.modules.length };
     } catch (error) { return { id, error: error.message }; }
   }));
 }

@@ -1,26 +1,31 @@
 /**
  * @typedef {{ id: string, title?: string, languageId?: string, contentVersion?: string,
- *   preview?: boolean, available?: number, total?: number, error?: string, enrolledVersion?: string, versions?: string[] }} CourseSummary
+ *   preview?: boolean, imported?: boolean, available?: number, total?: number, error?: string, enrolledVersion?: string, versions?: string[] }} CourseSummary
  * @typedef {{ kind: string, title: string, text: string, example?: string, examples?: string[],
  *   questions?: string[], task?: string, tasks?: string[] }} Step
  * @typedef {{ id: string, prompt: string, choices: {text: string, feedback: string}[], answer: number }} Question
  * @typedef {{ id: string, title: string, prompt: string, role: string, feedback: string,
- *   hints: string[], solution: string | null, fixtures: {id: string, declarations: string}[],
+ *   hints: string[], hintTotal?: number, solution: string | null, fixtures: {id: string, declarations: string}[],
  *   workspace?: {editable: {file: string, solution: string | null}[]} }} Task
  * @typedef {{ id: string, title: string, intro: string, steps: Step[], questions: Question[],
- *   examples: Record<string, {code: string, stdout?: string[], diagnostics?: {code: number, line: number}[]}>,
+ *   examples: Record<string, {code: string, readOnly?: boolean, sourceError?: string, repoRef?: {path: string, start: number, end: number, commit: string}, stdout?: string[], diagnostics?: {code: number, line: number}[]}>,
  *   tasks: Task[], drills?: string[] }} Lesson
- * @typedef {{ id: string, title: string, status: string }} Module
+ * @typedef {{ id: string, title: string, status: string, part?: string }} Module
  * @typedef {{ choice: number, correct: boolean, attempts: number, at: number }} QuestionProgress
- * @typedef {{ passed: boolean, title: string, details: string[], assisted: boolean }} CourseResult
+ * @typedef {{ passed: boolean, title: string, details: string[], assisted: boolean, assistanceUnknown?: boolean }} CourseResult
  * @typedef {{ attempts: number, passes: number, independentPasses: number, hintCount: number,
- *   answerShown: boolean, result?: CourseResult }} TaskProgress
+ *   answerShown: boolean, assistanceUnknown?: boolean, legacy?: {passed?: boolean, runs?: number, hints?: number, gaveUp?: boolean}, result?: CourseResult }} TaskProgress
  * @typedef {{ course: { id: string, title: string, languageId: string, contentVersion: string, preview: boolean,
- *   modules: Module[], lessons: Lesson[] }, enrollment: { position: {moduleId: string, step: number} | null,
- *   activeTask: string | null, review?: {ids: string[], index: number}, modules: Record<string, { seen: number[], skipped?: boolean, questions: Record<string, QuestionProgress>, examples?: Record<string, CourseResult> }>,
- *   tasks: Record<string, TaskProgress> }, file: string | null, folder: string | null, sourceHash: string | null,
+ *   modules: Module[], lessons: Lesson[], codeFence?: string,
+ *   legacy?: {source: string, known: string[], parts: {id: string,title: string}[]} }, enrollment: { position: {moduleId: string, step: number} | null,
+ *   activeTask: string | null, review?: {ids: string[], index: number}, modules: Record<string, { seen: number[], resumeStep?: number, skipped?: boolean, questions: Record<string, QuestionProgress>, examples?: Record<string, CourseResult> }>,
+ *   tasks: Record<string, TaskProgress>, legacy?: {modules: Record<string,{doneAt?: string,quiz?: {best?: number,passed?: boolean}}>} }, file: string | null, folder: string | null, sourceHash: string | null,
  *   stale: boolean, pendingSave?: boolean, reviewReady: number,
  *   attachment?: {name?: string, commit?: string, available: boolean, detail?: string},
  *   recommendation: {kind: string, reason: string, moduleId?: string, taskId?: string, step?: number} }} CourseSnapshot
+ * @typedef {{slug: string,title: string,error?: string,courseId?: string,contentVersion?: string,fingerprint?: string,
+ *   languageId?: string,modules?: number,written?: number,questions?: number,exercises?: number,answers?: number,
+ *   orphanAnswers?: number,warnings?: string[],known?: string[],alreadyImported?: boolean,
+ *   preferences?: {editor?: string,agent?: string}}} TutorImport
  */
 export {};

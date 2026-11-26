@@ -10,7 +10,7 @@ Each hint adds a little more help. Another exercise stays in the same topic unti
 
 Courses are available from **Courses** in the header. The bundled TypeScript preview has 18 modules and 56 tasks, including runnable examples and a two-file final project. Lessons need no repo or AI connection. Coding checks use the language pack’s compiler. Reading position, answers, hints, and review progress are saved separately from direct practice. Course updates preserve older enrollments and their content.
 
-You can optionally attach a local repo from the course’s module list. Course questions can use bounded code excerpts from its pinned commit when AI help is enabled. The repo is never edited, and its local path does not sync. Tutor course import and C# and SQL course packs are still in development.
+You can optionally attach a local repo from the course’s module list. Course questions can use bounded code excerpts from its pinned commit when AI help is enabled. The repo is never edited, and its local path does not sync. C# and SQL course packs are still in development. Their existing direct practice remains available.
 
 ```sh
 herdr-app do tab.new '{"name":"Practice Range","mod":"practice-range","props":{"practiceTab":true}}'
@@ -28,6 +28,18 @@ Every check shows what your code produced: what it printed, the value a failed c
 - **Send to scratch** (`s`): copies your current answer into scratch, with any tables or types the exercise supplies, and runs it, so you can experiment without touching your saved attempt.
 - **Compare** (`d` after a pass): opens your answer beside the read-only reference in your editor's diff view (a new Neovim tab that closes when you move to another file, or VS Code's diff editor). If they differ only in formatting or comments, the panel says so instead.
 - **Review** (`v` on the Topics screen): optional. Up to eight exercises from topics you've practiced, weakest and longest unseen first, no more than three per topic, each from a blank file. Your saved answers stay untouched. A clean first try waits longer before coming back; one you needed help with returns sooner. The Topics screen shows how many are ready.
+
+## Importing Tutor courses
+
+Open **Courses → Import Tutor courses**, choose a course, and review **Preview import** before copying. Practice Range looks for Tutor next to its own data folder. Enter Tutor's data folder when it lives elsewhere.
+
+The import preserves the original module order, parts, explanations, quizzes, read positions, historical scores, and saved C# or TypeScript answers. Unwritten modules stay Planned. Answers without a matching exercise are copied into imported history. Tutor's original files are never changed.
+
+Earlier practice results remain historical evidence. An imported answer does not earn independent credit until you use **Start fresh** and solve it again. Optional editor and AI preferences fill only missing settings. Existing choices and credentials are not replaced.
+
+Reimporting unchanged content reopens the existing copy without overwriting newer work. Revised lessons get a separate enrollment, and the earlier version stays available. If a repo was missing, attach a local clone from the imported course's module list to restore its pinned excerpts. With device sync enabled, imported course content and progress travel together. Local repo paths and incomplete import staging stay on this computer.
+
+Keep Tutor available for generating modules that have not been written yet. Generating repo architecture lessons and the remaining Tutor authoring flow inside Practice Range is still in development.
 
 ## Updating an existing install
 

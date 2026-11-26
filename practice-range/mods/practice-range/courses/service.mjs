@@ -8,7 +8,7 @@ import { loadCourse, listCourses, lessonFor, taskFor, courseFolderName } from ".
 import { findLanguage } from "../languages/index.js";
 import { loadLanguageRunner } from "../languages/runner.mjs";
 import { courseReview, nextCourseAction } from "./review.js";
-import { attachRepo, detachRepo, repoStatus } from "./repo.mjs";
+import { attachRepo, detachRepo, repoStatus, restoreRepoExcerpts } from "./repo.mjs";
 
 const hash = source => createHash("sha256").update(typeof source === "string" ? source : JSON.stringify(source)).digest("hex");
 export const enrollmentDirectory = (root, pack) => join(root, "courses", courseFolderName(pack.id), pack.contentVersion);
@@ -202,6 +202,7 @@ export async function courseCommand(root, action, request = {}) {
       const step = request.step ?? 0;
       if (!Number.isInteger(step) || !lesson.steps[step]) throw new Error("Unknown lesson step.");
       state.position = { moduleId: lesson.id, step };
+      if(pack.legacy?.source==="tutor") (state.modules[lesson.id]??={seen:[],questions:{}}).resumeStep=step;
       state.activeTask = null;
       await persist();
     } else if (action === "example") {
@@ -295,7 +296,7 @@ async function snapshot(pack, state, directory) {
   const file = active ? answerPath(directory, active, language, state.review) : null;
   const progress = active ? taskProgress(state, active.id) : null;
   // Reference content is returned only after an explicit reveal. Checks stay in the Node process.
-  const lessons = pack.lessons.map(lesson => ({ ...lesson, tasks: lesson.tasks.map(task => ({
+  const lessons = (await restoreRepoExcerpts(directory,pack.lessons)).map(lesson => ({ ...lesson, tasks: lesson.tasks.map(task => ({
     id: task.id, title: task.title, prompt: task.prompt, role: task.role, feedback: task.feedback,
     fixtures: task.fixtures.map(fixture => ({ id: fixture.id, declarations: fixture.declarations })),
     hints: task.id === active?.id ? task.hints.slice(0, progress.hintCount) : [],

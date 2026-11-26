@@ -13,10 +13,9 @@ Implement the approved scope in `LEARNING_SCOPE.md`. Practice Range is the desti
 | I5 | Lesson links to matching language practice topics. Returning to Courses restores the lesson. | Native navigation assertions in `tests/check-courses.mjs`. |
 | I6 | Optional AI questions in lessons and course exercises using existing provider settings, cancellation and tool restrictions. Successful on-task AI help is recorded as assistance. | `tests/course-help.test.mjs` and existing `tests/tutor.test.mjs` pass using stubbed providers. |
 | I7 | Optional sync includes course enrollment, answers, review files inside answers, and backups. The selected enrollment version also syncs. Checker artifacts and local repo attachments are excluded. | `tests/sync.test.mjs` verifies two-device transfer and exact upgrade of the prior generated ignore file. Custom ignore files stay untouched. |
-
 | I8 | Immutable content versions, retained prior packs, pinned enrollment selection, and separate starts for newer versions. | `tests/course-version.test.mjs` rejects same-version content edits and verifies retained content and preserved enrollment data. |
-
 | I9 | Optional local repo attachment for bounded, pinned source excerpts in course questions. Missing or damaged attachments fall back to bundled material. | `tests/course-repo.test.mjs` preserves dirty files, verifies pinned content and Unicode paths, bounds excerpts, and checks missing/corrupt attachments. |
+| I10 | Previewable Tutor import for C# and TypeScript, including original lessons, quizzes, reading positions, historical results, primary answers, unmatched answers, and optional compatible preferences. | `tests/course-import.test.mjs` checks read-only preview, atomic publication, repeated imports, separate revised enrollments, stale previews, damaged data, path restrictions, interrupted staging, strict C# checks, legacy TypeScript DOM settings, and repo recovery. |
 
 The course remains a preview. Compiler correctness and native materialization do not establish teaching effectiveness or verify layout and paint.
 
@@ -29,7 +28,7 @@ The course remains a preview. Compiler correctness and native materialization do
 | P2 | Loader, pinned enrollment, retained pack versions, shared checker adapter and native lesson flow implemented. | Keep archived packs in releases when rebuilding to a new content version. |
 | P3 | All 18 modules and the final project execute through the real checker. | Expose intermediate standalone project checkpoints, finish experienced-learner readiness assessments, and review pacing with learners. |
 | P4 | Core course UI, linked practice, optional AI and shared editor opening implemented. | Add course activation to language setup, known-language preferences/comparisons, compatible progress migration between pack versions, and verify real editor flows with a learner. |
-| P5 | Optional pinned repo context for course questions implemented. | Generated repo supplements and architecture teaching, existing Tutor course import, settings migration, and repeated/interrupted import recovery. Do not retire Tutor yet. |
+| P5 | Optional pinned repo context and previewable Tutor course import implemented. Existing settings and original Tutor files are preserved. | Generated repo supplements, architecture teaching, source-file navigation, and on-demand writing of unfinished Tutor modules remain. Keep Tutor available until that authoring flow and launch compatibility move. |
 | P6 | Course review and deterministic recommendations implemented. | Combine drill/course evidence and review entry points, add optional validated generated exercises, and test content-version transitions. |
 | P7 | Not started. | Learner pilot and corrections, then C# and SQL course packs. Their existing direct practice remains supported. |
 | P8 | Not started. | Final release checks, install/migration documentation, compatibility launch transition, and release. No source mod removal in the first release. |
@@ -38,9 +37,9 @@ The course remains a preview. Compiler correctness and native materialization do
 
 The full Practice Range Node suite ran with concurrency 3. It passed 94 of 96 tests, including the existing language reference-answer checks. The two editor tests failed under the sandbox's local-socket restrictions. Both editor files then passed all four tests outside the sandbox with `TMPDIR=/private/tmp`, avoiding macOS `/var` versus `/private/var` alias assertions.
 
-All original native panel states passed across the full run and targeted reruns. Some attempts were interrupted while loading the large SQL catalog. The native harness now accepts state names so only unresolved states need repeating. The expanded course harness passed all sixteen fixtures across full and targeted checks, including project, review and optional AI states. Native checks require access to macOS window services, which the sandbox denies even for an empty panel.
+All original native panel states passed across the full run and targeted reruns. Some attempts were interrupted while loading the large SQL catalog. The native harness now accepts state names so only unresolved states need repeating. The expanded course harness passed all twenty-five fixtures across full and targeted checks, including project, review and optional AI states. Native checks require access to macOS window services, which the sandbox denies even for an empty panel.
 
-The latest focused run passed 32 course, provider, and sync tests. The mod type check still reports four pre-existing errors in `kit/open-as.js` at the two `shared(backKey(mod))` call sites. The same errors were reproduced using the pre-project main file in an isolated copy. Do not widen this project into a shared-kit cleanup.
+The migration integration run passed 55 tests. The existing C# and TypeScript catalogs each passed all 800 reference answers after compatibility changes. Nine native import fixtures passed, including previews, optional preferences, damaged records, original lessons and quizzes, and imported answers. The mod type check still reports four pre-existing errors in `kit/open-as.js` at the two `shared(backKey(mod))` call sites. The same errors were reproduced using the pre-project main file in an isolated copy. Do not widen this project into a shared-kit cleanup.
 
 Tutor's baseline suite passed 14 of 18 tests. Its four TypeScript runner tests report that Tutor's own compiler dependency is absent. Tutor code and dependencies have not been changed to hide this baseline limitation.
 
@@ -68,7 +67,7 @@ Only broaden checks when a new change, failure, or unresolved concern justifies 
 | Module quiz records | Preserve question IDs, choices, correct indices, explanations and linked stop. Treat stored quiz passes as quiz evidence only. |
 | `exercises/<id>.json` | Add adapters for legacy TypeScript and C# exercise formats. Preserve source references and stable imported IDs. Run through registered language tooling. |
 | `progress.json` modules seen and last position | Preserve read positions and reading completion. Never convert them into independent coding passes. |
-| Module `quiz` best, attempts and passed | Preserve historical quiz evidence, including unknown timing or assistance. |
+| Module `quiz` best, attempts and passed | Preserve historical quiz evidence, including unknown timing or assistance. Retired module records remain in legacy history, and each available imported module retains its own resume position. |
 | Module `practice` passed, runs, hints, gaveUp and at | Preserve known fields. Do not infer independent passes when assistance cannot be established. |
 | Module `doneAt` | Preserve as legacy module completion, separate from demonstrated coding ability. |
 | `data/tutor/work/<slug>/<exercise-id>/` | Copy learner work to the imported course's own answer directories. Preserve originals and prevent collisions with bundled course and drill IDs. |
@@ -80,3 +79,11 @@ Only broaden checks when a new change, failure, or unresolved concern justifies 
 Astra completed the initial samples and two additional batches, then reached its account usage limit. Its remaining draft files were verified before registration. Compose, Tracker and Report were completed afterward using the same checker and wrong-answer criteria. Do not assume a provider is available for more authoring.
 
 No automation or automatic restart has been configured. Resuming a paused chat requires an available session. Continue from the phase table and current Git state rather than regenerating the existing course.
+
+## Tutor import implementation
+
+`courses/importer.mjs` builds a read-only source snapshot and a preview fingerprint. Apply checks the fingerprint and source stability, stages under the ignored `.tutor-imports/` directory, then publishes an immutable version. Repeated imports reuse existing data. Revised content becomes a separate enrollment. Copied packs and import receipts sync with progress. Repo paths stay in excluded machine attachments. Missing source excerpts can be recovered from an attached clone without rewriting the imported pack.
+
+Imported course folders use plain names because MSBuild interprets percent escapes in project paths. Existing bundled TypeScript folder paths are unchanged. C# imports preserve nullable warnings as errors and SDK implicit usings. TypeScript imports preserve ES2023 and DOM library settings, while regular practice keeps its existing compiler settings. Unknown earlier assistance prevents independent credit until a fresh start.
+
+Tutor remains installed and unchanged. The importer moves already-written material. It does not yet generate unwritten lessons or replace the full repo course authoring flow. Native checks verify eager element materialization and selected navigation assertions, not layout, paint, or a real learner session.

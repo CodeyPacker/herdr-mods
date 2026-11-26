@@ -105,7 +105,8 @@ export async function runScratch(root, code, { timeout = 5000, expectedOutput, l
     });
     const executed = await runDotnetProcess("dotnet", [output], { cwd: directory, timeout });
     if (executed.problem) return { passed: false, kind: "runtime", title: "The code could not finish", details: [executed.problem] };
-    const printed = executed.stdout.trim() ? [`Your code printed:\n${executed.stdout.trim()}`] : [];
+    const shown = typeof expectedOutput === "string" ? executed.stdout.replaceAll("\r", "").replace(/\n+$/, "") : executed.stdout.trim();
+    const printed = shown ? [`Your code printed:\n${shown}`] : [];
     if (executed.code !== 0) return { passed: false, kind: "result", title: "Your code threw an exception", details: [...exceptionDetails(executed.stderr || executed.stdout).map(line => line.replaceAll("Exercise.cs", "Scratch.cs")), ...printed] };
     if (typeof expectedOutput === "string") {
       const tidy = text => text.replaceAll("\r", "").split("\n").map(line => line.trimEnd()).join("\n").replace(/\n+$/, "");
@@ -175,8 +176,9 @@ export async function checkAnswer(root, exercise, answer, checker, { timeout = 5
   }
 }
 
-export async function prepareWorkspace(file, sdk) {
+export async function prepareWorkspace(file, sdk, exercise) {
   // Editor-only project. Validation is performed against a fresh generated harness, never
   // against editable project files or assertions inside the learner's workspace.
-  await writeIfChanged(join(dirname(file), "Practice.csproj"), `<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net${sdk.major}.0</TargetFramework><LangVersion>latest</LangVersion><Nullable>enable</Nullable></PropertyGroup></Project>`);
+  const legacy=exercise?.legacy ? `<OutputType>${exercise.legacy.kind==="program"?"Exe":"Library"}</OutputType><ImplicitUsings>enable</ImplicitUsings><TreatWarningsAsErrors>true</TreatWarningsAsErrors>` : "";
+  await writeIfChanged(join(dirname(file), "Practice.csproj"), `<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net${sdk.major}.0</TargetFramework><LangVersion>latest</LangVersion><Nullable>enable</Nullable>${legacy}</PropertyGroup></Project>`);
 }

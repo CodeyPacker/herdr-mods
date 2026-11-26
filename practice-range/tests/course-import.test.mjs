@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, writeFile, readdir, rm, symlink, utimes } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, writeFile, readdir, rm, symlink, utimes, rename } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -30,6 +30,9 @@ async function fixture(t,language="typescript") {
   const print=language==="csharp"?'using System;\nConsole.WriteLine("  ready");':'console.log("  ready");';
   await write(join(base,"exercises/01-values.json"),{module:"01-values",exercises:[{id:"01-sum",title:"A small type",kind:type,prompt:language==="csharp"?"Declare Point with integer X and Y.":"Write add(a, b).",starter:"// Write your answer here.\n",solution,checks,concept:"Values",source:reference},{id:"01-print",title:"Print text",kind:"program",prompt:"Print two spaces then ready.",starter:"// Print the text.\n",solution:print,expected:"  ready\n",concept:"Output",source:reference}]});
   await write(join(base,"progress.json"),{version:1,last:{module:"01-values",stop:0},modules:{"01-values":{seen:[0],stop:0,doneAt:"2026-01-02T00:00:00Z",quiz:{attempts:2,best:1,last:1,passed:true,missed:[],at:"2026-01-02T00:00:00Z"},practice:{"01-sum":{passed:true,runs:4,hints:2,gaveUp:false},"01-print":{passed:true,runs:1,hints:0,gaveUp:false}}}}});
+  const progress=JSON.parse(await readFile(join(base,"progress.json"),"utf8"));
+  progress.modules["99-retired"]={seen:[2],stop:2,doneAt:"2025-12-01",quiz:{best:3,passed:true},practice:{"99-orphan":{runs:2,passed:true}}};
+  await write(join(base,"progress.json"),progress);
   const extension=language==="csharp"?"cs":"ts";
   await write(join(source,"work",slug,"01-sum",`exercise.${extension}`),solution);
   await write(join(source,"work",slug,"01-print",`exercise.${extension}`),print);
@@ -58,6 +61,10 @@ test("Tutor preview is read-only and import preserves course order, quizzes, his
   const moduleId=state.course.modules[0].id;
   assert.equal(state.enrollment.legacy.modules[moduleId].quiz.best,1);
   assert.equal(state.enrollment.legacy.modules[moduleId].doneAt,"2026-01-02T00:00:00Z");
+  assert.equal(state.enrollment.modules[moduleId].resumeStep,0);
+  assert.equal(state.enrollment.legacy.unmappedModules[0].id,"99-retired");
+  assert.equal(state.enrollment.legacy.unmappedModules[0].quiz.best,3);
+  assert.deepEqual(state.enrollment.legacy.unmappedModules[0].seen,[2]);
   const task=preview.pack.lessons[0].tasks[0];
   state=await courseCommand(f.target,"task",{courseId:preview.pack.id,taskId:task.id});
   assert.equal(await readFile(state.file,"utf8"),f.solution);
@@ -93,6 +100,31 @@ test("Tutor preference opt-in fills missing fields, preserves explicit choices, 
   text="{}";
   await assert.rejects(saveImportedPreferences({editor:"neovim"},{read:async()=>text,write:async()=>{throw new Error("configuration changed");}}),/configuration changed/);
   assert.equal(text,"{}");
+});
+
+test("imported TypeScript keeps Tutor's DOM library without exposing it to regular practice",async t=>{
+  const f=await fixture(t), file=join(f.base,"exercises/01-values.json");
+  const exercises=JSON.parse(await readFile(file,"utf8"));
+  exercises.exercises[0].solution+='\nconst address = new URL("https://example.test/path");';
+  exercises.exercises[0].checks+='\ncheck("url", address.hostname === "example.test");';
+  await write(file,exercises);
+  await write(join(f.source,"work",f.slug,"01-sum/exercise.ts"),exercises.exercises[0].solution);
+  const preview=await previewTutor(f.target,f.source,f.slug);
+  await applyTutor(f.target,f.source,f.slug,preview.report.fingerprint);
+  const id=preview.pack.id, task=preview.pack.lessons[0].tasks[0];
+  let state=await courseCommand(f.target,"task",{courseId:id,taskId:task.id});
+  const options=JSON.parse(await readFile(join(state.folder,"tsconfig.json"),"utf8")).compilerOptions;
+  assert.deepEqual(options.lib,["ES2023","DOM"]);
+  assert.equal(options.moduleDetection,"force");
+  state=await courseCommand(f.target,"check",{courseId:id,taskId:task.id});
+  assert.equal(state.enrollment.tasks[task.id].result.passed,true,JSON.stringify(state.enrollment.tasks[task.id].result));
+  const core="course:ts-foundations", coreTask=`${core}/task/remaining`;
+  await courseCommand(f.target,"enroll",{courseId:core});
+  state=await courseCommand(f.target,"task",{courseId:core,taskId:coreTask});
+  await writeFile(state.file,'let remaining = opening - change;\nconst address = new URL("https://example.test");');
+  state=await courseCommand(f.target,"check",{courseId:core,taskId:coreTask});
+  assert.equal(state.enrollment.tasks[coreTask].result.passed,false);
+  assert.match(state.enrollment.tasks[coreTask].result.details.join("\n"),/TS2304/);
 });
 
 test("repeated import preserves newer destination work and changed source revisions get separate enrollments",async t=>{
@@ -144,6 +176,20 @@ test("source links cannot import files outside the chosen Tutor data folder",asy
   await assert.rejects(readdir(f.target),{code:"ENOENT"});
 });
 
+test("attaching a moved clone restores missing pinned excerpts without rewriting imported content",async t=>{
+  const f=await fixture(t), moved=join(f.root,"moved-clone");
+  await rename(f.repo,moved);
+  const preview=await previewTutor(f.target,f.source,f.slug);
+  assert.ok(preview.pack.lessons[0].examples["stop-0"].sourceError);
+  await applyTutor(f.target,f.source,f.slug,preview.report.fingerprint);
+  const state=await courseCommand(f.target,"attach-repo",{courseId:preview.pack.id,path:moved});
+  assert.equal(state.course.lessons[0].examples["stop-0"].sourceError,undefined);
+  assert.match(state.course.lessons[0].examples["stop-0"].code,/count = 3/);
+  const stored=JSON.parse(await readFile(join(f.target,"courses",courseFolderName(preview.pack.id),preview.pack.contentVersion,"pack.json"),"utf8"));
+  assert.ok(stored.lessons[0].examples["stop-0"].sourceError,"Immutable imported content is preserved");
+  assert.equal(state.course.contentVersion,preview.pack.contentVersion);
+});
+
 test("import cannot write into Tutor or through an external destination link",async t=>{
   const f=await fixture(t), preview=await previewTutor(f.target,f.source,f.slug);
   await assert.rejects(applyTutor(join(f.source,"nested"),f.source,f.slug,preview.report.fingerprint),/must not contain each other/);
@@ -158,6 +204,9 @@ test("C# Tutor types and complete programs execute through the registered checke
   await applyTutor(f.target,f.source,f.slug,preview.report.fingerprint);
   for(const task of preview.pack.lessons[0].tasks) {
     let state=await courseCommand(f.target,"task",{courseId:preview.pack.id,taskId:task.id});
+    const config=await readFile(join(state.folder,"Practice.csproj"),"utf8");
+    assert.match(config,/<ImplicitUsings>enable/);
+    assert.match(config,new RegExp(`<OutputType>${task.legacy.kind==="program"?"Exe":"Library"}`));
     state=await courseCommand(f.target,"check",{courseId:preview.pack.id,taskId:task.id});
     assert.equal(state.enrollment.tasks[task.id].result.passed,true,JSON.stringify(state.enrollment.tasks[task.id].result));
     if(task.legacy.kind==="program") {

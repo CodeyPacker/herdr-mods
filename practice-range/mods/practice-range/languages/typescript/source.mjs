@@ -122,7 +122,7 @@ export function checkingFiles(exercise, answer, captures = []) {
   (exercise.rejects ?? []).forEach((code, index) =>
     parts.push(add("reject", `function __rejected${index + 1}() {\n// @ts-expect-error\n${code};\n}`, index + 1)));
   parts.push(add("setup", "export {};"));
-  const files = { "globals.d.ts": globals, "harness.ts": harness, "check.ts": parts.join("\n") + "\n", ...exercise.modules };
+  const files = { "globals.d.ts": exercise.legacy?.source === "tutor" ? "" : globals, "harness.ts": harness, "check.ts": parts.join("\n") + "\n", ...exercise.modules };
   if (exercise.mode === "module") files["Exercise.ts"] = answer;
   return { files, segments };
 }
@@ -159,7 +159,10 @@ export const workspaceConfig = JSON.stringify({
 
 /** Editor files beside Exercise.ts. Supplied code is a global script the answer can use. */
 export function workspaceFiles(exercise) {
-  const files = { "tsconfig.json": workspaceConfig, "globals.d.ts": globals, ...exercise.modules };
+  const legacy=exercise.legacy?.source === "tutor";
+  const config=legacy?JSON.parse(workspaceConfig):null;
+  if(config) { config.compilerOptions.target="ES2023"; config.compilerOptions.lib=["ES2023","DOM"]; config.compilerOptions.moduleDetection="force"; }
+  const files = { "tsconfig.json": config?JSON.stringify(config,null,2)+"\n":workspaceConfig, "globals.d.ts": legacy?"":globals, ...exercise.modules };
   if (exercise.declarations) files["supplied.ts"] = `// Supplied by the exercise. Checks add this code automatically.\n${exercise.declarations.trimEnd()}\n`;
   return files;
 }

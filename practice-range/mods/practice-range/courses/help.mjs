@@ -22,6 +22,7 @@ export async function courseTutorContext(root, request) {
   const step = lesson?.steps[request.step];
   if (!step) throw new Error("Unknown lesson step.");
   const context = { language: state.course.languageId, course: state.course.title, entryPath: state.enrollment.entryPath,
+    knownLanguages: state.course.legacy?.known ?? [],
     lesson: { title: lesson.title, step: step.title, explanation: step.text },
     examples: [...(step.examples ?? []), ...(step.example ? [step.example] : [])].map(id => lesson.examples[id]),
     repository: await repositoryContext(enrollmentDirectory(root, state.course)),

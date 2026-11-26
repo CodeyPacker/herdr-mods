@@ -2,15 +2,14 @@
 import { readFile, writeFile, readdir, mkdir, realpath, rename, rm, open, stat } from "node:fs/promises";
 import { join, dirname, relative, isAbsolute, resolve, basename } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
-import { execFile } from "node:child_process";
 import { validatePack, courseFolderName } from "./loader.mjs";
 import { createEnrollment, newTaskProgress, validateState } from "./service.mjs";
+import { readPinnedExcerpt } from "./repo.mjs";
 
 const digest = value => createHash("sha256").update(typeof value === "string" || Buffer.isBuffer(value) ? value : JSON.stringify(value)).digest("hex");
 const segment = value => typeof value === "string" && /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,150}$/.test(value) && !value.includes("..");
 const key = value => `${String(value).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,55) || "item"}-${digest(String(value)).slice(0,8)}`;
 const jsonText = value => JSON.stringify(value,null,2)+"\n";
-const nonnegative = value => Number.isInteger(value) && value >= 0 ? value : 0;
 const text = value => typeof value === "string" && value.trim();
 function fail(message) { throw new Error(`Tutor import: ${message}`); }
 
@@ -53,17 +52,6 @@ function safeReference(source, commit) {
       !Number.isInteger(source.start) || !Number.isInteger(source.end) || source.start < 1 || source.end < source.start || source.end-source.start > 1000) fail("a repo excerpt has an invalid file or line range");
   return { path, start:source.start, end:source.end, anchor:typeof source.anchor==="string"?source.anchor:"", commit };
 }
-async function excerpt(root, ref, cache) {
-  try {
-    if (!root || !/^[a-f0-9]{40}(?:[a-f0-9]{24})?$/.test(ref.commit)) throw new Error("unavailable");
-    const cacheKey=`${ref.commit}:${ref.path}`;
-    if (!cache.has(cacheKey)) cache.set(cacheKey,await new Promise((resolve,reject)=>execFile("git",["-C",root,"show",cacheKey],{timeout:2000,maxBuffer:4*1024*1024},(error,stdout)=>error?reject(error):resolve(stdout))));
-    const lines=cache.get(cacheKey).replaceAll("\r\n","\n").split("\n");
-    const selected=lines.slice(ref.start-1,ref.end);
-    if(ref.end>lines.length || (ref.anchor && !selected.some(line=>line.includes(ref.anchor)))) throw new Error("range or anchor unavailable");
-    return {code:selected.join("\n") || "// Empty source excerpt.",readOnly:true,repoRef:ref};
-  } catch { return {code:"// The pinned source excerpt is unavailable on this computer.",readOnly:true,repoRef:ref,sourceError:"The repo, pinned commit, range or anchor is unavailable. The imported explanation is preserved."}; }
-}
 
 function convertTask(ex,id,languageId) {
   if (!segment(ex.id) || !["title","prompt","starter","solution"].every(field=>text(ex[field]))) fail("an exercise is missing its ID, prompt, starter or reference answer");
@@ -101,6 +89,13 @@ function legacyEvidence(raw) {
   if(Array.isArray(raw?.missed)) result.missed=raw.missed.filter(id=>typeof id==="string");
   return result;
 }
+function moduleEvidence(previous) {
+  const result={seen:Array.isArray(previous.seen)?previous.seen.filter(index=>Number.isInteger(index)&&index>=0):[],quiz:legacyEvidence(previous.quiz),practice:Object.create(null)};
+  if(Number.isInteger(previous.stop)&&previous.stop>=0) result.stop=previous.stop;
+  if(typeof previous.doneAt==="string") result.doneAt=previous.doneAt;
+  for(const [id,value] of Object.entries(previous.practice??{})) result.practice[id]=legacyEvidence(value);
+  return result;
+}
 
 export async function previewTutor(root,sourceRoot,slug) {
   if(!segment(slug)) fail("invalid course folder");
@@ -122,6 +117,7 @@ export async function previewTutor(root,sourceRoot,slug) {
     modules:[],lessons:[],entryPaths:[],legacy:{source:"tutor",slug,about:typeof course.about==="string"?course.about:"",createdAt:identity.createdAt,commit:identity.commit,
       parts:Array.isArray(course.parts)?course.parts.filter(part=>text(part?.id)&&text(part?.title)).map(part=>({id:part.id,title:part.title})):[],known:Array.isArray(course.known)?course.known.filter(value=>typeof value==="string"):Array.isArray(settings.known)?settings.known.filter(value=>typeof value==="string"):["TypeScript","JavaScript"]}};
   const moduleMap=new Map(), seenOld=new Set();
+  let unavailableSources=0;
   for(const entry of course.modules) {
     if(!segment(entry.id) || seenOld.has(entry.id) || !text(entry.title)) fail("a module has an invalid or duplicate ID or title");
     seenOld.add(entry.id);
@@ -135,8 +131,8 @@ export async function previewTutor(root,sourceRoot,slug) {
     for(const [index,stop] of mod.stops.entries()) {
       if(!text(stop.title) || !text(stop.body)) fail(`module ${entry.id} has an incomplete explanation`);
       const exampleId=`stop-${index}`, ref=safeReference(stop,course.commit);
-      lesson.examples[exampleId]=await excerpt(course.root,ref,cache);
-      if(lesson.examples[exampleId].sourceError) warnings.push(`${entry.title}: source for ${ref.path}:${ref.start} is unavailable.`);
+      lesson.examples[exampleId]=await readPinnedExcerpt(course.root,ref,cache);
+      if(lesson.examples[exampleId].sourceError) unavailableSources++;
       lesson.steps.push({kind:"walkthrough",title:stop.title,text:stop.body,example:exampleId});
     }
     for(const q of mod.quiz) {
@@ -159,6 +155,7 @@ export async function previewTutor(root,sourceRoot,slug) {
     if(lesson.tasks.length) lesson.steps.push({kind:"independent",title:"Original Tutor practice",text:"Your saved answers are preserved. Earlier passes remain historical evidence, with no assumed independent passes.",tasks:lesson.tasks.map(task=>task.id)});
     pack.lessons.push(lesson);
   }
+  if(unavailableSources) warnings.push(`${unavailableSources} pinned source excerpts are unavailable. Explanations and references are preserved. Attach a local clone after import to restore them.`);
   let work=[];
   try {
     const folder=await realpath(join(source.root,"work",slug)), rel=relative(source.root,folder);
@@ -178,14 +175,16 @@ export async function previewTutor(root,sourceRoot,slug) {
   for(const [oldId,moduleId] of moduleMap) {
     const previous=old.modules[oldId];
     if(!previous) continue;
-    const evidence={quiz:legacyEvidence(previous.quiz),practice:Object.create(null),...(typeof previous.doneAt==="string"?{doneAt:previous.doneAt}:{})};
-    for(const [exId,value] of Object.entries(previous.practice??{})) evidence.practice[exId]=legacyEvidence(value);
+    const evidence=moduleEvidence(previous);
     state.legacy.modules[moduleId]=evidence;
     const lesson=pack.lessons.find(lesson=>lesson.id===moduleId);
     if(lesson) state.modules[moduleId]={seen:[],questions:{}};
     // Only original stops count as read. Quizzes and exercise navigation are separate steps.
     if(lesson) state.modules[moduleId].seen=[...new Set((Array.isArray(previous.seen)?previous.seen:[]).filter(index=>Number.isInteger(index)&&index>=0&&index<Object.keys(lesson.examples).length))].sort((a,b)=>a-b);
+    if(lesson && Number.isInteger(previous.stop) && previous.stop>=0 && previous.stop<Object.keys(lesson.examples).length) state.modules[moduleId].resumeStep=previous.stop;
   }
+  state.legacy.unmappedModules=Object.entries(old.modules).filter(([id])=>!moduleMap.has(id)&&segment(id)).map(([id,previous])=>({id,...moduleEvidence(previous)}));
+  if(state.legacy.unmappedModules.length) warnings.push(`${state.legacy.unmappedModules.length} historical module records are no longer in the outline. Their progress is preserved as imported history.`);
   for(const lesson of pack.lessons) for(const task of lesson.tasks) {
     const prior=Object.values(state.legacy.modules).map(module=>module.practice[task.legacy.id]).find(Boolean);
     const progress=newTaskProgress();
@@ -250,7 +249,7 @@ export async function applyTutor(root,sourceRoot,slug,expectedFingerprint) {
     await writeFile(join(version,"pack.json"),jsonText(pack));
     await writeFile(join(version,"enrollment.json"),jsonText(state));
     await writeFile(join(version,"import.json"),jsonText({source:"tutor",identity,fingerprint:report.fingerprint,importedAt:new Date().toISOString()}));
-    if(typeof local.root==="string" && /^[a-f0-9]{40}(?:[a-f0-9]{24})?$/.test(local.commit)) await writeFile(join(version,"attachments.json"),jsonText(local));
+    if(typeof local.root==="string" && isAbsolute(local.root) && /^[a-f0-9]{40}(?:[a-f0-9]{24})?$/.test(local.commit)) await writeFile(join(version,"attachments.json"),jsonText(local));
     for(const [path,content] of answers) {
       const file=join(version,"answers",path);
       await mkdir(dirname(file),{recursive:true}); await writeFile(file,content);

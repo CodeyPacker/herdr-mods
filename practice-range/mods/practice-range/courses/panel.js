@@ -3,7 +3,8 @@ import { v_flex, h_flex, TextView, InputState } from "gpui-base";
 import { watchFolder, window as appWindow } from "herdr";
 import { keyButton, spinner, textInput } from "../kit/controls.js";
 import { banner, paneBar, sectionLabel } from "../kit/pane.js";
-import { courseCommand } from "./bridge.js";
+import { courseCommand, importTutorPreferences } from "./bridge.js";
+import { configuredEditor, configuredTutor } from "../bridge.js";
 import { tutorChat } from "../tutor/panel.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
@@ -30,6 +31,16 @@ export class CoursePanel {
     /** @type {import("herdr").FolderWatch | null} */
     this.watch = null;
     this.confirmReset = false;
+    /** @type {import("./types.js").TutorImport[]} */
+    this.imports=[];
+    /** @type {import("./types.js").TutorImport | null} */
+    this.importPreview=null;
+    this.applyImportPreferences=false;
+    this.importInput=InputState.new({placeholder:"Tutor data folder (optional)…"});
+    this.importInput.on("focus",()=>{this.host.typing=true;});
+    this.importInput.on("blur",()=>{this.host.typing=false;});
+    this.importInput.on("change",(_event,cx)=>cx.notify());
+    this.importInput.on("submit",(_event,cx)=>this.run("import-list",{},cx));
     this.repoInput = InputState.new({ placeholder: "Local git repo folder…" });
     this.repoInput.on("focus", () => { this.host.typing = true; });
     this.repoInput.on("blur", () => { this.host.typing = false; });
@@ -60,15 +71,28 @@ export class CoursePanel {
   /** @param {string} action @param {Record<string, unknown>} value @param {Context} cx */
   async dispatch(action, value, cx) {
     if (this.busy) return;
-    if (["list", "enroll", "open", "task", "review-start", "review-next", "review-end", "attach-repo", "detach-repo"].includes(action)) this.host.cancelTutor(cx);
+    if (action.startsWith("import-") || ["list", "enroll", "open", "task", "review-start", "review-next", "review-end", "attach-repo", "detach-repo"].includes(action)) this.host.cancelTutor(cx);
     this.busy = ["check", "check-saved"].includes(action) ? "Checking every case…" : "Loading course…";
     this.error = ""; cx.notify();
     try {
-      const request = { ...(action === "enroll" || action === "list" ? {} : { courseId: this.data?.course.id, contentVersion: this.data?.course.contentVersion }), ...value };
+      const request = { ...(action === "enroll" || action === "list" || action.startsWith("import-") ? {} : { courseId: this.data?.course.id, contentVersion: this.data?.course.contentVersion }),
+        ...(action.startsWith("import-")&&this.importInput.value().trim()?{sourceRoot:this.importInput.value().trim()}:{}),...value };
       const result = await courseCommand(action, request);
       if (action === "list") {
         this.catalog = result.courses;
         this.page = "catalog";
+      } else if(action==="import-list") { this.imports=result.imports; this.page="imports"; this.pause(); }
+      else if(action==="import-preview") { this.importPreview=result.preview; this.applyImportPreferences=false; this.page="import-preview"; }
+      else if(action==="import-apply") {
+        this.data=await courseCommand("enroll",{courseId:result.imported.courseId,contentVersion:result.imported.contentVersion});
+        this.page="modules";
+        if(this.applyImportPreferences) {
+          try {
+            await importTutorPreferences(result.imported.preferences??{});
+            this.host.editor=await configuredEditor(); this.host.editorDefaultSet=Boolean(this.host.editor);
+            this.host.tutor=await configuredTutor();
+          } catch(error) { this.error=`The course was imported. Preference setup needs attention: ${error instanceof Error?error.message:String(error)}`; }
+        }
       } else {
         this.data = result;
         if (action === "enroll") this.page = "modules";
@@ -81,7 +105,7 @@ export class CoursePanel {
         }
         if (result.pendingSave) this.pendingSave = true;
       }
-      if (this.host.sync && !["list", "status"].includes(action)) this.host.pushSoon(cx);
+      if (this.host.sync && !["list", "status", "import-list", "import-preview"].includes(action)) this.host.pushSoon(cx);
     } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
     finally { this.busy = ""; cx.notify(); }
   }
@@ -182,7 +206,9 @@ export class CoursePanel {
   back(cx) {
     if (this.busy) return;
     this.confirmReset = false;
-    if (this.data?.enrollment.review) this.run("review-end", {}, cx);
+    if(this.page==="import-preview") this.page="imports";
+    else if(this.page==="imports") this.page="catalog";
+    else if (this.data?.enrollment.review) this.run("review-end", {}, cx);
     else if (this.page === "task" && this.data?.enrollment.position) this.run("open", this.data.enrollment.position, cx);
     else if (this.page === "lesson") { this.page = "modules"; this.pause(); }
     else if (this.page === "modules") { this.page = "catalog"; this.pause(); }
@@ -197,21 +223,26 @@ export class CoursePanel {
     if (this.error) body.child(banner(t, this.error, t.blocked));
     if (this.page === "catalog") {
       body.child(div().font_semibold().child("Courses"))
-        .child(div().text_color(t.muted).child("Learn with included examples. No repo or AI connection needed."));
+        .child(div().text_color(t.muted).child("Learn with included examples. No repo or AI connection needed."))
+        .child(keyButton(t,"course-import","","Import Tutor courses",!this.busy,cx=>this.run("import-list",{},cx)));
       for (const course of this.catalog) {
+        const actions=h_flex().gap(8).flex_wrap()
+          .child(keyButton(t, `course-beginner-${course.id}`, "", "Start or resume", !this.busy && !course.error, cx => this.run("enroll", { courseId: course.id, entryPath: "beginner" }, cx)));
+        if(!course.imported) actions.child(keyButton(t, `course-experienced-${course.id}`, "", "I know another language", !this.busy && !course.error, cx => this.run("enroll", { courseId: course.id, entryPath: "experienced" }, cx)));
         body.child(v_flex().gap(8).child(div().font_semibold().child(course.title ?? course.id))
           .child(div().text_color(t.muted).child(course.error ?? `${course.preview ? "Preview · " : ""}${course.available} of ${course.total} modules available`))
-          .child(h_flex().gap(8).flex_wrap()
-            .child(keyButton(t, `course-beginner-${course.id}`, "", "Start or resume", !this.busy && !course.error, cx => this.run("enroll", { courseId: course.id, entryPath: "beginner" }, cx)))
-            .child(keyButton(t, `course-experienced-${course.id}`, "", "I know another language", !this.busy && !course.error, cx => this.run("enroll", { courseId: course.id, entryPath: "experienced" }, cx)))));
+          .child(actions));
         for (const version of (course.versions ?? []).filter(version => version !== course.enrolledVersion)) body.child(keyButton(t, `course-version-${course.id}-${version}`, "", `Resume ${version}`, !this.busy && !course.error,
           cx => this.run("enroll", { courseId: course.id, contentVersion: version }, cx)));
         if (course.enrolledVersion && course.enrolledVersion !== course.contentVersion) body.child(keyButton(t, `course-latest-${course.id}`, "", "Start latest version separately", !this.busy && !course.error,
           cx => this.run("enroll", { courseId: course.id, contentVersion: course.contentVersion }, cx)));
       }
-    } else if (this.data) {
+    } else if(this.page==="imports") this.importList(body,t);
+    else if(this.page==="import-preview") this.importReview(body,t);
+    else if (this.data) {
       body.child(div().font_semibold().child(this.data.course.title));
-      if (this.data.course.preview) body.child(banner(t, "Course preview. Lesson pacing still needs learner testing. You can explore available modules without completing their prerequisites."));
+      if (this.data.course.legacy) body.child(banner(t,"Imported Tutor course. Original lessons and historical results are preserved. Tutor's files remain unchanged."));
+      else if (this.data.course.preview) body.child(banner(t, "Course preview. Lesson pacing still needs learner testing. You can explore available modules without completing their prerequisites."));
       if (this.page === "modules") this.modules(body, t);
       else if (this.page === "lesson") this.lessonView(body, t);
       else if (this.page === "task") this.taskView(body, t);
@@ -221,7 +252,34 @@ export class CoursePanel {
       }));
     }
     return v_flex().flex_1().min_h(0).child(body).child(paneBar(t)
-      .child(keyButton(t, "course-back", "esc", this.data?.enrollment.review ? "End review" : this.page === "task" ? "Return to lesson" : this.page === "catalog" ? "Back to practice" : "Back", !this.busy, cx => this.back(cx))));
+      .child(keyButton(t, "course-back", "esc", ["imports","import-preview"].includes(this.page)?"Back":this.data?.enrollment.review ? "End review" : this.page === "task" ? "Return to lesson" : this.page === "catalog" ? "Back to practice" : "Back", !this.busy, cx => this.back(cx))));
+  }
+
+  /** @param {import("gpui-kit").Element} body @param {Theme} t */
+  importList(body,t) {
+    body.child(sectionLabel(t,"Import Tutor courses"))
+      .child(div().text_color(t.muted).child("Finds Tutor beside your Practice Range data folder by default. Preview one course before copying. Originals are never changed."))
+      .child(textInput(t,this.importInput,this.host.typing))
+      .child(keyButton(t,"scan-tutor","","Find courses",!this.busy,cx=>this.run("import-list",{},cx)));
+    if(!this.imports.length) body.child(div().child("No Tutor courses found. Enter its data folder if it is stored elsewhere."));
+    for(const course of this.imports) body.child(v_flex().gap(6)
+      .child(div().font_semibold().child(course.title))
+      .child(div().text_color(t.muted).child(course.error??`${course.languageId} · ${course.written}/${course.modules} modules written · ${course.answers} saved answers`))
+      .child(keyButton(t,`preview-${course.slug}`,"","Preview import",!this.busy&&!course.error,cx=>this.run("import-preview",{slug:course.slug},cx))));
+  }
+
+  /** @param {import("gpui-kit").Element} body @param {Theme} t */
+  importReview(body,t) {
+    const preview=this.importPreview;
+    if(!preview) return;
+    body.child(sectionLabel(t,preview.title))
+      .child(div().child(`${preview.written} written modules, ${preview.questions} questions, ${preview.exercises} exercises, ${preview.answers} saved answers.`))
+      .child(div().text_color(t.muted).child("Quiz scores and practice results remain historical evidence. Imported answers need a fresh start before recording independent success. Unmatched answers are kept in imported history."));
+    if(preview.known?.length) body.child(div().child(`Known languages: ${preview.known.join(", ")}`));
+    for(const warning of preview.warnings??[]) body.child(banner(t,warning));
+    body.child(keyButton(t,"import-preferences","",`Use Tutor editor and AI settings: ${this.applyImportPreferences?"on":"off"}`,!this.busy,cx=>{this.applyImportPreferences=!this.applyImportPreferences;cx.notify();}))
+      .child(div().text_size(12).text_color(t.muted).child("Optional. Copy only into missing settings. Existing editor and AI choices stay unchanged."))
+      .child(keyButton(t,"apply-tutor-import","",preview.alreadyImported?"Open existing import":"Import this course",!this.busy,cx=>this.run("import-apply",{slug:preview.slug,fingerprint:preview.fingerprint},cx)));
   }
 
   /** @param {import("gpui-kit").Element} body @param {Theme} t */
@@ -245,12 +303,20 @@ export class CoursePanel {
     body.child(keyButton(t, "course-review", "", this.data.enrollment.review ? "Resume review" : `Review · ${this.data.reviewReady} ready`,
       !this.busy && (Boolean(this.data.enrollment.review) || this.data.reviewReady > 0), cx => this.run("review-start", {}, cx)));
     if (position) body.child(keyButton(t, "course-resume", "", "Continue lesson", !this.busy, cx => this.run("open", position, cx)));
+    let previousPart="";
     for (const module of this.data.course.modules) {
+      if(module.part && module.part!==previousPart) {
+        const part=this.data.course.legacy?.parts.find(part=>part.id===module.part);
+        if(part) body.child(sectionLabel(t,part.title));
+        previousPart=module.part;
+      }
       const seen = this.data.enrollment.modules[module.id]?.seen.length ?? 0;
       body.child(h_flex().gap(8).items_center().flex_wrap()
-        .child(keyButton(t, module.id, "", module.title, !this.busy && module.status === "available", cx => this.run("open", { moduleId: module.id }, cx)))
+        .child(keyButton(t, module.id, "", module.title, !this.busy && module.status === "available", cx => this.run("open", { moduleId: module.id, step:this.data.enrollment.modules[module.id]?.resumeStep??0 }, cx)))
         .child(div().text_size(11).text_color(t.dim).child(module.status === "planned" ? "Planned" : this.data.enrollment.modules[module.id]?.skipped ? "Skipped" : `${seen} steps read`))
         .child(keyButton(t, `skip-${module.id}`, "", this.data.enrollment.modules[module.id]?.skipped ? "Include" : "Skip", !this.busy && module.status === "available", cx => this.run("skip", { moduleId: module.id }, cx))));
+      const legacy=this.data.enrollment.legacy?.modules[module.id];
+      if(legacy) body.child(div().text_size(11).text_color(t.muted).child(`${legacy.doneAt?"Completed in Tutor. ":""}${legacy.quiz?.best!==undefined?`Tutor quiz best: ${legacy.quiz.best}${legacy.quiz.passed?" · passed":""}`:""}`));
     }
   }
 
@@ -264,8 +330,10 @@ export class CoursePanel {
     body.child(div().font_semibold().child(step.title)).child(markdown("course-step", step.text));
     for (const id of [...(step.examples ?? []), ...(step.example ? [step.example] : [])]) {
       const example = lesson.examples[id];
-      body.child(markdown(`course-example-${id}`, `\`\`\`typescript\n${example.code}\n\`\`\``));
-      body.child(keyButton(t, `course-run-example-${id}`, "", "Run example", !this.busy, cx => this.run("example", { moduleId: lesson.id, exampleId: id }, cx)));
+      if(example.repoRef) body.child(div().text_size(11).text_color(t.muted).child(`${example.repoRef.path}:${example.repoRef.start}-${example.repoRef.end} · ${String(example.repoRef.commit??"").slice(0,10)}`));
+      if(example.sourceError) body.child(banner(t,example.sourceError));
+      body.child(markdown(`course-example-${id}`, `\`\`\`${this.data.course.codeFence??"typescript"}\n${example.code}\n\`\`\``));
+      if(!example.readOnly) body.child(keyButton(t, `course-run-example-${id}`, "", "Run example", !this.busy, cx => this.run("example", { moduleId: lesson.id, exampleId: id }, cx)));
       const result = this.data.enrollment.modules[lesson.id]?.examples?.[id];
       if (result) {
         body.child(banner(t, result.title));
@@ -297,18 +365,20 @@ export class CoursePanel {
     const task = this.task();
     if (!task) return;
     const progress = this.data.enrollment.tasks[task.id];
+    if(progress.assistanceUnknown) body.child(banner(t,"This answer was imported. Earlier assistance is unknown. Use Start fresh before recording independent success."));
+    if(progress.legacy) body.child(div().text_size(11).text_color(t.muted).child(`Tutor history: ${progress.legacy.runs??0} runs · ${progress.legacy.passed?"passed":"not passed"} · ${progress.legacy.hints??0} hints`));
     const review = this.data.enrollment.review;
     if (review) body.child(banner(t, `Review ${review.index + 1} of ${review.ids.length}. Fresh files. Your saved practice answers are preserved.`));
     body.child(sectionLabel(t, task.title)).child(markdown("course-task-prompt", task.prompt));
     if (task.workspace) body.child(div().text_color(t.muted).child(`Edit these files in the same folder: ${task.workspace.editable.map(entry => entry.file).join(", ")}. Saving either checks the whole project.`));
-    for (const fixture of task.fixtures) body.child(markdown(`course-fixture-${fixture.id}`, `Case ${fixture.id}\n\n\`\`\`typescript\n${fixture.declarations}\n\`\`\``));
+    for (const fixture of task.fixtures) if(fixture.declarations.trim()) body.child(markdown(`course-fixture-${fixture.id}`, `Case ${fixture.id}\n\n\`\`\`${this.data.course.codeFence??"typescript"}\n${fixture.declarations}\n\`\`\``));
     body.child(div().text_color(t.muted).child("Save your answer to check every case. Your answer must pass them all."))
       .when(!this.host.editor || this.host.offerEditorDefault, element => element.child(banner(t, "Choose and confirm your editor in Setup before opening this file.")))
       .child(div().text_size(11).text_color(t.dim).child(this.data.file))
       .child(h_flex().gap(8).flex_wrap()
         .child(keyButton(t, "course-editor", "o", "Open editor", !this.busy && !this.host.busy && Boolean(this.host.editor) && !this.host.offerEditorDefault, cx => this.host.openEditor(cx)))
         .child(keyButton(t, "course-check", "c", "Check saved answer", !this.busy, cx => this.run("check", { taskId: task.id }, cx)))
-        .child(keyButton(t, "course-hint", "h", "Another hint", !this.busy && task.hints.length < 3, cx => this.run("hint", { taskId: task.id }, cx)))
+        .child(keyButton(t, "course-hint", "h", "Another hint", !this.busy && task.hints.length < (task.hintTotal??3), cx => this.run("hint", { taskId: task.id }, cx)))
         .child(keyButton(t, "course-answer", "", "Show solution", !this.busy && !task.solution, cx => this.run("answer", { taskId: task.id }, cx)))
         .child(keyButton(t, "course-reset", "", "Start fresh", !this.busy, cx => { this.confirmReset = true; cx.notify(); })));
     if (this.confirmReset) body.child(h_flex().gap(8).flex_wrap().child(div().child("Save editor changes first. The current file will be backed up. Reload it after resetting."))
@@ -316,8 +386,8 @@ export class CoursePanel {
       .child(keyButton(t, "course-reset-cancel", "", "Cancel", true, cx => { this.confirmReset = false; cx.notify(); })));
     for (const [index, hint] of task.hints.entries()) body.child(markdown(`course-hint-${index}`, hint));
     if (task.solution) {
-      if (task.workspace) for (const file of task.workspace.editable) body.child(markdown(`course-solution-${file.file}`, `${file.file}\n\n\`\`\`typescript\n${file.solution}\n\`\`\``));
-      else body.child(markdown("course-solution", `\`\`\`typescript\n${task.solution}\n\`\`\``));
+      if (task.workspace) for (const file of task.workspace.editable) body.child(markdown(`course-solution-${file.file}`, `${file.file}\n\n\`\`\`${this.data.course.codeFence??"typescript"}\n${file.solution}\n\`\`\``));
+      else body.child(markdown("course-solution", `\`\`\`${this.data.course.codeFence??"typescript"}\n${task.solution}\n\`\`\``));
     }
     if (progress.result) {
       body.child(banner(t, `${this.data.stale ? "Saved code changed. " : ""}${progress.result.title}${progress.result.assisted ? " · with help" : ""}`, !this.data.stale && progress.result.passed ? t.done : t.foreground));
