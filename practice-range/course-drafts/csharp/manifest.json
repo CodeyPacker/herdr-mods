@@ -382,7 +382,11 @@
         "await",
         "async-failure"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/async/module.json"
+      }
     },
     {
       "id": "course:cs-foundations/module/checks",
@@ -395,7 +399,11 @@
         "tests",
         "debugging"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/checks/module.json"
+      }
     },
     {
       "id": "course:cs-foundations/module/tracker",
@@ -409,7 +417,11 @@
       "teaches": [
         "project"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/tracker/module.json"
+      }
     },
     {
       "id": "course:cs-foundations/module/report",
@@ -420,7 +432,11 @@
       "teaches": [
         "transfer"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/report/module.json"
+      }
     }
   ],
   "compatibility": {

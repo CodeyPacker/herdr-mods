@@ -1,0 +1,60 @@
+{
+  "id": "course:cs-foundations/task/async-total",
+  "role": "guided",
+  "title": "Add two counts",
+  "concepts": [
+    "task",
+    "await",
+    "method"
+  ],
+  "prompt": "Source is supplied. Source.CountAsync(board) returns a task with the number of open tasks on a board. TotalAsync(string first, string second) should read both boards, the first one first, and return the two counts added together. The starter reads only the first board.",
+  "hints": [
+    "How many reads does the method need, and how many does the starter make?",
+    "Each read needs its own await before you can use its number.",
+    "Await Source.CountAsync(second) into another int and return the sum of the two."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.TotalAsync(\"desk\", \"lab\").GetAwaiter().GetResult() == 8",
+    "Practice.TotalAsync(\"lab\", \"empty\").GetAwaiter().GetResult() == 5",
+    "Practice.TotalAsync(\"empty\", \"empty\").GetAwaiter().GetResult() == 0",
+    "Practice.TotalAsync(\"desk\", \"desk\").GetAwaiter().GetResult() == 6"
+  ],
+  "checkLabels": [
+    "desk has 3 and lab has 5, so the total must be 8.",
+    "A board with 0 tasks must add nothing.",
+    "Two empty boards must total 0.",
+    "The same board twice must count twice."
+  ],
+  "fixtures": [
+    {
+      "id": "source",
+      "declarations": "fixture-source.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-await.cs",
+      "misconception": "Uses the task as if it were its result.",
+      "witness": {
+        "fixture": "source",
+        "kind": "compile",
+        "detail": "CS0029"
+      }
+    },
+    {
+      "source": "wrong-first-twice.cs",
+      "misconception": "Reads the first board twice and never the second.",
+      "witness": {
+        "fixture": "source",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Check that each board is read once, that each read is awaited, and that both numbers reach the return."
+}

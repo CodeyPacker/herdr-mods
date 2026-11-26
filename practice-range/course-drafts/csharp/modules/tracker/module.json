@@ -1,0 +1,144 @@
+{
+  "id": "course:cs-foundations/module/tracker",
+  "title": "Assemble the tracker",
+  "requires": [
+    "record",
+    "list",
+    "loop",
+    "set",
+    "switch-expression",
+    "type-pattern",
+    "await",
+    "async-failure",
+    "interface",
+    "tests",
+    "generic",
+    "value-reference"
+  ],
+  "outcomes": [
+    {
+      "id": "trace",
+      "can": "Predict what an edit leaves unchanged.",
+      "assessment": [
+        "predict-copy"
+      ]
+    },
+    {
+      "id": "validate",
+      "can": "Turn raw rows into task records, skipping bad and repeated ones.",
+      "assessment": [
+        "course:cs-foundations/task/tracker-valid-rows"
+      ]
+    },
+    {
+      "id": "edit",
+      "can": "Apply one of several edit types to the matching task in a new list.",
+      "assessment": [
+        "course:cs-foundations/task/tracker-apply-edit"
+      ]
+    },
+    {
+      "id": "read",
+      "can": "Read tasks from a source that may be offline.",
+      "assessment": [
+        "course:cs-foundations/task/tracker-open-titles"
+      ]
+    }
+  ],
+  "intro": "A working program is small pieces with clear jobs. This module joins the pieces from earlier modules into a task tracker: checking raw input, applying edits without changing the original data, and reading from a local source that can fail.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Keep each piece small",
+      "text": "The tracker has three jobs. Raw rows arrive as text and must be checked before they become TaskItem records. That checking belongs at the edge, so the rest of the program can trust its data. Edits arrive as records of different types and are applied by producing new records, never by changing old ones. Tasks are read through an interface, so the same code works with a reader that holds its data in memory and with one that is offline. Each job is one method with a clear input and output, which makes each one easy to check on its own.",
+      "example": "trace"
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict the result",
+      "text": "done is made from first with one value changed. Predict the three lines of output.",
+      "example": "trace",
+      "questions": [
+        "predict-copy"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Trace the result",
+      "text": "with creates a new record and leaves first alone, so first.Done is still False. done has the new value and keeps the Title it was copied from. In the exercises, an edit is applied the same way: the result is a new list holding a changed copy, and the list you were given must look exactly as it did before.",
+      "example": "trace"
+    },
+    {
+      "kind": "independent",
+      "title": "Accept only valid rows",
+      "text": "Work from the contract in the prompt. Save to check every case.",
+      "task": "course:cs-foundations/task/tracker-valid-rows"
+    },
+    {
+      "kind": "independent",
+      "title": "Apply an edit",
+      "text": "Work from the contract in the prompt. Save to check every case.",
+      "task": "course:cs-foundations/task/tracker-apply-edit"
+    }
+  ],
+  "questions": [
+    {
+      "id": "predict-copy",
+      "example": "trace",
+      "prompt": "What are the three lines of output?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "True, True, Pack",
+          "feedback": "with does not change first. Only the copy is done."
+        },
+        {
+          "text": "False, True, then an empty line",
+          "feedback": "The copy keeps every value that with does not mention, including the Title."
+        },
+        {
+          "text": "False, True, Pack",
+          "feedback": "first is unchanged, the copy is done, and the copy kept the Title."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "trace": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/trace.cs"
+      },
+      "stdout": [
+        "False",
+        "True",
+        "Pack"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:cs-foundations/task/tracker-valid-rows",
+      "path": "tasks/valid-rows/task.json"
+    },
+    {
+      "id": "course:cs-foundations/task/tracker-apply-edit",
+      "path": "tasks/apply-edit/task.json"
+    },
+    {
+      "id": "course:cs-foundations/task/tracker-open-titles",
+      "path": "tasks/open-titles/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:cs-foundations/task/tracker-open-titles",
+    "afterModule": "course:cs-foundations/module/report",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [
+    "constructors/with",
+    "conditionals/type-binding",
+    "async/await"
+  ],
+  "drillGap": "These drills practise single features. They do not combine validation, edits and reading in one program."
+}

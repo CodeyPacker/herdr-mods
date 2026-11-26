@@ -1,0 +1,68 @@
+{
+  "id": "course:cs-foundations/task/tracker-apply-edit",
+  "role": "independent",
+  "title": "Apply an edit",
+  "concepts": [
+    "project",
+    "type-pattern",
+    "switch-expression",
+    "record",
+    "list",
+    "value-reference"
+  ],
+  "prompt": "TaskItem and the Edit record types are supplied. Every Edit has the Id of the task it changes. Write public static List<TaskItem> Apply(List<TaskItem> tasks, Edit edit). Return a new list with the same tasks in the same order, where the task with the edit's Id is replaced by a changed copy. Rename changes its Title, Complete sets Done to true, and Assign changes its Owner. Tasks with other Ids are unchanged, and an Id that matches no task changes nothing. The list passed in must not be modified.",
+  "hints": [
+    "Two decisions are needed for every task: is this the one, and what kind of edit is it?",
+    "Build a new list. For the matching task add a copy made with with. For every other task add the task itself.",
+    "Loop over tasks. When task.Id equals edit.Id, add edit switch { Rename r => task with { Title = r.Title }, ... }. Otherwise add task."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "support": "static List<TaskItem> Board() => new List<TaskItem> { new TaskItem(1, \"Pack\", \"Ana\", false), new TaskItem(2, \"Ship\", \"\", false) };\nstatic bool InputUnchanged()\n{\n    var tasks = Board();\n    Practice.Apply(tasks, new Complete(1));\n    return tasks.SequenceEqual(Board());\n}\n",
+  "checks": [
+    "Practice.Apply(Board(), new Rename(2, \"Send\")).SequenceEqual(new List<TaskItem> { new TaskItem(1, \"Pack\", \"Ana\", false), new TaskItem(2, \"Send\", \"\", false) })",
+    "Practice.Apply(Board(), new Complete(1)).SequenceEqual(new List<TaskItem> { new TaskItem(1, \"Pack\", \"Ana\", true), new TaskItem(2, \"Ship\", \"\", false) })",
+    "Practice.Apply(Board(), new Assign(2, \"Ben\")).SequenceEqual(new List<TaskItem> { new TaskItem(1, \"Pack\", \"Ana\", false), new TaskItem(2, \"Ship\", \"Ben\", false) })",
+    "Practice.Apply(Board(), new Rename(9, \"Lost\")).SequenceEqual(Board())",
+    "InputUnchanged()",
+    "Practice.Apply(new List<TaskItem>(), new Complete(1)).Count == 0"
+  ],
+  "checkLabels": [
+    "Rename must change only the title of the task with that Id.",
+    "Complete must set Done on the task with that Id and leave the other task alone.",
+    "Assign must change only the owner of the task with that Id.",
+    "An edit whose Id matches no task must change nothing.",
+    "The list passed in must hold the same tasks afterwards.",
+    "An empty list must give an empty list."
+  ],
+  "fixtures": [
+    {
+      "id": "tracker",
+      "declarations": "fixture-tracker.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-every-task.cs",
+      "misconception": "Applies the edit to every task and ignores its Id.",
+      "witness": {
+        "fixture": "tracker",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-in-place.cs",
+      "misconception": "Replaces the task inside the list that was passed in.",
+      "witness": {
+        "fixture": "tracker",
+        "kind": "result",
+        "detail": "Check 5 failed"
+      }
+    }
+  ],
+  "feedback": "Check three things separately: which task changes, what changes on it, and whether the list you were given is still the same afterwards."
+}

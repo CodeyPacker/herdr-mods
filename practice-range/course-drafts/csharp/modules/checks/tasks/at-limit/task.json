@@ -1,0 +1,61 @@
+{
+  "id": "course:cs-foundations/task/checks-at-limit",
+  "role": "guided",
+  "title": "Repair a threshold",
+  "concepts": [
+    "debugging",
+    "tests",
+    "comparison",
+    "method"
+  ],
+  "prompt": "AtLimit(int count, int limit) should return true when count has reached the limit or passed it, and false below it. Both inputs are 0 or more. One check fails on the starter. Use the failing input to find and fix the bug.",
+  "hints": [
+    "Which input fails, and what is special about it?",
+    "The failing input has count equal to limit. What does the comparison give for equal values?",
+    "Change the comparison so that equal values count as reaching the limit."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.AtLimit(4, 3) == true",
+    "Practice.AtLimit(3, 3) == true",
+    "Practice.AtLimit(2, 3) == false",
+    "Practice.AtLimit(0, 0) == true"
+  ],
+  "checkLabels": [
+    "4 has passed a limit of 3.",
+    "3 has reached a limit of 3.",
+    "2 is below a limit of 3.",
+    "0 has reached a limit of 0."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-equal-only.cs",
+      "misconception": "Fixes the equal case but breaks every count above the limit.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-one-early.cs",
+      "misconception": "Overcorrects, so the limit is reached one task too soon.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "Read the failing check's input, work out the expected result from the rule, and trace your comparison with those two numbers."
+}

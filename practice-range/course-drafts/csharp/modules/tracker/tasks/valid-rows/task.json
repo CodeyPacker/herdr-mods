@@ -1,0 +1,67 @@
+{
+  "id": "course:cs-foundations/task/tracker-valid-rows",
+  "role": "independent",
+  "title": "Accept only valid rows",
+  "concepts": [
+    "project",
+    "record",
+    "list",
+    "loop",
+    "set",
+    "branch"
+  ],
+  "prompt": "TaskItem and Row are supplied. A Row holds raw text. Write public static List<TaskItem> ValidTasks(List<Row> rows). A row is valid when its Id is a whole number greater than 0 and its Title is not empty. Turn each valid row into a TaskItem that is not done, keeping the row's order and its Owner, which may be empty. Skip invalid rows. Also skip a valid row whose Id was already used by an earlier accepted row. An invalid row does not use up its Id.",
+  "hints": [
+    "List the reasons a row can be skipped. In which order should you test them?",
+    "Remember the Ids you have accepted, and add an Id only at the moment its row is accepted.",
+    "Use int.TryParse for the Id, test id > 0 and Title != \"\", then use a HashSet<int> whose Add tells you whether the Id is new."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.ValidTasks(new List<Row> { new Row(\"1\", \"Pack\", \"Ana\"), new Row(\"2\", \"Ship\", \"\") }).SequenceEqual(new List<TaskItem> { new TaskItem(1, \"Pack\", \"Ana\", false), new TaskItem(2, \"Ship\", \"\", false) })",
+    "Practice.ValidTasks(new List<Row> { new Row(\"x\", \"Pack\", \"Ana\"), new Row(\"0\", \"Zero\", \"Ana\"), new Row(\"-3\", \"Neg\", \"Ana\"), new Row(\"4\", \"Label\", \"Ben\") }).SequenceEqual(new List<TaskItem> { new TaskItem(4, \"Label\", \"Ben\", false) })",
+    "Practice.ValidTasks(new List<Row> { new Row(\"1\", \"\", \"Ana\"), new Row(\"2\", \"Ship\", \"Ben\") }).SequenceEqual(new List<TaskItem> { new TaskItem(2, \"Ship\", \"Ben\", false) })",
+    "Practice.ValidTasks(new List<Row> { new Row(\"1\", \"Pack\", \"Ana\"), new Row(\"1\", \"Again\", \"Ben\"), new Row(\"2\", \"Ship\", \"Ben\") }).SequenceEqual(new List<TaskItem> { new TaskItem(1, \"Pack\", \"Ana\", false), new TaskItem(2, \"Ship\", \"Ben\", false) })",
+    "Practice.ValidTasks(new List<Row>()).Count == 0",
+    "Practice.ValidTasks(new List<Row> { new Row(\"1\", \"\", \"Ana\"), new Row(\"1\", \"Pack\", \"Ana\") }).SequenceEqual(new List<TaskItem> { new TaskItem(1, \"Pack\", \"Ana\", false) })"
+  ],
+  "checkLabels": [
+    "Two valid rows must become two tasks, in order, with their owners kept.",
+    "Rows whose Id is not a number, is 0 or is negative must be skipped.",
+    "A row with an empty Title must be skipped.",
+    "A later row that repeats an accepted Id must be skipped.",
+    "No rows must give an empty list.",
+    "An invalid row must not use up its Id for a later valid row."
+  ],
+  "fixtures": [
+    {
+      "id": "tracker",
+      "declarations": "fixture-tracker.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-keeps-repeats.cs",
+      "misconception": "Never checks whether an Id was already accepted.",
+      "witness": {
+        "fixture": "tracker",
+        "kind": "result",
+        "detail": "Check 4 failed"
+      }
+    },
+    {
+      "source": "wrong-id-too-early.cs",
+      "misconception": "Records the Id before checking the Title, so an invalid row uses it up.",
+      "witness": {
+        "fixture": "tracker",
+        "kind": "result",
+        "detail": "Check 6 failed"
+      }
+    }
+  ],
+  "feedback": "Take the failing rows one at a time and decide by hand whether each is accepted. Then compare with what your code does at the same row."
+}

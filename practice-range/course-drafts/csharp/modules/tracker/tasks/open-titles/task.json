@@ -1,0 +1,61 @@
+{
+  "id": "course:cs-foundations/task/tracker-open-titles",
+  "role": "review",
+  "title": "Read the open titles",
+  "concepts": [
+    "project",
+    "await",
+    "async-failure",
+    "interface",
+    "list"
+  ],
+  "prompt": "TaskItem, ITaskReader and two readers are supplied. Write public static async Task<List<string>> OpenTitlesAsync(ITaskReader reader). Read the tasks once and return the titles of those that are not done, in order. When the reader throws InvalidOperationException, return an empty list.",
+  "hints": [
+    "Which line can fail, and where does its exception appear?",
+    "Await the read inside a try. Catch the one exception type that means the reader is offline.",
+    "After a successful read, collect the Title of every task whose Done is false. In the catch, return a new empty List<string>."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "support": "static List<string> Run(ITaskReader reader) => Practice.OpenTitlesAsync(reader).GetAwaiter().GetResult();\n",
+  "checks": [
+    "Run(new MemoryReader(new List<TaskItem> { new TaskItem(1, \"Pack\", \"Ana\", true), new TaskItem(2, \"Ship\", \"\", false), new TaskItem(3, \"Label\", \"Ben\", false) })).SequenceEqual(new List<string> { \"Ship\", \"Label\" })",
+    "Run(new MemoryReader(new List<TaskItem>())).Count == 0",
+    "Run(new OfflineReader()).Count == 0"
+  ],
+  "checkLabels": [
+    "Only the titles of tasks that are not done must be returned, in order.",
+    "A reader with no tasks must give an empty list.",
+    "An offline reader must give an empty list."
+  ],
+  "fixtures": [
+    {
+      "id": "tracker",
+      "declarations": "fixture-tracker.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-catch.cs",
+      "misconception": "Awaits the read with nothing to handle an offline reader.",
+      "witness": {
+        "fixture": "tracker",
+        "kind": "result",
+        "detail": "InvalidOperationException"
+      }
+    },
+    {
+      "source": "wrong-all-titles.cs",
+      "misconception": "Returns every title, including the done tasks.",
+      "witness": {
+        "fixture": "tracker",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Check the offline reader and the reader with one done task separately. The first tests your catch and the second tests your filter."
+}

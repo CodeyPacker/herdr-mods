@@ -1,0 +1,62 @@
+{
+  "id": "course:cs-foundations/task/async-counts",
+  "role": "review",
+  "title": "Read every board in order",
+  "concepts": [
+    "await",
+    "async-failure",
+    "task",
+    "list",
+    "loop"
+  ],
+  "prompt": "Source is supplied. Write public static async Task<List<int>> CountsAsync(List<string> boards). Read each board in order and return the counts in the same order. When a board is offline, put -1 in its place and carry on with the next board.",
+  "hints": [
+    "If the second of three boards fails, how many numbers must the result have?",
+    "Each read needs its own try and catch, so one failure does not end the loop.",
+    "Inside the loop, await the count in a try and add it. In the catch for InvalidOperationException, add -1."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.CountsAsync(new List<string> { \"desk\", \"lab\" }).GetAwaiter().GetResult().SequenceEqual(new List<int> { 3, 5 })",
+    "Practice.CountsAsync(new List<string> { \"desk\", \"offline\", \"lab\" }).GetAwaiter().GetResult().SequenceEqual(new List<int> { 3, -1, 5 })",
+    "Practice.CountsAsync(new List<string>()).GetAwaiter().GetResult().Count == 0",
+    "Practice.CountsAsync(new List<string> { \"offline\" }).GetAwaiter().GetResult().SequenceEqual(new List<int> { -1 })"
+  ],
+  "checkLabels": [
+    "desk then lab must give 3 then 5.",
+    "An offline board in the middle must give -1 there, and the boards after it must still be read.",
+    "No boards must give an empty list.",
+    "A single offline board must give a list with -1."
+  ],
+  "fixtures": [
+    {
+      "id": "source",
+      "declarations": "fixture-source.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-stops.cs",
+      "misconception": "Wraps the whole loop in one try, so the first failure ends the reading.",
+      "witness": {
+        "fixture": "source",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-skips.cs",
+      "misconception": "Leaves a failed board out instead of marking it with -1.",
+      "witness": {
+        "fixture": "source",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Count the numbers in your result for three boards where the middle one is offline. There must be three, with -1 in the middle."
+}

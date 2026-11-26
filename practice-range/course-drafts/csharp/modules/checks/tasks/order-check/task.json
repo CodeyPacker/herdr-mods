@@ -1,0 +1,58 @@
+{
+  "id": "course:cs-foundations/task/checks-order-check",
+  "role": "review",
+  "title": "Catch a reversed pair",
+  "concepts": [
+    "tests",
+    "lambda",
+    "text"
+  ],
+  "prompt": "A candidate method takes two strings and should join them with a slash, the first argument first: \"west\" and \"east\" give \"west/east\". Write public static bool OrderCheck(Func<string, string, string> candidate). Return true for a correct candidate. Return false for a faulty one that joins them in reverse order, and for one that leaves out the slash.",
+  "hints": [
+    "Would two equal inputs tell the two orders apart?",
+    "Choose two different strings, so that swapping them changes the result.",
+    "Call candidate with two different strings and compare the result with the exact text you expect."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.OrderCheck((a, b) => a + \"/\" + b) == true",
+    "Practice.OrderCheck((a, b) => b + \"/\" + a) == false",
+    "Practice.OrderCheck((a, b) => a + b) == false"
+  ],
+  "checkLabels": [
+    "A correct candidate must pass your check.",
+    "A candidate that joins in reverse order must fail your check.",
+    "A candidate that leaves out the slash must fail your check."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-equal-inputs.cs",
+      "misconception": "Uses two equal strings, so both orders look the same.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-reversed-expected.cs",
+      "misconception": "Writes the expected text in the wrong order.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Pick inputs for which a reversed result looks different from a correct one, and write the expected text straight from the rule."
+}
