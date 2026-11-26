@@ -7,10 +7,13 @@ import { createHash, randomUUID } from "node:crypto";
 import { loadCourse, listCourses, lessonFor, taskFor } from "./loader.mjs";
 import { findLanguage } from "../languages/index.js";
 import { loadLanguageRunner } from "../languages/runner.mjs";
+import { courseReview, nextCourseAction } from "./review.js";
 
 const hash = source => createHash("sha256").update(typeof source === "string" ? source : JSON.stringify(source)).digest("hex");
 export const enrollmentDirectory = (root, pack) => join(root, "courses", encodeURIComponent(pack.id), pack.contentVersion);
-const answerPath = (directory, task, language) => join(directory, "answers", task.id.split("/").at(-1), task.workspace?.editable[0].file ?? language.answerFile);
+const answerPath = (directory, task, language, review) => join(directory, "answers", ...(review ? ["_review", review.id] : []), task.id.split("/").at(-1), task.workspace?.editable[0].file ?? language.answerFile);
+const newTaskProgress = () => ({ attempts: 0, passes: 0, independentPasses: 0, hintCount: 0, answerShown: false, history: [] });
+const taskProgress = (state, id) => state.review ? state.review.progress : state.tasks[id];
 const starters = task => task.workspace ? Object.fromEntries(task.workspace.editable.map(file => [file.file, file.starter])) : task.starter;
 async function readAnswer(file, task) {
   if (!task.workspace) return readFile(file, "utf8");
@@ -54,7 +57,7 @@ async function locked(directory, run) {
 function fresh(pack, entryPath) {
   if (!pack.entryPaths.some(path => path.id === entryPath)) throw new Error("Unknown course entry path.");
   return { version: 1, courseId: pack.id, contentVersion: pack.contentVersion, entryPath,
-    position: null, activeTask: null, modules: {}, tasks: {} };
+    position: null, activeTask: null, review: null, modules: {}, tasks: {} };
 }
 function validateState(state, pack) {
   const record = value => value && typeof value === "object" && !Array.isArray(value);
@@ -84,6 +87,10 @@ function validateState(state, pack) {
     }
   }
   if (state.activeTask && !Object.hasOwn(state.tasks, state.activeTask)) throw new Error("The saved exercise selection is damaged. Course progress has been preserved.");
+  if (state.review && (!/^[a-f0-9-]{36}$/.test(state.review.id) || !Array.isArray(state.review.ids) ||
+      !Number.isInteger(state.review.index) || state.review.ids[state.review.index] !== state.activeTask || !record(state.review.progress))) {
+    throw new Error("The saved review is damaged. Course progress has been preserved.");
+  }
 }
 async function runnerFor(pack) {
   const runner = await loadLanguageRunner(pack.languageId);
@@ -91,6 +98,27 @@ async function runnerFor(pack) {
   const expected = pack.runner.compiler.range.slice(1);
   if (!runtime.version.endsWith(` ${expected}`)) throw new Error(`This course needs ${pack.runner.compiler.name} ${expected}. ${runtime.version} is installed.`);
   return { runner, runtime };
+}
+
+async function prepareTask(directory, pack, task, state) {
+  const language = findLanguage(pack.languageId), { runner, runtime } = await runnerFor(pack);
+  const file = answerPath(directory, task, language, state.review);
+  await mkdir(dirname(file), { recursive: true });
+  await writeStarters(file, task, true);
+  await runner.prepareWorkspace(file, runtime, { ...task, declarations: task.fixtures[0].declarations });
+  return file;
+}
+
+function endReview(state) {
+  const back = state.review.returnTo;
+  state.activeTask = back.activeTask;
+  state.position = back.position;
+  state.review = null;
+}
+function reviewOutcome(state) {
+  const progress = state.review.progress, canonical = state.tasks[state.activeTask];
+  const clean = progress.result?.passed && progress.attempts === 1 && !progress.result.assisted;
+  canonical.review = { at: Date.now(), streak: clean ? (canonical.review?.streak ?? 0) + 1 : 0 };
 }
 
 /** Every fixture checks the same source snapshot. The caller records just one attempt. */
@@ -125,17 +153,39 @@ export async function courseCommand(root, action, request = {}) {
     validateState(state, pack);
     const persist = async () => { await save(file, state); };
     if (action === "enroll") await persist();
-    else if (action === "open") {
+    else if (["review-start", "review-next", "review-end"].includes(action)) {
+      if (action === "review-start" && !state.review) {
+        const ids = courseReview(pack, state, Date.now()).ids;
+        if (!ids.length) throw new Error("No course exercises are due for review yet.");
+        state.review = { id: randomUUID(), ids, index: 0, returnTo: { position: state.position, activeTask: state.activeTask }, progress: newTaskProgress() };
+        state.activeTask = ids[0];
+      } else if (!state.review) throw new Error("No course review is running.");
+      if (action === "review-next") {
+        reviewOutcome(state);
+        state.review.index++;
+        if (state.review.index === state.review.ids.length) endReview(state);
+        else { state.activeTask = state.review.ids[state.review.index]; state.review.progress = newTaskProgress(); }
+      }
+      if (action === "review-end") { if (state.review.progress.attempts) reviewOutcome(state); endReview(state); }
+      if (state.review) {
+        const { task } = taskFor(pack, state.activeTask);
+        await prepareTask(directory, pack, task, state);
+        state.review.progress.initialHash ??= hash(starters(task));
+      }
+      await persist();
+    } else if (action === "open") {
+      if (state.review) throw new Error("End or finish your review before opening a lesson.");
       const lesson = lessonFor(pack, request.moduleId);
       const step = request.step ?? 0;
       if (!Number.isInteger(step) || !lesson.steps[step]) throw new Error("Unknown lesson step.");
       state.position = { moduleId: lesson.id, step };
       state.activeTask = null;
       await persist();
-    } else if (action === "seen" || action === "question") {
+    } else if (["seen", "question", "skip"].includes(action)) {
       const lesson = lessonFor(pack, request.moduleId);
       const progress = state.modules[lesson.id] ??= { seen: [], questions: {} };
-      if (action === "seen") {
+      if (action === "skip") progress.skipped = !progress.skipped;
+      else if (action === "seen") {
         if (!Number.isInteger(request.step) || !lesson.steps[request.step]) throw new Error("Unknown lesson step.");
         progress.seen = [...new Set([...progress.seen, request.step])].sort((a, b) => a - b);
       } else {
@@ -148,14 +198,13 @@ export async function courseCommand(root, action, request = {}) {
       await persist();
     } else if (["task", "check", "check-saved", "hint", "answer", "reset"].includes(action)) {
       const { task, lesson } = taskFor(pack, request.taskId);
-      const language = findLanguage(pack.languageId), answer = answerPath(directory, task, language);
-      const progress = state.tasks[task.id] ??= { attempts: 0, passes: 0, independentPasses: 0, hintCount: 0, answerShown: false, history: [] };
+      if (state.review && action === "task") throw new Error("End or finish your review before choosing another exercise.");
+      const language = findLanguage(pack.languageId), answer = answerPath(directory, task, language, state.review);
+      state.tasks[task.id] ??= newTaskProgress();
+      const progress = taskProgress(state, task.id);
       if (action !== "task" && state.activeTask !== task.id) throw new Error("This exercise is no longer selected. Reopen it before checking.");
       if (action === "task") {
-        const { runner, runtime } = await runnerFor(pack);
-        await mkdir(dirname(answer), { recursive: true });
-        await writeStarters(answer, task, true);
-        await runner.prepareWorkspace(answer, runtime, { ...task, declarations: task.fixtures[0].declarations });
+        await prepareTask(directory, pack, task, state);
         state.activeTask = task.id;
         // Entering an exercise retains the lesson position for Return to lesson.
         if (state.position?.moduleId !== lesson.id) state.position = { moduleId: lesson.id, step: 0 };
@@ -189,6 +238,12 @@ export async function courseCommand(root, action, request = {}) {
           progress.attempts++; if (result.passed) progress.passes++;
           if (result.passed && !assisted) progress.independentPasses++;
           progress.history.push(attempt);
+          if (state.review) {
+            const canonical = state.tasks[task.id];
+            canonical.attempts++; if (result.passed) canonical.passes++;
+            if (result.passed && !assisted) canonical.independentPasses++;
+            canonical.history.push({ ...attempt, review: true });
+          }
           progress.checkedHash = sourceHash;
           progress.result = { ...result, ...attempt };
         }
@@ -202,8 +257,8 @@ export async function courseCommand(root, action, request = {}) {
 async function snapshot(pack, state, directory) {
   const active = state.activeTask ? taskFor(pack, state.activeTask).task : null;
   const language = findLanguage(pack.languageId);
-  const file = active ? answerPath(directory, active, language) : null;
-  const progress = active ? state.tasks[active.id] : null;
+  const file = active ? answerPath(directory, active, language, state.review) : null;
+  const progress = active ? taskProgress(state, active.id) : null;
   // Reference content is returned only after an explicit reveal. Checks stay in the Node process.
   const lessons = pack.lessons.map(lesson => ({ ...lesson, tasks: lesson.tasks.map(task => ({
     id: task.id, title: task.title, prompt: task.prompt, role: task.role, feedback: task.feedback,
@@ -215,7 +270,9 @@ async function snapshot(pack, state, directory) {
   })) }));
   const sourceHash = file ? hash(await readAnswer(file, active)) : null;
   return { course: { id: pack.id, title: pack.title, contentVersion: pack.contentVersion, languageId: pack.languageId,
-    preview: pack.preview === true, modules: pack.modules, lessons }, enrollment: state,
+    preview: pack.preview === true, modules: pack.modules, lessons },
+    enrollment: state.review && active ? { ...state, tasks: { ...state.tasks, [active.id]: progress } } : state,
+    reviewReady: courseReview(pack, state, Date.now()).ids.length, recommendation: nextCourseAction(pack, state, Date.now()),
     file, folder: file ? dirname(file) : null, sourceHash,
     stale: Boolean(progress?.result && progress.result.sourceHash !== sourceHash) };
 }

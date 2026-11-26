@@ -10,21 +10,21 @@
   "outcomes": [
     {
       "id": "1",
-      "can": "compose open count",
+      "can": "Read a public method and count open tasks without mutating its input.",
       "assessment": [
         "course:ts-foundations/task/compose-open-count"
       ]
     },
     {
       "id": "2",
-      "can": "compose load count",
+      "can": "Await one local reader, count open statuses, and propagate a rejected read.",
       "assessment": [
         "course:ts-foundations/task/compose-load-count"
       ]
     },
     {
       "id": "3",
-      "can": "compose read label",
+      "can": "Build a label from a public field and method while preserving a zero count.",
       "assessment": [
         "course:ts-foundations/task/compose-read-label"
       ]

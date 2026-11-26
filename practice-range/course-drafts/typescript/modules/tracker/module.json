@@ -10,21 +10,21 @@
   "outcomes": [
     {
       "id": "1",
-      "can": "tracker valid rows",
+      "can": "Validate an unknown batch and preserve valid rows in their original order.",
       "assessment": [
         "course:ts-foundations/task/tracker-valid-rows"
       ]
     },
     {
       "id": "2",
-      "can": "tracker apply edit",
+      "can": "Apply a selected edit without mutating the input array or its objects.",
       "assessment": [
         "course:ts-foundations/task/tracker-apply-edit"
       ]
     },
     {
       "id": "3",
-      "can": "tracker read open",
+      "can": "Combine a local asynchronous reader, row validation, and open-task selection.",
       "assessment": [
         "course:ts-foundations/task/tracker-read-open"
       ]

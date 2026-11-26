@@ -33,13 +33,14 @@ export class CoursePanel {
 
   /** @param {Context} cx */
   show(cx) {
+    const resume = this.host.screen !== "courses" && this.data;
     this.host.cancelTutor(cx);
     this.host.screen = "courses";
     this.host.pendingSaveCheck = null;
     this.host.confirmRepeat = false;
     this.host.typing = false;
     this.host.handle.focus();
-    this.run("list", {}, cx);
+    this.run(resume ? "status" : "list", {}, cx);
   }
 
   pause() { this.watchTurn++; this.watch?.cancel(); this.watch = null; this.pendingSave = false; }
@@ -66,6 +67,11 @@ export class CoursePanel {
         if (action === "enroll") this.page = "modules";
         if (action === "open") { this.page = "lesson"; this.pause(); }
         if (action === "task") { this.page = "task"; this.startWatch(cx); }
+        if (action === "status" && this.page === "task") { this.startWatch(cx); if (result.stale) this.queueSave(cx); }
+        if (["review-start", "review-next", "review-end"].includes(action)) {
+          this.page = result.enrollment.activeTask ? "task" : "modules";
+          if (this.page === "task") this.startWatch(cx); else this.pause();
+        }
         if (result.pendingSave) this.pendingSave = true;
       }
       if (this.host.sync && !["list", "status"].includes(action)) this.host.pushSoon(cx);
@@ -112,6 +118,19 @@ export class CoursePanel {
   lesson() { return this.data?.course.lessons.find(lesson => lesson.id === this.data.enrollment.position?.moduleId); }
   task() { return this.data?.course.lessons.flatMap(lesson => lesson.tasks).find(task => task.id === this.data.enrollment.activeTask); }
 
+  /** @param {string} id @param {Context} cx */
+  practiceTopic(id, cx) {
+    if (!this.data || this.busy) return;
+    const languageId = this.data.course.languageId;
+    if (!this.host.enabledLanguages.includes(languageId)) {
+      this.error = "Enable this language in Setup before opening its practice topics."; cx.notify(); return;
+    }
+    this.pause();
+    this.host.pendingTopic = id.split("/")[0];
+    this.host.screen = "topics";
+    this.host.perform("language", languageId, cx);
+  }
+
   /** @param {number} by @param {Context} cx */
   advance(by, cx) {
     const position = this.data?.enrollment.position, lesson = this.lesson();
@@ -143,7 +162,8 @@ export class CoursePanel {
   back(cx) {
     if (this.busy) return;
     this.confirmReset = false;
-    if (this.page === "task" && this.data?.enrollment.position) this.run("open", this.data.enrollment.position, cx);
+    if (this.data?.enrollment.review) this.run("review-end", {}, cx);
+    else if (this.page === "task" && this.data?.enrollment.position) this.run("open", this.data.enrollment.position, cx);
     else if (this.page === "lesson") { this.page = "modules"; this.pause(); }
     else if (this.page === "modules") { this.page = "catalog"; this.pause(); }
     else { this.pause(); this.host.screen = "topics"; }
@@ -173,18 +193,28 @@ export class CoursePanel {
       else if (this.page === "task") this.taskView(body, t);
     }
     return v_flex().flex_1().min_h(0).child(body).child(paneBar(t)
-      .child(keyButton(t, "course-back", "esc", this.page === "task" ? "Return to lesson" : this.page === "catalog" ? "Back to practice" : "Back", !this.busy, cx => this.back(cx))));
+      .child(keyButton(t, "course-back", "esc", this.data?.enrollment.review ? "End review" : this.page === "task" ? "Return to lesson" : this.page === "catalog" ? "Back to practice" : "Back", !this.busy, cx => this.back(cx))));
   }
 
   /** @param {import("gpui-kit").Element} body @param {Theme} t */
   modules(body, t) {
     const position = this.data.enrollment.position;
+    const next = this.data.recommendation;
+    if (next) body.child(v_flex().gap(6).child(div().text_color(t.muted).child(next.reason))
+      .child(keyButton(t, "course-recommendation", "", "Suggested next step", !this.busy && next.kind !== "practice", cx => {
+        if (next.kind === "review") this.run("review-start", {}, cx);
+        else if (next.kind === "task") this.run("task", { taskId: next.taskId }, cx);
+        else this.run("open", { moduleId: next.moduleId, step: next.step }, cx);
+      })));
+    body.child(keyButton(t, "course-review", "", this.data.enrollment.review ? "Resume review" : `Review · ${this.data.reviewReady} ready`,
+      !this.busy && (Boolean(this.data.enrollment.review) || this.data.reviewReady > 0), cx => this.run("review-start", {}, cx)));
     if (position) body.child(keyButton(t, "course-resume", "", "Continue lesson", !this.busy, cx => this.run("open", position, cx)));
     for (const module of this.data.course.modules) {
       const seen = this.data.enrollment.modules[module.id]?.seen.length ?? 0;
       body.child(h_flex().gap(8).items_center().flex_wrap()
         .child(keyButton(t, module.id, "", module.title, !this.busy && module.status === "available", cx => this.run("open", { moduleId: module.id }, cx)))
-        .child(div().text_size(11).text_color(t.dim).child(module.status === "planned" ? "Planned" : `${seen} steps read`)));
+        .child(div().text_size(11).text_color(t.dim).child(module.status === "planned" ? "Planned" : this.data.enrollment.modules[module.id]?.skipped ? "Skipped" : `${seen} steps read`))
+        .child(keyButton(t, `skip-${module.id}`, "", this.data.enrollment.modules[module.id]?.skipped ? "Include" : "Skip", !this.busy && module.status === "available", cx => this.run("skip", { moduleId: module.id }, cx))));
     }
   }
 
@@ -193,8 +223,9 @@ export class CoursePanel {
     const lesson = this.lesson(), position = this.data.enrollment.position;
     if (!lesson || !position) return;
     const step = lesson.steps[position.step];
-    body.child(sectionLabel(t, `${lesson.title} · ${position.step + 1} of ${lesson.steps.length}`))
-      .child(markdown("course-intro", lesson.intro)).child(div().font_semibold().child(step.title)).child(markdown("course-step", step.text));
+    body.child(sectionLabel(t, `${lesson.title} · ${position.step + 1} of ${lesson.steps.length}`));
+    if (position.step === 0 && lesson.intro !== step.text) body.child(markdown("course-intro", lesson.intro));
+    body.child(div().font_semibold().child(step.title)).child(markdown("course-step", step.text));
     for (const id of [...(step.examples ?? []), ...(step.example ? [step.example] : [])]) {
       const example = lesson.examples[id];
       body.child(markdown(`course-example-${id}`, `\`\`\`typescript\n${example.code}\n\`\`\``));
@@ -216,6 +247,9 @@ export class CoursePanel {
     body.child(h_flex().gap(8).flex_wrap()
       .child(keyButton(t, "course-previous", "p", "Previous", !this.busy && position.step > 0, cx => this.advance(-1, cx)))
       .child(keyButton(t, "course-next", "n", position.step + 1 === lesson.steps.length ? "Finish reading" : "Continue", !this.busy, cx => this.advance(1, cx))));
+    for (const topic of [...new Set((lesson.drills ?? []).map(id => id.split("/")[0]))]) {
+      body.child(keyButton(t, `course-drill-${topic}`, "", `Practice ${topic}`, !this.busy && !this.data.enrollment.review, cx => this.practiceTopic(topic, cx)));
+    }
   }
 
   /** @param {import("gpui-kit").Element} body @param {Theme} t */
@@ -223,6 +257,8 @@ export class CoursePanel {
     const task = this.task();
     if (!task) return;
     const progress = this.data.enrollment.tasks[task.id];
+    const review = this.data.enrollment.review;
+    if (review) body.child(banner(t, `Review ${review.index + 1} of ${review.ids.length}. Fresh files. Your saved practice answers are preserved.`));
     body.child(sectionLabel(t, task.title)).child(markdown("course-task-prompt", task.prompt));
     if (task.workspace) body.child(div().text_color(t.muted).child(`Edit these files in the same folder: ${task.workspace.editable.map(entry => entry.file).join(", ")}. Saving either checks the whole project.`));
     for (const fixture of task.fixtures) body.child(markdown(`course-fixture-${fixture.id}`, `Case ${fixture.id}\n\n\`\`\`typescript\n${fixture.declarations}\n\`\`\``));
@@ -249,5 +285,6 @@ export class CoursePanel {
       if (!progress.result.passed) body.child(markdown("course-feedback", task.feedback));
     }
     body.child(div().text_size(11).text_color(t.dim).child(`${progress.attempts} attempts · ${progress.independentPasses} independent passes`));
+    if (review) body.child(keyButton(t, "course-review-next", "", review.index + 1 === review.ids.length ? "Finish review" : "Next review exercise", !this.busy, cx => this.run("review-next", {}, cx)));
   }
 }

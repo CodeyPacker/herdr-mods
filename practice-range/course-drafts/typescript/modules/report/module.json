@@ -8,7 +8,7 @@
   "outcomes": [
     {
       "id": "1",
-      "can": "report audit",
+      "can": "Validate a local asynchronous batch, classify invalid and duplicate rows, and write a regression that distinguishes correct and faulty duplicate handling.",
       "assessment": [
         "course:ts-foundations/task/report-audit"
       ]

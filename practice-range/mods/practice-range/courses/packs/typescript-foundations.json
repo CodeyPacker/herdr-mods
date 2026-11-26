@@ -4364,21 +4364,21 @@
       "outcomes": [
         {
           "id": "1",
-          "can": "compose open count",
+          "can": "Read a public method and count open tasks without mutating its input.",
           "assessment": [
             "course:ts-foundations/task/compose-open-count"
           ]
         },
         {
           "id": "2",
-          "can": "compose load count",
+          "can": "Await one local reader, count open statuses, and propagate a rejected read.",
           "assessment": [
             "course:ts-foundations/task/compose-load-count"
           ]
         },
         {
           "id": "3",
-          "can": "compose read label",
+          "can": "Build a label from a public field and method while preserving a zero count.",
           "assessment": [
             "course:ts-foundations/task/compose-read-label"
           ]
@@ -4578,21 +4578,21 @@
       "outcomes": [
         {
           "id": "1",
-          "can": "tracker valid rows",
+          "can": "Validate an unknown batch and preserve valid rows in their original order.",
           "assessment": [
             "course:ts-foundations/task/tracker-valid-rows"
           ]
         },
         {
           "id": "2",
-          "can": "tracker apply edit",
+          "can": "Apply a selected edit without mutating the input array or its objects.",
           "assessment": [
             "course:ts-foundations/task/tracker-apply-edit"
           ]
         },
         {
           "id": "3",
-          "can": "tracker read open",
+          "can": "Combine a local asynchronous reader, row validation, and open-task selection.",
           "assessment": [
             "course:ts-foundations/task/tracker-read-open"
           ]
@@ -4788,7 +4788,7 @@
       "outcomes": [
         {
           "id": "1",
-          "can": "report audit",
+          "can": "Validate a local asynchronous batch, classify invalid and duplicate rows, and write a regression that distinguishes correct and faulty duplicate handling.",
           "assessment": [
             "course:ts-foundations/task/report-audit"
           ]

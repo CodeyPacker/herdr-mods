@@ -20,14 +20,17 @@ try {
   const task = await request("task", { taskId });
   const solution = await request("answer", { taskId });
   const project = await request("task", { taskId: `${courseId}/task/report-audit` });
+  const review = structuredClone(task);
+  review.enrollment.review = { ids: [taskId], index: 0 };
   const cases = { catalog: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules],
-    prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], error: ["task", task] };
+    prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], review: ["task", review], error: ["task", task] };
   for (const [name, [page, data]] of Object.entries(cases)) {
     const folder = join(root, name);
     await cp(source, folder, { recursive: true, filter: path => !path.split(/[\\/]/).includes("node_modules") });
     await rename(join(folder, "main.js"), join(folder, "practice-panel.js"));
     await writeFile(join(folder, "main.js"), `import Syntax from "./practice-panel.js";
 export default class Fixture extends Syntax {
+  perform(action, value) { this.lastPerformed = { action, value }; }
   init(props, cx) {
     super.init(props, cx);
     this.screen = "courses";
@@ -52,6 +55,11 @@ export default class Fixture extends Syntax {
       this.courses.key("escape", cx);
       if (this.courses.page !== "modules") throw new Error("Escape must return to modules");
       this.courses.page = "lesson";
+      this.enabledLanguages = ["typescript"];
+      this.courses.practiceTopic("variables/const-number", cx);
+      if (this.screen !== "topics" || this.pendingTopic !== "variables" || this.lastPerformed?.value !== "typescript") throw new Error("Lesson practice links must choose the matching language and topic");
+      if (this.state !== prior) throw new Error("Lesson links must not replace direct-practice state while loading");
+      this.screen = "courses";
     }
   }
 }
