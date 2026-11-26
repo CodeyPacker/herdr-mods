@@ -47,6 +47,7 @@ try {
   const cases = { catalog: ["catalog", null], versions: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules], "example-output": ["lesson", example],
     prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], review: ["task", review], "ai-lesson": ["lesson", modules], "ai-task": ["task", task], attached: ["modules", attached], "repo-missing": ["modules", missing], error: ["task", task],
     "repo-supplement":["repo-lesson",attached], "repo-generating":["modules",attached],
+    "repo-source":["source",attached], "repo-source-cached":["source",attached], "repo-source-missing":["source",attached],
     imports:["imports",null], "import-preview":["import-preview",null], "import-preferences":["import-preview",null], "import-error":["imports",null],
     "imported-catalog":["catalog",null], "imported-modules":["modules",importedModules], "imported-lesson":["lesson",importedLesson], "imported-quiz":["lesson",importedQuiz], "imported-task":["task",importedTask] };
   const requested = process.argv.slice(2);
@@ -74,6 +75,21 @@ export default class Fixture extends Syntax {
     if (${name === "versions"}) this.courses.catalog[0] = { ...this.courses.catalog[0], enrolledVersion: "0.0.1", versions: ["0.0.1", "0.1.0-preview.1"] };
     this.courses.data = ${JSON.stringify(data)};
     this.courses.page = ${JSON.stringify(page)};
+    if (${name.startsWith("repo-source")}) {
+      this.courses.repoLessonId="b".repeat(64);
+      this.courses.sourceReturnPage="repo-lesson";
+      this.courses.source={path:"src/count.ts",commit:"a".repeat(40),start:1,end:3,total:150,referenceStart:2,referenceEnd:2,previous:null,next:4,code:"// Context\\nexport const count = 1;\\n// More context"};
+      if (${name === "repo-source-cached" || name === "repo-source-missing"}) {
+        this.courses.source.total=null;this.courses.source.next=null;
+        this.courses.source.detail="The pinned file is unavailable. Showing the saved excerpt.";
+      }
+      if (${name === "repo-source-missing"}) {
+        this.courses.source.code="";this.courses.source.detail="No saved excerpt is available. Attach a clone containing this commit to read it.";
+      }
+      this.courses.back(cx);
+      if(this.courses.page!=="repo-lesson") throw new Error("Source navigation must return to its original lesson");
+      this.courses.page="source";
+    }
     if (${name === "repo-supplement"}) {
       this.courses.repoLessonId="b".repeat(64);
       this.courses.back(cx);

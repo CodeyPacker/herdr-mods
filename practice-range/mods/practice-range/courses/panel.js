@@ -27,6 +27,11 @@ export class CoursePanel {
     this.error = "";
     this.repoLessonId = "";
     this.generatingRepoLesson = false;
+    /** @type {import("./types.js").RepoSource | null} */
+    this.source = null;
+    /** @type {Record<string, unknown>} */
+    this.sourceRequest = {};
+    this.sourceReturnPage = "modules";
     this.pendingSave = false;
     this.saveLoop = false;
     this.watchTurn = 0;
@@ -101,7 +106,7 @@ export class CoursePanel {
   /** @param {string} action @param {Record<string, unknown>} value @param {Context} cx */
   async dispatch(action, value, cx) {
     if (this.busy) return;
-    if (action.startsWith("import-") || ["list", "enroll", "open", "task", "review-start", "review-next", "review-end", "attach-repo", "detach-repo"].includes(action)) this.host.cancelTutor(cx);
+    if (action.startsWith("import-") || ["list", "enroll", "open", "source", "task", "review-start", "review-next", "review-end", "attach-repo", "detach-repo"].includes(action)) this.host.cancelTutor(cx);
     this.busy = ["check", "check-saved"].includes(action) ? "Checking every case…" : "Loading course…";
     this.error = ""; cx.notify();
     try {
@@ -111,6 +116,9 @@ export class CoursePanel {
       if (action === "list") {
         this.catalog = result.courses;
         this.page = "catalog";
+      } else if (action === "source") {
+        if (this.page !== "source") this.sourceReturnPage = this.page;
+        this.source = result.source; this.sourceRequest = value; this.page = "source"; this.pause();
       } else if(action==="import-list") { this.imports=result.imports; this.page="imports"; this.pause(); }
       else if(action==="import-preview") { this.importPreview=result.preview; this.applyImportPreferences=false; this.page="import-preview"; }
       else if(action==="import-apply") {
@@ -135,7 +143,7 @@ export class CoursePanel {
         }
         if (result.pendingSave) this.pendingSave = true;
       }
-      if (this.host.sync && !["list", "status", "import-list", "import-preview"].includes(action)) this.host.pushSoon(cx);
+      if (this.host.sync && !["list", "status", "source", "import-list", "import-preview"].includes(action)) this.host.pushSoon(cx);
     } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
     finally { this.busy = ""; cx.notify(); }
   }
@@ -238,6 +246,7 @@ export class CoursePanel {
     this.confirmReset = false;
     if(this.page==="import-preview") this.page="imports";
     else if(this.page==="imports") this.page="catalog";
+    else if (this.page === "source") this.page = this.sourceReturnPage;
     else if (this.data?.enrollment.review) this.run("review-end", {}, cx);
     else if (this.page === "task" && this.data?.enrollment.position) this.run("open", this.data.enrollment.position, cx);
     else if (this.page === "lesson" || this.page === "repo-lesson") { this.page = "modules"; this.pause(); }
@@ -277,6 +286,7 @@ export class CoursePanel {
       if (this.page === "modules") this.modules(body, t);
       else if (this.page === "lesson") this.lessonView(body, t);
       else if (this.page === "repo-lesson") this.repoLessonView(body, t);
+      else if (this.page === "source") this.sourceView(body, t);
       else if (this.page === "task") this.taskView(body, t);
       if (["lesson", "task"].includes(this.page) && this.host.tutor.enabled) body.child(tutorChat(t, {
         messages: this.host.tutorThreads[this.helpKey()] ?? [], busy: this.host.tutorBusy, error: this.host.tutorError,
@@ -366,8 +376,30 @@ export class CoursePanel {
     for (const [index,section] of lesson.sections.entries()) {
       body.child(sectionLabel(t,section.title)).child(markdown(`repo-text-${lesson.id}-${index}`,section.text));
       for (const [refIndex,ref] of section.references.entries()) body.child(div().text_size(11).text_color(t.muted).child(`${ref.path}:${ref.start}-${ref.end}`))
-        .child(markdown(`repo-code-${lesson.id}-${index}-${refIndex}`,`\`\`\`${this.data.course.codeFence??"text"}\n${ref.code}\n\`\`\``));
+        .child(markdown(`repo-code-${lesson.id}-${index}-${refIndex}`,`\`\`\`${this.data.course.codeFence??"text"}\n${ref.code}\n\`\`\``))
+        .child(keyButton(t,`repo-source-${index}-${refIndex}`,"","Read source file",!this.busy,cx=>this.run("source",{repoLessonId:lesson.id,sectionIndex:index,referenceIndex:refIndex},cx)));
     }
+  }
+
+  /** @param {import("gpui-kit").Element} body @param {Theme} t */
+  sourceView(body, t) {
+    const source = this.source;
+    if (!source) return;
+    body.child(sectionLabel(t, source.path))
+      .child(div().text_color(t.muted).child(`Pinned commit ${source.commit.slice(0,10)} · lines ${source.start}–${source.end}${source.total ? ` of ${source.total}` : ""}`));
+    if (source.detail) body.child(banner(t,source.detail));
+    body.child(div().text_size(12).text_color(t.muted).child(`Referenced lines ${source.referenceStart}–${source.referenceEnd} are marked >.`));
+    const code = source.code.split("\n").map((line,index)=>{
+      const number=source.start+index;
+      return `${number>=source.referenceStart && number<=source.referenceEnd ? ">" : " "} ${String(number).padStart(5)}  ${line}`;
+    }).join("\n");
+    // A longer fence preserves code containing Markdown fences.
+    const fence="`".repeat([...code.matchAll(/`+/g)].reduce((length,match)=>Math.max(length,match[0].length+1),3));
+    if (source.code) body.child(markdown("repo-source-code",`${fence}text\n${code}\n${fence}`));
+    body.child(h_flex().gap(8).flex_wrap()
+      .child(keyButton(t,"source-previous","","Previous lines",!this.busy && Boolean(source.previous),cx=>this.run("source",{...this.sourceRequest,line:source.previous},cx)))
+      .child(keyButton(t,"source-reference","","Referenced lines",!this.busy && Boolean(source.total),cx=>this.run("source",{...this.sourceRequest,line:Math.max(1,source.referenceStart-20)},cx)))
+      .child(keyButton(t,"source-next","","Next lines",!this.busy && Boolean(source.next),cx=>this.run("source",{...this.sourceRequest,line:source.next},cx))));
   }
 
   /** @param {import("gpui-kit").Element} body @param {Theme} t */
@@ -381,7 +413,8 @@ export class CoursePanel {
     body.child(div().font_semibold().child(step.title)).child(markdown("course-step", step.text));
     for (const id of [...(step.examples ?? []), ...(step.example ? [step.example] : [])]) {
       const example = lesson.examples[id];
-      if(example.repoRef) body.child(div().text_size(11).text_color(t.muted).child(`${example.repoRef.path}:${example.repoRef.start}-${example.repoRef.end} · ${String(example.repoRef.commit??"").slice(0,10)}`));
+      if(example.repoRef) body.child(div().text_size(11).text_color(t.muted).child(`${example.repoRef.path}:${example.repoRef.start}-${example.repoRef.end} · ${String(example.repoRef.commit??"").slice(0,10)}`))
+        .child(keyButton(t,`course-source-${id}`,"","Read source file",!this.busy,cx=>this.run("source",{moduleId:lesson.id,exampleId:id},cx)));
       if(example.sourceError) body.child(banner(t,example.sourceError));
       body.child(markdown(`course-example-${id}`, `\`\`\`${this.data.course.codeFence??"typescript"}\n${example.code}\n\`\`\``));
       if(!example.readOnly) body.child(keyButton(t, `course-run-example-${id}`, "", "Run example", !this.busy, cx => this.run("example", { moduleId: lesson.id, exampleId: id }, cx)));

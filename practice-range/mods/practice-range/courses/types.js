@@ -30,5 +30,7 @@
  *   preferences?: {editor?: string,agent?: string}}} TutorImport
  * @typedef {{id: string, target: string, title: string, name: string, commit: string, scope: string,
  *   sections: {title: string, text: string, references: {path: string, start: number, end: number, code: string}[]}[]}} RepoLesson
+ * @typedef {{path: string, commit: string, start: number, end: number, total: number | null, code: string,
+ *   referenceStart: number, referenceEnd: number, previous: number | null, next: number | null, detail?: string}} RepoSource
  */
 export {};

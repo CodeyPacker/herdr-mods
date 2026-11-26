@@ -45,6 +45,34 @@ export async function detachRepo(directory) {
   await unlink(attachmentFile(directory)).catch(error => { if (error.code !== "ENOENT") throw error; });
 }
 
+/** Browse a referenced file at its pinned commit. Never read the working tree. */
+export async function readRepoSource(directory, ref, cachedCode, line) {
+  if (!ref || typeof ref.path !== "string" || !ref.path || ref.path.includes("\0") ||
+      !/^[a-f0-9]{40}(?:[a-f0-9]{24})?$/.test(ref.commit) ||
+      !Number.isInteger(ref.start) || !Number.isInteger(ref.end) || ref.start < 1 || ref.end < ref.start) throw new Error("Invalid source reference.");
+  if (line !== undefined && (!Number.isSafeInteger(line) || line < 1)) throw new Error("Choose a valid source line.");
+  const base = { path: ref.path, commit: ref.commit, referenceStart: ref.start, referenceEnd: ref.end };
+  try {
+    const record = await attachment(directory);
+    if (!record) throw new Error("unavailable");
+    const key = `${ref.commit}:${ref.path}`;
+    const size = Number(await git(record.root, ["cat-file", "-s", key], 2000));
+    if (!Number.isSafeInteger(size) || size > 256000) throw new Error("too large");
+    const content = (await git(record.root, ["show", key], 2000)).replaceAll("\r\n", "\n");
+    if (content.includes("\0")) throw new Error("binary");
+    const lines = content.split("\n");
+    if (ref.end > lines.length) throw new Error("range unavailable");
+    const start = Math.min(line ?? Math.max(1, ref.start - 20), lines.length);
+    const end = Math.min(start + 119, lines.length);
+    return { ...base, start, end, total: lines.length, code: lines.slice(start - 1, end).join("\n"),
+      previous: start > 1 ? Math.max(1, start - 120) : null, next: end < lines.length ? end + 1 : null };
+  } catch {
+    return { ...base, start: ref.start, end: ref.end, total: null, code: cachedCode ?? "", previous: null, next: null,
+      detail: cachedCode === null ? "The pinned file is unavailable or too large to browse. No saved excerpt is available. Attach a clone containing this commit to read it." :
+        "The pinned file is unavailable or too large to browse. Showing the saved excerpt. Attach a clone containing this commit to browse the file." };
+  }
+}
+
 /** Read the exact referenced lines. A cache is scoped to one import or display snapshot. */
 export async function readPinnedExcerpt(root, ref, cache = new Map()) {
   try {

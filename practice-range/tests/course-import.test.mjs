@@ -182,9 +182,15 @@ test("attaching a moved clone restores missing pinned excerpts without rewriting
   const preview=await previewTutor(f.target,f.source,f.slug);
   assert.ok(preview.pack.lessons[0].examples["stop-0"].sourceError);
   await applyTutor(f.target,f.source,f.slug,preview.report.fingerprint);
+  const sourceRequest={courseId:preview.pack.id,moduleId:preview.pack.lessons[0].id,exampleId:"stop-0"};
+  const unavailable=await courseCommand(f.target,"source",sourceRequest);
+  assert.match(unavailable.source.detail,/No saved excerpt/);
   const state=await courseCommand(f.target,"attach-repo",{courseId:preview.pack.id,path:moved});
   assert.equal(state.course.lessons[0].examples["stop-0"].sourceError,undefined);
   assert.match(state.course.lessons[0].examples["stop-0"].code,/count = 3/);
+  const source=await courseCommand(f.target,"source",sourceRequest);
+  assert.match(source.source.code,/count = 3/);
+  assert.equal(source.source.detail,undefined);
   const stored=JSON.parse(await readFile(join(f.target,"courses",courseFolderName(preview.pack.id),preview.pack.contentVersion,"pack.json"),"utf8"));
   assert.ok(stored.lessons[0].examples["stop-0"].sourceError,"Immutable imported content is preserved");
   assert.equal(state.course.contentVersion,preview.pack.contentVersion);

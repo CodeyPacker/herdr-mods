@@ -10,6 +10,7 @@ import { loadLanguageRunner } from "../languages/runner.mjs";
 import { courseReview, nextCourseAction } from "./review.js";
 import { attachRepo, detachRepo, repoStatus, restoreRepoExcerpts } from "./repo.mjs";
 import { readRepoLessons, saveRepoLesson } from "./supplements.mjs";
+import { courseSource } from "./source.mjs";
 
 const hash = source => createHash("sha256").update(typeof source === "string" ? source : JSON.stringify(source)).digest("hex");
 export const enrollmentDirectory = (root, pack) => join(root, "courses", courseFolderName(pack.id), pack.contentVersion);
@@ -172,6 +173,7 @@ export async function courseCommand(root, action, request = {}) {
       state = fresh(pack, request.entryPath ?? "beginner");
     }
     validateState(state, pack);
+    if (action === "source") return { source: await courseSource(pack, directory, request) };
     const persist = async () => { await save(file, state); };
     if (action === "enroll") { await persist(); await save(preferred, { courseId: pack.id, contentVersion: pack.contentVersion }); }
     else if (action === "attach-repo" || action === "detach-repo") {
