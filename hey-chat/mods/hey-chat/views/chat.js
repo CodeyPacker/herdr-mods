@@ -436,23 +436,17 @@ export function summaryButton(v, t, chat) {
     .when(open, el => el.bg(t.selected).text_color(t.accent));
 }
 
-/** Only the parent link stays visible; details are opened with the header's info button. */
+/** Child chats only: the parent link, and the summary when the header's info button opens it. */
 export function linkedChatsView(v, t, chat) {
-  const identity = chat.linkId ?? chat.id;
-  const children = (v.chats ?? []).filter(c => c.parentId === identity);
+  if (!chat.parentId) return null;
   const parent = (v.chats ?? []).find(c => (c.linkId ?? c.id) === chat.parentId);
   const summary = chat.linkSummary?.summary;
-  const open = v.summaryFor === chat.id;
-  if (!chat.parentId && !open) return null;
-  const item = (id, title, click) => div().id(id).text_size(12).text_color(t.accent).cursor_pointer()
-    .on_click((_e, cx) => { click(cx); cx.notify(); }).child(title);
+  const open = v.summaryFor === chat.id && Boolean(summary);
   return v_flex().id("linked-chats").flex_none().px(16).py(8).gap(7).border_b_1().border_color(t.border)
-    .when(Boolean(chat.parentId), el => el.child(item("open-parent-chat", `Parent: ${parent?.title ?? 'Open parent chat'}`, cx => v.openRelatedChat(chat.parentId, cx)).min_w(0).truncate()))
-    .when(open && Boolean(children.length), el => el.child(h_flex().flex_wrap().gap(10)
-      .children(children.map(child => item(`open-child-${child.id}`, child.title, cx => v.openChat(child.id, cx))))))
+    .child(div().id("open-parent-chat").min_w(0).truncate().text_size(12).text_color(t.accent).cursor_pointer()
+      .on_click((_e, cx) => { v.openRelatedChat(chat.parentId, cx); cx.notify(); }).child(`Parent: ${parent?.title ?? 'Open parent chat'}`))
     .when(open, el => el.child(v_flex().max_h(220).overflow_y_scrollbar().gap(5).text_size(12).text_color(t.muted)
-      .child(div().font_semibold().text_color(t.foreground).child(summary?.task || "No progress summary yet."))
-      .when(Boolean(summary && chat.linkSummary?.stale), row => row.child(div().text_color(t.blocked).child("Summary may be out of date. Latest activity is available in the conversation.")))
+      .child(div().font_semibold().text_color(t.foreground).child(summary?.task ?? ""))
       .children([...(summary?.progress ?? []), ...(summary?.decisions ?? []).map(s => `Decision: ${s}`), ...(summary?.blockers ?? []).map(s => `Blocked: ${s}`), ...(summary?.needs ?? []).map(s => `Needs: ${s}`), ...(summary?.references ?? []).map(s => `Reference: ${s}`)].map(s => div().child(s)))
       .when(Boolean(chat.linkSummary?.reportError), row => row.child(div().text_color(t.blocked).child("Parent update is waiting to be delivered.")))));
 }
@@ -581,7 +575,7 @@ export function chatView(v, t, width) {
       .child(svg(`${ICONS}/file.svg`).size(16)).child(`Files${chat.outputs?.length ? ` (${chat.outputs.length})` : ""}`))
     .child(roundButton(t, "pin-chat", `${ICONS}/pin.svg`, 32, () => v.togglePin(chat.id))
       .when(Boolean(chat.pinned), el => el.bg(t.selected).text_color(t.accent)))
-    .when(Boolean(chat.parentId || chat.linkSummary?.summary || (v.chats ?? []).some(c => c.parentId === (chat.linkId ?? chat.id))), el => el.child(summaryButton(v, t, chat)))
+    .when(Boolean(chat.parentId && chat.linkSummary?.summary), el => el.child(summaryButton(v, t, chat)))
     .child(roundButton(t, "chat-search", `${ICONS}/search.svg`, 36, () => v.toggleChatSearch()))
     // A quick chat goes with its tab, so its trash closes the tab, which deletes it.
     .child(roundButton(t, "chat-delete", `${ICONS}/trash.svg`, 36, () => v.quick ? v.closeQuick() : v.askDelete(chat.id)));
@@ -637,7 +631,7 @@ export function chatView(v, t, width) {
     // Keep the real chat painted beneath the cover so native text and scrolling settle before reveal.
     .child(v_flex().flex_1().min_h(0).w_full()
       .child(header)
-      .when(Boolean(chat.parentId || v.summaryFor === chat.id), el => el.child(linkedChatsView(v, t, chat)))
+      .when(Boolean(chat.parentId), el => el.child(linkedChatsView(v, t, chat)))
       .when(Boolean(v.renaming), el => el.child(renameEditor(v, t)))
       .when(v.chatSearchOpen, el => {
         const matches = searchMatches;

@@ -17,14 +17,14 @@ test('linked children stay beneath parents, with search preserving their ancesto
   assert.deepEqual(v.chatsIn('p').map(c=>c.id),['parent','child']);
 });
 
-test('progress links navigate ordinary chats without changing the composer', async () => {
+test('the parent link navigates without changing the composer, and parents show no summary', async () => {
   const parent={id:'parent',title:'Plan'},child={id:'child',parentId:'parent',title:'Build',linkSummary:{summary:{task:'Build feature',progress:['Done']}}};
   const opened=[];
   const v=await view({chats:[parent,child],summaryFor:'parent',draft:'Unsent work',openChat(id){opened.push(id);}});
   const cx={notify(){}};
-  findElement(linkedChatsView(v,{},parent),'open-child-child').click({},cx);
+  assert.equal(linkedChatsView(v,{},parent),null);
   findElement(linkedChatsView(v,{},child),'open-parent-chat').click({},cx);
-  assert.deepEqual(opened,['child','parent']);
+  assert.deepEqual(opened,['parent']);
   assert.equal(v.draft,'Unsent work');
 });
 
