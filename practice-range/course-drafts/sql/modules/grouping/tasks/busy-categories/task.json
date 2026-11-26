@@ -1,0 +1,50 @@
+{
+  "id": "course:sql-foundations/task/grouping-busy-categories",
+  "role": "independent",
+  "title": "Find the well-stocked categories",
+  "concepts": [
+    "group",
+    "having",
+    "filter",
+    "is-null"
+  ],
+  "prompt": "Look only at products that are not discontinued and that have a category. For each category_id with at least 3 such products, return category_id, products (how many) and avg_price (their average price, rounded to 2 decimal places). Sort by category_id.",
+  "hints": [
+    "Which test is about single products, and which is about a whole group?",
+    "Tests on rows go in WHERE, before GROUP BY. The test on the count goes in HAVING, after it.",
+    "WHERE discontinued = false AND category_id IS NOT NULL GROUP BY category_id HAVING count(*) >= 3"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-counts-discontinued.sql",
+      "misconception": "Leaves out the row filter, so discontinued products are counted.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    },
+    {
+      "source": "wrong-more-than-three.sql",
+      "misconception": "Keeps only groups with more than 3 products.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Count the products of one category by hand, leaving out discontinued ones, and compare with your result."
+}

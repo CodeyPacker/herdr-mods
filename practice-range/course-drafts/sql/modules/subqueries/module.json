@@ -1,0 +1,246 @@
+{
+  "id": "course:sql-foundations/module/subqueries",
+  "title": "Use a query inside a query",
+  "requires": [
+    "join",
+    "aggregate",
+    "filter",
+    "order",
+    "null",
+    "is-null"
+  ],
+  "outcomes": [
+    {
+      "id": "scalar",
+      "can": "Compare each row with a value computed by a subquery.",
+      "assessment": [
+        "above",
+        "course:sql-foundations/task/subqueries-above-average"
+      ]
+    },
+    {
+      "id": "exists",
+      "can": "Test whether related rows exist.",
+      "assessment": [
+        "exists",
+        "course:sql-foundations/task/subqueries-cancelled-customers"
+      ]
+    },
+    {
+      "id": "transfer",
+      "can": "Avoid the trap of NOT IN with a NULL in the list.",
+      "assessment": [
+        "not-in",
+        "course:sql-foundations/task/subqueries-referred-nobody"
+      ]
+    }
+  ],
+  "intro": "Some questions need an answer before they can be asked: which products cost more than the average? The average has to be worked out first. A subquery is a query inside another query, and it supplies that first answer.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "A query inside a query",
+      "text": "A subquery is a SELECT in brackets, used where a value is expected. PostgreSQL runs it and uses its result. A subquery that returns one row with one column acts as a single value, so price > (SELECT avg(price) FROM products) compares each price with the average. This is the way to use an aggregate in a filter, which WHERE alone cannot do.",
+      "example": "above"
+    },
+    {
+      "kind": "prediction",
+      "title": "Compare with the average",
+      "text": "The average product price is 269.67. The Office Chair costs 289.00 and the Soundbar 249.00. Predict the last row.",
+      "example": "above",
+      "questions": [
+        "above"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Two steps in one statement",
+      "text": "The subquery runs first and gives one number, about 269.67. The outer query then keeps the products whose price is above it. Seven pass, and the cheapest of them, the Office Chair, is the last row. If prices change, the average is recomputed on every run, which a number typed into the query would not be.",
+      "example": "above"
+    },
+    {
+      "kind": "explanation",
+      "title": "Lists and existence",
+      "text": "A subquery can also return a column of values for IN: id IN (SELECT customer_id FROM orders). EXISTS asks a different question. It is true when its subquery returns at least one row, whatever that row holds. The subquery usually refers to the outer row, as in WHERE o.customer_id = c.id, and is then checked once for each outer row. That is called a correlated subquery. Unlike a join, EXISTS never repeats the outer row: a customer with three cancelled orders still appears once.",
+      "example": "exists"
+    },
+    {
+      "kind": "prediction",
+      "title": "Customers with a cancelled order",
+      "text": "Ten orders were cancelled, and Ava cancelled three of them. Predict how many times Ava appears.",
+      "example": "exists",
+      "questions": [
+        "exists"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "NOT IN and NULL",
+      "text": "NOT IN has a trap. If the list contains a NULL, the test is never true for any row. The reason is the one from the NULL module: id NOT IN (2, NULL) asks whether id differs from every item, and comparing with NULL is unknown. referred_by is NULL for many customers, so a NOT IN over that column returns nothing. NOT EXISTS does not have this problem, and is the safer way to ask for rows with no related row.",
+      "example": "not-in"
+    },
+    {
+      "kind": "prediction",
+      "title": "Count with NOT IN",
+      "text": "Ten customers have referred somebody. Predict how many of the twenty customers this query counts.",
+      "example": "not-in",
+      "questions": [
+        "not-in"
+      ]
+    },
+    {
+      "kind": "modification",
+      "title": "Find the salaries above average",
+      "text": "The starter puts an aggregate in WHERE, which is an error. Supply the average another way.",
+      "task": "course:sql-foundations/task/subqueries-above-average"
+    },
+    {
+      "kind": "independent",
+      "title": "Find customers who cancelled",
+      "text": "Work from the prompt. Each customer must appear once.",
+      "task": "course:sql-foundations/task/subqueries-cancelled-customers"
+    }
+  ],
+  "questions": [
+    {
+      "id": "above",
+      "example": "above",
+      "prompt": "What is the last row?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Soundbar, 249.00",
+          "feedback": "249.00 is below the average of 269.67, so it is not kept."
+        },
+        {
+          "text": "Office Chair, 289.00",
+          "feedback": "It is the lowest price above the average, and the rows are sorted from the highest price down."
+        },
+        {
+          "text": "Forge 16 Laptop, 1649.00",
+          "feedback": "That is the first row. The sort is from the highest price down."
+        }
+      ]
+    },
+    {
+      "id": "exists",
+      "example": "exists",
+      "prompt": "How many times does Ava appear?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Once",
+          "feedback": "EXISTS is true or false for each customer. It never repeats the outer row."
+        },
+        {
+          "text": "Three times",
+          "feedback": "A join would repeat her. EXISTS only asks whether at least one such order exists."
+        },
+        {
+          "text": "Not at all",
+          "feedback": "She has cancelled orders, so EXISTS is true for her row."
+        }
+      ]
+    },
+    {
+      "id": "not-in",
+      "example": "not-in",
+      "prompt": "What count comes back?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "10",
+          "feedback": "That is the answer NOT EXISTS gives. Here the list contains NULL."
+        },
+        {
+          "text": "20",
+          "feedback": "The customers who did refer somebody are in the list and do not pass."
+        },
+        {
+          "text": "0",
+          "feedback": "The list contains NULL, so NOT IN is never true and no row is counted."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "above": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/above.sql"
+      },
+      "stdout": [
+        "Your query returned:",
+        " name             | price",
+        "------------------+---------",
+        " Forge 16 Laptop  | 1649.00",
+        " Aero 13 Laptop   | 1199.00",
+        " Scout 14 Laptop  | 749.00",
+        " Standing Desk    | 549.00",
+        " Espresso Machine | 499.00",
+        " 27in Monitor     | 329.00",
+        " Office Chair     | 289.00",
+        "(7 rows)"
+      ]
+    },
+    "exists": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/exists.sql"
+      },
+      "stdout": [
+        "Your query returned:",
+        " first_name",
+        "------------",
+        " Ava",
+        " Ethan",
+        " Grace",
+        " Isla",
+        " Jack",
+        " Noah",
+        " Sofia",
+        "(7 rows)"
+      ]
+    },
+    "not-in": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/not-in.sql"
+      },
+      "stdout": [
+        "Your query returned:",
+        " referred_nobody",
+        "-----------------",
+        " 0",
+        "(1 row)"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:sql-foundations/task/subqueries-above-average",
+      "path": "tasks/above-average/task.json"
+    },
+    {
+      "id": "course:sql-foundations/task/subqueries-cancelled-customers",
+      "path": "tasks/cancelled-customers/task.json"
+    },
+    {
+      "id": "course:sql-foundations/task/subqueries-referred-nobody",
+      "path": "tasks/referred-nobody/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:sql-foundations/task/subqueries-referred-nobody",
+    "afterModule": "course:sql-foundations/module/modify",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [
+    "subqueries/above-average",
+    "subqueries/in-subquery",
+    "subqueries/exists",
+    "subqueries/not-exists",
+    "subqueries/not-in-subquery"
+  ],
+  "drillGap": "These drills practise one subquery form each. They do not show NOT IN failing on a NULL."
+}

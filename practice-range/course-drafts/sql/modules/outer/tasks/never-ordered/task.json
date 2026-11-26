@@ -1,0 +1,53 @@
+{
+  "id": "course:sql-foundations/task/outer-never-ordered",
+  "role": "independent",
+  "title": "Find customers who never ordered",
+  "concepts": [
+    "anti-join",
+    "left-join",
+    "is-null"
+  ],
+  "prompt": "Return the first_name and last_name of every customer who has no orders, sorted by first_name.",
+  "hints": [
+    "Which join keeps a customer who has no orders?",
+    "After a LEFT JOIN, a customer with no orders has NULL in the order's columns.",
+    "LEFT JOIN orders AS o ON o.customer_id = c.id WHERE o.id IS NULL"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    },
+    {
+      "id": "added",
+      "declarations": "fixture-added.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-inner-join.sql",
+      "misconception": "Uses an inner join, which has already removed the customers it is looking for.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 3 rows, got 0."
+      }
+    },
+    {
+      "source": "wrong-no-filter.sql",
+      "misconception": "Keeps every customer and never asks for the unmatched ones.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    }
+  ],
+  "feedback": "A customer with orders must not appear, and a customer with none must. Check one of each in your result."
+}

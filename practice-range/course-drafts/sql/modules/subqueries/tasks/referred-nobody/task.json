@@ -1,0 +1,49 @@
+{
+  "id": "course:sql-foundations/task/subqueries-referred-nobody",
+  "role": "review",
+  "title": "Find customers who referred nobody",
+  "concepts": [
+    "exists",
+    "subquery",
+    "null"
+  ],
+  "prompt": "A customer's referred_by holds the id of the customer who referred them, or NULL. Return the first_name of every customer who has referred nobody: no other customer has their id in referred_by. Sort by first_name.",
+  "hints": [
+    "This is about rows that do not exist. Which test is safe when the column holds NULLs?",
+    "For each customer, ask whether any customer row has referred_by equal to their id.",
+    "WHERE NOT EXISTS (SELECT 1 FROM customers AS r WHERE r.referred_by = c.id)"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-not-in-null.sql",
+      "misconception": "Uses NOT IN over a column that contains NULL, which is never true.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 10 rows, got 0."
+      }
+    },
+    {
+      "source": "wrong-not-referred.sql",
+      "misconception": "Answers a different question: who was not referred by anybody.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "If your query returns no rows, look for a NULL in the list after NOT IN. Then check that you are asking about the customer's own id."
+}

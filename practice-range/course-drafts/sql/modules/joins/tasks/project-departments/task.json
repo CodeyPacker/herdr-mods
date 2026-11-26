@@ -1,0 +1,49 @@
+{
+  "id": "course:sql-foundations/task/joins-project-departments",
+  "role": "guided",
+  "title": "Show each project's department",
+  "concepts": [
+    "join",
+    "key",
+    "table-alias"
+  ],
+  "prompt": "Return project, the name of each project, and department, the name of the department it belongs to. Sort by project. The starter joins the two tables on the wrong column.",
+  "hints": [
+    "Which column of projects holds the id of a department?",
+    "The ON condition must compare the department's id with the project's department_id.",
+    "ON d.id = p.department_id"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-condition.sql",
+      "misconception": "Pairs every project with every department.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 8 rows, got 48."
+      }
+    },
+    {
+      "source": "wrong-swapped-names.sql",
+      "misconception": "Reads each name from the wrong table.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Pick one project, look up its department_id in schema.sql, and check that your result shows that department."
+}

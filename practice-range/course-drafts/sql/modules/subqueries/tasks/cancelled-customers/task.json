@@ -1,0 +1,49 @@
+{
+  "id": "course:sql-foundations/task/subqueries-cancelled-customers",
+  "role": "independent",
+  "title": "Find customers who cancelled",
+  "concepts": [
+    "exists",
+    "subquery",
+    "filter"
+  ],
+  "prompt": "Return the first_name and last_name of every customer who has at least one cancelled order, sorted by first_name. A customer appears once, however many orders they cancelled.",
+  "hints": [
+    "The question is whether such an order exists, not how many there are.",
+    "EXISTS with a subquery that refers to the outer customer never repeats a row.",
+    "WHERE EXISTS (SELECT 1 FROM orders AS o WHERE o.customer_id = c.id AND o.status = 'cancelled')"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-join-repeats.sql",
+      "misconception": "Joins to the orders, so a customer appears once per cancelled order.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 7 rows, got 10."
+      }
+    },
+    {
+      "source": "wrong-any-order.sql",
+      "misconception": "Tests for any order and forgets the status.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    }
+  ],
+  "feedback": "Look for a name that appears twice, and for a customer whose orders were never cancelled."
+}

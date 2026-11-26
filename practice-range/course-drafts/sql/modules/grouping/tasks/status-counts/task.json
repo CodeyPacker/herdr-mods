@@ -1,0 +1,49 @@
+{
+  "id": "course:sql-foundations/task/grouping-status-counts",
+  "role": "review",
+  "title": "Count the common order statuses",
+  "concepts": [
+    "group",
+    "having",
+    "order"
+  ],
+  "prompt": "Return status and orders, the number of orders with that status, for every status that has at least 10 orders. Put the status with the most orders first.",
+  "hints": [
+    "One row per status, then keep only some of those rows.",
+    "The test on the count comes after GROUP BY.",
+    "GROUP BY status HAVING count(*) >= 10 ORDER BY orders DESC"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-more-than-ten.sql",
+      "misconception": "Leaves out a status with exactly 10 orders.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-every-status.sql",
+      "misconception": "Never filters the groups.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    }
+  ],
+  "feedback": "Check the status that has exactly 10 orders, and the one that has only 1."
+}

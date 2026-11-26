@@ -222,7 +222,11 @@
         "aggregate",
         "count-forms"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/aggregates/module.json"
+      }
     },
     {
       "id": "course:sql-foundations/module/grouping",
@@ -235,7 +239,11 @@
         "group",
         "having"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/grouping/module.json"
+      }
     },
     {
       "id": "course:sql-foundations/module/joins",
@@ -249,7 +257,11 @@
         "key",
         "table-alias"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/joins/module.json"
+      }
     },
     {
       "id": "course:sql-foundations/module/outer",
@@ -262,7 +274,11 @@
         "left-join",
         "anti-join"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/outer/module.json"
+      }
     },
     {
       "id": "course:sql-foundations/module/subqueries",
@@ -275,7 +291,11 @@
         "subquery",
         "exists"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/subqueries/module.json"
+      }
     },
     {
       "id": "course:sql-foundations/module/ctes",

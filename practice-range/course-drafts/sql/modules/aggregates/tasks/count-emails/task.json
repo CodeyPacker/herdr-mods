@@ -1,0 +1,52 @@
+{
+  "id": "course:sql-foundations/task/aggregates-count-emails",
+  "role": "guided",
+  "title": "Count the customers with an email",
+  "concepts": [
+    "count-forms",
+    "aggregate",
+    "null"
+  ],
+  "prompt": "Return one row with two columns: customers, the number of customers, and with_email, the number of customers who have an email. The starter counts rows in both columns.",
+  "hints": [
+    "Some customers have no email. Which form of count leaves those rows out?",
+    "count(column) counts only the rows where that column is not NULL.",
+    "Change the second count to count(email)."
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    },
+    {
+      "id": "added",
+      "declarations": "fixture-added.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-both-emails.sql",
+      "misconception": "Counts emails in both columns, so customers is too low.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-distinct-rows.sql",
+      "misconception": "Counts different ids, which is the same as counting rows.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "The two numbers should differ by the number of customers who have no email."
+}

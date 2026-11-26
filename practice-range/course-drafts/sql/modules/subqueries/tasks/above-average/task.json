@@ -1,0 +1,53 @@
+{
+  "id": "course:sql-foundations/task/subqueries-above-average",
+  "role": "guided",
+  "title": "Find the salaries above average",
+  "concepts": [
+    "subquery",
+    "aggregate",
+    "order"
+  ],
+  "prompt": "Return the first_name and salary of every employee who earns more than the average salary of all employees, highest salary first. The starter uses avg in WHERE, which is not allowed.",
+  "hints": [
+    "Read the error. Why can WHERE not use avg directly?",
+    "A subquery in brackets can work the average out and hand it over as a single value.",
+    "WHERE salary > (SELECT avg(salary) FROM employees)"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    },
+    {
+      "id": "raise",
+      "declarations": "fixture-raise.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-typed-number.sql",
+      "misconception": "Types today's average into the query, so it is wrong when salaries change.",
+      "witness": {
+        "fixture": "raise",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-own-department.sql",
+      "misconception": "Compares each employee with the average of their own department instead of all employees.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "The average must come from all employees and be worked out by the query itself each time it runs."
+}

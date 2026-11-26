@@ -1,0 +1,50 @@
+{
+  "id": "course:sql-foundations/task/joins-cancelled",
+  "role": "review",
+  "title": "List the cancelled orders",
+  "concepts": [
+    "join",
+    "key",
+    "filter",
+    "order"
+  ],
+  "prompt": "For every cancelled order, return first_name (the customer's), order_id (the order's id) and status. Sort by order_id.",
+  "hints": [
+    "Which column of orders holds the id of a customer?",
+    "Join orders to customers on that column, then keep the cancelled orders.",
+    "JOIN customers AS c ON c.id = o.customer_id WHERE o.status = 'cancelled'"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-id-to-id.sql",
+      "misconception": "Matches the order's id with the customer's id.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-every-status.sql",
+      "misconception": "Returns the orders of every status.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 10 rows, got 60."
+      }
+    }
+  ],
+  "feedback": "Pick one cancelled order in schema.sql, find its customer_id, and check that your result shows that customer."
+}

@@ -1,0 +1,51 @@
+{
+  "id": "course:sql-foundations/task/joins-long-assignments",
+  "role": "independent",
+  "title": "List the long assignments",
+  "concepts": [
+    "join",
+    "key",
+    "table-alias",
+    "filter",
+    "order"
+  ],
+  "prompt": "For every assignment of more than 400 hours, return first_name (the employee's), project (the project's name) and hours. Put the most hours first, and sort assignments with the same hours by first_name.",
+  "hints": [
+    "assignments holds two ids. Which tables do they point at?",
+    "Join assignments to employees on employee_id, and to projects on project_id.",
+    "FROM assignments AS a JOIN employees AS e ON e.id = a.employee_id JOIN projects AS p ON p.id = a.project_id WHERE a.hours > 400"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-includes-400.sql",
+      "misconception": "Includes an assignment of exactly 400 hours.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    },
+    {
+      "source": "wrong-wrong-key.sql",
+      "misconception": "Links projects through the employee id instead of the project id.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Check each ON condition: one links the employee, the other links the project. Then check the edge at exactly 400 hours."
+}

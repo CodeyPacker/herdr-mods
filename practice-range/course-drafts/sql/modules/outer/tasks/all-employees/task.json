@@ -1,0 +1,49 @@
+{
+  "id": "course:sql-foundations/task/outer-all-employees",
+  "role": "guided",
+  "title": "List every employee with a department",
+  "concepts": [
+    "left-join",
+    "coalesce",
+    "table-alias"
+  ],
+  "prompt": "Return first_name and department for every employee, sorted by first_name. department is the name of the employee's department, or the text No department when the employee has none. The starter leaves one employee out.",
+  "hints": [
+    "Count the starter's rows. How many employees are there?",
+    "An inner join drops an employee whose department_id matches nothing.",
+    "Change JOIN to LEFT JOIN."
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-wrong-side.sql",
+      "misconception": "Keeps every department instead of every employee.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-no-fallback.sql",
+      "misconception": "Keeps the employee but leaves the department as NULL.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Find Alex in your result. The row must be there, and its department must read No department."
+}

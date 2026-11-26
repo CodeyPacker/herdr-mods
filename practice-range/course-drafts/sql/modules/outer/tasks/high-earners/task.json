@@ -1,0 +1,49 @@
+{
+  "id": "course:sql-foundations/task/outer-high-earners",
+  "role": "review",
+  "title": "Show each department's high earners",
+  "concepts": [
+    "left-join",
+    "table-alias",
+    "order"
+  ],
+  "prompt": "Return department (the department's name) and first_name for the employees who earn more than 150000. Every department must appear at least once. A department with no such employee appears as one row with NULL for first_name. Sort by department, then first_name.",
+  "hints": [
+    "Which table has to keep all its rows?",
+    "A test on the employee in WHERE would remove the departments that have no match.",
+    "FROM departments AS d LEFT JOIN employees AS e ON e.department_id = d.id AND e.salary > 150000"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-where.sql",
+      "misconception": "Puts the salary test in WHERE, which removes the departments with no match.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-no-test.sql",
+      "misconception": "Leaves out the salary test and lists every employee.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    }
+  ],
+  "feedback": "Count the departments in your result. All six must be there, including the ones with nobody above 150000."
+}

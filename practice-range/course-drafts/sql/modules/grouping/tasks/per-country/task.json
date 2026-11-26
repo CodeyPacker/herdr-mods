@@ -1,0 +1,49 @@
+{
+  "id": "course:sql-foundations/task/grouping-per-country",
+  "role": "guided",
+  "title": "Count customers per country",
+  "concepts": [
+    "group",
+    "aggregate",
+    "order"
+  ],
+  "prompt": "Return country and customers, the number of customers in that country. Put the country with the most customers first, and sort countries with the same number from A to Z. The starter returns a row for every city.",
+  "hints": [
+    "How many rows should the result have, and how many does the starter return?",
+    "A row is produced for every different combination of the GROUP BY columns.",
+    "Group by country only."
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-smallest-first.sql",
+      "misconception": "Sorts the counts in ascending order.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "not in the requested order"
+      }
+    },
+    {
+      "source": "wrong-counts-emails.sql",
+      "misconception": "Counts emails, which skips customers who have none.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Check the number of rows first: one per country. Then check the largest count and the order."
+}

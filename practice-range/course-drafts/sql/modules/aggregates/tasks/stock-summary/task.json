@@ -1,0 +1,48 @@
+{
+  "id": "course:sql-foundations/task/aggregates-stock-summary",
+  "role": "independent",
+  "title": "Summarize what is on sale",
+  "concepts": [
+    "aggregate",
+    "filter",
+    "alias"
+  ],
+  "prompt": "For the products that are not discontinued, return one row with three columns: products, how many there are; units, the total of their stock; and average_price, their average price rounded to 2 decimal places.",
+  "hints": [
+    "Which clause decides the rows the aggregates see?",
+    "count, sum and avg can share one SELECT list. Round only the average.",
+    "SELECT count(*) AS products, sum(stock) AS units, ROUND(avg(price), 2) AS average_price ... WHERE discontinued = false"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-filter.sql",
+      "misconception": "Summarizes every product, including the discontinued ones.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-not-rounded.sql",
+      "misconception": "Leaves the average with all its decimal places.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Check each of the three numbers on its own: the filter decides the first two, and rounding decides the third."
+}

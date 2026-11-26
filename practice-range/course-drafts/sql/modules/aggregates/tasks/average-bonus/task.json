@@ -1,0 +1,48 @@
+{
+  "id": "course:sql-foundations/task/aggregates-average-bonus",
+  "role": "review",
+  "title": "Average the bonus across everyone",
+  "concepts": [
+    "aggregate",
+    "coalesce",
+    "null"
+  ],
+  "prompt": "Return one row with one column, avg_bonus: the average bonus_pct across all employees, rounded to 2 decimal places. An employee with no bonus_pct counts as 0.",
+  "hints": [
+    "What does avg do with a NULL value?",
+    "Give the missing percentages a value before avg sees them.",
+    "ROUND(avg(COALESCE(bonus_pct, 0)), 2) AS avg_bonus"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-skips-missing.sql",
+      "misconception": "Averages only the employees who have a bonus.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-filters.sql",
+      "misconception": "Removes the employees with no bonus before averaging.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Decide what the total is divided by. Here it must be all 24 employees."
+}
