@@ -1,0 +1,66 @@
+{
+  "id": "course:cs-foundations/task/records-slot",
+  "role": "independent",
+  "title": "Model a time slot",
+  "concepts": [
+    "record",
+    "equality",
+    "value-reference",
+    "method"
+  ],
+  "prompt": "Declare Slot so that it holds a string Day and an int Hour, and so that two slots with the same day and hour are equal with ==. Then complete the static class Slots. Clash(Slot a, Slot b) returns true when the two slots are the same day and hour. NextHour(Slot slot) returns a slot on the same day, one hour later, and leaves the slot it was given unchanged.",
+  "hints": [
+    "Which kind of type compares its values with ==, and which compares references?",
+    "A record gives you the constructor, the properties and value equality in one line.",
+    "Declare public record Slot(string Day, int Hour);. Clash can compare with ==, and NextHour can use with."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "types",
+  "rules": [],
+  "support": "static int HourAfterNext()\n{\n    var slot = new Slot(\"Mon\", 9);\n    Slots.NextHour(slot);\n    return slot.Hour;\n}\n",
+  "checks": [
+    "new Slot(\"Mon\", 9) == new Slot(\"Mon\", 9)",
+    "Slots.Clash(new Slot(\"Mon\", 9), new Slot(\"Mon\", 9))",
+    "Slots.Clash(new Slot(\"Mon\", 9), new Slot(\"Tue\", 9)) == false",
+    "Slots.Clash(new Slot(\"Mon\", 9), new Slot(\"Mon\", 10)) == false",
+    "Slots.NextHour(new Slot(\"Mon\", 9)).Hour == 10 && Slots.NextHour(new Slot(\"Mon\", 9)).Day == \"Mon\"",
+    "HourAfterNext() == 9"
+  ],
+  "checkLabels": [
+    "Two slots with the same day and hour must be equal with ==.",
+    "Two slots on the same day and hour must clash.",
+    "Slots on different days must not clash.",
+    "Slots at different hours must not clash.",
+    "NextHour must give the same day, one hour later.",
+    "NextHour must leave the slot it was given unchanged."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-class.cs",
+      "misconception": "Keeps Slot as a class, so == compares references.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-day-only.cs",
+      "misconception": "Compares only the day when checking for a clash.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 4 failed"
+      }
+    }
+  ],
+  "feedback": "If two equal-looking slots are not equal with ==, look at how Slot is declared. Then check Clash against a slot that differs in only one value."
+}

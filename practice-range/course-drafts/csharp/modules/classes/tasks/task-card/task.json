@@ -1,0 +1,69 @@
+{
+  "id": "course:cs-foundations/task/classes-task-card",
+  "role": "independent",
+  "title": "Write a task card",
+  "concepts": [
+    "class",
+    "property",
+    "constructor",
+    "interpolation",
+    "branch"
+  ],
+  "prompt": "Complete the class TaskCard. The constructor takes a title and a number of minutes and stores them in Title and Minutes. Done starts as false, and Complete() sets it to true. Describe() returns \"Pack (30 min)\" for a card that is not done and \"Pack (done)\" for one that is.",
+  "hints": [
+    "Which members does the constructor have to fill in, and from which parameters?",
+    "Property names start with a capital letter and parameter names do not. Title = title; stores the parameter in the property.",
+    "In Describe, test Done. Return the title with \"(done)\" when it is true, and with the minutes when it is false."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "types",
+  "rules": [],
+  "support": "static TaskCard Completed(string title, int minutes)\n{\n    var card = new TaskCard(title, minutes);\n    card.Complete();\n    return card;\n}\n",
+  "checks": [
+    "new TaskCard(\"Pack\", 30).Title == \"Pack\"",
+    "new TaskCard(\"Pack\", 30).Minutes == 30",
+    "new TaskCard(\"Pack\", 30).Done == false",
+    "new TaskCard(\"Pack\", 30).Describe() == \"Pack (30 min)\"",
+    "new TaskCard(\"Sort\", 0).Describe() == \"Sort (0 min)\"",
+    "Completed(\"Pack\", 30).Done",
+    "Completed(\"Pack\", 30).Describe() == \"Pack (done)\""
+  ],
+  "checkLabels": [
+    "Title must hold the title passed to the constructor.",
+    "Minutes must hold the minutes passed to the constructor.",
+    "A new card must not be done.",
+    "A card that is not done must describe itself as \"Pack (30 min)\".",
+    "A card with 0 minutes must still show its minutes.",
+    "After Complete(), Done must be true.",
+    "A completed card must describe itself as \"Pack (done)\"."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-minutes.cs",
+      "misconception": "Forgets to store one constructor parameter.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-ignores-done.cs",
+      "misconception": "Describes a completed card the same way as an open one.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 7 failed"
+      }
+    }
+  ],
+  "feedback": "Check each member in turn: what the constructor stores, what Complete changes, and which text Describe returns for each value of Done."
+}

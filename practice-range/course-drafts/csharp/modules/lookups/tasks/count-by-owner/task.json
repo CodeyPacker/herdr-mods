@@ -1,0 +1,63 @@
+{
+  "id": "course:cs-foundations/task/lookups-count-by-owner",
+  "role": "guided",
+  "title": "Count tasks per owner",
+  "concepts": [
+    "dictionary",
+    "list",
+    "loop",
+    "branch"
+  ],
+  "prompt": "CountByOwner(List<string> owners) receives one owner name per task. It should return a dictionary with each name as a key and the number of times it appears as the value. The starter stores 1 for every name, however often it appears.",
+  "hints": [
+    "What should happen the second time the loop meets the same name?",
+    "A name that is already a key needs its old value plus 1. A new name starts at 1.",
+    "Use ContainsKey to choose between counts[owner] = counts[owner] + 1 and counts[owner] = 1."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.CountByOwner(new List<string> { \"Ana\", \"Ben\", \"Ana\" })[\"Ana\"] == 2",
+    "Practice.CountByOwner(new List<string> { \"Ana\", \"Ben\", \"Ana\" })[\"Ben\"] == 1",
+    "Practice.CountByOwner(new List<string> { \"Ana\", \"Ben\", \"Ana\" }).Count == 2",
+    "Practice.CountByOwner(new List<string>()).Count == 0",
+    "Practice.CountByOwner(new List<string> { \"Cy\", \"Cy\", \"Cy\" })[\"Cy\"] == 3"
+  ],
+  "checkLabels": [
+    "Ana appears twice, so her count must be 2.",
+    "Ben appears once, so his count must be 1.",
+    "Two different names must give two keys.",
+    "An empty list must give an empty dictionary.",
+    "A name that appears three times must have a count of 3."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-check.cs",
+      "misconception": "Reads a key before it has been added.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "KeyNotFoundException"
+      }
+    },
+    {
+      "source": "wrong-from-zero.cs",
+      "misconception": "Starts a new name at 0, so every count is one short.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Trace the dictionary by hand for the failing list. Write down the value under each key after every run of the loop."
+}

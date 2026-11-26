@@ -1,0 +1,59 @@
+{
+  "id": "course:cs-foundations/task/nulls-owner-label",
+  "role": "guided",
+  "title": "Label the owner",
+  "concepts": [
+    "nullable",
+    "null-check",
+    "null-coalescing",
+    "method"
+  ],
+  "prompt": "OwnerLabel(string? owner) should return \"Unassigned\" when owner is null, and the owner's own text otherwise. An empty string is a real owner name here, so it is returned as it is. The starter gets both the missing case and the empty case wrong.",
+  "hints": [
+    "What does owner.Length do when owner is null?",
+    "Only null means missing. An empty string must come back unchanged.",
+    "Return owner ?? \"Unassigned\"."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.OwnerLabel(null) == \"Unassigned\"",
+    "Practice.OwnerLabel(\"Ana\") == \"Ana\"",
+    "Practice.OwnerLabel(\"\") == \"\""
+  ],
+  "checkLabels": [
+    "A missing owner must give \"Unassigned\".",
+    "A named owner must be returned unchanged.",
+    "An empty owner name must be returned as it is."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-empty.cs",
+      "misconception": "Treats an empty string as a missing owner.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    },
+    {
+      "source": "wrong-blank-fallback.cs",
+      "misconception": "Replaces a missing owner with empty text instead of the label.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Check the three inputs separately: null, an empty string, and a name. Only null gets the label."
+}

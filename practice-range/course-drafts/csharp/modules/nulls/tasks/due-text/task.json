@@ -1,0 +1,63 @@
+{
+  "id": "course:cs-foundations/task/nulls-due-text",
+  "role": "independent",
+  "title": "Describe a due date",
+  "concepts": [
+    "nullable",
+    "null-check",
+    "branch",
+    "interpolation"
+  ],
+  "prompt": "Write public static string DueText(int? days). days is the number of days until a task is due. It is either null or 0 and above. Return \"no due date\" for null, \"due today\" for 0, \"due tomorrow\" for 1, and \"due in 5 days\" (with the number) for anything larger.",
+  "hints": [
+    "Which input means there is no date at all, and which means the date is today?",
+    "Test for null before you compare the number.",
+    "Return early for null, then for 0, then for 1, and build the last text with the number."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.DueText(null) == \"no due date\"",
+    "Practice.DueText(0) == \"due today\"",
+    "Practice.DueText(1) == \"due tomorrow\"",
+    "Practice.DueText(5) == \"due in 5 days\"",
+    "Practice.DueText(30) == \"due in 30 days\""
+  ],
+  "checkLabels": [
+    "A missing number must give \"no due date\".",
+    "0 days must give \"due today\".",
+    "1 day must give \"due tomorrow\".",
+    "5 days must give \"due in 5 days\".",
+    "30 days must give \"due in 30 days\"."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-zero-missing.cs",
+      "misconception": "Treats 0 days as if no date was set.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-null-today.cs",
+      "misconception": "Turns a missing date into 0, so it reads as due today.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Compare the results for null and for 0. They must be different texts, so the null test has to come before any fallback to a number."
+}

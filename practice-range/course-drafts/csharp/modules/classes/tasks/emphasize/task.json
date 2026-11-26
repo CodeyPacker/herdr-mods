@@ -1,0 +1,62 @@
+{
+  "id": "course:cs-foundations/task/classes-emphasize",
+  "role": "review",
+  "title": "Emphasize without changing the original",
+  "concepts": [
+    "class",
+    "property",
+    "constructor",
+    "method"
+  ],
+  "prompt": "Label is a class with one property, Text, that any code can change. Complete Labels.Emphasize so it returns a new Label whose text is the original text followed by \"!\". The label passed in must still have its old text afterwards, and the result must be a different object.",
+  "hints": [
+    "After Label copy = label; how many Label objects are there?",
+    "Assigning a class variable copies the reference. Only new creates another object.",
+    "Return new Label(label.Text + \"!\") and do not assign to label.Text."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "types",
+  "rules": [],
+  "support": "static string OriginalAfter(string text)\n{\n    var label = new Label(text);\n    Labels.Emphasize(label);\n    return label.Text;\n}\nstatic bool SameObject(string text)\n{\n    var label = new Label(text);\n    return ReferenceEquals(label, Labels.Emphasize(label));\n}\n",
+  "checks": [
+    "Labels.Emphasize(new Label(\"Pack\")).Text == \"Pack!\"",
+    "OriginalAfter(\"Pack\") == \"Pack\"",
+    "SameObject(\"Pack\") == false",
+    "Labels.Emphasize(new Label(\"\")).Text == \"!\""
+  ],
+  "checkLabels": [
+    "The result's text must be the original text followed by \"!\".",
+    "The label passed in must keep its old text.",
+    "The result must be a new object, not the label passed in.",
+    "An empty text must become \"!\"."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-mutate.cs",
+      "misconception": "Changes the label that was passed in and returns it.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-copy-reference.cs",
+      "misconception": "Expects assignment to copy the object.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Count the Label objects your method creates. If it never uses new, the result and the original are the same object."
+}

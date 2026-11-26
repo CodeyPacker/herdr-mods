@@ -1,0 +1,229 @@
+{
+  "id": "course:cs-foundations/module/nulls",
+  "title": "Handle a missing value",
+  "requires": [
+    "method",
+    "parameter-return",
+    "branch",
+    "comparison",
+    "text",
+    "interpolation",
+    "class",
+    "property",
+    "constructor"
+  ],
+  "outcomes": [
+    {
+      "id": "fallback",
+      "can": "Supply a fallback for a missing value with ??.",
+      "assessment": [
+        "predict-fallback",
+        "course:cs-foundations/task/nulls-owner-label"
+      ]
+    },
+    {
+      "id": "distinct",
+      "can": "Keep empty text and zero separate from a missing value.",
+      "assessment": [
+        "predict-empty",
+        "course:cs-foundations/task/nulls-due-text"
+      ]
+    },
+    {
+      "id": "numbers",
+      "can": "Say why an int cannot be null and how int? differs.",
+      "assessment": [
+        "predict-int-null"
+      ]
+    },
+    {
+      "id": "transfer",
+      "can": "Read through two levels that may each be missing.",
+      "assessment": [
+        "course:cs-foundations/task/nulls-text-length"
+      ]
+    }
+  ],
+  "intro": "Sometimes there is no value: a task with no owner, a card with no due date. C# calls that null. This module covers marking a value that may be missing, checking it before use, and supplying a fallback.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "null means no value",
+      "text": "null means a variable refers to nothing. string? owner = null; declares a string that may be missing. The ? after the type is a promise to readers and tools that null is allowed here, and editors use it to warn you when you use such a value without a check. Using a member of null, such as owner.Length, stops the program with a NullReferenceException. Test first with owner == null or owner != null. The ?? operator supplies a fallback: owner ?? \"Unassigned\" is owner when it has a value and \"Unassigned\" when it is null. The ?. operator reads a member only when there is a value. owner?.Length is null when owner is null, and no exception is thrown.",
+      "example": "owner"
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict a fallback",
+      "text": "owner is null. Predict the first two lines of output.",
+      "example": "owner",
+      "questions": [
+        "predict-fallback"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Follow the operators",
+      "text": "owner is null, so owner ?? \"Unassigned\" gives the fallback. On the next line owner?.Length is null because there is no string to measure, and ?? 0 turns that into 0. No member of null was ever used, so nothing was thrown.",
+      "example": "owner"
+    },
+    {
+      "kind": "prediction",
+      "title": "Empty is not missing",
+      "text": "blank holds a string with no characters. Predict the third line of output.",
+      "example": "owner",
+      "questions": [
+        "predict-empty"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Keep real values",
+      "text": "\"\" is a real string, so ?? leaves it alone and the comparison prints True. The same holds for numbers. An int always has a value and can never be null. int? is a different type that holds either an int or null. due.HasValue is False while due is null. After due = 0; it holds a real 0, and due ?? -1 gives 0, not the fallback. Zero and empty text are values. Only null means missing.",
+      "example": "owner"
+    },
+    {
+      "kind": "prediction",
+      "title": "Give an int no value",
+      "text": "Line 1 assigns null to a plain int. Read the example before checking.",
+      "example": "bad-null",
+      "questions": [
+        "predict-int-null"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Read the compiler error",
+      "text": "Check the example. CS0037 says null cannot be converted to int because int is a non-nullable value type. If a number can be missing, declare it as int?.",
+      "example": "bad-null"
+    },
+    {
+      "kind": "modification",
+      "title": "Label the owner",
+      "text": "The starter stops with an exception for a missing owner and gives the wrong label for an empty one. Repair it.",
+      "task": "course:cs-foundations/task/nulls-owner-label"
+    },
+    {
+      "kind": "independent",
+      "title": "Describe a due date",
+      "text": "Work from the prompt. A missing number and the number 0 mean different things here.",
+      "task": "course:cs-foundations/task/nulls-due-text"
+    }
+  ],
+  "questions": [
+    {
+      "id": "predict-fallback",
+      "example": "owner",
+      "prompt": "What are the first two lines of output?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Unassigned, 0",
+          "feedback": "owner is null, so both fallbacks are used."
+        },
+        {
+          "text": "Unassigned, then the program stops with an error",
+          "feedback": "?. reads Length only when there is a value, so nothing is thrown."
+        },
+        {
+          "text": "An empty line, 0",
+          "feedback": "null is not empty text. ?? replaces it with the fallback."
+        }
+      ]
+    },
+    {
+      "id": "predict-empty",
+      "example": "owner",
+      "prompt": "What is the third line of output?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "False",
+          "feedback": "\"\" is a real value, so ?? keeps it and the result equals \"\"."
+        },
+        {
+          "text": "True",
+          "feedback": "?? replaces only null. An empty string is kept."
+        },
+        {
+          "text": "Unassigned",
+          "feedback": "The line prints the result of a comparison, which is True or False."
+        }
+      ]
+    },
+    {
+      "id": "predict-int-null",
+      "example": "bad-null",
+      "prompt": "What happens when you check this example?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "It prints 0.",
+          "feedback": "null is not turned into 0. An int cannot be given null at all."
+        },
+        {
+          "text": "It prints an empty line.",
+          "feedback": "The file does not compile, so nothing prints."
+        },
+        {
+          "text": "The compiler reports an error on line 1.",
+          "feedback": "int always holds a number. Assigning null to it is CS0037."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "owner": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/owner.cs"
+      },
+      "stdout": [
+        "Unassigned",
+        "0",
+        "True",
+        "False",
+        "0"
+      ]
+    },
+    "bad-null": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/bad-null.cs"
+      },
+      "diagnostics": [
+        {
+          "code": 37,
+          "line": 1
+        }
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:cs-foundations/task/nulls-owner-label",
+      "path": "tasks/owner-label/task.json"
+    },
+    {
+      "id": "course:cs-foundations/task/nulls-due-text",
+      "path": "tasks/due-text/task.json"
+    },
+    {
+      "id": "course:cs-foundations/task/nulls-text-length",
+      "path": "tasks/text-length/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:cs-foundations/task/nulls-text-length",
+    "afterModule": "course:cs-foundations/module/interfaces",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [
+    "operators/coalesce",
+    "operators/null-conditional",
+    "conditionals/null",
+    "conditionals/not-null",
+    "variables/nullable"
+  ],
+  "drillGap": "These drills practise one operator each. They do not separate null from empty text and zero."
+}

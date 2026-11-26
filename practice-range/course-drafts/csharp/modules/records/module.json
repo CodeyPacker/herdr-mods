@@ -1,0 +1,232 @@
+{
+  "id": "course:cs-foundations/module/records",
+  "title": "Records, structs and copies",
+  "requires": [
+    "class",
+    "property",
+    "constructor",
+    "method",
+    "list",
+    "loop",
+    "comparison"
+  ],
+  "outcomes": [
+    {
+      "id": "copy",
+      "can": "Make a changed copy of a record and predict what the original holds.",
+      "assessment": [
+        "predict-with",
+        "course:cs-foundations/task/records-rename"
+      ]
+    },
+    {
+      "id": "equality",
+      "can": "Predict == for records, structs and classes.",
+      "assessment": [
+        "predict-equal",
+        "course:cs-foundations/task/records-slot"
+      ]
+    },
+    {
+      "id": "immutable",
+      "can": "Read the error from assigning to a record's property.",
+      "assessment": [
+        "predict-init"
+      ]
+    },
+    {
+      "id": "transfer",
+      "can": "Return a new list of changed records and leave the input list unchanged.",
+      "assessment": [
+        "course:cs-foundations/task/records-complete-all"
+      ]
+    }
+  ],
+  "intro": "Some types exist to carry data. This module covers records, which compare by value and are copied with with, and structs, which are copied on every assignment. It also shows how both differ from a class.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "A record carries data",
+      "text": "record Job(string Title, int Minutes); declares a record in one line. It has a constructor with those two parameters and a property for each. The properties can be set only when the record is created. To change something you make a copy: first with { Minutes = 45 } is a new Job with the same Title and a different Minutes. Two records are equal with == when all their values are equal. Printing a record shows its type name and values.",
+      "example": "copies"
+    },
+    {
+      "kind": "prediction",
+      "title": "Copy with a change",
+      "text": "second is made from first with one value changed. Predict the first line of output.",
+      "example": "copies",
+      "questions": [
+        "predict-with"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Follow the copy",
+      "text": "with created a second Job and left first alone, so first.Minutes is still 30. The second line shows the copy: the same Title and the new Minutes. Nothing can change a Job after it is created, so code that holds one can rely on it.",
+      "example": "copies"
+    },
+    {
+      "kind": "explanation",
+      "title": "Value or reference",
+      "text": "A struct is a value type, like int. Assigning it copies the whole value, so Size b = a; gives b its own Width. A class is a reference type: assignment copies the reference and both names refer to one object. For == the rule also depends on the type. Records compare their values. Classes compare references, so two separate objects are not equal even when they hold the same data.",
+      "example": "copies"
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict three comparisons",
+      "text": "Predict the last three lines of output.",
+      "example": "copies",
+      "questions": [
+        "predict-equal"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Check each type",
+      "text": "first == new Job(\"Pack\", 30) is True because records compare values. a.Width is 2 because b is a separate copy, so setting b.Width to 9 changed only b. boxA == boxB is False because they are two different objects, and a class compares references.",
+      "example": "copies"
+    },
+    {
+      "kind": "prediction",
+      "title": "Assign to a record's property",
+      "text": "Line 2 tries to change a record after it was created. Read the example before checking.",
+      "example": "bad-init",
+      "questions": [
+        "predict-init"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Read the compiler error",
+      "text": "Check the example. CS8852 says an init-only property can be assigned only while the object is being created. Write first with { Minutes = 45 } and use the copy it produces.",
+      "example": "bad-init"
+    },
+    {
+      "kind": "modification",
+      "title": "Rename a task",
+      "text": "The case box supplies the record type. The starter returns the task unchanged.",
+      "task": "course:cs-foundations/task/records-rename"
+    },
+    {
+      "kind": "independent",
+      "title": "Model a time slot",
+      "text": "Work from the prompt. Whether two slots count as equal depends on what kind of type Slot is.",
+      "task": "course:cs-foundations/task/records-slot"
+    }
+  ],
+  "questions": [
+    {
+      "id": "predict-with",
+      "example": "copies",
+      "prompt": "What is the first line of output?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "30",
+          "feedback": "with makes a new record. first keeps its own Minutes."
+        },
+        {
+          "text": "45",
+          "feedback": "The change went into the copy, second. first was not touched."
+        },
+        {
+          "text": "The program stops with an error",
+          "feedback": "with is allowed on records. It never changes the original."
+        }
+      ]
+    },
+    {
+      "id": "predict-equal",
+      "example": "copies",
+      "prompt": "What are the last three lines of output?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "True, 9, False",
+          "feedback": "Size is a struct, so b is a separate copy. Changing b leaves a.Width at 2."
+        },
+        {
+          "text": "False, 2, False",
+          "feedback": "Records compare by value, and both have Pack and 30."
+        },
+        {
+          "text": "True, 2, False",
+          "feedback": "Records compare values, the struct was copied, and the two Box objects are different objects."
+        }
+      ]
+    },
+    {
+      "id": "predict-init",
+      "example": "bad-init",
+      "prompt": "What happens when you check this example?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "It prints 45.",
+          "feedback": "A record's properties cannot be assigned after it is created."
+        },
+        {
+          "text": "The compiler reports an error on line 2.",
+          "feedback": "Minutes is init-only, so it can be set only during creation (CS8852)."
+        },
+        {
+          "text": "It prints 30, because the assignment is ignored.",
+          "feedback": "The assignment is a compile error, so nothing runs."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "copies": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/copies.cs"
+      },
+      "stdout": [
+        "30",
+        "Job { Title = Pack, Minutes = 45 }",
+        "True",
+        "2",
+        "False"
+      ]
+    },
+    "bad-init": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/bad-init.cs"
+      },
+      "diagnostics": [
+        {
+          "code": 8852,
+          "line": 2
+        }
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:cs-foundations/task/records-rename",
+      "path": "tasks/rename/task.json"
+    },
+    {
+      "id": "course:cs-foundations/task/records-slot",
+      "path": "tasks/slot/task.json"
+    },
+    {
+      "id": "course:cs-foundations/task/records-complete-all",
+      "path": "tasks/complete-all/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:cs-foundations/task/records-complete-all",
+    "afterModule": "course:cs-foundations/module/linq",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [
+    "classes/record",
+    "classes/struct",
+    "constructors/with",
+    "operators/equal"
+  ],
+  "drillGap": "These drills practise one declaration each. They do not compare the behavior of records, structs and classes."
+}

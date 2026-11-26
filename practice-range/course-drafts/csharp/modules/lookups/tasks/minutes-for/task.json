@@ -1,0 +1,62 @@
+{
+  "id": "course:cs-foundations/task/lookups-minutes-for",
+  "role": "independent",
+  "title": "Look up a task's minutes",
+  "concepts": [
+    "dictionary",
+    "branch",
+    "method"
+  ],
+  "prompt": "Write public static int MinutesFor(Dictionary<string, int> minutes, string title). Return the value stored under title. When the dictionary has no such key, return -1. A stored value of 0 is a real value and must be returned as 0.",
+  "hints": [
+    "What happens when you read a key that is not in the dictionary?",
+    "Find out whether the key exists before deciding what to return.",
+    "Use TryGetValue. Return the value it found when it returns true, and -1 when it returns false."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.MinutesFor(Sample.Minutes(), \"Pack\") == 30",
+    "Practice.MinutesFor(Sample.Minutes(), \"Rest\") == 0",
+    "Practice.MinutesFor(Sample.Minutes(), \"Label\") == -1",
+    "Practice.MinutesFor(Sample.Minutes(), \"\") == -1",
+    "Practice.MinutesFor(new Dictionary<string, int>(), \"Pack\") == -1"
+  ],
+  "checkLabels": [
+    "Pack is stored with 30.",
+    "Rest is stored with 0, which is a real value.",
+    "Label is not a key, so the result must be -1.",
+    "An empty title is not a key, so the result must be -1.",
+    "An empty dictionary has no keys, so the result must be -1."
+  ],
+  "fixtures": [
+    {
+      "id": "sample",
+      "declarations": "fixture-sample.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-direct.cs",
+      "misconception": "Reads the key without checking that it exists.",
+      "witness": {
+        "fixture": "sample",
+        "kind": "result",
+        "detail": "KeyNotFoundException"
+      }
+    },
+    {
+      "source": "wrong-zero-missing.cs",
+      "misconception": "Treats a stored 0 as a missing key.",
+      "witness": {
+        "fixture": "sample",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Compare a key that is stored with 0 and a key that is not stored at all. Only the second one gives -1."
+}

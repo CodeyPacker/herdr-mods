@@ -1,0 +1,62 @@
+{
+  "id": "course:cs-foundations/task/nulls-text-length",
+  "role": "review",
+  "title": "Measure a note",
+  "concepts": [
+    "nullable",
+    "null-check",
+    "null-coalescing",
+    "class",
+    "property"
+  ],
+  "prompt": "Note is supplied. Its Text may be null. Write public static int TextLength(Note? note). Return the number of characters in the note's text. Return 0 when note is null, and 0 when its Text is null.",
+  "hints": [
+    "How many different things can be missing here?",
+    "Both the note and its Text need a check before Length is read.",
+    "Use ?. at each step that may be null and ?? 0 at the end, or test both with if before reading Length."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.TextLength(new Note(\"Pack\")) == 4",
+    "Practice.TextLength(null) == 0",
+    "Practice.TextLength(new Note(null)) == 0",
+    "Practice.TextLength(new Note(\"\")) == 0"
+  ],
+  "checkLabels": [
+    "A note with the text Pack must give 4.",
+    "A missing note must give 0.",
+    "A note with missing text must give 0.",
+    "A note with empty text must give 0."
+  ],
+  "fixtures": [
+    {
+      "id": "notes",
+      "declarations": "fixture-notes.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-note-only.cs",
+      "misconception": "Checks the note but not its text.",
+      "witness": {
+        "fixture": "notes",
+        "kind": "result",
+        "detail": "NullReferenceException"
+      }
+    },
+    {
+      "source": "wrong-text-only.cs",
+      "misconception": "Checks the text but not the note itself.",
+      "witness": {
+        "fixture": "notes",
+        "kind": "result",
+        "detail": "NullReferenceException"
+      }
+    }
+  ],
+  "feedback": "A NullReferenceException means a member was read on null. Find which of the two values was missing in the failing case."
+}

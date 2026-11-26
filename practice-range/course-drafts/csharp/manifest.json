@@ -224,7 +224,11 @@
         "property",
         "constructor"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/classes/module.json"
+      }
     },
     {
       "id": "course:cs-foundations/module/records",
@@ -238,7 +242,11 @@
         "value-reference",
         "equality"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/records/module.json"
+      }
     },
     {
       "id": "course:cs-foundations/module/nulls",
@@ -252,7 +260,11 @@
         "null-check",
         "null-coalescing"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/nulls/module.json"
+      }
     },
     {
       "id": "course:cs-foundations/module/lookups",
@@ -265,7 +277,11 @@
         "dictionary",
         "set"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/lookups/module.json"
+      }
     },
     {
       "id": "course:cs-foundations/module/linq",

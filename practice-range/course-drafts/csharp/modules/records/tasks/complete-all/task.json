@@ -1,0 +1,60 @@
+{
+  "id": "course:cs-foundations/task/records-complete-all",
+  "role": "review",
+  "title": "Complete every task",
+  "concepts": [
+    "record",
+    "value-reference",
+    "list",
+    "loop"
+  ],
+  "prompt": "TaskItem is supplied. Write public static List<TaskItem> CompleteAll(List<TaskItem> tasks). Return a new list holding a done copy of every task, in the same order. The list passed in must not change: it keeps the same items, and they are still not done.",
+  "hints": [
+    "A List is a class. If you change the list you were given, who else sees the change?",
+    "Create a new list for the result, and add a changed copy of each task to it.",
+    "Loop over tasks and Add task with { Done = true } to a new List<TaskItem>. Return the new list."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "support": "static bool InputUnchanged()\n{\n    var tasks = new List<TaskItem> { new TaskItem(1, \"Pack\", false) };\n    Practice.CompleteAll(tasks);\n    return tasks.Count == 1 && tasks[0] == new TaskItem(1, \"Pack\", false);\n}\n",
+  "checks": [
+    "Practice.CompleteAll(new List<TaskItem> { new TaskItem(1, \"Pack\", false), new TaskItem(2, \"Ship\", true) }).SequenceEqual(new List<TaskItem> { new TaskItem(1, \"Pack\", true), new TaskItem(2, \"Ship\", true) })",
+    "Practice.CompleteAll(new List<TaskItem>()).Count == 0",
+    "InputUnchanged()"
+  ],
+  "checkLabels": [
+    "Every task in the result must be done, in the original order.",
+    "An empty list must give an empty list.",
+    "The list passed in must keep its original, not-done task."
+  ],
+  "fixtures": [
+    {
+      "id": "tasks",
+      "declarations": "fixture-tasks.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-in-place.cs",
+      "misconception": "Replaces the items inside the list that was passed in.",
+      "witness": {
+        "fixture": "tasks",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    },
+    {
+      "source": "wrong-copy-only.cs",
+      "misconception": "Copies the list but never completes the tasks.",
+      "witness": {
+        "fixture": "tasks",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Check two things separately: what the returned list holds, and what the list you were given holds afterwards."
+}
