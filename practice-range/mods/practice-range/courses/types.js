@@ -20,6 +20,7 @@
  *   activeTask: string | null, review?: {ids: string[], index: number}, modules: Record<string, { seen: number[], skipped?: boolean, questions: Record<string, QuestionProgress>, examples?: Record<string, CourseResult> }>,
  *   tasks: Record<string, TaskProgress> }, file: string | null, folder: string | null, sourceHash: string | null,
  *   stale: boolean, pendingSave?: boolean, reviewReady: number,
+ *   attachment?: {name?: string, commit?: string, available: boolean, detail?: string},
  *   recommendation: {kind: string, reason: string, moduleId?: string, taskId?: string, step?: number} }} CourseSnapshot
  */
 export {};

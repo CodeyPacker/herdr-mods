@@ -16,6 +16,8 @@ Implement the approved scope in `LEARNING_SCOPE.md`. Practice Range is the desti
 
 | I8 | Immutable content versions, retained prior packs, pinned enrollment selection, and separate starts for newer versions. | `tests/course-version.test.mjs` rejects same-version content edits and verifies retained content and preserved enrollment data. |
 
+| I9 | Optional local repo attachment for bounded, pinned source excerpts in course questions. Missing or damaged attachments fall back to bundled material. | `tests/course-repo.test.mjs` preserves dirty files, verifies pinned content and Unicode paths, bounds excerpts, and checks missing/corrupt attachments. |
+
 The course remains a preview. Compiler correctness and native materialization do not establish teaching effectiveness or verify layout and paint.
 
 ## Phase status and next work
@@ -27,7 +29,7 @@ The course remains a preview. Compiler correctness and native materialization do
 | P2 | Loader, pinned enrollment, retained pack versions, shared checker adapter and native lesson flow implemented. | Keep archived packs in releases when rebuilding to a new content version. |
 | P3 | All 18 modules and the final project execute through the real checker. | Expose intermediate standalone project checkpoints, finish experienced-learner readiness assessments, and review pacing with learners. |
 | P4 | Core course UI, linked practice, optional AI and shared editor opening implemented. | Add course activation to language setup, known-language preferences/comparisons, compatible progress migration between pack versions, and verify real editor flows with a learner. |
-| P5 | Not implemented. | Repo supplements and architecture teaching, existing Tutor course import, settings migration, and repeated/interrupted import recovery. Do not retire Tutor yet. |
+| P5 | Optional pinned repo context for course questions implemented. | Generated repo supplements and architecture teaching, existing Tutor course import, settings migration, and repeated/interrupted import recovery. Do not retire Tutor yet. |
 | P6 | Course review and deterministic recommendations implemented. | Combine drill/course evidence and review entry points, add optional validated generated exercises, and test content-version transitions. |
 | P7 | Not started. | Learner pilot and corrections, then C# and SQL course packs. Their existing direct practice remains supported. |
 | P8 | Not started. | Final release checks, install/migration documentation, compatibility launch transition, and release. No source mod removal in the first release. |
@@ -36,9 +38,9 @@ The course remains a preview. Compiler correctness and native materialization do
 
 The full Practice Range Node suite ran with concurrency 3. It passed 94 of 96 tests, including the existing language reference-answer checks. The two editor tests failed under the sandbox's local-socket restrictions. Both editor files then passed all four tests outside the sandbox with `TMPDIR=/private/tmp`, avoiding macOS `/var` versus `/private/var` alias assertions.
 
-All original native panel states passed across the full run and targeted reruns. Some attempts were interrupted while loading the large SQL catalog. The native harness now accepts state names so only unresolved states need repeating. The expanded course harness passed all fourteen fixtures across full and targeted checks, including project, review and optional AI states. Native checks require access to macOS window services, which the sandbox denies even for an empty panel.
+All original native panel states passed across the full run and targeted reruns. Some attempts were interrupted while loading the large SQL catalog. The native harness now accepts state names so only unresolved states need repeating. The expanded course harness passed all sixteen fixtures across full and targeted checks, including project, review and optional AI states. Native checks require access to macOS window services, which the sandbox denies even for an empty panel.
 
-The mod type check still reports four pre-existing errors in `kit/open-as.js` at the two `shared(backKey(mod))` call sites. The same errors were reproduced using the pre-project main file in an isolated copy. Do not widen this project into a shared-kit cleanup.
+The latest focused run passed 32 course, provider, and sync tests. The mod type check still reports four pre-existing errors in `kit/open-as.js` at the two `shared(backKey(mod))` call sites. The same errors were reproduced using the pre-project main file in an isolated copy. Do not widen this project into a shared-kit cleanup.
 
 Tutor's baseline suite passed 14 of 18 tests. Its four TypeScript runner tests report that Tutor's own compiler dependency is absent. Tutor code and dependencies have not been changed to hide this baseline limitation.
 

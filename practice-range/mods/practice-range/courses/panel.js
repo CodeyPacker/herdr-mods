@@ -1,7 +1,7 @@
 import { div } from "gpui-kit";
-import { v_flex, h_flex, TextView } from "gpui-base";
+import { v_flex, h_flex, TextView, InputState } from "gpui-base";
 import { watchFolder, window as appWindow } from "herdr";
-import { keyButton, spinner } from "../kit/controls.js";
+import { keyButton, spinner, textInput } from "../kit/controls.js";
 import { banner, paneBar, sectionLabel } from "../kit/pane.js";
 import { courseCommand } from "./bridge.js";
 import { tutorChat } from "../tutor/panel.js";
@@ -30,6 +30,11 @@ export class CoursePanel {
     /** @type {import("herdr").FolderWatch | null} */
     this.watch = null;
     this.confirmReset = false;
+    this.repoInput = InputState.new({ placeholder: "Local git repo folder…" });
+    this.repoInput.on("focus", () => { this.host.typing = true; });
+    this.repoInput.on("blur", () => { this.host.typing = false; });
+    this.repoInput.on("change", (_event, cx) => cx.notify());
+    this.repoInput.on("submit", (_event, cx) => this.run("attach-repo", { path: this.repoInput.value() }, cx));
   }
 
   /** @param {Context} cx */
@@ -55,7 +60,7 @@ export class CoursePanel {
   /** @param {string} action @param {Record<string, unknown>} value @param {Context} cx */
   async dispatch(action, value, cx) {
     if (this.busy) return;
-    if (["list", "enroll", "open", "task", "review-start", "review-next", "review-end"].includes(action)) this.host.cancelTutor(cx);
+    if (["list", "enroll", "open", "task", "review-start", "review-next", "review-end", "attach-repo", "detach-repo"].includes(action)) this.host.cancelTutor(cx);
     this.busy = ["check", "check-saved"].includes(action) ? "Checking every case…" : "Loading course…";
     this.error = ""; cx.notify();
     try {
@@ -222,6 +227,14 @@ export class CoursePanel {
   /** @param {import("gpui-kit").Element} body @param {Theme} t */
   modules(body, t) {
     const position = this.data.enrollment.position;
+    const repo = this.data.attachment;
+    body.child(sectionLabel(t, "Optional repo examples"));
+    if (repo) body.child(div().text_color(t.muted).child(repo.available ? `${repo.name} · pinned at ${repo.commit.slice(0, 10)}` : repo.detail));
+    body.child(div().text_size(12).text_color(t.muted).child("Attach a repo in this language to include code excerpts in AI questions. The standard lessons stay available."))
+      .child(textInput(t, this.repoInput, this.host.typing))
+      .child(h_flex().gap(8).flex_wrap()
+        .child(keyButton(t, "course-attach-repo", "", "Attach repo", !this.busy && Boolean(this.repoInput.value().trim()), cx => this.run("attach-repo", { path: this.repoInput.value() }, cx)))
+        .child(keyButton(t, "course-detach-repo", "", "Detach", !this.busy && Boolean(repo), cx => this.run("detach-repo", {}, cx))));
     const next = this.data.recommendation;
     if (next) body.child(v_flex().gap(6).child(div().text_color(t.muted).child(next.reason))
       .child(keyButton(t, "course-recommendation", "", "Suggested next step", !this.busy && next.kind !== "practice", cx => {

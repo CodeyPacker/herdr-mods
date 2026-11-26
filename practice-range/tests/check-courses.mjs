@@ -23,8 +23,12 @@ try {
   const project = await request("task", { taskId: `${courseId}/task/report-audit` });
   const review = structuredClone(task);
   review.enrollment.review = { ids: [taskId], index: 0 };
+  const attached = structuredClone(modules);
+  attached.attachment = { name: "example-project", commit: "a".repeat(40), available: true };
+  const missing = structuredClone(modules);
+  missing.attachment = { name: "example-project", commit: "a".repeat(40), available: false, detail: "The repo is unavailable. Bundled lessons still work." };
   const cases = { catalog: ["catalog", null], versions: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules], "example-output": ["lesson", example],
-    prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], review: ["task", review], "ai-lesson": ["lesson", modules], "ai-task": ["task", task], error: ["task", task] };
+    prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], review: ["task", review], "ai-lesson": ["lesson", modules], "ai-task": ["task", task], attached: ["modules", attached], "repo-missing": ["modules", missing], error: ["task", task] };
   const requested = process.argv.slice(2);
   for (const name of requested) if (!Object.hasOwn(cases, name)) throw new Error(`Unknown course fixture: ${name}`);
   for (const [name, [page, data]] of Object.entries(cases).filter(([name]) => !requested.length || requested.includes(name))) {

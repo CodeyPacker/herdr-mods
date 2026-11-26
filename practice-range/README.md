@@ -8,6 +8,10 @@ Choose a language and topic, write a short exercise, save, and check it. Each la
 SQL runs on real PostgreSQL, from SELECT and joins to window functions, recursive CTEs, JSON, and MERGE.
 Each hint adds a little more help. Another exercise stays in the same topic until you choose to switch.
 
+Courses are available from **Courses** in the header. The bundled TypeScript preview has 18 modules and 56 tasks, including runnable examples and a two-file final project. Lessons need no repo or AI connection. Coding checks use the language pack’s compiler. Reading position, answers, hints, and review progress are saved separately from direct practice. Course updates preserve older enrollments and their content.
+
+You can optionally attach a local repo from the course’s module list. Course questions can use bounded code excerpts from its pinned commit when AI help is enabled. The repo is never edited, and its local path does not sync. Tutor course import and C# and SQL course packs are still in development.
+
 ```sh
 herdr-app do tab.new '{"name":"Practice Range","mod":"practice-range","props":{"practiceTab":true}}'
 ```

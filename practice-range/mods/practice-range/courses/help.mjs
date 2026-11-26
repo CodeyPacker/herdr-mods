@@ -1,7 +1,8 @@
 // Only current lesson material and the saved answer enter a question. Trusted checks stay local.
 import { stat, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { courseCommand } from "./service.mjs";
+import { courseCommand, enrollmentDirectory } from "./service.mjs";
+import { repositoryContext } from "./repo.mjs";
 
 export async function askCourseTutor(root, configPath, request, options = {}) {
   const { askTutor } = await import("../tutor/service.mjs");
@@ -23,6 +24,7 @@ export async function courseTutorContext(root, request) {
   const context = { language: state.course.languageId, course: state.course.title, entryPath: state.enrollment.entryPath,
     lesson: { title: lesson.title, step: step.title, explanation: step.text },
     examples: [...(step.examples ?? []), ...(step.example ? [step.example] : [])].map(id => lesson.examples[id]),
+    repository: await repositoryContext(enrollmentDirectory(root, state.course)),
     conversation: messages, question: request.question.trim() };
   if (request.taskId) {
     if (state.enrollment.activeTask !== request.taskId) throw new Error("The exercise changed. Ask again from the current exercise.");

@@ -8,6 +8,7 @@ import { loadCourse, listCourses, lessonFor, taskFor } from "./loader.mjs";
 import { findLanguage } from "../languages/index.js";
 import { loadLanguageRunner } from "../languages/runner.mjs";
 import { courseReview, nextCourseAction } from "./review.js";
+import { attachRepo, detachRepo, repoStatus } from "./repo.mjs";
 
 const hash = source => createHash("sha256").update(typeof source === "string" ? source : JSON.stringify(source)).digest("hex");
 export const enrollmentDirectory = (root, pack) => join(root, "courses", encodeURIComponent(pack.id), pack.contentVersion);
@@ -163,7 +164,10 @@ export async function courseCommand(root, action, request = {}) {
     validateState(state, pack);
     const persist = async () => { await save(file, state); };
     if (action === "enroll") { await persist(); await save(preferred, { courseId: pack.id, contentVersion: pack.contentVersion }); }
-    else if (["review-start", "review-next", "review-end"].includes(action)) {
+    else if (action === "attach-repo" || action === "detach-repo") {
+      if (action === "attach-repo") await attachRepo(directory, pack.languageId, request.path);
+      else await detachRepo(directory);
+    } else if (["review-start", "review-next", "review-end"].includes(action)) {
       if (action === "review-start" && !state.review) {
         const ids = courseReview(pack, state, Date.now()).ids;
         if (!ids.length) throw new Error("No course exercises are due for review yet.");
@@ -294,6 +298,7 @@ async function snapshot(pack, state, directory) {
     preview: pack.preview === true, modules: pack.modules, lessons },
     enrollment: state.review && active ? { ...state, tasks: { ...state.tasks, [active.id]: progress } } : state,
     reviewReady: courseReview(pack, state, Date.now()).ids.length, recommendation: nextCourseAction(pack, state, Date.now()),
+    attachment: await repoStatus(directory),
     file, folder: file ? dirname(file) : null, sourceHash,
     stale: Boolean(progress?.result && progress.result.sourceHash !== sourceHash) };
 }
