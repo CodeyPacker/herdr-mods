@@ -1,0 +1,71 @@
+{
+  "id": "course:cs-foundations/task/patterns-repair-caption",
+  "role": "debug",
+  "title": "Repair the caption",
+  "concepts": [
+    "switch-expression",
+    "type-pattern",
+    "property-pattern"
+  ],
+  "prompt": "Entry and its record types are supplied. Caption should return \"Pack (15 min)\" for a Ready entry, \"Pack (no estimate)\" for a Ready entry with 0 minutes, \"Ship blocked: no label\" for a Blocked entry, and only the title for any other entry. The starter does not compile, and it is missing one case. Read the compiler error, then repair the method.",
+  "hints": [
+    "The error names an arm that can never run. Which arm above it already matches everything?",
+    "Move the _ arm to the bottom. Then decide where a Ready entry with 0 minutes must be handled.",
+    "Put Ready { Minutes: 0 } r above Ready r, and keep _ => entry.Title as the last arm."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.Caption(new Ready(\"Pack\", 15)) == \"Pack (15 min)\"",
+    "Practice.Caption(new Ready(\"Pack\", 0)) == \"Pack (no estimate)\"",
+    "Practice.Caption(new Blocked(\"Ship\", \"no label\")) == \"Ship blocked: no label\"",
+    "Practice.Caption(new Blocked(\"Ship\", \"\")) == \"Ship blocked: \"",
+    "Practice.Caption(new Note(\"Memo\")) == \"Memo\""
+  ],
+  "checkLabels": [
+    "A Ready entry must show its title and minutes, as in \"Pack (15 min)\".",
+    "A Ready entry with 0 minutes must show \"(no estimate)\" after its title.",
+    "A Blocked entry must show its title, then \" blocked: \", then its reason.",
+    "A Blocked entry with an empty reason must still end with \" blocked: \".",
+    "Any other entry must return only its title."
+  ],
+  "fixtures": [
+    {
+      "id": "entries",
+      "declarations": "fixture-entries.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-zero.cs",
+      "misconception": "Fixes the arm order but never handles 0 minutes.",
+      "witness": {
+        "fixture": "entries",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-no-discard.cs",
+      "misconception": "Deletes the discard arm to silence the error, so other entries match nothing.",
+      "witness": {
+        "fixture": "entries",
+        "kind": "result",
+        "detail": "SwitchExpressionException"
+      }
+    },
+    {
+      "source": "wrong-zero-late.cs",
+      "misconception": "Puts the 0-minute arm below the general Ready arm.",
+      "witness": {
+        "fixture": "entries",
+        "kind": "compile",
+        "detail": "CS8510"
+      }
+    }
+  ],
+  "feedback": "Read your arms from the top for the failing entry. A specific arm must sit above the general arm that also matches it, and the _ arm must stay last."
+}

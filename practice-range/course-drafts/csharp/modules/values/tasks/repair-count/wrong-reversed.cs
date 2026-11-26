@@ -1,0 +1,1 @@
+int remaining = done - opening;

@@ -1,0 +1,1 @@
+double share = 0;

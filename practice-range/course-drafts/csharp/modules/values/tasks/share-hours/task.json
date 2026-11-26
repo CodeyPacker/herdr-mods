@@ -1,0 +1,63 @@
+{
+  "id": "course:cs-foundations/task/values-share-hours",
+  "role": "independent",
+  "title": "Split the hours evenly",
+  "concepts": [
+    "number-types",
+    "variable"
+  ],
+  "prompt": "hours is a supplied whole number of hours. people is a supplied whole number of people, at least 1. Declare a double named share that holds the hours split evenly between the people, keeping any fraction. With 7 hours and 2 people, share is 3.5.",
+  "hints": [
+    "What does / give when both sides are int?",
+    "One side of the division must be a double before the division happens.",
+    "Store hours in a double variable first, or write (double)hours, then divide by people."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "statements",
+  "rules": [],
+  "checks": [
+    "share == (double)hours / people",
+    "((object)share) is double"
+  ],
+  "checkLabels": [
+    "share must be hours divided by people, with the fraction kept.",
+    "share must be a double."
+  ],
+  "fixtures": [
+    {
+      "id": "odd",
+      "declarations": "fixture-odd.cs"
+    },
+    {
+      "id": "even",
+      "declarations": "fixture-even.cs"
+    },
+    {
+      "id": "small",
+      "declarations": "fixture-small.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-int-division.cs",
+      "misconception": "Expects a double variable to make the division fractional.",
+      "witness": {
+        "fixture": "odd",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-late-cast.cs",
+      "misconception": "Converts to double after the whole-number division has already dropped the fraction.",
+      "witness": {
+        "fixture": "odd",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Work the case with 7 hours and 2 people by hand. If your answer gives 3, the division happened between two ints."
+}

@@ -1,0 +1,64 @@
+{
+  "id": "course:cs-foundations/task/patterns-apply-edit",
+  "role": "independent",
+  "title": "Apply a counter edit",
+  "concepts": [
+    "type-pattern",
+    "switch-expression",
+    "record"
+  ],
+  "prompt": "Edit and its record types are supplied. Write public static int Next(int count, Edit edit). An Add edit returns count plus its Amount. A Set edit returns its Value. A Keep edit returns count unchanged. Zero and negative numbers are valid everywhere.",
+  "hints": [
+    "Say in words what each edit type does to the count.",
+    "Add needs the old count and its Amount. Set needs only its Value.",
+    "Write one arm per type: Add a => ..., Set s => ..., and _ => count for Keep."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.Next(7, new Keep()) == 7",
+    "Practice.Next(4, new Add(-3)) == 1",
+    "Practice.Next(9, new Set(0)) == 0",
+    "Practice.Next(-5, new Add(0)) == -5",
+    "Practice.Next(11, new Set(-2)) == -2",
+    "Practice.Next(-2, new Add(8)) == 6"
+  ],
+  "checkLabels": [
+    "Keep must return the count unchanged.",
+    "Add with a negative amount must lower the count: 4 and -3 give 1.",
+    "Set to 0 must return 0.",
+    "Add with an amount of 0 must return the count unchanged.",
+    "Set to a negative value must return that value.",
+    "Add must start from the old count: -2 and 8 give 6."
+  ],
+  "fixtures": [
+    {
+      "id": "edits",
+      "declarations": "fixture-edits.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-replace.cs",
+      "misconception": "Returns the amount of an Add as the new total.",
+      "witness": {
+        "fixture": "edits",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-missing-set.cs",
+      "misconception": "Leaves out the Set arm, so the discard keeps the old count.",
+      "witness": {
+        "fixture": "edits",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "Use the failing case to decide whether that edit adds to the count, replaces it, or leaves it alone."
+}

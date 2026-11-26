@@ -1,0 +1,82 @@
+{
+  "id": "course:cs-foundations/task/values-seat-snapshot",
+  "role": "review",
+  "title": "Report free seats",
+  "concepts": [
+    "var-inference",
+    "variable",
+    "number-types",
+    "interpolation"
+  ],
+  "prompt": "seats is the number of seats in a room and booked is how many are taken. Both are supplied whole numbers, and at least one seat is free. Declare free with var as the number of free seats, and print it in the form \"7 free\". Then one more seat is booked: update free and print it again in the same form. With 12 seats and 5 booked, the output is 7 free then 6 free.",
+  "hints": [
+    "How many lines must print, and what has changed between them?",
+    "Work out the free seats once, print, then store a new value in the same variable before printing again.",
+    "Start with var free = seats - booked; and print $\"{free} free\". Subtract 1 from free, then print the same text again."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "statements",
+  "captureOutput": true,
+  "rules": [
+    {
+      "kind": "VariableDeclarator",
+      "name": "free",
+      "type": "var",
+      "message": "Declare free with var so the compiler infers its type."
+    }
+  ],
+  "checks": [
+    "__Output() == $\"{seats - booked} free\\n{seats - booked - 1} free\"",
+    "free == seats - booked - 1"
+  ],
+  "checkLabels": [
+    "The output must be the free seats before the new booking, then after it, each followed by the word free.",
+    "free must end as the seats left after one more booking."
+  ],
+  "fixtures": [
+    {
+      "id": "workshop",
+      "declarations": "fixture-workshop.cs"
+    },
+    {
+      "id": "sold",
+      "declarations": "fixture-sold.cs"
+    },
+    {
+      "id": "quiet",
+      "declarations": "fixture-quiet.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-both.cs",
+      "misconception": "Updates the count before the first line prints.",
+      "witness": {
+        "fixture": "workshop",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-typed.cs",
+      "misconception": "Writes the type where the task asks for inference.",
+      "witness": {
+        "fixture": "workshop",
+        "kind": "syntax",
+        "detail": "Declare free with var"
+      }
+    },
+    {
+      "source": "wrong-booked.cs",
+      "misconception": "Reports the booked seats as the free seats.",
+      "witness": {
+        "fixture": "sold",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Compare your two printed lines with the example in the prompt. The first line shows the count before the new booking and the second shows it after."
+}

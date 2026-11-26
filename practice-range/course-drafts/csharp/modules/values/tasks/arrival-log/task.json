@@ -1,0 +1,64 @@
+{
+  "id": "course:cs-foundations/task/values-arrival-log",
+  "role": "guided",
+  "title": "Show a delivery arriving",
+  "concepts": [
+    "variable",
+    "number-types"
+  ],
+  "prompt": "opening is how many tasks were open and arrivals is how many just came in. Both are supplied whole numbers. The starter prints the opening count, then an out-of-date total. Give total its new value between the two print lines. With 6 open and 2 arriving, the output is 6 then 8, one number per line.",
+  "hints": [
+    "Read the print lines from top to bottom. Which one should see the new value?",
+    "An assignment works out its right side first, then stores the result in the name on the left.",
+    "Between the prints, add arrivals to the current total and store the result back in total."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "statements",
+  "captureOutput": true,
+  "rules": [],
+  "checks": [
+    "__Output() == $\"{opening}\\n{opening + arrivals}\"",
+    "total == opening + arrivals"
+  ],
+  "checkLabels": [
+    "The output must be the opening count, then the count after the arrivals, on two lines.",
+    "total must end as opening plus arrivals."
+  ],
+  "fixtures": [
+    {
+      "id": "morning",
+      "declarations": "fixture-morning.cs"
+    },
+    {
+      "id": "empty",
+      "declarations": "fixture-empty.cs"
+    },
+    {
+      "id": "busy",
+      "declarations": "fixture-busy.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-replace.cs",
+      "misconception": "Replaces the total with the arrivals instead of adding them.",
+      "witness": {
+        "fixture": "morning",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-late.cs",
+      "misconception": "Updates the total after both lines have printed.",
+      "witness": {
+        "fixture": "morning",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Check which print runs before your update and which runs after it. The first line must still show the opening count."
+}

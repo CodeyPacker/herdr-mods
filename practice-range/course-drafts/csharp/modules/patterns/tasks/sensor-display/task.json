@@ -1,0 +1,62 @@
+{
+  "id": "course:cs-foundations/task/patterns-sensor-display",
+  "role": "review",
+  "title": "Display a sensor reading",
+  "concepts": [
+    "property-pattern",
+    "switch-expression",
+    "interpolation"
+  ],
+  "prompt": "Reading is supplied. Write public static string Display(Reading reading). An offline reading returns \"offline\", whatever its degrees. An online reading below 0 returns \"freezing\". Any other online reading returns its degrees in the form \"21 degrees\". Zero is a real temperature, so it returns \"0 degrees\".",
+  "hints": [
+    "Which rule ignores the temperature completely? Where must its arm go?",
+    "Test Online first, then the freezing range, then fall through to the general text.",
+    "Use { Online: false }, then { Degrees: < 0 }, then _ with an interpolated string. Below 0 does not include 0."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.Display(new Reading(true, 0)) == \"0 degrees\"",
+    "Practice.Display(new Reading(true, 21)) == \"21 degrees\"",
+    "Practice.Display(new Reading(true, -1)) == \"freezing\"",
+    "Practice.Display(new Reading(false, 21)) == \"offline\"",
+    "Practice.Display(new Reading(false, -5)) == \"offline\""
+  ],
+  "checkLabels": [
+    "An online reading of 0 must return \"0 degrees\".",
+    "An online reading of 21 must return \"21 degrees\".",
+    "An online reading below 0 must return \"freezing\".",
+    "An offline reading must return \"offline\".",
+    "An offline reading below 0 must still return \"offline\"."
+  ],
+  "fixtures": [
+    {
+      "id": "readings",
+      "declarations": "fixture-readings.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-zero.cs",
+      "misconception": "Treats 0 degrees as freezing.",
+      "witness": {
+        "fixture": "readings",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-order.cs",
+      "misconception": "Tests the temperature before checking that the sensor is online.",
+      "witness": {
+        "fixture": "readings",
+        "kind": "result",
+        "detail": "Check 5 failed"
+      }
+    }
+  ],
+  "feedback": "Find the failing reading and read your arms from the top. Check which rule must win for an offline sensor, and what happens at exactly 0."
+}

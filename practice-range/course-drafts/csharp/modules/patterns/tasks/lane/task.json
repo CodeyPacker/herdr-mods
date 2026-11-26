@@ -1,0 +1,66 @@
+{
+  "id": "course:cs-foundations/task/patterns-lane",
+  "role": "independent",
+  "title": "Sort a job into a lane",
+  "concepts": [
+    "property-pattern",
+    "switch-expression",
+    "comparison"
+  ],
+  "prompt": "Job is supplied. Write public static string Lane(Job job). A job with 0 minutes goes to \"skip\", even when it is urgent. Any other urgent job goes to \"now\". A job under 30 minutes goes to \"quick\". Everything else goes to \"plan\".",
+  "hints": [
+    "Two rules can apply to the same job. Which rule should win for an urgent job with 0 minutes?",
+    "The first matching arm wins, so write the arms in the same order as the rules in the prompt.",
+    "Use { Minutes: 0 }, then { Urgent: true }, then { Minutes: < 30 }, then _ for everything else."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.Lane(new Job(\"Sweep\", 0, true)) == \"skip\"",
+    "Practice.Lane(new Job(\"Sweep\", 0, false)) == \"skip\"",
+    "Practice.Lane(new Job(\"Ship\", 45, true)) == \"now\"",
+    "Practice.Lane(new Job(\"Ship\", 5, true)) == \"now\"",
+    "Practice.Lane(new Job(\"Label\", 29, false)) == \"quick\"",
+    "Practice.Lane(new Job(\"Pack\", 30, false)) == \"plan\"",
+    "Practice.Lane(new Job(\"Pack\", 90, false)) == \"plan\""
+  ],
+  "checkLabels": [
+    "An urgent job with 0 minutes goes to \"skip\".",
+    "A job with 0 minutes that is not urgent goes to \"skip\".",
+    "An urgent job of 45 minutes goes to \"now\".",
+    "An urgent job of 5 minutes goes to \"now\".",
+    "A job of 29 minutes that is not urgent goes to \"quick\".",
+    "A job of exactly 30 minutes that is not urgent goes to \"plan\".",
+    "A job of 90 minutes that is not urgent goes to \"plan\"."
+  ],
+  "fixtures": [
+    {
+      "id": "jobs",
+      "declarations": "fixture-jobs.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-urgent-first.cs",
+      "misconception": "Tests urgency before the 0-minute rule that should win.",
+      "witness": {
+        "fixture": "jobs",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-boundary.cs",
+      "misconception": "Counts exactly 30 minutes as under 30.",
+      "witness": {
+        "fixture": "jobs",
+        "kind": "result",
+        "detail": "Check 6 failed"
+      }
+    }
+  ],
+  "feedback": "Find the failing job and read your arms from the top. The first arm that matches decides the lane. Check the order, and the edge at exactly 30 minutes."
+}

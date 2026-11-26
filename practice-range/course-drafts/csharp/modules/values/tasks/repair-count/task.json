@@ -1,0 +1,62 @@
+{
+  "id": "course:cs-foundations/task/values-repair-count",
+  "role": "debug",
+  "title": "Repair a broken count",
+  "concepts": [
+    "var-inference",
+    "variable",
+    "number-types"
+  ],
+  "prompt": "The starter should work out how many tasks are still unfinished, but it does not compile. opening and done are supplied whole numbers. Read the compiler error, then repair the code so remaining is a whole number equal to opening minus done.",
+  "hints": [
+    "The error names a line and two types. Which type does remaining have, and which line gave it that type?",
+    "var takes its type from the first value. \"0\" in quotes is a string.",
+    "Give remaining a number as its first value, so the result of the subtraction fits."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "statements",
+  "rules": [],
+  "checks": [
+    "((object)remaining).Equals(opening - done)"
+  ],
+  "checkLabels": [
+    "remaining must be a whole number equal to opening minus done."
+  ],
+  "fixtures": [
+    {
+      "id": "morning",
+      "declarations": "fixture-morning.cs"
+    },
+    {
+      "id": "empty",
+      "declarations": "fixture-empty.cs"
+    },
+    {
+      "id": "busy",
+      "declarations": "fixture-busy.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-text.cs",
+      "misconception": "Silences the error by turning the number into text.",
+      "witness": {
+        "fixture": "morning",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-reversed.cs",
+      "misconception": "Subtracts in the wrong order.",
+      "witness": {
+        "fixture": "busy",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "remaining must hold a number, not text that looks like a number. Check the first value you give it, and the order of the subtraction."
+}

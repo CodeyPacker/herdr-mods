@@ -1,0 +1,383 @@
+{
+  "schemaVersion": "1-draft",
+  "contentVersion": "0.1.0-draft.1",
+  "id": "course:cs-foundations",
+  "languageId": "csharp",
+  "runner": {
+    "registeredLanguage": "csharp",
+    "compiler": {
+      "name": ".NET SDK",
+      "minimumMajor": 8
+    }
+  },
+  "title": "Build a task tracker with C#",
+  "audience": [
+    "New to programming",
+    "Experienced in another language, new to C#"
+  ],
+  "prerequisiteConcepts": [],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:cs-foundations/module/save",
+      "order": "listed"
+    },
+    {
+      "id": "experienced",
+      "start": "course:cs-foundations/module/save",
+      "readiness": [
+        "R1",
+        "R2",
+        "R3",
+        "R4"
+      ],
+      "description": "Try each group's readiness task or skip freely. A skip records navigation only."
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/save",
+      "description": "Save a short program, read its output, and find the line a compiler error names.",
+      "assessment": "course:cs-foundations/module/save"
+    },
+    {
+      "id": "outcome/values",
+      "description": "Trace assignments, choose whole-number or fractional division, build text from values, and repair a type mismatch.",
+      "assessment": "course:cs-foundations/module/values"
+    },
+    {
+      "id": "outcome/decisions",
+      "description": "Choose a branch with if, comparisons and boolean operators, including the edge values.",
+      "assessment": "course:cs-foundations/module/decisions"
+    },
+    {
+      "id": "outcome/methods",
+      "description": "Write a static method with parameters and a return value, and explain why a name is out of scope.",
+      "assessment": "course:cs-foundations/module/methods"
+    },
+    {
+      "id": "outcome/collections",
+      "description": "Build and walk an array and a List<T> with loops and a running total.",
+      "assessment": "course:cs-foundations/module/collections"
+    },
+    {
+      "id": "outcome/classes",
+      "description": "Write a class with properties, a constructor and methods, and predict what two names for one object share.",
+      "assessment": "course:cs-foundations/module/classes"
+    },
+    {
+      "id": "outcome/records",
+      "description": "Tell a copy from a shared reference, change a record with with, and predict == for records, structs and classes.",
+      "assessment": "course:cs-foundations/module/records"
+    },
+    {
+      "id": "outcome/nulls",
+      "description": "Mark a value that may be missing with ?, check it before use, and supply a fallback with ?? while keeping zero and empty text.",
+      "assessment": "course:cs-foundations/module/nulls"
+    },
+    {
+      "id": "outcome/lookups",
+      "description": "Count and group with a Dictionary, read a key that may be missing, and collect unique values with a HashSet.",
+      "assessment": "course:cs-foundations/module/lookups"
+    },
+    {
+      "id": "outcome/linq",
+      "description": "Filter, transform, count and group with LINQ, and predict when a query actually runs.",
+      "assessment": "course:cs-foundations/module/linq"
+    },
+    {
+      "id": "outcome/interfaces",
+      "description": "Implement an interface, extend a base type, and call different types through one contract.",
+      "assessment": "course:cs-foundations/module/interfaces"
+    },
+    {
+      "id": "outcome/patterns",
+      "description": "Pick a result by record type and property values with a switch expression, with the arms in a correct order.",
+      "assessment": "course:cs-foundations/module/patterns"
+    },
+    {
+      "id": "outcome/exceptions",
+      "description": "Throw and catch a specific exception, and choose between a result value and an exception for an expected failure.",
+      "assessment": "course:cs-foundations/module/exceptions"
+    },
+    {
+      "id": "outcome/generics",
+      "description": "Write a generic method and type that keep the caller's type, with a constraint where one is needed.",
+      "assessment": "course:cs-foundations/module/generics"
+    },
+    {
+      "id": "outcome/async",
+      "description": "Return and await a Task, run two reads in order, and handle a failed task.",
+      "assessment": "course:cs-foundations/module/async"
+    },
+    {
+      "id": "outcome/checks",
+      "description": "Read expected and actual values, find an off-by-one bug, and write a check that catches it.",
+      "assessment": "course:cs-foundations/module/checks"
+    },
+    {
+      "id": "outcome/tracker",
+      "description": "Join task records, validation, queries and a local async reader into one working tracker.",
+      "assessment": "course:cs-foundations/module/tracker"
+    },
+    {
+      "id": "outcome/report",
+      "description": "Independently combine validation, reporting, error handling, async reading and a regression check on a new request.",
+      "assessment": "course:cs-foundations/module/report"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:cs-foundations/module/save",
+      "title": "Save, run, read output",
+      "prerequisites": [],
+      "teaches": [
+        "save-run",
+        "read-output",
+        "compiler-error"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:cs-foundations/module/values",
+      "title": "Values, types and text",
+      "prerequisites": [
+        "course:cs-foundations/module/save"
+      ],
+      "teaches": [
+        "variable",
+        "number-types",
+        "text",
+        "var-inference",
+        "interpolation"
+      ],
+      "status": "sample",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/values/module.json"
+      }
+    },
+    {
+      "id": "course:cs-foundations/module/decisions",
+      "title": "Make a decision",
+      "prerequisites": [
+        "course:cs-foundations/module/values"
+      ],
+      "teaches": [
+        "branch",
+        "comparison",
+        "boolean-logic"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:cs-foundations/module/methods",
+      "title": "Give a calculation a name",
+      "prerequisites": [
+        "course:cs-foundations/module/decisions"
+      ],
+      "teaches": [
+        "method",
+        "parameter-return",
+        "scope"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:cs-foundations/module/collections",
+      "title": "Work through a list",
+      "prerequisites": [
+        "course:cs-foundations/module/methods"
+      ],
+      "teaches": [
+        "array",
+        "list",
+        "loop"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:cs-foundations/module/classes",
+      "title": "Describe a task with a class",
+      "prerequisites": [
+        "course:cs-foundations/module/methods",
+        "course:cs-foundations/module/collections"
+      ],
+      "teaches": [
+        "class",
+        "property",
+        "constructor"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:cs-foundations/module/records",
+      "title": "Records, structs and copies",
+      "prerequisites": [
+        "course:cs-foundations/module/classes"
+      ],
+      "teaches": [
+        "record",
+        "struct",
+        "value-reference",
+        "equality"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:cs-foundations/module/nulls",
+      "title": "Handle a missing value",
+      "prerequisites": [
+        "course:cs-foundations/module/classes",
+        "course:cs-foundations/module/decisions"
+      ],
+      "teaches": [
+        "nullable",
+        "null-check",
+        "null-coalescing"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:cs-foundations/module/lookups",
+      "title": "Look up and de-duplicate",
+      "prerequisites": [
+        "course:cs-foundations/module/collections",
+        "course:cs-foundations/module/nulls"
+      ],
+      "teaches": [
+        "dictionary",
+        "set"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:cs-foundations/module/linq",
+      "title": "Query a collection",
+      "prerequisites": [
+        "course:cs-foundations/module/collections",
+        "course:cs-foundations/module/records",
+        "course:cs-foundations/module/lookups"
+      ],
+      "teaches": [
+        "lambda",
+        "linq-query",
+        "deferred"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:cs-foundations/module/interfaces",
+      "title": "Share a contract",
+      "prerequisites": [
+        "course:cs-foundations/module/classes",
+        "course:cs-foundations/module/records"
+      ],
+      "teaches": [
+        "interface",
+        "inheritance"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:cs-foundations/module/patterns",
+      "title": "Choose by type and shape",
+      "prerequisites": [
+        "course:cs-foundations/module/interfaces",
+        "course:cs-foundations/module/records"
+      ],
+      "teaches": [
+        "switch-expression",
+        "type-pattern",
+        "property-pattern"
+      ],
+      "status": "sample",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/patterns/module.json"
+      }
+    },
+    {
+      "id": "course:cs-foundations/module/exceptions",
+      "title": "Recover from errors",
+      "prerequisites": [
+        "course:cs-foundations/module/patterns",
+        "course:cs-foundations/module/nulls"
+      ],
+      "teaches": [
+        "throw-catch",
+        "result-type"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:cs-foundations/module/generics",
+      "title": "Keep a type relationship",
+      "prerequisites": [
+        "course:cs-foundations/module/interfaces",
+        "course:cs-foundations/module/collections"
+      ],
+      "teaches": [
+        "generic"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:cs-foundations/module/async",
+      "title": "Wait for local data",
+      "prerequisites": [
+        "course:cs-foundations/module/exceptions",
+        "course:cs-foundations/module/methods"
+      ],
+      "teaches": [
+        "task",
+        "await",
+        "async-failure"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:cs-foundations/module/checks",
+      "title": "Read and write checks",
+      "prerequisites": [
+        "course:cs-foundations/module/linq",
+        "course:cs-foundations/module/exceptions"
+      ],
+      "teaches": [
+        "tests",
+        "debugging"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:cs-foundations/module/tracker",
+      "title": "Assemble the tracker",
+      "prerequisites": [
+        "course:cs-foundations/module/async",
+        "course:cs-foundations/module/generics",
+        "course:cs-foundations/module/checks",
+        "course:cs-foundations/module/patterns"
+      ],
+      "teaches": [
+        "project"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "course:cs-foundations/module/report",
+      "title": "Deliver an unfamiliar report",
+      "prerequisites": [
+        "course:cs-foundations/module/tracker"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "planned"
+    }
+  ],
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  },
+  "runtimeContentVersion": "0.1.0-preview.1"
+}

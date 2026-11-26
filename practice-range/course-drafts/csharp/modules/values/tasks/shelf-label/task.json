@@ -1,0 +1,61 @@
+{
+  "id": "course:cs-foundations/task/values-shelf-label",
+  "role": "independent",
+  "title": "Label a shelf",
+  "concepts": [
+    "text",
+    "interpolation"
+  ],
+  "prompt": "area is a supplied string and open is a supplied whole number. Declare a string named label in the form \"Desk: 3 open\": the area, a colon and a space, the number, a space, then the word open. Build it from the supplied values so it works for every case.",
+  "hints": [
+    "Which parts of the label change from case to case, and which stay the same?",
+    "An interpolated string starts with $ before the opening quote.",
+    "Inside the $ string, put area and open in braces, and type the colon, the spaces and the word open as plain text."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "statements",
+  "rules": [],
+  "checks": [
+    "label == area + \": \" + open + \" open\""
+  ],
+  "checkLabels": [
+    "label must be the area, a colon and a space, the count, then the word open."
+  ],
+  "fixtures": [
+    {
+      "id": "desk",
+      "declarations": "fixture-desk.cs"
+    },
+    {
+      "id": "empty",
+      "declarations": "fixture-empty.cs"
+    },
+    {
+      "id": "lab",
+      "declarations": "fixture-lab.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-literal.cs",
+      "misconception": "Copies the worked example as fixed text.",
+      "witness": {
+        "fixture": "lab",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-no-dollar.cs",
+      "misconception": "Leaves off the $, so the braces stay as ordinary text.",
+      "witness": {
+        "fixture": "desk",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Compare your label with the expected text one character at a time. Check the $ before the quote and the spaces around the number."
+}
