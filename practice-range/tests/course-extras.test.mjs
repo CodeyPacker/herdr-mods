@@ -54,7 +54,6 @@ test("validated extra practice is saved beside a bundled enrollment and stays ou
   const saved = JSON.parse(await readFile(join(f.directory, "extra-practice.json"), "utf8")).lessons[moduleId];
   assert.deepEqual(saved.map(task => task.title), ["Add arrivals", "Add departures", "Add seats"]);
   assert.equal(new Set(saved.map(task => task.id)).size, 3);
-  assert.equal(saved.every(task => !task.legacy), true, "Bundled TypeScript extras keep the course's compiler settings");
 });
 
 test("failed validation, unvalidated saves and cancellation write no extra practice", { timeout: 180000 }, async t => {

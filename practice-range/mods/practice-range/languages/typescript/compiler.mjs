@@ -36,10 +36,10 @@ export async function loadTypeScript() {
   return ts;
 }
 
-export function compilerOptions(ts, legacy = false) {
+export function compilerOptions(ts) {
   return {
-    target: legacy ? ts.ScriptTarget.ES2023 : ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler,
-    moduleDetection: ts.ModuleDetectionKind.Force, lib: ["lib.es2023.d.ts", ...(legacy ? ["lib.dom.d.ts"] : [])], types: [], strict: true,
+    target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler,
+    moduleDetection: ts.ModuleDetectionKind.Force, lib: ["lib.es2023.d.ts"], types: [], strict: true,
     skipLibCheck: true, noEmitOnError: true, inlineSourceMap: true, newLine: ts.NewLineKind.LineFeed,
   };
 }
@@ -80,7 +80,7 @@ function formatAt(ts, diagnostic, file, line) {
  * Returns answer errors, failed type checks, and the program for emitting.
  */
 export function typeCheck(ts, directory, exercise, segments) {
-  const options = compilerOptions(ts, exercise.legacy?.source === "tutor");
+  const options = compilerOptions(ts);
   const roots = [join(directory, "check.ts"), join(directory, "globals.d.ts")];
   const program = ts.createProgram({ rootNames: roots, options, host: createHost(ts, options) });
   const answerErrors = [], checkFailures = [], internal = [];

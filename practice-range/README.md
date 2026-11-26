@@ -18,11 +18,11 @@ With AI help enabled, a lesson's **Write extra practice** adds up to six short A
 
 Setup also offers **Browse courses**, and the TypeScript language card offers **Start or resume course**. Reading is available before installing a compiler or choosing an editor. Coding checks still require the compiler. Back returns to the setup or language screen you came from.
 
-In the course catalog or module list, save the languages you already know to give AI questions familiar-language context. Leave the list empty if you are new to programming. These preferences sync between devices and do not change course progress. Imported Tutor comparisons remain available until you save your own preferences.
+In the course catalog or module list, save the languages you already know to give AI questions familiar-language context. Leave the list empty if you are new to programming. These preferences sync between devices and do not change course progress.
 
 You can optionally attach a local repo from the course’s module list. When AI help is enabled, **Explain repo architecture** creates supplemental reading from a bounded sample. From a lesson, **Explain this topic using my repo** adds examples for that module. Generation sends those source excerpts to your configured model. File paths and line ranges are checked against the pinned commit, but explanations still need your judgment. Saved lessons retain their source excerpts and travel with device sync, even if the repo later becomes unavailable. The repo is never edited, and its local path does not sync. C# and SQL course packs are still in development. Their existing direct practice remains available.
 
-Use **Read source file** beside a repo excerpt to browse the pinned file inside Courses. Referenced lines are marked, and you can page through surrounding code. This reads committed content and leaves local edits alone. If the repo or commit is unavailable, the reader shows the saved excerpt when one exists. Files larger than 256 KB and binary files use the same fallback.
+In a saved repo lesson, use **Read source file** beside an excerpt to browse the pinned file inside Courses. Referenced lines are marked, and you can page through surrounding code. This reads committed content and leaves local edits alone. If the repo or commit is unavailable, the reader shows the saved excerpt when one exists. Files larger than 256 KB and binary files use the same fallback.
 
 ```sh
 herdr-app do tab.new '{"name":"Practice Range","mod":"practice-range","props":{"practiceTab":true}}'
@@ -40,20 +40,6 @@ Every check shows what your code produced: what it printed, the value a failed c
 - **Send to scratch** (`s`): copies your current answer into scratch, with any tables or types the exercise supplies, and runs it, so you can experiment without touching your saved attempt.
 - **Compare** (`d` after a pass): opens your answer beside the read-only reference in your editor's diff view (a new Neovim tab that closes when you move to another file, or VS Code's diff editor). If they differ only in formatting or comments, the panel says so instead.
 - **Review** (`v` on the Topics screen): optional. Up to eight exercises from topics you've practiced, weakest and longest unseen first, no more than three per topic, each from a blank file. Your saved answers stay untouched. A clean first try waits longer before coming back; one you needed help with returns sooner. The Topics screen shows how many are ready.
-
-## Importing Tutor courses
-
-Open **Courses → Import Tutor courses**, choose a course, and review **Preview import** before copying. Practice Range looks for Tutor next to its own data folder. Enter Tutor's data folder when it lives elsewhere.
-
-The import preserves the original module order, parts, explanations, quizzes, read positions, historical scores, and saved C# or TypeScript answers. Unwritten modules stay Planned. Answers without a matching exercise are copied into imported history. Tutor's original files are never changed.
-
-Earlier practice results remain historical evidence. An imported answer does not earn independent credit until you use **Start fresh** and solve it again. Optional editor and AI preferences fill only missing settings. Existing choices and credentials are not replaced.
-
-Reimporting unchanged content reopens the existing copy without overwriting newer work. Revised lessons get a separate enrollment, and the earlier version stays available. If a repo was missing, attach a local clone from the imported course's module list to restore its pinned excerpts. With device sync enabled, imported course content and progress travel together. Local repo paths and incomplete import staging stay on this computer.
-
-Planned imported modules can be written from the module list with **Write lesson and quiz** when AI help is enabled and a clone containing the course's pinned commit is attached. This writes reading and a quiz only, never coding exercises. Source references are checked against the pinned commit. The result is saved as a new course version that carries your progress and answers. The original version stays available. Repeating the request for the same module reopens the saved version.
-
-Imported modules with reading but no exercises offer **Write practice exercises**. Each generated exercise is a small program checked by its printed output. Before anything is saved, the reference answer must pass, and the starter and each known wrong answer must fail, using the language's own compiler. Exercises that fail this are discarded. Saved exercises are labeled as AI-generated and also go into a new course version.
 
 ## Updating an existing install
 

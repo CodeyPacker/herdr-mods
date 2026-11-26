@@ -24,8 +24,6 @@ test("reading, skipping, hinted passes and revealed solutions never count as ind
   assert.deepEqual(status({ tasks: {}, modules: { a: { seen: [0, 1], skipped: true } } }).a, "skipped");
   // A hinted pass and a pass after the solution was shown are both recorded as assisted.
   assert.equal(status({ tasks: { a0: task([attempt(true, true)]), a1: task([attempt(false, false), attempt(true, true)], { answerShown: true }) } }).a, "practiced");
-  // Imported answers carry unknown assistance, which the checker records as assisted.
-  assert.equal(status({ tasks: { a0: task([{ ...attempt(true, true), assistanceUnknown: true }], { assistanceUnknown: true }) } }).a, "practiced");
 });
 
 test("independent passes on two exercises, or one confirmed by a later clean review, demonstrate a module", () => {

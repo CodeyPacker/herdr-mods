@@ -37,8 +37,7 @@ export function migrateState(state, from, to, now = Date.now()) {
       const question = lesson.questions.find(question => question.id === questionId);
       return question && question.choices[result.choice] && result.correct === (question.answer === result.choice);
     }));
-    next.modules[id] = { ...structuredClone(progress), seen: progress.seen.filter(step => step < steps), questions,
-      ...(Number.isInteger(progress.resumeStep) && progress.resumeStep >= steps ? { resumeStep: 0 } : {}) };
+    next.modules[id] = { ...structuredClone(progress), seen: progress.seen.filter(step => step < steps), questions };
     if (Object.keys(questions).length !== Object.keys(progress.questions).length) retired.modules[id] = progress;
   }
   const position = state.position && to.lessons.find(lesson => lesson.id === state.position.moduleId);

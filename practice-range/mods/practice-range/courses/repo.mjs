@@ -1,7 +1,7 @@
 // Attachments are machine-local. All repository operations read a pinned commit.
 import { execFile } from "node:child_process";
 import { readFile, writeFile, rename, unlink } from "node:fs/promises";
-import { join, basename, isAbsolute } from "node:path";
+import { join, basename } from "node:path";
 import { randomUUID } from "node:crypto";
 
 function git(root, args, timeout = 20000) {
@@ -73,33 +73,6 @@ export async function readRepoSource(directory, ref, cachedCode, line) {
   }
 }
 
-/** Read the exact referenced lines. A cache is scoped to one import or display snapshot. */
-export async function readPinnedExcerpt(root, ref, cache = new Map()) {
-  try {
-    if (!root || !isAbsolute(root) || !/^[a-f0-9]{40}(?:[a-f0-9]{24})?$/.test(ref.commit)) throw new Error("unavailable");
-    const key=`${ref.commit}:${ref.path}`;
-    if(!cache.has(key)) cache.set(key,git(root,["show",key],2000));
-    const lines=(await cache.get(key)).replaceAll("\r\n","\n").split("\n");
-    const selected=lines.slice(ref.start-1,ref.end);
-    if(ref.end>lines.length || (ref.anchor&&!selected.some(line=>line.includes(ref.anchor)))) throw new Error("range or anchor unavailable");
-    return {code:selected.join("\n")||"// Empty source excerpt.",readOnly:true,repoRef:ref};
-  } catch { return {code:"// The pinned source excerpt is unavailable on this computer.",readOnly:true,repoRef:ref,sourceError:"The repo, pinned commit, range or anchor is unavailable. The imported explanation is preserved."}; }
-}
-
-export async function restoreRepoExcerpts(directory, lessons) {
-  if(!lessons.some(lesson=>Object.values(lesson.examples).some(example=>example.sourceError&&example.repoRef))) return lessons;
-  let record;
-  try { record=await attachment(directory); } catch { return lessons; }
-  if(!record) return lessons;
-  const cache=new Map(), restored=[];
-  for(const lesson of lessons) {
-    const examples={...lesson.examples};
-    for(const [id,example] of Object.entries(examples)) if(example.sourceError&&example.repoRef) examples[id]=await readPinnedExcerpt(record.root,example.repoRef,cache);
-    restored.push({...lesson,examples});
-  }
-  return restored;
-}
-
 export async function repoStatus(directory) {
   try {
     const record = await attachment(directory);
@@ -112,14 +85,10 @@ export async function repoStatus(directory) {
 }
 
 /** A bounded sample, not a claim to have analyzed the entire repository. No absolute path is sent. */
-export async function repositoryContext(directory, pinnedCommit) {
+export async function repositoryContext(directory) {
   try {
     const record = await attachment(directory);
     if (!record) return null;
-    if (pinnedCommit !== undefined) {
-      if (!/^[a-f0-9]{40}(?:[a-f0-9]{24})?$/.test(pinnedCommit)) throw new Error("Invalid pinned commit.");
-      record.commit = pinnedCommit;
-    }
     const paths = sourcePaths((await git(record.root, ["ls-tree", "-r", "-z", "--name-only", record.commit], 2000)).split("\0").filter(Boolean), record.languageId);
     const files = [];
     let budget = 48000;

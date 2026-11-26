@@ -14,7 +14,6 @@ const drillIndependent = (/** @type {DrillProgress} */ entry) => entry.independe
 /**
  * Skipping and reading never count as skill. Demonstrated means independent passes on two different
  * exercises or drills, or one independent pass confirmed by a clean later review.
- * Imported answers with unknown assistance never count, because they are recorded as assisted.
  * @param {any} pack @param {any} state @param {Drills} drills
  */
 export function moduleEvidence(pack, state, drills) {

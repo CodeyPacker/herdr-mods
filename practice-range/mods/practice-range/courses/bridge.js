@@ -1,12 +1,5 @@
-import { appHome, exec, readTextFile, writeTextFile } from "herdr";
+import { appHome, exec } from "herdr";
 import { practiceDirectory } from "../bridge.js";
-import { saveImportedPreferences } from "./import-preferences.js";
-
-/** @param {{editor?: unknown, agent?: unknown}} preferences */
-export function importTutorPreferences(preferences) {
-  const path=`${appHome()}/practice-range.json`;
-  return saveImportedPreferences(preferences,{read:()=>readTextFile(path),write:(text,expected)=>writeTextFile(path,text,expected)});
-}
 
 /** @param {string} action @param {Record<string, unknown>} [request] @returns {Promise<any>} */
 export async function courseCommand(action, request = {}) {

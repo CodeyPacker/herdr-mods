@@ -12,8 +12,5 @@ export async function courseSource(course, directory, request) {
     if (!ref) throw new Error("Choose a saved source reference.");
     return readRepoSource(directory, { ...ref, commit: lesson.commit }, ref.code, request.line);
   }
-  const lesson = course.lessons.find(lesson => lesson.id === request.moduleId);
-  const example = lesson?.examples[request.exampleId];
-  if (!example?.repoRef) throw new Error("Choose a repo example from this course.");
-  return readRepoSource(directory, example.repoRef, example.sourceError ? null : example.code, request.line);
+  throw new Error("Choose a saved source reference.");
 }

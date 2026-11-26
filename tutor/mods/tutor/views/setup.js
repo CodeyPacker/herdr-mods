@@ -8,7 +8,6 @@ import { LANGUAGES } from "../languages.js";
 import { EDITORS, AGENTS } from "../settings.js";
 import { learnerOf } from "../learner.js";
 import { button } from "../ui.js";
-import { MOVE_NOTICE } from "../constants.js";
 
 /** `v` is the Tutor view: its state is read here and its methods run on clicks. */
 export function setupView(v, t) {
@@ -29,7 +28,6 @@ export function setupView(v, t) {
     .child(div().flex_none().text_size(11.5).text_color(t.dim).child(keys));
   // Sized to its content, so it also draws in a dialog. The spacer below pushes the keys down in a pane.
   const body = v_flex().w_full().px(10).pb(10).gap(2)
-    .child(div().px(12).pt(6).text_size(11.5).text_color(t.dim).child(MOVE_NOTICE))
     .child(sectionLabel(t, "New course").px(12))
     .child(listRow(t, { id: "setup-new", on: s.at === 0, tall: true, click: cx => { s.at = 0; v.setupEnter(cx); cx.notify(); } })
       .child(rowText(t, `Build a ${lang.name} course`, s.path ? `from ${s.path}` : folder ? "Pick a folder first: e types one, b browses" : "Pick a folder first")))

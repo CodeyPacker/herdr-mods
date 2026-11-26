@@ -1,6 +1,6 @@
 # Practice Range learning project scope
 
-Practice Range becomes the single learning mod for structured courses, direct practice, and review. It absorbs Tutor's course teaching and optional repo examples. The default course requires no repo and no model. Premade, reviewed course packs provide the foundation. The user's model provides optional personal help.
+Practice Range becomes the single learning mod for structured courses, direct practice, and review. It takes Tutor's teaching ideas and optional repo examples. Tutor stays a separate mod. The default course requires no repo and no model. Premade, reviewed course packs provide the foundation. The user's model provides optional personal help.
 
 Status: in progress. Phase acceptance criteria below define completion, rather than promises about learning effectiveness. `LEARNING_PROGRESS.md` holds test evidence for each capability.
 
@@ -8,15 +8,15 @@ Status: in progress. Phase acceptance criteria below define completion, rather t
 
 | Phase | Status | Completed | Remaining |
 | --- | --- | --- | --- |
-| P0 | Done | Baselines, Tutor migration map and test commands recorded. | None. |
+| P0 | Done | Baselines and test commands recorded. | None. |
 | P1 | Done except learner review | TypeScript outline, concept map, schema and samples verified with the real checker. | Learner observation of pacing and clarity. |
 | P2 | Done | Loader, pinned enrollment, retained versions, shared checker adapter and lesson flow. | None. |
 | P3 | Done except learner review | All 18 modules and 60 tasks pass reference, alternative and wrong-answer checks. Four tracker checkpoints and the final audit form a listed project. Four readiness checks (R1–R4) serve the experienced entry path. | Learner pacing review. |
 | P4 | Done except learner review | Course UI, setup and language-card entry, linked practice, optional AI, known-language preferences, shared editor opening, and explicit progress migration to a newer compatible pack version. | Real editor flow with a learner. |
-| P5 | Done except learner review | Pinned repo excerpts, repo module and architecture lessons, source browsing, Tutor import, writing unfinished imported modules as reading and quizzes, and validated generated exercises for imported modules. | Learner review of generated explanations and exercises. |
+| P5 | Done except learner review | Pinned repo excerpts, repo module and architecture lessons, and source browsing. Tutor import was built, then removed (D8). | Learner review of generated explanations. |
 | P6 | Done except learner review | Course review, assistance tracking, explained recommendations, module evidence combining course exercises with linked drills, recommendations for due linked drills, and optional validated AI extra practice for bundled courses. Fixtures cover hinted passes, revealed solutions, later independent passes, overdue review, changed versions and mixed sessions. | Learner review of the evidence rules and generated exercises. |
 | P7 | Kit ready, not run | `course-drafts/typescript/pilot/PILOT.md` gives the session plan for both learner groups, a notes template and three verified pilot tasks (a new problem, a type error to explain, a bug to find) checked by `scripts/pilot-check.mjs`. | Run the pilot with learners and fix what blocks them, then C# and SQL courses. |
-| P8 | Prepared, blocked on P7 | `RELEASE.md` records requirements, the tested platform, every check with its last result, release notes and the Tutor transition. Tutor shows a move notice. All 150 tests and 100 native panel checks passed. | Rerun checks after the pilot, stop recommending new Tutor installs, then release. |
+| P8 | Prepared, blocked on P7 | `RELEASE.md` records requirements, the tested platform, every check with its last result and release notes. All 129 tests and 82 native panel checks passed. | Rerun checks after the pilot, then release. |
 
 ## Product decisions
 
@@ -29,7 +29,7 @@ Status: in progress. Phase acceptance criteria below define completion, rather t
 | D5 | Use Astra during development to design and critique course content. Review, execute, and version that content before shipping. Runtime AI answers questions, explains errors, compares familiar languages, and optionally supplies repo examples or additional exercises. |
 | D6 | Preserve lesson completion and demonstrated skill as separate records. Keep recommendations optional and explain why a lesson or review is suggested. |
 | D7 | Pilot TypeScript first. Preserve C# and SQL practice throughout. Add their courses after validating the TypeScript teaching format. |
-| D8 | Import existing Tutor courses and progress without deleting the originals. Retire Tutor only after migration and feature checks pass. Tourist stays separate. |
+| D8 | Do not import Tutor courses. Tutor stays a separate, unchanged mod. Tourist stays separate. Changed on 2026-11-26: the import was built, then removed, because only the project owner had Tutor data and did not need it. |
 
 ## Current implementation
 
@@ -80,7 +80,7 @@ Course packs are immutable content installed under the existing mod. User files 
 | C6 | Content source | Bundled file and content version, or local repo path, commit, file, range, and anchor. Repo attachments belong to the learner, not the shipped manifest. |
 | C7 | Compatibility map | Explicit replacements for changed module/exercise IDs and whether prior completion remains valid. No match means new material, not an inferred pass. |
 
-Use namespaced IDs so course exercises cannot collide with `topic/exercise` drill IDs or imported Tutor IDs. A module may teach several concepts and reference several practice topics. Replace AI-only one-topic matching for shipped courses with reviewed mappings.
+Use namespaced IDs so course exercises cannot collide with `topic/exercise` drill IDs. A module may teach several concepts and reference several practice topics. Replace AI-only one-topic matching for shipped courses with reviewed mappings.
 
 Do not import arbitrary runner modules named by a course pack. Execution remains restricted to registered language runners. Pinned tools and trusted checks ship through the repository release process.
 
@@ -90,11 +90,11 @@ Keep existing drill progress and answer paths intact. Add course enrollment, con
 
 Updates affect new enrollments by default. Existing enrollments remain pinned until the learner chooses an available compatible update. Preserve the previous content needed for those enrollments. Apply ID mappings explicitly, keep removed answers recoverable, and request a retake where assessment meaning changed. Disable a course without erasing progress. Do not offer uninstall where it would strand a pinned enrollment.
 
-Extend optional sync to course progress, learner answers, and imported course content required to restore them. Exclude checker artifacts, dependency folders, local machine setup, absolute repo paths, and transient chat. Preserve existing sync conflict behavior. Repo attachment paths are configured per machine. Bundled pack content is supplied by the mod version, not copied into every progress commit.
+Extend optional sync to course progress, and learner answers. Exclude checker artifacts, dependency folders, local machine setup, absolute repo paths, and transient chat. Preserve existing sync conflict behavior. Repo attachment paths are configured per machine. Bundled pack content is supplied by the mod version, not copied into every progress commit.
 
 ### Exercise execution
 
-Keep Practice Range's save checking, compiler diagnostics, source mapping, bounded processes, latest-save handling, and editor lifecycle. Add an adapter for Tutor exercises first rather than rewriting every exercise. Restrict syntax checks only when the requested syntax is itself the learning goal. Behavioral and type checks should accept equivalent correct solutions.
+Keep Practice Range's save checking, compiler diagnostics, source mapping, bounded processes, latest-save handling, and editor lifecycle. Restrict syntax checks only when the requested syntax is itself the learning goal. Behavioral and type checks should accept equivalent correct solutions.
 
 Start with isolated snippets and supplied local module fixtures. Add a bounded project workspace for later checkpoints with an explicit file manifest, trusted checks outside editable files, stale-result handling, and workspace reset. This is a course feature, not a general IDE or arbitrary package runner. Use local fixtures instead of network calls. No dependency installation during answer checks.
 
@@ -138,17 +138,15 @@ Preserve scratch, compare, progressive hints, solution reveal, Neovim and VS Cod
 
 Acceptance: verify the whole course-to-practice-to-course flow in both editors, restart/resume, unavailable AI, disabled courses, and language switches. Existing C# and SQL direct practice remain usable. Depends on P2, with final acceptance after P3.
 
-### P5 Add repo teaching and import Tutor
+### P5 Add repo teaching
 
-Move Tutor's pinned-repo reading, course generation, quizzes, lesson chat, learner comparisons, and repo architecture teaching into Practice Range. Generate repo supplements against the fixed foundation curriculum. Preserve imported Tutor courses as legacy repo courses rather than silently changing their lesson sequence.
+Move Tutor's pinned-repo reading, lesson chat, learner comparisons, and repo architecture teaching into Practice Range. Generate repo supplements against the fixed foundation curriculum. Tutor courses are not imported (D8).
 
-Provide an explicit import action. Preview courses, module progress, quiz results, work files, and settings to import. Copy to namespaced destinations, map known fields, and keep unknown status unknown. Preserve originals. Record import provenance so repeated imports do not duplicate data or overwrite newer work. A failed import leaves the destination unchanged or resumes from a clearly recorded checkpoint. Import compatible editor/provider preferences only where Practice Range has no explicit setting, and never copy secrets.
-
-Acceptance: missing repos fall back to bundled teaching for new courses and show recoverable source errors for legacy excerpts. Import works for partial courses, malformed files, repeated imports, preexisting destinations, and interrupted copies. Original data still opens in Tutor. Depends on P4.
+Acceptance: missing repos fall back to bundled teaching, and saved repo lessons keep their excerpts. Depends on P4.
 
 ### P6 Connect review and learning recommendations
 
-Reuse Practice Range's review scheduling for eligible course exercises. Preserve fresh review workspaces and assistance tracking. Define concept evidence from independent passes across varied tasks and later reviews. Distinguish skipped, read, practiced with help, and demonstrated independently. Incomplete or imported evidence must not count as independent success.
+Reuse Practice Range's review scheduling for eligible course exercises. Preserve fresh review workspaces and assistance tracking. Define concept evidence from independent passes across varied tasks and later reviews. Distinguish skipped, read, practiced with help, and demonstrated independently. Incomplete evidence must not count as independent success.
 
 Show a small next-action recommendation with its reason, such as repeated failed checks or a concept due for review. Let users continue or skip freely. Ship explicit scheduling rules rather than requiring an AI decision for every next step. Generated exercises are optional additional practice and must be validated and labeled.
 
@@ -162,13 +160,11 @@ Correct content and interface problems before multiplying the course. Build C# n
 
 Acceptance: reviewed pilot tasks demonstrate the intended skills, known blocking confusion is resolved, and each additional course passes the same automated and editorial checks. Depends on P3 through P6. TypeScript may release before additional course packs are ready.
 
-### P8 Release and retire Tutor
+### P8 Release
 
-Complete targeted regression checks, native panel checks, pack validation, migration rehearsal, and documentation for changed setup and import behavior. Document tested platforms and requirements. Ship TypeScript first with existing C# and SQL practice intact. Add later course packs as they pass P7.
+Complete targeted regression checks, native panel checks, pack validation, version-update rehearsal, and documentation for changed setup behavior. Document tested platforms and requirements. Ship TypeScript first with existing C# and SQL practice intact. Add later course packs as they pass P7. Tutor is not changed.
 
-Stop recommending new Tutor installations after feature parity and import verification. Keep a compatibility launch or clear move notice for existing Tutor launch paths during transition. Do not delete old course data or remove the old source mod as part of the initial release. Remove the compatibility route only in a separate deliberate release.
-
-Acceptance: users can install, learn without a repo/model, attach a repo, import Tutor, sync supported data, update compatible content, and recover using original data. The release checklist names any untested editor/platform combinations. Depends on P7 for TypeScript release and P5 migration verification.
+Acceptance: users can install, learn without a repo/model, attach a repo, sync supported data, and update compatible content. The release checklist names any untested editor/platform combinations. Depends on P7 for TypeScript release.
 
 ## Release checks
 
@@ -178,9 +174,9 @@ Acceptance: users can install, learn without a repo/model, attach a repo, import
 | V2 | Run bundled examples and reference answers. Check starters, intended compile errors, known wrong answers, edge cases, and acceptable alternative solutions. |
 | V3 | Verify save checking, stale runs, resets, workspace isolation, source mapping, bounded output/timeouts, scratch, and compare. |
 | V4 | Verify restart/resume, independent navigation state, language switches, missing tools, and no-repo/no-model use. |
-| V5 | Rehearse Tutor import, partial/corrupt data, repeated import, old practice sessions, version updates, and restoration from untouched originals. |
+| V5 | Rehearse partial/corrupt data, old practice sessions, and version updates. |
 | V6 | Verify optional sync includes portable course data and excludes local paths and generated build files. |
-| V7 | Run relevant existing Practice Range and Tutor tests, mod type checks, native panel checks, and whitespace checks. Add tests for new behavior rather than mirroring implementation details. |
+| V7 | Run relevant existing Practice Range tests, mod type checks, native panel checks, and whitespace checks. Add tests for new behavior rather than mirroring implementation details. |
 | V8 | Review course explanations and observe learner transfer tasks. Automated tests establish code correctness, not teaching effectiveness. |
 
 ## Boundaries and risks
@@ -189,7 +185,7 @@ Acceptance: users can install, learn without a repo/model, attach a repo, import
 | --- | --- | --- |
 | R1 | Generated content compiles but teaches badly. | Review prerequisite order, explanations, wrong answers, and observed learner tasks before release. |
 | R2 | A complete beginner is asked to use unexplained JavaScript. | Include a true programming foundation and a separate entry path for experienced developers. |
-| R3 | Consolidation loses existing answers or features. | Preserve IDs and paths where possible, copy imports, rehearse recovery, and check the feature inventory. |
+| R3 | Consolidation loses existing answers or features. | Preserve IDs and paths where possible, rehearse recovery, and check the feature inventory. |
 | R4 | Course updates invalidate progress or orphan work. | Pin enrollments, retain required content, and migrate through explicit compatibility mappings. |
 | R5 | Repo teaching produces gaps or becomes unavailable. | Keep the complete bundled curriculum and distinguish repo supplements from foundations. |
 | R6 | Building all three courses delays validating the design. | Finish one vertical sample and one complete TypeScript course before expanding. |

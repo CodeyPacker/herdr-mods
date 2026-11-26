@@ -123,7 +123,7 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/CodeyP
 ---
 ### [tutor](tutor/)
 
-Learn a language from a codebase you pick: the agent plans a course from its real code, with lessons, quizzes and practice exercises. Practice Range can import Tutor courses with their progress.
+Learn a language from a codebase you pick: the agent plans a course from its real code, with lessons, quizzes and practice exercises.
 
 ```text
 Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/CodeyPacker/herdr-mods/tree/main/tutor

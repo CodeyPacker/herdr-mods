@@ -6,8 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseSyncConfig } from "../mods/practice-range/editor-config.js";
 import { pull, push, GITIGNORE } from "../mods/practice-range/sync.mjs";
-import { loadCourse } from "../mods/practice-range/courses/loader.mjs";
-import { createEnrollment, courseCommand } from "../mods/practice-range/courses/service.mjs";
+import { courseCommand } from "../mods/practice-range/courses/service.mjs";
 
 const git = (folder, ...args) => execFileSync("git", ["-C", folder, ...args], { encoding: "utf8" });
 
@@ -127,32 +126,6 @@ test("sync preserves a customized ignore file", async () => {
   await writeFile(join(first, ".gitignore"), custom);
   await push(first);
   assert.equal(await readFile(join(first, ".gitignore"), "utf8"), custom);
-});
-
-test("an imported course restores on another device without copying machine attachments or staging files",async()=>{
-  const {first,second}=await twoDevices();
-  const original=await loadCourse("course:ts-foundations"),id="course:tutor-0123456789abcdef";
-  const pack=JSON.parse(JSON.stringify(original).replaceAll(original.id,id));
-  pack.legacy={source:"tutor",slug:"example",known:[],parts:[]};
-  const parent="courses/course-tutor-0123456789abcdef",version=`${parent}/${pack.contentVersion}`;
-  const files={
-    [`${parent}/current.json`]:JSON.stringify({courseId:id,contentVersion:pack.contentVersion}),
-    [`${version}/pack.json`]:JSON.stringify(pack),
-    [`${version}/enrollment.json`]:JSON.stringify(createEnrollment(pack,"beginner")),
-    [`${version}/import.json`]:JSON.stringify({source:"tutor",identity:{slug:"example"}}),
-    [`${version}/attachments.json`]:'{"root":"/private/source"}',
-    ".tutor-imports/partial/enrollment.json":"{}",
-  };
-  for(const [path,text] of Object.entries(files)){await mkdir(join(first,path,".."),{recursive:true});await writeFile(join(first,path),text);}
-  await push(first);
-  const tracked=git(first,"ls-files");
-  assert.match(tracked,/pack.json/);assert.match(tracked,/import.json/);
-  assert.doesNotMatch(tracked,/attachments|partial/);
-  await pull(second);
-  const state=await courseCommand(second,"status",{courseId:id});
-  assert.equal(state.course.legacy.source,"tutor");
-  assert.equal(state.course.lessons.length,18);
-  assert.equal(state.attachment,null);
 });
 
 test("the first computer can start from git init and an empty remote", async () => {

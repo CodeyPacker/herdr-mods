@@ -3,8 +3,8 @@ import { v_flex, h_flex, TextView, InputState } from "gpui-base";
 import { watchFolder, window as appWindow } from "herdr";
 import { keyButton, spinner, textInput } from "../kit/controls.js";
 import { banner, paneBar, sectionLabel } from "../kit/pane.js";
-import { courseCommand, importTutorPreferences } from "./bridge.js";
-import { configuredEditor, configuredTutor, generateRepoLesson, generateImportedModule, generateImportedExercises, generateExtraPractice } from "../bridge.js";
+import { courseCommand } from "./bridge.js";
+import { generateRepoLesson, generateExtraPractice } from "../bridge.js";
 import { tutorChat } from "../tutor/panel.js";
 import { findLanguage } from "../languages/index.js";
 import { statusLabels } from "./evidence.js";
@@ -33,7 +33,6 @@ export class CoursePanel {
     this.error = "";
     this.repoLessonId = "";
     this.generatingRepoLesson = false;
-    this.generatingModule = false;
     this.generatingExtras = false;
     /** @type {import("./types.js").RepoSource | null} */
     this.source = null;
@@ -46,21 +45,11 @@ export class CoursePanel {
     /** @type {import("herdr").FolderWatch | null} */
     this.watch = null;
     this.confirmReset = false;
-    /** @type {import("./types.js").TutorImport[]} */
-    this.imports=[];
-    /** @type {import("./types.js").TutorImport | null} */
-    this.importPreview=null;
-    this.applyImportPreferences=false;
     this.knownInput=InputState.new({placeholder:"Python, JavaScript…"});
     this.knownInput.on("focus",()=>{this.host.typing=true;});
     this.knownInput.on("blur",()=>{this.host.typing=false;});
     this.knownInput.on("change",(_event,cx)=>cx.notify());
     this.knownInput.on("submit",(_event,cx)=>this.saveProfile(cx));
-    this.importInput=InputState.new({placeholder:"Tutor data folder (optional)…"});
-    this.importInput.on("focus",()=>{this.host.typing=true;});
-    this.importInput.on("blur",()=>{this.host.typing=false;});
-    this.importInput.on("change",(_event,cx)=>cx.notify());
-    this.importInput.on("submit",(_event,cx)=>this.run("import-list",{},cx));
     this.repoInput = InputState.new({ placeholder: "Local git repo folder…" });
     this.repoInput.on("focus", () => { this.host.typing = true; });
     this.repoInput.on("blur", () => { this.host.typing = false; });
@@ -147,44 +136,14 @@ export class CoursePanel {
     });
   }
 
-  /** @param {string} moduleId @param {Context} cx @param {"reading" | "exercises"} [kind] */
-  generateImportedModule(moduleId,cx,kind="reading") {
-    if(this.busy || !this.data || !this.host.tutor.enabled) return;
-    this.host.cancelTutor(cx);
-    const id=`module-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const request={id,courseId:this.data.course.id,contentVersion:this.data.course.contentVersion,moduleId};
-    this.host.tutorRequestId=id; this.host.tutorBusy=true; this.generatingModule=true;
-    this.busy=kind==="exercises"?"Writing exercises, then checking every answer…":"Writing the unfinished lesson and quiz…"; this.error=""; cx.notify();
-    cx.spawn(async cx=>{
-      try {
-        const result=await (kind==="exercises"?generateImportedExercises:generateImportedModule)(request);
-        if(this.host.tutorRequestId!==id) return;
-        this.generatingModule=false; this.host.tutorRequestId=null; this.host.tutorBusy=false;
-        this.busy="Opening the generated course version…"; cx.notify();
-        try {
-          await courseCommand("enroll",result.generated);
-          this.data=await courseCommand("open",{...result.generated,step:0});
-          this.page="lesson"; this.pause();
-        } catch(error) { throw new Error(`The new version was saved, but opening it failed. Open Courses to resume it. ${error instanceof Error?error.message:String(error)}`); }
-        if(this.host.sync) this.host.pushSoon(cx);
-      } catch(error) {
-        if(this.host.tutorRequestId===id || !this.generatingModule) this.error=error instanceof Error?error.message:String(error);
-      } finally {
-        if(this.host.tutorRequestId===id) {this.host.tutorRequestId=null;this.host.tutorBusy=false;}
-        this.generatingModule=false;this.busy="";cx.notify();
-      }
-    });
-  }
-
   /** @param {string} action @param {Record<string, unknown>} value @param {Context} cx */
   async dispatch(action, value, cx) {
     if (this.busy) return;
-    if (action.startsWith("import-") || ["profile-save", "list", "enroll", "open", "source", "task", "review-start", "review-next", "review-end", "attach-repo", "detach-repo"].includes(action)) this.host.cancelTutor(cx);
+    if (["profile-save", "list", "enroll", "open", "source", "task", "review-start", "review-next", "review-end", "attach-repo", "detach-repo"].includes(action)) this.host.cancelTutor(cx);
     this.busy = ["check", "check-saved"].includes(action) ? "Checking every case…" : "Loading course…";
     this.error = ""; cx.notify();
     try {
-      const request = { ...(action === "enroll" || action === "list" || action.startsWith("import-") ? {} : { courseId: this.data?.course.id, contentVersion: this.data?.course.contentVersion }),
-        ...(action.startsWith("import-")&&this.importInput.value().trim()?{sourceRoot:this.importInput.value().trim()}:{}),...value };
+      const request = { ...(action === "enroll" || action === "list" ? {} : { courseId: this.data?.course.id, contentVersion: this.data?.course.contentVersion }), ...value };
       const result = await courseCommand(action, request);
       if (result.profile) {
         const untouched=this.knownInput.value()===this.profile.knownLanguages.join(", ");
@@ -199,18 +158,6 @@ export class CoursePanel {
       } else if (action === "source") {
         if (this.page !== "source") this.sourceReturnPage = this.page;
         this.source = result.source; this.sourceRequest = value; this.page = "source"; this.pause();
-      } else if(action==="import-list") { this.imports=result.imports; this.page="imports"; this.pause(); }
-      else if(action==="import-preview") { this.importPreview=result.preview; this.applyImportPreferences=false; this.page="import-preview"; }
-      else if(action==="import-apply") {
-        this.data=await courseCommand("enroll",{courseId:result.imported.courseId,contentVersion:result.imported.contentVersion});
-        this.page="modules";
-        if(this.applyImportPreferences) {
-          try {
-            await importTutorPreferences(result.imported.preferences??{});
-            this.host.editor=await configuredEditor(); this.host.editorDefaultSet=Boolean(this.host.editor);
-            this.host.tutor=await configuredTutor();
-          } catch(error) { this.error=`The course was imported. Preference setup needs attention: ${error instanceof Error?error.message:String(error)}`; }
-        }
       } else {
         this.data = result;
         if (action === "enroll") this.page = "modules";
@@ -224,7 +171,7 @@ export class CoursePanel {
         }
         if (result.pendingSave) this.pendingSave = true;
       }
-      if (this.host.sync && !["list", "status", "source", "import-list", "import-preview"].includes(action)) this.host.pushSoon(cx);
+      if (this.host.sync && !["list", "status", "source"].includes(action)) this.host.pushSoon(cx);
     } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
     finally { this.busy = ""; cx.notify(); }
   }
@@ -345,9 +292,7 @@ export class CoursePanel {
   back(cx) {
     if (this.busy) return;
     this.confirmReset = false;
-    if(this.page==="import-preview") this.page="imports";
-    else if(this.page==="imports") this.page="catalog";
-    else if (this.page === "source") this.page = this.sourceReturnPage;
+    if (this.page === "source") this.page = this.sourceReturnPage;
     else if (this.page !== "catalog" && this.data?.enrollment.review) this.run("review-end", {}, cx);
     else if (this.page === "task" && this.isReadiness(this.data?.enrollment.activeTask)) { this.page = "modules"; this.pause(); }
     else if (this.page === "task" && this.data?.enrollment.position) this.run("open", this.data.enrollment.position, cx);
@@ -364,18 +309,17 @@ export class CoursePanel {
   render(t) {
     const body = v_flex().id("course-body").flex_1().min_h(0).overflow_y_scroll().p(16).gap(12);
     if (this.busy) body.child(h_flex().gap(8).child(spinner(t)).child(div().child(this.busy)));
-    if (this.generatingRepoLesson || this.generatingModule || this.generatingExtras) body.child(keyButton(t,"cancel-repo-lesson","","Cancel generation",Boolean(this.host.tutorRequestId),cx=>this.host.cancelTutor(cx)));
+    if (this.generatingRepoLesson || this.generatingExtras) body.child(keyButton(t,"cancel-repo-lesson","","Cancel generation",Boolean(this.host.tutorRequestId),cx=>this.host.cancelTutor(cx)));
     if (this.error) body.child(banner(t, this.error, t.blocked));
     if (this.page === "catalog") {
       body.child(div().font_semibold().child(this.languageFilter ? `${findLanguage(this.languageFilter).name} courses` : "Courses"))
-        .child(div().text_color(t.muted).child("Learn with included examples. No repo or AI connection needed."))
-        .child(keyButton(t,"course-import","","Import Tutor courses",!this.busy,cx=>this.run("import-list",{},cx)));
+        .child(div().text_color(t.muted).child("Learn with included examples. No repo or AI connection needed."));
       this.profileView(body,t);
       if (this.languageFilter) body.child(keyButton(t,"course-all-languages","","All courses",!this.busy,cx=>{this.languageFilter="";cx.notify();}));
       for (const course of this.catalog.filter(course=>!this.languageFilter || course.languageId===this.languageFilter)) {
         const actions=h_flex().gap(8).flex_wrap()
           .child(keyButton(t, `course-beginner-${course.id}`, "", "Start or resume", !this.busy && !course.error, cx => this.run("enroll", { courseId: course.id, entryPath: "beginner" }, cx)));
-        if(!course.imported) actions.child(keyButton(t, `course-experienced-${course.id}`, "", "I know another language", !this.busy && !course.error, cx => this.run("enroll", { courseId: course.id, entryPath: "experienced" }, cx)));
+        actions.child(keyButton(t, `course-experienced-${course.id}`, "", "I know another language", !this.busy && !course.error, cx => this.run("enroll", { courseId: course.id, entryPath: "experienced" }, cx)));
         body.child(v_flex().gap(8).child(div().font_semibold().child(course.title ?? course.id))
           .child(div().text_color(t.muted).child(course.error ?? `${course.preview ? "Preview · " : ""}${course.available} of ${course.total} modules available`))
           .child(actions));
@@ -384,12 +328,9 @@ export class CoursePanel {
         if (course.enrolledVersion && course.enrolledVersion !== course.contentVersion) body.child(keyButton(t, `course-latest-${course.id}`, "", "Start latest version separately", !this.busy && !course.error,
           cx => this.run("enroll", { courseId: course.id, contentVersion: course.contentVersion }, cx)));
       }
-    } else if(this.page==="imports") this.importList(body,t);
-    else if(this.page==="import-preview") this.importReview(body,t);
-    else if (this.data) {
+    } else if (this.data) {
       body.child(div().font_semibold().child(this.data.course.title));
-      if (this.data.course.legacy) body.child(banner(t,"Imported Tutor course. Original lessons and historical results are preserved. Tutor's files remain unchanged."));
-      else if (this.data.course.preview) body.child(banner(t, "Course preview. Lesson pacing still needs learner testing. You can explore available modules without completing their prerequisites."));
+      if (this.data.course.preview) body.child(banner(t, "Course preview. Lesson pacing still needs learner testing. You can explore available modules without completing their prerequisites."));
       if (this.page === "modules") this.modules(body, t);
       else if (this.page === "lesson") this.lessonView(body, t);
       else if (this.page === "repo-lesson") this.repoLessonView(body, t);
@@ -401,36 +342,9 @@ export class CoursePanel {
       }));
     }
     const backLabel = this.page === "catalog" ? `Back to ${this.returnScreen === "setup" ? "setup" : this.returnScreen === "languages" ? "languages" : "practice"}`
-      : ["imports","import-preview"].includes(this.page) ? "Back" : this.data?.enrollment.review ? "End review" : this.page === "task" && !this.isReadiness(this.data?.enrollment.activeTask) ? "Return to lesson" : "Back";
+      : this.data?.enrollment.review ? "End review" : this.page === "task" && !this.isReadiness(this.data?.enrollment.activeTask) ? "Return to lesson" : "Back";
     return v_flex().flex_1().min_h(0).child(body).child(paneBar(t)
       .child(keyButton(t, "course-back", "esc", backLabel, !this.busy, cx => this.back(cx))));
-  }
-
-  /** @param {import("gpui-kit").Element} body @param {Theme} t */
-  importList(body,t) {
-    body.child(sectionLabel(t,"Import Tutor courses"))
-      .child(div().text_color(t.muted).child("Finds Tutor beside your Practice Range data folder by default. Preview one course before copying. Originals are never changed."))
-      .child(textInput(t,this.importInput,this.host.typing))
-      .child(keyButton(t,"scan-tutor","","Find courses",!this.busy,cx=>this.run("import-list",{},cx)));
-    if(!this.imports.length) body.child(div().child("No Tutor courses found. Enter its data folder if it is stored elsewhere."));
-    for(const course of this.imports) body.child(v_flex().gap(6)
-      .child(div().font_semibold().child(course.title))
-      .child(div().text_color(t.muted).child(course.error??`${course.languageId} · ${course.written}/${course.modules} modules written · ${course.answers} saved answers`))
-      .child(keyButton(t,`preview-${course.slug}`,"","Preview import",!this.busy&&!course.error,cx=>this.run("import-preview",{slug:course.slug},cx))));
-  }
-
-  /** @param {import("gpui-kit").Element} body @param {Theme} t */
-  importReview(body,t) {
-    const preview=this.importPreview;
-    if(!preview) return;
-    body.child(sectionLabel(t,preview.title))
-      .child(div().child(`${preview.written} written modules, ${preview.questions} questions, ${preview.exercises} exercises, ${preview.answers} saved answers.`))
-      .child(div().text_color(t.muted).child("Quiz scores and practice results remain historical evidence. Imported answers need a fresh start before recording independent success. Unmatched answers are kept in imported history."));
-    if(preview.known?.length) body.child(div().child(`Known languages: ${preview.known.join(", ")}`));
-    for(const warning of preview.warnings??[]) body.child(banner(t,warning));
-    body.child(keyButton(t,"import-preferences","",`Use Tutor editor and AI settings: ${this.applyImportPreferences?"on":"off"}`,!this.busy,cx=>{this.applyImportPreferences=!this.applyImportPreferences;cx.notify();}))
-      .child(div().text_size(12).text_color(t.muted).child("Optional. Copy only into missing settings. Existing editor and AI choices stay unchanged."))
-      .child(keyButton(t,"apply-tutor-import","",preview.alreadyImported?"Open existing import":"Import this course",!this.busy,cx=>this.run("import-apply",{slug:preview.slug,fingerprint:preview.fingerprint},cx)));
   }
 
   /** @param {import("gpui-kit").Element} body @param {Theme} t */
@@ -464,27 +378,12 @@ export class CoursePanel {
     body.child(keyButton(t, "course-review", "", this.data.enrollment.review ? "Resume review" : `Review · ${this.data.reviewReady} ready`,
       !this.busy && (Boolean(this.data.enrollment.review) || this.data.reviewReady > 0), cx => this.run("review-start", {}, cx)));
     if (position) body.child(keyButton(t, "course-resume", "", "Continue lesson", !this.busy, cx => this.run("open", position, cx)));
-    let previousPart="";
     for (const module of this.data.course.modules) {
-      if(module.part && module.part!==previousPart) {
-        const part=this.data.course.legacy?.parts.find(part=>part.id===module.part);
-        if(part) body.child(sectionLabel(t,part.title));
-        previousPart=module.part;
-      }
       const seen = this.data.enrollment.modules[module.id]?.seen.length ?? 0;
       body.child(h_flex().gap(8).items_center().flex_wrap()
-        .child(keyButton(t, module.id, "", module.title, !this.busy && module.status === "available", cx => this.run("open", { moduleId: module.id, step:this.data.enrollment.modules[module.id]?.resumeStep??0 }, cx)))
+        .child(keyButton(t, module.id, "", module.title, !this.busy && module.status === "available", cx => this.run("open", { moduleId: module.id, step: 0 }, cx)))
         .child(div().text_size(11).text_color(t.dim).child(module.status === "planned" ? "Planned" : this.evidenceLabel(module.id, seen)))
         .child(keyButton(t, `skip-${module.id}`, "", this.data.enrollment.modules[module.id]?.skipped ? "Include" : "Skip", !this.busy && module.status === "available", cx => this.run("skip", { moduleId: module.id }, cx))));
-      if(module.generated) body.child(div().text_size(11).text_color(t.muted).child("AI-generated reading and quiz"));
-      if(module.generatedExercises) body.child(div().text_size(11).text_color(t.muted).child("AI-generated exercises, checked before saving"));
-      const written=this.data.course.lessons.find(lesson=>lesson.id===module.id);
-      if(written && !written.tasks.length && this.data.course.legacy) body.child(keyButton(t,`write-exercises-${module.id}`,"","Write practice exercises",!this.busy && !this.data.enrollment.review && this.host.tutor.enabled,cx=>this.generateImportedModule(module.id,cx,"exercises")))
-        .child(div().text_size(11).text_color(t.muted).child("Every reference answer must pass and every starter and known wrong answer must fail before anything is saved. Needs the language's compiler. Saves a new version with your progress."));
-      if(module.status==="planned" && this.data.course.legacy) body.child(keyButton(t,`write-module-${module.id}`,"","Write lesson and quiz",!this.busy && !this.data.enrollment.review && this.host.tutor.enabled && Boolean(repo?.available),cx=>this.generateImportedModule(module.id,cx)))
-        .child(div().text_size(11).text_color(t.muted).child("Uses the imported course's pinned source. Saves a new version with your progress and answers. The original stays available."));
-      const legacy=this.data.enrollment.legacy?.modules[module.id];
-      if(legacy) body.child(div().text_size(11).text_color(t.muted).child(`${legacy.doneAt?"Completed in Tutor. ":""}${legacy.quiz?.best!==undefined?`Tutor quiz best: ${legacy.quiz.best}${legacy.quiz.passed?" · passed":""}`:""}`));
     }
   }
 
@@ -537,7 +436,6 @@ export class CoursePanel {
   lessonView(body, t) {
     const lesson = this.lesson(), position = this.data.enrollment.position;
     if (!lesson || !position) return;
-    if(lesson.generated) body.child(banner(t,`AI-generated lesson and quiz. Source locations are checked. Explanations and quiz answers may need correction. ${lesson.generated.scope}`));
     body.child(keyButton(t,"course-repo-module","","Explain this topic using my repo",!this.busy && Boolean(this.data.attachment?.available) && this.host.tutor.enabled,cx=>this.generateRepoLesson(lesson.id,cx)));
     const step = lesson.steps[position.step];
     body.child(sectionLabel(t, `${lesson.title} · ${position.step + 1} of ${lesson.steps.length}`));
@@ -545,9 +443,6 @@ export class CoursePanel {
     body.child(div().font_semibold().child(step.title)).child(markdown("course-step", step.text));
     for (const id of [...(step.examples ?? []), ...(step.example ? [step.example] : [])]) {
       const example = lesson.examples[id];
-      if(example.repoRef) body.child(div().text_size(11).text_color(t.muted).child(`${example.repoRef.path}:${example.repoRef.start}-${example.repoRef.end} · ${String(example.repoRef.commit??"").slice(0,10)}`))
-        .child(keyButton(t,`course-source-${id}`,"","Read source file",!this.busy,cx=>this.run("source",{moduleId:lesson.id,exampleId:id},cx)));
-      if(example.sourceError) body.child(banner(t,example.sourceError));
       body.child(markdown(`course-example-${id}`, `\`\`\`${this.data.course.codeFence??"typescript"}\n${example.code}\n\`\`\``));
       if(!example.readOnly) body.child(keyButton(t, `course-run-example-${id}`, "", "Run example", !this.busy, cx => this.run("example", { moduleId: lesson.id, exampleId: id }, cx)));
       const result = this.data.enrollment.modules[lesson.id]?.examples?.[id];
@@ -574,7 +469,6 @@ export class CoursePanel {
     for (const topic of [...new Set((lesson.drills ?? []).map(id => id.split("/")[0]))]) {
       body.child(keyButton(t, `course-drill-${topic}`, "", `Practice ${topic}`, !this.busy && !this.data.enrollment.review, cx => this.practiceTopic(topic, cx)));
     }
-    if (this.data.course.legacy) return;
     if (this.data.extrasError) body.child(banner(t, this.data.extrasError));
     if ((lesson.extraTasks ?? []).length) body.child(sectionLabel(t, "Extra practice"));
     for (const task of lesson.extraTasks ?? []) body.child(keyButton(t, `course-extra-${task.id}`, "", `${task.title} · AI-generated`, !this.busy && !this.data.enrollment.review, cx => this.run("task", { taskId: task.id }, cx)));
@@ -646,8 +540,6 @@ export class CoursePanel {
     if (!task) return;
     const progress = this.data.enrollment.tasks[task.id];
     if(task.generated) body.child(banner(t,`AI-generated exercise. Its reference passed and known wrong answers failed before saving. It checks printed output only.${this.isExtra(task.id) ? " Extra practice does not count toward module status or course review." : ""}`));
-    if(progress.assistanceUnknown) body.child(banner(t,"This answer was imported. Earlier assistance is unknown. Use Start fresh before recording independent success."));
-    if(progress.legacy) body.child(div().text_size(11).text_color(t.muted).child(`Tutor history: ${progress.legacy.runs??0} runs · ${progress.legacy.passed?"passed":"not passed"} · ${progress.legacy.hints??0} hints`));
     const review = this.data.enrollment.review;
     if (review) body.child(banner(t, `Review ${review.index + 1} of ${review.ids.length}. Fresh files. Your saved practice answers are preserved.`));
     body.child(sectionLabel(t, task.title)).child(markdown("course-task-prompt", task.prompt));

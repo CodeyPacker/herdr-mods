@@ -3,8 +3,6 @@
 // What the learner already knows. Lessons, quizzes and chat compare to it.
 export const KNOWN = "JavaScript and TypeScript";
 export const COMPARE = "TypeScript";
-// Course teaching is moving to Practice Range. Tutor keeps working, and its files are never changed by an import.
-export const MOVE_NOTICE = "Courses are moving to Practice Range. Open Practice Range, then Courses, then Import Tutor courses to copy a course with its progress. Tutor keeps working and its files are not changed.";
 // Read-only tools for every claude call. It can read the codebase but never change it.
 export const TOOLS = ["--allowedTools", "Read", "Grep", "Glob", "Bash(git show:*)", "Bash(git log:*)", "Bash(git ls-files:*)", "Bash(git grep:*)"];
 // How many times a written outline, module or exercise set goes back to Claude to fix its problems.

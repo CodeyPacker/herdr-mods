@@ -57,7 +57,7 @@ test("source requests resolve enrolled references and reject invalid selectors a
   const f=await fixture(t);
   for(const value of [{repoLessonId:"missing"},{sectionIndex:-1},{referenceIndex:1},{line:0},{line:1.5},{line:"1"}])
     await assert.rejects(courseCommand(f.data,"source",{...f.request,...value}),/Choose/);
-  await assert.rejects(courseCommand(f.data,"source",{courseId,moduleId,exampleId:"board",path:"../secret",commit:f.commit}),/Choose a repo example/);
+  await assert.rejects(courseCommand(f.data,"source",{courseId,moduleId,exampleId:"board",path:"../secret",commit:f.commit}),/Choose a saved source reference/);
   const {source}=await courseCommand(f.data,"source",{...f.request,path:"../secret",commit:"b".repeat(40)});
   assert.equal(source.path,"δ.ts");assert.equal(source.commit,f.commit);
 });
