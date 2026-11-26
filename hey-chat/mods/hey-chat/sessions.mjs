@@ -30,7 +30,7 @@ import { spawnSync as runProgram } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { homedir, tmpdir } from "node:os";
 import { keepFile, keepBase64, keepDataUrl, REL } from "./images.mjs";
-import { flags, parse, clip, errorText } from "./cli.mjs";
+import { flags, parse, clip, errorText, isMain } from "./cli.mjs";
 import { imageEvent, textEvents, compactNote, claudeAssistantEvents, claudeToolResultEvents } from "./agent-events.mjs";
 
 const HOME = homedir();
@@ -342,13 +342,32 @@ function lastTurns(events, max) {
  * Removes a session for good. @param {string} agent @param {string} session @param {string} file
  * @returns {{ ok: boolean, message: string }}
  */
+/**
+ * The app that has a session file open, from lsof (macOS and Linux), or null.
+ * @param {string | undefined} file @returns {string | null}
+ */
+export function openBy(file, run = runProgram) {
+  if (!file || process.platform === "win32") return null;
+  const r = run("lsof", ["-t", "--", file], { encoding: "utf8", timeout: 5000 });
+  const pids = String(r.stdout ?? "").split(/\s+/).filter(pid => /^\d+$/.test(pid) && Number(pid) !== process.pid);
+  if (!pids.length) return null;
+  const commands = pids.map(pid => String(run("ps", ["-o", "command=", "-p", pid], { encoding: "utf8", timeout: 5000 }).stdout ?? ""));
+  if (commands.some(c => c.includes("ChatGPT.app"))) return "the ChatGPT app";
+  if (commands.some(c => c.includes("Codex.app"))) return "the Codex app";
+  return "another Codex window";
+}
+
 function removeSession(agent, session, file) {
   if (!/^[0-9a-f-]{20,}$/i.test(session)) return { ok: false, message: "That isn't a session id." };
   if (agent === "codex") {
     const r = spawnSync("codex", ["delete", "--force", session], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
     if (r.error) return { ok: false, message: `Couldn't run codex: ${r.error.message}` };
     const out = `${r.stdout ?? ""}${r.stderr ?? ""}`.trim();
-    return r.status === 0 && !/^error/im.test(out) ? { ok: true, message: out } : { ok: false, message: out || "codex didn't delete it." };
+    if (r.status === 0 && !/^error/im.test(out)) return { ok: true, message: out };
+    // Codex won't delete a session another program still has open, and only says "failed".
+    const holder = openBy(file);
+    if (holder) return { ok: false, message: `This chat is open in ${holder}. Close it there, then delete it again.` };
+    return { ok: false, message: out || "codex didn't delete it." };
   }
   // Claude: only <id>.jsonl inside ~/.claude/projects/<folder>/, and the <id>/ folder beside it.
   const root = join(HOME, ".claude", "projects");
@@ -400,7 +419,9 @@ const [mode, ...rest] = process.argv.slice(2);
 const opts = flags(rest);
 /** Where images a chat shows are copied (images.mjs). */
 const images_dir = opts.images || join(HOME, ".config", "herdr-app", REL);
-if (mode === "list") {
+if (!isMain(import.meta.url)) {
+  // Imported (tests): no command to run.
+} else if (mode === "list") {
   const all = [...listClaude(), ...listCodex()].sort((a, b) => b.updatedAt - a.updatedAt);
   process.stdout.write(JSON.stringify(all));
 } else if (mode === "read") {
