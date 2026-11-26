@@ -67,12 +67,14 @@ export const talk = {
   /** One event from a chat's bridge. @param {any} chat @param {any} ev @param {any} cx */
   onEvent(chat, ev, cx) {
     // The bridge has replayed what came before. Not part of the chat itself.
-    if (ev.type === "synced") { if (this.syncing?.delete(chat.id)) cx.notify(); return; }
+    // Outputs are looked for once the replay is done, not after each replayed event: each look
+    // reads the whole chat, which made a long chat's replay slow.
+    if (ev.type === "synced") { this.syncOutputs(chat, cx); if (this.syncing?.delete(chat.id)) cx.notify(); return; }
     const before = chat.session;
     const beforeModel = chat.model;
     const what = applyEvent(chat, ev);
     // A replayed output isn't new, so only a live one is announced.
-    if (["turn_end", "tool_done", "user"].includes(ev.type)) this.syncOutputs(chat, cx, Boolean(this.bridges.get(chat.id)?.synced));
+    if (["turn_end", "tool_done", "user"].includes(ev.type) && this.bridges.get(chat.id)?.synced) this.syncOutputs(chat, cx, true);
     if (ev.type === "connection") {
       const recovery = {};
       chat.recovery = recovery;

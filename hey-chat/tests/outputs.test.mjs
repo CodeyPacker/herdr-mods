@@ -143,7 +143,11 @@ test('a new file shows a short toast in the open chat only, and replayed history
   };
   write('replayed', 'old.md');
   assert.equal(v.outputToast, null, 'a file from replayed history is not news');
+  // As Bridge.markSynced does: it is synced, then the chat hears so.
   bridge.synced = true;
+  v.onEvent(chat, { type: 'synced' }, cx);
+  assert.equal(v.outputToast, null, 'the replay is looked through once, quietly');
+  assert.ok(chat.outputs.some(o => o.label === 'old.md'), 'the replayed file is still listed');
   write('live', 'review.md');
   assert.equal(v.outputToast.text, 'New: review.md');
   assert.equal(timers.at(-1).ms, 4000);

@@ -54,35 +54,54 @@ export async function checkSetup() {
  * character, so a chunk that splits a character is held until its line is whole.
  */
 class LineReader {
-  constructor() { /** @type {number[]} */ this.buf = []; }
+  constructor() { /** The start of a line whose end hasn't arrived yet. @type {Uint8Array[]} */ this.held = []; }
 
   /** @param {Uint8Array} bytes @returns {string[]} the complete lines */
   push(bytes) {
+    if (!(bytes instanceof Uint8Array)) bytes = Uint8Array.from(bytes);
     const out = [];
-    for (const b of bytes) {
-      if (b === 10) { out.push(utf8(this.buf)); this.buf = []; }
-      else this.buf.push(b);
+    let start = 0;
+    // Finding each newline with indexOf is far quicker in Herdr's engine than a loop over every byte.
+    for (let end = bytes.indexOf(10); end !== -1; end = bytes.indexOf(10, start)) {
+      const part = bytes.subarray(start, end);
+      out.push(utf8(this.held.length ? join([...this.held, part]) : part));
+      this.held = [];
+      start = end + 1;
     }
+    if (start < bytes.length) this.held.push(bytes.slice(start));
     return out;
   }
 }
 
-/** @param {number[]} bytes */
+/** @param {Uint8Array[]} parts */
+function join(parts) {
+  const all = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+  let at = 0;
+  for (const p of parts) { all.set(p, at); at += p.length; }
+  return all;
+}
+
+/** @param {Uint8Array} bytes */
 function utf8(bytes) {
-  if (typeof TextDecoder !== "undefined") return new TextDecoder().decode(new Uint8Array(bytes));
-  let s = "";
-  for (let i = 0; i < bytes.length;) {
+  if (typeof TextDecoder !== "undefined") return new TextDecoder().decode(bytes);
+  /** @type {string[]} */
+  const pieces = [];
+  let i = 0;
+  while (i < bytes.length) {
+    // A run of plain ASCII bytes becomes text in one call, a few thousand at a time.
+    let run = i;
+    while (run < bytes.length && bytes[run] < 0x80 && run - i < 4096) run++;
+    if (run > i) { pieces.push(String.fromCharCode.apply(null, /** @type {any} */ (bytes.subarray(i, run)))); i = run; continue; }
     const b = bytes[i];
     let cp, n;
-    if (b < 0x80) { cp = b; n = 1; }
-    else if (b >= 0xf0) { cp = b & 0x07; n = 4; }
+    if (b >= 0xf0) { cp = b & 0x07; n = 4; }
     else if (b >= 0xe0) { cp = b & 0x0f; n = 3; }
     else { cp = b & 0x1f; n = 2; }
     for (let k = 1; k < n; k++) cp = (cp << 6) | ((bytes[i + k] ?? 0) & 0x3f);
-    s += String.fromCodePoint(cp);
+    pieces.push(String.fromCodePoint(cp));
     i += n;
   }
-  return s;
+  return pieces.join("");
 }
 
 /** Where images a chat shows are copied (images.mjs). */
@@ -198,6 +217,8 @@ export class Bridge {
     this.token = null;
     this.received = 0;
     this.lastEventAt = 0;
+    /** The last event after the replay: replayed old events don't make a chat active. */
+    this.lastLiveAt = 0;
     this.lastWriteAt = 0;
     this.quietTicks = 0;
     this.catchUpBusy = false;
@@ -232,7 +253,7 @@ export class Bridge {
    * each check starts a Node program.
    */
   dueForCatchUp() {
-    if (Date.now() - Math.max(this.lastEventAt, this.lastWriteAt) < ACTIVE_MS) { this.quietTicks = 0; return true; }
+    if (Date.now() - Math.max(this.lastLiveAt, this.lastWriteAt) < ACTIVE_MS) { this.quietTicks = 0; return true; }
     return this.quietTicks++ % QUIET_EVERY === 0;
   }
 
@@ -252,6 +273,7 @@ export class Bridge {
         this.onEvent(replay.events[i], cx);
         this.received++;
         this.lastEventAt = Date.now();
+        if (this.synced) this.lastLiveAt = this.lastEventAt;
       }
       cx.notify();
     } finally { this.catchUpBusy = false; }
@@ -330,7 +352,10 @@ export class Bridge {
         const reader = new LineReader();
         let replayed = 0;
         for (;;) {
-          const bytes = await sock.read(65536);
+          let bytes;
+          // Herdr's read gives up after 30 quiet seconds, but the socket still works: read again
+          // instead of reconnecting, which would make the bridge send the whole chat once more.
+          try { bytes = await sock.read(65536); } catch (e) { if (/timed out/i.test(String(e))) continue; throw e; }
           if (!bytes || bytes.length === 0) break;
           for (const line of reader.push(bytes)) {
             let ev = null;
@@ -341,6 +366,7 @@ export class Bridge {
             this.onEvent(ev, cx);
             this.received++;
             this.lastEventAt = Date.now();
+            if (this.synced) this.lastLiveAt = this.lastEventAt;
             retries = 0;
           }
           this.waitForQuiet(cx);
