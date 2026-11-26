@@ -1,0 +1,54 @@
+{
+  "id": "course:sql-foundations/task/tables-coupons",
+  "role": "review",
+  "title": "Create a coupons table",
+  "concepts": [
+    "create-table",
+    "constraint"
+  ],
+  "prompt": "Create a table named coupons with three columns. code is text and the primary key. percent is an integer that must have a value from 1 to 100. expires_on is a date and may be left empty.",
+  "hints": [
+    "Which column may be NULL, and which may not?",
+    "The limit on percent needs both a CHECK and a NOT NULL, because a CHECK lets NULL through.",
+    "code text PRIMARY KEY, percent integer NOT NULL CHECK (percent BETWEEN 1 AND 100), expires_on date"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "verify": "INSERT INTO coupons (code, percent) VALUES ('SPRING', 15) RETURNING code, percent, expires_on;",
+  "rejects": [
+    "INSERT INTO coupons (code, percent) VALUES ('SPRING', 20)",
+    "INSERT INTO coupons (code, percent) VALUES ('ZERO', 0)",
+    "INSERT INTO coupons (code, percent) VALUES ('BIG', 101)",
+    "INSERT INTO coupons (code, percent) VALUES ('NONE', NULL)"
+  ],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-allows-zero.sql",
+      "misconception": "Sets the lower limit at 0 instead of 1.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "should be rejected"
+      }
+    },
+    {
+      "source": "wrong-check-only.sql",
+      "misconception": "Relies on the CHECK alone, which accepts a missing percent.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "should be rejected"
+      }
+    }
+  ],
+  "feedback": "The feedback names an INSERT that should have been rejected. Check both ends of the range and a missing value."
+}

@@ -1,0 +1,56 @@
+{
+  "id": "course:sql-foundations/task/tables-shipments",
+  "role": "independent",
+  "title": "Create a shipments table",
+  "concepts": [
+    "create-table",
+    "constraint",
+    "foreign-key"
+  ],
+  "prompt": "Create a table named shipments with four columns, all of which must have a value. id is an integer and the primary key. order_id is an integer that must be the id of an existing order. weight_kg is numeric(6, 2) and must be greater than 0. shipped_on is a date.",
+  "hints": [
+    "Which column depends on another table, and which has a limit on its value?",
+    "REFERENCES links order_id to orders (id). CHECK holds the test on the weight.",
+    "order_id integer NOT NULL REFERENCES orders (id), weight_kg numeric(6, 2) NOT NULL CHECK (weight_kg > 0)"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "verify": "INSERT INTO shipments (id, order_id, weight_kg, shipped_on) VALUES (1, 5, 2.50, '2025-03-01') RETURNING id, order_id, weight_kg, shipped_on;",
+  "rejects": [
+    "INSERT INTO shipments (id, order_id, weight_kg, shipped_on) VALUES (2, 999, 1.00, '2025-03-01')",
+    "INSERT INTO shipments (id, order_id, weight_kg, shipped_on) VALUES (3, 5, 0, '2025-03-01')",
+    "INSERT INTO shipments (id, order_id, weight_kg, shipped_on) VALUES (4, NULL, 1.00, '2025-03-01')",
+    "INSERT INTO shipments (id, order_id, weight_kg, shipped_on) VALUES (5, 5, 1.00, NULL)",
+    "INSERT INTO shipments (id, order_id, weight_kg, shipped_on) VALUES (1, 6, 1.00, '2025-03-02')"
+  ],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-foreign-key.sql",
+      "misconception": "Leaves out the link to orders, so any order_id is accepted.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "should be rejected"
+      }
+    },
+    {
+      "source": "wrong-zero-weight.sql",
+      "misconception": "Allows a weight of exactly 0.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "should be rejected"
+      }
+    }
+  ],
+  "feedback": "The feedback names an INSERT that should have been rejected. Find the rule that would stop that row."
+}

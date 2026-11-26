@@ -1,0 +1,50 @@
+{
+  "id": "course:sql-foundations/task/ctes-big-orders",
+  "role": "guided",
+  "title": "Find the large orders",
+  "concepts": [
+    "cte",
+    "group",
+    "filter",
+    "order"
+  ],
+  "prompt": "An order's total is the sum of quantity * unit_price over its items. Return order_id and total for every order whose total is more than 4000, largest total first. The starter tests single items inside the step, so it misses orders made of several smaller items.",
+  "hints": [
+    "Is the limit about one item or about a whole order?",
+    "Let the step add up every item. Then filter the totals in the main query.",
+    "Remove the WHERE from the step and add WHERE total > 4000 to the main query."
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-price-only.sql",
+      "misconception": "Adds up the unit prices and forgets the quantities.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-smallest-first.sql",
+      "misconception": "Sorts the totals in ascending order.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "not in the requested order"
+      }
+    }
+  ],
+  "feedback": "Work out one order's total by hand from its items in schema.sql, and compare it with your result."
+}

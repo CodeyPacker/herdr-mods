@@ -307,21 +307,30 @@
       "teaches": [
         "cte"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/ctes/module.json"
+      }
     },
     {
       "id": "course:sql-foundations/module/expressions",
       "title": "Compute new values",
       "prerequisites": [
         "course:sql-foundations/module/where",
-        "course:sql-foundations/module/nulls"
+        "course:sql-foundations/module/nulls",
+        "course:sql-foundations/module/sorting"
       ],
       "teaches": [
         "case",
         "cast",
         "date-function"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/expressions/module.json"
+      }
     },
     {
       "id": "course:sql-foundations/module/modify",
@@ -335,7 +344,11 @@
         "update",
         "delete"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/modify/module.json"
+      }
     },
     {
       "id": "course:sql-foundations/module/tables",
@@ -348,7 +361,11 @@
         "constraint",
         "foreign-key"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/tables/module.json"
+      }
     },
     {
       "id": "course:sql-foundations/module/windows",

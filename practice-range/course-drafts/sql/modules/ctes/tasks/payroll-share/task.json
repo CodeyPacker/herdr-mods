@@ -1,0 +1,50 @@
+{
+  "id": "course:sql-foundations/task/ctes-payroll-share",
+  "role": "independent",
+  "title": "Compare payroll with budget",
+  "concepts": [
+    "cte",
+    "join",
+    "group",
+    "filter"
+  ],
+  "prompt": "A department's payroll is the total salary of its employees. Return department (the department's name) and payroll for every department whose payroll is more than half of its budget. Sort by department.",
+  "hints": [
+    "What has to be worked out before any department can be compared with its budget?",
+    "Make a step with one row per department_id and its total salary. Join it to departments.",
+    "WITH payrolls AS (SELECT department_id, sum(salary) AS payroll FROM employees GROUP BY department_id) ... WHERE p.payroll > d.budget / 2"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-average.sql",
+      "misconception": "Uses the average salary instead of the total.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Expected 3 rows"
+      }
+    },
+    {
+      "source": "wrong-less-than.sql",
+      "misconception": "Keeps the departments whose payroll is below half of the budget.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Add up one department's salaries by hand and compare the total with half of its budget."
+}

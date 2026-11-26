@@ -1,0 +1,53 @@
+{
+  "id": "course:sql-foundations/task/tables-suppliers",
+  "role": "guided",
+  "title": "Create a suppliers table",
+  "concepts": [
+    "create-table",
+    "constraint"
+  ],
+  "prompt": "Create a table named suppliers with three columns. id is an integer and the primary key. name is text and must always have a value. active is a boolean that must always have a value and is true when an INSERT leaves it out. The starter has the columns but none of the rules.",
+  "hints": [
+    "Three rules are missing: one identifies a row, one forbids a missing name, one supplies a value.",
+    "Rules are written after the column's type.",
+    "id integer PRIMARY KEY, name text NOT NULL, active boolean NOT NULL DEFAULT true"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "verify": "INSERT INTO suppliers (id, name) VALUES (1, 'Acme') RETURNING id, name, active;",
+  "rejects": [
+    "INSERT INTO suppliers (id, name) VALUES (1, 'Again')",
+    "INSERT INTO suppliers (id, name) VALUES (2, NULL)",
+    "INSERT INTO suppliers (id, name, active) VALUES (3, 'Bolt', NULL)"
+  ],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-key.sql",
+      "misconception": "Leaves out the primary key, so two suppliers can share an id.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "should be rejected"
+      }
+    },
+    {
+      "source": "wrong-no-default.sql",
+      "misconception": "Gives active no default, so a missing value is stored as NULL.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "different result"
+      }
+    }
+  ],
+  "feedback": "Read which statement the check ran. Either a row came back with the wrong value, or a bad row was accepted."
+}

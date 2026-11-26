@@ -1,0 +1,52 @@
+{
+  "id": "course:sql-foundations/task/expressions-stock-level",
+  "role": "guided",
+  "title": "Label the stock level",
+  "concepts": [
+    "case",
+    "alias",
+    "filter"
+  ],
+  "prompt": "For every product, return name, stock and level. level is out when the stock is 0, low when it is from 1 to 9, and ok when it is 10 or more. The starter never produces out.",
+  "hints": [
+    "Which test does a stock of 0 meet first in the starter?",
+    "The first true test decides, so the most specific test has to come first.",
+    "Test stock = 0 before stock < 10."
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    },
+    {
+      "id": "edge",
+      "declarations": "fixture-edge.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-else.sql",
+      "misconception": "Leaves out ELSE, so well-stocked products get NULL.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-ten-is-low.sql",
+      "misconception": "Counts a stock of exactly 10 as low.",
+      "witness": {
+        "fixture": "edge",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Check three products: one with a stock of 0, one with a stock of exactly 10, and one with plenty."
+}

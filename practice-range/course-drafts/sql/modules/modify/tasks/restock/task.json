@@ -1,0 +1,49 @@
+{
+  "id": "course:sql-foundations/task/modify-restock",
+  "role": "guided",
+  "title": "Restock what is still sold",
+  "concepts": [
+    "update",
+    "filter",
+    "logic"
+  ],
+  "prompt": "Set the stock to 20 for every product that has a stock of 0 and is not discontinued. Leave every other product as it is. The starter also restocks discontinued products.",
+  "hints": [
+    "Which products have a stock of 0, and which of those are discontinued?",
+    "The WHERE needs a second test, joined with AND.",
+    "WHERE stock = 0 AND discontinued = false"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "verify": "SELECT id, stock FROM products ORDER BY id;",
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-where.sql",
+      "misconception": "Leaves out the WHERE, so every product gets a stock of 20.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "different result"
+      }
+    },
+    {
+      "source": "wrong-low-stock.sql",
+      "misconception": "Restocks every product with less than 20, not only the ones at 0.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "different result"
+      }
+    }
+  ],
+  "feedback": "The feedback shows the rows your statement changed. Exactly two products should change, and neither is discontinued."
+}

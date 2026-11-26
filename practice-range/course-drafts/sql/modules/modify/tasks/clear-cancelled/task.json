@@ -1,0 +1,49 @@
+{
+  "id": "course:sql-foundations/task/modify-clear-cancelled",
+  "role": "review",
+  "title": "Remove the items of cancelled orders",
+  "concepts": [
+    "delete",
+    "subquery",
+    "filter"
+  ],
+  "prompt": "Delete every row of order_items that belongs to a cancelled order. Leave the orders themselves, and the items of all other orders, in place.",
+  "hints": [
+    "order_items has no status. Where is the status of an order stored?",
+    "A subquery can list the ids of the cancelled orders.",
+    "DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE status = 'cancelled');"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "verify": "SELECT count(*) AS items, count(DISTINCT order_id) AS orders_with_items, (SELECT count(*) FROM orders) AS orders FROM order_items;",
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-everything.sql",
+      "misconception": "Leaves out the WHERE and deletes every item.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "different result"
+      }
+    },
+    {
+      "source": "wrong-not-delivered.sql",
+      "misconception": "Deletes the items of every order that is not delivered.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "different result"
+      }
+    }
+  ],
+  "feedback": "Run the subquery on its own first. It should list only the cancelled orders."
+}

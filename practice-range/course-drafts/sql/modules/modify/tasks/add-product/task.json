@@ -1,0 +1,48 @@
+{
+  "id": "course:sql-foundations/task/modify-add-product",
+  "role": "independent",
+  "title": "Add a product",
+  "concepts": [
+    "insert",
+    "column-list"
+  ],
+  "prompt": "Add one product: id 25, name Desk Lamp, category_id 9, price 35.00, stock 12, added_on 2025-02-01. Leave the other columns to their defaults.",
+  "hints": [
+    "Which columns are you giving a value, and in what order?",
+    "List those columns after the table name, then the values in the same order.",
+    "INSERT INTO products (id, name, category_id, price, stock, added_on) VALUES (25, 'Desk Lamp', 9, 35.00, 12, '2025-02-01');"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "verify": "SELECT id, name, category_id, price, stock, discontinued, added_on FROM products WHERE id >= 24 ORDER BY id;",
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-stock.sql",
+      "misconception": "Leaves out a column that must have a value.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "compile",
+        "detail": "error 23502"
+      }
+    },
+    {
+      "source": "wrong-swapped.sql",
+      "misconception": "Gives the values in a different order from the columns.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "different result"
+      }
+    }
+  ],
+  "feedback": "Match each value with the column in the same position of the column list."
+}

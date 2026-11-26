@@ -1,0 +1,48 @@
+{
+  "id": "course:sql-foundations/task/expressions-half-stock",
+  "role": "review",
+  "title": "Halve the stock",
+  "concepts": [
+    "cast",
+    "expression",
+    "filter"
+  ],
+  "prompt": "For every product in category 4, return name and half: its stock divided by 2, keeping the fraction. A stock of 45 gives 22.5.",
+  "hints": [
+    "stock is an integer. What does an integer divided by an integer give?",
+    "One side of the division must not be an integer.",
+    "stock / 2.0 AS half"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-integer-division.sql",
+      "misconception": "Divides two integers, so the fraction is dropped.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-cast-too-late.sql",
+      "misconception": "Converts after the integer division has already dropped the fraction.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Find the product with a stock of 45. Its half should be 22.5, not 22."
+}

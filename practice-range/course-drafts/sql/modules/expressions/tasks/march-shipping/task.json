@@ -1,0 +1,50 @@
+{
+  "id": "course:sql-foundations/task/expressions-march-shipping",
+  "role": "independent",
+  "title": "Measure shipping time in March",
+  "concepts": [
+    "date-function",
+    "cast",
+    "is-null",
+    "filter"
+  ],
+  "prompt": "For every order that was placed in March and has been shipped, return id and days: the number of whole days from the date it was ordered to the date it was shipped. An order that has not been shipped has no shipped_at and must not appear. Sort by id.",
+  "hints": [
+    "Two things are needed from the dates: the month of one, and the difference between two.",
+    "Subtracting timestamps gives an interval. Subtracting dates gives a number of days.",
+    "CAST(shipped_at AS date) - CAST(ordered_at AS date) AS days ... WHERE EXTRACT(MONTH FROM ordered_at) = 3 AND shipped_at IS NOT NULL"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-interval.sql",
+      "misconception": "Subtracts the timestamps, which gives an interval instead of a number of days.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-unshipped.sql",
+      "misconception": "Includes orders that were never shipped.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Not expected:"
+      }
+    }
+  ],
+  "feedback": "Check that days is a plain number, and that every row has one."
+}

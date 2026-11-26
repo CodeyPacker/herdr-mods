@@ -1,0 +1,50 @@
+{
+  "id": "course:sql-foundations/task/ctes-repeat-buyers",
+  "role": "review",
+  "title": "Find the repeat buyers",
+  "concepts": [
+    "cte",
+    "group",
+    "join",
+    "order"
+  ],
+  "prompt": "Return first_name and orders, the number of orders the customer has placed, for every customer with at least 6 orders. Orders of every status count. Put the most orders first, and sort customers with the same number by first_name.",
+  "hints": [
+    "First find how many orders each customer_id has. Then decide who to keep.",
+    "A step with one row per customer_id and its count can be filtered and joined to customers.",
+    "WITH order_counts AS (SELECT customer_id, count(*) AS orders FROM orders GROUP BY customer_id) ... WHERE oc.orders >= 6"
+  ],
+  "starter": "starter.sql",
+  "solution": "solution.sql",
+  "alternative": "alternative.sql",
+  "mode": "query",
+  "rules": [],
+  "ordered": true,
+  "fixtures": [
+    {
+      "id": "practice",
+      "declarations": "fixture-practice.sql"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-more-than-six.sql",
+      "misconception": "Leaves out a customer with exactly 6 orders.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    },
+    {
+      "source": "wrong-skips-cancelled.sql",
+      "misconception": "Leaves cancelled orders out of the count.",
+      "witness": {
+        "fixture": "practice",
+        "kind": "result",
+        "detail": "Missing:"
+      }
+    }
+  ],
+  "feedback": "Count one customer's orders by hand in schema.sql, cancelled ones included, and compare with your result."
+}
