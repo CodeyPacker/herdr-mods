@@ -8,6 +8,7 @@ import { checkProvider, requestReply } from "./providers.mjs";
 import { findLanguage } from "../languages/index.js";
 import { catalogFor } from "../catalog.js";
 import { languageRoot, exerciseFile } from "../runner.mjs";
+import { readLearningProfile } from "../courses/learning-profile.mjs";
 
 async function settings(path) {
   try { return parseTutorConfig(await readFile(path, "utf8")); }
@@ -41,6 +42,7 @@ export async function tutorContext(root, request) {
   catch (error) { if (error.code !== "ENOENT") throw error; }
   const current = session?.exerciseId === exercise.id;
   return { language: language.name, exercise: { title: exercise.title, prompt: exercise.prompt, suppliedTypes: exercise.declarations ?? null }, savedAnswer: answer,
+    knownLanguages: (await readLearningProfile(root)).knownLanguages,
     feedback: current ? session.result : null, revealedAnswer: current && session.answerShown ? exercise.solution : null,
     conversation: messages, question: request.question.trim() };
 }

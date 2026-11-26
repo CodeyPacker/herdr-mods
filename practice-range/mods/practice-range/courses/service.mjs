@@ -11,6 +11,7 @@ import { courseReview, nextCourseAction } from "./review.js";
 import { attachRepo, detachRepo, repoStatus, restoreRepoExcerpts } from "./repo.mjs";
 import { readRepoLessons, saveRepoLesson } from "./supplements.mjs";
 import { courseSource } from "./source.mjs";
+import { knownLanguages, readLearningProfile } from "./learning-profile.mjs";
 
 const hash = source => createHash("sha256").update(typeof source === "string" ? source : JSON.stringify(source)).digest("hex");
 export const enrollmentDirectory = (root, pack) => join(root, "courses", courseFolderName(pack.id), pack.contentVersion);
@@ -149,11 +150,18 @@ export async function checkTask(root, pack, task, source, run) {
 }
 
 export async function courseCommand(root, action, request = {}) {
+  if (action === "profile-save") return locked(root, async () => {
+    const profile = await readLearningProfile(root);
+    if (profile.error) throw new Error(profile.error);
+    const names = knownLanguages(request.knownLanguages);
+    await save(join(root,"learning.json"),{version:1,knownLanguages:names});
+    return { profile:{configured:true,knownLanguages:names} };
+  });
   if (action.startsWith("import-")) {
     const { tutorImports } = await import("./importer.mjs");
     return tutorImports(root, action, request);
   }
-  if (action === "list") return { courses: await Promise.all((await listCourses(root)).map(async course => {
+  if (action === "list") return { profile: await readLearningProfile(root), courses: await Promise.all((await listCourses(root)).map(async course => {
     const parent = join(root, "courses", courseFolderName(course.id));
     try {
       const selected = await readJson(join(parent, "current.json"));
@@ -272,7 +280,7 @@ export async function courseCommand(root, action, request = {}) {
           const result = await checkTask(checks, pack, task, source);
           const currentHash = hash(await readAnswer(answer, task));
           // A newer save will be checked next. Never record a stale verdict as a current pass.
-          if (currentHash !== sourceHash) return { ...await snapshot(pack, state, directory), pendingSave: true };
+          if (currentHash !== sourceHash) return { ...await snapshot(root, pack, state, directory), pendingSave: true };
           const assisted = progress.hintCount > 0 || progress.answerShown || Boolean(progress.aiHelp) || Boolean(progress.assistanceUnknown);
           const attempt = { at: Date.now(), sourceHash, passed: result.passed, assisted,
             hintCount: progress.hintCount, answerShown: progress.answerShown, aiHelp: Boolean(progress.aiHelp), assistanceUnknown: Boolean(progress.assistanceUnknown) };
@@ -291,11 +299,11 @@ export async function courseCommand(root, action, request = {}) {
       }
       await persist();
     } else if (action !== "status") throw new Error(`Unknown course action: ${action}`);
-    return snapshot(pack, state, directory);
+    return snapshot(root, pack, state, directory);
   });
 }
 
-async function snapshot(pack, state, directory) {
+async function snapshot(root, pack, state, directory) {
   const active = state.activeTask ? taskFor(pack, state.activeTask).task : null;
   const language = findLanguage(pack.languageId);
   const file = active ? answerPath(directory, active, language, state.review) : null;
@@ -316,6 +324,7 @@ async function snapshot(pack, state, directory) {
     enrollment: state.review && active ? { ...state, tasks: { ...state.tasks, [active.id]: progress } } : state,
     reviewReady: courseReview(pack, state, Date.now()).ids.length, recommendation: nextCourseAction(pack, state, Date.now()),
     attachment: await repoStatus(directory),
+    profile: await readLearningProfile(root),
     repoLessons: await readRepoLessons(directory),
     file, folder: file ? dirname(file) : null, sourceHash,
     stale: Boolean(progress?.result && progress.result.sourceHash !== sourceHash) };

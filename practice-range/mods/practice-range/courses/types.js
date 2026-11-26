@@ -23,6 +23,7 @@
  *   stale: boolean, pendingSave?: boolean, reviewReady: number,
  *   attachment?: {name?: string, commit?: string, available: boolean, detail?: string},
  *   repoLessons?: {error?: string, lessons: RepoLesson[]},
+ *   profile?: LearningProfile,
  *   recommendation: {kind: string, reason: string, moduleId?: string, taskId?: string, step?: number} }} CourseSnapshot
  * @typedef {{slug: string,title: string,error?: string,courseId?: string,contentVersion?: string,fingerprint?: string,
  *   languageId?: string,modules?: number,written?: number,questions?: number,exercises?: number,answers?: number,
@@ -32,5 +33,6 @@
  *   sections: {title: string, text: string, references: {path: string, start: number, end: number, code: string}[]}[]}} RepoLesson
  * @typedef {{path: string, commit: string, start: number, end: number, total: number | null, code: string,
  *   referenceStart: number, referenceEnd: number, previous: number | null, next: number | null, detail?: string}} RepoSource
+ * @typedef {{configured: boolean, knownLanguages: string[], error?: string}} LearningProfile
  */
 export {};

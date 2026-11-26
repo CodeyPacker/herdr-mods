@@ -49,6 +49,7 @@ test("disabled tutor rejects requests before reading context or launching a prov
 
 test("questions use the saved answer and recent conversation without revealing hidden solutions", async t => {
   const { root, configPath, request, exercise } = await fixture(t);
+  await writeFile(join(root,"learning.json"),JSON.stringify({version:1,knownLanguages:["Python"]}));
   request.messages = [{ role: "user", content: "What is a variable?" }, { role: "assistant", content: "It holds a value." }];
   let context;
   const reply = await askTutor(root, configPath, request, { run: async (provider, args, options) => {
@@ -64,6 +65,7 @@ test("questions use the saved answer and recent conversation without revealing h
   assert.equal(context.exercise.rules, undefined);
   assert.deepEqual(context.conversation, request.messages);
   assert.equal(context.feedback.title, "Correct");
+  assert.deepEqual(context.knownLanguages,["Python"]);
   await writeFile(join(root, "session.json"), JSON.stringify({ exerciseId: exercise.id, answerShown: true }));
   assert.equal((await tutorContext(root, request)).revealedAnswer, exercise.solution);
 });

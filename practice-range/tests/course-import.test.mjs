@@ -8,6 +8,7 @@ import { previewTutor, applyTutor } from "../mods/practice-range/courses/importe
 import { courseCommand } from "../mods/practice-range/courses/service.mjs";
 import { saveImportedPreferences } from "../mods/practice-range/courses/import-preferences.js";
 import { courseFolderName } from "../mods/practice-range/courses/loader.mjs";
+import { courseTutorContext } from "../mods/practice-range/courses/help.mjs";
 
 const write=async(file,value)=>{ await mkdir(join(file,".."),{recursive:true}); await writeFile(file,typeof value==="string"?value:JSON.stringify(value)); };
 const git=(root,...args)=>execFileSync("git",["-C",root,...args],{encoding:"utf8"}).trim();
@@ -87,6 +88,19 @@ test("Tutor preview is read-only and import preserves course order, quizzes, his
   assert.equal(await readFile(join(f.base,"progress.json"),"utf8"),original);
   assert.equal((await courseCommand(f.target,"list")).courses.some(course=>course.id===preview.pack.id),true);
   assert.doesNotMatch(JSON.stringify(state.course),/must not copy/);
+});
+
+test("explicit learning preferences override imported comparisons without rewriting Tutor history",async t=>{
+  const f=await fixture(t), preview=await previewTutor(f.target,f.source,f.slug);
+  await applyTutor(f.target,f.source,f.slug,preview.report.fingerprint);
+  const request={courseId:preview.pack.id,moduleId:preview.pack.lessons[0].id,step:0,question:"Explain this code."};
+  await courseCommand(f.target,"open",request);
+  assert.deepEqual((await courseTutorContext(f.target,request)).knownLanguages,["Python"]);
+  await courseCommand(f.target,"profile-save",{knownLanguages:[]});
+  assert.deepEqual((await courseTutorContext(f.target,request)).knownLanguages,[]);
+  await courseCommand(f.target,"profile-save",{knownLanguages:["Rust"]});
+  assert.deepEqual((await courseTutorContext(f.target,request)).knownLanguages,["Rust"]);
+  assert.deepEqual((await courseCommand(f.target,"status",{courseId:preview.pack.id})).course.legacy.known,["Python"]);
 });
 
 test("Tutor preference opt-in fills missing fields, preserves explicit choices, and uses the original write guard",async()=>{

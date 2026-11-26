@@ -49,6 +49,7 @@ try {
     "repo-supplement":["repo-lesson",attached], "repo-generating":["modules",attached],
     "repo-source":["source",attached], "repo-source-cached":["source",attached], "repo-source-missing":["source",attached],
     "language-course-entry":["catalog",review], "setup-course-entry":["catalog",review],
+    "learning-profile":["catalog",null], "learning-profile-error":["modules",modules],
     imports:["imports",null], "import-preview":["import-preview",null], "import-preferences":["import-preview",null], "import-error":["imports",null],
     "imported-catalog":["catalog",null], "imported-modules":["modules",importedModules], "imported-lesson":["lesson",importedLesson], "imported-quiz":["lesson",importedQuiz], "imported-task":["task",importedTask] };
   const requested = process.argv.slice(2);
@@ -76,6 +77,11 @@ export default class Fixture extends Syntax {
     if (${name === "versions"}) this.courses.catalog[0] = { ...this.courses.catalog[0], enrolledVersion: "0.0.1", versions: ["0.0.1", "0.1.0-preview.1"] };
     this.courses.data = ${JSON.stringify(data)};
     this.courses.page = ${JSON.stringify(page)};
+    if (${name === "learning-profile"}) {
+      this.courses.profile={configured:true,knownLanguages:["Python","JavaScript"]};
+      this.courses.knownInput.set_value("Python, JavaScript");
+    }
+    if (${name === "learning-profile-error"}) this.courses.profile={configured:true,knownLanguages:[],error:"The learning profile could not be read. Standard lessons remain available."};
     if (${name.startsWith("repo-source")}) {
       this.courses.repoLessonId="b".repeat(64);
       this.courses.sourceReturnPage="repo-lesson";

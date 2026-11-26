@@ -26,6 +26,8 @@ export class CoursePanel {
     this.page = "catalog";
     this.languageFilter = "";
     this.returnScreen = "topics";
+    /** @type {import("./types.js").LearningProfile} */
+    this.profile = {configured:false,knownLanguages:[]};
     this.busy = "";
     this.error = "";
     this.repoLessonId = "";
@@ -46,6 +48,11 @@ export class CoursePanel {
     /** @type {import("./types.js").TutorImport | null} */
     this.importPreview=null;
     this.applyImportPreferences=false;
+    this.knownInput=InputState.new({placeholder:"Python, JavaScript…"});
+    this.knownInput.on("focus",()=>{this.host.typing=true;});
+    this.knownInput.on("blur",()=>{this.host.typing=false;});
+    this.knownInput.on("change",(_event,cx)=>cx.notify());
+    this.knownInput.on("submit",(_event,cx)=>this.saveProfile(cx));
     this.importInput=InputState.new({placeholder:"Tutor data folder (optional)…"});
     this.importInput.on("focus",()=>{this.host.typing=true;});
     this.importInput.on("blur",()=>{this.host.typing=false;});
@@ -81,6 +88,11 @@ export class CoursePanel {
     cx.spawn(async cx => { await this.dispatch(action, value, cx); });
   }
 
+  /** @param {Context} cx */
+  saveProfile(cx) {
+    this.run("profile-save",{knownLanguages:this.knownInput.value().split(",").map(name=>name.trim()).filter(Boolean)},cx);
+  }
+
   /** @param {string | null} moduleId @param {Context} cx */
   generateRepoLesson(moduleId, cx) {
     if (this.busy || !this.data || !this.host.tutor.enabled) return;
@@ -112,14 +124,21 @@ export class CoursePanel {
   /** @param {string} action @param {Record<string, unknown>} value @param {Context} cx */
   async dispatch(action, value, cx) {
     if (this.busy) return;
-    if (action.startsWith("import-") || ["list", "enroll", "open", "source", "task", "review-start", "review-next", "review-end", "attach-repo", "detach-repo"].includes(action)) this.host.cancelTutor(cx);
+    if (action.startsWith("import-") || ["profile-save", "list", "enroll", "open", "source", "task", "review-start", "review-next", "review-end", "attach-repo", "detach-repo"].includes(action)) this.host.cancelTutor(cx);
     this.busy = ["check", "check-saved"].includes(action) ? "Checking every case…" : "Loading course…";
     this.error = ""; cx.notify();
     try {
       const request = { ...(action === "enroll" || action === "list" || action.startsWith("import-") ? {} : { courseId: this.data?.course.id, contentVersion: this.data?.course.contentVersion }),
         ...(action.startsWith("import-")&&this.importInput.value().trim()?{sourceRoot:this.importInput.value().trim()}:{}),...value };
       const result = await courseCommand(action, request);
-      if (action === "list") {
+      if (result.profile) {
+        const untouched=this.knownInput.value()===this.profile.knownLanguages.join(", ");
+        this.profile=result.profile;
+        if (untouched || action==="profile-save") this.knownInput.set_value(this.profile.knownLanguages.join(", "));
+      }
+      if (action === "profile-save") {
+        if(this.data) this.data.profile=this.profile;
+      } else if (action === "list") {
         this.catalog = result.courses;
         this.page = "catalog";
       } else if (action === "source") {
@@ -274,6 +293,7 @@ export class CoursePanel {
       body.child(div().font_semibold().child(this.languageFilter ? `${findLanguage(this.languageFilter).name} courses` : "Courses"))
         .child(div().text_color(t.muted).child("Learn with included examples. No repo or AI connection needed."))
         .child(keyButton(t,"course-import","","Import Tutor courses",!this.busy,cx=>this.run("import-list",{},cx)));
+      this.profileView(body,t);
       if (this.languageFilter) body.child(keyButton(t,"course-all-languages","","All courses",!this.busy,cx=>{this.languageFilter="";cx.notify();}));
       for (const course of this.catalog.filter(course=>!this.languageFilter || course.languageId===this.languageFilter)) {
         const actions=h_flex().gap(8).flex_wrap()
@@ -340,6 +360,7 @@ export class CoursePanel {
   modules(body, t) {
     const position = this.data.enrollment.position;
     const repo = this.data.attachment;
+    this.profileView(body,t);
     body.child(sectionLabel(t, "Optional repo examples"));
     if (repo) body.child(div().text_color(t.muted).child(repo.available ? `${repo.name} · pinned at ${repo.commit.slice(0, 10)}` : repo.detail));
     body.child(div().text_size(12).text_color(t.muted).child("Attach a repo in this language for optional AI lessons and questions. Generation sends a bounded source sample to your configured model."))
@@ -376,6 +397,15 @@ export class CoursePanel {
       const legacy=this.data.enrollment.legacy?.modules[module.id];
       if(legacy) body.child(div().text_size(11).text_color(t.muted).child(`${legacy.doneAt?"Completed in Tutor. ":""}${legacy.quiz?.best!==undefined?`Tutor quiz best: ${legacy.quiz.best}${legacy.quiz.passed?" · passed":""}`:""}`));
     }
+  }
+
+  /** @param {import("gpui-kit").Element} body @param {Theme} t */
+  profileView(body,t) {
+    body.child(sectionLabel(t,"Languages you already know"))
+      .child(div().text_size(12).text_color(t.muted).child("Optional. AI explanations can compare with these languages. Separate names with commas. Leave empty if you are new to programming."))
+      .child(textInput(t,this.knownInput,this.host.typing))
+      .child(keyButton(t,"save-learning-profile","","Save languages",!this.busy && !this.profile.error,cx=>this.saveProfile(cx)));
+    if(this.profile.error) body.child(banner(t,this.profile.error));
   }
 
   /** @param {import("gpui-kit").Element} body @param {Theme} t */

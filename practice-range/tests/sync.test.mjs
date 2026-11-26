@@ -38,6 +38,7 @@ test("progress and answers travel between devices, machine files stay behind", a
     "courses/course%3Ats-foundations/current.json": '{"courseId":"course:ts-foundations","contentVersion":"0.1.0-preview.1"}',
     "session.json": "{\"progress\":{}}",
     "setup.json": "{}",
+    "learning.json": '{"version":1,"knownLanguages":["Python"]}',
     "session.lock": "",
     "answers/variables/integer/Program.cs": "int x = 1;",
     "answers/_reference/variables/integer/Reference.cs": "int x = 1;",
@@ -62,10 +63,12 @@ test("progress and answers travel between devices, machine files stay behind", a
     "history/variables/integer/1.cs",
     "languages/typescript/answers/types/alias/answer.ts",
     "languages/typescript/session.json",
+    "learning.json",
     "session.json",
   ]);
 
   await pull(second);
+  assert.deepEqual((await courseCommand(second,"list")).profile.knownLanguages,["Python"]);
   assert.equal(await readFile(join(second, "languages/typescript/session.json"), "utf8"), "{\"progress\":{}}");
 
   // Practice on the second computer, then come back to the first.
@@ -98,7 +101,7 @@ test("course progress, answers and backups sync while local course artifacts sta
     [`${course}/answers/remaining/node_modules/internal.js`]: "dependency",
   };
   // Existing users have the old generated allow-list. Upgrade that exact version only.
-  await writeFile(join(first, ".gitignore"), GITIGNORE.replace("!/courses/*/*/repo-lessons.json\n", ""));
+  await writeFile(join(first, ".gitignore"), GITIGNORE.replace("!/learning.json\n", ""));
   for (const [path, text] of Object.entries(files)) {
     await mkdir(join(first, path, ".."), { recursive: true });
     await writeFile(join(first, path), text);
