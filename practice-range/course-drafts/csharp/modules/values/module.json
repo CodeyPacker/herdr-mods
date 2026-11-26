@@ -51,7 +51,7 @@
     {
       "kind": "explanation",
       "title": "Give a value a name and a type",
-      "text": "A variable is a name for a value. In C# the type comes first. int open = 4; creates a variable named open that holds whole numbers, and gives it 4. double holds numbers with a fraction, such as 2.5. string holds text in double quotes. bool holds true or false. Read = as \"gets\". A semicolon ends each statement, and statements run from top to bottom. A variable can get a new value later. open = open + 1; works out the right side first, then stores the result in open.\n\nComing from TypeScript: the type goes before the name, with no colon. int and double are separate types, where TypeScript has one number type. A variable keeps its type for its whole life."
+      "text": "A variable is a name for a value. In C# the type comes first. int open = 4; creates a variable named open that holds whole numbers, and gives it 4. double holds numbers with a fraction, such as 2.5. string holds text in double quotes. bool holds true or false. Read = as \"gets\". A semicolon ends each statement, and statements run from top to bottom. A variable can get a new value later. open = open + 1; works out the right side first, then stores the result in open."
     },
     {
       "kind": "prediction",
@@ -80,13 +80,13 @@
     {
       "kind": "walkthrough",
       "title": "Keep the fraction",
-      "text": "With two ints, 7 / 2 is 3 and 7 % 2 is the 1 left over. Line 5 stores done in a double. An int fits in a double with no extra code. Now exact / days has a double on one side, so the result keeps its fraction: 3.5, which is greater than 3. A bool prints as True or False. You can also convert in place with a cast: (double)done / days. Convert before dividing. (double)(done / days) divides the two ints first, so the fraction is already gone.\n\nComing from TypeScript: 7 / 2 is 3.5 there. In C# it is 3 when both sides are int. This is one of the most common mistakes when moving over.",
+      "text": "With two ints, 7 / 2 is 3 and 7 % 2 is the 1 left over. Line 5 stores done in a double. An int fits in a double with no extra code. Now exact / days has a double on one side, so the result keeps its fraction: 3.5, which is greater than 3. A bool prints as True or False. You can also convert in place with a cast: (double)done / days. Convert before dividing. (double)(done / days) divides the two ints first, so the fraction is already gone.",
       "example": "divide"
     },
     {
       "kind": "explanation",
       "title": "Let the compiler pick the type, and build text",
-      "text": "var asks the compiler to work out the type from the first value (inference). var label = \"Desk\"; means exactly the same as string label = \"Desk\";. The type is still fixed. A $ before the opening quote makes an interpolated string: each {name} inside it is replaced by that value. Without the $, the braces are ordinary text. You can also join text with +.\n\nComing from TypeScript: this var is not JavaScript's var. It is closer to let with an inferred type. $\"{x}\" does the job of a template literal with ${x}.",
+      "text": "var asks the compiler to work out the type from the first value (inference). var label = \"Desk\"; means exactly the same as string label = \"Desk\";. The type is still fixed. A $ before the opening quote makes an interpolated string: each {name} inside it is replaced by that value. Without the $, the braces are ordinary text. You can also join text with +.",
       "example": "label"
     },
     {

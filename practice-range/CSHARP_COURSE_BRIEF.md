@@ -15,12 +15,13 @@ Inspect the current code before relying on this brief. If it disagrees with the 
 
 ## Learner and audience
 
-Two entry paths, like TypeScript: `beginner` (new to programming) and `experienced` (knows another language). Both must work (D4).
+Two entry paths: `beginner` (new to programming) and `experienced` (already programs). Both must work (D4).
 
-The first tester is the project owner, who knows TypeScript well and will take the experienced path. Make that path strong:
-- Readiness checks R1–R4 that let a TypeScript developer skip what they already know.
-- Short "Coming from TypeScript" notes in explanation text where C# differs in ways that cause real mistakes. Examples: value versus reference types, structs, nullable reference types and `?`, `int` versus `double` division, `List<T>` and arrays, LINQ versus array methods, `Task` versus `Promise`, records and `with`, properties, `switch` expressions and pattern matching, interfaces versus structural typing, exceptions.
-- Keep these notes short and optional. Never assume TypeScript knowledge on the beginner path.
+The course teaches C# on its own terms. Lesson text, hints and feedback never compare C# with another language or assume the learner knows one. Decided by the owner on 2026-11-26.
+
+The first tester is the project owner, who will take the experienced path. Make that path strong:
+- Readiness checks R1–R4 that let someone who already programs skip what they know.
+- Explain the C# behaviors that cause real mistakes in the main lesson text, for every learner. Examples: value versus reference types, structs, nullable reference types and `?`, `int` versus `double` division, `List<T>` and arrays, deferred LINQ queries, blocking on a `Task`, records and `with`, properties, `switch` expressions and pattern matching, declaring an interface, exceptions.
 
 ## Format in C#
 

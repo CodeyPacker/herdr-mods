@@ -73,4 +73,3 @@ An example is a `.cs` file of top-level statements, optionally followed by type 
 - L1: The checker compiles with nullable reference types switched off. `string?` compiles, but null-safety warnings never appear and cannot be checked. The editor project switches them on, so the learner's editor and the checker disagree.
 - L2: Printed numbers use the machine's culture. A `double` such as 3.5 prints as `3,5` on some systems. Examples and output checks avoid printing fractional numbers.
 - L3: Running the verifier with no module keys also checks the project and fails when the manifest has no `project`. Until the project exists, pass module keys.
-- L4: A step has one `text` field, so "Coming from TypeScript" notes are shown on both entry paths.

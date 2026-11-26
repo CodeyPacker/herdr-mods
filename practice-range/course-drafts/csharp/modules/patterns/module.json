@@ -56,7 +56,7 @@
     {
       "kind": "explanation",
       "title": "Test a type and name the result",
-      "text": "A pattern is a test that a value either matches or does not. The simplest is a type pattern. update is Finished f asks whether update is a Finished record. When it is, f is that same object seen as a Finished, so f.Title is available. A switch expression tries several patterns in order and produces a value. Write the value to test, the word switch, then the arms in braces. Each arm is pattern => result, with a comma between arms. The first arm that matches wins. The discard _ matches anything, so it goes last.\n\nComing from TypeScript: this does the job of a tagged union with a kind field. The record's own type is the tag, and C# checks the real type at runtime, so you write no tag by hand.",
+      "text": "A pattern is a test that a value either matches or does not. The simplest is a type pattern. update is Finished f asks whether update is a Finished record. When it is, f is that same object seen as a Finished, so f.Title is available. A switch expression tries several patterns in order and produces a value. Write the value to test, the word switch, then the arms in braces. Each arm is pattern => result, with a comma between arms. The first arm that matches wins. The discard _ matches anything, so it goes last.",
       "example": "board"
     },
     {
@@ -71,7 +71,7 @@
     {
       "kind": "walkthrough",
       "title": "Follow the arms",
-      "text": "Describe is called twice. new Waiting(0) matches the first arm and returns \"Place 0\". The arm tests the type, so a Place of 0 is handled like any other number. new Finished(\"Pack\") does not match the first arm, matches the second and returns its Title. The last arm runs only for a Notice type that the arms above do not name. Without it the compiler warns that the switch does not handle every input (CS8509), and a value that matches no arm throws SwitchExpressionException when the program runs.\n\nComing from TypeScript: a missing case is a warning plus a runtime exception, not a compile error. For a set of record types, do not rely on the compiler to list every case for you.",
+      "text": "Describe is called twice. new Waiting(0) matches the first arm and returns \"Place 0\". The arm tests the type, so a Place of 0 is handled like any other number. new Finished(\"Pack\") does not match the first arm, matches the second and returns its Title. The last arm runs only for a Notice type that the arms above do not name. Without it the compiler warns that the switch does not handle every input (CS8509), and a value that matches no arm throws SwitchExpressionException when the program runs.",
       "example": "board"
     },
     {
@@ -92,7 +92,7 @@
     {
       "kind": "walkthrough",
       "title": "Read the arms in order",
-      "text": "Job(0, true) matches the first arm, so it is \"empty\" even though it is urgent. Job(10, true) is not 0 but is below 30, so it is \"short\". Job(45, true) fails both Minutes tests and reaches the Urgent arm. Job(45, false) falls through to the discard. If the Urgent arm moved to the top, the first three results would all become \"long and urgent\".\n\nComing from TypeScript: a switch expression is an expression, like a chain of ?: that can also test types and properties. There is no break and no fall-through.",
+      "text": "Job(0, true) matches the first arm, so it is \"empty\" even though it is urgent. Job(10, true) is not 0 but is below 30, so it is \"short\". Job(45, true) fails both Minutes tests and reaches the Urgent arm. Job(45, false) falls through to the discard. If the Urgent arm moved to the top, the first three results would all become \"long and urgent\".",
       "example": "sizes"
     },
     {

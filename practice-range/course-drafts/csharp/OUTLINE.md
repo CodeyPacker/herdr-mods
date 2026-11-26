@@ -42,24 +42,6 @@ The manifest lists the concept IDs each module introduces and its direct prerequ
 - **Failure and reuse.** throw-catch, result-type → generic → task, await, async-failure → tests, debugging.
 - **Integration.** project → transfer.
 
-## Coming from TypeScript
-
-Short labeled notes sit at the end of a step's text where C# differs in a way that causes real mistakes. Both entry paths see them, because a step has one text field. They are worded so a beginner can skip them. Planned placement:
-
-| Module | Note |
-| --- | --- |
-| values | Type before the name. `int` and `double` are separate. `7 / 2` is 3. `var` is not JavaScript's `var`. `$"{x}"` versus a template literal. |
-| collections | Arrays have a fixed length. `List<T>` is the growable one. `Length` versus `Count`. |
-| classes | Properties with `get`/`set` replace plain fields. No object literals for a class shape. |
-| records | Structs and records versus plain objects. `==` compares record values but class references. `with` versus spread. |
-| nulls | One `null`, no `undefined`. `string?` is a compiler hint for reference types but a different type (`int?`) for value types. |
-| lookups | `Dictionary` throws on a missing key where `Map.get` returns `undefined`. |
-| linq | `Where`/`Select` versus `filter`/`map`. Queries are deferred until read. |
-| interfaces | A type must declare that it implements an interface. Matching members is not enough. |
-| patterns | Record types replace a `kind` tag. A missing case is a warning and a runtime exception. |
-| exceptions | Catch by exception type. Any thrown value is an `Exception`. |
-| async | `Task<T>` versus `Promise<T>`. A method must be marked `async` to `await`. Blocking on `.Result`. |
-
 ## Experienced entry
 
 Each readiness check is a fresh problem. A result suggests where to start. It does not mark any module passed.
@@ -73,7 +55,7 @@ Each readiness check is a fresh problem. A result suggests where to start. It do
 
 ## Project sequence
 
-The tracker theme matches the TypeScript course, rewritten for C#. Every checkpoint is a single-file task.
+The project is a small task tracker. Every checkpoint is a single-file task.
 
 1. **P1 · Methods.** Compute a board count after arrivals and completions.
 2. **P2 · LINQ.** Task records with an ID, title, status and owner. Count by status with repeated owners and an empty list.
