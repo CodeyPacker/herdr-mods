@@ -72,13 +72,16 @@ export async function check(root, exercise, answer) {
 
 /**
  * A read-only course example. With `stdout`, what the SQL shows must match those lines exactly.
- * With `diagnostics`, it must fail with that PostgreSQL error code on that line.
+ * With `diagnostics`, it must fail with that PostgreSQL error code on that line. Errors raised by
+ * the data, such as a broken constraint, have no position, so their diagnostic names no line.
  */
 export async function checkExample(root, example) {
   const result = await runScratch(root, example.code);
   if (example.diagnostics) {
-    const expected = result.kind === "compile" && example.diagnostics.length === 1 &&
-      new RegExp(`^Scratch\\.sql:${example.diagnostics[0].line}:\\d+ - error ${example.diagnostics[0].code}:`).test(result.details[0] ?? "");
+    const [diagnostic] = example.diagnostics, first = result.details[0] ?? "";
+    const expected = result.kind === "compile" && example.diagnostics.length === 1 && (diagnostic.line === undefined
+      ? first.startsWith(`error ${diagnostic.code}:`)
+      : new RegExp(`^Scratch\\.sql:${diagnostic.line}:\\d+ - error ${diagnostic.code}:`).test(first));
     return { ...result, passed: expected, title: expected ? "The expected SQL error occurred" : "This example did not produce its expected error" };
   }
   if (result.kind !== "output") return { ...result, passed: false };

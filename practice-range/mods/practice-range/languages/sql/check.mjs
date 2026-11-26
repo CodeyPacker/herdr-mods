@@ -87,7 +87,12 @@ export async function runCheck(job, blob) {
 
   const learner = await open(blob, job.setup);
   // The check query before the answer runs, so the feedback can show what the answer changed.
-  const before = job.verify ? lastResult(await learner.exec(job.verify, options)) : null;
+  // A check query on a table the answer has yet to create cannot run now. It then has no "before".
+  let before = null;
+  if (job.verify) {
+    try { before = lastResult(await learner.exec(job.verify, options)); }
+    catch { before = null; }
+  }
   let results;
   try { results = await learner.exec(job.answer, options); }
   catch (error) { return { status: "error", details: describe(error, job.answer) }; }
