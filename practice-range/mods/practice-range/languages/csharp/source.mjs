@@ -16,6 +16,16 @@ function scaffold(exercise) {
   return { before: `${setup}public static class Practice\n{\n    public static void Run()\n    {\n${capture}`, after: "\n    }\n}\n" };
 }
 
+/**
+ * What the editor needs beside a course answer: the same usings the checker adds and the task's
+ * supplied code. They live in their own file, so each using is made global to reach the answer.
+ */
+export function suppliedSource(exercise) {
+  const global = text => text.replace(/^using /gm, "global using ");
+  const supplied = (exercise.declarations ?? "").replaceAll("\r\n", "\n").trim();
+  return `// Supplied by the exercise. Your editor reads this file. Changing it does not change the checks.\n${global(imports)}${supplied ? `\n${global(supplied)}\n` : ""}`;
+}
+
 /** Scratch code compiles as top-level statements, which may be followed by type declarations. */
 export function scratchSource(code) {
   const prefix = `${imports}#line 1 "Scratch.cs"\n`;

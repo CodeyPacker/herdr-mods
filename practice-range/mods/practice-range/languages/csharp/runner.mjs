@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { createHash, randomUUID } from "node:crypto";
 import { runProcess } from "../../process.mjs";
-import { exerciseSource, legacyAnswer, checkingSource, scratchSource } from "./source.mjs";
+import { exerciseSource, legacyAnswer, checkingSource, scratchSource, suppliedSource } from "./source.mjs";
 
 const packDirectory = dirname(fileURLToPath(import.meta.url));
 const processEnvironment = { DOTNET_CLI_TELEMETRY_OPTOUT: "1", DOTNET_NOLOGO: "1", DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1" };
@@ -182,8 +182,13 @@ export async function checkAnswer(root, exercise, answer, checker, { timeout = 5
   }
 }
 
-export async function prepareWorkspace(file, sdk) {
+export async function prepareWorkspace(file, sdk, exercise) {
   // Editor-only project. Validation is performed against a fresh generated harness, never
   // against editable project files or assertions inside the learner's workspace.
-  await writeIfChanged(join(dirname(file), "Practice.csproj"), `<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net${sdk.major}.0</TargetFramework><LangVersion>latest</LangVersion><Nullable>enable</Nullable></PropertyGroup></Project>`);
+  // A course task (it carries fixtures) has its own folder, so the editor can also be given the
+  // task's supplied code and, for statements, a program to put them in. Practice is unchanged.
+  const course = Array.isArray(exercise?.fixtures);
+  const program = course && exercise.mode !== "members" && exercise.mode !== "types" ? "<OutputType>Exe</OutputType>" : "";
+  await writeIfChanged(join(dirname(file), "Practice.csproj"), `<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net${sdk.major}.0</TargetFramework><LangVersion>latest</LangVersion><Nullable>enable</Nullable>${program}</PropertyGroup></Project>`);
+  if (course) await writeIfChanged(join(dirname(file), "Supplied.cs"), suppliedSource(exercise));
 }

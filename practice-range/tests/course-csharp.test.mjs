@@ -1,12 +1,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { spawnSync } from "node:child_process";
 import { courseCommand } from "../mods/practice-range/courses/service.mjs";
 import { loadCourse, listCourses, taskFor } from "../mods/practice-range/courses/loader.mjs";
 
 const courseId = "course:cs-foundations", moduleId = `${courseId}/module/values`;
+/** Compiler errors from building the editor project in a folder, or "" when it builds. */
+function editorBuild(folder) {
+  const result = spawnSync("dotnet", ["build", "Practice.csproj", "--nologo", "--verbosity", "quiet"], { cwd: folder, encoding: "utf8", timeout: 120000 });
+  return result.status === 0 ? "" : [...new Set((result.stdout + result.stderr).match(/error \w+: [^\[\r\n]*/g) ?? ["build failed"])].join("\n");
+}
 
 test("the C# course pack is complete, registered and written for C# alone", async () => {
   const pack = await loadCourse(courseId);
@@ -73,6 +79,8 @@ test("a C# course runs examples and checks a saved answer against every case", {
   assert.equal(progress.result.passed, true);
   assert.equal(progress.result.fixtures.length, 3);
   assert.equal(progress.attempts, 2);
+  // The editor project beside the answer knows the supplied values, so an editor reports no false errors.
+  assert.equal(editorBuild(dirname(state.file)), "", "A correct statements answer must build in the editor project");
 
   // A members task that uses supplied record types.
   const laneId = `${courseId}/task/patterns-lane`;
@@ -82,6 +90,13 @@ test("a C# course runs examples and checks a saved answer against every case", {
   state = await run("check", { taskId: laneId });
   assert.equal(state.enrollment.tasks[laneId].result.passed, true);
   assert.equal(state.enrollment.tasks[laneId].independentPasses, 1);
+
+  // A types task: the answer and the supplied interface build together in the editor project.
+  const sourceId = `${courseId}/task/interfaces-fixed-source`;
+  await run("open", { moduleId: `${courseId}/module/interfaces`, step: 6 });
+  state = await run("task", { taskId: sourceId });
+  assert.match(await readFile(join(dirname(state.file), "Supplied.cs"), "utf8"), /global using System\.Linq;[\s\S]*public interface ITaskSource/);
+  assert.equal(editorBuild(dirname(state.file)), "", "A types starter must build in the editor project with its supplied interface");
 
   // The final assessment: async methods, a trusted helper and a learner-written check.
   const auditId = `${courseId}/task/report-audit`;
