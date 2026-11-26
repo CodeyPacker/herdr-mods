@@ -1,0 +1,63 @@
+{
+  "id": "course:cs-foundations/task/exceptions-parse-minutes",
+  "role": "independent",
+  "title": "Parse minutes into a result",
+  "concepts": [
+    "result-type",
+    "throw-catch",
+    "record",
+    "branch"
+  ],
+  "prompt": "Parsed is supplied. Write public static Parsed ParseMinutes(string text). When text is a whole number of 0 or more, return Parsed with Ok true, that number, and an empty Error. When text is not a number, return Ok false, 0 and the Error \"not a number\". When it is a negative number, return Ok false, 0 and the Error \"negative\". The method must not throw for any of these.",
+  "hints": [
+    "There are three outcomes. Which one does int.Parse report by throwing?",
+    "Handle text that is not a number first, then look at the number you got.",
+    "Catch FormatException around int.Parse, or use int.TryParse, and return the matching Parsed in each case."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.ParseMinutes(\"30\") == new Parsed(true, 30, \"\")",
+    "Practice.ParseMinutes(\"0\") == new Parsed(true, 0, \"\")",
+    "Practice.ParseMinutes(\"soon\") == new Parsed(false, 0, \"not a number\")",
+    "Practice.ParseMinutes(\"\") == new Parsed(false, 0, \"not a number\")",
+    "Practice.ParseMinutes(\"-5\") == new Parsed(false, 0, \"negative\")"
+  ],
+  "checkLabels": [
+    "\"30\" must give Ok true with 30.",
+    "\"0\" is a valid number and must give Ok true with 0.",
+    "\"soon\" must give Ok false with the error \"not a number\".",
+    "Empty text must give Ok false with the error \"not a number\".",
+    "\"-5\" must give Ok false with the error \"negative\"."
+  ],
+  "fixtures": [
+    {
+      "id": "parsed",
+      "declarations": "fixture-parsed.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-accepts-negative.cs",
+      "misconception": "Never checks the number after parsing it.",
+      "witness": {
+        "fixture": "parsed",
+        "kind": "result",
+        "detail": "Check 5 failed"
+      }
+    },
+    {
+      "source": "wrong-rejects-zero.cs",
+      "misconception": "Treats 0 as a negative number.",
+      "witness": {
+        "fixture": "parsed",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Go through the three outcomes with the failing text. Check which one your code picks and that all three values of the result match the prompt."
+}

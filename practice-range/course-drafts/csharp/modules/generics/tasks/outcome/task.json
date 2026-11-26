@@ -1,0 +1,64 @@
+{
+  "id": "course:cs-foundations/task/generics-outcome",
+  "role": "independent",
+  "title": "Carry a result of any type",
+  "concepts": [
+    "generic",
+    "record",
+    "branch"
+  ],
+  "prompt": "Outcome<T> describes work that can fail. Ok says whether it worked, Value holds the result, and Error holds a message. Finish the three methods in Outcomes. Success(value) returns an outcome with Ok true, that value and an empty Error. Failure(fallback, error) returns Ok false, the fallback as its Value, and the error text. ValueOr(outcome, fallback) returns the outcome's Value when Ok is true, and the fallback otherwise.",
+  "hints": [
+    "Write down the three values each method puts into the record, in order.",
+    "ValueOr should decide by Ok. A successful outcome can hold 0 or empty text as a real value.",
+    "Success: new Outcome<T>(true, value, \"\"). Failure: new Outcome<T>(false, fallback, error). ValueOr: test outcome.Ok."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "types",
+  "rules": [],
+  "checks": [
+    "Outcomes.Success(5) == new Outcome<int>(true, 5, \"\")",
+    "Outcomes.Success(\"a\") == new Outcome<string>(true, \"a\", \"\")",
+    "Outcomes.Failure(0, \"offline\") == new Outcome<int>(false, 0, \"offline\")",
+    "Outcomes.ValueOr(Outcomes.Success(\"a\"), \"z\") == \"a\"",
+    "Outcomes.ValueOr(Outcomes.Failure(\"\", \"bad\"), \"z\") == \"z\"",
+    "Outcomes.ValueOr(Outcomes.Success(0), 7) == 0"
+  ],
+  "checkLabels": [
+    "Success(5) must be Ok with the value 5 and no error.",
+    "Success(\"a\") must be Ok with the value \"a\" and no error.",
+    "Failure(0, \"offline\") must be not Ok, with the fallback 0 and that error.",
+    "ValueOr on a success must give the success's value.",
+    "ValueOr on a failure must give the fallback passed to ValueOr.",
+    "A successful 0 is a real value and must be returned."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-ignores-ok.cs",
+      "misconception": "Returns the stored value even when the outcome failed.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 5 failed"
+      }
+    },
+    {
+      "source": "wrong-failure-ok.cs",
+      "misconception": "Marks a failure as Ok.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "Compare all three values of the failing outcome with the prompt. For ValueOr, check that the decision is made by Ok and nothing else."
+}

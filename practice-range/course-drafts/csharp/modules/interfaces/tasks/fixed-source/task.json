@@ -1,0 +1,62 @@
+{
+  "id": "course:cs-foundations/task/interfaces-fixed-source",
+  "role": "guided",
+  "title": "Finish a task source",
+  "concepts": [
+    "interface",
+    "class",
+    "property",
+    "constructor"
+  ],
+  "prompt": "ITaskSource and Sources are supplied. Finish FixedSource so that Name is \"fixed\" and Titles() returns the titles passed to the constructor, in the same order. The class must keep naming ITaskSource so it can be used wherever a task source is expected.",
+  "hints": [
+    "The constructor receives the titles. Where are they kept so Titles() can return them later?",
+    "Add a property for the list, store the parameter in it in the constructor, and return it from Titles().",
+    "Keep : ITaskSource on the class line and make Name return \"fixed\"."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "types",
+  "rules": [],
+  "support": "static ITaskSource Source(params string[] titles) => (ITaskSource)(object)new FixedSource(titles.ToList());\n",
+  "checks": [
+    "Source(\"Pack\").Name == \"fixed\"",
+    "Source(\"Pack\", \"Ship\").Titles().SequenceEqual(new List<string> { \"Pack\", \"Ship\" })",
+    "Source().Titles().Count == 0",
+    "Sources.Total(new List<ITaskSource> { Source(\"Pack\", \"Ship\"), Source(\"Label\") }) == 3"
+  ],
+  "checkLabels": [
+    "FixedSource must work as an ITaskSource, and its Name must be \"fixed\".",
+    "Titles() must return the titles given to the constructor, in order.",
+    "A source created with no titles must return an empty list.",
+    "Two sources with 2 and 1 titles must total 3."
+  ],
+  "fixtures": [
+    {
+      "id": "sources",
+      "declarations": "fixture-sources.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-interface.cs",
+      "misconception": "Has matching members but never names the interface.",
+      "witness": {
+        "fixture": "sources",
+        "kind": "result",
+        "detail": "InvalidCastException"
+      }
+    },
+    {
+      "source": "wrong-drops-titles.cs",
+      "misconception": "Never stores the titles the constructor receives.",
+      "witness": {
+        "fixture": "sources",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "An InvalidCastException means the class does not name ITaskSource. Otherwise, follow the titles from the constructor to Titles() and find where they are lost."
+}

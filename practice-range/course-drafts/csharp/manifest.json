@@ -296,7 +296,11 @@
         "linq-query",
         "deferred"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/linq/module.json"
+      }
     },
     {
       "id": "course:cs-foundations/module/interfaces",
@@ -309,7 +313,11 @@
         "interface",
         "inheritance"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/interfaces/module.json"
+      }
     },
     {
       "id": "course:cs-foundations/module/patterns",
@@ -340,7 +348,11 @@
         "throw-catch",
         "result-type"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/exceptions/module.json"
+      }
     },
     {
       "id": "course:cs-foundations/module/generics",
@@ -352,7 +364,11 @@
       "teaches": [
         "generic"
       ],
-      "status": "planned"
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/generics/module.json"
+      }
     },
     {
       "id": "course:cs-foundations/module/async",

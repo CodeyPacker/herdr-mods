@@ -1,0 +1,61 @@
+{
+  "id": "course:cs-foundations/task/exceptions-checked",
+  "role": "guided",
+  "title": "Reject negative minutes",
+  "concepts": [
+    "throw-catch",
+    "branch",
+    "method"
+  ],
+  "prompt": "Checked(int minutes) should return minutes unchanged when it is 0 or more, and throw an ArgumentException when it is negative. The starter returns every input.",
+  "hints": [
+    "Which inputs are acceptable? Is 0 one of them?",
+    "Test for the bad input first, and throw before the return.",
+    "If minutes is less than 0, throw new ArgumentException with a short message. Otherwise return minutes."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "support": "static bool ThrowsArgument(Action action)\n{\n    try { action(); return false; }\n    catch (ArgumentException) { return true; }\n    catch (Exception) { return false; }\n}\n",
+  "checks": [
+    "ThrowsArgument(() => Practice.Checked(-1))",
+    "ThrowsArgument(() => Practice.Checked(0)) == false",
+    "Practice.Checked(0) == 0",
+    "Practice.Checked(30) == 30"
+  ],
+  "checkLabels": [
+    "A negative number must throw an ArgumentException.",
+    "0 is acceptable and must not throw.",
+    "0 must be returned unchanged.",
+    "30 must be returned unchanged."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-wrong-type.cs",
+      "misconception": "Throws the general Exception type instead of the specific one.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-rejects-zero.cs",
+      "misconception": "Treats 0 as a bad input.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Check the type of exception you throw and the exact edge: -1 must throw and 0 must not."
+}

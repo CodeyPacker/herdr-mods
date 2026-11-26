@@ -1,0 +1,62 @@
+{
+  "id": "course:cs-foundations/task/generics-last-or",
+  "role": "guided",
+  "title": "Return the last item",
+  "concepts": [
+    "generic",
+    "list",
+    "branch"
+  ],
+  "prompt": "LastOr<T>(List<T> items, T fallback) should return the last item of the list, or the fallback when the list is empty. It must work for a list of any type. The starter always returns the fallback.",
+  "hints": [
+    "At which position is the last item of a list with Count items?",
+    "Positions start at 0, so the last one is Count - 1. An empty list has no last item.",
+    "Return fallback when items.Count is 0. Otherwise return items[items.Count - 1]."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.LastOr(new List<int> { 4, 9 }, 0) == 9",
+    "Practice.LastOr(new List<int>(), 7) == 7",
+    "Practice.LastOr(new List<string> { \"a\", \"b\" }, \"none\") == \"b\"",
+    "Practice.LastOr(new List<string>(), \"none\") == \"none\"",
+    "Practice.LastOr(new List<int> { 5 }, 0) == 5"
+  ],
+  "checkLabels": [
+    "The last of 4 and 9 must be 9.",
+    "An empty list of ints must give the fallback.",
+    "The last of \"a\" and \"b\" must be \"b\".",
+    "An empty list of strings must give the fallback.",
+    "A list with one item must give that item."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-first.cs",
+      "misconception": "Returns the first item instead of the last.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-no-empty-check.cs",
+      "misconception": "Reads the last position of a list that has none.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "ArgumentOutOfRangeException"
+      }
+    }
+  ],
+  "feedback": "Try a list of two items and an empty list. Check which position you read and what happens when Count is 0."
+}

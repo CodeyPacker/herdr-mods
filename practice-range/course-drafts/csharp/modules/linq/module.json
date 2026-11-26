@@ -1,0 +1,189 @@
+{
+  "id": "course:cs-foundations/module/linq",
+  "title": "Query a collection",
+  "requires": [
+    "list",
+    "loop",
+    "method",
+    "parameter-return",
+    "record",
+    "dictionary",
+    "comparison",
+    "boolean-logic"
+  ],
+  "outcomes": [
+    {
+      "id": "query",
+      "can": "Filter and transform a list with Where and Select.",
+      "assessment": [
+        "predict-query",
+        "course:cs-foundations/task/linq-open-titles"
+      ]
+    },
+    {
+      "id": "group",
+      "can": "Group items and total a value for each group.",
+      "assessment": [
+        "course:cs-foundations/task/linq-minutes-by-owner"
+      ]
+    },
+    {
+      "id": "deferred",
+      "can": "Predict when a query runs and save its results at the right time.",
+      "assessment": [
+        "predict-deferred",
+        "course:cs-foundations/task/linq-long-titles"
+      ]
+    }
+  ],
+  "intro": "Filtering, transforming and counting come up so often that C# has a set of methods for them, called LINQ. This module covers lambdas, the most used LINQ methods, and the fact that a query does not run until its results are read.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "A lambda is a small method",
+      "text": "A lambda is a method written in place, without a name. task => !task.Done takes one task and returns whether it is still open. The part before => is the parameter and the part after it is the result. LINQ methods take lambdas. Where keeps the items for which the lambda returns true. Select replaces each item with the lambda's result. Count() counts the items, Any() says whether there is at least one, and Sum adds up a number taken from each item. The methods chain: the result of one is the input of the next.",
+      "example": "query"
+    },
+    {
+      "kind": "prediction",
+      "title": "Filter, then transform",
+      "text": "open keeps the tasks that are not done. Predict the first two lines of output.",
+      "example": "query",
+      "questions": [
+        "predict-query"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Follow the query",
+      "text": "Where keeps Ship and Label, because Pack is done, so Count() is 2. Select then replaces each kept task with its Title, and string.Join puts a comma and a space between them. The order of the original list is preserved. GroupBy collects the items that share a key. Each group has a Key, here the owner, and can itself be counted or summed. Ana has two tasks and Ben has one.",
+      "example": "query"
+    },
+    {
+      "kind": "explanation",
+      "title": "A query runs when it is read",
+      "text": "Where and Select do not do their work when you call them. They return a description of the work, called a query. Its type is IEnumerable<T>, which means something you can loop over. Lists and arrays fit that type too. The query runs each time something reads it: a foreach, Count(), or ToList(). This is called deferred execution. ToList() runs the query once and stores the results in a new list, which does not change afterwards. ToDictionary does the same into a dictionary, from one lambda for the key and one for the value.",
+      "example": "deferred"
+    },
+    {
+      "kind": "prediction",
+      "title": "Change the list after the query",
+      "text": "50 is added after both queries are written. Predict the two lines of output.",
+      "example": "deferred",
+      "questions": [
+        "predict-deferred"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Follow the timing",
+      "text": "longOnes is only a description. It runs when Count() reads it, after 50 was added, so it finds 40 and 50 and prints 2. saved called ToList() straight away, when the list held only 10 and 40, so it captured one item and stays at 1. When a result must not change later, end the query with ToList().",
+      "example": "deferred"
+    },
+    {
+      "kind": "modification",
+      "title": "List the open titles",
+      "text": "The case box supplies the record type and sample tasks. The starter returns every title.",
+      "task": "course:cs-foundations/task/linq-open-titles"
+    },
+    {
+      "kind": "independent",
+      "title": "Total the minutes per owner",
+      "text": "Work from the prompt. A loop with a dictionary and a LINQ chain are both accepted.",
+      "task": "course:cs-foundations/task/linq-minutes-by-owner"
+    }
+  ],
+  "questions": [
+    {
+      "id": "predict-query",
+      "example": "query",
+      "prompt": "What are the first two lines of output?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "3, then Pack, Ship, Label",
+          "feedback": "Where keeps only the tasks that are not done. Pack is done."
+        },
+        {
+          "text": "2, then Ship, Label",
+          "feedback": "Two tasks are open, and Select turns each into its title, in the original order."
+        },
+        {
+          "text": "2, then Label, Ship",
+          "feedback": "LINQ keeps the order of the source list unless you sort it."
+        }
+      ]
+    },
+    {
+      "id": "predict-deferred",
+      "example": "deferred",
+      "prompt": "What are the two lines of output?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "2, then 1",
+          "feedback": "longOnes runs when it is counted, after 50 was added. saved was captured earlier by ToList()."
+        },
+        {
+          "text": "1, then 1",
+          "feedback": "longOnes has not run yet when 50 is added. It runs at Count() and sees the new item."
+        },
+        {
+          "text": "2, then 2",
+          "feedback": "ToList() already ran its query and stored the results. Later changes to minutes do not reach it."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "query": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/query.cs"
+      },
+      "stdout": [
+        "2",
+        "Ship, Label",
+        "Ana: 2",
+        "Ben: 1"
+      ]
+    },
+    "deferred": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/deferred.cs"
+      },
+      "stdout": [
+        "2",
+        "1"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:cs-foundations/task/linq-open-titles",
+      "path": "tasks/open-titles/task.json"
+    },
+    {
+      "id": "course:cs-foundations/task/linq-minutes-by-owner",
+      "path": "tasks/minutes-by-owner/task.json"
+    },
+    {
+      "id": "course:cs-foundations/task/linq-long-titles",
+      "path": "tasks/long-titles/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:cs-foundations/task/linq-long-titles",
+    "afterModule": "course:cs-foundations/module/exceptions",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [
+    "linq/where",
+    "linq/select",
+    "linq/group",
+    "linq/any",
+    "methods/lambda"
+  ],
+  "drillGap": "These drills practise one LINQ method each. They do not check a chain against sample data or test when a query runs."
+}

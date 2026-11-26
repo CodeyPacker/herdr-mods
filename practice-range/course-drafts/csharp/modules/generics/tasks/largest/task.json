@@ -1,0 +1,63 @@
+{
+  "id": "course:cs-foundations/task/generics-largest",
+  "role": "review",
+  "title": "Find the largest item",
+  "concepts": [
+    "generic",
+    "list",
+    "loop",
+    "comparison"
+  ],
+  "prompt": "Write the body of Largest<T>(List<T> items, T fallback), where T is limited to types that implement IComparable<T>. Return the largest item in the list, or the fallback when the list is empty. The fallback is used only for an empty list. It never competes with the items.",
+  "hints": [
+    "With the items -5 and -2 and a fallback of 0, what must the result be?",
+    "Start from the first item, not from the fallback, and compare the rest against the best so far.",
+    "Return fallback for an empty list. Otherwise keep a best item and replace it whenever item.CompareTo(best) is greater than 0."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.Largest(new List<int> { 3, 9, 4 }, 0) == 9",
+    "Practice.Largest(new List<string> { \"b\", \"c\", \"a\" }, \"none\") == \"c\"",
+    "Practice.Largest(new List<int>(), 7) == 7",
+    "Practice.Largest(new List<int> { 5 }, 0) == 5",
+    "Practice.Largest(new List<int> { -5, -2 }, 0) == -2"
+  ],
+  "checkLabels": [
+    "The largest of 3, 9 and 4 must be 9.",
+    "The largest of \"b\", \"c\" and \"a\" must be \"c\".",
+    "An empty list must give the fallback.",
+    "A list with one item must give that item.",
+    "The largest of -5 and -2 must be -2, whatever the fallback is."
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-from-fallback.cs",
+      "misconception": "Starts from the fallback, so it competes with the items.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-smallest.cs",
+      "misconception": "Reads the comparison the wrong way round and finds the smallest.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Try a list of negative numbers with a fallback of 0. Check where your best value starts and which way the comparison points."
+}

@@ -1,0 +1,61 @@
+{
+  "id": "course:cs-foundations/task/exceptions-safe-load",
+  "role": "review",
+  "title": "Load without hiding bugs",
+  "concepts": [
+    "throw-catch",
+    "method",
+    "text"
+  ],
+  "prompt": "Store is supplied. Store.Load(key) returns the stored text, which may be an empty string. It throws InvalidOperationException when the store is offline, and ArgumentException when the key is empty. Write public static string SafeLoad(string key). Return what Load returns, including an empty string. When the store is offline, return \"unavailable\". An ArgumentException is a bug in the caller, so let it pass through uncaught.",
+  "hints": [
+    "Which of the two exception types is an expected failure here, and which is a bug?",
+    "A catch block handles only the type it names. Name the one you can handle.",
+    "Wrap Store.Load(key) in try, and add catch (InvalidOperationException) that returns \"unavailable\". Do not test the returned text."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "support": "static bool ThrowsArgument(Action action)\n{\n    try { action(); return false; }\n    catch (ArgumentException) { return true; }\n    catch (Exception) { return false; }\n}\n",
+  "checks": [
+    "Practice.SafeLoad(\"a\") == \"value of a\"",
+    "Practice.SafeLoad(\"blank\") == \"\"",
+    "Practice.SafeLoad(\"lost\") == \"unavailable\"",
+    "ThrowsArgument(() => Practice.SafeLoad(\"\"))"
+  ],
+  "checkLabels": [
+    "A stored value must be returned unchanged.",
+    "An empty stored value is a success and must be returned as empty text.",
+    "When the store is offline, the result must be \"unavailable\".",
+    "An empty key must still throw an ArgumentException."
+  ],
+  "fixtures": [
+    {
+      "id": "store",
+      "declarations": "fixture-store.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-catch-all.cs",
+      "misconception": "Catches every exception, which hides the caller's bug.",
+      "witness": {
+        "fixture": "store",
+        "kind": "result",
+        "detail": "Check 4 failed"
+      }
+    },
+    {
+      "source": "wrong-empty-failure.cs",
+      "misconception": "Treats an empty result as a failed load.",
+      "witness": {
+        "fixture": "store",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Look at which exception type your catch names, and whether an empty result is passed on unchanged."
+}

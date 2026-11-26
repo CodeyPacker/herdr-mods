@@ -1,0 +1,59 @@
+{
+  "id": "course:cs-foundations/task/linq-open-titles",
+  "role": "guided",
+  "title": "List the open titles",
+  "concepts": [
+    "lambda",
+    "linq-query",
+    "list",
+    "record"
+  ],
+  "prompt": "TaskItem and Sample are supplied. OpenTitles(List<TaskItem> tasks) should return the titles of the tasks that are not done, in their original order. The starter returns the title of every task.",
+  "hints": [
+    "Which step decides whether a task is kept, and which step turns a task into a title?",
+    "Filter before you transform: Where comes before Select.",
+    "Add .Where(task => !task.Done) in front of the Select."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.OpenTitles(Sample.Tasks()).SequenceEqual(new List<string> { \"Ship\", \"Label\", \"Count\" })",
+    "Practice.OpenTitles(new List<TaskItem>()).Count == 0",
+    "Practice.OpenTitles(new List<TaskItem> { new TaskItem(\"Pack\", \"Ana\", 30, true) }).Count == 0"
+  ],
+  "checkLabels": [
+    "From the sample tasks, the result must be Ship, Label, Count in that order.",
+    "An empty list must give an empty list.",
+    "A list with only done tasks must give an empty list."
+  ],
+  "fixtures": [
+    {
+      "id": "tasks",
+      "declarations": "fixture-tasks.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-done.cs",
+      "misconception": "Keeps the done tasks instead of the open ones.",
+      "witness": {
+        "fixture": "tasks",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-sorted.cs",
+      "misconception": "Sorts the titles, which changes the original order.",
+      "witness": {
+        "fixture": "tasks",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Compare your result with the sample tasks one by one. Check which tasks are kept and that their order is unchanged."
+}

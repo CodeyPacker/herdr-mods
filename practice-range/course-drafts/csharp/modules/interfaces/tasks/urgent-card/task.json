@@ -1,0 +1,67 @@
+{
+  "id": "course:cs-foundations/task/interfaces-urgent-card",
+  "role": "independent",
+  "title": "Add an urgent card",
+  "concepts": [
+    "inheritance",
+    "class",
+    "constructor",
+    "list",
+    "loop"
+  ],
+  "prompt": "Card is supplied. Finish UrgentCard, which is a Card with a number of Hours. Its Label() returns the title and the hours in the form \"Ship (within 4 h)\", and that version must also run when the card is held in a Card variable. Then finish Cards.Labels so it returns the Label() of every card, in order.",
+  "hints": [
+    "What does the constructor still have to store, and what does : base(title) already take care of?",
+    "Card marks Label as virtual. Which word replaces a virtual method in a derived class?",
+    "Add public override string Label() to UrgentCard. In Labels, call Label() on each card, not Title."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "types",
+  "rules": [],
+  "support": "static Card AsCard(string title, int hours) => (Card)(object)new UrgentCard(title, hours);\n",
+  "checks": [
+    "new UrgentCard(\"Ship\", 4).Label() == \"Ship (within 4 h)\"",
+    "AsCard(\"Ship\", 4).Label() == \"Ship (within 4 h)\"",
+    "AsCard(\"Ship\", 4).Title == \"Ship\"",
+    "new UrgentCard(\"Ship\", 4).Hours == 4",
+    "Cards.Labels(new List<Card> { new Card(\"Pack\"), AsCard(\"Ship\", 2) }).SequenceEqual(new List<string> { \"Pack\", \"Ship (within 2 h)\" })",
+    "Cards.Labels(new List<Card>()).Count == 0"
+  ],
+  "checkLabels": [
+    "An urgent card's label must be its title and hours, as in \"Ship (within 4 h)\".",
+    "Calling Label through a Card variable must still give the urgent text.",
+    "An urgent card must keep its title.",
+    "Hours must hold the hours passed to the constructor.",
+    "Labels must return each card's own label, in order.",
+    "An empty list must give an empty list."
+  ],
+  "fixtures": [
+    {
+      "id": "cards",
+      "declarations": "fixture-cards.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-hides.cs",
+      "misconception": "Declares Label without override, so it only hides the base method.",
+      "witness": {
+        "fixture": "cards",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-titles.cs",
+      "misconception": "Reads Title in the loop instead of calling Label().",
+      "witness": {
+        "fixture": "cards",
+        "kind": "result",
+        "detail": "Check 5 failed"
+      }
+    }
+  ],
+  "feedback": "If the label is right on an UrgentCard variable but wrong through a Card variable, check for the word override. Then check what Labels reads from each card."
+}

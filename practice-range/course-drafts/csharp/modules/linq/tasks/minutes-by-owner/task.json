@@ -1,0 +1,63 @@
+{
+  "id": "course:cs-foundations/task/linq-minutes-by-owner",
+  "role": "independent",
+  "title": "Total the minutes per owner",
+  "concepts": [
+    "linq-query",
+    "lambda",
+    "dictionary",
+    "record"
+  ],
+  "prompt": "TaskItem and Sample are supplied. Write public static Dictionary<string, int> MinutesByOwner(List<TaskItem> tasks). For the tasks that are not done, return each owner with the total of their Minutes. An owner whose tasks are all done does not appear as a key.",
+  "hints": [
+    "Which tasks count at all? Decide that before grouping.",
+    "Each owner needs one total, built from the Minutes of that owner's open tasks.",
+    "Filter with Where, group with GroupBy on Owner, then build the dictionary from each group's Key and its Sum of Minutes."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.MinutesByOwner(Sample.Tasks())[\"Ana\"] == 30",
+    "Practice.MinutesByOwner(Sample.Tasks())[\"Ben\"] == 45",
+    "Practice.MinutesByOwner(Sample.Tasks()).ContainsKey(\"Cy\") == false",
+    "Practice.MinutesByOwner(Sample.Tasks()).Count == 2",
+    "Practice.MinutesByOwner(new List<TaskItem>()).Count == 0"
+  ],
+  "checkLabels": [
+    "Ana's open tasks are 10 and 20 minutes, so her total must be 30.",
+    "Ben's one open task is 45 minutes.",
+    "Cy's only task is done, so Cy must not be a key.",
+    "The sample tasks must give exactly two owners.",
+    "An empty list must give an empty dictionary."
+  ],
+  "fixtures": [
+    {
+      "id": "tasks",
+      "declarations": "fixture-tasks.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-all-tasks.cs",
+      "misconception": "Includes the tasks that are already done.",
+      "witness": {
+        "fixture": "tasks",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-counts.cs",
+      "misconception": "Counts the tasks instead of adding their minutes.",
+      "witness": {
+        "fixture": "tasks",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Work out Ana's total by hand from the sample tasks, using only the tasks that are not done, and compare it with your result."
+}

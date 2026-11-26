@@ -1,0 +1,65 @@
+{
+  "id": "course:cs-foundations/task/interfaces-estimates",
+  "role": "review",
+  "title": "Total different estimates",
+  "concepts": [
+    "interface",
+    "class",
+    "constructor",
+    "list",
+    "loop"
+  ],
+  "prompt": "IEstimate is supplied. Finish two classes that implement it. FlatEstimate takes a number of minutes and returns it from Minutes(). ItemEstimate takes a number of items and the minutes for each, and Minutes() returns the two multiplied. Then finish Estimates.Total so it returns the Minutes() of every estimate added together, and 0 for an empty list.",
+  "hints": [
+    "What does each class need to remember between its constructor and its Minutes() call?",
+    "Total does not need to know which class it has. It only needs Minutes().",
+    "Store the constructor values in properties. In Total, loop and add estimate.Minutes() to a running total."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "types",
+  "rules": [],
+  "support": "static IEstimate E(object estimate) => (IEstimate)estimate;\n",
+  "checks": [
+    "E(new FlatEstimate(30)).Minutes() == 30",
+    "E(new ItemEstimate(4, 5)).Minutes() == 20",
+    "E(new ItemEstimate(0, 5)).Minutes() == 0",
+    "Estimates.Total(new List<IEstimate> { E(new FlatEstimate(30)), E(new ItemEstimate(4, 5)) }) == 50",
+    "Estimates.Total(new List<IEstimate>()) == 0"
+  ],
+  "checkLabels": [
+    "A flat estimate of 30 must give 30.",
+    "4 items at 5 minutes each must give 20.",
+    "0 items must give 0.",
+    "A flat 30 and 4 items at 5 minutes must total 50.",
+    "An empty list must total 0."
+  ],
+  "fixtures": [
+    {
+      "id": "estimates",
+      "declarations": "fixture-estimates.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-adds.cs",
+      "misconception": "Adds the items and the minutes instead of multiplying.",
+      "witness": {
+        "fixture": "estimates",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-counts.cs",
+      "misconception": "Counts the estimates instead of adding their minutes.",
+      "witness": {
+        "fixture": "estimates",
+        "kind": "result",
+        "detail": "Check 4 failed"
+      }
+    }
+  ],
+  "feedback": "Check each class on its own first, then Total. Total should call Minutes() on every estimate without asking which class it is."
+}
