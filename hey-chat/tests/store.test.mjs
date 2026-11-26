@@ -20,7 +20,7 @@ test('saving an existing store preserves the bridge id and latest session on reo
   fake('fs/promises', herdrFs);
   const { saveStore, loadStore } = await mod('store.js');
   const projects = [{ id: 'project', path: '/tmp' }];
-  const chat = { id: 'original-bridge-id', agent: 'codex', cwd: '/tmp', project: 'project', session: 'first-session' };
+  const chat = { id: 'original-bridge-id', agent: 'codex', cwd: '/tmp', project: 'project', session: 'first-session', file: '/sessions/first.jsonl' };
   await saveStore([chat], projects);
   chat.session = 'current-session';
   chat.model = 'current-model';
@@ -34,6 +34,7 @@ test('saving an existing store preserves the bridge id and latest session on reo
   const reopened = store.chats[0];
   assert.equal(reopened.id, 'original-bridge-id');
   assert.equal(reopened.session, 'current-session');
+  assert.equal(reopened.file, '/sessions/first.jsonl');
   assert.equal(reopened.model, 'current-model');
   assert.equal(reopened.selectedModel, 'chosen-model');
   assert.equal(reopened.title, 'Latest title');
@@ -68,4 +69,52 @@ test('independent project saves merge, retry conflicts, and preserve project sel
   const stored = await b.loadStore();
   assert.deepEqual(stored.chats.map(c => c.id), ['b']);
   assert.equal(stored.activeChats['/b'], 'b');
+});
+
+
+test('draft-only chats and unsent images survive saving and clearing removes empty chats', async t => {
+  const root = await fs.mkdtemp(join(tmpdir(), 'hey-chat-drafts-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  let text = null;
+  fake('herdr', { readTextFile: async () => text, writeTextFile: async (_file, next) => { text = next; }, appHome: () => root });
+  fake('fs/promises', herdrFs);
+  const { saveStore, loadStore } = await mod('store.js');
+  const chats = [
+    { id: 'text', project: 'project', draft: '  unfinished\nmessage  ' },
+    { id: 'image', project: 'project', attached: [{ path: '/tmp/image.png', w: 20, h: 10 }, { kind: 'document', path: 'data/hey-chat/files/report.pdf', name: 'report.pdf', format: 'pdf' }] },
+    { id: 'empty', project: 'project' },
+  ];
+  await saveStore(chats, [{ id: 'project', path: '/tmp' }], 'text');
+  const store = await loadStore();
+  assert.deepEqual(store.chats.map(c => c.id), ['text', 'image']);
+  assert.equal(store.chats[0].draft, chats[0].draft);
+  assert.deepEqual(store.chats[1].attached, chats[1].attached);
+  assert.equal(store.activeChat, 'text');
+  assert.equal(store.projects.length, 1);
+  chats[0].draft = '';
+  chats[1].attached = [];
+  await saveStore(chats, [], '');
+  assert.deepEqual((await loadStore()).chats, []);
+});
+
+test('custom names and pins survive reopening even for chats without messages', async t => {
+  const root = await fs.mkdtemp(join(tmpdir(), 'hey-chat-names-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  let text = null;
+  fake('herdr', { readTextFile: async () => text, writeTextFile: async (_file, next) => { text = next; }, appHome: () => root });
+  fake('fs/promises', herdrFs);
+  const { saveStore, loadStore } = await mod('store.js');
+  const chats = [
+    { id: 'named', project: 'project', title: 'Research notes', customTitle: true },
+    { id: 'pinned', project: 'project', title: 'New chat', pinned: true },
+  ];
+  await saveStore(chats, [{ id: 'project', path: '/tmp' }], 'named');
+  const restored = await loadStore();
+  assert.equal(restored.chats[0].title, 'Research notes');
+  assert.equal(restored.chats[0].customTitle, true);
+  assert.equal(restored.chats[1].pinned, true);
+  assert.equal(restored.projects.length, 1);
+  chats[1].pinned = false;
+  await saveStore(chats, [{ id: 'project', path: '/tmp' }], 'named');
+  assert.deepEqual((await loadStore()).chats.map(c => c.id), ['named']);
 });

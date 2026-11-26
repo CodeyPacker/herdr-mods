@@ -13,7 +13,7 @@
 //       image, note, tool, tool_done, turn_end), so the pane builds the chat with the same code. Images are
 //       copied into <dir> (images.mjs). `--before` keeps
 //       what came before a time (a running bridge replays the rest). `--max` keeps the last n user
-//       turns (default 40).
+//       turns when positive (default 0, the full history).
 //   node sessions.mjs delete --agent claude|codex --session <id> [--file <path>]
 //       Removes a session for good and prints { ok, message }. Claude: its <id>.jsonl and the <id>/
 //       folder beside it, only inside ~/.claude/projects. Codex: `codex delete --force <id>`.
@@ -21,6 +21,8 @@
 //       Deletes a quick chat when its tab closes: stops each chat's bridge, deletes its session, the
 //       session folder Claude keeps for that folder, and the folder itself. Only a folder inside a
 //       hey-chat/quick folder is touched.
+import { splitSender } from "./link-messages.js";
+import { splitDocuments } from "./file-messages.mjs";
 import { readdirSync, statSync, openSync, readSync, closeSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { join, dirname, basename, resolve } from "node:path";
 import { runAgent as spawnSync } from "./process.mjs";
@@ -157,7 +159,7 @@ function readClaude(file, before, max) {
     const user = claudeUserText(d);
     if (user !== null) {
       const images = claudeUserImages(d).map((x) => keepBase64(x.source.data, x.source.media_type, images_dir)).filter(Boolean);
-      events.push({ type: "user", text: user, images, at });
+      events.push({ type: "user", ...splitDocuments(splitSender(user).text), source: splitSender(user).source, images, at });
       continue;
     }
     if (d.type === "system" && d.subtype === "compact_boundary") events.push(compactNote(d.compactMetadata?.trigger));
@@ -175,6 +177,7 @@ function codexUserText(p) {
   if (p?.type !== "message" || p.role !== "user") return null;
   // A pasted image comes wrapped in <image …> and </image> parts, beside what you typed.
   const text = (p.content ?? []).map((/** @type {any} */ c) => c.text ?? "").filter((/** @type {string} */ s) => !/^\s*<\/?image\b/.test(s)).join("\n");
+  if (splitSender(text).source || splitDocuments(text).files.length) return text;
   if (/^\s*(<|# AGENTS\.md)/.test(text)) return null;
   if (!text.trim()) return codexUserImages(p).length ? "" : null;
   return text;
@@ -283,7 +286,7 @@ function readCodex(file, before, max) {
     if (d.type === "response_item") {
       const user = codexUserText(p);
       if (user !== null) {
-        events.push({ type: "user", text: user, images: codexUserImages(p).map((url) => keepDataUrl(url, images_dir)).filter(Boolean), at });
+        events.push({ type: "user", ...splitDocuments(splitSender(user).text), source: splitSender(user).source, images: codexUserImages(p).map((url) => keepDataUrl(url, images_dir)).filter(Boolean), at });
         continue;
       }
       const agent = codexAgentText(p);
@@ -323,6 +326,7 @@ function add(events, more) {
 
 /** The events from the nth-last message you typed on. @param {any[]} events @param {number} max */
 function lastTurns(events, max) {
+  if (!(max > 0)) return events;
   const model = events.findLast(e => e.type === "model");
   let seen = 0;
   for (let i = events.length - 1; i >= 0; i--) {
@@ -400,7 +404,7 @@ if (mode === "list") {
   const all = [...listClaude(), ...listCodex()].sort((a, b) => b.updatedAt - a.updatedAt);
   process.stdout.write(JSON.stringify(all));
 } else if (mode === "read") {
-  const before = Number(opts.before) || 0, max = Number(opts.max) || 40;
+  const before = Number(opts.before) || 0, max = Number(opts.max) || 0;
   process.stdout.write(JSON.stringify(opts.agent === "codex" ? readCodex(opts.file, before, max) : readClaude(opts.file, before, max)));
 } else if (mode === "delete") {
   process.stdout.write(JSON.stringify(removeSession(opts.agent, opts.session, opts.file)));

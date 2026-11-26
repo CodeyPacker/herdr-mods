@@ -47,8 +47,8 @@ export function askClaude(cwd, args, message, pick, fallback) {
  * @param {string} [timedOut] the message when it takes too long
  * @returns {Promise<T>}
  */
-export async function withCodex(cwd, use, timedOut = "Codex took too long to answer. Try again.") {
-  const child = spawnAgent("codex", ["app-server"], { cwd, stdio: ["pipe", "pipe", "pipe"] });
+export async function withCodex(cwd, use, timedOut = "Codex took too long to answer. Try again.", options = {}) {
+  const child = spawnAgent("codex", ["app-server", ...(options.args ?? [])], { cwd, stdio: ["pipe", "pipe", "pipe"] });
   /** @type {Map<number, { resolve: (r: any) => void, reject: (e: Error) => void }>} */
   const calls = new Map();
   let id = 0, stderr = "";
@@ -84,7 +84,7 @@ export async function withCodex(cwd, use, timedOut = "Codex took too long to ans
   const late = new Promise((_resolve, reject) => { timer = setTimeout(() => reject(new Error(timedOut)), WAIT_MS); });
   try {
     return await Promise.race([late, (async () => {
-      await call("initialize", { clientInfo: { name: "hey-chat", title: "Hey, chat", version: "1" } });
+      await call("initialize", { clientInfo: { name: "hey-chat", title: "Hey, chat", version: "1" }, ...(options.experimental ? { capabilities: { experimentalApi: true } } : {}) });
       write({ method: "initialized", params: {} });
       return use(call);
     })()]);

@@ -1,3 +1,4 @@
+import { updateText } from "./link-messages.js";
 // Bridge events to chat messages, and the words for tool calls and permission cards.
 
 /**
@@ -222,6 +223,7 @@ export function visibleMessages(chat, condensed) {
 /** Clears what a chat built from its bridge before replaying its events. @param {any} chat */
 export function resetThread(chat) {
   chat.thread = [];
+  chat.messageSequence = 0;
   chat.tools = new Map();     // tool call id → its card
   chat.asks = new Map();      // permission id → its card
   chat.questions = new Map(); // question id → its card
@@ -236,7 +238,7 @@ export function resetThread(chat) {
  * @param {any} chat @param {any} ev @returns {"asked" | "question" | "ended" | null}
  */
 export function applyEvent(chat, ev) {
-  const push = (/** @type {any} */ m) => { chat.thread.push({ id: `${chat.id}.${chat.thread.length}`, ...m }); return chat.thread[chat.thread.length - 1]; };
+  const push = (/** @type {any} */ m) => { chat.thread.push({ id: `${chat.id}.${chat.messageSequence = (chat.messageSequence ?? 0) + 1}`, ...m }); return chat.thread[chat.thread.length - 1]; };
   switch (ev.type) {
     case "connection":
       chat.reconnecting = ev.state === "reconnecting";
@@ -253,6 +255,32 @@ export function applyEvent(chat, ev) {
       for (const card of chat.thread) if (card.queueId === ev.id) { card.sending = false; card.queueError = String(ev.message ?? "Couldn't send. Try again."); }
       return null;
     }
+    case "retry_cleared":
+      for (const card of chat.thread) if (card.retry?.id === ev.id) { card.retried = true; card.retrying = false; card.retryError = null; }
+      return null;
+    case "retry_error":
+      for (const card of chat.thread) if (card.retry?.id === ev.id) { card.retrying = false; card.retryError = String(ev.message ?? "Couldn't retry. Try again."); }
+      return null;
+    case "queue_removed":
+      chat.thread = chat.thread.filter(m => m.queueId !== ev.id || !m.queued);
+      return null;
+    case "queue_updated": {
+      const cards = chat.thread.filter(m => m.queueId === ev.id && m.queued);
+      if (!cards.length) return null;
+      const text = cards.find(m => m.kind === "text");
+      if (text && ev.text) text.text = ev.text;
+      else if (text) chat.thread = chat.thread.filter(m => m !== text);
+      else if (ev.text) {
+        const last = cards[cards.length - 1];
+        const card = push({ kind: "text", from: "me", text: ev.text, time: last.time, queueId: ev.id, queued: true });
+        chat.thread.pop();
+        chat.thread.splice(chat.thread.indexOf(last) + 1, 0, card);
+      }
+      const remaining = chat.thread.filter(m => m.queueId === ev.id && m.queued);
+      for (const card of remaining) { card.queueAction = false; card.sending = false; card.queueError = null; }
+      if (remaining.length) remaining[remaining.length - 1].queueAction = true;
+      return null;
+    }
     case "queued":
     case "user": {
       // A message the agent now reads starts a new turn, and the last turn's plan goes with it.
@@ -267,9 +295,10 @@ export function applyEvent(chat, ev) {
       if (!chat.lastAt || !sameDay(chat.lastAt, at) || at - chat.lastAt > 3600000) push({ kind: "sep", text: dayLabel(at) });
       chat.lastAt = at;
       chat.time = clock(at);
-      const state = { queueId, queued: ev.type === "queued" };
+      const state = { queueId, queued: ev.type === "queued", source: ev.source ?? null };
       for (const img of Array.isArray(ev.images) ? ev.images : []) push({ kind: "image", from: "me", path: img.path, w: img.w, h: img.h, time: clock(at), ...state });
-      if (ev.text) push({ kind: "text", from: "me", text: ev.text, time: clock(at), ...state });
+      for (const file of Array.isArray(ev.files) ? ev.files : []) push({ ...file, kind: "file", from: "me", time: clock(at), ...state });
+      if (ev.text) push({ kind: "text", from: "me", text: ev.source?.kind === "update" ? updateText(ev.source) : ev.text, time: clock(at), ...state });
       if (state.queued) chat.thread[chat.thread.length - 1].queueAction = true;
       return null;
     }
@@ -334,7 +363,7 @@ export function applyEvent(chat, ev) {
       // A tool the turn ended in the middle of.
       for (const card of chat.tools.values()) if (card.running) { card.running = false; card.failed = true; card.title = `${card.doneTitle} (${ev.stopped ? "stopped" : "didn't finish"})`; }
       if (ev.stopped) push({ kind: "note", text: "Stopped." });
-      else if (ev.error) push({ kind: "error", from: "agent", text: String(ev.text || "Something went wrong.") });
+      else if (ev.error) push({ kind: "error", from: "agent", text: String(ev.text || "Something went wrong."), retry: ev.retry ?? null });
       return "ended";
     case "error":
       chat.working = false;

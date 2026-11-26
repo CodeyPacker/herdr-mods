@@ -18,7 +18,7 @@ async function setup() {
   const timers = [];
   const cx = { notify() {}, spawn() {}, stop_propagation() {}, timer: { after(ms, fn) { timers.push({ ms, fn }); } } };
   const v = await view({
-    chats, chatId: 'a', unread: {}, fresh: [], previous: null, syncing: new Set(), keyHints: true, shortcuts: makeShortcuts(),
+    chats, loaded: false, chatId: 'a', unread: {}, fresh: [], previous: null, syncing: new Set(), keyHints: true, shortcuts: makeShortcuts(),
     bridges: new Map(chats.map(c => [c.id, { synced: true }])), links: new Map(),
     inputs: { claude: box(), codex: box() }, zone: 'chat', handle: { focus() {} },
     scrollDown() {}, focusInput() {}, focusTree() {},
@@ -112,4 +112,46 @@ test('a new chat with a draft stays when you leave it', async () => {
   s.v.inputs.claude.set_value('');
   s.v.openChat('b', s.cx);
   assert.equal(s.v.chats.some(c => c.id === 'a'), false, 'an empty new chat still goes away');
+});
+
+
+test('an image-only draft stays with its chat when switching', async () => {
+  const s = await setup();
+  s.v.chat('a').session = null;
+  s.v.chat('a').attached = [{ path: '/tmp/image.png' }];
+  s.v.openChat('b', s.cx);
+  assert.ok(s.v.chats.some(c => c.id === 'a'));
+  assert.equal(s.v.chat('b').attached, undefined);
+  s.v.openChat('a', s.cx);
+  assert.equal(s.v.chat('a').attached[0].path, '/tmp/image.png');
+});
+
+test('typing saves after a pause and captures the active draft without switching chats', async () => {
+  const s = await setup();
+  s.v.loaded = true;
+  const saved = [];
+  s.v.saveChats = () => saved.push(s.v.chat('a').draft);
+  s.v.inputs.claude.set_value('First');
+  s.v.draftChanged(s.cx);
+  s.v.inputs.claude.set_value('Latest');
+  s.v.draftChanged(s.cx);
+  for (const timer of s.timers) timer.fn(s.cx);
+  assert.deepEqual(saved, ['Latest']);
+});
+
+
+test('changing agents keeps the current draft and never revives text from another chat', async () => {
+  const s = await setup();
+  s.v.inputs.claude.set_value('Draft for a');
+  s.v.setChatAgent(s.v.chat('a'), 'codex');
+  assert.equal(s.v.inputs.codex.value(), 'Draft for a');
+  s.v.openChat('b', s.cx);
+  assert.equal(s.v.inputs.claude.value(), '');
+  s.v.setChatAgent(s.v.chat('b'), 'codex');
+  assert.equal(s.v.inputs.codex.value(), '');
+  s.v.inputs.codex.set_value('Draft for b');
+  s.v.openChat('a', s.cx);
+  assert.equal(s.v.inputs.codex.value(), 'Draft for a');
+  s.v.setChatAgent(s.v.chat('a'), 'claude');
+  assert.equal(s.v.inputs.claude.value(), 'Draft for a');
 });

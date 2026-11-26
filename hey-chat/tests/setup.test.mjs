@@ -67,7 +67,7 @@ test('setup only guides fresh chats, preserves existing chats, and refreshes aft
   let state = { node: false, agents: {} };
   fake('agent.js', { checkSetup: async () => state });
   const chat = { thread: [], agent: 'claude' };
-  const v = await view({ chat: () => chat, chatId: 'chat', loadChats: async () => { v.reloaded = true; } });
+  const v = await view({ loaded: false, chat: () => chat, chatId: 'chat', loadChats: async () => { v.reloaded = true; } });
   const jobs = [];
   const cx = { spawn: fn => jobs.push(fn(cx)), notify() {} };
   v.refreshSetup(cx, true); await Promise.all(jobs);

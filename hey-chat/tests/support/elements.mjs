@@ -23,6 +23,9 @@ export function element() {
     if (key === 'children') return children => { target.nodes.push(...[...children].map(checkChild)); return el; };
     if (key === 'id') return id => { target.elementId = id; return el; };
     if (key === 'on_click') return handler => { target.click = handler; return el; };
+    if (key === 'bg') return color => { target.background = color; return el; };
+    if (key === 'text_color') return color => { target.foreground = color; return el; };
+    if (key === 'items_start' || key === 'items_center' || key === 'items_end') return () => { target.alignment = key; return el; };
     if (key === 'then') return undefined; // not a promise
     return () => el;
   } });

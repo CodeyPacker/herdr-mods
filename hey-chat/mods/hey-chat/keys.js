@@ -92,6 +92,15 @@ export function handleKey(v, e, cx) {
     // Anything else goes to the initials box when it has the keyboard, and nowhere otherwise.
     return;
   }
+  if (v.renaming && v.zone === "rename") {
+    if (ks === "enter") { v.saveRename(); done(); }
+    else if (ks === "escape") { v.cancelRename(); done(); }
+    return;
+  }
+  if (v.queueEdit && v.zone === "queue-edit") {
+    if (ks === "escape" && !v.queueEdit.saving) { v.cancelQueueEdit(); done(); }
+    return;
+  }
   if (v.chatSearchOpen && v.zone === "chat-search") {
     if (ks === "escape") { v.toggleChatSearch(); done(); return; }
     if (ks === "enter" || ks === "shift-enter") { v.findChatMatch(ks === "shift-enter" ? -1 : 1); done(); return; }

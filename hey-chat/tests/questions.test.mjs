@@ -6,7 +6,7 @@ import * as messages from '../mods/hey-chat/messages.js';
 
 const { default: HeyChat } = await mod('main.js');
 const { serve } = await mod('bridge.mjs');
-const { questionCard: renderQuestion, messageRow: renderMessage } = await mod('views/chat.js');
+const { questionCard: renderQuestion, messageRow: renderMessage, queueEditor } = await mod('views/chat.js');
 
 function setup(questions, bridge = {}) {
   const chat = { id: 'chat', agent: 'codex' };
@@ -15,7 +15,7 @@ function setup(questions, bridge = {}) {
   const card = messages.pendingQuestion(chat);
   const v = Object.create(HeyChat.prototype);
   let text = '';
-  Object.assign(v, { chatId: chat.id, zone: 'chat', chat: () => chat, bridges: new Map([[chat.id, bridge]]), inputFor: () => ({ value: () => text, set_value: x => { text = x; } }) });
+  Object.assign(v, { saveChats() {}, chatId: chat.id, zone: 'chat', chat: () => chat, bridges: new Map([[chat.id, bridge]]), inputFor: () => ({ value: () => text, set_value: x => { text = x; } }) });
   const jobs = [];
   const cx = { notify() {}, spawn(fn) { jobs.push(fn(cx)); } };
   return { v, chat, card, cx, jobs, type: x => { text = x; } };
@@ -138,7 +138,15 @@ async function bridge(agent, model = null, options = {}) {
   let saved = null; // The bridge's own file, which holds the token a client sends first.
   fake('process.mjs', { spawnAgent: (command, args) => { spawns.push({ command, args }); return child; } });
   fake('node:net', { createServer: fn => { server.connect = fn; return server; } });
-  fake('node:fs', { mkdirSync() {}, writeFileSync(file, text) { if (/[\\/]chat\.json$/.test(file)) saved = JSON.parse(text); }, readFileSync() { throw new Error('missing'); }, rmSync() {} });
+  fake('node:fs', { mkdirSync() {}, writeFileSync(file, text) { if (/[\\/]chat\.json$/.test(file)) saved = JSON.parse(text); }, readFileSync(file, encoding) {
+    const bytes = options.documentFiles?.get(file);
+    if (bytes !== undefined) return encoding ? Buffer.from(bytes).toString(encoding) : Buffer.from(bytes);
+    throw new Error('missing');
+  }, statSync(file) {
+    const bytes = options.documentFiles?.get(file);
+    if (bytes === undefined) throw new Error('missing');
+    return { isFile: () => true, size: Buffer.byteLength(bytes) };
+  }, rmSync() {} });
   // The bridge's idle check runs every minute. It is kept here and run by clock.tick().
   let tick = () => {};
   const { setInterval: every } = globalThis;
@@ -534,4 +542,377 @@ test('a pane that asks is told where the replay ends, and the marker is not kept
   b.socket('pane'); // A pane that doesn't ask gets the history alone.
   assert.equal(b.events.slice(again).some(e => e.type === 'replay_end'), false);
   assert.equal(b.events.length - again, replay.length - 1);
+});
+for (const agent of ['claude', 'codex']) {
+  test(`${agent} edits queued text in place, preserves images and order, and replays the edit`, async () => {
+    const b = await bridge(agent);
+    const images = [{ path: 'data/hey-chat/images/p.png', w: 20, h: 10 }];
+    b.send({ type: 'send', id: 'next', text: '/old Before', images, skill: { name: 'old', path: '/old/SKILL.md' } });
+    b.send({ type: 'send', id: 'later', text: 'Later' });
+    b.send({ type: 'queue_edit', id: 'next', text: 'After', skill: null });
+    assert.equal(b.events.at(-1).type, 'queue_updated');
+    const replayStart = b.events.length;
+    b.socket('pane');
+    const chat = { id: 'chat' };
+    messages.resetThread(chat);
+    for (const ev of b.events.slice(replayStart)) messages.applyEvent(chat, ev);
+    assert.equal(chat.thread.filter(m => m.queueId === 'next' && m.kind === 'text')[0].text, 'After');
+    assert.equal(chat.thread.filter(m => m.queueId === 'next' && m.kind === 'image')[0].path, images[0].path);
+    assert.equal(chat.thread.filter(m => m.queueId === 'next' && m.queueAction).length, 1);
+    b.stdout(agent === 'codex' ? { method: 'turn/completed', params: { turn: { status: 'completed' } } } : { type: 'result', subtype: 'success' });
+    await new Promise(resolve => setImmediate(resolve));
+    const accepted = b.events.find(e => e.type === 'user' && e.queueId === 'next');
+    assert.ok(accepted, JSON.stringify(b.events.slice(-3)));
+    assert.equal(accepted.text, 'After');
+    assert.deepEqual(accepted.images, images);
+    assert.equal(b.events.some(e => e.type === 'user' && e.queueId === 'later'), false);
+    if (agent === 'codex') {
+      const input = b.requests.filter(r => r.method === 'turn/start').at(-1).params.input;
+      assert.equal(input.some(x => x.type === 'skill'), false);
+      assert.equal(input.find(x => x.type === 'text').text, 'After');
+    }
+    b.send({ type: 'queue_edit', id: 'next', text: 'Too late' });
+    assert.equal(b.events.at(-1).type, 'queue_error');
+    assert.equal(b.events.find(e => e.type === 'user' && e.queueId === 'next').text, 'After');
+  });
+
+  test(`${agent} removes a queued message and its images without sending or restoring it`, async () => {
+    const b = await bridge(agent);
+    b.send({ type: 'send', id: 'remove', text: 'Do not send', images: [{ path: 'data/hey-chat/images/p.png' }] });
+    b.send({ type: 'send', id: 'keep', text: 'Keep this' });
+    b.send({ type: 'queue_remove', id: 'remove' });
+    assert.equal(b.events.at(-1).type, 'queue_removed');
+    const replayStart = b.events.length;
+    b.socket('pane');
+    const chat = { id: 'chat' };
+    messages.resetThread(chat);
+    for (const ev of b.events.slice(replayStart)) messages.applyEvent(chat, ev);
+    assert.equal(chat.thread.some(m => m.queueId === 'remove'), false);
+    assert.equal(chat.thread.some(m => m.queueId === 'keep' && m.queued), true);
+    b.stdout(agent === 'codex' ? { method: 'turn/completed', params: { turn: { status: 'completed' } } } : { type: 'result', subtype: 'success' });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(b.events.some(e => e.type === 'user' && e.queueId === 'remove'), false);
+    assert.equal(b.events.find(e => e.type === 'user' && e.queueId === 'keep').text, 'Keep this');
+    const delivered = b.events.filter(e => e.type === 'user' && e.queueId === 'keep').length;
+    b.send({ type: 'queue_remove', id: 'remove' });
+    assert.equal(b.events.at(-1).type, 'queue_error');
+    assert.equal(b.events.filter(e => e.type === 'user' && e.queueId === 'keep').length, delivered);
+    assert.equal(new Set(chat.thread.map(m => m.id)).size, chat.thread.length);
+  });
+}
+
+test('queue edits and removals cannot change a message reserved by Send now', async () => {
+  const b = await bridge('codex');
+  b.send({ type: 'send', id: 'next', text: 'Original' });
+  b.send({ type: 'send_now', id: 'next' });
+  b.send({ type: 'queue_edit', id: 'next', text: 'Changed' });
+  assert.equal(b.events.at(-1).type, 'queue_error');
+  b.send({ type: 'queue_remove', id: 'next' });
+  assert.equal(b.events.at(-1).type, 'queue_error');
+  await new Promise(resolve => setImmediate(resolve));
+  const steer = b.requests.find(r => r.method === 'turn/steer');
+  assert.equal(steer.params.input[0].text, 'Original');
+  b.stdout({ id: steer.id, result: {} });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(b.events.find(e => e.type === 'user' && e.queueId === 'next').text, 'Original');
+});
+
+test('queued edits can add or clear captions without moving images or reusing row ids', () => {
+  const chat = { id: 'chat' };
+  messages.resetThread(chat);
+  messages.applyEvent(chat, { type: 'queued', id: 'image', images: [{ path: 'picture.png' }] });
+  messages.applyEvent(chat, { type: 'text', text: 'Working' });
+  messages.applyEvent(chat, { type: 'queue_updated', id: 'image', text: 'Caption' });
+  const caption = chat.thread.find(m => m.queueId === 'image' && m.kind === 'text');
+  assert.equal(caption.queueAction, true);
+  assert.equal(chat.thread.indexOf(caption) + 1, chat.thread.findIndex(m => m.text === 'Working'));
+  messages.applyEvent(chat, { type: 'queue_updated', id: 'image', text: '' });
+  assert.equal(chat.thread.some(m => m === caption), false);
+  assert.equal(chat.thread.find(m => m.kind === 'image').queueAction, true);
+  messages.applyEvent(chat, { type: 'queue_updated', id: 'image', text: 'New caption' });
+  assert.equal(chat.thread.some(m => m.id === caption.id), false);
+  messages.applyEvent(chat, { type: 'queue_removed', id: 'image' });
+  messages.applyEvent(chat, { type: 'text', text: 'Finished' });
+  assert.equal(new Set(chat.thread.map(m => m.id)).size, chat.thread.length);
+});
+
+function queuedPane(wire) {
+  const s = setup([], wire);
+  s.chat.questions.clear();
+  s.chat.thread = [];
+  s.chat.working = true;
+  s.v.me = { initials: 'Me', color: '#7c5cff', picture: null };
+  s.v.focusInput = () => { s.v.zone = 'chat'; };
+  s.v.link = async () => wire;
+  s.v.codexSkill = () => null;
+  s.v.syncOutputs = () => {};
+  s.type('The next message draft');
+  messages.applyEvent(s.chat, { type: 'queued', id: 'next', text: 'Before' });
+  const card = s.chat.thread.find(m => m.queueAction);
+  return { ...s, card, render: () => renderMessage(s.v, {}, s.chat.thread, s.chat.thread.indexOf(card), 500) };
+}
+
+test('Edit preserves the composer and waits for confirmation before replacing queued text', async () => {
+  const edits = [];
+  const s = queuedPane({ protocol: 3, editQueued: async (...args) => edits.push(args) });
+  findElement(s.render(), 'edit-queued-next').click({}, s.cx);
+  assert.equal(s.v.queueEdit.box.value(), 'Before');
+  assert.equal(s.v.zone, 'queue-edit');
+  s.v.queueEdit.box.set_value('After');
+  const editor = queueEditor(s.v, {});
+  findElement(editor, 'save-queued-edit').click({}, s.cx);
+  findElement(editor, 'save-queued-edit').click({}, s.cx);
+  await Promise.all(s.jobs);
+  assert.deepEqual(edits, [['next', 'After', null]]);
+  assert.equal(s.card.text, 'Before');
+  assert.equal(s.v.queueEdit.saving, true);
+  assert.equal(s.v.inputFor().value(), 'The next message draft');
+  assert.equal(Object.hasOwn(findElement(s.render(), 'remove-queued-next'), 'click'), false);
+  s.v.onEvent(s.chat, { type: 'queue_updated', id: 'next', text: 'After' }, s.cx);
+  assert.equal(s.card.text, 'After');
+  assert.equal(s.v.queueEdit, null);
+  assert.equal(s.card.sending, false);
+});
+
+test('Remove waits for confirmation, removes the whole message, and rejects duplicate clicks', async () => {
+  const removed = [];
+  const s = queuedPane({ protocol: 3, removeQueued: async id => removed.push(id) });
+  const row = s.render();
+  findElement(row, 'remove-queued-next').click({}, s.cx);
+  findElement(row, 'remove-queued-next').click({}, s.cx);
+  await Promise.all(s.jobs);
+  assert.deepEqual(removed, ['next']);
+  assert.equal(s.chat.thread.includes(s.card), true);
+  s.v.onEvent(s.chat, { type: 'queue_removed', id: 'next' }, s.cx);
+  assert.equal(s.chat.thread.includes(s.card), false);
+  assert.equal(s.v.inputFor().value(), 'The next message draft');
+});
+
+test('failed edits retain the edited text and allow retry, while Cancel leaves the queue alone', async () => {
+  const s = queuedPane({ protocol: 3, editQueued: async () => { throw new Error('Disconnected'); } });
+  s.v.editQueued('next');
+  s.v.queueEdit.box.set_value('Unsent change');
+  s.v.changeQueued('next', 'edit', s.cx);
+  await Promise.all(s.jobs);
+  assert.equal(s.v.queueEdit.error, 'Disconnected');
+  assert.equal(s.v.queueEdit.saving, false);
+  assert.equal(s.v.queueEdit.box.value(), 'Unsent change');
+  assert.equal(s.card.text, 'Before');
+  assert.equal(s.card.sending, false);
+  s.v.cancelQueueEdit();
+  assert.equal(s.v.queueEdit, null);
+  assert.equal(s.card.text, 'Before');
+});
+
+test('a message starting during editing keeps the unsaved edit visible with a clear error', () => {
+  const s = queuedPane({ protocol: 3 });
+  s.v.editQueued('next');
+  s.v.queueEdit.box.set_value('Too late');
+  s.v.onEvent(s.chat, { type: 'user', queueId: 'next', text: 'Before' }, s.cx);
+  assert.equal(s.card.queued, false);
+  assert.match(s.v.queueEdit.error, /wasn't applied/);
+  assert.equal(s.v.queueEdit.box.value(), 'Too late');
+  assert.equal(findElement(s.render(), 'edit-queued-next'), null);
+});
+
+test('older bridges reject queue changes with a visible error instead of hanging', async () => {
+  const s = queuedPane({ protocol: 2 });
+  s.v.editQueued('next');
+  s.v.changeQueued('next', 'edit', s.cx);
+  await Promise.all(s.jobs);
+  assert.match(s.v.queueEdit.error, /available after this turn/);
+  assert.equal(s.card.sending, false);
+});
+
+for (const agent of ['claude', 'codex']) {
+  test(`${agent} delivers queued PDFs as saved references and text files inline after editing`, async () => {
+    const pdfName = `${'a'.repeat(32)}.pdf`, textName = `${'b'.repeat(32)}.txt`;
+    const files = [
+      { kind: 'document', path: `data/hey-chat/files/${pdfName}`, name: 'report.pdf', format: 'pdf' },
+      { kind: 'document', path: `data/hey-chat/files/${textName}`, name: 'notes.txt', format: 'text' },
+    ];
+    const b = await bridge(agent, null, { documentFiles: new Map([
+      [`/tmp/files/${pdfName}`, Buffer.from('%PDF-1.7\nOpaque PDF bytes')],
+      [`/tmp/files/${textName}`, Buffer.from('Saved notes content')],
+    ]) });
+    b.send({ type: 'send', id: 'files', text: 'Before', files });
+    b.send({ type: 'queue_edit', id: 'files', text: 'After' });
+    b.stdout(agent === 'codex' ? { method: 'turn/completed', params: { turn: { status: 'completed' } } } : { type: 'result', subtype: 'success' });
+    await new Promise(resolve => setImmediate(resolve));
+    const accepted = b.events.find(e => e.type === 'user' && e.queueId === 'files');
+    assert.ok(accepted, JSON.stringify(b.events.slice(-3)));
+    assert.equal(accepted.text, 'After');
+    assert.deepEqual(accepted.files, files);
+    const sent = agent === 'codex' ? b.requests.filter(r => r.method === 'turn/start').at(-1).params.input.find(i => i.type === 'text').text
+      : b.requests.filter(r => r.type === 'user').at(-1).message.content;
+    const { splitDocuments } = await mod('file-messages.mjs');
+    const restored = splitDocuments(sent);
+    assert.equal(restored.text, 'After');
+    assert.deepEqual(restored.files.map(f => f.name), ['report.pdf', 'notes.txt']);
+    assert.ok(sent.includes('Saved notes content'));
+    assert.ok(sent.includes(`/tmp/files/${pdfName}`));
+    assert.equal(sent.includes('Opaque PDF bytes'), false);
+    const chat = { id: 'chat' };
+    messages.resetThread(chat);
+    for (const ev of b.events) messages.applyEvent(chat, ev);
+    assert.equal(chat.thread.filter(m => m.kind === 'file').length, 2);
+  });
+
+  test(`${agent} removes queued documents without passing their references to the agent`, async () => {
+    const b = await bridge(agent);
+    const files = [{ kind: 'document', path: `data/hey-chat/files/${'c'.repeat(32)}.pdf`, name: 'remove.pdf', format: 'pdf' }];
+    b.send({ type: 'send', id: 'files', text: '', files });
+    b.send({ type: 'queue_remove', id: 'files' });
+    b.stdout(agent === 'codex' ? { method: 'turn/completed', params: { turn: { status: 'completed' } } } : { type: 'result', subtype: 'success' });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(b.events.some(e => e.type === 'user' && e.queueId === 'files'), false);
+    assert.equal(JSON.stringify(b.requests).includes('remove.pdf'), false);
+    const chat = { id: 'chat' };
+    messages.resetThread(chat);
+    for (const ev of b.events) messages.applyEvent(chat, ev);
+    assert.equal(chat.thread.some(m => m.kind === 'file'), false);
+  });
+}
+
+test('missing saved files stay queued with an error instead of reaching the agent', async () => {
+  const b = await bridge('codex');
+  b.send({ type: 'send', id: 'missing', text: '', files: [{ kind: 'document', path: `data/hey-chat/files/${'d'.repeat(32)}.pdf`, name: 'missing.pdf' }] });
+  b.stdout({ method: 'turn/completed', params: { turn: { status: 'completed' } } });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(b.events.at(-1).type, 'queue_error');
+  assert.equal(b.events.some(e => e.type === 'user' && e.queueId === 'missing'), false);
+  assert.equal(b.requests.filter(r => r.method === 'turn/start').length, 1);
+});
+
+function finishTurn(b, agent, failed = false) {
+  b.stdout(agent === 'codex' ? { method: 'turn/completed', params: { turn: { status: failed ? 'failed' : 'completed', error: failed ? { message: 'Temporary failure' } : undefined } } }
+    : { type: 'result', subtype: failed ? 'error_during_execution' : 'success', is_error: failed, result: failed ? 'Temporary failure' : '' });
+}
+
+for (const agent of ['claude', 'codex']) {
+  test(`${agent} retries the failed request once with its files, images and skill ahead of the queue`, async () => {
+    const pdf = `${'e'.repeat(32)}.pdf`;
+    const b = await bridge(agent, null, { documentFiles: new Map([
+      [`/tmp/files/${pdf}`, Buffer.from('%PDF-1.7\nSaved original')],
+      ['/tmp/images/original.png', Buffer.from('original image bytes')],
+    ]) });
+    finishTurn(b, agent);
+    const request = { type: 'send', id: 'original', text: '/review Check this', images: [{ path: 'data/hey-chat/images/original.png', w: 20, h: 10 }],
+      files: [{ kind: 'document', path: `data/hey-chat/files/${pdf}`, name: 'original.pdf', format: 'pdf' }], skill: { name: 'review', path: '/skills/review' } };
+    b.send(request);
+    await new Promise(resolve => setImmediate(resolve));
+    b.send({ type: 'send', id: 'later', text: 'Queued follow-up' });
+    finishTurn(b, agent, true);
+    const error = b.events.findLast(e => e.type === 'turn_end' && e.error);
+    assert.equal(error.retry.text, request.text);
+    assert.deepEqual(error.retry.images, request.images);
+    assert.deepEqual(error.retry.files, request.files);
+    assert.deepEqual(error.retry.skill, request.skill);
+    const replayStart = b.events.length;
+    b.socket('pane');
+    const reopened = { id: 'chat' };
+    messages.resetThread(reopened);
+    for (const event of b.events.slice(replayStart)) messages.applyEvent(reopened, event);
+    assert.equal(reopened.thread.find(m => m.retry)?.retry.id, error.retry.id);
+    b.send({ type: 'retry_turn', id: error.retry.id });
+    b.send({ type: 'retry_turn', id: error.retry.id });
+    await new Promise(resolve => setImmediate(resolve));
+    const attempts = agent === 'codex' ? b.requests.filter(r => r.method === 'turn/start') : b.requests.filter(r => r.type === 'user');
+    assert.equal(attempts.length, 3, 'starter, original and exactly one retry');
+    assert.equal(b.events.some(e => e.type === 'user' && e.queueId === 'later'), false);
+    if (agent === 'codex') assert.deepEqual(attempts[2].params.input, attempts[1].params.input);
+    else assert.deepEqual(attempts[2].message.content, attempts[1].message.content);
+    assert.ok(b.events.some(e => e.type === 'retry_cleared' && e.id === error.retry.id));
+    finishTurn(b, agent);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.ok(b.events.some(e => e.type === 'user' && e.queueId === 'later'));
+  });
+
+  test(`${agent} rejects stale retries after a new message starts and creates a fresh retry after another failure`, async () => {
+    const b = await bridge(agent);
+    finishTurn(b, agent, true);
+    const first = b.events.findLast(e => e.retry)?.retry;
+    b.send({ type: 'retry_turn', id: first.id });
+    await new Promise(resolve => setImmediate(resolve));
+    finishTurn(b, agent, true);
+    const second = b.events.findLast(e => e.retry)?.retry;
+    assert.notEqual(second.id, first.id);
+    b.send({ type: 'retry_turn', id: first.id });
+    assert.equal(b.events.at(-1).type, 'retry_error');
+    b.send({ type: 'send', id: 'new', text: 'New direction' });
+    await new Promise(resolve => setImmediate(resolve));
+    b.send({ type: 'retry_turn', id: second.id });
+    assert.equal(b.events.at(-1).type, 'retry_error');
+    const attempts = agent === 'codex' ? b.requests.filter(r => r.method === 'turn/start') : b.requests.filter(r => r.type === 'user');
+    assert.equal(attempts.length, 3);
+  });
+}
+
+test('retry reports missing saved attachments and keeps the original failure available', async () => {
+  const pdf = `${'f'.repeat(32)}.pdf`;
+  const copies = new Map([[`/tmp/files/${pdf}`, Buffer.from('%PDF-1.7\nOriginal')]]);
+  const b = await bridge('codex', null, { documentFiles: copies });
+  finishTurn(b, 'codex');
+  b.send({ type: 'send', id: 'files', text: '', files: [{ kind: 'document', path: `data/hey-chat/files/${pdf}`, name: 'original.pdf', format: 'pdf' }] });
+  await new Promise(resolve => setImmediate(resolve));
+  finishTurn(b, 'codex', true);
+  const failure = b.events.findLast(e => e.retry).retry;
+  copies.delete(`/tmp/files/${pdf}`);
+  b.send({ type: 'retry_turn', id: failure.id });
+  assert.equal(b.events.at(-1).type, 'retry_error');
+  assert.match(b.events.at(-1).message, /missing/);
+  assert.equal(b.events.some(e => e.type === 'retry_cleared'), false);
+  copies.set(`/tmp/files/${pdf}`, Buffer.from('%PDF-1.7\nOriginal'));
+  b.send({ type: 'retry_turn', id: failure.id });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(b.requests.filter(r => r.method === 'turn/start').length, 3);
+});
+
+function retryPane(wire) {
+  const s = queuedPane(wire);
+  messages.resetThread(s.chat);
+  messages.applyEvent(s.chat, { type: 'turn_end', error: true, text: 'Temporary failure', retry: { id: 'failure-1', text: 'Original request', images: [], files: [] } });
+  const card = s.chat.thread.find(m => m.retry);
+  return { ...s, card, render: () => renderMessage(s.v, {}, s.chat.thread, s.chat.thread.indexOf(card), 500) };
+}
+
+test('Retry preserves the composer and waits for acknowledgement while blocking repeated clicks', async () => {
+  const calls = [];
+  const s = retryPane({ protocol: 5, retryTurn: async id => calls.push(id) });
+  const row = s.render();
+  findElement(row, `retry-turn-${s.card.id}`).click({}, s.cx);
+  findElement(row, `retry-turn-${s.card.id}`).click({}, s.cx);
+  await Promise.all(s.jobs);
+  assert.deepEqual(calls, ['failure-1']);
+  assert.equal(s.card.retrying, true);
+  assert.equal(s.v.inputFor().value(), 'The next message draft');
+  assert.equal(Object.hasOwn(findElement(s.render(), `retry-turn-${s.card.id}`), 'click'), false);
+  s.v.onEvent(s.chat, { type: 'retry_cleared', id: 'failure-1' }, s.cx);
+  assert.equal(s.card.retried, true);
+  assert.equal(findElement(s.render(), `retry-turn-${s.card.id}`), null);
+});
+
+test('failed Retry transport and bridge rejection keep the action available without changing drafts', async () => {
+  const s = retryPane({ protocol: 5, retryTurn: async () => { throw new Error('Disconnected'); } });
+  s.v.retryTurn(s.card.id, s.cx);
+  await Promise.all(s.jobs);
+  assert.equal(s.card.retrying, false);
+  assert.equal(s.card.retryError, 'Disconnected');
+  assert.equal(s.card.retried, undefined);
+  s.v.onEvent(s.chat, { type: 'retry_error', id: 'failure-1', message: 'Saved file is missing' }, s.cx);
+  assert.equal(s.card.retryError, 'Saved file is missing');
+  assert.equal(s.v.inputFor().value(), 'The next message draft');
+});
+
+test('Retry stays inactive during another running turn, and stopped turns have no retry action', async () => {
+  const calls = [];
+  const s = retryPane({ protocol: 5, retryTurn: async id => calls.push(id) });
+  s.chat.working = true;
+  assert.equal(Object.hasOwn(findElement(s.render(), `retry-turn-${s.card.id}`), 'click'), false);
+  s.v.retryTurn(s.card.id, s.cx);
+  await Promise.all(s.jobs);
+  assert.deepEqual(calls, []);
+  messages.resetThread(s.chat);
+  messages.applyEvent(s.chat, { type: 'turn_end', stopped: true });
+  assert.equal(s.chat.thread.some(m => m.retry), false);
 });

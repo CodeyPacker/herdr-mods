@@ -1,6 +1,7 @@
 // Talking to a chat's agent: the link to its bridge, the bridge's events, and sending messages.
 import { panes, playSound } from "herdr";
-import { Bridge } from "../agent.js";
+import { TextareaState } from "gpui-base";
+import { Bridge, checkDocuments } from "../agent.js";
 import { applyEvent, resetThread, clock } from "../messages.js";
 import { errorText } from "../common.js";
 
@@ -18,7 +19,7 @@ export const talk = {
     const had = this.bridges.get(chat.id);
     if (had?.sock) return Promise.resolve(had);
     const connecting = new Promise((resolve) => {
-      const bridge = new Bridge({ chat: chat.id, agent: chat.agent, cwd: chat.cwd, session: chat.session ?? null, model: chat.selectedModel ?? null },
+      const bridge = new Bridge({ chat: chat.linkId ?? chat.id, agent: chat.agent, cwd: chat.cwd, session: chat.session ?? null, title: chat.title, model: chat.selectedModel ?? null },
         (ev, cx) => this.onEvent(chat, ev, cx),
         (cx) => { if (this.bridges.get(chat.id) === bridge) this.bridges.delete(chat.id); chat.working = false; this.syncing?.delete(chat.id); cx.notify(); });
       this.bridges.set(chat.id, bridge);
@@ -58,7 +59,7 @@ export const talk = {
    * bridge found by its file.
    * @param {any} chat @param {Bridge} [bridge]
    */
-  async quitBridge(chat, bridge = this.bridges.get(chat.id) ?? new Bridge({ chat: chat.id, agent: chat.agent, cwd: chat.cwd, session: chat.session ?? null }, () => {}, () => {})) {
+  async quitBridge(chat, bridge = this.bridges.get(chat.id) ?? new Bridge({ chat: chat.linkId ?? chat.id, agent: chat.agent, cwd: chat.cwd, session: chat.session ?? null }, () => {}, () => {})) {
     await bridge.quit();
     bridge.close();
     if (this.bridges.get(chat.id) === bridge) this.bridges.delete(chat.id);
@@ -66,10 +67,33 @@ export const talk = {
 
   /** One event from a chat's bridge. @param {any} chat @param {any} ev @param {any} cx */
   onEvent(chat, ev, cx) {
+    if (this.isDeletedChat(chat)) return;
     // The bridge has replayed what came before. Not part of the chat itself.
     // Outputs are looked for once the replay is done, not after each replayed event: each look
     // reads the whole chat, which made a long chat's replay slow.
-    if (ev.type === "synced") { this.syncOutputs(chat, cx); if (this.syncing?.delete(chat.id)) cx.notify(); return; }
+    if (ev.type === "synced") {
+      if (chat.linksNeedRefresh) {
+        chat.linksNeedRefresh = false;
+        cx.spawn(async cx => this.refreshLinkedChats(cx));
+      }
+      this.syncOutputs(chat, cx);
+      if (this.syncing?.delete(chat.id)) cx.notify();
+      if (this.chatId === chat.id) this.bridges.get(chat.id)?.markSeen?.().catch(() => {});
+      return;
+    }
+    if (ev.type === "linked_chat") {
+      // Creation events in replay are old snapshots. Read current records instead.
+      if (this.bridges.get(chat.id)?.synced) cx.spawn(async cx => this.refreshLinkedChats(cx));
+      else chat.linksNeedRefresh = true;
+      return;
+    }
+    if (ev.type === "linked_summary") chat.linkSummary = ev.summary;
+    const edit = this.queueEdit;
+    if (edit?.chat === chat.id && ev.id === edit.id && ["queue_updated", "queue_removed"].includes(ev.type)) this.cancelQueueEdit();
+    else if (edit?.chat === chat.id && ((ev.type === "user" && ev.queueId === edit.id) || (ev.type === "queue_error" && ev.id === edit.id))) {
+      edit.saving = false;
+      edit.error = ev.type === "queue_error" ? ev.message : "This message started sending. Your edit wasn't applied.";
+    }
     const before = chat.session;
     const beforeModel = chat.model;
     const what = applyEvent(chat, ev);
@@ -88,6 +112,7 @@ export const talk = {
     if (ev.type === "user" || ev.type === "text") chat.stamp = Math.max(chat.stamp ?? 0, Date.now() - 1);
     if (chat.session !== before || chat.model !== beforeModel) this.saveChats();
     const open = chat.id === this.chatId;
+    if (open && ev.type === "turn_end") this.bridges.get(chat.id)?.markSeen?.().catch(() => {});
     if (what === "asked" || what === "question") {
       // A question leaves the keyboard in the message box, for typing your own answer.
       if (open) { if (what === "asked") { this.zone = "ask"; this.handle.focus(); } else this.focusInput(); }
@@ -114,18 +139,22 @@ export const talk = {
     const chat = this.chat(this.chatId);
     const box = this.inputFor(chat.agent);
     const text = box.value().trim();
-    const images = chat.attached ?? [];
+    const attached = chat.attached ?? [];
+    const images = attached.filter(file => file.kind !== "document");
+    const files = attached.filter(file => file.kind === "document");
     // While the agent asks you something, what you type is your own answer to its next question.
     const asking = this.question(chat);
     if (asking && text) {
       const q = this.answeringQuestion(asking);
       if (q) asking.picks = { ...asking.picks, [q.id]: [text] };
       box.set_value("");
+      chat.draft = "";
+      this.saveChats();
       this.sendAnswers(asking, cx);
       cx.notify();
       return;
     }
-    if ((!text && images.length === 0) || chat.connecting || chat.modelSaving || chat.reconnecting) return;
+    if ((!text && attached.length === 0) || chat.connecting || chat.modelSaving || chat.reconnecting) return;
     const queued = Boolean(chat.working);
     // Existing bridges pick up the queue protocol on the next idle send, without interrupting a turn.
     if (queued && this.bridges.get(chat.id)?.protocol === 1) {
@@ -133,35 +162,121 @@ export const talk = {
       cx.notify();
       return;
     }
+    if (files.length && this.bridges.get(chat.id)?.protocol < 4 && (queued || chat.thread.some(m => m.queued))) {
+      chat.pasteError = "File attachments will be ready after this turn and its queue finish, on your next send. Your draft is still here.";
+      cx.notify();
+      return;
+    }
     const missing = this.missingCli(chat.agent);
     if (missing) { this.addError(chat, missing); this.scrollDown(); return; }
     const skill = chat.agent === "codex" ? this.codexSkill(chat, text) : null;
     box.set_value("");
+    chat.draft = "";
     chat.attached = []; chat.pasteError = null;
-    if (chat.thread.length === 0 && !chat.session) { const line = text.replace(/\s*\n\s*/g, " ") || "Image"; chat.title = line.length > 32 ? `${line.slice(0, 31)}…` : line; }
+    if (chat.thread.length === 0 && !chat.session && !chat.customTitle) { const line = text.replace(/\s*\n\s*/g, " ") || files[0]?.name || "Image"; chat.title = line.length > 32 ? `${line.slice(0, 31)}…` : line; }
     chat.stamp = Date.now(); chat.time = clock(Date.now());
     this.saveChats();
     chat.connecting = !queued;
     this.scrollDown(cx);
     cx.spawn(async (/** @type {any} */ cx) => {
       try {
+        if (files.length) await checkDocuments(files);
         let bridge = await this.link(chat, cx, true);
         // A bridge from before the queue protocol is replaced once it is idle.
-        if (bridge?.protocol === 1 && !queued) {
+        if (bridge?.protocol < 10 && !queued && !chat.working && !chat.thread.some(m => m.queued)) {
           await this.quitBridge(chat, bridge);
           bridge = await this.link(chat, cx, true);
         }
         if (!bridge) throw new Error("Couldn't connect. Your message wasn't sent.");
-        await bridge.send(text, images, skill, `${chat.id}-${Date.now()}-${this.messageSequence = (this.messageSequence ?? 0) + 1}`);
+        if (files.length && bridge.protocol < 4) throw new Error("This running chat needs to finish its turn and queue before file attachments are available. Your draft has been restored.");
+        await bridge.send(text, images, skill, `${chat.id}-${Date.now()}-${this.messageSequence = (this.messageSequence ?? 0) + 1}`, files);
       } catch (e) {
         this.addError(chat, e);
         // Preserve both the failed message and anything typed while its write was in flight.
-        const draft = box.value();
-        box.set_value([text, draft].filter(Boolean).join("\n\n"));
-        chat.attached = [...images, ...(chat.attached ?? [])].filter((img, n, all) => all.findIndex((/** @type {any} */ x) => x.path === img.path) === n);
+        const open = this.chatId === chat.id;
+        const draft = open ? box.value() : chat.draft;
+        chat.draft = [text, draft].filter(Boolean).join("\n\n");
+        if (open) box.set_value(chat.draft);
+        chat.attached = [...attached, ...(chat.attached ?? [])].filter((img, n, all) => all.findIndex((/** @type {any} */ x) => x.path === img.path) === n);
+        this.saveChats();
       } finally {
         chat.connecting = false;
         if (this.chatId === chat.id && this.atBottom) this.scrollDown(cx);
+      }
+      cx.notify();
+    });
+  },
+
+  /** Retries the bridge's original request without touching the current composer. */
+  retryTurn(id, cx) {
+    const chat = this.chat(this.chatId);
+    const card = chat.thread.find(m => m.id === id && m.kind === "error" && m.retry);
+    if (!card || card.retrying || card.retried || chat.working || chat.connecting || chat.reconnecting || chat.modelSaving) return;
+    card.retrying = true;
+    card.retryError = null;
+    cx.spawn(async (cx) => {
+      try {
+        const bridge = await this.link(chat, cx, false);
+        if (!bridge) throw new Error("This chat is disconnected. Reopen it to reconnect, then try again.");
+        if (bridge.protocol < 5) throw new Error("This older chat cannot retry this turn. Send the original message again.");
+        await bridge.retryTurn(card.retry.id);
+      } catch (error) { card.retrying = false; card.retryError = errorText(error); }
+      cx.notify();
+    });
+  },
+
+  /** Opens a separate editor so the next message's draft stays untouched. */
+  editQueued(id) {
+    const chat = this.chat(this.chatId);
+    const card = chat.thread.find(m => m.queueId === id && m.queueAction && m.queued);
+    if (!card || card.sending || this.queueEdit?.saving) return;
+    this.cancelQueueEdit();
+    const text = chat.thread.find(m => m.queueId === id && m.kind === "text")?.text ?? "";
+    const box = TextareaState.new({ placeholder: "Edit queued message", value: text });
+    box.set_auto_grow(1, 8);
+    box.on("focus", () => { this.zone = "queue-edit"; });
+    box.on("change", (_e, cx) => cx.notify());
+    this.queueEdit = { chat: chat.id, id, box, saving: false, error: null };
+    this.zone = "queue-edit";
+    box.focus();
+  },
+
+  cancelQueueEdit() {
+    if (!this.queueEdit) return;
+    this.queueEdit.box.release();
+    this.queueEdit = null;
+    this.focusInput();
+  },
+
+  /** Requests a queue change. The bridge confirms it before the UI changes. */
+  changeQueued(id, action, cx) {
+    const chat = this.chat(this.chatId);
+    const card = chat.thread.find(m => m.queueId === id && m.queueAction && m.queued);
+    const edit = this.queueEdit?.chat === chat.id && this.queueEdit.id === id ? this.queueEdit : null;
+    if (!card || card.sending) {
+      if (edit) edit.error = "This message has already started sending. Your edit wasn't applied.";
+      return;
+    }
+    const text = edit?.box.value().trim() ?? "";
+    if (action === "edit" && (!edit || (!text && !chat.thread.some(m => m.queueId === id && (m.kind === "image" || m.kind === "file"))))) {
+      if (edit) edit.error = "Add a message or use Remove.";
+      return;
+    }
+    card.sending = true;
+    card.queueOperation = action;
+    card.queueError = null;
+    if (edit) { edit.saving = true; edit.error = null; }
+    cx.spawn(async (cx) => {
+      try {
+        const bridge = await this.link(chat, cx, false);
+        if (!bridge) throw new Error("Not connected. Try again.");
+        if (bridge.protocol < 3) throw new Error("Queue editing will be available after this turn and its queued messages finish, on your next send.");
+        if (action === "edit") await bridge.editQueued(id, text, chat.agent === "codex" ? this.codexSkill(chat, text) : null);
+        else await bridge.removeQueued(id);
+      } catch (error) {
+        card.sending = false;
+        card.queueError = errorText(error);
+        if (edit) { edit.saving = false; edit.error = card.queueError; }
       }
       cx.notify();
     });
@@ -173,6 +288,7 @@ export const talk = {
     const card = chat.thread.find((/** @type {any} */ m) => m.queueId === id && m.queueAction && m.queued);
     if (!card || card.sending) return;
     card.sending = true;
+    card.queueOperation = "send";
     card.queueError = null;
     cx.spawn(async (/** @type {any} */ cx) => {
       try {

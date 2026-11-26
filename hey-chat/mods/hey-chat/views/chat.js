@@ -9,6 +9,7 @@ import { ICONS } from "../common.js";
 import { LIST_PAD_TOP, LIST_PAD_BOTTOM } from "../keys.js";
 import { outputToast } from "./outputs.js";
 import { currentActivity } from "../messages.js";
+import { messageColors } from "../message-colors.js";
 import { markedText, markedMarkdown } from "../search.js";
 
 /** @typedef {import("../kit/theme.js").Theme} Theme */
@@ -34,7 +35,7 @@ function boxTextSize() {
 
 /** True when `a` and `b` come from the same sender, so they sit in one group. @param {Message} a @param {Message} [b] */
 function sameSender(a, b) {
-  return Boolean(b) && a.kind !== "sep" && b.kind !== "sep" && a.from === b.from;
+  return Boolean(b) && a.kind !== "sep" && b.kind !== "sep" && a.from === b.from && a.source?.chat === b.source?.chat;
 }
 
 /**
@@ -109,14 +110,30 @@ export function imageViewer(v) {
     .child(div().w(w).h(h).rounded(10).overflow_hidden().child(image(img.path).w(w).h(h)));
 }
 
+/** Opens the original saved file, including PDFs that the agent reads with its tools. */
+export function documentCard(v, t, file) {
+  const size = file.bytes >= 1024 ? `${Math.ceil(file.bytes / 1024)} KB` : `${file.bytes ?? 0} bytes`;
+  return h_flex().id(`document-${file.path}`).flex_1().min_w(0).gap(8).items_center().cursor_pointer()
+    .on_click((_e, cx) => { v.openDocument(file.path, cx); cx.notify(); })
+    .child(svg(`${ICONS}/file.svg`).flex_none().size(18).text_color(t.muted))
+    .child(v_flex().flex_1().min_w(0).gap(3)
+      .child(div().truncate().text_size(13).text_color(t.foreground).child(file.name))
+      .child(div().text_size(11).text_color(t.muted).child(`${file.format === 'pdf' ? 'PDF' : 'Text'} · ${size}`)));
+}
+
 /**
  * The images you pasted, above the message box, each with a button that takes it back out.
  * @param {any} v @param {Theme} t @param {any} chat
  */
 function attachments(v, t, chat) {
   const list = chat.attached ?? [];
-  return h_flex().flex_none().gap(8).px(14).pt(10).items_end()
+  return h_flex().flex_none().flex_wrap().max_h(160).overflow_y_scrollbar().gap(8).px(14).pt(10).items_end()
     .children(list.map((/** @type {any} */ img, /** @type {number} */ i) => {
+      if (img.kind === "document") return h_flex().flex_none().w(220).p(8).gap(6).items_center().rounded(10).border_1().border_color(t.border)
+        .child(documentCard(v, t, img))
+        .child(div().id(`unattach-${i}`).flex_none().size(20).cursor_pointer()
+          .on_click((_e, cx) => { v.unattach(img.path); cx.notify(); })
+          .child(svg(`${ICONS}/close.svg`).size(14).text_color(t.muted)));
       const { w, h } = fit(img, 72);
       return div().relative().flex_none().w(w).h(h).rounded(10).overflow_hidden().border_1().border_color(t.border)
         .child(image(img.path).w(w).h(h))
@@ -287,7 +304,7 @@ function askCard(v, t, m, el, max) {
  * One message row, with its picture slot and the space above it.
  * @param {any} v @param {Theme} t @param {Message[]} list @param {number} i @param {number} max a bubble's widest
  */
-export function messageRow(v, t, list, i, max, searchCurrent = false) {
+export function messageRow(v, t, list, i, max, searchCurrent = false, palette = messageColors(t)) {
   const m = list[i];
   if (m.kind === "sep") {
     return h_flex().justify_center().pt(i === 0 ? 0 : 12).pb(6)
@@ -296,25 +313,28 @@ export function messageRow(v, t, list, i, max, searchCurrent = false) {
   if (m.kind === "note") {
     return h_flex().justify_center().pt(GROUP_GAP).child(div().text_size(12).text_color(t.dim).child(m.text ?? ""));
   }
-  const mine = m.from === "me";
+  const mine = m.from === "me" && !m.source;
+  const background = mine ? palette.userBackground : palette.agentBackground;
+  const foreground = mine ? palette.userText : palette.agentText;
   const typingHere = v.thinking(v.chat(v.chatId));
   const above = sameSender(m, list[i - 1]);
-  const below = sameSender(m, list[i + 1]) || (!mine && i === list.length - 1 && typingHere);
-  const lastOfGroup = !sameSender(m, list[i + 1]);
+  const below = sameSender(m, list[i + 1]) || (!mine && !m.source && i === list.length - 1 && typingHere);
+  const firstOfGroup = !above;
   const chat = v.chat(v.chatId);
 
   let bubble = corners(div(), mine, above, below);
   if (m.kind === "tool") bubble = toolCard(v, t, m, bubble);
   else if (m.kind === "permission") bubble = askCard(v, t, m, bubble, max);
   else if (m.kind === "question") bubble = questionCard(v, t, m, bubble, max);
+  else if (m.kind === "file") bubble = bubble.w(260).max_w(max).p(12).bg(t.raised).border_1().border_color(t.border).child(documentCard(v, t, m));
   else if (m.kind === "image") bubble = pictureBubble(v, t, m, bubble);
   else if (m.kind === "error") bubble = bubble.max_w(max).px(14).py(9).text_size(14).bg(t.raised).border_1().border_color(t.blocked)
     .text_color(t.foreground).child(searchText(v, `error-${m.id}`, m.text));
   // A real agent's words are Markdown: bold, lists, code and links.
-  else if (!mine && chat.real) bubble = bubble.max_w(max).px(14).py(9).text_size(14.5).bg(t.raised).text_color(t.foreground)
-    .child(TextView.markdown(`md-${m.id}`, markedMarkdown(m.text ?? "", v.chatSearchOpen ? v.chatSearchInput.value() : "")).selectable(true));
+  else if (!mine && chat.real) bubble = bubble.max_w(max).px(14).py(9).text_size(14.5).bg(background).text_color(foreground)
+    .child(TextView.markdown(`md-${m.id}`, markedMarkdown(m.text ?? "", v.chatSearchOpen ? v.chatSearchInput.value() : "")).text_color(foreground).selectable(true));
   else bubble = bubble.max_w(max).px(14).py(9).text_size(14.5).line_height(1.42)
-    .bg(mine ? t.accent : t.raised).text_color(mine ? t.accent_foreground : t.foreground).child(searchText(v, `text-${m.id}`, m.text));
+    .bg(background).text_color(foreground).child(searchText(v, `text-${m.id}`, m.text));
 
   if (searchCurrent) {
     const yellow = String(t.ansi3);
@@ -322,21 +342,43 @@ export function messageRow(v, t, list, i, max, searchCurrent = false) {
   }
 
   const picture = div().flex_none().size(SMALL)
-    .when(lastOfGroup, (el) => el.child(mine ? myPicture(v.me, SMALL) : agentPicture(chat.agent, SMALL)));
+    .when(firstOfGroup, (el) => el.child(m.source ? agentPicture(m.source.agent ?? chat.agent, SMALL) : mine ? myPicture(v.me, SMALL) : agentPicture(chat.agent, SMALL)));
 
   // Words can be copied: a button beside the bubble, on the side away from the picture.
   const copyable = m.kind === "text" || m.kind === "error";
-  const row = h_flex().id(`msg-${m.id}`).w_full().gap(8).items_end().pt(i === 0 ? 0 : above ? BUBBLE_GAP : GROUP_GAP)
+  let row = h_flex().id(`msg-${m.id}`).w_full().gap(8).items_start().pt(i === 0 ? 0 : above ? BUBBLE_GAP : GROUP_GAP)
     .when(copyable, (el) => el.on_hover((/** @type {boolean} */ on, /** @type {any} */ cx) => v.hoverMessage(m.id, on, cx)))
     .when(mine, (el) => el.justify_end().when(copyable, (r) => r.child(copyButton(v, t, m))).child(bubble).child(picture))
     .when(!mine, (el) => el.child(picture).child(bubble).when(copyable, (r) => r.child(copyButton(v, t, m))));
 
+  if (m.source) {
+    const label = m.source.kind === "update" ? `Update from ${m.source.title}` : `From ${m.source.title}`;
+    row = v_flex().w_full()
+      .child(div().id(`message-source-${m.id}`).px(SMALL + 8).pt(6).text_size(11).text_color(t.accent).cursor_pointer()
+        .on_click((_e, cx) => { v.openRelatedChat(m.source.chat, cx); cx.notify(); }).child(label))
+      .child(row);
+  }
+  if (m.kind === "error" && m.retry && !m.retried) {
+    const waiting = m.retrying || chat.working || chat.connecting || chat.reconnecting || chat.modelSaving;
+    return v_flex().w_full().child(row)
+      .child(div().id(`retry-turn-${m.id}`).pl(SMALL + 8).pt(5).text_size(12).text_color(waiting ? t.dim : t.accent)
+        .when(!waiting, el => el.cursor_pointer().on_click((_e, cx) => { v.retryTurn(m.id, cx); cx.notify(); }))
+        .child(m.retrying ? "Retrying…" : "Retry"))
+      .when(Boolean(m.retryError), el => el.child(div().pl(SMALL + 8).pt(4).text_size(12).text_color(t.blocked).child(m.retryError)));
+  }
   if (mine && m.queued && m.queueAction) return v_flex().w_full().child(row)
     .child(h_flex().justify_end().pr(SMALL + 8).pt(4).gap(10).items_center()
-      .child(div().text_size(11.5).text_color(t.dim).child(m.sending ? "Sending…" : "Queued"))
+      .child(div().text_size(11.5).text_color(t.dim).child(m.sending ? m.queueOperation === "edit" ? "Updating…" : m.queueOperation === "remove" ? "Removing…" : "Sending…" : "Queued"))
       .child(div().id(`send-now-${m.queueId}`).text_size(11.5).text_color(t.accent)
         .when(!m.sending, el => el.cursor_pointer().on_click((_e, cx) => { v.sendQueuedNow(m.queueId, cx); cx.notify(); }))
-        .child("Send now")))
+        .child("Send now"))
+      .children([['edit', 'Edit'], ['remove', 'Remove']].map(([action, label]) =>
+        div().id(`${action}-queued-${m.queueId}`).text_size(11.5).text_color(t.accent)
+          .when(!m.sending && !v.queueEdit?.saving, el => el.cursor_pointer().on_click((_e, cx) => {
+            if (action === 'edit') v.editQueued(m.queueId);
+            else v.changeQueued(m.queueId, 'remove', cx);
+            cx.notify();
+          })).child(label))))
     .when(Boolean(m.queueError), el => el.child(h_flex().justify_end().pr(SMALL + 8).pt(4)
       .child(div().text_size(11.5).text_color(t.blocked).child(m.queueError))));
   // The receipt under your last message, when nothing came after it.
@@ -385,6 +427,63 @@ function planBox(t, steps) {
     .when(steps.length > shown.length, (el) => el.child(div().text_size(11.5).text_color(t.dim).child(`${steps.length - shown.length} more`)));
 }
 
+export function summaryButton(v, t, chat) {
+  const open = v.summaryFor === chat.id;
+  return roundButton(t, "toggle-chat-summary", `${ICONS}/info.svg`, 32, cx => {
+    v.summaryFor = open ? null : chat.id;
+    if (!open) cx.spawn(async cx => v.refreshLinkedChats(cx));
+  }).tooltip(open ? "Hide summary" : "Show summary")
+    .when(open, el => el.bg(t.selected).text_color(t.accent));
+}
+
+/** Only the parent link stays visible; details are opened with the header's info button. */
+export function linkedChatsView(v, t, chat) {
+  const identity = chat.linkId ?? chat.id;
+  const children = (v.chats ?? []).filter(c => c.parentId === identity);
+  const parent = (v.chats ?? []).find(c => (c.linkId ?? c.id) === chat.parentId);
+  const summary = chat.linkSummary?.summary;
+  const open = v.summaryFor === chat.id;
+  if (!chat.parentId && !open) return null;
+  const item = (id, title, click) => div().id(id).text_size(12).text_color(t.accent).cursor_pointer()
+    .on_click((_e, cx) => { click(cx); cx.notify(); }).child(title);
+  return v_flex().id("linked-chats").flex_none().px(16).py(8).gap(7).border_b_1().border_color(t.border)
+    .when(Boolean(chat.parentId), el => el.child(item("open-parent-chat", `Parent: ${parent?.title ?? 'Open parent chat'}`, cx => v.openRelatedChat(chat.parentId, cx)).min_w(0).truncate()))
+    .when(open && Boolean(children.length), el => el.child(h_flex().flex_wrap().gap(10)
+      .children(children.map(child => item(`open-child-${child.id}`, child.title, cx => v.openChat(child.id, cx))))))
+    .when(open, el => el.child(v_flex().max_h(220).overflow_y_scrollbar().gap(5).text_size(12).text_color(t.muted)
+      .child(div().font_semibold().text_color(t.foreground).child(summary?.task || "No progress summary yet."))
+      .when(Boolean(summary && chat.linkSummary?.stale), row => row.child(div().text_color(t.blocked).child("Summary may be out of date. Latest activity is available in the conversation.")))
+      .children([...(summary?.progress ?? []), ...(summary?.decisions ?? []).map(s => `Decision: ${s}`), ...(summary?.blockers ?? []).map(s => `Blocked: ${s}`), ...(summary?.needs ?? []).map(s => `Needs: ${s}`), ...(summary?.references ?? []).map(s => `Reference: ${s}`)].map(s => div().child(s)))
+      .when(Boolean(chat.linkSummary?.reportError), row => row.child(div().text_color(t.blocked).child("Parent update is waiting to be delivered.")))));
+}
+
+/** A chat name editor, separate from the message composer. */
+export function renameEditor(v, t) {
+  const edit = v.renaming;
+  if (!edit || edit.id !== v.chatId) return null;
+  return v_flex().id("rename-editor").flex_none().px(14).py(10).gap(6).border_b_1().border_color(t.border)
+    .child(h_flex().gap(8).items_center()
+      .child(Input.new(edit.box).flex_1().min_w(0).text_size(14).text_color(t.foreground))
+      .child(pill(t, "save-chat-name", null, "Save", true, () => v.saveRename()))
+      .child(pill(t, "cancel-chat-name", null, "Cancel", false, () => v.cancelRename())))
+    .when(Boolean(edit.error), el => el.child(div().text_size(12).text_color(t.blocked).child(edit.error)));
+}
+
+/** A separate editor keeps queued changes out of the next message's draft. */
+export function queueEditor(v, t) {
+  const edit = v.queueEdit;
+  if (!edit || edit.chat !== v.chatId) return null;
+  return v_flex().id("queue-editor").flex_none().mx(14).mt(10).p(12).gap(8).rounded(12).bg(t.raised).border_1().border_color(t.border)
+    .child(div().text_size(12).text_color(t.muted).child("Edit queued message"))
+    .child(Textarea.new(edit.box).text_size(boxTextSize()).text_color(t.foreground))
+    .when(Boolean(edit.error), el => el.child(div().text_size(12).text_color(t.blocked).child(edit.error)))
+    .child(h_flex().gap(8)
+      .child(pill(t, "save-queued-edit", null, edit.saving ? "Saving…" : "Save", true, cx => {
+        if (!edit.saving) v.changeQueued(edit.id, "edit", cx);
+      }))
+      .when(!edit.saving, el => el.child(pill(t, "cancel-queued-edit", null, "Cancel", false, () => v.cancelQueueEdit()))));
+}
+
 /** An empty chat: the agent's picture, where it is, and the Claude / Codex switch. @param {any} v @param {Theme} t */
 function emptyChat(v, t) {
   const chat = v.chat(v.chatId);
@@ -394,7 +493,7 @@ function emptyChat(v, t) {
     .when(chat.agent !== id, (el) => el.text_color(t.muted).hover((s) => s.bg(t.hover)))
     .on_click((_e, cx) => {
       if (v.busy(chat) || chat.agent === id) return;
-      chat.agent = id;
+      v.setChatAgent(chat, id);
       chat.model = null; chat.selectedModel = null;
       chat.models = null; chat.modelsError = null; chat.modelsLoading = false;
       v.modelPicker = null;
@@ -455,13 +554,17 @@ export function chatView(v, t, width) {
   const input = v.inputFor(chat.agent);
   const hasText = input.value().trim().length > 0 || (chat.attached ?? []).length > 0;
   const loading = v.starting || v.restoring?.id === chat.id;
+  const palette = messageColors(t);
 
   const header = h_flex().flex_none().gap(12).items_center().pl(v.sidebarHidden ? 10 : 18).pr(12).py(12).border_b_1().border_color(t.border)
     // Shows the hidden sidebar (ctrl-b). While it shows, its own bottom row has the button.
     .when(v.sidebarHidden && !v.quick, (el) => el.child(roundButton(t, "show-sidebar", `${ICONS}/sidebar.svg`, 32, () => v.toggleSidebar())))
     .child(withDot(agentPicture(chat.agent, 40), 40, statusColor, t.background))
     .child(v_flex().flex_1().min_w(0).gap(2)
-      .child(div().truncate().text_size(16).font_semibold().text_color(t.foreground).child(chat.title))
+      .child(h_flex().min_w(0).gap(4).items_center()
+        .child(div().min_w(0).truncate().text_size(16).font_semibold().text_color(t.foreground).cursor_pointer()
+          .on_click((_e, cx) => { v.beginRename(chat.id); cx.notify(); }).child(chat.title))
+        .child(roundButton(t, "rename-chat", `${ICONS}/pencil.svg`, 26, () => v.beginRename(chat.id))))
       .child(h_flex().min_w(0).gap(4).items_center().text_size(12.5)
         .child(div().text_color(t.muted).child(`${agent.name} ·`))
         .child(h_flex().id("chat-model").min_w(0).px(4).rounded(4).gap(4).items_center().text_color(t.muted).cursor_pointer().hover(s => s.bg(t.hover).text_color(t.foreground))
@@ -476,6 +579,9 @@ export function chatView(v, t, width) {
     .child(h_flex().id("chat-outputs").flex_none().px(10).py(7).gap(5).rounded(8).items_center().cursor_pointer().text_size(12).text_color(t.muted).hover(s => s.bg(t.hover).text_color(t.foreground))
       .on_click((_e, cx) => { v.toggleOutputs(cx); cx.notify(); })
       .child(svg(`${ICONS}/file.svg`).size(16)).child(`Files${chat.outputs?.length ? ` (${chat.outputs.length})` : ""}`))
+    .child(roundButton(t, "pin-chat", `${ICONS}/pin.svg`, 32, () => v.togglePin(chat.id))
+      .when(Boolean(chat.pinned), el => el.bg(t.selected).text_color(t.accent)))
+    .when(Boolean(chat.parentId || chat.linkSummary?.summary || (v.chats ?? []).some(c => c.parentId === (chat.linkId ?? chat.id))), el => el.child(summaryButton(v, t, chat)))
     .child(roundButton(t, "chat-search", `${ICONS}/search.svg`, 36, () => v.toggleChatSearch()))
     // A quick chat goes with its tab, so its trash closes the tab, which deletes it.
     .child(roundButton(t, "chat-delete", `${ICONS}/trash.svg`, 36, () => v.quick ? v.closeQuick() : v.askDelete(chat.id)));
@@ -493,7 +599,7 @@ export function chatView(v, t, width) {
         const dy = e.delta_lines ? e.delta_lines.y * 20 : e.delta.y;
         v.trackMessageScroll(dy);
       })
-      .children(list.map((m, i) => measured(v, `row-${m.id}`, m.id, messageRow(v, t, list, i, max, i === searchCurrent))))
+      .children(list.map((m, i) => measured(v, `row-${m.id}`, m.id, messageRow(v, t, list, i, max, i === searchCurrent, palette))))
       .when(typingHere, (el) => el.child(measured(v, "row-typing", "typing", typingRow(v, t))))
       .child(div().id("chat-end").flex_none().h(1));
 
@@ -531,18 +637,20 @@ export function chatView(v, t, width) {
     // Keep the real chat painted beneath the cover so native text and scrolling settle before reveal.
     .child(v_flex().flex_1().min_h(0).w_full()
       .child(header)
+      .when(Boolean(chat.parentId || v.summaryFor === chat.id), el => el.child(linkedChatsView(v, t, chat)))
+      .when(Boolean(v.renaming), el => el.child(renameEditor(v, t)))
       .when(v.chatSearchOpen, el => {
         const matches = searchMatches;
         return el.child(h_flex().flex_none().px(14).py(8).gap(8).items_center().border_b_1().border_color(t.border)
           .child(Input.new(v.chatSearchInput).flex_1().text_size(13).text_color(t.foreground))
-          .child(div().text_size(12).text_color(t.muted).child(matches.length ? `${Math.min(v.chatSearchIndex + 1, matches.length)} of ${matches.length}` : v.chatSearchInput.value().trim() ? "No matches" : "Loaded messages only"))
+          .child(div().text_size(12).text_color(t.muted).child(matches.length ? `${Math.min(v.chatSearchIndex + 1, matches.length)} of ${matches.length}` : v.chatSearchInput.value().trim() ? "No matches" : "Find in conversation"))
           .child(pill(t, "find-previous", null, "Previous", false, () => v.findChatMatch(-1)))
           .child(pill(t, "find-next", null, "Next", false, () => v.findChatMatch(1)))
           .child(roundButton(t, "close-chat-search", `${ICONS}/close.svg`, 28, () => v.toggleChatSearch())));
       })
       .when(v.modelPicker === chat.id, el => el.child(modelPicker(v, t, chat))).child(body).when(Boolean(plan), (el) => el.child(plan)).when(Boolean(pasted), (el) => el.child(attachments(v, t, chat)))
-      .when(Boolean(slash), (el) => el.child(slashMenu(v, t, slash ?? []))).child(composer))
+      .when(Boolean(slash), (el) => el.child(slashMenu(v, t, slash ?? []))).when(Boolean(v.queueEdit), el => el.child(queueEditor(v, t))).child(composer))
     .when(Boolean(toast), (el) => el.child(toast))
-    .when(Boolean(loading), el => el.child(v_flex().id("chat-loading").absolute().top(0).bottom(0).left(0).right(0).bg(t.popover)
+    .when(Boolean(loading), el => el.child(v_flex().id("chat-loading").absolute().top(1).bottom(1).left(1).right(1).rounded(13).overflow_hidden().bg(t.popover)
       .items_center().justify_center().child(div().text_size(13).text_color(t.dim).child("Loading conversation…"))));
 }
