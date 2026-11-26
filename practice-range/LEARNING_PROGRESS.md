@@ -38,7 +38,7 @@ The course remains a preview. Compiler correctness and native materialization do
 | P4 | Core course UI, setup/language entry points, known-language preferences for AI comparisons, linked practice, optional AI, shared editor opening and explicit version migration implemented. | Verification of real editor flows with a learner. |
 | P5 | Optional pinned repo context, saved module/architecture supplements and source navigation implemented. Tutor import was built, then removed on 2026-11-26 (D8). | Generated explanations need learner review. |
 | P6 | Course review, deterministic recommendations, combined module evidence, linked drill review recommendations and validated extra practice for bundled courses implemented. | Check with learners that the evidence rules match observed skill and that generated exercises are useful. |
-| P7 | Pilot kit ready: guide, notes template, three verified transfer tasks and a checker script. | Run sessions with learners, record findings and fix blocking problems. Then C# and SQL course packs. Their existing direct practice remains supported. |
+| P7 | Pilot kit ready for TypeScript. C# course plumbing done: C# compiler rule and task modes in the loader, runnable C# examples, printed-output checks, and a shared verifier and builder (`scripts/verify-course.mjs`, `scripts/build-course.mjs`). A one-module C# draft verified and built. | Write the C# course from `CSHARP_COURSE_BRIEF.md`. The owner tests it. Running a C# course inside the app is not tested yet. |
 | P8 | Release checklist, requirements, tested platform and release notes prepared in `RELEASE.md`. | Rerun checks after P7, then release. |
 
 ## Verification record

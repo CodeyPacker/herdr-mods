@@ -113,6 +113,20 @@ export async function runScratch(root, code, { timeout = 5000 } = {}) {
   }
 }
 
+/** A read-only course example: compare its printed lines or its expected compiler errors. */
+export async function checkExample(root, example) {
+  const result = await runScratch(root, example.code);
+  if (example.diagnostics) {
+    const expected = result.kind === "compile" && result.details.length === example.diagnostics.length &&
+      example.diagnostics.every(diagnostic => result.details.some(detail => new RegExp(`Scratch\\.cs\\(${diagnostic.line},\\d+\\): error CS${String(diagnostic.code).padStart(4, "0")}:`).test(detail)));
+    return { ...result, passed: expected, title: expected ? "The expected compiler error occurred" : "This example did not produce its expected diagnostic" };
+  }
+  if (result.kind !== "output") return { ...result, passed: false };
+  const printed = (result.details[0] ?? "").startsWith("Your code printed:\n") ? result.details[0].slice("Your code printed:\n".length).split("\n") : [];
+  const passed = JSON.stringify(printed) === JSON.stringify(example.stdout ?? []);
+  return { ...result, passed, title: passed ? "The example ran and produced its expected output" : "The example printed something unexpected" };
+}
+
 /**
  * The message of an unhandled exception, without .NET's prefix. A failed check keeps its
  * "Your code returned" line. Other exceptions add the first stack frame in Exercise.cs.

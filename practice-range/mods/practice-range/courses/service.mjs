@@ -103,6 +103,10 @@ function validateState(state, pack) {
 async function runnerFor(pack) {
   const runner = await loadLanguageRunner(pack.languageId);
   const runtime = await runner.environment();
+  if (pack.runner.compiler.minimumMajor) {
+    if (runtime.major < pack.runner.compiler.minimumMajor) throw new Error(`This course needs .NET SDK ${pack.runner.compiler.minimumMajor} or newer. ${runtime.label} is installed.`);
+    return { runner, runtime };
+  }
   const expected = pack.runner.compiler.range.slice(1);
   if (!runtime.version.endsWith(` ${expected}`)) throw new Error(`This course needs ${pack.runner.compiler.name} ${expected}. ${runtime.version} is installed.`);
   return { runner, runtime };

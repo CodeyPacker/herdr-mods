@@ -11,7 +11,9 @@ function scaffold(exercise) {
   const setup = `${imports}${declarations}\n`;
   if (exercise.mode === "types") return { before: setup, after: "\n" };
   if (exercise.mode === "members") return { before: `${setup}public static class Practice\n{\n`, after: "\n}\n" };
-  return { before: `${setup}public static class Practice\n{\n    public static void Run()\n    {\n`, after: "\n    }\n}\n" };
+  // Course tasks can check printed output. Checks read it with __Output().
+  const capture = exercise.captureOutput ? "        var __printed = new System.IO.StringWriter(); Console.SetOut(__printed);\n        string __Output() => __printed.ToString().ReplaceLineEndings(\"\\n\").TrimEnd();\n" : "";
+  return { before: `${setup}public static class Practice\n{\n    public static void Run()\n    {\n${capture}`, after: "\n    }\n}\n" };
 }
 
 /** Scratch code compiles as top-level statements, which may be followed by type declarations. */

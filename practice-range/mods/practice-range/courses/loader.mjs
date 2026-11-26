@@ -24,7 +24,7 @@ function validateTask(pack, task, taskIds) {
   taskIds.add(task.id);
   for (const field of ["title", "prompt", "starter", "solution", "feedback"]) requireValue(text(task[field]), `task ${field}`);
   strings(task.hints, "hints"); strings(task.concepts, "task concepts");
-  requireValue(["script", "module"].includes(task.mode), "task mode");
+  requireValue((pack.languageId === "csharp" ? ["statements", "members", "types"] : ["script", "module"]).includes(task.mode), "task mode");
   list(task.rules, "syntax rules");
   for (const field of ["checks", "typeChecks", "rejects"]) strings(task[field] ?? [], field);
   const fixtures = list(task.fixtures, "fixtures");
@@ -51,7 +51,9 @@ export function validatePack(pack) {
   requireValue(text(pack.title), "title");
   findLanguage(pack.languageId);
   requireValue(pack.runner?.registeredLanguage === pack.languageId, "runner must match registered language");
-  requireValue(/^=\d+\.\d+\.\d+$/.test(pack.runner?.compiler?.range), "compiler must name an exact supported version");
+  // TypeScript packs pin an exact compiler. C# uses the installed .NET SDK at or above a major version.
+  requireValue(/^=\d+\.\d+\.\d+$/.test(pack.runner?.compiler?.range) ||
+    (pack.languageId === "csharp" && Number.isInteger(pack.runner?.compiler?.minimumMajor) && pack.runner.compiler.minimumMajor >= 8), "compiler must name an exact supported version or a minimum .NET SDK");
   const entries = list(pack.modules, "modules");
   requireValue(entries.length > 0, "empty course");
   const ids = unique(entries, "modules");
