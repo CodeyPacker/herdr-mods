@@ -1,8 +1,9 @@
 // Compile reviewed authoring files into a self-contained data pack. No generated executable code.
-import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { dirname, resolve, relative, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validatePack } from "../mods/practice-range/courses/loader.mjs";
+import { writeCoursePack } from "../mods/practice-range/courses/storage.mjs";
 
 const base = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const draft = resolve(base, "course-drafts/typescript");
@@ -13,7 +14,7 @@ async function source(folder, path) {
   return readFile(file, "utf8");
 }
 const json = async (folder, path) => JSON.parse(await source(folder, path));
-const manifest = await json(draft, "manifest.json");
+const { runtimeContentVersion, ...manifest } = await json(draft, "manifest.json");
 const modules = [];
 for (const entry of manifest.modules.filter(entry => entry.source)) {
   const folder = dirname(resolve(draft, entry.source.path));
@@ -40,12 +41,11 @@ for (const entry of manifest.modules.filter(entry => entry.source)) {
   modules.push({ ...module, examples, tasks });
 }
 const pack = {
-  ...manifest, schemaVersion: 1, contentVersion: "0.1.0-preview.1", preview: true,
+  ...manifest, schemaVersion: 1, contentVersion: runtimeContentVersion, preview: true,
   modules: manifest.modules.map(({ source, ...entry }) => ({ ...entry, status: source ? "available" : "planned" })),
   lessons: modules,
 };
 validatePack(pack);
 const destination = resolve(base, "mods/practice-range/courses/packs/typescript-foundations.json");
-await mkdir(dirname(destination), { recursive: true });
-await writeFile(destination, JSON.stringify(pack, null, 2) + "\n");
+await writeCoursePack(destination, pack);
 console.log(`Built ${pack.id}: ${modules.length} preview modules, ${modules.reduce((n, m) => n + m.tasks.length, 0)} tasks.`);

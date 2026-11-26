@@ -1,6 +1,6 @@
 /**
  * @typedef {{ id: string, title?: string, languageId?: string, contentVersion?: string,
- *   preview?: boolean, available?: number, total?: number, error?: string }} CourseSummary
+ *   preview?: boolean, available?: number, total?: number, error?: string, enrolledVersion?: string, versions?: string[] }} CourseSummary
  * @typedef {{ kind: string, title: string, text: string, example?: string, examples?: string[],
  *   questions?: string[], task?: string, tasks?: string[] }} Step
  * @typedef {{ id: string, prompt: string, choices: {text: string, feedback: string}[], answer: number }} Question

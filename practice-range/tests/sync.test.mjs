@@ -33,6 +33,7 @@ async function twoDevices() {
 test("progress and answers travel between devices, machine files stay behind", async () => {
   const { first, second } = await twoDevices();
   const files = {
+    "courses/course%3Ats-foundations/current.json": '{"courseId":"course:ts-foundations","contentVersion":"0.1.0-preview.1"}',
     "session.json": "{\"progress\":{}}",
     "setup.json": "{}",
     "session.lock": "",
@@ -55,6 +56,7 @@ test("progress and answers travel between devices, machine files stay behind", a
   assert.deepEqual(git(first, "ls-files").trim().split("\n").sort(), [
     ".gitignore",
     "answers/variables/integer/Program.cs",
+    "courses/course%3Ats-foundations/current.json",
     "history/variables/integer/1.cs",
     "languages/typescript/answers/types/alias/answer.ts",
     "languages/typescript/session.json",

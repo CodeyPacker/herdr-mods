@@ -30,7 +30,7 @@ node_modules/
 `;
 
 // Only learner-owned course records travel. Checker files and machine attachments stay local.
-export const GITIGNORE = LEGACY_GITIGNORE + `!/courses/
+const COURSE_GITIGNORE = LEGACY_GITIGNORE + `!/courses/
 /courses/*
 !/courses/*/
 /courses/*/*
@@ -40,6 +40,7 @@ export const GITIGNORE = LEGACY_GITIGNORE + `!/courses/
 !/courses/*/*/answers/
 !/courses/*/*/history/
 `;
+export const GITIGNORE = COURSE_GITIGNORE + "!/courses/*/current.json\n";
 
 /** @param {string} folder @param {string[]} args @returns {Promise<{ code: number, stdout: string, stderr: string }>} */
 function git(folder, args) {
@@ -71,7 +72,7 @@ async function ensureGitignore(folder) {
   const path = join(folder, ".gitignore");
   try {
     const existing = await readFile(path, "utf8");
-    if (existing === LEGACY_GITIGNORE) await writeFile(path, GITIGNORE);
+    if (existing === LEGACY_GITIGNORE || existing === COURSE_GITIGNORE) await writeFile(path, GITIGNORE);
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
     await writeFile(path, GITIGNORE);

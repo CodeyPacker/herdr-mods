@@ -1,5 +1,5 @@
 // Course commands never change the direct-practice session or its answer files.
-import { readFile, writeFile, mkdir, rename, unlink, open, copyFile, stat } from "node:fs/promises";
+import { readFile, writeFile, mkdir, rename, unlink, open, copyFile, stat, readdir } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -141,8 +141,18 @@ export async function checkTask(root, pack, task, source, run) {
 }
 
 export async function courseCommand(root, action, request = {}) {
-  if (action === "list") return { courses: await listCourses() };
-  const pack = await loadCourse(request.courseId);
+  if (action === "list") return { courses: await Promise.all((await listCourses()).map(async course => {
+    const parent = join(root, "courses", encodeURIComponent(course.id));
+    try {
+      const selected = await readJson(join(parent, "current.json"));
+      const versions = (await readdir(parent, { withFileTypes: true })).filter(entry => entry.isDirectory() && /^\d+\.\d+\.\d+(?:-[a-z0-9.]+)?$/.test(entry.name)).map(entry => entry.name);
+      return { ...course, enrolledVersion: selected?.contentVersion, versions };
+    } catch (error) { return error.code === "ENOENT" ? course : { ...course, error: error.message }; }
+  })) };
+  const latest = await loadCourse(request.courseId);
+  const preferred = join(root, "courses", encodeURIComponent(latest.id), "current.json");
+  const selected = await readJson(preferred);
+  const pack = await loadCourse(request.courseId, request.contentVersion ?? selected?.contentVersion ?? latest.contentVersion);
   const directory = enrollmentDirectory(root, pack), file = join(directory, "enrollment.json");
   return locked(directory, async () => {
     let state = await readJson(file);
@@ -152,7 +162,7 @@ export async function courseCommand(root, action, request = {}) {
     }
     validateState(state, pack);
     const persist = async () => { await save(file, state); };
-    if (action === "enroll") await persist();
+    if (action === "enroll") { await persist(); await save(preferred, { courseId: pack.id, contentVersion: pack.contentVersion }); }
     else if (["review-start", "review-next", "review-end"].includes(action)) {
       if (action === "review-start" && !state.review) {
         const ids = courseReview(pack, state, Date.now()).ids;

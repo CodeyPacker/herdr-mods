@@ -59,7 +59,7 @@ export class CoursePanel {
     this.busy = ["check", "check-saved"].includes(action) ? "Checking every case…" : "Loading course…";
     this.error = ""; cx.notify();
     try {
-      const request = { courseId: this.data?.course.id, ...value };
+      const request = { ...(action === "enroll" || action === "list" ? {} : { courseId: this.data?.course.id, contentVersion: this.data?.course.contentVersion }), ...value };
       const result = await courseCommand(action, request);
       if (action === "list") {
         this.catalog = result.courses;
@@ -125,7 +125,7 @@ export class CoursePanel {
     if (!position || !["lesson", "task"].includes(this.page)) return null;
     const taskId = this.page === "task" ? this.data.enrollment.activeTask : null;
     const lesson = taskId ? this.data.course.lessons.find(lesson => lesson.tasks.some(task => task.id === taskId)) : this.lesson();
-    return { courseId: this.data.course.id, moduleId: lesson.id, step: lesson.id === position.moduleId ? position.step : 0, taskId };
+    return { courseId: this.data.course.id, contentVersion: this.data.course.contentVersion, moduleId: lesson.id, step: lesson.id === position.moduleId ? position.step : 0, taskId };
   }
 
   helpKey() {
@@ -199,6 +199,10 @@ export class CoursePanel {
           .child(h_flex().gap(8).flex_wrap()
             .child(keyButton(t, `course-beginner-${course.id}`, "", "Start or resume", !this.busy && !course.error, cx => this.run("enroll", { courseId: course.id, entryPath: "beginner" }, cx)))
             .child(keyButton(t, `course-experienced-${course.id}`, "", "I know another language", !this.busy && !course.error, cx => this.run("enroll", { courseId: course.id, entryPath: "experienced" }, cx)))));
+        for (const version of (course.versions ?? []).filter(version => version !== course.enrolledVersion)) body.child(keyButton(t, `course-version-${course.id}-${version}`, "", `Resume ${version}`, !this.busy && !course.error,
+          cx => this.run("enroll", { courseId: course.id, contentVersion: version }, cx)));
+        if (course.enrolledVersion && course.enrolledVersion !== course.contentVersion) body.child(keyButton(t, `course-latest-${course.id}`, "", "Start latest version separately", !this.busy && !course.error,
+          cx => this.run("enroll", { courseId: course.id, contentVersion: course.contentVersion }, cx)));
       }
     } else if (this.data) {
       body.child(div().font_semibold().child(this.data.course.title));

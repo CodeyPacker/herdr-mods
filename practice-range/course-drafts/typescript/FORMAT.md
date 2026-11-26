@@ -33,3 +33,7 @@ Keep pack files immutable. A learner-owned enrollment records course/content ver
 ## Implemented project task extension
 
 A task may declare `workspace.entry` as a trusted module that re-exports learner functions and `workspace.editable` as ordered `{file, starter, solution}` source references. The first file opens in the editor. The builder resolves those sources to text and resolves `moduleSources` into immutable supplied modules. The service snapshots every editable file before checking, hashes the complete snapshot, reconstructs trusted files separately, and records one attempt. Filename validation rejects traversal, duplicates, checker-reserved names, and supplied/learner collisions. Only explicitly revealed solutions reach the panel. Optional `checkLabels` replace long trusted assertion bodies with useful failure descriptions.
+
+## Content releases
+
+Set `runtimeContentVersion` in the author manifest for the compiled runtime pack. Rebuilding identical content is allowed. Changing content under the same version fails. A new version archives the previous installed pack under `courses/packs/archive/` before replacing the current one. Include those archived files in the release. Enrollment selection is stored separately from each version's progress. New versions start separately until an explicit compatible progress migration is implemented.

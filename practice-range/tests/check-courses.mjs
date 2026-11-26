@@ -22,9 +22,11 @@ try {
   const project = await request("task", { taskId: `${courseId}/task/report-audit` });
   const review = structuredClone(task);
   review.enrollment.review = { ids: [taskId], index: 0 };
-  const cases = { catalog: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules],
+  const cases = { catalog: ["catalog", null], versions: ["catalog", null], modules: ["modules", modules], lesson: ["lesson", modules],
     prediction: ["lesson", prediction], feedback: ["lesson", feedback], task: ["task", task], solution: ["task", solution], project: ["task", project], review: ["task", review], "ai-lesson": ["lesson", modules], "ai-task": ["task", task], error: ["task", task] };
-  for (const [name, [page, data]] of Object.entries(cases)) {
+  const requested = process.argv.slice(2);
+  for (const name of requested) if (!Object.hasOwn(cases, name)) throw new Error(`Unknown course fixture: ${name}`);
+  for (const [name, [page, data]] of Object.entries(cases).filter(([name]) => !requested.length || requested.includes(name))) {
     const folder = join(root, name);
     await cp(source, folder, { recursive: true, filter: path => !path.split(/[\\/]/).includes("node_modules") });
     await rename(join(folder, "main.js"), join(folder, "practice-panel.js"));
@@ -39,6 +41,7 @@ export default class Fixture extends Syntax {
     this.editorDefaultSet = true;
     this.setupCompleted = true;
     this.courses.catalog = ${JSON.stringify(catalog)};
+    if (${name === "versions"}) this.courses.catalog[0] = { ...this.courses.catalog[0], enrolledVersion: "0.0.1", versions: ["0.0.1", "0.1.0-preview.1"] };
     this.courses.data = ${JSON.stringify(data)};
     this.courses.page = ${JSON.stringify(page)};
     if (${name.startsWith("ai-")}) {

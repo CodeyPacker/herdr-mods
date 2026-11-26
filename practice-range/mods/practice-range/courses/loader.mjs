@@ -1,5 +1,4 @@
 // Bundled courses are data. Only the existing language registry can choose executable runners.
-import { readFile } from "node:fs/promises";
 import { findLanguage } from "../languages/index.js";
 
 const registry = new Map([["course:ts-foundations", new URL("./packs/typescript-foundations.json", import.meta.url)]]);
@@ -104,12 +103,11 @@ export function validatePack(pack) {
   return pack;
 }
 
-export async function loadCourse(id) {
+export async function loadCourse(id, version) {
   const path = registry.get(id);
   if (!path) throw new Error(`Course pack is not installed: ${id}`);
-  const pack = validatePack(JSON.parse(await readFile(path, "utf8")));
-  requireValue(pack.id === id, "registry identity");
-  return pack;
+  const { readCoursePack } = await import("./storage.mjs");
+  return readCoursePack(path, id, version);
 }
 
 export async function listCourses() {
