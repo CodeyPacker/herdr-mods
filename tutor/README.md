@@ -7,6 +7,8 @@ from its real code, pinned to the current commit. Each module walks through 4 to
 explanation, then a 5-question quiz and up to three small practice exercises you write and run.
 Modules are written the first time you open them.
 
+Courses are moving to [Practice Range](../practice-range/). Open Practice Range, then **Courses → Import Tutor courses**, to copy a course with its progress and answers. Tutor keeps working, and the import never changes Tutor's files.
+
 - **Languages:** C# and TypeScript (`l` on the setup screen).
 - **What you know** (`w`): the languages you already know, for example `TypeScript, some SQL`. Lessons compare to the
   first one. Each course keeps its own list. If you list the course's own language, lessons skip the comparisons.

@@ -16,7 +16,7 @@ Status: in progress. Phase acceptance criteria below define completion, rather t
 | P5 | Done except learner review | Pinned repo excerpts, repo module and architecture lessons, source browsing, Tutor import, writing unfinished imported modules as reading and quizzes, and validated generated exercises for imported modules. | Learner review of generated explanations and exercises. |
 | P6 | Done except learner review | Course review, assistance tracking, explained recommendations, module evidence combining course exercises with linked drills, recommendations for due linked drills, and optional validated AI extra practice for bundled courses. Fixtures cover hinted passes, revealed solutions, later independent passes, overdue review, changed versions and mixed sessions. | Learner review of the evidence rules and generated exercises. |
 | P7 | Not started | | Learner pilot and fixes, then C# and SQL courses. |
-| P8 | Not started | | Release checks, install and migration docs, Tutor launch transition. |
+| P8 | Prepared, blocked on P7 | `RELEASE.md` records requirements, the tested platform, every check with its last result, release notes and the Tutor transition. Tutor shows a move notice. All 150 tests and 100 native panel checks passed. | Rerun checks after the pilot, stop recommending new Tutor installs, then release. |
 
 ## Product decisions
 

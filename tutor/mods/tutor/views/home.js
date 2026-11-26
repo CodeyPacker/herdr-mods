@@ -6,6 +6,7 @@ import { letterRow } from "../kit/letters.js";
 import { rowText, listNote } from "../kit/list.js";
 import { spinner } from "../kit/controls.js";
 import { button } from "../ui.js";
+import { MOVE_NOTICE } from "../constants.js";
 
 /** `v` is the Tutor view: its state is read here and its methods run on clicks. */
 export function homeView(v, t) {
@@ -25,6 +26,7 @@ export function homeView(v, t) {
   if (v.courseError) add(div().pt(10).child(banner(t, `${v.courseError}${startNew}`, t.ansi1)));
   else if (!course) add(listNote(t, h_flex().gap(8).child(spinner(t)).child("Loading the course…")));
   if (v.repoError) add(div().pt(10).child(banner(t, v.repoError, t.ansi1)));
+  add(div().px(12).pt(6).text_size(11.5).text_color(t.dim).child(MOVE_NOTICE));
   for (const part of course?.parts ?? []) {
     const mods = list.map((m, i) => ({ m, i })).filter(x => x.m.part === part.id);
     if (!mods.length) continue;

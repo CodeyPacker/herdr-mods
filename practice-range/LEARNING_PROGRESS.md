@@ -6,7 +6,7 @@ Implement the approved scope in `LEARNING_SCOPE.md`. Practice Range is the desti
 
 | Code | Capability | Evidence |
 | --- | --- | --- |
-| I1 | Bundled TypeScript preview with 18 authored modules and 60 tasks, including four project checkpoints, a two-file final assessment and four readiness checks. | `course-drafts/typescript/verify.mjs` passed 19 runnable examples, two intentional diagnostics, 82 reference runs, 82 alternatives, and 129 named wrong-answer witnesses across 165 case runs. |
+| I1 | Bundled TypeScript preview with 18 authored modules and 60 lesson tasks, including four project checkpoints and a two-file final assessment, plus four readiness checks outside the lessons. | `course-drafts/typescript/verify.mjs` passed 19 runnable examples, two intentional diagnostics, 82 reference runs, 82 alternatives, and 129 named wrong-answer witnesses across 165 case runs. |
 | I2 | Course catalog, module navigation, predictions, runnable examples, reading position, save checks, hints, solution reveal, and reset backups. No repo or AI required. | `tests/course-pack.test.mjs` and `tests/course-session.test.mjs`. |
 | I3 | Bounded project workspaces with complete file snapshots, trusted supplied files, stale-result detection, and backups of both editable files. | `tests/course-project.test.mjs`. The final assessment checks both implementation correctness and the learner's regression test against correct and faulty candidates. |
 | I4 | Course review in fresh files, original-answer preservation, assistance tracking, review intervals, and explained next-action recommendations. | `tests/course-review.test.mjs` and the review session test. Reuses existing practice scheduling rules. |
@@ -42,7 +42,7 @@ The course remains a preview. Compiler correctness and native materialization do
 | P5 | Optional pinned repo context, saved module/architecture supplements, source navigation, previewable Tutor course import, writing of unfinished imported modules and validated generated exercises implemented. Existing settings and original Tutor files are preserved. | Generated explanations and exercises need learner review. Tutor launch compatibility remains for P8. |
 | P6 | Course review, deterministic recommendations, combined module evidence, linked drill review recommendations and validated extra practice for bundled courses implemented. | Check with learners that the evidence rules match observed skill and that generated exercises are useful. |
 | P7 | Not started. | Learner pilot and corrections, then C# and SQL course packs. Their existing direct practice remains supported. |
-| P8 | Not started. | Final release checks, install/migration documentation, compatibility launch transition, and release. No source mod removal in the first release. |
+| P8 | Release checklist, requirements, tested platform, release notes and Tutor move notice prepared in `RELEASE.md`. | Rerun checks after P7, stop recommending new Tutor installs, then release. No source mod removal in the first release. |
 
 ## Verification record
 
