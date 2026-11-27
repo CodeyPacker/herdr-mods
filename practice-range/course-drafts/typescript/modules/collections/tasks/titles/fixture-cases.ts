@@ -1,1 +1,1 @@
-type Task = {title: string; open: boolean};
+type Product = {name: string; inStock: boolean};

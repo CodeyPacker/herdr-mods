@@ -1,3 +1,3 @@
-function ownerCounts(owners: string[]): Map<string, number> {
+function voteCounts(votes: string[]): Map<string, number> {
   return new Map();
 }

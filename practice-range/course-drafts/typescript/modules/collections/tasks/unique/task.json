@@ -7,11 +7,11 @@
     "transform",
     "map-set"
   ],
-  "prompt": "Return unique stop names in first-seen order, preserving case and empty text.",
+  "prompt": "Write `uniqueStops(stops: string[]): string[]`. Return each stop name once, in the order it first appears. Keep letter case as is, so `\"A\"` and `\"a\"` are different stops. An empty name counts too.",
   "hints": [
-    "Which occurrence decides a name’s position?",
-    "A Set records whether you have seen a name.",
-    "Walk the input in order, or expand a Set built from that ordered input."
+    "The first time a name appears decides its position.",
+    "A `Set` remembers which names you have seen.",
+    "`[...new Set(stops)]` keeps first-seen order."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -34,7 +34,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Keeps duplicates.",
+      "misconception": "Keeps the repeated names.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -43,7 +43,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Sorts the distinct names.",
+      "misconception": "Sorts the names instead of keeping first-seen order.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -51,5 +51,5 @@
       }
     }
   ],
-  "feedback": "Which occurrence decides a name’s position?"
+  "feedback": "The first time a name appears decides its position."
 }

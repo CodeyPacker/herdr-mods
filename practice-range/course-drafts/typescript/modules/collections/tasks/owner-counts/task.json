@@ -1,17 +1,17 @@
 {
   "id": "course:ts-foundations/task/collections-owner-counts",
   "role": "independent",
-  "title": "Count tasks per owner",
+  "title": "Count votes per choice",
   "concepts": [
     "callback",
     "transform",
     "map-set"
   ],
-  "prompt": "Return a Map from each owner string to its number of occurrences. Empty text is an owner, and distinct keys must retain first-seen order.",
+  "prompt": "Write `voteCounts(votes: string[]): Map<string, number>`. Return a `Map` from each choice to how many times it appears. An empty string is a blank vote and counts as its own choice. Keys keep the order they first appear in.",
   "hints": [
-    "Read the previous count before replacing it.",
-    "A missing key starts at zero.",
-    "Update the existing key when the owner repeats."
+    "Read the current count before you set the new one.",
+    "A choice not in the map yet starts at 0. `counts.get(vote) ?? 0` handles that.",
+    "Set the same key again when a choice repeats."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -19,9 +19,9 @@
   "mode": "script",
   "rules": [],
   "checks": [
-    "__same(ownerCounts([\"b\",\"\",\"b\",\"a\",\"\"]), new Map([[\"b\",2],[\"\",2],[\"a\",1]]))",
-    "__same(ownerCounts([]), new Map())",
-    "__same(ownerCounts([\"a\"]), new Map([[\"a\",1]]))"
+    "__same(voteCounts([\"b\",\"\",\"b\",\"a\",\"\"]), new Map([[\"b\",2],[\"\",2],[\"a\",1]]))",
+    "__same(voteCounts([]), new Map())",
+    "__same(voteCounts([\"a\"]), new Map([[\"a\",1]]))"
   ],
   "typeChecks": [],
   "rejects": [],
@@ -34,7 +34,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Records only presence.",
+      "misconception": "Records that a choice appeared but not how many times.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -43,7 +43,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Skips empty owners.",
+      "misconception": "Skips blank votes because `\"\"` is falsy.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -51,5 +51,5 @@
       }
     }
   ],
-  "feedback": "Read the previous count before replacing it."
+  "feedback": "Read the current count before you set the new one."
 }

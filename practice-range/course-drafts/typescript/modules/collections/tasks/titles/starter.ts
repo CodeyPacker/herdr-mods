@@ -1,3 +1,3 @@
-function openTitles(tasks: Task[]): string[] {
-  return tasks.map(t => t.title);
+function stockedNames(products: Product[]): string[] {
+  return products.map(p => p.name);
 }

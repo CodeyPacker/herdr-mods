@@ -1,3 +1,3 @@
-function openTitles(tasks: Task[]): string[] {
-  return [...new Set(tasks.filter(t=>t.open).map(t=>t.title))];
+function stockedNames(products: Product[]): string[] {
+  return [...new Set(products.filter(p=>p.inStock).map(p=>p.name))];
 }

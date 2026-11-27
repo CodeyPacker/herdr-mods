@@ -1,7 +1,7 @@
-function openTitles(tasks: Task[]): string[] {
-  const titles: string[] = [];
-  for (const task of tasks) {
-    if (task.open) titles.push(task.title);
+function stockedNames(products: Product[]): string[] {
+  const names: string[] = [];
+  for (const product of products) {
+    if (product.inStock) names.push(product.name);
   }
-  return titles;
+  return names;
 }

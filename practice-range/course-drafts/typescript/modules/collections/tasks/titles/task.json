@@ -1,17 +1,17 @@
 {
   "id": "course:ts-foundations/task/collections-titles",
   "role": "guided",
-  "title": "Keep just the open titles",
+  "title": "Keep the names of products in stock",
   "concepts": [
     "callback",
     "transform",
     "map-set"
   ],
-  "prompt": "Return the titles of open tasks in input order, preserving repeated titles and empty text.",
+  "prompt": "Write `stockedNames(products: Product[]): string[]`. Return the `name` of every product where `inStock` is `true`, in input order. Keep repeated names and empty names.",
   "hints": [
-    "Identify which field controls selection.",
-    "Select before turning a task into its title.",
-    "Keep one output entry per qualifying row."
+    "Which field decides whether a product is kept?",
+    "Use `filter` to choose products, then `map` to turn each into its name.",
+    "There is one output entry for every product that is kept."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -19,8 +19,8 @@
   "mode": "script",
   "rules": [],
   "checks": [
-    "__same(openTitles([{title:\"A\",open:false},{title:\"\",open:true},{title:\"B\",open:true},{title:\"B\",open:true}]), [\"\",\"B\",\"B\"])",
-    "__same(openTitles([]), [])"
+    "__same(stockedNames([{name:\"A\",inStock:false},{name:\"\",inStock:true},{name:\"B\",inStock:true},{name:\"B\",inStock:true}]), [\"\",\"B\",\"B\"])",
+    "__same(stockedNames([]), [])"
   ],
   "typeChecks": [],
   "rejects": [],
@@ -33,7 +33,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Includes closed tasks.",
+      "misconception": "Keeps products that are out of stock.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -42,7 +42,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Deduplicates titles.",
+      "misconception": "Removes repeated names with a `Set`.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -50,5 +50,5 @@
       }
     }
   ],
-  "feedback": "Identify which field controls selection."
+  "feedback": "Which field decides whether a product is kept?"
 }

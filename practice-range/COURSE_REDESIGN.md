@@ -246,7 +246,8 @@ Same rules as Phase C, new content version, 16 modules from the table.
     - Teaches widening (`const` vs `let`), narrowing with `Array.isArray`, and named literal unions. Tasks: `unions-join-tags`, `unions-sizes` (type checks and rejects), `unions-lights` (review after Tagged). Added `outcome/unions` to the manifest.
 - [x] D9 tagged · Discriminated unions
     - The example is now a coffee `Pickup` (example id `board` kept). `describe-update` uses `Workout`, `repair-caption` uses `Door`. The other three tasks only got clearer prompts. Unions is now a prerequisite of Tagged.
-- [ ] D10 collections · Transform arrays, maps and sets
+- [x] D10 collections · Transform arrays, maps and sets
+    - Tasks now use `Product`/`stockedNames`, `voteCounts` and bus stops. Added a Map counting prediction (`count`).
 - [ ] D11 boundary · unknown and type guards
 - [ ] D12 modules · Modules
 - [ ] D13 checks · Writing tests

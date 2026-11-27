@@ -291,7 +291,7 @@
       "status": "reviewed",
       "source": {
         "kind": "bundled",
-        "path": "modules/collections/module.json"
+        "path": "modules/collections/module.md"
       }
     },
     {
