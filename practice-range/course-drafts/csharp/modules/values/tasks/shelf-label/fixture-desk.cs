@@ -3,6 +3,6 @@ using static Given;
 
 public static class Given
 {
-    public static string area = "Desk";
-    public static int open = 3;
+    public static string city = "Oslo";
+    public static int temp = 3;
 }

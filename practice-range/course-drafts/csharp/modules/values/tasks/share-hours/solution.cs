@@ -1,2 +1,2 @@
-double exact = hours;
+double exact = bill;
 double share = exact / people;

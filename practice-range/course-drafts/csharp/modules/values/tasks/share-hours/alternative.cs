@@ -1,1 +1,1 @@
-var share = (double)hours / people;
+var share = (double)bill / people;

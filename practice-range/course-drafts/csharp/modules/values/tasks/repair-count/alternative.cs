@@ -1,1 +1,1 @@
-int remaining = opening - done;
+int remaining = budget - spent;

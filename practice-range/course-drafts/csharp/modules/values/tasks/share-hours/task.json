@@ -1,16 +1,16 @@
 {
   "id": "course:cs-foundations/task/values-share-hours",
   "role": "independent",
-  "title": "Split the hours evenly",
+  "title": "Split the bill evenly",
   "concepts": [
     "number-types",
     "variable"
   ],
-  "prompt": "hours is a supplied whole number of hours. people is a supplied whole number of people, at least 1. Declare a double named share that holds the hours split evenly between the people, keeping any fraction. With 7 hours and 2 people, share is 3.5.",
+  "prompt": "`bill` is a supplied whole number of dollars. `people` is a supplied whole number of people, at least 1. Declare a `double` named `share` that holds the bill split evenly between the people, keeping any fraction. With a bill of 7 and 2 people, share is 3.5.",
   "hints": [
     "What does / give when both sides are int?",
     "One side of the division must be a double before the division happens.",
-    "Store hours in a double variable first, or write (double)hours, then divide by people."
+    "Store bill in a double variable first, or write (double)bill, then divide by people."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -18,11 +18,11 @@
   "mode": "statements",
   "rules": [],
   "checks": [
-    "share == (double)hours / people",
+    "share == (double)bill / people",
     "((object)share) is double"
   ],
   "checkLabels": [
-    "share must be hours divided by people, with the fraction kept.",
+    "share must be bill divided by people, with the fraction kept.",
     "share must be a double."
   ],
   "fixtures": [
@@ -59,5 +59,5 @@
       }
     }
   ],
-  "feedback": "Work the case with 7 hours and 2 people by hand. If your answer gives 3, the division happened between two ints."
+  "feedback": "Work the case with a bill of 7 and 2 people by hand. If your answer gives 3, the division happened between two ints."
 }

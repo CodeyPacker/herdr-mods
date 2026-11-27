@@ -1,13 +1,13 @@
 {
   "id": "course:cs-foundations/task/values-repair-count",
   "role": "debug",
-  "title": "Repair a broken count",
+  "title": "Repair the money left",
   "concepts": [
     "var-inference",
     "variable",
     "number-types"
   ],
-  "prompt": "The starter should work out how many tasks are still unfinished, but it does not compile. opening and done are supplied whole numbers. Read the compiler error, then repair the code so remaining is a whole number equal to opening minus done.",
+  "prompt": "The starter should work out how much money is left, but it does not compile. `budget` and `spent` are supplied whole numbers of dollars. Read the compiler error, then repair the code so `remaining` is a whole number equal to budget minus spent.",
   "hints": [
     "The error names a line and two types. Which type does remaining have, and which line gave it that type?",
     "var takes its type from the first value. \"0\" in quotes is a string.",
@@ -19,10 +19,10 @@
   "mode": "statements",
   "rules": [],
   "checks": [
-    "((object)remaining).Equals(opening - done)"
+    "((object)remaining).Equals(budget - spent)"
   ],
   "checkLabels": [
-    "remaining must be a whole number equal to opening minus done."
+    "remaining must be a whole number equal to budget minus spent."
   ],
   "fixtures": [
     {

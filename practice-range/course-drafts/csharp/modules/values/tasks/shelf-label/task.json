@@ -1,16 +1,16 @@
 {
   "id": "course:cs-foundations/task/values-shelf-label",
   "role": "independent",
-  "title": "Label a shelf",
+  "title": "Write a weather line",
   "concepts": [
     "text",
     "interpolation"
   ],
-  "prompt": "area is a supplied string and open is a supplied whole number. Declare a string named label in the form \"Desk: 3 open\": the area, a colon and a space, the number, a space, then the word open. Build it from the supplied values so it works for every case.",
+  "prompt": "`city` is a supplied string and `temp` is a supplied whole number. Declare a string named `label` in the form `\"Oslo: 3 degrees\"`: the city, a colon and a space, the number, a space, then the word degrees. Build it from the supplied values so it works for every case.",
   "hints": [
     "Which parts of the label change from case to case, and which stay the same?",
     "An interpolated string starts with $ before the opening quote.",
-    "Inside the $ string, put area and open in braces, and type the colon, the spaces and the word open as plain text."
+    "Inside the $ string, put city and temp in braces, and type the colon, the spaces and the word degrees as plain text."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -18,10 +18,10 @@
   "mode": "statements",
   "rules": [],
   "checks": [
-    "label == area + \": \" + open + \" open\""
+    "label == city + \": \" + temp + \" degrees\""
   ],
   "checkLabels": [
-    "label must be the area, a colon and a space, the count, then the word open."
+    "label must be the city, a colon and a space, the temperature, then the word degrees."
   ],
   "fixtures": [
     {

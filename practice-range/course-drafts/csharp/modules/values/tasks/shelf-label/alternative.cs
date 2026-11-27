@@ -1,1 +1,1 @@
-var label = area + ": " + open + " open";
+var label = city + ": " + temp + " degrees";

@@ -1,1 +1,1 @@
-string label = $"{area}: {open} open";
+string label = $"{city}: {temp} degrees";

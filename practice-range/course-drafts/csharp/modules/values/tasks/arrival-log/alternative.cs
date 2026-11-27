@@ -1,5 +1,5 @@
-int total = opening;
+int total = morning;
 Console.WriteLine(total);
-int after = opening + arrivals;
+int after = morning + walk;
 total = after;
 Console.WriteLine(total);

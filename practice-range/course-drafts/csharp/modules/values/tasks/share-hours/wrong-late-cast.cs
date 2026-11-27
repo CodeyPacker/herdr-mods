@@ -1,1 +1,1 @@
-double share = (double)(hours / people);
+double share = (double)(bill / people);

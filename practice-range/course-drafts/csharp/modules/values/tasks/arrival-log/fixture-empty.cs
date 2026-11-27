@@ -3,6 +3,6 @@ using static Given;
 
 public static class Given
 {
-    public static int opening = 0;
-    public static int arrivals = 0;
+    public static int morning = 0;
+    public static int walk = 0;
 }

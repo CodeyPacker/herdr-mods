@@ -1,4 +1,4 @@
-int total = opening;
+int total = morning;
 Console.WriteLine(total);
-total = arrivals;
+total = walk;
 Console.WriteLine(total);

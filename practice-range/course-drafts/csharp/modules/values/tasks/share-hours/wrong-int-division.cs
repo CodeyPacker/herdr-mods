@@ -1,1 +1,1 @@
-double share = hours / people;
+double share = bill / people;

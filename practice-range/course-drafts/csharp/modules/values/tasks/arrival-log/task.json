@@ -1,16 +1,16 @@
 {
   "id": "course:cs-foundations/task/values-arrival-log",
   "role": "guided",
-  "title": "Show a delivery arriving",
+  "title": "Add a walk to your steps",
   "concepts": [
     "variable",
     "number-types"
   ],
-  "prompt": "opening is how many tasks were open and arrivals is how many just came in. Both are supplied whole numbers. The starter prints the opening count, then an out-of-date total. Give total its new value between the two print lines. With 6 open and 2 arriving, the output is 6 then 8, one number per line.",
+  "prompt": "`morning` is how many steps you took this morning and `walk` is how many steps an afternoon walk added. Both are supplied whole numbers. The starter prints the morning count, then an out-of-date total. Give `total` its new value between the two print lines. With 6000 morning steps and a 2500-step walk, the output is 6000 then 8500, one number per line.",
   "hints": [
     "Read the print lines from top to bottom. Which one should see the new value?",
     "An assignment works out its right side first, then stores the result in the name on the left.",
-    "Between the prints, add arrivals to the current total and store the result back in total."
+    "Between the prints, add walk to the current total and store the result back in total."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -19,12 +19,12 @@
   "captureOutput": true,
   "rules": [],
   "checks": [
-    "__Output() == $\"{opening}\\n{opening + arrivals}\"",
-    "total == opening + arrivals"
+    "__Output() == $\"{morning}\\n{morning + walk}\"",
+    "total == morning + walk"
   ],
   "checkLabels": [
-    "The output must be the opening count, then the count after the arrivals, on two lines.",
-    "total must end as opening plus arrivals."
+    "The output must be the morning steps, then the steps after the walk, on two lines.",
+    "total must end as morning plus walk."
   ],
   "fixtures": [
     {
@@ -43,7 +43,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-replace.cs",
-      "misconception": "Replaces the total with the arrivals instead of adding them.",
+      "misconception": "Replaces the total with the walk instead of adding it.",
       "witness": {
         "fixture": "morning",
         "kind": "result",
@@ -60,5 +60,5 @@
       }
     }
   ],
-  "feedback": "Check which print runs before your update and which runs after it. The first line must still show the opening count."
+  "feedback": "Check which print runs before your update and which runs after it. The first line must still show the morning steps."
 }

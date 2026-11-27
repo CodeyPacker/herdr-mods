@@ -1,1 +1,1 @@
-string label = "Desk: 3 open";
+string label = "Oslo: 3 degrees";
