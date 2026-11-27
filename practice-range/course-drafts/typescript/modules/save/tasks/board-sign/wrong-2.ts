@@ -1,1 +1,1 @@
-console.log("Task board All clear");
+console.log("Corner Cafe Open daily");

@@ -124,7 +124,7 @@
       "status": "reviewed",
       "source": {
         "kind": "bundled",
-        "path": "modules/save/module.json"
+        "path": "modules/save/module.md"
       }
     },
     {

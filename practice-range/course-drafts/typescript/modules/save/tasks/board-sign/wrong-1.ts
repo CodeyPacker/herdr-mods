@@ -1,2 +1,2 @@
-console.log("All clear");
-console.log("Task board");
+console.log("Open daily");
+console.log("Corner Cafe");

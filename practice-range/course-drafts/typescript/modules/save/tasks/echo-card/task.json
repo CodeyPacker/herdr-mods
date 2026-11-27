@@ -1,12 +1,12 @@
 {
   "id": "course:ts-foundations/task/save-echo-card",
   "role": "review",
-  "title": "Read a supplied card",
+  "title": "Read a supplied word",
   "concepts": [
     "save-run",
     "read-output"
   ],
-  "prompt": "The checker supplies text under the name card. Print the text it gives you, followed by Checked on a separate line. A name without quotes reads the supplied value. With card set to Mail, the first line is Mail.",
+  "prompt": "The checker supplies text under the name `word`. Print the text it gives you, followed by `Checked` on a separate line. A name without quotes reads the supplied value. With `word` set to `Mail`, the first line is `Mail`.",
   "hints": [
     "Identify which output line depends on the supplied text.",
     "A quoted word prints itself. An unquoted supplied name reads its value.",
@@ -18,7 +18,7 @@
   "mode": "script",
   "rules": [],
   "checks": [
-    "__same(__logs(), [card, \"Checked\"])"
+    "__same(__logs(), [word, \"Checked\"])"
   ],
   "typeChecks": [],
   "rejects": [],

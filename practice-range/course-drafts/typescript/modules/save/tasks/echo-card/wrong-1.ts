@@ -1,2 +1,2 @@
-console.log("card");
+console.log("word");
 console.log("Checked");

@@ -1,1 +1,1 @@
-const card = "Mail";
+const word = "Mail";

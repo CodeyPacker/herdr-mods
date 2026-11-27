@@ -1,12 +1,12 @@
 {
   "id": "course:ts-foundations/task/save-board-sign",
   "role": "independent",
-  "title": "Print the board sign",
+  "title": "Print a cafe sign",
   "concepts": [
     "save-run",
     "read-output"
   ],
-  "prompt": "Print Task board and then All clear on separate lines, with exactly that capitalization. Text inside matching single or double quotes is accepted.",
+  "prompt": "Print `Corner Cafe` and then `Open daily` on separate lines, with exactly that capitalization. Text inside matching single or double quotes is accepted.",
   "hints": [
     "Write down what the first line should say.",
     "Use a separate print instruction for each line.",
@@ -18,7 +18,7 @@
   "mode": "script",
   "rules": [],
   "checks": [
-    "__same(__logs(), [\"Task board\", \"All clear\"])"
+    "__same(__logs(), [\"Corner Cafe\", \"Open daily\"])"
   ],
   "typeChecks": [],
   "rejects": [],
