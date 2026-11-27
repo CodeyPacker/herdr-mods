@@ -281,3 +281,4 @@ Same rules as Phase C, new content version, 16 modules from the table.
 - [x] F1 Update `README.md`, `RELEASE.md` and `LEARNING_PROGRESS.md` for the new courses and screens.
     - Also rewrote `course-drafts/typescript/OUTLINE.md` from the manifest. The C#, full-suite and native-panel rows in `RELEASE.md` still hold older numbers until F2 reruns them.
 - [ ] F2 Full test run and owner walkthrough.
+    - Test run done 2026-11-27: 141 of 141 Node tests, all 49 course fixtures, all practice panels, `herdr-app check`, and full verifies for TypeScript, C# and SQL. `tsc` reports type errors in `courses/panel.js` (mostly untyped `cx` callbacks). They were there before the redesign. Owner walkthrough not done.
