@@ -115,6 +115,11 @@
       "id": "outcome/generic",
       "description": "Preserve input and output types with a generic function, limit T with a constraint, and build types with Pick, Omit and Partial.",
       "assessment": "course:ts-foundations/module/generic"
+    },
+    {
+      "id": "outcome/utility",
+      "description": "Build types with Record, Required, Readonly and ReturnType.",
+      "assessment": "course:ts-foundations/module/utility"
     }
   ],
   "modules": [
@@ -409,7 +414,11 @@
       "teaches": [
         "utility-types"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/utility/module.md"
+      }
     },
     {
       "id": "course:ts-foundations/module/mapped",

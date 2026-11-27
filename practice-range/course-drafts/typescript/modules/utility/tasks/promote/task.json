@@ -1,0 +1,54 @@
+{
+  "id": "course:ts-foundations/task/utility-promote",
+  "role": "review",
+  "title": "Promote a user without copying its type",
+  "concepts": [
+    "utility-types"
+  ],
+  "prompt": "The supplied `makeUser(name, age)` returns `{ name, age, admin: false }`. Define `type User` from the return type of `makeUser`, without writing the fields by hand. Then write `promote(user: User): User` that returns a new user with `admin: true` and leaves `user` unchanged.",
+  "hints": [
+    "Which utility type reads a function's return type?",
+    "`typeof makeUser` turns the function into a type you can pass to it.",
+    "Return `{ ...user, admin: true }`."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(promote(makeUser(\"Ana\", 30)), { name: \"Ana\", age: 30, admin: true })",
+    "(() => { const u = makeUser(\"Bo\", 0); const p = promote(u); return u.admin === false && p !== u; })()"
+  ],
+  "typeChecks": [
+    "__Equal<User, { name: string; age: number; admin: boolean }>"
+  ],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Changes the user that was passed in.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Writes the type by hand and misses `admin`.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "types",
+        "detail": "Type check 1"
+      }
+    }
+  ],
+  "feedback": "Which utility type reads a function's return type?"
+}

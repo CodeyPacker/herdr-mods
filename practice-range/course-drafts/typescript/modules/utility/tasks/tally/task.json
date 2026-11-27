@@ -1,0 +1,53 @@
+{
+  "id": "course:ts-foundations/task/utility-tally",
+  "role": "guided",
+  "title": "Count every category",
+  "concepts": [
+    "utility-types"
+  ],
+  "prompt": "Repair `tally(items: Category[]): Record<Category, number>`. `Category` is `\"fruit\" | \"veg\" | \"dairy\"`. Return an object with all three keys, each set to how many times that category appears in `items`. A category that never appears has the count 0.",
+  "hints": [
+    "What does the starter return for `[\"veg\", \"veg\"]`?",
+    "Start with all three keys set to 0.",
+    "For each item, add 1 to `counts[item]`."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(tally([\"veg\", \"fruit\", \"veg\"]), { fruit: 1, veg: 2, dairy: 0 })",
+    "__same(tally([]), { fruit: 0, veg: 0, dairy: 0 })",
+    "__same(tally([\"dairy\"]), { fruit: 0, veg: 0, dairy: 1 })"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Starts from `{}` with `as`, so categories that never appear are missing instead of 0.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Sets each seen category to 1 instead of counting.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "What does the starter return for `[\"veg\", \"veg\"]`?"
+}
