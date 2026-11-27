@@ -360,7 +360,7 @@
       "status": "reviewed",
       "source": {
         "kind": "bundled",
-        "path": "modules/errors/module.json"
+        "path": "modules/errors/module.md"
       }
     },
     {

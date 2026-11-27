@@ -6,11 +6,11 @@
     "throw-catch",
     "failure"
   ],
-  "prompt": "Return the Error message for an Error, the original text for a string, and \"Unknown\" otherwise. Preserve empty messages.",
+  "prompt": "Write `issueText(problem: unknown): string` for a value caught by `catch`. Return `problem.message` for an `Error`, the text itself for a thrown string, and `\"Unknown\"` for anything else. Keep empty strings.",
   "hints": [
-    "Check the runtime kind before reading a field.",
-    "An empty string still carries a string message.",
-    "Use the fallback only after the two known cases."
+    "What does `String(new Error(\"Denied\"))` give?",
+    "Check the kind first: `instanceof Error`, then `typeof problem === \"string\"`.",
+    "Use `\"Unknown\"` only after both checks fail."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -34,7 +34,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Stringifies an Error object.",
+      "misconception": "Uses `String(problem)`, which gives `\"Error: Denied\"` instead of `\"Denied\"`.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -43,7 +43,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Replaces an empty thrown string.",
+      "misconception": "Replaces an empty thrown string with `\"Unknown\"`.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -51,5 +51,5 @@
       }
     }
   ],
-  "feedback": "Check the runtime kind before reading a field."
+  "feedback": "What does `String(new Error(\"Denied\"))` give?"
 }

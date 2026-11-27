@@ -254,7 +254,8 @@ Same rules as Phase C, new content version, 16 modules from the table.
     - `export-task` now builds a `Song` (`makeSong`). Added a "Ways to import" reading step. Every question needs a runnable example, and examples are one file, so import forms have no question.
 - [x] D13 checks · Writing tests
     - Tasks had no tracker theme. Prompts rewritten. Added a test helper prediction (`helper`) where the test itself is wrong.
-- [ ] D14 errors · Errors and failure
+- [x] D14 errors · Errors and failure
+    - Tasks had no tracker theme. Prompts rewritten. Added a throw/finally step and prediction (`finally`).
 - [ ] D15 async · async and Promises
 - [ ] D16 generic · Generics
 - [ ] D16a utility · Utility types (new module)

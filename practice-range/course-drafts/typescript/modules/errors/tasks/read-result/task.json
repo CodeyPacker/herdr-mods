@@ -1,16 +1,16 @@
 {
   "id": "course:ts-foundations/task/errors-read-result",
   "role": "independent",
-  "title": "Keep successes and exceptions distinct",
+  "title": "Keep successes and errors apart",
   "concepts": [
     "throw-catch",
     "failure"
   ],
-  "prompt": "Run source once. Return {kind:\"ok\", text} when it returns a string, including empty text. If it throws, return {kind:\"error\", message} using the Error message, thrown string, or \"Unknown\".",
+  "prompt": "Write `readText(source: () => string): Result`. Call `source` once. If it returns a string, even an empty one, return `{ kind: \"ok\", text }`. If it throws, return `{ kind: \"error\", message }`, where `message` is the `Error` message, the thrown string, or `\"Unknown\"`.",
   "hints": [
-    "Separate the success path from the catch path.",
-    "Use the returned string even when it is empty.",
-    "Narrow caught data before building the error result."
+    "Put the call inside `try`. Build the error result in `catch`.",
+    "An empty string from `source` is still a success.",
+    "Narrow the caught value before reading `.message`."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -36,7 +36,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Treats empty success as an exception.",
+      "misconception": "Treats an empty successful result as an error.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -45,7 +45,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Discards specific errors.",
+      "misconception": "Replaces every error message with `\"Unknown\"`.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -53,5 +53,5 @@
       }
     }
   ],
-  "feedback": "Separate the success path from the catch path."
+  "feedback": "Put the call inside `try`. Build the error result in `catch`."
 }

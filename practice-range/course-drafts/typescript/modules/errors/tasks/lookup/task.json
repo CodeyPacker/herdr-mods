@@ -6,11 +6,11 @@
     "throw-catch",
     "failure"
   ],
-  "prompt": "Use a Map of titles by numeric ID. Return the existing title, including empty text, or null when the key is absent. A missing key is an ordinary outcome.",
+  "prompt": "Write `lookup(titles: Map<number, string>, id: number): string | null`. Return the title stored for `id`, even an empty one. Return `null` when `id` is not in the map. A missing key is a normal result, so do not throw.",
   "hints": [
-    "An existing value may be empty.",
-    "Read the value for the requested key.",
-    "Handle the Map’s missing-key result explicitly."
+    "A stored title can be `\"\"`.",
+    "`titles.get(id)` gives `undefined` for a missing key.",
+    "`??` replaces only `undefined` and `null`."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -33,7 +33,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Treats empty text as missing.",
+      "misconception": "Uses `||`, so an empty title becomes `null`.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -42,7 +42,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Uses empty text as the fallback.",
+      "misconception": "Returns `\"\"` for a missing key, so missing and empty look the same.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -50,5 +50,5 @@
       }
     }
   ],
-  "feedback": "An existing value may be empty."
+  "feedback": "A stored title can be `\"\"`."
 }
