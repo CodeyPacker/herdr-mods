@@ -1,17 +1,17 @@
-public static TaskItem Renamed(TaskItem task, string title)
+public static Book Renamed(Book book, string title)
 {
-    return new TaskItem(task.Id, title, task.Owner);
+    return new Book(book.Id, title, book.Author);
 }
 
-public static Dictionary<string, int> CountByOwner(List<TaskItem> tasks)
+public static Dictionary<string, int> CountByAuthor(List<Book> books)
 {
     var counts = new Dictionary<string, int>();
-    foreach (TaskItem task in tasks)
+    foreach (Book book in books)
     {
-        string key = "Unassigned";
-        if (task.Owner != null)
+        string key = "Unknown";
+        if (book.Author != null)
         {
-            key = task.Owner;
+            key = book.Author;
         }
         counts.TryGetValue(key, out int current);
         counts[key] = current + 1;

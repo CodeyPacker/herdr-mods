@@ -1,2 +1,2 @@
-// Supplied record type. Owner may be null.
-public record TaskItem(int Id, string Title, string? Owner);
+// Supplied record type. Author may be null.
+public record Book(int Id, string Title, string? Author);

@@ -1,7 +1,7 @@
 {
   "id": "course:cs-foundations/task/readiness-r3",
   "role": "readiness",
-  "title": "Readiness 3 · LINQ through exceptions",
+  "title": "LINQ through exceptions",
   "concepts": [
     "switch-expression",
     "type-pattern",
@@ -10,7 +10,7 @@
     "inheritance",
     "list"
   ],
-  "prompt": "Update and its record types are supplied. Write public static List<string> Summaries(List<Update> updates). Return one line for each Arrived update, in the form \"3 arrived\", and one for each Finished update, in the form \"Pack: 15 min\". Keep the original order. Leave out any other kind of update. A Finished update with negative Minutes is a bug in the data: throw an ArgumentException for it.",
+  "prompt": "Update and its record types are supplied. Write public static List<string> Summaries(List<Update> updates). Return one line for each Arrived update, in the form \"3 arrived\", and one for each Finished update, in the form \"Soup: 15 min\". Keep the original order. Leave out any other kind of update. A Finished update with negative Minutes is a bug in the data: throw an ArgumentException for it.",
   "hints": [
     "Three things can happen to an update: it becomes a line, it is left out, or it is rejected. Which updates get which?",
     "Decide by the update's type, and check the Minutes of a Finished update before building its line.",
@@ -23,10 +23,10 @@
   "rules": [],
   "support": "static bool ThrowsArgument(Action action)\n{\n    try { action(); return false; }\n    catch (ArgumentException) { return true; }\n    catch (Exception) { return false; }\n}\n",
   "checks": [
-    "Practice.Summaries(new List<Update> { new Arrived(3), new Note(\"hi\"), new Finished(\"Pack\", 15) }).SequenceEqual(new List<string> { \"3 arrived\", \"Pack: 15 min\" })",
+    "Practice.Summaries(new List<Update> { new Arrived(3), new Note(\"hi\"), new Finished(\"Soup\", 15) }).SequenceEqual(new List<string> { \"3 arrived\", \"Soup: 15 min\" })",
     "Practice.Summaries(new List<Update>()).Count == 0",
     "Practice.Summaries(new List<Update> { new Finished(\"Sort\", 0), new Arrived(0) }).SequenceEqual(new List<string> { \"Sort: 0 min\", \"0 arrived\" })",
-    "ThrowsArgument(() => Practice.Summaries(new List<Update> { new Arrived(1), new Finished(\"Pack\", -1) }))"
+    "ThrowsArgument(() => Practice.Summaries(new List<Update> { new Arrived(1), new Finished(\"Soup\", -1) }))"
   ],
   "checkLabels": [
     "Arrived and Finished must each give a line, in order, and the Note must be left out.",

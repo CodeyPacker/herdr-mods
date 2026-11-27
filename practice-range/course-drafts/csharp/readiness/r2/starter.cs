@@ -1,9 +1,9 @@
-public static TaskItem Renamed(TaskItem task, string title)
+public static Book Renamed(Book book, string title)
 {
-    return task;
+    return book;
 }
 
-public static Dictionary<string, int> CountByOwner(List<TaskItem> tasks)
+public static Dictionary<string, int> CountByAuthor(List<Book> books)
 {
     return new Dictionary<string, int>();
 }

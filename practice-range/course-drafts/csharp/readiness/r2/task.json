@@ -1,7 +1,7 @@
 {
-  "id": "course:cs-foundations/task/readiness-r2",
+  "id": "course:cs-foundations/book/readiness-r2",
   "role": "readiness",
-  "title": "Readiness 2 · Classes through lookups",
+  "title": "Classes through lookups",
   "concepts": [
     "record",
     "equality",
@@ -11,61 +11,61 @@
     "list",
     "loop"
   ],
-  "prompt": "TaskItem is supplied. Its Owner may be null. Write two methods. public static TaskItem Renamed(TaskItem task, string title) returns a copy with the new title and the same Id and Owner. public static Dictionary<string, int> CountByOwner(List<TaskItem> tasks) returns the number of tasks for each owner. Tasks whose Owner is null are counted under the key \"Unassigned\". An empty string is a real owner name and gets its own key.",
+  "prompt": "Book is supplied. Its Author may be null. Write two methods. public static Book Renamed(Book book, string title) returns a copy with the new title and the same Id and Author. public static Dictionary<string, int> CountByAuthor(List<Book> books) returns the number of books for each author. Books whose Author is null are counted under the key \"Unknown\". An empty string is a real author name and gets its own key.",
   "hints": [
-    "Which owner values are there to tell apart: a name, an empty string, and what else?",
-    "Turn a null owner into the key \"Unassigned\" before you touch the dictionary. Leave an empty string as it is.",
-    "Use task with { Title = title } for the copy. For the counts, use task.Owner ?? \"Unassigned\" as the key and add 1, starting a new key at 1."
+    "Which author values are there to tell apart: a name, an empty string, and what else?",
+    "Turn a null author into the key \"Unknown\" before you touch the dictionary. Leave an empty string as it is.",
+    "Use book with { Title = title } for the copy. For the counts, use book.Author ?? \"Unknown\" as the key and add 1, starting a new key at 1."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
   "alternative": "alternative.cs",
   "mode": "members",
   "rules": [],
-  "support": "static List<TaskItem> Board() => new List<TaskItem>\n{\n    new TaskItem(1, \"Pack\", \"Ana\"),\n    new TaskItem(2, \"Ship\", null),\n    new TaskItem(3, \"Label\", \"Ana\"),\n    new TaskItem(4, \"Sort\", \"\"),\n    new TaskItem(5, \"Move\", null),\n};\n",
+  "support": "static List<Book> Board() => new List<Book>\n{\n    new Book(1, \"Dune\", \"Ana\"),\n    new Book(2, \"Emma\", null),\n    new Book(3, \"Label\", \"Ana\"),\n    new Book(4, \"Sort\", \"\"),\n    new Book(5, \"Move\", null),\n};\n",
   "checks": [
-    "Practice.Renamed(new TaskItem(1, \"Pack\", \"Ana\"), \"Send\") == new TaskItem(1, \"Send\", \"Ana\")",
-    "Practice.Renamed(new TaskItem(2, \"Ship\", null), \"Send\") == new TaskItem(2, \"Send\", null)",
-    "Practice.CountByOwner(Board())[\"Ana\"] == 2",
-    "Practice.CountByOwner(Board())[\"Unassigned\"] == 2",
-    "Practice.CountByOwner(Board())[\"\"] == 1",
-    "Practice.CountByOwner(Board()).Count == 3",
-    "Practice.CountByOwner(new List<TaskItem>()).Count == 0"
+    "Practice.Renamed(new Book(1, \"Dune\", \"Ana\"), \"Send\") == new Book(1, \"Send\", \"Ana\")",
+    "Practice.Renamed(new Book(2, \"Emma\", null), \"Send\") == new Book(2, \"Send\", null)",
+    "Practice.CountByAuthor(Board())[\"Ana\"] == 2",
+    "Practice.CountByAuthor(Board())[\"Unknown\"] == 2",
+    "Practice.CountByAuthor(Board())[\"\"] == 1",
+    "Practice.CountByAuthor(Board()).Count == 3",
+    "Practice.CountByAuthor(new List<Book>()).Count == 0"
   ],
   "checkLabels": [
-    "Renamed must change the title and keep the Id and Owner.",
-    "Renamed must keep a missing Owner missing.",
-    "Ana has 2 tasks.",
-    "The 2 tasks with no owner must be counted under \"Unassigned\".",
-    "An empty owner name is its own key, with 1 task.",
+    "Renamed must change the title and keep the Id and Author.",
+    "Renamed must keep a missing Author missing.",
+    "Ana has 2 books.",
+    "The 2 books with no author must be counted under \"Unknown\".",
+    "An empty author name is its own key, with 1 book.",
     "The board must give exactly three keys.",
     "An empty list must give an empty dictionary."
   ],
   "fixtures": [
     {
-      "id": "tasks",
-      "declarations": "fixture-tasks.cs"
+      "id": "books",
+      "declarations": "fixture-books.cs"
     }
   ],
   "wrongAnswers": [
     {
       "source": "wrong-empty-unassigned.cs",
-      "misconception": "Treats an empty owner name as a missing owner.",
+      "misconception": "Treats an empty author name as a missing author.",
       "witness": {
-        "fixture": "tasks",
+        "fixture": "books",
         "kind": "result",
         "detail": "Check 4 failed"
       }
     },
     {
       "source": "wrong-null-key.cs",
-      "misconception": "Uses a missing owner directly as a dictionary key.",
+      "misconception": "Uses a missing author directly as a dictionary key.",
       "witness": {
-        "fixture": "tasks",
+        "fixture": "books",
         "kind": "result",
         "detail": "ArgumentNullException"
       }
     }
   ],
-  "feedback": "Look at how a null owner, an empty owner name and a real name are each turned into a key. They must give three different keys."
+  "feedback": "Look at how a null author, an empty author name and a real name are each turned into a key. They must give three different keys."
 }

@@ -1,14 +1,14 @@
-public static TaskItem Renamed(TaskItem task, string title)
+public static Book Renamed(Book book, string title)
 {
-    return task with { Title = title };
+    return book with { Title = title };
 }
 
-public static Dictionary<string, int> CountByOwner(List<TaskItem> tasks)
+public static Dictionary<string, int> CountByAuthor(List<Book> books)
 {
     Dictionary<string, int> counts = new Dictionary<string, int>();
-    foreach (TaskItem task in tasks)
+    foreach (Book book in books)
     {
-        string key = task.Owner ?? "Unassigned";
+        string key = book.Author ?? "Unknown";
         if (counts.ContainsKey(key))
         {
             counts[key] = counts[key] + 1;

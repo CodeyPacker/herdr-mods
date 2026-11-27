@@ -1,7 +1,7 @@
 {
   "id": "course:cs-foundations/task/readiness-r1",
   "role": "readiness",
-  "title": "Readiness 1 · Values through collections",
+  "title": "Values through collections",
   "concepts": [
     "method",
     "list",

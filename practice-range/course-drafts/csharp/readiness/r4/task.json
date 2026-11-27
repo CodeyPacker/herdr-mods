@@ -1,7 +1,7 @@
 {
   "id": "course:cs-foundations/task/readiness-r4",
   "role": "readiness",
-  "title": "Readiness 4 · Generics, async and tests",
+  "title": "Generics, async and tests",
   "concepts": [
     "generic",
     "await",
