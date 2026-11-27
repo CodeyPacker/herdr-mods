@@ -12,13 +12,13 @@ test("the SQL course pack is complete, registered and written for SQL alone", as
   const pack = await loadCourse(courseId);
   assert.equal(pack.languageId, "sql");
   assert.equal(pack.preview, true);
-  assert.equal(pack.modules.length, 18);
+  assert.equal(pack.modules.length, 16);
   assert.ok(pack.modules.every(entry => entry.status === "available"));
   const tasks = pack.lessons.flatMap(lesson => lesson.tasks);
-  assert.equal(tasks.length, 56, "52 lesson tasks plus four project checkpoints");
+  assert.equal(tasks.length, 48);
   assert.equal(pack.readiness.length, 4);
-  assert.equal(pack.project.checkpoints.length, 5);
-  for (const checkpoint of pack.project.checkpoints) assert.equal(taskFor(pack, checkpoint.taskId).lesson.id, checkpoint.module);
+  // D11: no project and no capstone.
+  assert.equal(pack.project, undefined);
   for (const task of [...tasks, ...pack.readiness.map(group => group.task)]) {
     assert.equal(task.mode, "query", task.id);
     assert.ok(task.solution.trim(), `${task.id} is checked against its reference answer`);
@@ -29,7 +29,7 @@ test("the SQL course pack is complete, registered and written for SQL alone", as
     readiness: pack.readiness.map(({ task }) => [task.prompt, task.hints, task.feedback]) });
   assert.doesNotMatch(text, /TypeScript|JavaScript|Python|C#|\bJava\b|another language|other languages/i);
   const summary = (await listCourses()).find(course => course.id === courseId);
-  assert.deepEqual([summary.languageId, summary.available, summary.total], ["sql", 18, 18]);
+  assert.deepEqual([summary.languageId, summary.available, summary.total], ["sql", 16, 16]);
 });
 
 test("a SQL course runs examples and checks saved answers on every case", { timeout: 240000 }, async t => {
@@ -90,8 +90,8 @@ test("a SQL course runs examples and checks saved answers on every case", { time
   state = await run("check", { taskId: tableId });
   assert.equal(state.enrollment.tasks[tableId].result.passed, true);
 
-  // The final assessment.
-  const reportId = `${courseId}/task/report-review-report`;
+  // The last module's review task.
+  const reportId = `${courseId}/task/checks-delivered-summary`;
   state = await run("task", { taskId: reportId });
   await writeFile(state.file, taskFor(pack, reportId).task.solution);
   state = await run("check", { taskId: reportId });

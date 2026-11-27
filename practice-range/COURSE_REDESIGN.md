@@ -273,7 +273,8 @@ Same rules as Phase C, new content version, 16 modules from the table.
 
 - [x] E1 Remove the project checkpoints and the assemble and report modules. Convert modules to Markdown. Keep the practice database.
     - 16 modules, all `module.md`. Checks is last, so its review uses `afterCompletion`. Reviews that waited for Assemble or Report now wait for Windows or Checks. R4 is "Tables through checks". The prose had no project theme, so only the format changed. Runtime version 0.2.0-preview.1, compatible with 0.1.0-preview.1.
-- [ ] E2 Build, verify, tests, screenshots
+- [x] E2 Build, verify, tests, screenshots
+    - Built 0.2.0-preview.1 (16 modules, 48 tasks); 0.1.0-preview.1 is archived. Full verify passed (52 tasks, 61 cases). Course tests 48 of 48. Native fixtures all pass (one known "interrupted" stop, rerun by name). `course-sql.test.mjs` now expects 16 modules and no project. `OUTLINE.md` and `VALIDATION.md` updated.
 
 ### Phase F: Wrap up
 

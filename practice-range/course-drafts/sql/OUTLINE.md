@@ -2,7 +2,7 @@
 
 The beginner follows all 18 modules in order. The experienced path starts with the same run-and-read check and offers the readiness checks below. A learner can open any module or practice drill directly. The manifest expands each module key below with `course:sql-foundations/module/`.
 
-Status: all 18 modules, four project checkpoints and four readiness checks are written and pass the verifier. `VALIDATION.md` records the run. The course teaches SQL on its own terms, using PostgreSQL, and never compares it with a programming language.
+Status: all 16 modules and four readiness checks are written and pass the verifier. The project and the Assemble and Report modules were removed on 2026-11-27 (D11: no project, no capstone). `VALIDATION.md` records the run. The course teaches SQL on its own terms, using PostgreSQL, and never compares it with a programming language.
 
 ## Data
 
@@ -30,10 +30,8 @@ Task keys expand to `course:sql-foundations/task/<module>-<key>`. The last task 
 | 14. **tables** · Design a table | modify | Create a table whose keys and constraints reject bad data. | suppliers, shipments, coupons | R4 |
 | 15. **windows** · Rank and compare rows | grouping, ctes | Rank rows and compare each with its group without collapsing them. | rank-in-department, top-per-category, above-own-average | R4 |
 | 16. **checks** · Check that a query is right | outer, grouping, ctes | Test a result against a simpler query and repair a join that counts twice. | staff-and-projects, orders-per-customer, delivered-summary | R4 |
-| 17. **assemble** · Assemble a sales report | ctes, expressions, checks, windows | Combine joins, grouping, steps and labels into one report. | monthly-revenue, category-units, customer-tiers | R4 |
-| 18. **report** · Deliver an unfamiliar report | assemble, modify | Independently answer a new reporting request. | review-report | All take |
 
-That is 52 lesson tasks. The four project checkpoints join their modules when the pack is built, which gives 56. The four readiness checks sit outside the lessons.
+That is 48 lesson tasks. The four readiness checks sit outside the lessons.
 
 ## Experienced entry
 
@@ -42,18 +40,8 @@ That is 52 lesson tasks. The four project checkpoints join their modules when th
 | R1 · select through sorting | Customers in two countries who signed up in one year, with a fallback for a missing email, newest first. | A filter that mixes a list with a range, COALESCE and ordering. |
 | R2 · aggregates through outer | Every department with its staff count and payroll, including the one with no employees. | LEFT JOIN, counting values against rows, and a total that may be missing. |
 | R3 · subqueries through modify | Products that cost more than the average of their own category, with a CASE label. | A correlated subquery or a step, and CASE with ELSE. |
-| R4 · tables through assemble | Each customer's largest order that is not cancelled. | Totals in a step, a numbered window per customer, and a filter on it. |
-
-## Project sequence
-
-The project is a sales report. Every checkpoint is one query in `project/`.
-
-1. **P1 · Sorting.** Products running low: a two-part filter and a two-column order.
-2. **P2 · Grouping.** Best sellers: units and order lines per product, filtered with HAVING.
-3. **P3 · Outer joins.** Products that never sold.
-4. **P4 · Assemble.** The five customers who spent the most, with a safe count of their orders.
-5. **P5 · Report.** The module's `review-report` task: reviewed products with their rating, units sold and a verdict.
+| R4 · tables through checks | Each customer's largest order that is not cancelled. | Totals in a step, a numbered window per customer, and a filter on it. |
 
 ## Scope
 
-The core ends at writing a multi-step report and checking that it is right. Outside this course: indexes and query plans, views, transactions and locking, JSON and array columns, set operations, recursive queries, user and permission management, and database administration. The practice drills cover several of these.
+The core ends at writing a multi-step query and checking that it is right. Outside this course: indexes and query plans, views, transactions and locking, JSON and array columns, set operations, recursive queries, user and permission management, and database administration. The practice drills cover several of these.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "0.1.0-preview.1",
+  "contentVersion": "0.2.0-preview.1",
   "id": "course:sql-foundations",
   "languageId": "sql",
   "runner": {
@@ -114,16 +114,6 @@
       "id": "outcome/checks",
       "description": "Test a query's result against a known count and repair a join that counts rows twice.",
       "assessment": "course:sql-foundations/module/checks"
-    },
-    {
-      "id": "outcome/assemble",
-      "description": "Combine joins, grouping, steps and labels into one report.",
-      "assessment": "course:sql-foundations/module/assemble"
-    },
-    {
-      "id": "outcome/report",
-      "description": "Independently answer a new reporting request and prove the answer with a check.",
-      "assessment": "course:sql-foundations/module/report"
     }
   ],
   "modules": [
@@ -337,72 +327,12 @@
         "fan-out"
       ],
       "status": "available"
-    },
-    {
-      "id": "course:sql-foundations/module/assemble",
-      "title": "Assemble a sales report",
-      "prerequisites": [
-        "course:sql-foundations/module/ctes",
-        "course:sql-foundations/module/expressions",
-        "course:sql-foundations/module/checks",
-        "course:sql-foundations/module/windows"
-      ],
-      "teaches": [
-        "project"
-      ],
-      "status": "available"
-    },
-    {
-      "id": "course:sql-foundations/module/report",
-      "title": "Deliver an unfamiliar report",
-      "prerequisites": [
-        "course:sql-foundations/module/assemble",
-        "course:sql-foundations/module/modify"
-      ],
-      "teaches": [
-        "transfer"
-      ],
-      "status": "available"
     }
   ],
-  "project": {
-    "id": "course:sql-foundations/project/sales-report",
-    "title": "Sales report",
-    "checkpoints": [
-      {
-        "id": "course:sql-foundations/project/sales-report/low-stock",
-        "title": "List what is running low",
-        "module": "course:sql-foundations/module/sorting",
-        "taskId": "course:sql-foundations/task/project-low-stock"
-      },
-      {
-        "id": "course:sql-foundations/project/sales-report/best-sellers",
-        "title": "Find the best sellers",
-        "module": "course:sql-foundations/module/grouping",
-        "taskId": "course:sql-foundations/task/project-best-sellers"
-      },
-      {
-        "id": "course:sql-foundations/project/sales-report/unsold",
-        "title": "Find products that never sold",
-        "module": "course:sql-foundations/module/outer",
-        "taskId": "course:sql-foundations/task/project-unsold"
-      },
-      {
-        "id": "course:sql-foundations/project/sales-report/top-customers",
-        "title": "Report the top customers",
-        "module": "course:sql-foundations/module/assemble",
-        "taskId": "course:sql-foundations/task/project-top-customers"
-      },
-      {
-        "id": "course:sql-foundations/project/sales-report/review-report",
-        "title": "Report on reviewed products",
-        "module": "course:sql-foundations/module/report",
-        "taskId": "course:sql-foundations/task/report-review-report"
-      }
-    ]
-  },
   "compatibility": {
-    "fromVersions": [],
+    "fromVersions": [
+      "0.1.0-preview.1"
+    ],
     "replacements": []
   },
   "readiness": [
@@ -533,17 +463,16 @@
     },
     {
       "id": "R4",
-      "title": "Tables through assembling",
+      "title": "Tables through checks",
       "modules": [
         "course:sql-foundations/module/tables",
         "course:sql-foundations/module/windows",
-        "course:sql-foundations/module/checks",
-        "course:sql-foundations/module/assemble"
+        "course:sql-foundations/module/checks"
       ],
       "task": {
         "id": "course:sql-foundations/task/readiness-r4",
         "role": "readiness",
-        "title": "Readiness 4 · Tables through assembling",
+        "title": "Readiness 4 · Tables through checks",
         "concepts": [
           "window",
           "partition",
@@ -699,6 +628,7 @@
       ],
       "examples": {
         "departments": {
+          "code": "SELECT name, location\nFROM departments;\n",
           "stdout": [
             "Your query returned:",
             " name        | location",
@@ -710,17 +640,16 @@
             " Support     | Austin",
             " Legal       | Denver",
             "(6 rows)"
-          ],
-          "code": "SELECT name, location\nFROM departments;\n"
+          ]
         },
         "typo": {
+          "code": "SELECT name, locaton\nFROM departments;\n",
           "diagnostics": [
             {
               "code": "42703",
               "line": 1
             }
-          ],
-          "code": "SELECT name, locaton\nFROM departments;\n"
+          ]
         }
       },
       "tasks": [
@@ -985,6 +914,7 @@
       ],
       "examples": {
         "monthly": {
+          "code": "SELECT name AS department, ROUND(budget / 12, 2) AS monthly_budget\nFROM departments;\n",
           "stdout": [
             "Your query returned:",
             " department  | monthly_budget",
@@ -996,19 +926,19 @@
             " Support     | 40000.00",
             " Legal       | 25000.00",
             "(6 rows)"
-          ],
-          "code": "SELECT name AS department, ROUND(budget / 12, 2) AS monthly_budget\nFROM departments;\n"
+          ]
         },
         "bad-alias": {
+          "code": "SELECT budget / 12 AS monthly, monthly * 2\nFROM departments;\n",
           "diagnostics": [
             {
               "code": "42703",
               "line": 1
             }
-          ],
-          "code": "SELECT budget / 12 AS monthly, monthly * 2\nFROM departments;\n"
+          ]
         },
         "locations": {
+          "code": "SELECT DISTINCT location\nFROM departments;\n",
           "stdout": [
             "Your query returned:",
             " location",
@@ -1017,8 +947,7 @@
             " Chicago",
             " Denver",
             "(3 rows)"
-          ],
-          "code": "SELECT DISTINCT location\nFROM departments;\n"
+          ]
         }
       },
       "tasks": [
@@ -1294,6 +1223,7 @@
       ],
       "examples": {
         "sales": {
+          "code": "SELECT first_name, title, salary\nFROM employees\nWHERE department_id = 3;\n",
           "stdout": [
             "Your query returned:",
             " first_name | title             | salary",
@@ -1303,10 +1233,10 @@
             " Ravi       | Account Executive | 101000.00",
             " Julia      | Sales Associate   | 64000.00",
             "(4 rows)"
-          ],
-          "code": "SELECT first_name, title, salary\nFROM employees\nWHERE department_id = 3;\n"
+          ]
         },
         "precedence": {
+          "code": "SELECT first_name, department_id, salary\nFROM employees\nWHERE department_id = 5 OR department_id = 4 AND salary > 90000;\n",
           "stdout": [
             "Your query returned:",
             " first_name | department_id | salary",
@@ -1318,17 +1248,16 @@
             " Carlos     | 5             | 56500.00",
             " Ingrid     | 5             | 57000.00",
             "(6 rows)"
-          ],
-          "code": "SELECT first_name, department_id, salary\nFROM employees\nWHERE department_id = 5 OR department_id = 4 AND salary > 90000;\n"
+          ]
         },
         "quotes": {
+          "code": "SELECT first_name\nFROM customers\nWHERE city = \"Denver\";\n",
           "diagnostics": [
             {
               "code": "42703",
               "line": 3
             }
-          ],
-          "code": "SELECT first_name\nFROM customers\nWHERE city = \"Denver\";\n"
+          ]
         }
       },
       "tasks": [
@@ -1611,15 +1540,16 @@
       ],
       "examples": {
         "equals-null": {
+          "code": "SELECT first_name, email\nFROM customers\nWHERE email = NULL;\n",
           "stdout": [
             "Your query returned:",
             " first_name | email",
             "------------+-------",
             "(0 rows)"
-          ],
-          "code": "SELECT first_name, email\nFROM customers\nWHERE email = NULL;\n"
+          ]
         },
         "bonus": {
+          "code": "SELECT first_name, bonus_pct,\n       ROUND(salary * bonus_pct / 100) AS bonus,\n       COALESCE(bonus_pct, 0) AS pct\nFROM employees\nWHERE department_id = 5;\n",
           "stdout": [
             "Your query returned:",
             " first_name | bonus_pct | bonus | pct",
@@ -1629,18 +1559,17 @@
             " Carlos     | NULL      | NULL  | 0",
             " Ingrid     | NULL      | NULL  | 0",
             "(4 rows)"
-          ],
-          "code": "SELECT first_name, bonus_pct,\n       ROUND(salary * bonus_pct / 100) AS bonus,\n       COALESCE(bonus_pct, 0) AS pct\nFROM employees\nWHERE department_id = 5;\n"
+          ]
         },
         "not-equal": {
+          "code": "SELECT count(*) AS customers\nFROM customers\nWHERE email <> 'noah.kim@example.com';\n",
           "stdout": [
             "Your query returned:",
             " customers",
             "-----------",
             " 16",
             "(1 row)"
-          ],
-          "code": "SELECT count(*) AS customers\nFROM customers\nWHERE email <> 'noah.kim@example.com';\n"
+          ]
         }
       },
       "tasks": [
@@ -1841,14 +1770,6 @@
           "title": "Sort signups by country",
           "text": "Work from the prompt. The two sort columns go in different directions.",
           "task": "course:sql-foundations/task/sorting-signups"
-        },
-        {
-          "kind": "independent",
-          "title": "Project 1 · List what is running low",
-          "text": "A tracker project checkpoint. Later checkpoints build on the same task data.",
-          "tasks": [
-            "course:sql-foundations/task/project-low-stock"
-          ]
         }
       ],
       "questions": [
@@ -1915,6 +1836,7 @@
       ],
       "examples": {
         "top": {
+          "code": "SELECT name, price\nFROM products\nORDER BY price DESC\nLIMIT 3;\n",
           "stdout": [
             "Your query returned:",
             " name            | price",
@@ -1923,10 +1845,10 @@
             " Aero 13 Laptop  | 1199.00",
             " Scout 14 Laptop | 749.00",
             "(3 rows)"
-          ],
-          "code": "SELECT name, price\nFROM products\nORDER BY price DESC\nLIMIT 3;\n"
+          ]
         },
         "two-keys": {
+          "code": "SELECT first_name, city\nFROM customers\nWHERE country = 'USA'\nORDER BY city, first_name;\n",
           "stdout": [
             "Your query returned:",
             " first_name | city",
@@ -1939,10 +1861,10 @@
             " Henry      | Seattle",
             " Noah       | Seattle",
             "(7 rows)"
-          ],
-          "code": "SELECT first_name, city\nFROM customers\nWHERE country = 'USA'\nORDER BY city, first_name;\n"
+          ]
         },
         "nulls": {
+          "code": "SELECT first_name, bonus_pct\nFROM employees\nWHERE department_id = 4\nORDER BY bonus_pct DESC;\n",
           "stdout": [
             "Your query returned:",
             " first_name | bonus_pct",
@@ -1951,8 +1873,7 @@
             " Tom        | 10.00",
             " Laura      | 5.00",
             "(3 rows)"
-          ],
-          "code": "SELECT first_name, bonus_pct\nFROM employees\nWHERE department_id = 4\nORDER BY bonus_pct DESC;\n"
+          ]
         }
       },
       "tasks": [
@@ -2039,39 +1960,6 @@
             }
           ],
           "feedback": "Look at the first row. It should hold a real bonus_pct, the highest one, and not NULL."
-        },
-        {
-          "id": "course:sql-foundations/task/project-low-stock",
-          "role": "project",
-          "title": "Project 1 · List what is running low",
-          "concepts": [
-            "filter",
-            "logic",
-            "order",
-            "column-list"
-          ],
-          "prompt": "Return the name and stock of every product that is not discontinued and has fewer than 10 in stock. Put the lowest stock first, and sort products with the same stock by name.",
-          "hints": [
-            "Two tests decide which products appear. Two columns decide their order.",
-            "Join the tests with AND. List both sort columns after ORDER BY.",
-            "WHERE discontinued = false AND stock < 10 ORDER BY stock, name"
-          ],
-          "starter": "-- Write your SQL here. Save to check.\n",
-          "solution": "SELECT name, stock\nFROM products\nWHERE discontinued = false AND stock < 10\nORDER BY stock, name;\n",
-          "mode": "query",
-          "rules": [],
-          "ordered": true,
-          "fixtures": [
-            {
-              "id": "practice",
-              "declarations": "\n"
-            },
-            {
-              "id": "edge",
-              "declarations": "-- This case gives one product a stock of exactly 10.\nUPDATE products SET stock = 10 WHERE id = 16;\n"
-            }
-          ],
-          "feedback": "Check a discontinued product with no stock, and a product with exactly 10 in stock. Neither belongs in the list."
         }
       ],
       "review": {
@@ -2309,43 +2197,43 @@
       ],
       "examples": {
         "counts": {
+          "code": "SELECT count(*) AS products,\n       count(category_id) AS with_category,\n       min(price) AS cheapest,\n       max(price) AS dearest\nFROM products;\n",
           "stdout": [
             "Your query returned:",
             " products | with_category | cheapest | dearest",
             "----------+---------------+----------+---------",
             " 24       | 23            | 14.50    | 1649.00",
             "(1 row)"
-          ],
-          "code": "SELECT count(*) AS products,\n       count(category_id) AS with_category,\n       min(price) AS cheapest,\n       max(price) AS dearest\nFROM products;\n"
+          ]
         },
         "averages": {
+          "code": "SELECT count(bonus_pct) AS with_bonus,\n       ROUND(avg(bonus_pct), 2) AS avg_bonus,\n       ROUND(avg(COALESCE(bonus_pct, 0)), 2) AS avg_all\nFROM employees;\n",
           "stdout": [
             "Your query returned:",
             " with_bonus | avg_bonus | avg_all",
             "------------+-----------+---------",
             " 15         | 12.33     | 7.71",
             "(1 row)"
-          ],
-          "code": "SELECT count(bonus_pct) AS with_bonus,\n       ROUND(avg(bonus_pct), 2) AS avg_bonus,\n       ROUND(avg(COALESCE(bonus_pct, 0)), 2) AS avg_all\nFROM employees;\n"
+          ]
         },
         "empty": {
+          "code": "SELECT count(*) AS products, sum(stock) AS units\nFROM products\nWHERE category_id = 99;\n",
           "stdout": [
             "Your query returned:",
             " products | units",
             "----------+-------",
             " 0        | NULL",
             "(1 row)"
-          ],
-          "code": "SELECT count(*) AS products, sum(stock) AS units\nFROM products\nWHERE category_id = 99;\n"
+          ]
         },
         "mix": {
+          "code": "SELECT name, max(price)\nFROM products;\n",
           "diagnostics": [
             {
               "code": "42803",
               "line": 1
             }
-          ],
-          "code": "SELECT name, max(price)\nFROM products;\n"
+          ]
         }
       },
       "tasks": [
@@ -2563,14 +2451,6 @@
           "title": "Find the well-stocked categories",
           "text": "Work from the prompt. One test belongs in WHERE and one in HAVING.",
           "task": "course:sql-foundations/task/grouping-busy-categories"
-        },
-        {
-          "kind": "independent",
-          "title": "Project 2 · Find the best sellers",
-          "text": "A tracker project checkpoint. Later checkpoints build on the same task data.",
-          "tasks": [
-            "course:sql-foundations/task/project-best-sellers"
-          ]
         }
       ],
       "questions": [
@@ -2637,6 +2517,7 @@
       ],
       "examples": {
         "countries": {
+          "code": "SELECT country, count(*) AS customers\nFROM customers\nGROUP BY country\nORDER BY customers DESC, country;\n",
           "stdout": [
             "Your query returned:",
             " country   | customers",
@@ -2651,10 +2532,10 @@
             " Italy     | 1",
             " Spain     | 1",
             "(9 rows)"
-          ],
-          "code": "SELECT country, count(*) AS customers\nFROM customers\nGROUP BY country\nORDER BY customers DESC, country;\n"
+          ]
         },
         "having": {
+          "code": "SELECT department_id, count(*) AS staff, ROUND(avg(salary)) AS avg_salary\nFROM employees\nGROUP BY department_id\nHAVING count(*) >= 4\nORDER BY department_id;\n",
           "stdout": [
             "Your query returned:",
             " department_id | staff | avg_salary",
@@ -2663,17 +2544,16 @@
             " 3             | 4     | 118250",
             " 5             | 4     | 64375",
             "(3 rows)"
-          ],
-          "code": "SELECT department_id, count(*) AS staff, ROUND(avg(salary)) AS avg_salary\nFROM employees\nGROUP BY department_id\nHAVING count(*) >= 4\nORDER BY department_id;\n"
+          ]
         },
         "bad-where": {
+          "code": "SELECT country, count(*)\nFROM customers\nWHERE count(*) > 2\nGROUP BY country;\n",
           "diagnostics": [
             {
               "code": "42803",
               "line": 3
             }
-          ],
-          "code": "SELECT country, count(*)\nFROM customers\nWHERE count(*) > 2\nGROUP BY country;\n"
+          ]
         }
       },
       "tasks": [
@@ -2761,35 +2641,6 @@
             }
           ],
           "feedback": "Check the status that has exactly 10 orders, and the one that has only 1."
-        },
-        {
-          "id": "course:sql-foundations/task/project-best-sellers",
-          "role": "project",
-          "title": "Project 2 · Find the best sellers",
-          "concepts": [
-            "group",
-            "having",
-            "aggregate",
-            "order"
-          ],
-          "prompt": "From order_items, return product_id, units (the total quantity ordered) and lines (the number of order items) for every product with at least 16 units. Put the most units first, and sort products with the same units by product_id.",
-          "hints": [
-            "One row per product, then keep only some of those rows.",
-            "The test on the total comes after GROUP BY, in HAVING.",
-            "GROUP BY product_id HAVING sum(quantity) >= 16 ORDER BY units DESC, product_id"
-          ],
-          "starter": "-- Write your SQL here. Save to check.\n",
-          "solution": "SELECT product_id, sum(quantity) AS units, count(*) AS lines\nFROM order_items\nGROUP BY product_id\nHAVING sum(quantity) >= 16\nORDER BY units DESC, product_id;\n",
-          "mode": "query",
-          "rules": [],
-          "ordered": true,
-          "fixtures": [
-            {
-              "id": "practice",
-              "declarations": "\n"
-            }
-          ],
-          "feedback": "Add up one product's quantities by hand in schema.sql and compare with your units."
         }
       ],
       "review": {
@@ -2989,6 +2840,7 @@
       ],
       "examples": {
         "chicago": {
+          "code": "SELECT e.first_name, d.name AS department\nFROM employees AS e\nJOIN departments AS d ON d.id = e.department_id\nWHERE d.location = 'Chicago'\nORDER BY e.first_name;\n",
           "stdout": [
             "Your query returned:",
             " first_name | department",
@@ -3001,27 +2853,26 @@
             " Ravi       | Sales",
             " Tom        | Marketing",
             "(7 rows)"
-          ],
-          "code": "SELECT e.first_name, d.name AS department\nFROM employees AS e\nJOIN departments AS d ON d.id = e.department_id\nWHERE d.location = 'Chicago'\nORDER BY e.first_name;\n"
+          ]
         },
         "matched": {
+          "code": "SELECT count(*) AS matched\nFROM employees AS e\nJOIN departments AS d ON d.id = e.department_id;\n",
           "stdout": [
             "Your query returned:",
             " matched",
             "---------",
             " 23",
             "(1 row)"
-          ],
-          "code": "SELECT count(*) AS matched\nFROM employees AS e\nJOIN departments AS d ON d.id = e.department_id;\n"
+          ]
         },
         "ambiguous": {
+          "code": "SELECT id, name\nFROM employees\nJOIN departments ON departments.id = employees.department_id;\n",
           "diagnostics": [
             {
               "code": "42702",
               "line": 1
             }
-          ],
-          "code": "SELECT id, name\nFROM employees\nJOIN departments ON departments.id = employees.department_id;\n"
+          ]
         }
       },
       "tasks": [
@@ -3235,14 +3086,6 @@
           "title": "Find customers who never ordered",
           "text": "Work from the prompt. A second case adds a new customer with no orders.",
           "task": "course:sql-foundations/task/outer-never-ordered"
-        },
-        {
-          "kind": "independent",
-          "title": "Project 3 · Find products that never sold",
-          "text": "A tracker project checkpoint. Later checkpoints build on the same task data.",
-          "tasks": [
-            "course:sql-foundations/task/project-unsold"
-          ]
         }
       ],
       "questions": [
@@ -3309,6 +3152,7 @@
       ],
       "examples": {
         "left": {
+          "code": "SELECT e.first_name, d.name AS department\nFROM employees AS e\nLEFT JOIN departments AS d ON d.id = e.department_id\nWHERE e.id >= 22\nORDER BY e.id;\n",
           "stdout": [
             "Your query returned:",
             " first_name | department",
@@ -3317,10 +3161,10 @@
             " Alex       | NULL",
             " Mila       | Engineering",
             "(3 rows)"
-          ],
-          "code": "SELECT e.first_name, d.name AS department\nFROM employees AS e\nLEFT JOIN departments AS d ON d.id = e.department_id\nWHERE e.id >= 22\nORDER BY e.id;\n"
+          ]
         },
         "unmatched": {
+          "code": "SELECT c.first_name\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nWHERE o.id IS NULL\nORDER BY c.first_name;\n",
           "stdout": [
             "Your query returned:",
             " first_name",
@@ -3329,10 +3173,10 @@
             " Mason",
             " Ruby",
             "(3 rows)"
-          ],
-          "code": "SELECT c.first_name\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nWHERE o.id IS NULL\nORDER BY c.first_name;\n"
+          ]
         },
         "on": {
+          "code": "SELECT d.name, e.first_name\nFROM departments AS d\nLEFT JOIN employees AS e ON e.department_id = d.id AND e.salary > 200000\nORDER BY d.id;\n",
           "stdout": [
             "Your query returned:",
             " name        | first_name",
@@ -3344,10 +3188,10 @@
             " Support     | NULL",
             " Legal       | NULL",
             "(6 rows)"
-          ],
-          "code": "SELECT d.name, e.first_name\nFROM departments AS d\nLEFT JOIN employees AS e ON e.department_id = d.id AND e.salary > 200000\nORDER BY d.id;\n"
+          ]
         },
         "where": {
+          "code": "SELECT d.name, e.first_name\nFROM departments AS d\nLEFT JOIN employees AS e ON e.department_id = d.id\nWHERE e.salary > 200000\nORDER BY d.id;\n",
           "stdout": [
             "Your query returned:",
             " name        | first_name",
@@ -3356,8 +3200,7 @@
             " Engineering | Marcus",
             " Sales       | Priya",
             "(3 rows)"
-          ],
-          "code": "SELECT d.name, e.first_name\nFROM departments AS d\nLEFT JOIN employees AS e ON e.department_id = d.id\nWHERE e.salary > 200000\nORDER BY d.id;\n"
+          ]
         }
       },
       "tasks": [
@@ -3448,39 +3291,6 @@
             }
           ],
           "feedback": "Count the departments in your result. All six must be there, including the ones with nobody above 150000."
-        },
-        {
-          "id": "course:sql-foundations/task/project-unsold",
-          "role": "project",
-          "title": "Project 3 · Find products that never sold",
-          "concepts": [
-            "anti-join",
-            "left-join",
-            "is-null",
-            "order"
-          ],
-          "prompt": "Return the name of every product that does not appear in any order item, sorted by name.",
-          "hints": [
-            "Which join keeps a product that has no order items?",
-            "After a LEFT JOIN, an unsold product has NULL in the item's columns.",
-            "LEFT JOIN order_items AS i ON i.product_id = p.id WHERE i.product_id IS NULL"
-          ],
-          "starter": "-- Write your SQL here. Save to check.\n",
-          "solution": "SELECT p.name\nFROM products AS p\nLEFT JOIN order_items AS i ON i.product_id = p.id\nWHERE i.product_id IS NULL\nORDER BY p.name;\n",
-          "mode": "query",
-          "rules": [],
-          "ordered": true,
-          "fixtures": [
-            {
-              "id": "practice",
-              "declarations": "\n"
-            },
-            {
-              "id": "added",
-              "declarations": "-- This case adds a product that has not been ordered yet.\nINSERT INTO products (id, name, category_id, price, stock, added_on)\nVALUES (25, 'Desk Lamp', 9, 35.00, 12, '2025-02-01');\n"
-            }
-          ],
-          "feedback": "A product that has sold must not appear, and a product with no order items must. Check one of each."
         }
       ],
       "review": {
@@ -3663,6 +3473,7 @@
       ],
       "examples": {
         "above": {
+          "code": "SELECT name, price\nFROM products\nWHERE price > (SELECT avg(price) FROM products)\nORDER BY price DESC;\n",
           "stdout": [
             "Your query returned:",
             " name             | price",
@@ -3675,10 +3486,10 @@
             " 27in Monitor     | 329.00",
             " Office Chair     | 289.00",
             "(7 rows)"
-          ],
-          "code": "SELECT name, price\nFROM products\nWHERE price > (SELECT avg(price) FROM products)\nORDER BY price DESC;\n"
+          ]
         },
         "exists": {
+          "code": "SELECT c.first_name\nFROM customers AS c\nWHERE EXISTS (\n    SELECT 1\n    FROM orders AS o\n    WHERE o.customer_id = c.id AND o.status = 'cancelled'\n)\nORDER BY c.first_name;\n",
           "stdout": [
             "Your query returned:",
             " first_name",
@@ -3691,18 +3502,17 @@
             " Noah",
             " Sofia",
             "(7 rows)"
-          ],
-          "code": "SELECT c.first_name\nFROM customers AS c\nWHERE EXISTS (\n    SELECT 1\n    FROM orders AS o\n    WHERE o.customer_id = c.id AND o.status = 'cancelled'\n)\nORDER BY c.first_name;\n"
+          ]
         },
         "not-in": {
+          "code": "SELECT count(*) AS referred_nobody\nFROM customers\nWHERE id NOT IN (SELECT referred_by FROM customers);\n",
           "stdout": [
             "Your query returned:",
             " referred_nobody",
             "-----------------",
             " 0",
             "(1 row)"
-          ],
-          "code": "SELECT count(*) AS referred_nobody\nFROM customers\nWHERE id NOT IN (SELECT referred_by FROM customers);\n"
+          ]
         }
       },
       "tasks": [
@@ -3990,6 +3800,7 @@
       ],
       "examples": {
         "totals": {
+          "code": "WITH order_totals AS (\n    SELECT order_id, sum(quantity * unit_price) AS total\n    FROM order_items\n    GROUP BY order_id\n)\nSELECT order_id, total\nFROM order_totals\nWHERE total > 5000\nORDER BY total DESC;\n",
           "stdout": [
             "Your query returned:",
             " order_id | total",
@@ -3999,10 +3810,10 @@
             " 58       | 5107.97",
             " 40       | 5044.50",
             "(4 rows)"
-          ],
-          "code": "WITH order_totals AS (\n    SELECT order_id, sum(quantity * unit_price) AS total\n    FROM order_items\n    GROUP BY order_id\n)\nSELECT order_id, total\nFROM order_totals\nWHERE total > 5000\nORDER BY total DESC;\n"
+          ]
         },
         "spenders": {
+          "code": "WITH order_totals AS (\n    SELECT order_id, sum(quantity * unit_price) AS total\n    FROM order_items\n    GROUP BY order_id\n),\ncustomer_totals AS (\n    SELECT o.customer_id, sum(t.total) AS spent\n    FROM orders AS o\n    JOIN order_totals AS t ON t.order_id = o.id\n    WHERE o.status <> 'cancelled'\n    GROUP BY o.customer_id\n)\nSELECT c.first_name, ct.spent\nFROM customer_totals AS ct\nJOIN customers AS c ON c.id = ct.customer_id\nORDER BY ct.spent DESC\nLIMIT 3;\n",
           "stdout": [
             "Your query returned:",
             " first_name | spent",
@@ -4011,17 +3822,16 @@
             " Sofia      | 8857.27",
             " Henry      | 6872.90",
             "(3 rows)"
-          ],
-          "code": "WITH order_totals AS (\n    SELECT order_id, sum(quantity * unit_price) AS total\n    FROM order_items\n    GROUP BY order_id\n),\ncustomer_totals AS (\n    SELECT o.customer_id, sum(t.total) AS spent\n    FROM orders AS o\n    JOIN order_totals AS t ON t.order_id = o.id\n    WHERE o.status <> 'cancelled'\n    GROUP BY o.customer_id\n)\nSELECT c.first_name, ct.spent\nFROM customer_totals AS ct\nJOIN customers AS c ON c.id = ct.customer_id\nORDER BY ct.spent DESC\nLIMIT 3;\n"
+          ]
         },
         "scope": {
+          "code": "WITH big AS (\n    SELECT id FROM products WHERE price > 500\n)\nSELECT count(*) FROM big;\n\nSELECT count(*) FROM big;\n",
           "diagnostics": [
             {
               "code": "42P01",
               "line": 6
             }
-          ],
-          "code": "WITH big AS (\n    SELECT id FROM products WHERE price > 500\n)\nSELECT count(*) FROM big;\n\nSELECT count(*) FROM big;\n"
+          ]
         }
       },
       "tasks": [
@@ -4337,6 +4147,7 @@
       ],
       "examples": {
         "bands": {
+          "code": "SELECT name, price,\n       CASE WHEN price >= 500 THEN 'premium'\n            WHEN price >= 100 THEN 'mid'\n            ELSE 'budget'\n       END AS band\nFROM products\nWHERE category_id IN (3, 9)\nORDER BY price DESC;\n",
           "stdout": [
             "Your query returned:",
             " name            | price   | band",
@@ -4348,20 +4159,20 @@
             " Office Chair    | 289.00  | mid",
             " Bookshelf       | 120.00  | mid",
             "(6 rows)"
-          ],
-          "code": "SELECT name, price,\n       CASE WHEN price >= 500 THEN 'premium'\n            WHEN price >= 100 THEN 'mid'\n            ELSE 'budget'\n       END AS band\nFROM products\nWHERE category_id IN (3, 9)\nORDER BY price DESC;\n"
+          ]
         },
         "division": {
+          "code": "SELECT 7 / 2 AS whole,\n       7 / 2.0 AS exact,\n       CAST('42' AS integer) + 1 AS number;\n",
           "stdout": [
             "Your query returned:",
             " whole | exact              | number",
             "-------+--------------------+--------",
             " 3     | 3.5000000000000000 | 43",
             "(1 row)"
-          ],
-          "code": "SELECT 7 / 2 AS whole,\n       7 / 2.0 AS exact,\n       CAST('42' AS integer) + 1 AS number;\n"
+          ]
         },
         "dates": {
+          "code": "SELECT id, ordered_at,\n       EXTRACT(MONTH FROM ordered_at) AS month,\n       CAST(shipped_at AS date) - CAST(ordered_at AS date) AS days_to_ship\nFROM orders\nWHERE id <= 3;\n",
           "stdout": [
             "Your query returned:",
             " id | ordered_at          | month | days_to_ship",
@@ -4370,17 +4181,16 @@
             " 2  | 2025-01-07 07:01:00 | 1     | 2",
             " 3  | 2025-01-13 08:36:00 | 1     | 3",
             "(3 rows)"
-          ],
-          "code": "SELECT id, ordered_at,\n       EXTRACT(MONTH FROM ordered_at) AS month,\n       CAST(shipped_at AS date) - CAST(ordered_at AS date) AS days_to_ship\nFROM orders\nWHERE id <= 3;\n"
+          ]
         },
         "bad-number": {
+          "code": "SELECT name\nFROM products\nWHERE price > 'cheap';\n",
           "diagnostics": [
             {
               "code": "22P02",
               "line": 3
             }
-          ],
-          "code": "SELECT name\nFROM products\nWHERE price > 'cheap';\n"
+          ]
         }
       },
       "tasks": [
@@ -4474,7 +4284,7 @@
       ],
       "review": {
         "task": "course:sql-foundations/task/expressions-half-stock",
-        "afterModule": "course:sql-foundations/module/assemble",
+        "afterModule": "course:sql-foundations/module/windows",
         "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
       },
       "drills": [
@@ -4653,6 +4463,7 @@
       ],
       "examples": {
         "insert": {
+          "code": "INSERT INTO departments (id, name, location, budget)\nVALUES (7, 'Research', 'Austin', 250000.00);\n\nSELECT name, location\nFROM departments\nWHERE id >= 6;\n",
           "stdout": [
             "Statement 1 changed 1 row.",
             "Statement 2 returned:",
@@ -4661,18 +4472,18 @@
             " Legal    | Denver",
             " Research | Austin",
             "(2 rows)"
-          ],
-          "code": "INSERT INTO departments (id, name, location, budget)\nVALUES (7, 'Research', 'Austin', 250000.00);\n\nSELECT name, location\nFROM departments\nWHERE id >= 6;\n"
+          ]
         },
         "bad-key": {
+          "code": "INSERT INTO departments (id, name, location, budget)\nVALUES (3, 'Research', 'Austin', 250000.00);\n",
           "diagnostics": [
             {
               "code": "23505"
             }
-          ],
-          "code": "INSERT INTO departments (id, name, location, budget)\nVALUES (3, 'Research', 'Austin', 250000.00);\n"
+          ]
         },
         "no-where": {
+          "code": "UPDATE products\nSET discontinued = true;\n\nSELECT count(*) AS discontinued\nFROM products\nWHERE discontinued;\n",
           "stdout": [
             "Statement 1 changed 24 rows.",
             "Statement 2 returned:",
@@ -4680,8 +4491,7 @@
             "--------------",
             " 24",
             "(1 row)"
-          ],
-          "code": "UPDATE products\nSET discontinued = true;\n\nSELECT count(*) AS discontinued\nFROM products\nWHERE discontinued;\n"
+          ]
         }
       },
       "tasks": [
@@ -4771,7 +4581,7 @@
       ],
       "review": {
         "task": "course:sql-foundations/task/modify-clear-cancelled",
-        "afterModule": "course:sql-foundations/module/report",
+        "afterModule": "course:sql-foundations/module/checks",
         "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
       },
       "drills": [
@@ -4955,6 +4765,7 @@
       ],
       "examples": {
         "create": {
+          "code": "CREATE TABLE suppliers (\n    id      integer PRIMARY KEY,\n    name    text NOT NULL,\n    country text NOT NULL DEFAULT 'USA',\n    rating  integer CHECK (rating BETWEEN 1 AND 5)\n);\n\nINSERT INTO suppliers (id, name, rating)\nVALUES (1, 'Acme', 4);\n\nSELECT * FROM suppliers;\n",
           "stdout": [
             "Statement 2 changed 1 row.",
             "Statement 3 returned:",
@@ -4962,24 +4773,23 @@
             "----+------+---------+--------",
             " 1  | Acme | USA     | 4",
             "(1 row)"
-          ],
-          "code": "CREATE TABLE suppliers (\n    id      integer PRIMARY KEY,\n    name    text NOT NULL,\n    country text NOT NULL DEFAULT 'USA',\n    rating  integer CHECK (rating BETWEEN 1 AND 5)\n);\n\nINSERT INTO suppliers (id, name, rating)\nVALUES (1, 'Acme', 4);\n\nSELECT * FROM suppliers;\n"
+          ]
         },
         "check": {
+          "code": "CREATE TABLE suppliers (\n    id      integer PRIMARY KEY,\n    name    text NOT NULL,\n    country text NOT NULL DEFAULT 'USA',\n    rating  integer CHECK (rating BETWEEN 1 AND 5)\n);\n\nINSERT INTO suppliers (id, name, rating)\nVALUES (2, 'Bolt', 9);\n",
           "diagnostics": [
             {
               "code": "23514"
             }
-          ],
-          "code": "CREATE TABLE suppliers (\n    id      integer PRIMARY KEY,\n    name    text NOT NULL,\n    country text NOT NULL DEFAULT 'USA',\n    rating  integer CHECK (rating BETWEEN 1 AND 5)\n);\n\nINSERT INTO suppliers (id, name, rating)\nVALUES (2, 'Bolt', 9);\n"
+          ]
         },
         "foreign": {
+          "code": "INSERT INTO order_items (order_id, product_id, quantity, unit_price)\nVALUES (1, 999, 1, 5.00);\n",
           "diagnostics": [
             {
               "code": "23503"
             }
-          ],
-          "code": "INSERT INTO order_items (order_id, product_id, quantity, unit_price)\nVALUES (1, 999, 1, 5.00);\n"
+          ]
         }
       },
       "tasks": [
@@ -5086,7 +4896,7 @@
       ],
       "review": {
         "task": "course:sql-foundations/task/tables-coupons",
-        "afterModule": "course:sql-foundations/module/report",
+        "afterModule": "course:sql-foundations/module/checks",
         "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
       },
       "drills": [
@@ -5272,6 +5082,7 @@
       ],
       "examples": {
         "ranks": {
+          "code": "SELECT first_name, department_id, salary,\n       RANK() OVER (ORDER BY salary DESC) AS overall,\n       RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS in_department\nFROM employees\nWHERE department_id IN (3, 4)\nORDER BY department_id, salary DESC;\n",
           "stdout": [
             "Your query returned:",
             " first_name | department_id | salary    | overall | in_department",
@@ -5284,10 +5095,10 @@
             " Laura      | 4             | 92000.00  | 5       | 2",
             " Kofi       | 4             | 88000.00  | 6       | 3",
             "(7 rows)"
-          ],
-          "code": "SELECT first_name, department_id, salary,\n       RANK() OVER (ORDER BY salary DESC) AS overall,\n       RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS in_department\nFROM employees\nWHERE department_id IN (3, 4)\nORDER BY department_id, salary DESC;\n"
+          ]
         },
         "compare": {
+          "code": "SELECT first_name, salary,\n       ROUND(avg(salary) OVER (PARTITION BY department_id)) AS department_avg,\n       salary - ROUND(avg(salary) OVER (PARTITION BY department_id)) AS difference\nFROM employees\nWHERE department_id = 5\nORDER BY salary DESC;\n",
           "stdout": [
             "Your query returned:",
             " first_name | salary   | department_avg | difference",
@@ -5297,17 +5108,16 @@
             " Ingrid     | 57000.00 | 64375          | -7375.00",
             " Carlos     | 56500.00 | 64375          | -7875.00",
             "(4 rows)"
-          ],
-          "code": "SELECT first_name, salary,\n       ROUND(avg(salary) OVER (PARTITION BY department_id)) AS department_avg,\n       salary - ROUND(avg(salary) OVER (PARTITION BY department_id)) AS difference\nFROM employees\nWHERE department_id = 5\nORDER BY salary DESC;\n"
+          ]
         },
         "bad-where": {
+          "code": "SELECT name, RANK() OVER (ORDER BY price DESC) AS position\nFROM products\nWHERE position <= 3;\n",
           "diagnostics": [
             {
               "code": "42703",
               "line": 3
             }
-          ],
-          "code": "SELECT name, RANK() OVER (ORDER BY price DESC) AS position\nFROM products\nWHERE position <= 3;\n"
+          ]
         }
       },
       "tasks": [
@@ -5404,7 +5214,7 @@
       ],
       "review": {
         "task": "course:sql-foundations/task/windows-above-own-average",
-        "afterModule": "course:sql-foundations/module/assemble",
+        "afterModule": "course:sql-foundations/module/checks",
         "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
       },
       "drills": [
@@ -5591,6 +5401,7 @@
       ],
       "examples": {
         "zero": {
+          "code": "SELECT c.first_name, count(o.id) AS orders, count(*) AS joined_rows\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nWHERE c.id >= 16\nGROUP BY c.first_name\nORDER BY c.first_name;\n",
           "stdout": [
             "Your query returned:",
             " first_name | orders | joined_rows",
@@ -5601,10 +5412,10 @@
             " Ruby       | 0      | 1",
             " Sofia      | 6      | 6",
             "(5 rows)"
-          ],
-          "code": "SELECT c.first_name, count(o.id) AS orders, count(*) AS joined_rows\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nWHERE c.id >= 16\nGROUP BY c.first_name\nORDER BY c.first_name;\n"
+          ]
         },
         "fan-out": {
+          "code": "SELECT d.name,\n       count(DISTINCT e.id) AS staff,\n       count(DISTINCT p.id) AS projects,\n       count(*) AS joined_rows\nFROM departments AS d\nLEFT JOIN employees AS e ON e.department_id = d.id\nLEFT JOIN projects AS p ON p.department_id = d.id\nGROUP BY d.name\nORDER BY d.name;\n",
           "stdout": [
             "Your query returned:",
             " name        | staff | projects | joined_rows",
@@ -5616,10 +5427,10 @@
             " Sales       | 4     | 1        | 4",
             " Support     | 4     | 1        | 4",
             "(6 rows)"
-          ],
-          "code": "SELECT d.name,\n       count(DISTINCT e.id) AS staff,\n       count(DISTINCT p.id) AS projects,\n       count(*) AS joined_rows\nFROM departments AS d\nLEFT JOIN employees AS e ON e.department_id = d.id\nLEFT JOIN projects AS p ON p.department_id = d.id\nGROUP BY d.name\nORDER BY d.name;\n"
+          ]
         },
         "doubled": {
+          "code": "SELECT sum(i.quantity * i.unit_price) AS revenue\nFROM order_items AS i\nJOIN orders AS o ON o.id = i.order_id\nWHERE o.status = 'delivered';\n\nSELECT sum(i.quantity * i.unit_price) AS revenue\nFROM order_items AS i\nJOIN orders AS o ON o.id = i.order_id\nJOIN reviews AS r ON r.customer_id = o.customer_id\nWHERE o.status = 'delivered';\n",
           "stdout": [
             "Statement 1 returned:",
             " revenue",
@@ -5631,8 +5442,7 @@
             "-----------",
             " 110169.60",
             "(1 row)"
-          ],
-          "code": "SELECT sum(i.quantity * i.unit_price) AS revenue\nFROM order_items AS i\nJOIN orders AS o ON o.id = i.order_id\nWHERE o.status = 'delivered';\n\nSELECT sum(i.quantity * i.unit_price) AS revenue\nFROM order_items AS i\nJOIN orders AS o ON o.id = i.order_id\nJOIN reviews AS r ON r.customer_id = o.customer_id\nWHERE o.status = 'delivered';\n"
+          ]
         }
       },
       "tasks": [
@@ -5725,8 +5535,8 @@
       ],
       "review": {
         "task": "course:sql-foundations/task/checks-delivered-summary",
-        "afterModule": "course:sql-foundations/module/report",
-        "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+        "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted.",
+        "afterCompletion": true
       },
       "drills": [
         "joins/left-count",
@@ -5734,392 +5544,6 @@
         "aggregates/count-distinct"
       ],
       "drillGap": "These drills practise counting through a join. They do not show a result that is wrong without any error."
-    },
-    {
-      "id": "course:sql-foundations/module/assemble",
-      "title": "Assemble a sales report",
-      "requires": [
-        "cte",
-        "case",
-        "date-function",
-        "left-join",
-        "group",
-        "fan-out",
-        "coalesce",
-        "order"
-      ],
-      "outcomes": [
-        {
-          "id": "trace",
-          "can": "Predict the shape of a report built in steps.",
-          "assessment": [
-            "report-shape"
-          ]
-        },
-        {
-          "id": "month",
-          "can": "Summarize orders and revenue by month.",
-          "assessment": [
-            "course:sql-foundations/task/assemble-monthly-revenue"
-          ]
-        },
-        {
-          "id": "category",
-          "can": "Summarize sales by category, keeping products that never sold.",
-          "assessment": [
-            "course:sql-foundations/task/assemble-category-units"
-          ]
-        },
-        {
-          "id": "tier",
-          "can": "Label every customer by what they have spent.",
-          "assessment": [
-            "course:sql-foundations/task/assemble-customer-tiers"
-          ]
-        }
-      ],
-      "intro": "A report is several small answers joined together. This module assembles a sales report from the pieces of the earlier modules: totals worked out in steps, joins that keep rows with nothing sold, labels made with CASE, and counts that are safe from fan-out.",
-      "steps": [
-        {
-          "kind": "explanation",
-          "title": "Build a report from steps",
-          "text": "Start a report by naming its rows: one row per month, per category, per customer. That decides the GROUP BY of the last step. Then work backwards. Each number the report needs becomes a small step that produces one row per thing, with one total. Join the steps at the end. Totals from different tables go in different steps, so that joining them cannot multiply rows. Use a LEFT JOIN from the list of things the report must show, so a row with nothing to total still appears, and COALESCE its total to 0.",
-          "example": "trace"
-        },
-        {
-          "kind": "prediction",
-          "title": "Predict the result",
-          "text": "The step totals each customer's orders. The main query starts from customers with an id of 16 or more. Predict how many rows come back.",
-          "example": "trace",
-          "questions": [
-            "report-shape"
-          ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Trace the result",
-          "text": "Five customers have an id of 16 or more, and the LEFT JOIN keeps all five. Two of them have orders and show a count. The other three have no row in the step, so the join leaves NULL, and COALESCE turns it into 0. The report's rows come from customers, not from orders, which is why nobody is missing.",
-          "example": "trace"
-        },
-        {
-          "kind": "independent",
-          "title": "Report revenue by month",
-          "text": "Work from the contract in the prompt. Save to check.",
-          "task": "course:sql-foundations/task/assemble-monthly-revenue"
-        },
-        {
-          "kind": "independent",
-          "title": "Report units by category",
-          "text": "Work from the contract in the prompt. Save to check.",
-          "task": "course:sql-foundations/task/assemble-category-units"
-        },
-        {
-          "kind": "independent",
-          "title": "Project 4 · Report the top customers",
-          "text": "A tracker project checkpoint. Later checkpoints build on the same task data.",
-          "tasks": [
-            "course:sql-foundations/task/project-top-customers"
-          ]
-        }
-      ],
-      "questions": [
-        {
-          "id": "report-shape",
-          "example": "trace",
-          "prompt": "How many rows come back?",
-          "answer": 2,
-          "choices": [
-            {
-              "text": "2",
-              "feedback": "The LEFT JOIN keeps the customers who have no row in the step."
-            },
-            {
-              "text": "60",
-              "feedback": "The step has one row per customer, and the main query starts from five customers."
-            },
-            {
-              "text": "5",
-              "feedback": "One row for each of the five customers, with 0 for the three who never ordered."
-            }
-          ]
-        }
-      ],
-      "examples": {
-        "trace": {
-          "stdout": [
-            "Your query returned:",
-            " first_name | orders",
-            "------------+--------",
-            " Felix      | 0",
-            " Jack       | 4",
-            " Mason      | 0",
-            " Ruby       | 0",
-            " Sofia      | 6",
-            "(5 rows)"
-          ],
-          "code": "WITH order_counts AS (\n    SELECT customer_id, count(*) AS orders\n    FROM orders\n    GROUP BY customer_id\n)\nSELECT c.first_name, COALESCE(oc.orders, 0) AS orders\nFROM customers AS c\nLEFT JOIN order_counts AS oc ON oc.customer_id = c.id\nWHERE c.id >= 16\nORDER BY c.first_name;\n"
-        }
-      },
-      "tasks": [
-        {
-          "id": "course:sql-foundations/task/assemble-monthly-revenue",
-          "role": "independent",
-          "title": "Report revenue by month",
-          "concepts": [
-            "project",
-            "date-function",
-            "group",
-            "fan-out",
-            "join"
-          ],
-          "prompt": "Leave out cancelled orders. For each month in which orders were placed, return month (the month number of ordered_at, 1 to 12), orders (how many orders were placed) and revenue (the total of quantity * unit_price over their items). Sort by month.",
-          "hints": [
-            "After joining orders to their items, a row is one item. What does that do to a count of orders?",
-            "Group by the month number. Count each order once, and add up every item.",
-            "EXTRACT(MONTH FROM o.ordered_at) AS month, count(DISTINCT o.id) AS orders, sum(i.quantity * i.unit_price) AS revenue"
-          ],
-          "starter": "-- Write your SQL here. Save to check.\n",
-          "solution": "SELECT EXTRACT(MONTH FROM o.ordered_at) AS month,\n       count(DISTINCT o.id) AS orders,\n       sum(i.quantity * i.unit_price) AS revenue\nFROM orders AS o\nJOIN order_items AS i ON i.order_id = o.id\nWHERE o.status <> 'cancelled'\nGROUP BY EXTRACT(MONTH FROM o.ordered_at)\nORDER BY month;\n",
-          "mode": "query",
-          "rules": [],
-          "ordered": true,
-          "fixtures": [
-            {
-              "id": "practice",
-              "declarations": "\n"
-            }
-          ],
-          "feedback": "Test one month with a plain query: count the orders placed in it that are not cancelled, using the orders table alone."
-        },
-        {
-          "id": "course:sql-foundations/task/assemble-category-units",
-          "role": "independent",
-          "title": "Report units by category",
-          "concepts": [
-            "project",
-            "left-join",
-            "group",
-            "fan-out",
-            "coalesce"
-          ],
-          "prompt": "For every category that has at least one product, return category (its name), products (how many products it has) and units (the total quantity of those products across all order items). A product that never sold still counts as a product and adds 0 units. Put the most units first, and sort categories with the same units by category.",
-          "hints": [
-            "Some products have no order items. Which join keeps them?",
-            "After joining products to their items, a product appears once per item. Count each product once.",
-            "JOIN products, then LEFT JOIN order_items. count(DISTINCT p.id) AS products, COALESCE(sum(i.quantity), 0) AS units"
-          ],
-          "starter": "-- Write your SQL here. Save to check.\n",
-          "solution": "SELECT c.name AS category,\n       count(DISTINCT p.id) AS products,\n       COALESCE(sum(i.quantity), 0) AS units\nFROM categories AS c\nJOIN products AS p ON p.category_id = c.id\nLEFT JOIN order_items AS i ON i.product_id = p.id\nGROUP BY c.name\nORDER BY units DESC, c.name;\n",
-          "mode": "query",
-          "rules": [],
-          "ordered": true,
-          "fixtures": [
-            {
-              "id": "practice",
-              "declarations": "\n"
-            }
-          ],
-          "feedback": "Test one category with a plain query on products alone: how many products does it have?"
-        },
-        {
-          "id": "course:sql-foundations/task/assemble-customer-tiers",
-          "role": "review",
-          "title": "Label customers by spending",
-          "concepts": [
-            "project",
-            "cte",
-            "case",
-            "left-join",
-            "coalesce"
-          ],
-          "prompt": "For every customer, return first_name, spent and tier. spent is the total of quantity * unit_price over the items of the customer's orders, leaving out cancelled orders, and 0 for a customer with no such orders. tier is gold when spent is 5000 or more, silver when it is 1000 or more, and bronze otherwise. Put the highest spent first, and sort customers with the same spent by first_name.",
-          "hints": [
-            "The report has one row per customer. Which table must the main query start from?",
-            "Work out spent per customer_id in a step. LEFT JOIN it to customers and turn a missing total into 0.",
-            "CASE WHEN spent >= 5000 THEN 'gold' WHEN spent >= 1000 THEN 'silver' ELSE 'bronze' END, with the larger limit tested first"
-          ],
-          "starter": "-- Write your SQL here. Save to check.\n",
-          "solution": "WITH spending AS (\n    SELECT o.customer_id, sum(i.quantity * i.unit_price) AS spent\n    FROM orders AS o\n    JOIN order_items AS i ON i.order_id = o.id\n    WHERE o.status <> 'cancelled'\n    GROUP BY o.customer_id\n),\ntotals AS (\n    SELECT c.first_name, COALESCE(s.spent, 0) AS spent\n    FROM customers AS c\n    LEFT JOIN spending AS s ON s.customer_id = c.id\n)\nSELECT first_name, spent,\n       CASE WHEN spent >= 5000 THEN 'gold'\n            WHEN spent >= 1000 THEN 'silver'\n            ELSE 'bronze'\n       END AS tier\nFROM totals\nORDER BY spent DESC, first_name;\n",
-          "mode": "query",
-          "rules": [],
-          "ordered": true,
-          "fixtures": [
-            {
-              "id": "practice",
-              "declarations": "\n"
-            }
-          ],
-          "feedback": "Check three customers: the biggest spender, one who has never ordered, and one whose only orders were cancelled."
-        },
-        {
-          "id": "course:sql-foundations/task/project-top-customers",
-          "role": "project",
-          "title": "Project 4 · Report the top customers",
-          "concepts": [
-            "project",
-            "cte",
-            "join",
-            "group",
-            "fan-out"
-          ],
-          "prompt": "Leave out cancelled orders. For the five customers who have spent the most, return first_name, orders (how many orders they placed) and spent (the total of quantity * unit_price over the items of those orders). Put the highest spent first.",
-          "hints": [
-            "After joining orders to their items, a row is one item. How do you count orders?",
-            "Total each order first, or count each order once. Then group by customer.",
-            "count(DISTINCT o.id) AS orders, sum(i.quantity * i.unit_price) AS spent ... ORDER BY spent DESC LIMIT 5"
-          ],
-          "starter": "-- Write your SQL here. Save to check.\n",
-          "solution": "SELECT c.first_name,\n       count(DISTINCT o.id) AS orders,\n       sum(i.quantity * i.unit_price) AS spent\nFROM customers AS c\nJOIN orders AS o ON o.customer_id = c.id\nJOIN order_items AS i ON i.order_id = o.id\nWHERE o.status <> 'cancelled'\nGROUP BY c.id, c.first_name\nORDER BY spent DESC\nLIMIT 5;\n",
-          "mode": "query",
-          "rules": [],
-          "ordered": true,
-          "fixtures": [
-            {
-              "id": "practice",
-              "declarations": "\n"
-            }
-          ],
-          "feedback": "Test the top customer with a plain query on orders alone: how many of their orders are not cancelled?"
-        }
-      ],
-      "review": {
-        "task": "course:sql-foundations/task/assemble-customer-tiers",
-        "afterModule": "course:sql-foundations/module/report",
-        "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
-      },
-      "drills": [
-        "ctes/two-ctes",
-        "case/group-by-case",
-        "dates/orders-per-month",
-        "joins/left-count"
-      ],
-      "drillGap": "These drills practise single features. They do not combine steps, labels and safe counts in one report."
-    },
-    {
-      "id": "course:sql-foundations/module/report",
-      "title": "Deliver an unfamiliar report",
-      "requires": [
-        "project"
-      ],
-      "outcomes": [
-        {
-          "id": "trace",
-          "can": "Predict what a join does to a total.",
-          "assessment": [
-            "predict-repeat"
-          ]
-        },
-        {
-          "id": "deliver",
-          "can": "Deliver a complete report from an unfamiliar request without help.",
-          "assessment": [
-            "course:sql-foundations/task/report-review-report"
-          ]
-        }
-      ],
-      "intro": "This last module is an assessment. The request is new and uses a table the lessons have not reported on. It needs ideas from the whole course: joins, grouping, a filter on groups, labels, and counts that are safe from fan-out. Reading a finished solution can explain an approach, but it does not show that you can solve the task yourself. Use the contract in the prompt to decide when your work is complete.",
-      "steps": [
-        {
-          "kind": "explanation",
-          "title": "Read the request before writing",
-          "text": "Name the rows of the report first. Then list its numbers and note which table each comes from. Two numbers that come from two different tables, each with many rows per product, cannot be added up in one joined query, because each table's rows would repeat the other's. Give each its own step. Before you trust the result, test one row by hand with a plain query on a single table."
-        },
-        {
-          "kind": "prediction",
-          "title": "Predict the result",
-          "text": "Product 6 has 2 reviews and 11 order items. The query joins both tables to the product. Predict joined_rows.",
-          "example": "trace",
-          "questions": [
-            "predict-repeat"
-          ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Trace the result",
-          "text": "Each of the 2 reviews is paired with each of the 11 items, so the join has 22 rows. A count of reviews over those rows would say 22, and a sum of quantities would be doubled. The two DISTINCT counts recover the true numbers for counting, but a sum has no such repair, so the units must be added up before the reviews are joined.",
-          "example": "trace"
-        },
-        {
-          "kind": "independent",
-          "title": "Report on reviewed products",
-          "text": "Work from the contract in the prompt. There are no steps to follow. Save to check the complete submission. Any correct query is accepted.",
-          "task": "course:sql-foundations/task/report-review-report"
-        }
-      ],
-      "questions": [
-        {
-          "id": "predict-repeat",
-          "example": "trace",
-          "prompt": "What is joined_rows?",
-          "answer": 1,
-          "choices": [
-            {
-              "text": "13",
-              "feedback": "The join pairs every review with every item. The two numbers multiply."
-            },
-            {
-              "text": "22",
-              "feedback": "2 reviews times 11 order items gives 22 joined rows."
-            },
-            {
-              "text": "11",
-              "feedback": "Each of the 11 items appears once for each of the 2 reviews."
-            }
-          ]
-        }
-      ],
-      "examples": {
-        "trace": {
-          "stdout": [
-            "Your query returned:",
-            " reviews | item_rows | joined_rows",
-            "---------+-----------+-------------",
-            " 2       | 11        | 22",
-            "(1 row)"
-          ],
-          "code": "SELECT count(DISTINCT r.id) AS reviews,\n       count(DISTINCT i.order_id) AS item_rows,\n       count(*) AS joined_rows\nFROM products AS p\nJOIN reviews AS r ON r.product_id = p.id\nJOIN order_items AS i ON i.product_id = p.id\nWHERE p.id = 6;\n"
-        }
-      },
-      "tasks": [
-        {
-          "id": "course:sql-foundations/task/report-review-report",
-          "role": "independent",
-          "title": "Report on reviewed products",
-          "concepts": [
-            "transfer",
-            "project"
-          ],
-          "prompt": "For every product that has at least 2 reviews, return five columns. name is the product's name. reviews is how many reviews it has. avg_rating is its average rating, rounded to 2 decimal places. units_sold is the total quantity of the product across all order items, or 0 if it was never ordered. verdict is loved when avg_rating is 4.5 or more, mixed when it is 3 or more, and poor otherwise. Put the highest avg_rating first, and sort products with the same avg_rating by name.",
-          "hints": [
-            "Reviews and order items are two separate tables with many rows per product. What happens if both are joined to products at once?",
-            "Work out the review numbers in one step and the units in another, each with one row per product_id. Then join them to products.",
-            "Keep products with no items by using a LEFT JOIN to the units step and COALESCE. Test the larger limit of the verdict first."
-          ],
-          "starter": "-- Write your SQL here. Save to check.\n",
-          "solution": "WITH review_stats AS (\n    SELECT product_id, count(*) AS reviews, ROUND(avg(rating), 2) AS avg_rating\n    FROM reviews\n    GROUP BY product_id\n    HAVING count(*) >= 2\n),\nsales AS (\n    SELECT product_id, sum(quantity) AS units_sold\n    FROM order_items\n    GROUP BY product_id\n)\nSELECT p.name, r.reviews, r.avg_rating,\n       COALESCE(s.units_sold, 0) AS units_sold,\n       CASE WHEN r.avg_rating >= 4.5 THEN 'loved'\n            WHEN r.avg_rating >= 3 THEN 'mixed'\n            ELSE 'poor'\n       END AS verdict\nFROM review_stats AS r\nJOIN products AS p ON p.id = r.product_id\nLEFT JOIN sales AS s ON s.product_id = p.id\nORDER BY r.avg_rating DESC, p.name;\n",
-          "mode": "query",
-          "rules": [],
-          "ordered": true,
-          "fixtures": [
-            {
-              "id": "practice",
-              "declarations": "\n"
-            },
-            {
-              "id": "unsold",
-              "declarations": "-- This case adds two reviews for a product that has never been ordered.\nINSERT INTO reviews (id, product_id, customer_id, rating, body, reviewed_on)\nVALUES (101, 15, 3, 5, 'Simple and sturdy.', '2025-06-01'),\n       (102, 15, 5, 4, NULL, '2025-06-09');\n"
-            }
-          ],
-          "feedback": "Take the first row the failure names and test each of its numbers with a plain query on one table."
-        }
-      ],
-      "review": {
-        "task": "course:sql-foundations/task/report-review-report",
-        "afterCompletion": true,
-        "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
-      },
-      "drills": [],
-      "drillGap": "No practice drill covers a combined report. This assessment is the evidence for the module."
     }
   ]
 }
