@@ -75,7 +75,7 @@ Readiness checks stay, renamed "Skip-ahead test", as one link at the bottom of t
 
 ### Phase A: Interface, with today's content
 
-- [ ] A0 Add `scripts/shoot-courses.mjs`: build course fixtures (as `tests/check-courses.mjs` does), open each in an isolated Herdr window (`HERDR_APP_HOME`), save PNGs to a folder, clean up the space and window.
+- [x] A0 Add `scripts/shoot-courses.mjs`: build course fixtures (as `tests/check-courses.mjs` does), open each in an isolated Herdr window (`HERDR_APP_HOME`), save PNGs to a folder, clean up the space and window.
 - [ ] A1 Catalog: cards with title, summary, progress, one Start/Continue button, Preview label. Remove the known-languages form and the "I know another language" button from the catalog.
 - [ ] A2 Course settings page: known languages, repo attach/detach, Explain repo architecture, older versions. Header Settings button on catalog and course page.
 - [ ] A3 Course page: Up next box with one Continue button (uses `enrollment.position`, else `recommendation`, else module 1), numbered module rows with status marks, Review line only when ready > 0, skip-ahead link at the bottom. Remove the project section and per-row Skip buttons from this page.
