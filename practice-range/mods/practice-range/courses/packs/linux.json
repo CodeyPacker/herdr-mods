@@ -474,7 +474,7 @@
         {
           "kind": "explanation",
           "title": "Copying and moving",
-          "text": "`cp` copies. `mv` moves, and it is also how a file is renamed.\n\n\nBoth overwrite an existing destination without asking. Copying `a.txt` onto `b.txt` replaces `b.txt`, and its old contents are gone. Add `-i` to be asked first, or `-n` to never overwrite.\n\nA trailing slash on a destination, as in `reports/`, makes your meaning clear: this is a directory to put things in. Without it, if `reports` does not exist, `mv ideas.txt reports` renames the file to `reports`.",
+          "text": "`cp` copies. `mv` moves, and it is also how a file is renamed.\n\n\nBoth overwrite an existing destination without asking. Copying `a.txt` onto `b.txt` replaces `b.txt`, and its old contents are gone. Add `-i` to be asked first, or `-n` to never overwrite. On recent systems `cp -n` still works and prints a warning that suggests the newer spelling, `--update=none`.\n\nA trailing slash on a destination, as in `reports/`, makes your meaning clear: this is a directory to put things in. Without it, if `reports` does not exist, `mv ideas.txt reports` renames the file to `reports`.",
           "example": "copy-move"
         },
         {
@@ -511,7 +511,7 @@
         {
           "kind": "walkthrough",
           "title": "One possible answer",
-          "text": "**Notes**\n\n- In task 1, `&&` means nothing is moved if the directory could not be made. The trailing slash on `images/` means that, if the directory were missing, `mv` would fail and not rename a file to `images`.\n- In task 2, the names contain spaces, so they are quoted. The pattern `draft*.txt` also works, since the shell passes each matched name as one argument, spaces included.\n- In task 4, plain `rm -r` is enough. Adding `-f` gains nothing here and removes the warnings that could save you.\n\n**Task 5.** `rm *` does not remove `.env`, since `*` does not match hidden files. And `img?.png` matches `img1.png` and `img2.png` only. The `?` stands for exactly one character, and `img10.png` has two there. Use `img*.png`.",
+          "text": "**Notes**\n\n- In task 1, `&&` means nothing is moved if the directory could not be made. The trailing slash on `images/` means that, if the directory were missing, `mv` would fail and not rename a file to `images`.\n- In task 2, the names contain spaces, so they are quoted. The pattern `draft*.txt` also works, since the shell passes each matched name as one argument, spaces included.\n- In task 3, a recent system prints a warning for `cp -n` and still does the right thing. `cp --update=none` is the newer spelling, and older systems do not have it.\n- In task 4, plain `rm -r` is enough. Adding `-f` gains nothing here and removes the warnings that could save you.\n\n**Task 5.** `rm *` does not remove `.env`, since `*` does not match hidden files. And `img?.png` matches `img1.png` and `img2.png` only. The `?` stands for exactly one character, and `img10.png` has two there. Use `img*.png`.",
           "example": "tidy-answer"
         }
       ],
@@ -1400,7 +1400,7 @@
         {
           "kind": "explanation",
           "title": "Seeing what is running",
-          "text": "`ps` lists processes. On its own it shows only those of your current terminal. Two forms show everything.\n\n\n\nRead `USER` to see whose rights the process has, `%CPU` and `%MEM` for what it is using, and `RSS` for the memory it actually holds, in kilobytes.",
+          "text": "`ps` lists processes. On its own it shows only those of your current terminal. Two forms show everything.\n\n\n\nRead `USER` to see whose rights the process has, `%CPU` and `%MEM` for what it is using, and `RSS` for the memory it actually holds, in kilobytes. `TTY` is the terminal the process is attached to. A `?` there means none, which is normal for a service.",
           "examples": [
             "ps",
             "ps-output"
@@ -1533,7 +1533,7 @@
           "readOnly": true
         },
         "ps-output": {
-          "code": "USER       PID %CPU %MEM    VSZ   RSS STAT START   TIME COMMAND\nroot         1  0.0  0.1 168140 11200 Ss   Mar01   0:09 /sbin/init\nwww-data   904  1.2  0.8 142300 66100 S    09:14   0:41 nginx: worker\npostgres  1120  0.3  3.1 412800 251000 Ss  Mar01   2:10 postgres\nana       4502  0.0  0.0   8100   900 S+   14:02   0:00 tail -f app.log",
+          "code": "USER      PID %CPU %MEM    VSZ    RSS TTY   STAT START  TIME COMMAND\nroot        1  0.0  0.1 168140  11200 ?     Ss   Mar01  0:09 /sbin/init\nwww-data  904  1.2  0.8 142300  66100 ?     S    09:14  0:41 nginx: worker\npostgres 1120  0.3  3.1 412800 251000 ?     Ss   Mar01  2:10 postgres\nana      4502  0.0  0.0   8100    900 pts/0 S+   14:02  0:00 tail -f app.log",
           "fence": "text",
           "readOnly": true
         },
@@ -2162,7 +2162,7 @@
         {
           "kind": "explanation",
           "title": "Unit files",
-          "text": "systemd describes each thing it manages in a **unit file**. A service's unit file says what to run and how.\n\n\n| Line | Meaning |\n| --- | --- |\n| `After=` | Start this after the named unit |\n| `User=` | Run as this user, not as root |\n| `EnvironmentFile=` | Read environment variables from this file |\n| `ExecStart=` | The command to run. It must use a full path |\n| `Restart=on-failure` | Start it again if it exits with an error |\n| `WantedBy=multi-user.target` | What `enable` attaches it to: normal boot |\n\nUnit files supplied by packages live in `/lib/systemd/system`. Your own, and your changes, go in `/etc/systemd/system`, which takes priority. After changing any unit file, tell systemd to read them again.\n\n\n`systemctl edit` creates a small override file and leaves the packaged file alone, so that a package update does not undo your change.",
+          "text": "systemd describes each thing it manages in a **unit file**. A service's unit file says what to run and how.\n\n\n| Line | Meaning |\n| --- | --- |\n| `After=` | Start this after the named unit |\n| `User=` | Run as this user, not as root |\n| `EnvironmentFile=` | Read environment variables from this file |\n| `ExecStart=` | The command to run. Give the program's full path |\n| `Restart=on-failure` | Start it again if it exits with an error |\n| `WantedBy=multi-user.target` | What `enable` attaches it to: normal boot |\n\nUnit files supplied by packages live in `/lib/systemd/system`. Your own, and your changes, go in `/etc/systemd/system`, which takes priority. After changing any unit file, tell systemd to read them again.\n\n\n`systemctl edit` creates a small override file and leaves the packaged file alone, so that a package update does not undo your change.",
           "examples": [
             "unit",
             "daemon-reload"
@@ -2226,7 +2226,7 @@
         {
           "kind": "walkthrough",
           "title": "One possible answer",
-          "text": "**Problems**\n\n1. **`ExecStart` has no full path.** systemd does not search your `PATH`. This is the `203/EXEC` error.\n2. **A relative path to the configuration,** with no working directory set. A service starts in `/`, so `config.yaml` is not found.\n3. **No user.** It runs as root, so a flaw in the API is a flaw with full control of the machine.\n4. **Port 80 needs a privilege.** Ports below 1024 cannot be opened by an ordinary user. Listen on a high port behind a proxy, or grant only that one capability.\n5. **No restart policy.** A crash leaves it down.\n6. **No ordering.** It may start before the network is ready.\n\n**Corrected**\n\n\n**Put it into effect**\n\n\n`AmbientCapabilities` lets the unprivileged user open port 80 and nothing else. `daemon-reload` is needed because the unit file changed. `enable --now` starts the service and makes it survive a reboot. The last two commands check the result, which is the step most often skipped.",
+          "text": "**Problems**\n\n1. **`ExecStart` has no full path.** systemd does not use your shell's `PATH`, and the program is not in the few system directories it does search. This is the `203/EXEC` error.\n2. **A relative path to the configuration,** with no working directory set. A service starts in `/`, so `config.yaml` is not found.\n3. **No user.** It runs as root, so a flaw in the API is a flaw with full control of the machine.\n4. **Port 80 needs a privilege.** Ports below 1024 cannot be opened by an ordinary user. Listen on a high port behind a proxy, or grant only that one capability.\n5. **No restart policy.** A crash leaves it down.\n6. **No ordering.** It may start before the network is ready.\n\n**Corrected**\n\n\n**Put it into effect**\n\n\n`AmbientCapabilities` lets the unprivileged user open port 80 and nothing else. `daemon-reload` is needed because the unit file changed. `enable --now` starts the service and makes it survive a reboot. The last two commands check the result, which is the step most often skipped.",
           "examples": [
             "good-unit",
             "unit-commands"
@@ -2347,7 +2347,7 @@
         {
           "kind": "explanation",
           "title": "What is listening",
-          "text": "A service that should accept connections has to be listening on a port. `ss` shows which ports are open and which process holds each.\n\n\n\nThe address in front of the port decides who can connect. `127.0.0.1:5432` accepts connections from this machine only. `0.0.0.0:80` accepts them on every interface. `[::]` is the same for IPv6.\n\nThe options are worth knowing: `-l` listening, `-t` TCP, `-u` UDP, `-n` numbers and not names, `-p` the process. `sudo` is needed to see processes that belong to other users. Older guides use `netstat` with similar options.",
+          "text": "A service that should accept connections has to be listening on a port. `ss` shows which ports are open and which process holds each.\n\n\n\nRead the `Local Address:Port` column and the process at the end. On a real terminal each entry is one long line. It is wrapped here to fit.\n\nThe address in front of the port decides who can connect. `127.0.0.1:5432` accepts connections from this machine only. `0.0.0.0:80` accepts them on every interface. `[::]` is the same for IPv6.\n\nThe options are worth knowing: `-l` listening, `-t` TCP, `-u` UDP, `-n` numbers and not names, `-p` the process. `sudo` is needed to see processes that belong to other users. Older guides use `netstat` with similar options.",
           "examples": [
             "ss",
             "ss-output"
@@ -2362,7 +2362,7 @@
         {
           "kind": "explanation",
           "title": "Can I reach it",
-          "text": "Test reachability in steps, each a little higher than the one before.\n\n\n`ping` sends a small test packet and reports whether a reply came, and how long it took. `-c 4` sends four and stops. On Linux, without it, `ping` runs until you press Ctrl+C.\n\nA failed `ping` proves little, since many networks block those packets while allowing real traffic. A successful TCP connection with `nc -vz` proves much more: the path works and something is listening.\n\n`nc` gives three different results, and each has a meaning.\n\n| Result | Meaning |\n| --- | --- |\n| `succeeded` or `open` | The path and the port are fine |\n| `Connection refused`, at once | The machine answered, and nothing listens on that port |\n| No answer, then a timeout | A firewall dropped it, or the address is unreachable |",
+          "text": "Test reachability in steps, each a little higher than the one before.\n\n\n`ping` sends a small test packet and reports whether a reply came, and how long it took. `-c 4` sends four and stops. On Linux, without it, `ping` runs until you press Ctrl+C.\n\nThe `-w 3` makes `nc` give up after 3 seconds. Without it, a blocked connection can hang for minutes.\n\nA failed `ping` proves little, since many networks block those packets while allowing real traffic. A successful TCP connection with `nc -vz` proves much more: the path works and something is listening.\n\n`nc` gives three different results, and each has a meaning.\n\n| Result | Meaning |\n| --- | --- |\n| `succeeded` or `open` | The path and the port are fine |\n| `Connection refused`, at once | The machine answered, and nothing listens on that port |\n| `timed out`, after a wait | A firewall dropped it, or the address is unreachable |",
           "example": "reach"
         },
         {
@@ -2480,7 +2480,7 @@
           "readOnly": true
         },
         "ss-output": {
-          "code": "State   Local Address:Port    Process\nLISTEN  0.0.0.0:22            users:((\"sshd\",pid=812))\nLISTEN  127.0.0.1:5432        users:((\"postgres\",pid=1120))\nLISTEN  0.0.0.0:80            users:((\"nginx\",pid=903))\nLISTEN  [::]:80               users:((\"nginx\",pid=903))",
+          "code": "State  Recv-Q Send-Q Local Address:Port Peer Address:Port Process\nLISTEN 0      128          0.0.0.0:22        0.0.0.0:*\n       users:((\"sshd\",pid=812,fd=3))\nLISTEN 0      244        127.0.0.1:5432      0.0.0.0:*\n       users:((\"postgres\",pid=1120,fd=6))\nLISTEN 0      511          0.0.0.0:80        0.0.0.0:*\n       users:((\"nginx\",pid=903,fd=5))\nLISTEN 0      511             [::]:80           [::]:*\n       users:((\"nginx\",pid=903,fd=6))",
           "fence": "text",
           "readOnly": true
         },
@@ -2490,7 +2490,7 @@
           "readOnly": true
         },
         "reach": {
-          "code": "ping -c 4 10.0.1.1                  # does the gateway answer\nping -c 4 api.example.com           # does a name resolve and answer\nnc -vz 10.0.2.8 5432                # does a TCP port accept a connection\ntraceroute api.example.com          # which hops are on the path",
+          "code": "ping -c 4 10.0.1.1                  # does the gateway answer\nping -c 4 api.example.com           # does a name resolve and answer\nnc -vz -w 3 10.0.2.8 5432           # does a TCP port accept a connection\ntraceroute api.example.com          # which hops are on the path",
           "fence": "bash",
           "readOnly": true
         },
@@ -2803,7 +2803,7 @@
         {
           "kind": "explanation",
           "title": "Memory",
-          "text": "`free` shows how memory is used.\n\n\nThe column to read is **available**, not **free**. Linux uses memory that programs do not need to keep recently read files in memory, shown as `buff/cache`. That makes disk access much faster, and the memory is handed back the moment a program asks for it.\n\nSo a low \"free\" figure is normal and healthy. Here only 310 MB is free, and 5.4 GB is available. This machine has plenty of memory. A machine is short of memory when \"available\" is low.\n\n**Swap** is disk space used as overflow when memory runs out. Disk is thousands of times slower than memory, so a machine that is actively swapping becomes very slow. Some swap in use is harmless. Swap that keeps growing is a sign of too little memory.",
+          "text": "`free` shows how memory is used.\n\n\nThe real output is a little wider than shown here. The column to read is **available**, not **free**. Linux uses memory that programs do not need to keep recently read files in memory, shown as `buff/cache`. That makes disk access much faster, and the memory is handed back the moment a program asks for it.\n\nSo a low \"free\" figure is normal and healthy. Here only 310 MB is free, and 5.4 GB is available. This machine has plenty of memory. A machine is short of memory when \"available\" is low.\n\n**Swap** is disk space used as overflow when memory runs out. Disk is thousands of times slower than memory, so a machine that is actively swapping becomes very slow. Some swap in use is harmless. Swap that keeps growing is a sign of too little memory.",
           "example": "free"
         },
         {
@@ -2940,7 +2940,7 @@
           "readOnly": true
         },
         "top-cpu": {
-          "code": "%Cpu(s): 12.0 us,  3.0 sy,  0.0 ni, 20.0 id, 64.0 wa,  0.0 hi,  1.0 si\n\n   us   user programs\n   sy   the kernel\n   id   idle\n   wa   waiting for disk or network storage",
+          "code": "%Cpu(s): 12.0 us, 3.0 sy, 0.0 ni, 20.0 id, 64.0 wa, 0.0 hi, 1.0 si, 0.0 st\n\n   us   user programs\n   sy   the kernel\n   id   idle\n   wa   waiting for disk or network storage",
           "fence": "text",
           "readOnly": true
         },
@@ -3085,7 +3085,7 @@
           "readOnly": true
         },
         "case2": {
-          "code": "laptop$ ssh -v dana@app02\ndebug1: Offering public key: /home/dana/.ssh/id_ed25519\ndebug1: Authentications that can continue: publickey\ndana@app02: Permission denied (publickey).\n\napp02$ sudo journalctl -u ssh -n 2\nAuthentication refused: bad ownership or modes for directory /home/dana\n\napp02$ ls -ld /home/dana /home/dana/.ssh /home/dana/.ssh/authorized_keys\ndrwxrwxrwx  dana dana  /home/dana\ndrwx------  dana dana  /home/dana/.ssh\n-rw-------  dana dana  /home/dana/.ssh/authorized_keys",
+          "code": "laptop$ ssh -v dana@app02\ndebug1: Offering public key: /home/dana/.ssh/id_ed25519 ED25519 SHA256:...\ndebug1: Authentications that can continue: publickey\ndana@app02: Permission denied (publickey).\n\napp02$ sudo journalctl -u ssh -n 2\nAuthentication refused: bad ownership or modes for directory /home/dana\n\napp02$ ls -ld /home/dana /home/dana/.ssh /home/dana/.ssh/authorized_keys\ndrwxrwxrwx  dana dana  /home/dana\ndrwx------  dana dana  /home/dana/.ssh\n-rw-------  dana dana  /home/dana/.ssh/authorized_keys",
           "fence": "text",
           "readOnly": true
         },

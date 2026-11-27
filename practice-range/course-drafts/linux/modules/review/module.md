@@ -100,7 +100,7 @@ A developer reports that they cannot SSH to `app02` since this morning. Others c
 
 ```text example case2 readonly
 laptop$ ssh -v dana@app02
-debug1: Offering public key: /home/dana/.ssh/id_ed25519
+debug1: Offering public key: /home/dana/.ssh/id_ed25519 ED25519 SHA256:...
 debug1: Authentications that can continue: publickey
 dana@app02: Permission denied (publickey).
 

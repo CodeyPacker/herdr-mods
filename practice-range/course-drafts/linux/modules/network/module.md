@@ -46,12 +46,18 @@ ss -tn                  # established TCP connections
 ```
 
 ```text example ss-output readonly
-State   Local Address:Port    Process
-LISTEN  0.0.0.0:22            users:(("sshd",pid=812))
-LISTEN  127.0.0.1:5432        users:(("postgres",pid=1120))
-LISTEN  0.0.0.0:80            users:(("nginx",pid=903))
-LISTEN  [::]:80               users:(("nginx",pid=903))
+State  Recv-Q Send-Q Local Address:Port Peer Address:Port Process
+LISTEN 0      128          0.0.0.0:22        0.0.0.0:*
+       users:(("sshd",pid=812,fd=3))
+LISTEN 0      244        127.0.0.1:5432      0.0.0.0:*
+       users:(("postgres",pid=1120,fd=6))
+LISTEN 0      511          0.0.0.0:80        0.0.0.0:*
+       users:(("nginx",pid=903,fd=5))
+LISTEN 0      511             [::]:80           [::]:*
+       users:(("nginx",pid=903,fd=6))
 ```
+
+Read the `Local Address:Port` column and the process at the end. On a real terminal each entry is one long line. It is wrapped here to fit.
 
 The address in front of the port decides who can connect. `127.0.0.1:5432` accepts connections from this machine only. `0.0.0.0:80` accepts them on every interface. `[::]` is the same for IPv6.
 
@@ -78,11 +84,13 @@ Test reachability in steps, each a little higher than the one before.
 ```bash example reach readonly
 ping -c 4 10.0.1.1                  # does the gateway answer
 ping -c 4 api.example.com           # does a name resolve and answer
-nc -vz 10.0.2.8 5432                # does a TCP port accept a connection
+nc -vz -w 3 10.0.2.8 5432           # does a TCP port accept a connection
 traceroute api.example.com          # which hops are on the path
 ```
 
 `ping` sends a small test packet and reports whether a reply came, and how long it took. `-c 4` sends four and stops. On Linux, without it, `ping` runs until you press Ctrl+C.
+
+The `-w 3` makes `nc` give up after 3 seconds. Without it, a blocked connection can hang for minutes.
 
 A failed `ping` proves little, since many networks block those packets while allowing real traffic. A successful TCP connection with `nc -vz` proves much more: the path works and something is listening.
 
@@ -92,7 +100,7 @@ A failed `ping` proves little, since many networks block those packets while all
 | --- | --- |
 | `succeeded` or `open` | The path and the port are fine |
 | `Connection refused`, at once | The machine answered, and nothing listens on that port |
-| No answer, then a timeout | A firewall dropped it, or the address is unreachable |
+| `timed out`, after a wait | A firewall dropped it, or the address is unreachable |
 
 ## HTTP with curl
 

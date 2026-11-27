@@ -97,7 +97,7 @@ WantedBy=multi-user.target
 | `After=` | Start this after the named unit |
 | `User=` | Run as this user, not as root |
 | `EnvironmentFile=` | Read environment variables from this file |
-| `ExecStart=` | The command to run. It must use a full path |
+| `ExecStart=` | The command to run. Give the program's full path |
 | `Restart=on-failure` | Start it again if it exits with an error |
 | `WantedBy=multi-user.target` | What `enable` attaches it to: normal boot |
 
@@ -253,7 +253,7 @@ List the problems with the unit file. Write a corrected one, and the commands to
 
 **Problems**
 
-1. **`ExecStart` has no full path.** systemd does not search your `PATH`. This is the `203/EXEC` error.
+1. **`ExecStart` has no full path.** systemd does not use your shell's `PATH`, and the program is not in the few system directories it does search. This is the `203/EXEC` error.
 2. **A relative path to the configuration,** with no working directory set. A service starts in `/`, so `config.yaml` is not found.
 3. **No user.** It runs as root, so a flaw in the API is a flaw with full control of the machine.
 4. **Port 80 needs a privilege.** Ports below 1024 cannot be opened by an ordinary user. Listen on a high port behind a proxy, or grant only that one capability.

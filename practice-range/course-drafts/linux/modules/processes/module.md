@@ -47,14 +47,14 @@ ps -o pid,ppid,user,stat,cmd -p 903     # chosen columns for one PID
 ```
 
 ```text example ps-output readonly
-USER       PID %CPU %MEM    VSZ   RSS STAT START   TIME COMMAND
-root         1  0.0  0.1 168140 11200 Ss   Mar01   0:09 /sbin/init
-www-data   904  1.2  0.8 142300 66100 S    09:14   0:41 nginx: worker
-postgres  1120  0.3  3.1 412800 251000 Ss  Mar01   2:10 postgres
-ana       4502  0.0  0.0   8100   900 S+   14:02   0:00 tail -f app.log
+USER      PID %CPU %MEM    VSZ    RSS TTY   STAT START  TIME COMMAND
+root        1  0.0  0.1 168140  11200 ?     Ss   Mar01  0:09 /sbin/init
+www-data  904  1.2  0.8 142300  66100 ?     S    09:14  0:41 nginx: worker
+postgres 1120  0.3  3.1 412800 251000 ?     Ss   Mar01  2:10 postgres
+ana      4502  0.0  0.0   8100    900 pts/0 S+   14:02  0:00 tail -f app.log
 ```
 
-Read `USER` to see whose rights the process has, `%CPU` and `%MEM` for what it is using, and `RSS` for the memory it actually holds, in kilobytes.
+Read `USER` to see whose rights the process has, `%CPU` and `%MEM` for what it is using, and `RSS` for the memory it actually holds, in kilobytes. `TTY` is the terminal the process is attached to. A `?` there means none, which is normal for a service.
 
 ## Watching live
 

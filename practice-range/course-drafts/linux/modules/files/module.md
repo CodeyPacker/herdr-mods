@@ -129,7 +129,7 @@ mv ideas.txt reports/             # move into a directory
 mv reports/ archive/              # move or rename a directory
 ```
 
-Both overwrite an existing destination without asking. Copying `a.txt` onto `b.txt` replaces `b.txt`, and its old contents are gone. Add `-i` to be asked first, or `-n` to never overwrite.
+Both overwrite an existing destination without asking. Copying `a.txt` onto `b.txt` replaces `b.txt`, and its old contents are gone. Add `-i` to be asked first, or `-n` to never overwrite. On recent systems `cp -n` still works and prints a warning that suggests the newer spelling, `--update=none`.
 
 A trailing slash on a destination, as in `reports/`, makes your meaning clear: this is a directory to put things in. Without it, if `reports` does not exist, `mv ideas.txt reports` renames the file to `reports`.
 
@@ -247,6 +247,7 @@ rm -r old
 
 - In task 1, `&&` means nothing is moved if the directory could not be made. The trailing slash on `images/` means that, if the directory were missing, `mv` would fail and not rename a file to `images`.
 - In task 2, the names contain spaces, so they are quoted. The pattern `draft*.txt` also works, since the shell passes each matched name as one argument, spaces included.
+- In task 3, a recent system prints a warning for `cp -n` and still does the right thing. `cp --update=none` is the newer spelling, and older systems do not have it.
 - In task 4, plain `rm -r` is enough. Adding `-f` gains nothing here and removes the warnings that could save you.
 
 **Task 5.** `rm *` does not remove `.env`, since `*` does not match hidden files. And `img?.png` matches `img1.png` and `img2.png` only. The `?` stands for exactly one character, and `img10.png` has two there. Use `img*.png`.

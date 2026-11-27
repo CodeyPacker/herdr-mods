@@ -109,7 +109,7 @@ Mem:    7.8Gi   2.1Gi   310Mi     24Mi       5.4Gi      5.4Gi
 Swap:   2.0Gi      0B   2.0Gi
 ```
 
-The column to read is **available**, not **free**. Linux uses memory that programs do not need to keep recently read files in memory, shown as `buff/cache`. That makes disk access much faster, and the memory is handed back the moment a program asks for it.
+The real output is a little wider than shown here. The column to read is **available**, not **free**. Linux uses memory that programs do not need to keep recently read files in memory, shown as `buff/cache`. That makes disk access much faster, and the memory is handed back the moment a program asks for it.
 
 So a low "free" figure is normal and healthy. Here only 310 MB is free, and 5.4 GB is available. This machine has plenty of memory. A machine is short of memory when "available" is low.
 
@@ -158,7 +158,7 @@ Compare the three numbers to see the trend. Here the load went from 0.45 to 3.20
 High load has two different causes, and they need different fixes. `top` tells them apart in its summary line.
 
 ```text example top-cpu readonly
-%Cpu(s): 12.0 us,  3.0 sy,  0.0 ni, 20.0 id, 64.0 wa,  0.0 hi,  1.0 si
+%Cpu(s): 12.0 us, 3.0 sy, 0.0 ni, 20.0 id, 64.0 wa, 0.0 hi, 1.0 si, 0.0 st
 
    us   user programs
    sy   the kernel

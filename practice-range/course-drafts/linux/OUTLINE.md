@@ -2,7 +2,7 @@
 
 A reading course about working on a Linux system from the command line: files, pipes, permissions, processes, scripts, services, networking, SSH and diagnosing a machine. It has no code to run in the app and needs nothing installed. Every command is printed with what it does, and most with the output to expect.
 
-Status: all 15 modules are written, built and registered as `course:linux`, content version 0.1.0-preview.1. Nobody has worked through it as a learner.
+Status: all 15 modules are written, built and registered as `course:linux`, content version 0.1.0-preview.1. Nobody has worked through it as a learner. Its commands were run in an Ubuntu container on 2026-11-27.
 
 ## Who it is for
 
@@ -50,14 +50,24 @@ Each module explains a group of commands in short steps, with the commands and t
 
 `tests/course-linux.test.mjs` checks the built pack: 15 available modules, no exercises to run, every example read-only with a known fence and no line over 76 characters, every question shown with feedback on every choice, an exercise and a worked answer in every module, example domains only, and nothing that looks like a live credential. It also drives an enrollment through the course service.
 
+## Verified on 2026-11-27
+
+The commands in modules 1 to 15 were run in a fresh `ubuntu:24.04` container, and the course was corrected where the result differed.
+
+- Confirmed as written: exit statuses, globbing, redirection and pipeline behaviour, the `sort`, `uniq`, `cut`, `awk`, `tr` and `sed` examples, permission checks between three users, signals, quoting and `PATH` behaviour, the scripts (also clean under `shellcheck`), `apt` and `dpkg` queries, the SSH key, config, jump host and host key cases, and the disk and inode commands.
+- The three unit files pass `systemd-analyze verify`, and the flawed one is reported as not executable.
+- An SSH server in the container refused a key when the home directory was mode 777, with the log line the review module quotes.
+- Corrected: `cp -n` prints a warning on current Ubuntu, the `ss` and `ps` samples lacked columns, the `top` summary lacked its last field, `nc` needs `-w` to give up quickly, and the wording about `ExecStart` and `PATH`.
+- The Alpine `apk` commands were run in `alpine:3.20`.
+
 ## Not verified
 
-- **No command in the course was run.** This was written on a Windows machine without a Linux shell in the loop. The commands and their outputs were written from knowledge of the tools. Output formats and option names differ between distributions and versions, so some sample output will not match a given system exactly.
-- The sample outputs are illustrative. They were composed to show one point each and were not captured from a real machine.
+- **Anything that needs systemd running as PID 1.** `systemctl start`, `enable`, `status` and `journalctl` output could not be exercised in a container. The status and journal samples are illustrative.
+- The Red Hat family commands (`dnf`, `firewall-cmd`), and `ufw`, `tmux`, `iotop` and `traceroute`.
+- Commands that need a real second machine or a real disk: `lsblk` on hardware, `rsync` and `scp` between hosts, and the missing-route case.
+- The sample outputs are still illustrative. They were composed to show one point each, and were checked for format against real output.
 - Nobody has opened the course in the app.
 - The text was reviewed by its author only.
-
-A good first check for this course would be to run every command listing in a fresh Ubuntu container and correct whatever differs.
 
 ## Scope
 
