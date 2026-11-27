@@ -1,1 +1,1 @@
-type Task = { id: number; title: string };
+type Book = { id: number; title: string };

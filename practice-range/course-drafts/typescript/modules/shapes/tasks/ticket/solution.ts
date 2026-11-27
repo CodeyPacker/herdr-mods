@@ -1,1 +1,1 @@
-type Ticket = { id: number; open: boolean };
+type Seat = { row: number; booked: boolean };

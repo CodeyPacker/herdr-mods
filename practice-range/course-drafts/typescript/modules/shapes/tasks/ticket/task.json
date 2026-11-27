@@ -1,17 +1,17 @@
 {
   "id": "course:ts-foundations/task/shapes-ticket",
   "role": "independent",
-  "title": "Specify the required fields",
+  "title": "Describe a seat with a type",
   "concepts": [
     "object-shape",
     "type-alias",
     "interface"
   ],
-  "prompt": "Declare the type Ticket for an object with id: number and open: boolean, both required. A fresh object missing either field or using the wrong type must fail assignment.",
+  "prompt": "Declare a type `Seat` for an object with `row: number` and `booked: boolean`, both required. An object missing either field, or with a field of the wrong type, must not be assignable to `Seat`.",
   "hints": [
-    "List both fields and their value types.",
-    "Each field must be present.",
-    "Use a type alias or interface with required properties."
+    "List both fields with their types.",
+    "A `?` after a field name makes it optional. Neither field here is optional.",
+    "`type Seat = { ... }` and `interface Seat { ... }` both work."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -20,13 +20,13 @@
   "rules": [],
   "checks": [],
   "typeChecks": [
-    "__Extends<{id:number;open:boolean}, Ticket>",
-    "__Extends<Ticket, {id:number;open:boolean}>"
+    "__Extends<{row:number;booked:boolean}, Seat>",
+    "__Extends<Seat, {row:number;booked:boolean}>"
   ],
   "rejects": [
-    "const x: Ticket = { open: true }",
-    "const x: Ticket = { id: 2 }",
-    "const x: Ticket = { id: 2, open: \"yes\" }"
+    "const x: Seat = { booked: true }",
+    "const x: Seat = { row: 2 }",
+    "const x: Seat = { row: 2, booked: \"yes\" }"
   ],
   "fixtures": [
     {
@@ -37,7 +37,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Makes the id optional.",
+      "misconception": "Marks `row` optional, so a seat without a row is accepted.",
       "witness": {
         "fixture": "cases",
         "kind": "types",
@@ -46,7 +46,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Requires text IDs.",
+      "misconception": "Types `row` as `string`.",
       "witness": {
         "fixture": "cases",
         "kind": "types",
@@ -54,5 +54,5 @@
       }
     }
   ],
-  "feedback": "List both fields and their value types."
+  "feedback": "List both fields with their types."
 }

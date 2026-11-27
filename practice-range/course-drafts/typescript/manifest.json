@@ -212,7 +212,7 @@
       "status": "reviewed",
       "source": {
         "kind": "bundled",
-        "path": "modules/shapes/module.json"
+        "path": "modules/shapes/module.md"
       }
     },
     {

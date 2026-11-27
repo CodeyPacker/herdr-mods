@@ -1,1 +1,1 @@
-type Ticket = {};
+type Seat = {};

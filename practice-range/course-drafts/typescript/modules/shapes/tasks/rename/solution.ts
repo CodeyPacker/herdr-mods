@@ -1,3 +1,3 @@
-function rename(task: Task, title: string): Task {
-  return { ...task, title };
+function retitle(book: Book, title: string): Book {
+  return { ...book, title };
 }

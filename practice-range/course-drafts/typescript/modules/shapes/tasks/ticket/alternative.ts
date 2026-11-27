@@ -1,1 +1,1 @@
-interface Ticket { id: number; open: boolean }
+interface Seat { row: number; booked: boolean }

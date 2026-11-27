@@ -7,11 +7,11 @@
     "type-alias",
     "interface"
   ],
-  "prompt": "Return a new Point with x increased by dx and y unchanged. Keep the input point intact.",
+  "prompt": "Write `move(p: Point, dx: number): Point`. Return a new `Point` with `x` increased by `dx` and `y` unchanged. Do not change `p`.",
   "hints": [
-    "Which axis changes?",
-    "A distance adds to the current coordinate.",
-    "Return a fresh object retaining the other coordinate."
+    "Which coordinate changes, `x` or `y`?",
+    "`dx` is added to the current `x`, not used in its place.",
+    "Return a new object that keeps `y`."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -34,7 +34,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Moves the wrong axis.",
+      "misconception": "Moves along `y` instead of `x`.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -43,7 +43,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Replaces x with the distance.",
+      "misconception": "Replaces `x` with `dx` instead of adding.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -51,5 +51,5 @@
       }
     }
   ],
-  "feedback": "Which axis changes?"
+  "feedback": "Which coordinate changes, `x` or `y`?"
 }

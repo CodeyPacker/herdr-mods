@@ -1,17 +1,17 @@
 {
   "id": "course:ts-foundations/task/shapes-rename",
   "role": "guided",
-  "title": "Rename without changing the input",
+  "title": "Retitle a book without changing it",
   "concepts": [
     "object-shape",
     "type-alias",
     "interface"
   ],
-  "prompt": "Return a new Task with the same id and the supplied title, even when the title is empty. Preserve the original object.",
+  "prompt": "Write `retitle(book: Book, title: string): Book`. Return a new `Book` with the same `id` and the new `title`, even when the title is empty. The `book` passed in must keep its old title.",
   "hints": [
-    "Which object owns the original title?",
-    "Construct a separate object.",
-    "Copy the original fields before overriding the title."
+    "After `retitle(b, \"Emma\")`, what should `b.title` still be?",
+    "Build a separate object instead of assigning to `book.title`.",
+    "`{ ...book, title }` copies every field, then replaces `title`."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -19,9 +19,9 @@
   "mode": "script",
   "rules": [],
   "checks": [
-    "(() => { const t = { id: 7, title: \"Mail\" }; const n = rename(t, \"Post\"); return t.title === \"Mail\" && n !== t; })()",
-    "__same(rename({id:7,title:\"Mail\"}, \"\"), {id:7,title:\"\"})",
-    "__same(rename({id:0,title:\"A\"}, \"B\"), {id:0,title:\"B\"})"
+    "(() => { const t = { id: 7, title: \"Dune\" }; const n = retitle(t, \"Emma\"); return t.title === \"Dune\" && n !== t; })()",
+    "__same(retitle({id:7,title:\"Dune\"}, \"\"), {id:7,title:\"\"})",
+    "__same(retitle({id:0,title:\"A\"}, \"B\"), {id:0,title:\"B\"})"
   ],
   "typeChecks": [],
   "rejects": [],
@@ -34,7 +34,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Changes the original.",
+      "misconception": "Assigns to `book.title`, so the caller's book changes too.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -43,7 +43,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Discards the id.",
+      "misconception": "Builds a new object but drops the original `id`.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -51,5 +51,5 @@
       }
     }
   ],
-  "feedback": "Which object owns the original title?"
+  "feedback": "After `retitle(b, \"Emma\")`, what should `b.title` still be?"
 }

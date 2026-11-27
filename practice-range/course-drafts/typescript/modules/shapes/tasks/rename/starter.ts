@@ -1,4 +1,4 @@
-function rename(task: Task, title: string): Task {
-  task.title = title;
-  return task;
+function retitle(book: Book, title: string): Book {
+  book.title = title;
+  return book;
 }
