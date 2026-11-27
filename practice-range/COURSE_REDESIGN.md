@@ -266,7 +266,8 @@ Same rules as Phase C, new content version, 16 modules from the table.
     - Teaches `keyof`, `T[K]`, mapped types, conditional types and `infer`. Tasks: `mapped-get-field`, `mapped-flags`, `mapped-item-of` (review after completion). Added `outcome/mapped`.
 - [x] D17 Readiness checks
     - R1 and R3 had no tracker theme and are unchanged. R2 counts book loans (`countLoans`) and now includes Unions. R4 is "Generics through mapped types": `firstOr`, `drafts` over `Article`, and a new `pluck<T, K extends keyof T>`. Manifest outcome descriptions no longer mention tasks or owners. `OUTLINE.md` still describes the old tracker course.
-- [ ] D18 Build, verify, tests (update `tests/course-pack.test.mjs`, `tests/course-project.test.mjs` and the TypeScript fixtures in `tests/check-courses.mjs` that use `report-audit` or the project), screenshots
+- [x] D18 Build, verify, tests (update `tests/course-pack.test.mjs`, `tests/course-project.test.mjs` and the TypeScript fixtures in `tests/check-courses.mjs` that use `report-audit` or the project), screenshots
+    - Built 0.2.0-preview.1 (18 modules, 59 tasks); 0.1.0-preview.2 is archived. Full verify passed. Course tests 48 of 48, native fixtures 49 of 49, `herdr-app check` passed. No current course has a two-file project task, so `course-project.test.mjs` and the `project` fixture use the archived 0.1.0-preview.2 pack. The migration test now expects 14 new exercises.
 
 ### Phase E: SQL course
 

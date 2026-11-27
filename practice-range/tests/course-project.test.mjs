@@ -6,13 +6,14 @@ import { join } from "node:path";
 import { courseCommand, enrollmentDirectory } from "../mods/practice-range/courses/service.mjs";
 import { loadCourse, taskFor, validatePack } from "../mods/practice-range/courses/loader.mjs";
 
-const courseId = "course:ts-foundations", taskId = `${courseId}/task/report-audit`;
+// No current course has a two-file project task, so these tests use the archived TypeScript 0.1.0 pack, which does.
+const courseId = "course:ts-foundations", contentVersion = "0.1.0-preview.2", taskId = `${courseId}/task/report-audit`;
 
 test("project checks snapshot both editable files, keep trusted files separate, and back up both on reset", async t => {
   const root = await mkdtemp(join(tmpdir(), "herdr-course-project-"));
   t.after(() => rm(root, { recursive: true, force: true }));
-  const pack = await loadCourse(courseId), { task } = taskFor(pack, taskId);
-  const run = action => courseCommand(root, action, { courseId, taskId });
+  const pack = await loadCourse(courseId, contentVersion), { task } = taskFor(pack, taskId);
+  const run = action => courseCommand(root, action, { courseId, contentVersion, taskId });
   await run("enroll");
   let state = await run("task");
   const folder = state.folder;
@@ -45,7 +46,7 @@ test("project checks snapshot both editable files, keep trusted files separate, 
 });
 
 test("project file manifests reject traversal, duplicate files, and supplied/learner collisions", async () => {
-  const original = await loadCourse(courseId);
+  const original = await loadCourse(courseId, contentVersion);
   for (const name of ["../outside.ts", "check.ts", "contract.ts"]) {
     const pack = structuredClone(original), { task } = taskFor(pack, taskId);
     task.workspace.editable[0].file = name;

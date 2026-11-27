@@ -27,7 +27,7 @@ test("an enrollment on the previous version updates explicitly and keeps reading
   await run("task", { taskId: hinted });
   state = await run("hint", { taskId: hinted });
   const oldDirectory = enrollmentDirectory(root, old), before = await readFile(join(oldDirectory, "enrollment.json"), "utf8");
-  assert.deepEqual(state.update, { to: latest.contentVersion, compatible: true, started: false, newTasks: 8 });
+  assert.deepEqual(state.update, { to: latest.contentVersion, compatible: true, started: false, newTasks: 14 });
   await assert.rejects(run("update-version", { to: "9.9.9" }), /not installed/);
   const result = await run("update-version", { to: latest.contentVersion });
   assert.deepEqual(result.migrated, { courseId, contentVersion: latest.contentVersion });
@@ -85,13 +85,6 @@ test("readiness checks record their own result without moving the lesson or coun
   assert.equal(state.enrollment.tasks[r1.id].independentPasses, 1);
   assert.ok(pack.readiness[0].modules.every(id => state.evidence[id].status === "new"), "A readiness pass does not imply module passes");
   assert.equal(state.reviewReady, 0);
-  // Project checkpoints are lesson tasks, listed in order with the final audit last.
-  assert.deepEqual(state.course.project.checkpoints.map(checkpoint => checkpoint.taskId.split("/").at(-1)),
-    ["project-count", "project-group", "project-test-edit", "project-local-reader", "report-audit"]);
-  const group = pack.lessons.find(lesson => lesson.id === `${courseId}/module/collections`).tasks.find(task => task.id.endsWith("project-group"));
-  state = await courseCommand(root, "task", { courseId, taskId: group.id });
-  assert.equal(state.enrollment.position.moduleId, `${courseId}/module/collections`);
-  await writeFile(state.file, group.solution);
-  state = await courseCommand(root, "check", { courseId, taskId: group.id });
-  assert.equal(state.evidence[`${courseId}/module/collections`].independent, 1, "Checkpoints count for their module");
+  // D11: no project and no capstone.
+  assert.equal(pack.project, undefined);
 });

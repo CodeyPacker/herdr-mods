@@ -20,7 +20,10 @@ try {
   const example = await request("example", { moduleId, exampleId: "board" });
   const task = await request("task", { taskId });
   const solution = await request("answer", { taskId });
-  const project = await request("task", { taskId: `${courseId}/task/report-audit` });
+  // No current course has a two-file project task. The archived TypeScript 0.1.0 pack does, in its own data folder.
+  const archived = (action, value = {}) => courseCommand(join(root, "data-archived"), action, { courseId, contentVersion: "0.1.0-preview.2", ...value });
+  await archived("enroll");
+  const project = await archived("task", { taskId: `${courseId}/task/report-audit` });
   const review = structuredClone(task);
   review.enrollment.review = { ids: [taskId], index: 0 };
   const attached = structuredClone(modules);
