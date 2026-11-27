@@ -1,0 +1,60 @@
+{
+  "id": "course:ts-foundations/task/unions-sizes",
+  "role": "independent",
+  "title": "Limit sizes to three choices",
+  "concepts": [
+    "union-type",
+    "literal-type"
+  ],
+  "prompt": "Declare `type Size = \"S\" | \"M\" | \"L\"` and write `price(size: Size): number`. `\"S\"` costs 8, `\"M\"` costs 10 and `\"L\"` costs 12. Any other text, such as `\"XL\"` or lowercase `\"s\"`, must be a type error.",
+  "hints": [
+    "A literal type allows one exact value. A union of them lists every allowed value.",
+    "`string` would accept `\"XL\"`. The type must list only the three sizes.",
+    "Return a price for each of the three cases."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(price(\"S\"), 8)",
+    "__same(price(\"M\"), 10)",
+    "__same(price(\"L\"), 12)"
+  ],
+  "typeChecks": [
+    "__Extends<Size, \"S\" | \"M\" | \"L\">",
+    "__Extends<\"S\" | \"M\" | \"L\", Size>"
+  ],
+  "rejects": [
+    "price(\"XL\")",
+    "const s: Size = \"s\""
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Uses `string`, so any text is accepted.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "types",
+        "detail": "This should be a type error, but it compiles"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Gives `\"M\"` the price of `\"L\"`.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "A literal type allows one exact value. A union of them lists every allowed value."
+}

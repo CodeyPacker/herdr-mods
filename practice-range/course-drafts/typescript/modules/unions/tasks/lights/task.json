@@ -1,0 +1,54 @@
+{
+  "id": "course:ts-foundations/task/unions-lights",
+  "role": "review",
+  "title": "Step a traffic light",
+  "concepts": [
+    "union-type",
+    "literal-type"
+  ],
+  "prompt": "Write `nextLight(light: \"red\" | \"green\" | \"yellow\"): \"red\" | \"green\" | \"yellow\"`. Red goes to green, green goes to yellow, and yellow goes to red.",
+  "hints": [
+    "Write the three moves as a list before you write code.",
+    "Each input has exactly one next color.",
+    "The return type is the same union, so a typo such as `\"gren\"` is a type error."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(nextLight(\"red\"), \"green\")",
+    "__same(nextLight(\"green\"), \"yellow\")",
+    "__same(nextLight(\"yellow\"), \"red\")"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Runs the cycle backwards.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Sends green back to red, skipping yellow.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Write the three moves as a list before you write code."
+}

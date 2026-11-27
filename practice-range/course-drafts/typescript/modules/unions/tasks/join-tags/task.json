@@ -1,0 +1,55 @@
+{
+  "id": "course:ts-foundations/task/unions-join-tags",
+  "role": "guided",
+  "title": "Accept one tag or many",
+  "concepts": [
+    "union-type",
+    "literal-type"
+  ],
+  "prompt": "Repair `joinTags(tags: string | string[]): string`. A single string comes back unchanged. An array comes back joined with `\", \"` (a comma and a space). An empty array gives `\"\"`.",
+  "hints": [
+    "What does `String([\"red\", \"blue\"])` give? Compare it with `\"red, blue\"`.",
+    "`Array.isArray(tags)` tells you which side of the union you have.",
+    "On the array path, use `tags.join(\", \")`."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(joinTags(\"red\"), \"red\")",
+    "__same(joinTags([\"red\", \"blue\"]), \"red, blue\")",
+    "__same(joinTags([]), \"\")",
+    "__same(joinTags(\"\"), \"\")"
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Joins with a comma but no space.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Keeps only the first tag of an array.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "What does `String([\"red\", \"blue\"])` give? Compare it with `\"red, blue\"`."
+}

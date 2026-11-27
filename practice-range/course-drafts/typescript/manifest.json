@@ -72,6 +72,11 @@
       "assessment": "course:ts-foundations/module/missing"
     },
     {
+      "id": "outcome/unions",
+      "description": "Write union and literal types, predict widening, and narrow a union before using it.",
+      "assessment": "course:ts-foundations/module/unions"
+    },
+    {
       "id": "outcome/collections",
       "description": "Select and transform tasks with callbacks. Build a Map of groups and a Set of unique owners.",
       "assessment": "course:ts-foundations/module/collections"
@@ -244,7 +249,11 @@
         "union-type",
         "literal-type"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/unions/module.md"
+      }
     },
     {
       "id": "course:ts-foundations/module/tagged",
