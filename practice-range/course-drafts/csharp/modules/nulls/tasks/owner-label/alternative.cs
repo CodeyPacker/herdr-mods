@@ -1,8 +1,8 @@
-public static string OwnerLabel(string? owner)
+public static string DisplayName(string? nickname)
 {
-    if (owner == null)
+    if (nickname == null)
     {
-        return "Unassigned";
+        return "Guest";
     }
-    return owner;
+    return nickname;
 }

@@ -1,18 +1,18 @@
 {
   "id": "course:cs-foundations/task/nulls-owner-label",
   "role": "guided",
-  "title": "Label the owner",
+  "title": "Show a display name",
   "concepts": [
     "nullable",
     "null-check",
     "null-coalescing",
     "method"
   ],
-  "prompt": "OwnerLabel(string? owner) should return \"Unassigned\" when owner is null, and the owner's own text otherwise. An empty string is a real owner name here, so it is returned as it is. The starter gets both the missing case and the empty case wrong.",
+  "prompt": "`DisplayName(string? nickname)` should return `\"Guest\"` when nickname is null, and the nickname itself otherwise. An empty string is a real nickname here, so it is returned as it is. The starter gets both the missing case and the empty case wrong.",
   "hints": [
-    "What does owner.Length do when owner is null?",
+    "What does nickname.Length do when nickname is null?",
     "Only null means missing. An empty string must come back unchanged.",
-    "Return owner ?? \"Unassigned\"."
+    "Return nickname ?? \"Guest\"."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -20,14 +20,14 @@
   "mode": "members",
   "rules": [],
   "checks": [
-    "Practice.OwnerLabel(null) == \"Unassigned\"",
-    "Practice.OwnerLabel(\"Ana\") == \"Ana\"",
-    "Practice.OwnerLabel(\"\") == \"\""
+    "Practice.DisplayName(null) == \"Guest\"",
+    "Practice.DisplayName(\"Ana\") == \"Ana\"",
+    "Practice.DisplayName(\"\") == \"\""
   ],
   "checkLabels": [
-    "A missing owner must give \"Unassigned\".",
-    "A named owner must be returned unchanged.",
-    "An empty owner name must be returned as it is."
+    "A missing nickname must give \"Guest\".",
+    "A named nickname must be returned unchanged.",
+    "An empty nickname name must be returned as it is."
   ],
   "fixtures": [
     {
@@ -38,7 +38,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-empty.cs",
-      "misconception": "Treats an empty string as a missing owner.",
+      "misconception": "Treats an empty string as a missing nickname.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -47,7 +47,7 @@
     },
     {
       "source": "wrong-blank-fallback.cs",
-      "misconception": "Replaces a missing owner with empty text instead of the label.",
+      "misconception": "Replaces a missing nickname with empty text instead of the label.",
       "witness": {
         "fixture": "cases",
         "kind": "result",

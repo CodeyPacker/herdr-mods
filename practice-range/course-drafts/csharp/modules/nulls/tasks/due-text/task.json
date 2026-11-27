@@ -8,7 +8,7 @@
     "branch",
     "interpolation"
   ],
-  "prompt": "Write public static string DueText(int? days). days is the number of days until a task is due. It is either null or 0 and above. Return \"no due date\" for null, \"due today\" for 0, \"due tomorrow\" for 1, and \"due in 5 days\" (with the number) for anything larger.",
+  "prompt": "Write public static string DueText(int? days). days is the number of days until a library book is due. It is either null or 0 and above. Return \"no due date\" for null, \"due today\" for 0, \"due tomorrow\" for 1, and \"due in 5 days\" (with the number) for anything larger.",
   "hints": [
     "Which input means there is no date at all, and which means the date is today?",
     "Test for null before you compare the number.",

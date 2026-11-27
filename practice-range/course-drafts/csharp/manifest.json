@@ -253,7 +253,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/nulls/module.json"
+        "path": "modules/nulls/module.md"
       }
     },
     {

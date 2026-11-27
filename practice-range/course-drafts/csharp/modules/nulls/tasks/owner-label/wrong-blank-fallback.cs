@@ -1,4 +1,4 @@
-public static string OwnerLabel(string? owner)
+public static string DisplayName(string? nickname)
 {
-    return owner ?? "";
+    return nickname ?? "";
 }

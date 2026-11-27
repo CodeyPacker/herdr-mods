@@ -21,13 +21,13 @@
   "mode": "members",
   "rules": [],
   "checks": [
-    "Practice.TextLength(new Note(\"Pack\")) == 4",
+    "Practice.TextLength(new Note(\"Milk\")) == 4",
     "Practice.TextLength(null) == 0",
     "Practice.TextLength(new Note(null)) == 0",
     "Practice.TextLength(new Note(\"\")) == 0"
   ],
   "checkLabels": [
-    "A note with the text Pack must give 4.",
+    "A note with the text Milk must give 4.",
     "A missing note must give 0.",
     "A note with missing text must give 0.",
     "A note with empty text must give 0."
