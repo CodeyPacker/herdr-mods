@@ -1,14 +1,14 @@
 {
   "id": "course:cs-foundations/task/collections-over",
   "role": "independent",
-  "title": "Collect the long tasks",
+  "title": "Collect the long workouts",
   "concepts": [
     "list",
     "loop",
     "comparison",
     "array"
   ],
-  "prompt": "Write public static List<int> Over(int[] minutes, int limit). Return a new list with the values that are greater than limit, in their original order. A value equal to limit is not included. With no such values, return an empty list.",
+  "prompt": "Write `public static List<int> Over(int[] minutes, int limit)`. Return a new list with the workout lengths that are greater than `limit`, in their original order. A value equal to `limit` is not included. With no such values, return an empty list.",
   "hints": [
     "Start with an empty list and decide, item by item, whether it belongs.",
     "Add the value itself to the list, not its position.",

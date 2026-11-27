@@ -1,14 +1,14 @@
 {
   "id": "course:cs-foundations/task/collections-average",
   "role": "review",
-  "title": "Average the minutes",
+  "title": "Average the workouts",
   "concepts": [
     "list",
     "loop",
     "number-types",
     "branch"
   ],
-  "prompt": "Write public static double Average(List<int> minutes). Return the average of the values, keeping any fraction. For an empty list return 0.",
+  "prompt": "Write `public static double Average(List<int> minutes)`. Return the average workout length, keeping any fraction. For an empty list return 0.",
   "hints": [
     "What does the average of 1 and 2 need to be? What do two ints give when divided?",
     "An empty list has a Count of 0. Decide what to return before dividing.",

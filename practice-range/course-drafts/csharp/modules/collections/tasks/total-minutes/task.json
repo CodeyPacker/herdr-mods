@@ -1,13 +1,13 @@
 {
   "id": "course:cs-foundations/task/collections-total-minutes",
   "role": "guided",
-  "title": "Total the minutes",
+  "title": "Total the workout minutes",
   "concepts": [
     "array",
     "loop",
     "method"
   ],
-  "prompt": "TotalMinutes(int[] minutes) should return all the values added together, and 0 for an empty array. The starter returns only the last value. Repair the loop.",
+  "prompt": "`TotalMinutes(int[] minutes)` should return all the workout minutes added together, and 0 for an empty array. The starter returns only the last value. Repair the loop.",
   "hints": [
     "Follow total through an array of two items. What does it hold after each run?",
     "Each run must keep what total already has.",
