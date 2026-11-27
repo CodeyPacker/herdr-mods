@@ -1,6 +1,6 @@
 {
   "id": "course:ts-foundations/module/generic",
-  "title": "Preserve the caller’s type",
+  "title": "Generics",
   "requires": [
     "function",
     "array",
@@ -144,7 +144,7 @@
   ],
   "review": {
     "task": "course:ts-foundations/task/generic-pair",
-    "afterModule": "course:ts-foundations/module/tracker",
+    "afterModule": "course:ts-foundations/module/utility",
     "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
   },
   "drills": [

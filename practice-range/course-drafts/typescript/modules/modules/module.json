@@ -1,6 +1,6 @@
 {
   "id": "course:ts-foundations/module/modules",
-  "title": "Connect two local files",
+  "title": "Modules",
   "requires": [
     "function",
     "object-shape",

@@ -219,31 +219,30 @@ Owner decision (2026-11-26): write all three new modules (Union and literal type
 
 Same rules as Phase C, new content version, 16 modules from the table.
 
-- [ ] D0 Outline and manifest. Existing keys map to the planned list like this (reuse each, retheme, convert with the C recipe):
+- [x] D0 Outline and manifest. 18 modules, version 0.2.0-preview.1, compatible with 0.1.0-preview.1 and preview.2. `compose`, `tracker`, `report` and `project/` are deleted. Collections and Checks stay, because later modules and the skip-ahead tests depend on what they teach. The three new modules are `planned` entries in the manifest (no `source`) until written. R4 now covers Generics only. Do not rebuild the TypeScript pack until D18.
 
-    | # | Planned title | Existing key | Note |
-    | --- | --- | --- | --- |
-    | 1 | Run code, read a type error | save | |
-    | 2 | Types and inference | values | |
-    | 3 | Narrowing with control flow | decisions | |
-    | 4 | Function types | functions | |
-    | 5 | Arrays and tuples | lists | add a tuple step |
-    | 6 | Object types and interfaces | shapes | |
-    | 7 | null, undefined, optional | missing | |
-    | 8 | Union and literal types | collections | new content needed: collections is about grouping data |
-    | 9 | Discriminated unions | tagged | |
-    | 10 | unknown and type guards | boundary | |
-    | 11 | Modules | modules | |
-    | 12 | Generics | generic | |
-    | 13 | Utility types | none | new module |
-    | 14 | Mapped and conditional types | none | new module |
-    | 15 | Errors and Result types | errors | |
-    | 16 | async and Promises | async | |
+    Retheme each existing module with the C recipe (convert to `module.md`, rename tracker words, verify with `node scripts/verify-course.mjs typescript <key>`, run `scripts/course-polish.py` if the prose needs code formatting; its keyword list is C#, so check the result). TypeScript tasks can also have `typeChecks`, `rejects`, `moduleSources` and two-file `workspace` folders: rename inside those too.
 
-    Drop `checks`, `compose`, `tracker`, `report` and `project/` (or keep `checks` as "Writing tests" and fold 13 and 14 into one module, if the owner prefers fewer new modules). Ask the owner before writing modules 8, 13 and 14 from scratch: each new module needs examples with expected output and 2 to 4 verified tasks with wrong answers.
-- [ ] D1 to D16 one box per module (add them when D0 is done)
+- [ ] D1 save · Run code, read a type error
+- [ ] D2 values · Types and inference
+- [ ] D3 decisions · Narrowing with control flow
+- [ ] D4 functions · Function types
+- [ ] D5 lists · Arrays and tuples (add a tuple step and task)
+- [ ] D6 shapes · Object types and interfaces
+- [ ] D7 missing · null, undefined and optional
+- [ ] D8 unions · Union and literal types (new module: write `modules/unions/module.md` and 2 to 4 tasks with wrong answers, add `source` to its manifest entry)
+- [ ] D9 tagged · Discriminated unions
+- [ ] D10 collections · Transform arrays, maps and sets
+- [ ] D11 boundary · unknown and type guards
+- [ ] D12 modules · Modules
+- [ ] D13 checks · Writing tests
+- [ ] D14 errors · Errors and failure
+- [ ] D15 async · async and Promises
+- [ ] D16 generic · Generics
+- [ ] D16a utility · Utility types (new module)
+- [ ] D16b mapped · Mapped and conditional types (new module, last in the course: its review uses `"afterCompletion": true`)
 - [ ] D17 Readiness checks
-- [ ] D18 Build, verify, tests, screenshots
+- [ ] D18 Build, verify, tests (update `tests/course-pack.test.mjs`, `tests/course-project.test.mjs` and the TypeScript fixtures in `tests/check-courses.mjs` that use `report-audit` or the project), screenshots
 
 ### Phase E: SQL course
 

@@ -1,6 +1,6 @@
 {
   "id": "course:ts-foundations/module/decisions",
-  "title": "Decide which tasks need attention",
+  "title": "Narrowing with control flow",
   "requires": [
     "binding",
     "numeric-expression",

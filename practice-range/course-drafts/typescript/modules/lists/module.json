@@ -1,6 +1,6 @@
 {
   "id": "course:ts-foundations/module/lists",
-  "title": "Walk through every task",
+  "title": "Arrays and tuples",
   "requires": [
     "function",
     "numeric-expression"

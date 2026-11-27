@@ -1,6 +1,6 @@
 {
   "id": "course:ts-foundations/module/functions",
-  "title": "Give a calculation a name",
+  "title": "Function types",
   "requires": [
     "numeric-expression",
     "branch",

@@ -1,6 +1,6 @@
 {
   "id": "course:ts-foundations/module/boundary",
-  "title": "Check data before trusting its type",
+  "title": "unknown and type guards",
   "requires": [
     "discriminant",
     "map-set",

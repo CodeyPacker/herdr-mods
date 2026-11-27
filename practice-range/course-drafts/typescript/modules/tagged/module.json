@@ -1,6 +1,6 @@
 {
   "id": "course:ts-foundations/module/tagged",
-  "title": "Choose the fields that belong to a case",
+  "title": "Discriminated unions",
   "requires": [
     "binding",
     "text-expression",

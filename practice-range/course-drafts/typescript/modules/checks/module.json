@@ -1,6 +1,6 @@
 {
   "id": "course:ts-foundations/module/checks",
-  "title": "Write a check that finds a defect",
+  "title": "Writing tests",
   "requires": [
     "function",
     "import-export",

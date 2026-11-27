@@ -1,6 +1,6 @@
 {
   "id": "course:ts-foundations/module/save",
-  "title": "Save a file and read its output",
+  "title": "Run code, read a type error",
   "requires": [],
   "outcomes": [
     {

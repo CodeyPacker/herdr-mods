@@ -1,6 +1,6 @@
 {
   "id": "course:ts-foundations/module/shapes",
-  "title": "Describe a task with fields",
+  "title": "Object types and interfaces",
   "requires": [
     "function",
     "array"

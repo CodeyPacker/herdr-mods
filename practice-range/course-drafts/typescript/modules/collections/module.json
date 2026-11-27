@@ -1,6 +1,6 @@
 {
   "id": "course:ts-foundations/module/collections",
-  "title": "Select, transform and group tasks",
+  "title": "Transform arrays, maps and sets",
   "requires": [
     "array",
     "loop",

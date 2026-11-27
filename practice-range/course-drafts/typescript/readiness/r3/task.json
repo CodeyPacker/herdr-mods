@@ -13,7 +13,7 @@
   ],
   "id": "course:ts-foundations/task/readiness-r3",
   "role": "readiness",
-  "title": "Readiness 3 · Modules through async",
+  "title": "Modules through async",
   "concepts": [
     "import-export",
     "tests",

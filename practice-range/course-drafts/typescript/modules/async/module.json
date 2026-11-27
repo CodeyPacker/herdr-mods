@@ -1,6 +1,6 @@
 {
   "id": "course:ts-foundations/module/async",
-  "title": "Wait for a local reader",
+  "title": "async and Promises",
   "requires": [
     "throw-catch",
     "import-export"
@@ -141,7 +141,7 @@
   ],
   "review": {
     "task": "course:ts-foundations/task/async-in-order",
-    "afterModule": "course:ts-foundations/module/tracker",
+    "afterModule": "course:ts-foundations/module/generic",
     "evidence": "Use a fresh answer on a later visit. An unaided pass on the changed case adds independent evidence. Preserve hint use and solution reveals with their attempts."
   },
   "drills": [

@@ -1,6 +1,6 @@
 {
   "id": "course:ts-foundations/module/values",
-  "title": "Values that stay and values that change",
+  "title": "Types and inference",
   "requires": [
     "save-run",
     "read-output"

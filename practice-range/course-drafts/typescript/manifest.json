@@ -11,7 +11,7 @@
     },
     "node": ">=20"
   },
-  "title": "Build a task tracker with TypeScript",
+  "title": "TypeScript",
   "audience": [
     "New to programming",
     "Experienced in another language, new to TypeScript"
@@ -110,27 +110,12 @@
       "id": "outcome/generic",
       "description": "Preserve input/output types with a generic function and describe task projections with Pick, Omit and Partial.",
       "assessment": "course:ts-foundations/module/generic"
-    },
-    {
-      "id": "outcome/compose",
-      "description": "Read fields, constructors and methods in an existing class, then compose its local reader with pure functions.",
-      "assessment": "course:ts-foundations/module/compose"
-    },
-    {
-      "id": "outcome/tracker",
-      "description": "Join task edits, input checks and a local asynchronous reader through module boundaries.",
-      "assessment": "course:ts-foundations/module/tracker"
-    },
-    {
-      "id": "outcome/report",
-      "description": "Independently combine validation, reporting, error handling, local async behavior and regression tests.",
-      "assessment": "course:ts-foundations/module/report"
     }
   ],
   "modules": [
     {
       "id": "course:ts-foundations/module/save",
-      "title": "Save, run, read output",
+      "title": "Run code, read a type error",
       "prerequisites": [],
       "teaches": [
         "save-run",
@@ -144,7 +129,7 @@
     },
     {
       "id": "course:ts-foundations/module/values",
-      "title": "Values, variables and inference",
+      "title": "Types and inference",
       "prerequisites": [
         "course:ts-foundations/module/save"
       ],
@@ -163,7 +148,7 @@
     },
     {
       "id": "course:ts-foundations/module/decisions",
-      "title": "Make a decision",
+      "title": "Narrowing with control flow",
       "prerequisites": [
         "course:ts-foundations/module/values"
       ],
@@ -180,7 +165,7 @@
     },
     {
       "id": "course:ts-foundations/module/functions",
-      "title": "Give a calculation a name",
+      "title": "Function types",
       "prerequisites": [
         "course:ts-foundations/module/decisions"
       ],
@@ -197,7 +182,7 @@
     },
     {
       "id": "course:ts-foundations/module/lists",
-      "title": "Work through a list",
+      "title": "Arrays and tuples",
       "prerequisites": [
         "course:ts-foundations/module/functions"
       ],
@@ -213,7 +198,7 @@
     },
     {
       "id": "course:ts-foundations/module/shapes",
-      "title": "Describe a task",
+      "title": "Object types and interfaces",
       "prerequisites": [
         "course:ts-foundations/module/functions",
         "course:ts-foundations/module/lists"
@@ -231,7 +216,7 @@
     },
     {
       "id": "course:ts-foundations/module/missing",
-      "title": "Handle a missing value",
+      "title": "null, undefined and optional",
       "prerequisites": [
         "course:ts-foundations/module/shapes",
         "course:ts-foundations/module/decisions"
@@ -249,27 +234,20 @@
       }
     },
     {
-      "id": "course:ts-foundations/module/collections",
-      "title": "Group and transform tasks",
+      "id": "course:ts-foundations/module/unions",
+      "title": "Union and literal types",
       "prerequisites": [
-        "course:ts-foundations/module/lists",
-        "course:ts-foundations/module/shapes",
         "course:ts-foundations/module/missing"
       ],
       "teaches": [
-        "callback",
-        "transform",
-        "map-set"
+        "union-type",
+        "literal-type"
       ],
-      "status": "reviewed",
-      "source": {
-        "kind": "bundled",
-        "path": "modules/collections/module.json"
-      }
+      "status": "planned"
     },
     {
       "id": "course:ts-foundations/module/tagged",
-      "title": "Choose fields by case",
+      "title": "Discriminated unions",
       "prerequisites": [
         "course:ts-foundations/module/missing",
         "course:ts-foundations/module/functions",
@@ -287,8 +265,27 @@
       }
     },
     {
+      "id": "course:ts-foundations/module/collections",
+      "title": "Transform arrays, maps and sets",
+      "prerequisites": [
+        "course:ts-foundations/module/lists",
+        "course:ts-foundations/module/shapes",
+        "course:ts-foundations/module/missing"
+      ],
+      "teaches": [
+        "callback",
+        "transform",
+        "map-set"
+      ],
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/collections/module.json"
+      }
+    },
+    {
       "id": "course:ts-foundations/module/boundary",
-      "title": "Read unknown data",
+      "title": "unknown and type guards",
       "prerequisites": [
         "course:ts-foundations/module/tagged",
         "course:ts-foundations/module/collections"
@@ -306,7 +303,7 @@
     },
     {
       "id": "course:ts-foundations/module/modules",
-      "title": "Split code into modules",
+      "title": "Modules",
       "prerequisites": [
         "course:ts-foundations/module/functions",
         "course:ts-foundations/module/shapes"
@@ -323,7 +320,7 @@
     },
     {
       "id": "course:ts-foundations/module/checks",
-      "title": "Read and write checks",
+      "title": "Writing tests",
       "prerequisites": [
         "course:ts-foundations/module/modules",
         "course:ts-foundations/module/collections"
@@ -340,7 +337,7 @@
     },
     {
       "id": "course:ts-foundations/module/errors",
-      "title": "Recover from errors",
+      "title": "Errors and failure",
       "prerequisites": [
         "course:ts-foundations/module/boundary",
         "course:ts-foundations/module/checks"
@@ -357,7 +354,7 @@
     },
     {
       "id": "course:ts-foundations/module/async",
-      "title": "Wait for local data",
+      "title": "async and Promises",
       "prerequisites": [
         "course:ts-foundations/module/errors",
         "course:ts-foundations/module/modules"
@@ -375,7 +372,7 @@
     },
     {
       "id": "course:ts-foundations/module/generic",
-      "title": "Keep a type relationship",
+      "title": "Generics",
       "prerequisites": [
         "course:ts-foundations/module/functions",
         "course:ts-foundations/module/missing",
@@ -392,64 +389,39 @@
       }
     },
     {
-      "id": "course:ts-foundations/module/compose",
-      "title": "Connect small pieces",
+      "id": "course:ts-foundations/module/utility",
+      "title": "Utility types",
       "prerequisites": [
-        "course:ts-foundations/module/async",
         "course:ts-foundations/module/generic",
-        "course:ts-foundations/module/checks"
+        "course:ts-foundations/module/shapes"
       ],
       "teaches": [
-        "composition",
-        "class-reading"
+        "utility-types"
       ],
-      "status": "reviewed",
-      "source": {
-        "kind": "bundled",
-        "path": "modules/compose/module.json"
-      }
+      "status": "planned"
     },
     {
-      "id": "course:ts-foundations/module/tracker",
-      "title": "Assemble the tracker",
+      "id": "course:ts-foundations/module/mapped",
+      "title": "Mapped and conditional types",
       "prerequisites": [
-        "course:ts-foundations/module/compose",
-        "course:ts-foundations/module/boundary",
-        "course:ts-foundations/module/tagged"
+        "course:ts-foundations/module/utility"
       ],
       "teaches": [
-        "project-workspace"
+        "keyof",
+        "mapped-type",
+        "conditional-type"
       ],
-      "status": "reviewed",
-      "source": {
-        "kind": "bundled",
-        "path": "modules/tracker/module.json"
-      }
-    },
-    {
-      "id": "course:ts-foundations/module/report",
-      "title": "Deliver an unfamiliar report",
-      "prerequisites": [
-        "course:ts-foundations/module/tracker"
-      ],
-      "teaches": [
-        "transfer"
-      ],
-      "status": "reviewed",
-      "source": {
-        "kind": "bundled",
-        "path": "modules/report/module.json"
-      }
+      "status": "planned"
     }
   ],
-  "project": "project/project.json",
   "compatibility": {
     "fromVersions": [
-      "0.1.0-preview.1"
+      "0.1.0-preview.1",
+      "0.1.0-preview.2"
     ],
     "replacements": []
   },
-  "runtimeContentVersion": "0.1.0-preview.2",
+  "runtimeContentVersion": "0.2.0-preview.1",
   "readiness": [
     {
       "id": "R1",
@@ -487,11 +459,9 @@
     },
     {
       "id": "R4",
-      "title": "Generic through tracker",
+      "title": "Generics",
       "modules": [
-        "course:ts-foundations/module/generic",
-        "course:ts-foundations/module/compose",
-        "course:ts-foundations/module/tracker"
+        "course:ts-foundations/module/generic"
       ],
       "task": "readiness/r4/task.json"
     }

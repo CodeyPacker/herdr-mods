@@ -1,6 +1,6 @@
 {
   "id": "course:ts-foundations/module/missing",
-  "title": "Keep missing values distinct",
+  "title": "null, undefined and optional",
   "requires": [
     "object-shape",
     "branch"
