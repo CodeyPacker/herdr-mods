@@ -11,7 +11,7 @@ import { courseCommand } from "../mods/practice-range/courses/service.mjs";
 
 const source = resolve(dirname(fileURLToPath(import.meta.url)), "../mods/practice-range");
 const courses = {
-  csharp: { id: "course:cs-foundations", module: "values", task: "values-arrival-log" },
+  csharp: { id: "course:cs-foundations", module: "save", task: "values-arrival-log" },
   typescript: { id: "course:ts-foundations", module: "values", task: "remaining" },
   sql: { id: "course:sql-foundations", module: "where", task: "where-small-items" },
   "api-design": { id: "course:api-design", module: "methods", task: null },

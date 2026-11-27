@@ -397,7 +397,9 @@
     }
   ],
   "compatibility": {
-    "fromVersions": [],
+    "fromVersions": [
+      "0.1.0-preview.1"
+    ],
     "replacements": []
   },
   "runtimeContentVersion": "0.2.0-preview.1",

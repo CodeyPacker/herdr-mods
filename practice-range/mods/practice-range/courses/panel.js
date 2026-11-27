@@ -330,7 +330,8 @@ export class CoursePanel {
       else if (this.page === "repo-lesson") this.repoLessonView(body, t);
       else if (this.page === "source") this.sourceView(body, t);
       else if (this.page === "task") this.taskView(body, t);
-      if (["lesson", "task"].includes(this.page) && this.host.tutor.enabled) body.child(tutorChat(t, {
+      // The AI box belongs to exercises. On reading steps it looked like the place to write code.
+      if (this.page === "task" && this.host.tutor.enabled) body.child(sectionLabel(t, "ASK THE AI TUTOR")).child(tutorChat(t, {
         messages: this.host.tutorThreads[this.helpKey()] ?? [], busy: this.host.tutorBusy, error: this.host.tutorError,
         input: this.host.tutorInput, typing: this.host.typing, send: cx => this.host.askTutor(cx),
       }));
@@ -340,8 +341,12 @@ export class CoursePanel {
       : this.data?.enrollment.review ? "End review" : this.page === "task" && !this.isReadiness(this.data?.enrollment.activeTask) ? "Back to lesson"
       : this.page === "lesson" ? "Course page" : this.page === "modules" ? "Courses" : "Back";
     sweepCode();
-    return v_flex().flex_1().min_h(0).child(body).child(paneBar(t)
-      .child(keyButton(t, "course-back", "esc", backLabel, !this.busy, cx => this.back(cx))));
+    // One line of shortcuts for this screen, instead of a key on every button.
+    const keys = ["esc back", ...(this.page === "modules" ? ["enter continue"] : this.page === "lesson" ? ["n next", "p previous"] : this.page === "task" ? ["o open in editor", "c check", "h hint"] : [])];
+    return v_flex().flex_1().min_h(0).child(body).child(paneBar(t).items_center()
+      .child(keyButton(t, "course-back", "", backLabel, !this.busy, cx => this.back(cx)))
+      .child(div().flex_1())
+      .child(div().text_size(11).text_color(t.dim).child(keys.join("   \u00b7   "))));
   }
 
   /**
@@ -443,7 +448,7 @@ export class CoursePanel {
           .child(v_flex().flex_1().gap(2)
             .child(div().font_semibold().child(`${this.moduleNumber(nextLesson.id)}. ${nextLesson.title}${step ? ` \u00b7 ${step.title}` : ""}`))
             .child(div().text_size(12).text_color(t.muted).child(`Step ${next.step + 1} of ${nextLesson.steps.length}`)))
-          .child(keyButton(t, "course-continue", "enter", "Continue", !this.busy, cx => this.run("open", next, cx)))));
+          .child(keyButton(t, "course-continue", "", "Continue", !this.busy, cx => this.run("open", next, cx)))));
     } else body.child(banner(t, "You have read every module. Open any module below to revisit it.", t.done));
     const reviewing = Boolean(this.data.enrollment.review);
     if (reviewing || this.data.reviewReady > 0) body.child(h_flex().gap(8).items_center()
@@ -524,22 +529,28 @@ export class CoursePanel {
       div().text_size(12).text_color(t.muted).child(`Step ${position.step + 1} of ${lesson.steps.length}`)))
       .child(progressBar(t, (position.step + 1) / lesson.steps.length));
     if (!this.data.course.reading && this.data.attachment?.available && this.host.tutor.enabled) body.child(keyButton(t,"course-repo-module","","Explain this topic using my repo",!this.busy,cx=>this.generateRepoLesson(lesson.id,cx)));
-    if (position.step === 0 && lesson.intro !== step.text) body.child(richText(t, "course-intro", lesson.intro, this.data.course.codeFence));
+    if (position.step === 0) {
+      // Say up front how the module works, so a reading step is not mistaken for a broken exercise.
+      const exerciseSteps = lesson.steps.flatMap((item, index) => (item.task || item.tasks?.length) ? [index + 1] : []);
+      const plan = exerciseSteps.length
+        ? `${lesson.steps.length} steps. Read each step and answer its question, then press Continue. ${exerciseSteps.length === 1 ? `Step ${exerciseSteps[0]} is an exercise: it opens` : `Steps ${exerciseSteps.slice(0, -1).join(", ")} and ${exerciseSteps.at(-1)} are exercises: each opens`} a file in your editor and checks it when you save.`
+        : `${lesson.steps.length} steps to read. Answer each question, then press Continue.`;
+      body.child(banner(t, plan));
+      if (lesson.intro !== step.text) body.child(richText(t, "course-intro", lesson.intro, this.data.course.codeFence));
+    }
     body.child(div().text_size(16).font_semibold().child(step.title)).child(richText(t, "course-step", step.text, this.data.course.codeFence));
-    for (const id of [...(step.examples ?? []), ...(step.example ? [step.example] : [])]) {
+    const exampleIds = [...(step.examples ?? []), ...(step.example ? [step.example] : [])];
+    const progress = this.data.enrollment.modules[lesson.id];
+    // Predict first: a step's question comes before its Run button, which appears once every question is answered.
+    const answered = (step.questions ?? []).every(id => progress?.questions?.[id]);
+    for (const id of exampleIds) {
       const example = lesson.examples[id];
       // An example can name its own fence, such as http or json. Otherwise it is in the course's language.
       body.child(codeBlock(t, `course-example-${id}`, example.code, example.fence ?? this.data.course.codeFence ?? "typescript"));
-      if(!example.readOnly) body.child(h_flex().child(keyButton(t, `course-run-example-${id}`, "", "Run example", !this.busy, cx => this.run("example", { moduleId: lesson.id, exampleId: id }, cx))));
-      const result = this.data.enrollment.modules[lesson.id]?.examples?.[id];
-      if (result) {
-        body.child(banner(t, result.title));
-        for (const [index, detail] of result.details.entries()) body.child(markdown(`course-example-result-${id}-${index}`, `\`\`\`text\n${detail}\n\`\`\``));
-      }
     }
     for (const id of step.questions ?? []) {
       const question = lesson.questions.find(question => question.id === id);
-      const result = this.data.enrollment.modules[lesson.id]?.questions?.[id];
+      const result = progress?.questions?.[id];
       const box = card(t, { id: `course-question-box-${id}` }).child(div().text_size(11).text_color(t.dim).child("QUESTION"))
         .child(richText(t, `course-question-${id}`, question.prompt, this.data.course.codeFence));
       question.choices.forEach((choice, index) => {
@@ -547,10 +558,21 @@ export class CoursePanel {
         box.child(h_flex().id(`course-choice-${id}-${index}`).px(10).py(6).rounded(8).border_1()
           .border_color(picked ? (result?.correct ? t.done : t.blocked) : t.border).bg(picked ? t.selected : t.raised)
           .when(!this.busy, el => el.cursor_pointer().hover(s => s.border_color(t.accent)).on_click((_e, cx) => this.run("question", { moduleId: lesson.id, questionId: id, choice: index }, cx)))
-          .child(choice.text));
+          .child(markdown(`course-choice-text-${id}-${index}`, choice.text)));
       });
       if (result) box.child(div().text_color(result.correct ? t.done : t.foreground).child(`${result.correct ? "Right. " : "Not quite. "}${question.choices[result.choice].feedback}`));
       body.child(box);
+    }
+    for (const id of exampleIds) {
+      const example = lesson.examples[id];
+      if (example.readOnly) continue;
+      if (!answered) { body.child(div().text_size(12).text_color(t.muted).child("Answer the question first, then run the example to check your prediction.")); break; }
+      body.child(h_flex().child(keyButton(t, `course-run-example-${id}`, "", "Run example", !this.busy, cx => this.run("example", { moduleId: lesson.id, exampleId: id }, cx))));
+      const result = progress?.examples?.[id];
+      if (result) {
+        body.child(banner(t, result.title));
+        for (const [index, detail] of result.details.entries()) body.child(markdown(`course-example-result-${id}-${index}`, `\`\`\`text\n${detail}\n\`\`\``));
+      }
     }
     for (const id of [...(step.tasks ?? []), ...(step.task ? [step.task] : [])]) {
       const task = lesson.tasks.find(task => task.id === id);
@@ -559,9 +581,10 @@ export class CoursePanel {
         .child(keyButton(t, `course-task-${id}`, "", `Exercise: ${task.title}`, !this.busy, cx => this.run("task", { taskId: id }, cx)))
         .child(div().text_size(12).text_color(progress?.passes ? t.done : t.muted).child(progress?.passes ? "Passed" : progress?.attempts ? "Started" : "")));
     }
+    if ((step.questions ?? []).length && (step.questions ?? []).every(id => progress?.questions?.[id]?.correct)) body.child(div().text_size(12).text_color(t.done).child(`Press ${last ? "Finish module" : "Continue"} for the next step.`));
     body.child(h_flex().pt(8).gap(8).flex_wrap()
-      .child(keyButton(t, "course-previous", "p", "Previous", !this.busy && position.step > 0, cx => this.advance(-1, cx)))
-      .child(keyButton(t, "course-next", "n", last ? "Finish module" : "Continue", !this.busy, cx => this.advance(1, cx))));
+      .child(keyButton(t, "course-previous", "", "Previous", !this.busy && position.step > 0, cx => this.advance(-1, cx)))
+      .child(keyButton(t, "course-next", "", last ? "Finish module" : "Continue", !this.busy, cx => this.advance(1, cx))));
     if (!last) return;
     const topics = [...new Set((lesson.drills ?? []).map(id => id.split("/")[0]))];
     if (topics.length) body.child(sectionLabel(t, "Keep practicing")).child(h_flex().gap(8).flex_wrap().children(topics.map(topic =>
@@ -630,9 +653,9 @@ export class CoursePanel {
     if (review) body.child(banner(t, `Review ${review.index + 1} of ${review.ids.length}. Fresh files. Your saved practice answers are preserved.`));
     const editorReady = Boolean(this.host.editor) && !this.host.offerEditorDefault;
     body.child(h_flex().gap(8).flex_wrap().items_center()
-      .child(keyButton(t, "course-editor", "o", "Open in editor", !this.busy && !this.host.busy && editorReady, cx => this.host.openEditor(cx)))
-      .child(keyButton(t, "course-check", "c", "Check", !this.busy, cx => this.run("check", { taskId: task.id }, cx)))
-      .child(keyButton(t, "course-hint", "h", "Hint", !this.busy && task.hints.length < (task.hintTotal??3), cx => this.run("hint", { taskId: task.id }, cx)))
+      .child(keyButton(t, "course-editor", "", "Open in editor", !this.busy && !this.host.busy && editorReady, cx => this.host.openEditor(cx)))
+      .child(keyButton(t, "course-check", "", "Check", !this.busy, cx => this.run("check", { taskId: task.id }, cx)))
+      .child(keyButton(t, "course-hint", "", "Hint", !this.busy && task.hints.length < (task.hintTotal??3), cx => this.run("hint", { taskId: task.id }, cx)))
       .child(keyButton(t, "course-answer", "", "Show solution", !this.busy && !task.solution, cx => this.run("answer", { taskId: task.id }, cx)))
       .child(keyButton(t, "course-reset", "", "Start fresh", !this.busy, cx => { this.confirmReset = true; cx.notify(); }))
       .child(div().flex_1().text_size(11).text_color(t.dim).child("Checked when you save")));

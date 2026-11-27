@@ -18,7 +18,7 @@ test("the C# course pack is complete, registered and written for C# alone", asyn
   const pack = await loadCourse(courseId);
   assert.equal(pack.languageId, "csharp");
   assert.equal(pack.preview, true);
-  assert.equal(pack.title, "Learn C#");
+  assert.equal(pack.title, "C#");
   assert.equal(pack.modules.length, 16);
   assert.ok(pack.modules.every(entry => entry.status === "available"));
   assert.equal(pack.lessons.length, 16);
@@ -69,12 +69,12 @@ test("a C# course runs examples and checks a saved answer against every case", {
   assert.doesNotMatch(state.file, /%/, "MSBuild misreads % in a path, which would break the C# editor project beside the answer");
   state = await run("check-saved", { taskId });
   assert.equal(state.enrollment.tasks[taskId].attempts, 0, "An unchanged starter is not an attempt");
-  await writeFile(state.file, "int total = opening;\nConsole.WriteLine(total);\ntotal = arrivals;\nConsole.WriteLine(total);\n");
+  await writeFile(state.file, "int total = morning;\nConsole.WriteLine(total);\ntotal = walk;\nConsole.WriteLine(total);\n");
   state = await run("check", { taskId });
   let progress = state.enrollment.tasks[taskId];
   assert.equal(progress.result.passed, false);
   assert.match(JSON.stringify(progress.result), /Case morning/);
-  assert.match(JSON.stringify(progress.result), /Check 1 failed: The output must be the opening count/, "A failed check shows its plain label");
+  assert.match(JSON.stringify(progress.result), /Check 1 failed: The output must be the morning steps/, "A failed check shows its plain label");
   await writeFile(state.file, task.solution);
   state = await run("check", { taskId });
   progress = state.enrollment.tasks[taskId];
@@ -97,7 +97,7 @@ test("a C# course runs examples and checks a saved answer against every case", {
   const sourceId = `${courseId}/task/interfaces-fixed-source`;
   await run("open", { moduleId: `${courseId}/module/interfaces`, step: 6 });
   state = await run("task", { taskId: sourceId });
-  assert.match(await readFile(join(dirname(state.file), "Supplied.cs"), "utf8"), /global using System\.Linq;[\s\S]*public interface ITaskSource/);
+  assert.match(await readFile(join(dirname(state.file), "Supplied.cs"), "utf8"), /global using System\.Linq;[\s\S]*public interface ISongSource/);
   assert.equal(editorBuild(dirname(state.file)), "", "A types starter must build in the editor project with its supplied interface");
 
   // The last module's task: a learner-written check run against faulty and correct candidates.

@@ -9,7 +9,7 @@ drills: ["conditionals/switch-expression","conditionals/type-binding","condition
 drillGap: These drills practise one pattern form each. They do not check arm order across several record types.
 ---
 
-Code often has to ask two questions at once: what kind of value is this, and what is inside it? Pattern matching answers both in one step. This module covers the is test, switch expressions, type patterns and property patterns, using the tracker's updates as data.
+Code often has to ask two questions at once: what kind of value is this, and what is inside it? Pattern matching answers both in one step. This module covers the is test, switch expressions, type patterns and property patterns, using kitchen orders as data.
 
 ## Test a type and name the result
 
