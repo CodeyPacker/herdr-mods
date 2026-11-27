@@ -309,7 +309,7 @@
       "status": "reviewed",
       "source": {
         "kind": "bundled",
-        "path": "modules/boundary/module.json"
+        "path": "modules/boundary/module.md"
       }
     },
     {

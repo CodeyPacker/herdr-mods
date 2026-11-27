@@ -7,11 +7,11 @@
     "validation",
     "erasure"
   ],
-  "prompt": "Return true for an array containing only strings. An empty array qualifies. A plain string or an array with any non-string fails.",
+  "prompt": "Write `labelsOnly(value: unknown): boolean`. Return `true` when `value` is an array that holds only strings. An empty array counts. A plain string, or an array with any non-string item, gives `false`.",
   "hints": [
-    "Check the container before inspecting any item.",
-    "Each item needs its own type check.",
-    "An empty list has no invalid item."
+    "Check that `value` is an array before looking at items.",
+    "Every item needs its own `typeof` check.",
+    "An empty array has no bad items, so it passes."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -36,7 +36,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Validates only the container.",
+      "misconception": "Checks only that it is an array.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -45,7 +45,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Requires at least one item.",
+      "misconception": "Rejects an empty array.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -53,5 +53,5 @@
       }
     }
   ],
-  "feedback": "Check the container before inspecting any item."
+  "feedback": "Check that `value` is an array before looking at items."
 }

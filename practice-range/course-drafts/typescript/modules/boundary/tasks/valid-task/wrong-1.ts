@@ -1,3 +1,3 @@
-function validTask(value: unknown): boolean {
-  return value !== null && typeof value === "object" && "id" in value && "done" in value;
+function validMember(value: unknown): boolean {
+  return value !== null && typeof value === "object" && "id" in value && "active" in value;
 }

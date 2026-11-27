@@ -1,3 +1,3 @@
-function validTask(value: unknown): boolean {
+function validMember(value: unknown): boolean {
   return false;
 }

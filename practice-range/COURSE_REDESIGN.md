@@ -248,7 +248,8 @@ Same rules as Phase C, new content version, 16 modules from the table.
     - The example is now a coffee `Pickup` (example id `board` kept). `describe-update` uses `Workout`, `repair-caption` uses `Door`. The other three tasks only got clearer prompts. Unions is now a prerequisite of Tagged.
 - [x] D10 collections · Transform arrays, maps and sets
     - Tasks now use `Product`/`stockedNames`, `voteCounts` and bus stops. Added a Map counting prediction (`count`).
-- [ ] D11 boundary · unknown and type guards
+- [x] D11 boundary · unknown and type guards
+    - `valid-task` now checks member records (`validMember`, `active`). Added a type guard (`value is T`) step and prediction (`guard`).
 - [ ] D12 modules · Modules
 - [ ] D13 checks · Writing tests
 - [ ] D14 errors · Errors and failure
