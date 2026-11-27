@@ -44,9 +44,9 @@ export function pageBody(id) {
   return v_flex().id(id).flex_1().min_h(0).overflow_y_scrollbar().px(SIZE.panePad + 4).py(16).gap(14);
 }
 
-/** Cards side by side that wrap onto more rows when the panel is narrow. */
+/** Cards side by side that wrap onto more rows when the panel is narrow. Cards in a row share the tallest one's height. */
 export function cardGrid() {
-  return h_flex().flex_wrap().gap(12).items_start();
+  return h_flex().flex_wrap().gap(12).items_stretch();
 }
 
 /** One card's share of a grid row: grows to fill it, and wraps below `basis` px. @param {any} card @param {number} [basis] */

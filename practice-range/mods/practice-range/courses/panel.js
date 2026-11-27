@@ -1,8 +1,9 @@
 import { div } from "gpui-kit";
 import { v_flex, h_flex, TextView, InputState } from "gpui-base";
 import { watchFolder, window as appWindow } from "herdr";
-import { keyButton, keysAreHidden, spinner, textInput } from "../kit/controls.js";
-import { banner, card, inkOn, paneBar, sectionLabel } from "../kit/pane.js";
+import { keyButton, keysAreHidden, meter, spinner, textInput } from "../kit/controls.js";
+import { badge, banner, card, inkOn, paneBar, sectionLabel } from "../kit/pane.js";
+import { cardGrid, cardTitle, inGrid, packBadge, packColor, statusTag } from "../setup/parts.js";
 import { courseCommand } from "./bridge.js";
 import { generateRepoLesson, generateExtraPractice } from "../bridge.js";
 import { tutorChat } from "../tutor/panel.js";
@@ -13,9 +14,6 @@ import { codeBlock, initCode, richText, sweepCode } from "./code.js";
 /** @typedef {import("../kit/theme.js").Theme} Theme */
 /** @param {string} id @param {string} text */
 const markdown = (id, text) => TextView.markdown(id, text).selectable();
-/** A progress bar whose empty part shows on a raised card. @param {Theme} t @param {number} fraction */
-const progressBar = (t, fraction) => div().w_full().h(4).rounded(2).bg(t.border).overflow_hidden()
-  .child(div().h_full().rounded(2).bg(t.accent).w(`${Math.round(Math.min(1, Math.max(0, fraction)) * 1000) / 10}%`));
 /**
  * The screen's main action: filled in the accent when ready, outlined otherwise. Still clickable when not ready.
  * @param {Theme} t @param {string} id @param {string} label @param {boolean} enabled @param {boolean} ready @param {(cx: Context) => void} click
@@ -350,7 +348,7 @@ export class CoursePanel {
   render(t) {
     const body = v_flex().id("course-body").flex_1().min_h(0).overflow_y_scroll().p(16);
     // Content sits in a centred column instead of the full window. The lesson is wider because it has a step list.
-    const column = v_flex().w_full().max_w(this.page === "lesson" ? 1040 : 760).mx_auto().gap(12);
+    const column = v_flex().w_full().max_w(this.page === "catalog" ? 1400 : this.page === "lesson" ? 1040 : 760).mx_auto().gap(12);
     if (this.generatingRepoLesson || this.generatingExtras) column.child(keyButton(t,"cancel-repo-lesson","","Cancel generation",Boolean(this.host.tutorRequestId),cx=>this.host.cancelTutor(cx)));
     if (this.error) column.child(banner(t, this.error, t.blocked));
     if (this.page === "catalog") this.catalogView(column, t);
@@ -425,27 +423,35 @@ export class CoursePanel {
       .child(div().flex_1().font_semibold().child(this.languageFilter ? `${findLanguage(this.languageFilter).name} courses` : "Courses"))
       .child(this.settingsButton(t, "course-catalog-settings")));
     if (this.languageFilter) body.child(keyButton(t,"course-all-languages","","All courses",!this.busy,cx=>{this.languageFilter="";cx.notify();}));
+    // Laid out like the language cards: badge, name and status on top, progress, then buttons at the bottom.
+    const grid = cardGrid();
     for (const course of this.catalog.filter(course=>!this.languageFilter || course.languageId===this.languageFilter)) {
       const total = course.total ?? 0, done = course.done ?? 0, started = Boolean(course.enrolledVersion);
+      const pack = course.languageId ? findLanguage(course.languageId) : undefined;
+      const color = pack ? packColor(t, pack) : t.accent;
+      const mark = pack ? packBadge(t, pack, 36) : badge((course.title ?? course.id).slice(0, 3).toUpperCase(), t.accent, 36);
       const summary = course.error ?? `${total} ${course.reading ? "reading modules" : "modules"}${course.preview ? " \u00b7 Preview" : ""}`;
+      const status = course.error ? statusTag(t, "Unavailable", "needed")
+        : total && done >= total ? statusTag(t, "Done", "ready")
+        : statusTag(t, started ? "In progress" : "Not started", "neutral");
+      const enabled = !this.busy && !course.error;
       const open = (/** @type {Context} */ cx) => this.run("enroll", { courseId: course.id, entryPath: "beginner" }, cx);
-      body.child(card(t, { id: `course-card-${course.id}`, click: this.busy || course.error ? undefined : open })
-        .child(div().font_semibold().child(courseName(course)))
-        .child(div().text_size(12).text_color(t.muted).child(summary))
-        .child(h_flex().gap(10).items_center()
-          .child(div().w(200).child(progressBar(t, total ? done / total : 0)))
-          .child(div().text_size(12).text_color(t.muted).child(started ? `${done} of ${total} done` : "Not started")))
-        .child(h_flex().gap(12).items_center()
-          .child(div().text_size(12).text_color(t.accent).child(started ? "Continue \u2192" : "Start \u2192"))
+      // The card opens the course too, so its buttons stop the click from reaching it.
+      const press = (/** @type {(cx: Context) => void} */ act) => (/** @type {Context} */ cx) => { cx.stop_propagation(); act(cx); };
+      grid.child(inGrid(card(t, { id: `course-card-${course.id}`, click: enabled ? open : undefined })
+        .child(cardTitle(t, mark, courseName(course), summary, status))
+        .when(started, el => el.child(v_flex().gap(4)
+          .child(h_flex().text_size(11).text_color(t.dim).child(div().flex_1().child("Done")).child(`${done} / ${total}`))
+          .child(meter(t, total ? done / total : 0, color))))
+        .child(div().flex_1())
+        .child(h_flex().gap(8).flex_wrap()
+          .child(keyButton(t, `course-open-${course.id}`, "", started ? "Continue" : "Start", enabled, press(open)))
           // A newer version is offered here. Updating carries reading and answers over and opens the course.
           .when(Boolean(started && course.contentVersion && course.enrolledVersion !== course.contentVersion), el => el.child(
-            h_flex().id(`course-update-${course.id}`).h(26).px(10).items_center().rounded(8).border_1().border_color(t.accent).text_size(12)
-              .when(!this.busy, b => b.cursor_pointer().hover(s => s.bg(t.selected)).on_click((_e, cx) => {
-                cx.stop_propagation();
-                this.run("update-version", { courseId: course.id, contentVersion: course.enrolledVersion, to: course.contentVersion }, cx);
-              }))
-              .child(`Update to ${course.contentVersion}`)))));
+            keyButton(t, `course-update-${course.id}`, "", `Update to ${course.contentVersion}`, !this.busy, press(cx =>
+              this.run("update-version", { courseId: course.id, contentVersion: course.enrolledVersion, to: course.contentVersion }, cx))))))));
     }
+    body.child(grid);
   }
 
   /** Course settings: known languages, the repo, older versions. @param {import("gpui-kit").Element} body @param {Theme} t */

@@ -56,8 +56,8 @@ function packCard(t, pack, flow, { on, busy, act, select, learn }) {
       .child(spinner(t))
       .child(div().text_size(12).text_color(t.muted).child(`Installing ${pack.install.what} with npm. This can take a minute.`))))
     .when(Boolean(error), element => element.child(banner(t, error, t.blocked).text_size(11)))
-    // Practice and the course sit side by side, the same size.
-    .when(!installing, element => element.child(h_flex().gap(8).flex_wrap()
+    // Practice and the course sit side by side, the same size, at the bottom so buttons line up across a row.
+    .when(!installing, element => element.child(div().flex_1()).child(h_flex().gap(8).flex_wrap()
       .child(keyButton(t, `language-action-${pack.id}`, on ? "enter" : "", actionLabel(action, pack), !busy && Boolean(action), cx => act(pack.id, cx)))
       .when(bundledCourses.some(course=>course.languageId===pack.id), row => row
         .child(keyButton(t,`language-course-${pack.id}`,"","Course",!busy,cx=>learn(pack.id,cx)))))), 220);

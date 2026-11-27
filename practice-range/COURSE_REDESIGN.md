@@ -216,6 +216,7 @@ Owner feedback round 4 (2026-11-26), done:
 - Language cards show Practice and Course as two same-size buttons. The line about compilers is gone.
 - Turning off "Show key hints" now hides every key: on buttons (`hideKeys` in `kit/controls.js`, set each render), in legends (`kit/legend.js`) and in the course footer.
 - In zsh, a list held in a variable needs `${=var}` to split into words. Fixture reruns that used `for n in $rest` ran nothing.
+- Course catalog cards use the language card layout (`cardTitle`, status tag, meter, buttons at the bottom) in a full-width grid. `cardGrid` stretches cards in a row to the same height.
 
 Also done: a language card ("Start or resume course") with exactly one course opens that course page directly instead of a one-item list.
 
