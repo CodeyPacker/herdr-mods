@@ -37,6 +37,7 @@ const catalog = (await request("list")).courses;
 await request("enroll");
 const moduleId = `${course.id}/module/${course.module}`;
 const states = {
+  "languages-screen": ["languages", null],
   catalog: ["catalog", null],
   modules: ["modules", await request("open", { moduleId, step: 0 })],
   lesson: ["lesson", await request("open", { moduleId, step: 0 })],
@@ -78,6 +79,7 @@ export default class Fixture extends Syntax {
     this.courses.catalog = ${JSON.stringify(catalog)};
     this.courses.data = ${JSON.stringify(value)};
     this.courses.page = ${JSON.stringify(page)};
+    if (${JSON.stringify(page)} === "languages") this.screen = "languages";
     this.courses.settingsReturn = this.courses.page === "settings" ? "modules" : "catalog";
     this.courses.run = () => {};
   }

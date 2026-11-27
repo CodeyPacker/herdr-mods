@@ -211,6 +211,12 @@ Owner feedback round 3 (2026-11-26), done:
 - "Loading course…" shows in the footer, so the page does not shift when a step opens.
 - A newer course version is offered as "Update to <version>" on the catalog card, not as a banner on the course page.
 
+Owner feedback round 4 (2026-11-26), done:
+- The header has two tabs, Practice and Courses, in place of the Courses button and the Languages button. Practice opens the language screen (the landing page), Courses opens the catalog. `l` still opens the language screen.
+- Language cards show Practice and Course as two same-size buttons. The line about compilers is gone.
+- Turning off "Show key hints" now hides every key: on buttons (`hideKeys` in `kit/controls.js`, set each render), in legends (`kit/legend.js`) and in the course footer.
+- In zsh, a list held in a variable needs `${=var}` to split into words. Fixture reruns that used `for n in $rest` ran nothing.
+
 Also done: a language card ("Start or resume course") with exactly one course opens that course page directly instead of a one-item list.
 
 ### Phase D: TypeScript course rewrite

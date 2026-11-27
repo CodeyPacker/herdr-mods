@@ -4,7 +4,7 @@ import { run, nextCommand, panes, props, watchFolder, focused, checking, appHome
 import { togglePractice, reopenPractice, openPractice, liveEditor, DIALOG_KEY } from "./toggle.js";
 import { colors, SIZE, paneBackground } from "./kit/theme.js";
 import { paneHeader, paneTitle, paneDetail, paneBar, tag, sectionLabel, banner } from "./kit/pane.js";
-import { keyButton, spinner, textInput, meter } from "./kit/controls.js";
+import { keyButton, hideKeys, spinner, textInput, meter } from "./kit/controls.js";
 import { legend } from "./kit/legend.js";
 import { listRow, rowText, listNote } from "./kit/list.js";
 import { catalogFor } from "./catalog.js";
@@ -25,6 +25,7 @@ import { arrangeCommands } from "./split.js";
 import { startTopic } from "./start-topic.js";
 import { CoursePanel } from "./courses/panel.js";
 import { Shortcuts } from "./kit/shortcuts.js";
+import { tabStrip } from "./kit/tabs.js";
 import { closeTab, sharedStorage, openAsOption, onOpenAsChange } from "./kit/open-as.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
@@ -1364,17 +1365,22 @@ export default class Syntax extends View {
     // Saved as it changes (only when it changed), so the next dialog opens here.
     if (this.dialog) this.saveSpot();
     const t = colors();
+    hideKeys(!this.shortcuts.showHints);
     return v_flex().id("practice-range").relative().size_full().min_w(0).min_h(0).bg(this.background(t)).text_color(t.foreground).text_size(13)
       .on_size_change((size, cx) => { this.panelWidth = size.width; this.bindPane(cx); })
       .track_focus(this.handle).on_key_down((event, cx) => this.key(event, cx))
       .when(this.dialog, element => element.key_context(ESC_CONTEXT).on_action(ESC_ACTION, (_event, cx) => { this.escape(cx); cx.notify(); }))
       .child(paneHeader(t).flex_wrap()
         .child(paneTitle(t, "Practice Range"))
-        .child(keyButton(t, "choose-courses", "", "Courses", !this.busy && !this.courses.busy, cx => this.action("courses", cx)))
-        .child(paneDetail(t, this.screen === "setup" ? SETUP_TITLES[this.setup.page] : this.screen === "languages" ? "Languages" : this.screen === "courses" ? "Courses" : this.screen === "scratch" ? `${this.language.name} scratch` : `${this.language.name} repetition`))
+        // The two ways to learn, always one click apart: practice drills by language, or a course.
+        .child(tabStrip(t, [
+          { id: "practice", label: "Practice", on: this.screen !== "courses" && this.screen !== "setup", click: cx => { if (!this.busy) this.action("languages", cx); } },
+          { id: "courses", label: "Courses", on: this.screen === "courses", click: cx => { if (!this.busy && !this.courses.busy) this.action("courses", cx); } },
+        ]))
+        .when(["practice", "scratch", "topics", "exercises"].includes(this.screen), el => el.child(paneDetail(t, this.screen === "scratch" ? `${this.language.name} scratch` : this.language.name)))
+        .when(this.screen === "setup", el => el.child(paneDetail(t, SETUP_TITLES[this.setup.page])))
         .when(Boolean(this.returnScreen) && ["setup", "languages"].includes(this.screen), element => element
           .child(keyButton(t, "go-back", this.screen === "setup" && this.setup.page !== "hub" ? "" : "esc", this.returnLabel(), !this.busy, cx => this.goBack(cx))))
-        .child(keyButton(t, "choose-languages", this.shown("languages", "l"), "Languages", !this.busy, cx => this.action("languages", cx)))
         .child(keyButton(t, "open-setup", this.shown("setup", "?"), "Setup", !this.busy, cx => this.action("setup", cx)))
         .child(keyButton(t, "choose-topics", this.shown("topics", "t"), "Topics", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state), cx => this.action("topics", cx)))
         .child(keyButton(t, "choose-exercises", this.shown("exercises", "e"), "Exercises", !this.busy && !["setup", "languages", "courses"].includes(this.screen) && Boolean(this.state) && (Boolean(this.pickerTopicId) || this.screen === "practice"), cx => this.action("exercises", cx)))

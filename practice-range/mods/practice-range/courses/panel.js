@@ -1,7 +1,7 @@
 import { div } from "gpui-kit";
 import { v_flex, h_flex, TextView, InputState } from "gpui-base";
 import { watchFolder, window as appWindow } from "herdr";
-import { keyButton, spinner, textInput } from "../kit/controls.js";
+import { keyButton, keysAreHidden, spinner, textInput } from "../kit/controls.js";
 import { banner, card, inkOn, paneBar, sectionLabel } from "../kit/pane.js";
 import { courseCommand } from "./bridge.js";
 import { generateRepoLesson, generateExtraPractice } from "../bridge.js";
@@ -388,7 +388,7 @@ export class CoursePanel {
     // One line of shortcuts for this screen, instead of a key on every button.
     const keys = ["esc back", ...(this.page === "modules" ? ["enter continue"] : this.page === "lesson" ? ["p previous", "n continue", "r run"] : this.page === "task" ? ["o open in editor", "c check", "h hint"] : [])];
     return v_flex().flex_1().min_h(0).child(body).child(footer)
-      .child(h_flex().px(16).pb(6).justify_end().text_size(11).text_color(t.dim).child(keys.join("  \u00b7  ")));
+      .when(!keysAreHidden(), el => el.child(h_flex().px(16).pb(6).justify_end().text_size(11).text_color(t.dim).child(keys.join("  \u00b7  "))));
   }
 
   /**
