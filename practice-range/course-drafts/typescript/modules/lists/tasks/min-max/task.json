@@ -1,0 +1,61 @@
+{
+  "id": "course:ts-foundations/task/lists-min-max",
+  "role": "independent",
+  "title": "Return the smallest and largest as a tuple",
+  "concepts": [
+    "array",
+    "loop",
+    "tuple"
+  ],
+  "prompt": "Write `minMax(values: number[]): [number, number]`. Return `[smallest, largest]` from `values`. For an empty array, return `[0, 0]`. The return type must stay a two-number tuple, not `number[]`.",
+  "hints": [
+    "Try `[4, 9, 6]`. What should each slot hold after every visit?",
+    "Start both slots from the first value, not from 0. Think about `[5, 8]`.",
+    "Return `[low, high]` and keep `[number, number]` as the return type."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(minMax([4, 9, 6]), [4, 9])",
+    "__same(minMax([5, 8]), [5, 8])",
+    "__same(minMax([-3, -7]), [-7, -3])",
+    "__same(minMax([2]), [2, 2])",
+    "__same(minMax([]), [0, 0])"
+  ],
+  "typeChecks": [
+    "__Extends<ReturnType<typeof minMax>, [number, number]>"
+  ],
+  "rejects": [
+    "const [low, high, extra] = minMax([1])"
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Starts both slots at 0, so an all-positive array reports 0 as the smallest.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Returns `number[]`, so callers lose the fixed two slots.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "types",
+        "detail": "This should be a type error, but it compiles"
+      }
+    }
+  ],
+  "feedback": "Try `[4, 9, 6]`. What should each slot hold after every visit?"
+}

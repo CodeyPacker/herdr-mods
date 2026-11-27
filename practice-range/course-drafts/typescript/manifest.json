@@ -188,12 +188,13 @@
       ],
       "teaches": [
         "array",
-        "loop"
+        "loop",
+        "tuple"
       ],
       "status": "reviewed",
       "source": {
         "kind": "bundled",
-        "path": "modules/lists/module.json"
+        "path": "modules/lists/module.md"
       }
     },
     {

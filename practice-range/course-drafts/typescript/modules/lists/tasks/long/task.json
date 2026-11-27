@@ -1,12 +1,12 @@
 {
   "id": "course:ts-foundations/task/lists-long",
   "role": "independent",
-  "title": "Collect long tasks",
+  "title": "Keep values at or above a minimum",
   "concepts": [
     "array",
     "loop"
   ],
-  "prompt": "Return a new array of values at least the supplied minimum, preserving order and duplicates. Leave the original array intact.",
+  "prompt": "Write `atLeast(values: number[], minimum: number): number[]`. Return a new array of the values that are at least `minimum`, in their original order, duplicates included. Do not change `values`.",
   "hints": [
     "Start with an empty output list.",
     "Test each value against the threshold.",
@@ -18,10 +18,10 @@
   "mode": "script",
   "rules": [],
   "checks": [
-    "__same(longTasks([3,2,3,5], 3), [3,3,5])",
-    "__same(longTasks([], 0), [])",
-    "__same(longTasks([0,-1], 0), [0])",
-    "(() => { const input = [1, 4]; const output = longTasks(input, 4); return output !== input && __same(input, [1, 4]); })()"
+    "__same(atLeast([3,2,3,5], 3), [3,3,5])",
+    "__same(atLeast([], 0), [])",
+    "__same(atLeast([0,-1], 0), [0])",
+    "(() => { const input = [1, 4]; const output = atLeast(input, 4); return output !== input && __same(input, [1, 4]); })()"
   ],
   "typeChecks": [],
   "rejects": [],

@@ -6,7 +6,7 @@
     "array",
     "loop"
   ],
-  "prompt": "Return how many entries in numbers are exactly zero. Other values, including negatives, do not count.",
+  "prompt": "Write `emptyBins(numbers: number[]): number`. Return how many entries are exactly `0`. Other values, negatives included, do not count.",
   "hints": [
     "Which item qualifies?",
     "Add one for each matching entry.",

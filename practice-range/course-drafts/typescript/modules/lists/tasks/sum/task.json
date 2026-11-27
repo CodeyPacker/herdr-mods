@@ -6,7 +6,7 @@
     "array",
     "loop"
   ],
-  "prompt": "Return the sum of all durations, with an empty list totaling zero. The starter keeps only the last duration.",
+  "prompt": "Repair `totalMinutes`. It must return the sum of every value in the array, and 0 for an empty array. The starter keeps only the last value.",
   "hints": [
     "Trace the total after the first and second visit.",
     "Initialize the running number once before the loop.",
