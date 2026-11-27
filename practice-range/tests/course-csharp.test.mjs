@@ -18,14 +18,15 @@ test("the C# course pack is complete, registered and written for C# alone", asyn
   const pack = await loadCourse(courseId);
   assert.equal(pack.languageId, "csharp");
   assert.equal(pack.preview, true);
-  assert.equal(pack.modules.length, 18);
+  assert.equal(pack.title, "Learn C#");
+  assert.equal(pack.modules.length, 16);
   assert.ok(pack.modules.every(entry => entry.status === "available"));
-  assert.equal(pack.lessons.length, 18);
+  assert.equal(pack.lessons.length, 16);
   const tasks = pack.lessons.flatMap(lesson => lesson.tasks);
-  assert.equal(tasks.length, 61, "57 lesson tasks plus four project checkpoints");
+  assert.equal(tasks.length, 53);
   assert.equal(pack.readiness.length, 4);
-  assert.equal(pack.project.checkpoints.length, 5);
-  for (const checkpoint of pack.project.checkpoints) assert.equal(taskFor(pack, checkpoint.taskId).lesson.id, checkpoint.module);
+  // D11: no project and no capstone.
+  assert.equal(pack.project, undefined);
   for (const task of [...tasks, ...pack.readiness.map(group => group.task)]) {
     assert.ok(["statements", "members", "types"].includes(task.mode), task.id);
     assert.equal(task.checkLabels.length, task.checks.length, `${task.id} needs a plain label for every check`);
@@ -37,8 +38,9 @@ test("the C# course pack is complete, registered and written for C# alone", asyn
     tasks: tasks.map(({ title, prompt, hints, feedback, checkLabels }) => ({ title, prompt, hints, feedback, checkLabels })) })),
     readiness: pack.readiness.map(({ task }) => [task.prompt, task.hints, task.feedback]) });
   assert.doesNotMatch(text, /TypeScript|JavaScript|Python|\bJava\b|another language|other languages/i);
+  assert.doesNotMatch(text, /tracker|task board/i, "D11: no task tracker theme");
   const summary = (await listCourses()).find(course => course.id === courseId);
-  assert.deepEqual([summary.languageId, summary.available, summary.total], ["csharp", 18, 18]);
+  assert.deepEqual([summary.languageId, summary.available, summary.total], ["csharp", 16, 16]);
 });
 
 test("a C# course runs examples and checks a saved answer against every case", { timeout: 240000 }, async t => {
@@ -98,12 +100,12 @@ test("a C# course runs examples and checks a saved answer against every case", {
   assert.match(await readFile(join(dirname(state.file), "Supplied.cs"), "utf8"), /global using System\.Linq;[\s\S]*public interface ITaskSource/);
   assert.equal(editorBuild(dirname(state.file)), "", "A types starter must build in the editor project with its supplied interface");
 
-  // The final assessment: async methods, a trusted helper and a learner-written check.
-  const auditId = `${courseId}/task/report-audit`;
-  await run("open", { moduleId: `${courseId}/module/report`, step: 3 });
+  // The last module's task: a learner-written check run against faulty and correct candidates.
+  const auditId = `${courseId}/task/checks-order-check`;
+  await run("open", { moduleId: `${courseId}/module/checks`, step: 0 });
   state = await run("task", { taskId: auditId });
   state = await run("check", { taskId: auditId });
-  assert.equal(state.enrollment.tasks[auditId].result.passed, false, "The starter must not pass the final assessment");
+  assert.equal(state.enrollment.tasks[auditId].result.passed, false, "The starter must not pass the last module's task");
   await writeFile(state.file, taskFor(pack, auditId).task.solution);
   state = await run("check", { taskId: auditId });
   assert.equal(state.enrollment.tasks[auditId].result.passed, true);

@@ -53,7 +53,7 @@ try {
   const csharpExample = await csharp("example", { moduleId: csharpModule, exampleId: "board" });
   const csharpTask = await csharp("task", { taskId: `${csharpId}/task/values-arrival-log` });
   const csharpMembers = await csharp("task", { taskId: `${csharpId}/task/patterns-lane` });
-  const csharpProject = await csharp("task", { taskId: `${csharpId}/task/report-audit` });
+  const csharpProject = await csharp("task", { taskId: `${csharpId}/task/checks-order-check` });
   const csharpReadiness = await csharp("task", { taskId: `${csharpId}/task/readiness-r1` });
   const csharpCases = { "csharp-modules": ["modules", csharpModules], "csharp-lesson": ["lesson", csharpExample], "csharp-task": ["task", csharpTask],
     "csharp-members-task": ["task", csharpMembers], "csharp-project": ["task", csharpProject], "csharp-readiness-task": ["task", csharpReadiness] };

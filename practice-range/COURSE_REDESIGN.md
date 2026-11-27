@@ -186,7 +186,28 @@ New content version `0.2.0-preview.1`, no compatibility with 0.1.0 (old enrollme
 
 Same rules as Phase C, new content version, 16 modules from the table.
 
-- [ ] D0 Outline and manifest
+- [ ] D0 Outline and manifest. Existing keys map to the planned list like this (reuse each, retheme, convert with the C recipe):
+
+    | # | Planned title | Existing key | Note |
+    | --- | --- | --- | --- |
+    | 1 | Run code, read a type error | save | |
+    | 2 | Types and inference | values | |
+    | 3 | Narrowing with control flow | decisions | |
+    | 4 | Function types | functions | |
+    | 5 | Arrays and tuples | lists | add a tuple step |
+    | 6 | Object types and interfaces | shapes | |
+    | 7 | null, undefined, optional | missing | |
+    | 8 | Union and literal types | collections | new content needed: collections is about grouping data |
+    | 9 | Discriminated unions | tagged | |
+    | 10 | unknown and type guards | boundary | |
+    | 11 | Modules | modules | |
+    | 12 | Generics | generic | |
+    | 13 | Utility types | none | new module |
+    | 14 | Mapped and conditional types | none | new module |
+    | 15 | Errors and Result types | errors | |
+    | 16 | async and Promises | async | |
+
+    Drop `checks`, `compose`, `tracker`, `report` and `project/` (or keep `checks` as "Writing tests" and fold 13 and 14 into one module, if the owner prefers fewer new modules). Ask the owner before writing modules 8, 13 and 14 from scratch: each new module needs examples with expected output and 2 to 4 verified tasks with wrong answers.
 - [ ] D1 to D16 one box per module (add them when D0 is done)
 - [ ] D17 Readiness checks
 - [ ] D18 Build, verify, tests, screenshots
