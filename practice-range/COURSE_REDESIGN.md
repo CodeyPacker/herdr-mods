@@ -204,6 +204,13 @@ Mockup: "Screen 3, revised after first use" in the redesign doc.
 - [x] A2.5 Apply the same narrow column and bottom bar to the course page and the exercise page.
     - Course and exercise pages use a 760-wide centred column; the lesson uses 1040 for the step list plus a 680-wide step. "Open in editor" is the filled button on exercises. GPUI elements take no children after they are added to a parent, so containers are attached last.
 
+Owner feedback round 3 (2026-11-26), done:
+- Catalog cards and the course page's Up next box are clickable as a whole, with "Continue →" text instead of a button.
+- "← Courses" in the course header goes back.
+- Practice drills are one plain "Practice drills" button beside Settings, with no due-for-review notice.
+- "Loading course…" shows in the footer, so the page does not shift when a step opens.
+- A newer course version is offered as "Update to <version>" on the catalog card, not as a banner on the course page.
+
 Also done: a language card ("Start or resume course") with exactly one course opens that course page directly instead of a one-item list.
 
 ### Phase D: TypeScript course rewrite

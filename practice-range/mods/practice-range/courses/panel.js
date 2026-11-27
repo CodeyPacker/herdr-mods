@@ -351,7 +351,6 @@ export class CoursePanel {
     const body = v_flex().id("course-body").flex_1().min_h(0).overflow_y_scroll().p(16);
     // Content sits in a centred column instead of the full window. The lesson is wider because it has a step list.
     const column = v_flex().w_full().max_w(this.page === "lesson" ? 1040 : 760).mx_auto().gap(12);
-    if (this.busy) column.child(h_flex().gap(8).child(spinner(t)).child(div().child(this.busy)));
     if (this.generatingRepoLesson || this.generatingExtras) column.child(keyButton(t,"cancel-repo-lesson","","Cancel generation",Boolean(this.host.tutorRequestId),cx=>this.host.cancelTutor(cx)));
     if (this.error) column.child(banner(t, this.error, t.blocked));
     if (this.page === "catalog") this.catalogView(column, t);
@@ -374,7 +373,9 @@ export class CoursePanel {
       : this.page === "lesson" ? "Course page" : this.page === "modules" ? "Courses" : "Back";
     body.child(column);
     sweepCode();
-    const footer = paneBar(t).items_center().child(keyButton(t, "course-back", "", backLabel, !this.busy, cx => this.back(cx))).child(div().flex_1());
+    // Loading shows in the footer, so the page never shifts while a step opens.
+    const footer = paneBar(t).items_center().child(keyButton(t, "course-back", "", backLabel, !this.busy, cx => this.back(cx)))
+      .child(h_flex().flex_1().gap(8).items_center().px(12).when(Boolean(this.busy), el => el.child(spinner(t)).child(div().text_size(12).text_color(t.muted).child(this.busy))));
     const lesson = this.page === "lesson" ? this.lesson() : null, position = this.data?.enrollment.position;
     if (lesson && position) {
       // Previous, where you are, and Continue: the one filled button, bright once the step is done.
@@ -396,7 +397,8 @@ export class CoursePanel {
    */
   header(t, back, title, right) {
     return h_flex().gap(12).items_center().pb(4).border_b_1().border_color(t.border)
-      .child(div().flex_none().text_size(12).text_color(t.muted).child(`\u2190 ${back}`))
+      .child(div().id("course-header-back").flex_none().text_size(12).text_color(t.muted).cursor_pointer().hover(s => s.text_color(t.foreground))
+        .on_click((_e, cx) => this.back(cx)).child(`\u2190 ${back}`))
       .child(div().flex_1().font_semibold().child(title))
       .when(Boolean(right), el => el.child(right));
   }
@@ -426,14 +428,23 @@ export class CoursePanel {
     for (const course of this.catalog.filter(course=>!this.languageFilter || course.languageId===this.languageFilter)) {
       const total = course.total ?? 0, done = course.done ?? 0, started = Boolean(course.enrolledVersion);
       const summary = course.error ?? `${total} ${course.reading ? "reading modules" : "modules"}${course.preview ? " \u00b7 Preview" : ""}`;
-      body.child(card(t, { id: `course-card-${course.id}` })
+      const open = (/** @type {Context} */ cx) => this.run("enroll", { courseId: course.id, entryPath: "beginner" }, cx);
+      body.child(card(t, { id: `course-card-${course.id}`, click: this.busy || course.error ? undefined : open })
         .child(div().font_semibold().child(courseName(course)))
         .child(div().text_size(12).text_color(t.muted).child(summary))
         .child(h_flex().gap(10).items_center()
           .child(div().w(200).child(progressBar(t, total ? done / total : 0)))
           .child(div().text_size(12).text_color(t.muted).child(started ? `${done} of ${total} done` : "Not started")))
-        .child(h_flex().child(keyButton(t, `course-open-${course.id}`, "", started ? "Continue" : "Start", !this.busy && !course.error,
-          cx => this.run("enroll", { courseId: course.id, entryPath: "beginner" }, cx)))));
+        .child(h_flex().gap(12).items_center()
+          .child(div().text_size(12).text_color(t.accent).child(started ? "Continue \u2192" : "Start \u2192"))
+          // A newer version is offered here. Updating carries reading and answers over and opens the course.
+          .when(Boolean(started && course.contentVersion && course.enrolledVersion !== course.contentVersion), el => el.child(
+            h_flex().id(`course-update-${course.id}`).h(26).px(10).items_center().rounded(8).border_1().border_color(t.accent).text_size(12)
+              .when(!this.busy, b => b.cursor_pointer().hover(s => s.bg(t.selected)).on_click((_e, cx) => {
+                cx.stop_propagation();
+                this.run("update-version", { courseId: course.id, contentVersion: course.enrolledVersion, to: course.contentVersion }, cx);
+              }))
+              .child(`Update to ${course.contentVersion}`)))));
     }
   }
 
@@ -476,28 +487,28 @@ export class CoursePanel {
   /** The course page: one Continue box, then the numbered modules. @param {import("gpui-kit").Element} body @param {Theme} t */
   modules(body, t) {
     const course = this.data.course;
-    body.child(this.header(t, "Courses", courseName(course), this.settingsButton(t, "course-settings")));
+    // Drills are optional, so they are one quiet button, never a reminder.
+    const tools = h_flex().gap(8).when(!course.reading, el => el.child(keyButton(t, "course-practice-review", "", "Practice drills", !this.busy, cx => this.practiceReview(cx))))
+      .child(this.settingsButton(t, "course-settings"));
+    body.child(this.header(t, "Courses", courseName(course), tools));
     this.updateView(body, t);
     if (this.data.drillError) body.child(banner(t, this.data.drillError));
     const next = this.nextStep();
     const nextLesson = next && course.lessons.find(lesson => lesson.id === next.moduleId);
     if (next && nextLesson) {
       const step = nextLesson.steps[next.step];
-      body.child(card(t, { id: "course-up-next", on: true })
+      body.child(card(t, { id: "course-up-next", on: true, click: this.busy ? undefined : cx => this.run("open", next, cx) })
         .child(div().text_size(11).text_color(t.dim).child("Up next"))
         .child(h_flex().gap(12).items_center()
           .child(v_flex().flex_1().gap(2)
             .child(div().font_semibold().child(`${this.moduleNumber(nextLesson.id)}. ${nextLesson.title}${step ? ` \u00b7 ${step.title}` : ""}`))
             .child(div().text_size(12).text_color(t.muted).child(`Step ${next.step + 1} of ${nextLesson.steps.length}`)))
-          .child(keyButton(t, "course-continue", "", "Continue", !this.busy, cx => this.run("open", next, cx)))));
+          .child(div().flex_none().text_size(12).text_color(t.accent).child("Continue \u2192"))));
     } else body.child(banner(t, "You have read every module. Open any module below to revisit it.", t.done));
     const reviewing = Boolean(this.data.enrollment.review);
     if (reviewing || this.data.reviewReady > 0) body.child(h_flex().gap(8).items_center()
       .child(keyButton(t, "course-review", "", reviewing ? "Resume review" : `Review \u00b7 ${this.data.reviewReady} ready`, !this.busy, cx => this.run("review-start", {}, cx)))
       .child(div().text_size(12).text_color(t.muted).child("Exercises you passed, back for another try.")));
-    if (this.data.recommendation?.kind === "practice-review") body.child(h_flex().gap(8).items_center()
-      .child(keyButton(t, "course-practice-review", "", "Practice drills", !this.busy, cx => this.practiceReview(cx)))
-      .child(div().text_size(12).text_color(t.muted).child(this.data.recommendation.reason)));
     body.child(sectionLabel(t, "MODULES"));
     for (const [index, module] of course.modules.entries()) {
       const state = module.status === "planned" ? "planned" : this.moduleState(module.id);
@@ -670,8 +681,7 @@ export class CoursePanel {
     if (!update) return;
     if (update.started) { body.child(banner(t, `Version ${update.to} is already started. Resume it from Courses.`)); return; }
     if (!update.compatible) { body.child(banner(t, `Version ${update.to} cannot take progress from this version. You can start it separately from Courses.`)); return; }
-    body.child(banner(t, `Version ${update.to} adds ${update.newTasks} exercises. Your reading, answers, results and backups carry over. This version stays available.`))
-      .child(keyButton(t, "course-update", "", `Update to ${update.to}`, !this.busy && !this.data.enrollment.review, cx => this.run("update-version", { to: update.to }, cx)));
+    // A compatible update is offered on the course's card in the catalog, not here.
   }
 
   /** Skip-ahead tests (readiness checks). A pass covers that task only. @param {import("gpui-kit").Element} body @param {Theme} t */
