@@ -1,15 +1,15 @@
 {
   "id": "course:cs-foundations/task/patterns-lane",
   "role": "independent",
-  "title": "Sort a job into a lane",
+  "title": "Sort a order into a lane",
   "concepts": [
     "property-pattern",
     "switch-expression",
     "comparison"
   ],
-  "prompt": "Job is supplied. Write public static string Lane(Job job). A job with 0 minutes goes to \"skip\", even when it is urgent. Any other urgent job goes to \"now\". A job under 30 minutes goes to \"quick\". Everything else goes to \"plan\".",
+  "prompt": "Order is supplied. Write public static string Lane(Order order). A order with 0 minutes goes to \"skip\", even when it is urgent. Any other urgent order goes to \"now\". A order under 30 minutes goes to \"quick\". Everything else goes to \"plan\".",
   "hints": [
-    "Two rules can apply to the same job. Which rule should win for an urgent job with 0 minutes?",
+    "Two rules can apply to the same order. Which rule should win for an urgent order with 0 minutes?",
     "The first matching arm wins, so write the arms in the same order as the rules in the prompt.",
     "Use { Minutes: 0 }, then { Urgent: true }, then { Minutes: < 30 }, then _ for everything else."
   ],
@@ -19,22 +19,22 @@
   "mode": "members",
   "rules": [],
   "checks": [
-    "Practice.Lane(new Job(\"Sweep\", 0, true)) == \"skip\"",
-    "Practice.Lane(new Job(\"Sweep\", 0, false)) == \"skip\"",
-    "Practice.Lane(new Job(\"Ship\", 45, true)) == \"now\"",
-    "Practice.Lane(new Job(\"Ship\", 5, true)) == \"now\"",
-    "Practice.Lane(new Job(\"Label\", 29, false)) == \"quick\"",
-    "Practice.Lane(new Job(\"Pack\", 30, false)) == \"plan\"",
-    "Practice.Lane(new Job(\"Pack\", 90, false)) == \"plan\""
+    "Practice.Lane(new Order(\"Sweep\", 0, true)) == \"skip\"",
+    "Practice.Lane(new Order(\"Sweep\", 0, false)) == \"skip\"",
+    "Practice.Lane(new Order(\"Salad\", 45, true)) == \"now\"",
+    "Practice.Lane(new Order(\"Salad\", 5, true)) == \"now\"",
+    "Practice.Lane(new Order(\"Label\", 29, false)) == \"quick\"",
+    "Practice.Lane(new Order(\"Soup\", 30, false)) == \"plan\"",
+    "Practice.Lane(new Order(\"Soup\", 90, false)) == \"plan\""
   ],
   "checkLabels": [
-    "An urgent job with 0 minutes goes to \"skip\".",
-    "A job with 0 minutes that is not urgent goes to \"skip\".",
-    "An urgent job of 45 minutes goes to \"now\".",
-    "An urgent job of 5 minutes goes to \"now\".",
-    "A job of 29 minutes that is not urgent goes to \"quick\".",
-    "A job of exactly 30 minutes that is not urgent goes to \"plan\".",
-    "A job of 90 minutes that is not urgent goes to \"plan\"."
+    "An urgent order with 0 minutes goes to \"skip\".",
+    "A order with 0 minutes that is not urgent goes to \"skip\".",
+    "An urgent order of 45 minutes goes to \"now\".",
+    "An urgent order of 5 minutes goes to \"now\".",
+    "A order of 29 minutes that is not urgent goes to \"quick\".",
+    "A order of exactly 30 minutes that is not urgent goes to \"plan\".",
+    "A order of 90 minutes that is not urgent goes to \"plan\"."
   ],
   "fixtures": [
     {
@@ -62,5 +62,5 @@
       }
     }
   ],
-  "feedback": "Find the failing job and read your arms from the top. The first arm that matches decides the lane. Check the order, and the edge at exactly 30 minutes."
+  "feedback": "Find the failing order and read your arms from the top. The first arm that matches decides the lane. Check the order, and the edge at exactly 30 minutes."
 }

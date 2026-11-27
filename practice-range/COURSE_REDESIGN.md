@@ -160,7 +160,8 @@ New content version `0.2.0-preview.1`, no compatibility with 0.1.0 (old enrollme
         3. Rename identifiers in each task's `.cs` files and `checks` together, then rewrite `title`, `prompt`, `hints`, `checkLabels`, `feedback` and each wrong answer's `misconception`. Rewrite fixture files with new values. Watch `alternative.cs`: it often builds text with `+`, so a rename can break its format.
         4. Rewrite the lesson body in `module.md` with backticks for code, short paragraphs and lists. Keep every example id, question id, step kind and `@task` line.
         5. `git rm module.json examples/*.cs`, point the manifest entry at `module.md`, run `node scripts/verify-course.mjs csharp <key>`, then grep the module for tracker words.
-        6. In Python, read a file before opening it for writing. `open(f, "w").write(open(f).read())` empties the file.
+        6. A word-for-word rename must skip `@task` lines, example ids (` example <id>`, `example=<id>`, `@example <id>`) and question ids. The verifier catches a broken id, so read its assertion when it fails.
+        7. In Python, read a file before opening it for writing. `open(f, "w").write(open(f).read())` empties the file.
 - [x] C1 Run a program, read errors
 - [x] C2 Types and values
 - [x] C3 Control flow
@@ -172,7 +173,7 @@ New content version `0.2.0-preview.1`, no compatibility with 0.1.0 (old enrollme
 - [x] C9 Dictionaries and sets
 - [x] C10 LINQ
 - [x] C11 Interfaces and inheritance
-- [ ] C12 Pattern matching
+- [x] C12 Pattern matching
 - [ ] C13 Exceptions
 - [ ] C14 Generics
 - [ ] C15 async and await

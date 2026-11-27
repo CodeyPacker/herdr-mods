@@ -7,7 +7,7 @@
     "type-pattern",
     "property-pattern"
   ],
-  "prompt": "Entry and its record types are supplied. Caption should return \"Pack (15 min)\" for a Ready entry, \"Pack (no estimate)\" for a Ready entry with 0 minutes, \"Ship blocked: no label\" for a Blocked entry, and only the title for any other entry. The starter does not compile, and it is missing one case. Read the compiler error, then repair the method.",
+  "prompt": "Entry and its record types are supplied. Caption should return \"Soup (15 min)\" for a Ready entry, \"Soup (no estimate)\" for a Ready entry with 0 minutes, \"Salad blocked: no lettuce\" for a Blocked entry, and only the title for any other entry. The starter does not compile, and it is missing one case. Read the compiler error, then repair the method.",
   "hints": [
     "The error names an arm that can never run. Which arm above it already matches everything?",
     "Move the _ arm to the bottom. Then decide where a Ready entry with 0 minutes must be handled.",
@@ -19,14 +19,14 @@
   "mode": "members",
   "rules": [],
   "checks": [
-    "Practice.Caption(new Ready(\"Pack\", 15)) == \"Pack (15 min)\"",
-    "Practice.Caption(new Ready(\"Pack\", 0)) == \"Pack (no estimate)\"",
-    "Practice.Caption(new Blocked(\"Ship\", \"no label\")) == \"Ship blocked: no label\"",
-    "Practice.Caption(new Blocked(\"Ship\", \"\")) == \"Ship blocked: \"",
+    "Practice.Caption(new Ready(\"Soup\", 15)) == \"Soup (15 min)\"",
+    "Practice.Caption(new Ready(\"Soup\", 0)) == \"Soup (no estimate)\"",
+    "Practice.Caption(new Blocked(\"Salad\", \"no lettuce\")) == \"Salad blocked: no lettuce\"",
+    "Practice.Caption(new Blocked(\"Salad\", \"\")) == \"Salad blocked: \"",
     "Practice.Caption(new Note(\"Memo\")) == \"Memo\""
   ],
   "checkLabels": [
-    "A Ready entry must show its title and minutes, as in \"Pack (15 min)\".",
+    "A Ready entry must show its title and minutes, as in \"Soup (15 min)\".",
     "A Ready entry with 0 minutes must show \"(no estimate)\" after its title.",
     "A Blocked entry must show its title, then \" blocked: \", then its reason.",
     "A Blocked entry with an empty reason must still end with \" blocked: \".",

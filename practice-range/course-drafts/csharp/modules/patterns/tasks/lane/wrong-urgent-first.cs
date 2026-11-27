@@ -1,4 +1,4 @@
-public static string Lane(Job job) => job switch
+public static string Lane(Order order) => order switch
 {
     { Urgent: true } => "now",
     { Minutes: 0 } => "skip",

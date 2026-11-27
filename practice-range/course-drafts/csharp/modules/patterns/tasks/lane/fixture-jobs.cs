@@ -1,2 +1,2 @@
 // Supplied record type.
-public record Job(string Title, int Minutes, bool Urgent);
+public record Order(string Title, int Minutes, bool Urgent);

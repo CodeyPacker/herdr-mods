@@ -324,7 +324,7 @@
       "status": "sample",
       "source": {
         "kind": "bundled",
-        "path": "modules/patterns/module.json"
+        "path": "modules/patterns/module.md"
       }
     },
     {

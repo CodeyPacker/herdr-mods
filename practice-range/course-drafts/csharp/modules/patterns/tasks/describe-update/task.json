@@ -8,7 +8,7 @@
     "interpolation",
     "record"
   ],
-  "prompt": "Update and its record types are supplied. Describe returns one line for the board. The Arrived arm is finished. Change the Finished arm to return the title and time in the form \"Pack took 15 min\". Add an arm so a Paused update returns \"Paused: \" followed by its reason. Any other update still returns \"Other\".",
+  "prompt": "Update and its record types are supplied. Describe returns one line for the kitchen screen. The Arrived arm is finished. Change the Finished arm to return the title and time in the form \"Soup took 15 min\". Add an arm so a Paused update returns \"Paused: \" followed by its reason. Any other update still returns \"Other\".",
   "hints": [
     "Inside the Finished arm, f is the Finished record. Which of its properties does the line need?",
     "Build the text with an interpolated string that uses f.Title and f.Minutes.",
@@ -21,7 +21,7 @@
   "rules": [],
   "checks": [
     "Practice.Describe(new Arrived(0)) == \"0 arrived\"",
-    "Practice.Describe(new Finished(\"Pack\", 15)) == \"Pack took 15 min\"",
+    "Practice.Describe(new Finished(\"Soup\", 15)) == \"Soup took 15 min\"",
     "Practice.Describe(new Finished(\"Sort\", 0)) == \"Sort took 0 min\"",
     "Practice.Describe(new Paused(\"lunch\")) == \"Paused: lunch\"",
     "Practice.Describe(new Paused(\"\")) == \"Paused: \"",
@@ -29,7 +29,7 @@
   ],
   "checkLabels": [
     "An Arrived update with a count of 0 must return \"0 arrived\".",
-    "A Finished update must return its title and minutes, as in \"Pack took 15 min\".",
+    "A Finished update must return its title and minutes, as in \"Soup took 15 min\".",
     "A Finished update with a different title and 0 minutes must use those values.",
     "A Paused update must return \"Paused: \" followed by its reason.",
     "A Paused update with an empty reason must return \"Paused: \".",

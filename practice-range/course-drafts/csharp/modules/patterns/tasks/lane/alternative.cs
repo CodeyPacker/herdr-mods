@@ -1,7 +1,7 @@
-public static string Lane(Job job)
+public static string Lane(Order order)
 {
-    if (job.Minutes == 0) return "skip";
-    if (job.Urgent) return "now";
-    if (job.Minutes < 30) return "quick";
+    if (order.Minutes == 0) return "skip";
+    if (order.Urgent) return "now";
+    if (order.Minutes < 30) return "quick";
     return "plan";
 }
