@@ -3,8 +3,14 @@ function firstOr<T>(items: readonly T[], fallback: T): T {
   return fallback;
 }
 
-function summaries(tasks: readonly TrackerTask[]): Pick<TrackerTask, "id" | "title">[] {
-  const result: Pick<TrackerTask, "id" | "title">[] = [];
-  for (const { id, title, done } of tasks) if (done === false) result.push({ id, title });
+function drafts(articles: readonly Article[]): Pick<Article, "id" | "title">[] {
+  const result: Pick<Article, "id" | "title">[] = [];
+  for (const { id, title, published } of articles) if (published === false) result.push({ id, title });
   return result;
+}
+
+function pluck<T, K extends keyof T>(items: readonly T[], key: K): T[K][] {
+  const values: T[K][] = [];
+  for (const item of items) values.push(item[key]);
+  return values;
 }

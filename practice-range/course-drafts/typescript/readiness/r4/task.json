@@ -5,10 +5,12 @@
   "rules": [],
   "typeChecks": [
     "__Equal<ReturnType<typeof firstOr<string>>, string>",
-    "__Equal<ReturnType<typeof summaries>, Pick<TrackerTask, \"id\" | \"title\">[]>"
+    "__Equal<ReturnType<typeof drafts>, Pick<Article, \"id\" | \"title\">[]>",
+    "__Equal<ReturnType<typeof pluck<{ a: number; b: string }, \"a\">>, number[]>"
   ],
   "rejects": [
-    "firstOr<number>([1], \"x\")"
+    "firstOr<number>([1], \"x\")",
+    "pluck([{ a: 1 }], \"b\")"
   ],
   "fixtures": [
     {
@@ -18,31 +20,34 @@
   ],
   "id": "course:ts-foundations/task/readiness-r4",
   "role": "readiness",
-  "title": "Generics",
+  "title": "Generics through mapped types",
   "concepts": [
     "generic",
     "utility",
+    "utility-types",
+    "keyof",
     "callback",
     "transform"
   ],
   "mode": "script",
-  "prompt": "Write firstOr<T>(items, fallback): return the first item when the list is nonempty, even if it is 0 or empty text, and the fallback otherwise. Write summaries(tasks): return { id, title } for each open task (done is false), in order, with no other fields. The two must work together: firstOr(summaries(tasks), fallback).",
+  "prompt": "Write three functions that work together. `firstOr<T>(items, fallback)` returns the first item when the array is not empty, even if it is 0 or `\"\"`, and `fallback` otherwise. `drafts(articles)` returns `{ id, title }` for each article where `published` is `false`, in order, with no other fields. `pluck<T, K extends keyof T>(items, key)` returns the value of field `key` from each item, typed as `T[K][]`.",
   "hints": [
-    "Use the list length, not truthiness, to decide whether a first item exists.",
-    "Filter open tasks, then build a new object with only id and title.",
-    "Pick<TrackerTask, \"id\" | \"title\"> describes the result shape."
+    "Use the array length, not truthiness, to decide whether a first item exists.",
+    "Filter unpublished articles, then build new objects with only `id` and `title`.",
+    "In `pluck`, `K extends keyof T` limits the key, and `T[K]` is the type of each value."
   ],
   "checks": [
     "__same(firstOr([0, 1], 9), 0)",
     "__same(firstOr([], \"none\"), \"none\")",
-    "__same(summaries([{ id: \"a\", title: \"A\", done: false, owner: \"s\" }, { id: \"b\", title: \"B\", done: true }]), [{ id: \"a\", title: \"A\" }])",
-    "__same(summaries([]), [])",
-    "__same(firstOr(summaries([{ id: \"c\", title: \"\", done: false }]), { id: \"-\", title: \"none\" }), { id: \"c\", title: \"\" })"
+    "__same(drafts([{ id: \"a\", title: \"A\", published: false, author: \"s\" }, { id: \"b\", title: \"B\", published: true }]), [{ id: \"a\", title: \"A\" }])",
+    "__same(drafts([]), [])",
+    "__same(firstOr(drafts([{ id: \"c\", title: \"\", published: false }]), { id: \"-\", title: \"none\" }), { id: \"c\", title: \"\" })",
+    "__same(pluck(drafts([{ id: \"a\", title: \"A\", published: false }, { id: \"b\", title: \"B\", published: false }]), \"title\"), [\"A\", \"B\"])"
   ],
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Treats zero as missing.",
+      "misconception": "Uses `||`, so a first item of 0 is replaced.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -51,7 +56,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Copies every field of each task.",
+      "misconception": "Copies every field of each article.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -59,5 +64,5 @@
       }
     }
   ],
-  "feedback": "Check an empty list, a falsy first item, and that summaries contain only the requested fields."
+  "feedback": "Use the array length, not truthiness, to decide whether a first item exists."
 }

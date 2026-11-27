@@ -23,22 +23,22 @@
     "optional"
   ],
   "mode": "script",
-  "prompt": "Write ownersOf(input: unknown). If input is not an array, return \"invalid\". Otherwise return a Map from owner to the number of valid tasks they own, in first-seen order. A valid task is an object with kind \"task\" and a string id. owner is optional. Skip tasks without a string owner, but keep an empty owner string as its own owner. Skip anything else.",
+  "prompt": "Write `countLoans(input: unknown): Map<string, number> | \"invalid\"`. If `input` is not an array, return `\"invalid\"`. Otherwise return a `Map` from each borrower to how many valid books they have, in first-seen order. A valid book is an object with `kind: \"book\"` and a string `id`. `borrower` is optional: skip books without a string borrower, but count an empty borrower `\"\"` as its own borrower. Skip everything else.",
   "hints": [
-    "Check the outer value with Array.isArray first.",
-    "For each item, rule out null and non-objects before reading fields.",
-    "Check kind, then the id type, then whether owner is a string. Empty text is a string."
+    "Check the outer value with `Array.isArray` first.",
+    "For each item, rule out `null` and non-objects before reading fields.",
+    "Check `kind`, then the type of `id`, then whether `borrower` is a string. `\"\"` is a string."
   ],
   "checks": [
-    "__same(ownersOf(null), \"invalid\")",
-    "__same(ownersOf([]), new Map())",
-    "__same(ownersOf([{kind:\"task\",id:\"a\",owner:\"sam\"},{kind:\"task\",id:\"b\",owner:\"\"},{kind:\"task\",id:\"c\"},{kind:\"task\",id:\"d\",owner:\"sam\"}]), new Map([[\"sam\",2],[\"\",1]]))",
-    "__same(ownersOf([{kind:\"note\",id:\"x\",owner:\"sam\"},{kind:\"task\",owner:\"sam\"},{kind:\"task\",id:\"y\",owner:7},null,\"task\"]), new Map())"
+    "__same(countLoans(null), \"invalid\")",
+    "__same(countLoans([]), new Map())",
+    "__same(countLoans([{kind:\"book\",id:\"a\",borrower:\"lee\"},{kind:\"book\",id:\"b\",borrower:\"\"},{kind:\"book\",id:\"c\"},{kind:\"book\",id:\"d\",borrower:\"lee\"}]), new Map([[\"lee\",2],[\"\",1]]))",
+    "__same(countLoans([{kind:\"magazine\",id:\"x\",borrower:\"lee\"},{kind:\"book\",borrower:\"lee\"},{kind:\"book\",id:\"y\",borrower:7},null,\"book\"]), new Map())"
   ],
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Treats an empty owner as missing.",
+      "misconception": "Treats an empty borrower as missing.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -47,7 +47,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Never checks the kind tag.",
+      "misconception": "Never checks the `kind` tag.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -55,5 +55,5 @@
       }
     }
   ],
-  "feedback": "A type alias cannot check data at runtime. Inspect each field before trusting it."
+  "feedback": "Check the outer value with `Array.isArray` first."
 }

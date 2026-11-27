@@ -264,7 +264,8 @@ Same rules as Phase C, new content version, 16 modules from the table.
     - Teaches Record, Required, Readonly and ReturnType. Tasks: `utility-tally`, `utility-finalize` (types only), `utility-promote` (review after Mapped). Added `outcome/utility`.
 - [x] D16b mapped · Mapped and conditional types (new module, last in the course: its review uses `"afterCompletion": true`)
     - Teaches `keyof`, `T[K]`, mapped types, conditional types and `infer`. Tasks: `mapped-get-field`, `mapped-flags`, `mapped-item-of` (review after completion). Added `outcome/mapped`.
-- [ ] D17 Readiness checks
+- [x] D17 Readiness checks
+    - R1 and R3 had no tracker theme and are unchanged. R2 counts book loans (`countLoans`) and now includes Unions. R4 is "Generics through mapped types": `firstOr`, `drafts` over `Article`, and a new `pluck<T, K extends keyof T>`. Manifest outcome descriptions no longer mention tasks or owners. `OUTLINE.md` still describes the old tracker course.
 - [ ] D18 Build, verify, tests (update `tests/course-pack.test.mjs`, `tests/course-project.test.mjs` and the TypeScript fixtures in `tests/check-courses.mjs` that use `report-audit` or the project), screenshots
 
 ### Phase E: SQL course

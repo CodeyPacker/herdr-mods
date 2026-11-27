@@ -63,12 +63,12 @@
     },
     {
       "id": "outcome/shapes",
-      "description": "Describe a task with a type alias or interface, read a property and update an object while keeping its input intact.",
+      "description": "Describe an object with a type alias or interface, read a field, and copy an object without changing the original.",
       "assessment": "course:ts-foundations/module/shapes"
     },
     {
       "id": "outcome/missing",
-      "description": "Represent a missing owner or due date. Use string literal unions, null checks and typeof to narrow a value.",
+      "description": "Represent a missing value with null, undefined and optional fields. Use ??, ?. and typeof to handle it.",
       "assessment": "course:ts-foundations/module/missing"
     },
     {
@@ -78,7 +78,7 @@
     },
     {
       "id": "outcome/collections",
-      "description": "Select and transform tasks with callbacks. Build a Map of groups and a Set of unique owners.",
+      "description": "Select and transform arrays with callbacks. Count with a Map and remove duplicates with a Set.",
       "assessment": "course:ts-foundations/module/collections"
     },
     {
@@ -88,7 +88,7 @@
     },
     {
       "id": "outcome/boundary",
-      "description": "Accept unknown input, distinguish it from unchecked any, and inspect real properties before accepting a task.",
+      "description": "Accept unknown input, tell it apart from any, and check real fields before trusting it, including with a type guard.",
       "assessment": "course:ts-foundations/module/boundary"
     },
     {
@@ -469,6 +469,7 @@
       "modules": [
         "course:ts-foundations/module/shapes",
         "course:ts-foundations/module/missing",
+        "course:ts-foundations/module/unions",
         "course:ts-foundations/module/collections",
         "course:ts-foundations/module/tagged",
         "course:ts-foundations/module/boundary"
@@ -488,9 +489,11 @@
     },
     {
       "id": "R4",
-      "title": "Generics",
+      "title": "Generics through mapped types",
       "modules": [
-        "course:ts-foundations/module/generic"
+        "course:ts-foundations/module/generic",
+        "course:ts-foundations/module/utility",
+        "course:ts-foundations/module/mapped"
       ],
       "task": "readiness/r4/task.json"
     }

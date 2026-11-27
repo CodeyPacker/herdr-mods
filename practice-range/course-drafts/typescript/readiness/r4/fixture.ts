@@ -1,2 +1,2 @@
-// Supplied tracker type. The checks call your code directly.
-interface TrackerTask { id: string; title: string; done: boolean; owner?: string }
+// Supplied article type. The checks call your code directly.
+interface Article { id: string; title: string; published: boolean; author?: string }
