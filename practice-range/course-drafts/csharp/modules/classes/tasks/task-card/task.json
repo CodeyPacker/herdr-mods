@@ -1,7 +1,7 @@
 {
   "id": "course:cs-foundations/task/classes-task-card",
   "role": "independent",
-  "title": "Write a task card",
+  "title": "Write a book class",
   "concepts": [
     "class",
     "property",
@@ -9,35 +9,35 @@
     "interpolation",
     "branch"
   ],
-  "prompt": "Complete the class TaskCard. The constructor takes a title and a number of minutes and stores them in Title and Minutes. Done starts as false, and Complete() sets it to true. Describe() returns \"Pack (30 min)\" for a card that is not done and \"Pack (done)\" for one that is.",
+  "prompt": "Complete the class `Book`. The constructor takes a title and a number of pages and stores them in `Title` and `Pages`. `Finished` starts as false, and `MarkFinished()` sets it to true. `Describe()` returns `\"Dune (400 pages)\"` for a book that is not finished and `\"Dune (finished)\"` for one that is.",
   "hints": [
     "Which members does the constructor have to fill in, and from which parameters?",
     "Property names start with a capital letter and parameter names do not. Title = title; stores the parameter in the property.",
-    "In Describe, test Done. Return the title with \"(done)\" when it is true, and with the minutes when it is false."
+    "In Describe, test Finished. Return the title with \"(finished)\" when it is true, and with the pages when it is false."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
   "alternative": "alternative.cs",
   "mode": "types",
   "rules": [],
-  "support": "static TaskCard Completed(string title, int minutes)\n{\n    var card = new TaskCard(title, minutes);\n    card.Complete();\n    return card;\n}\n",
+  "support": "static Book Completed(string title, int pages)\n{\n    var book = new Book(title, pages);\n    book.MarkFinished();\n    return book;\n}\n",
   "checks": [
-    "new TaskCard(\"Pack\", 30).Title == \"Pack\"",
-    "new TaskCard(\"Pack\", 30).Minutes == 30",
-    "new TaskCard(\"Pack\", 30).Done == false",
-    "new TaskCard(\"Pack\", 30).Describe() == \"Pack (30 min)\"",
-    "new TaskCard(\"Sort\", 0).Describe() == \"Sort (0 min)\"",
-    "Completed(\"Pack\", 30).Done",
-    "Completed(\"Pack\", 30).Describe() == \"Pack (done)\""
+    "new Book(\"Dune\", 30).Title == \"Dune\"",
+    "new Book(\"Dune\", 30).Pages == 30",
+    "new Book(\"Dune\", 30).Finished == false",
+    "new Book(\"Dune\", 30).Describe() == \"Dune (30 pages)\"",
+    "new Book(\"Emma\", 0).Describe() == \"Emma (0 pages)\"",
+    "Completed(\"Dune\", 30).Finished",
+    "Completed(\"Dune\", 30).Describe() == \"Dune (finished)\""
   ],
   "checkLabels": [
     "Title must hold the title passed to the constructor.",
-    "Minutes must hold the minutes passed to the constructor.",
-    "A new card must not be done.",
-    "A card that is not done must describe itself as \"Pack (30 min)\".",
-    "A card with 0 minutes must still show its minutes.",
-    "After Complete(), Done must be true.",
-    "A completed card must describe itself as \"Pack (done)\"."
+    "Pages must hold the pages passed to the constructor.",
+    "A new book must not be finished.",
+    "A book that is not finished must describe itself as \"Dune (30 pages)\".",
+    "A book with 0 pages must still show its pages.",
+    "After MarkFinished(), Finished must be true.",
+    "A completed book must describe itself as \"Dune (finished)\"."
   ],
   "fixtures": [
     {
@@ -57,7 +57,7 @@
     },
     {
       "source": "wrong-ignores-done.cs",
-      "misconception": "Describes a completed card the same way as an open one.",
+      "misconception": "Describes a finished book the same way as an unfinished one.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -65,5 +65,5 @@
       }
     }
   ],
-  "feedback": "Check each member in turn: what the constructor stores, what Complete changes, and which text Describe returns for each value of Done."
+  "feedback": "Check each member in turn: what the constructor stores, what MarkFinished changes, and which text Describe returns for each value of Finished."
 }

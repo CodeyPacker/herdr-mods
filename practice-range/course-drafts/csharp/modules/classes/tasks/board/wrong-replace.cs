@@ -1,23 +1,23 @@
-public class Board
+public class Bus
 {
-    public string Name { get; }
-    public int Open { get; private set; }
+    public string Route { get; }
+    public int Riders { get; private set; }
 
-    public Board(string name)
+    public Bus(string route)
     {
-        Name = name;
+        Route = route;
     }
 
-    public void Arrive(int count)
+    public void GetOn(int count)
     {
-        Open = count;
+        Riders = count;
     }
 
-    public void Finish()
+    public void GetOff()
     {
-        if (Open > 0)
+        if (Riders > 0)
         {
-            Open = Open - 1;
+            Riders = Riders - 1;
         }
     }
 }

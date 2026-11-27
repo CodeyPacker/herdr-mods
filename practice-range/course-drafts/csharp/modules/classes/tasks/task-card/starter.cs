@@ -1,14 +1,14 @@
-public class TaskCard
+public class Book
 {
     public string Title { get; }
-    public int Minutes { get; }
-    public bool Done { get; private set; }
+    public int Pages { get; }
+    public bool Finished { get; private set; }
 
-    public TaskCard(string title, int minutes)
+    public Book(string title, int pages)
     {
     }
 
-    public void Complete()
+    public void MarkFinished()
     {
     }
 

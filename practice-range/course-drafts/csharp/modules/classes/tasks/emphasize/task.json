@@ -21,9 +21,9 @@
   "rules": [],
   "support": "static string OriginalAfter(string text)\n{\n    var label = new Label(text);\n    Labels.Emphasize(label);\n    return label.Text;\n}\nstatic bool SameObject(string text)\n{\n    var label = new Label(text);\n    return ReferenceEquals(label, Labels.Emphasize(label));\n}\n",
   "checks": [
-    "Labels.Emphasize(new Label(\"Pack\")).Text == \"Pack!\"",
-    "OriginalAfter(\"Pack\") == \"Pack\"",
-    "SameObject(\"Pack\") == false",
+    "Labels.Emphasize(new Label(\"Hello\")).Text == \"Hello!\"",
+    "OriginalAfter(\"Hello\") == \"Hello\"",
+    "SameObject(\"Hello\") == false",
     "Labels.Emphasize(new Label(\"\")).Text == \"!\""
   ],
   "checkLabels": [

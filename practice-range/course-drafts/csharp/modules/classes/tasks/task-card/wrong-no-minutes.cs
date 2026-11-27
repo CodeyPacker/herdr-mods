@@ -1,25 +1,25 @@
-public class TaskCard
+public class Book
 {
     public string Title { get; }
-    public int Minutes { get; }
-    public bool Done { get; private set; }
+    public int Pages { get; }
+    public bool Finished { get; private set; }
 
-    public TaskCard(string title, int minutes)
+    public Book(string title, int pages)
     {
         Title = title;
     }
 
-    public void Complete()
+    public void MarkFinished()
     {
-        Done = true;
+        Finished = true;
     }
 
     public string Describe()
     {
-        if (Done)
+        if (Finished)
         {
-            return $"{Title} (done)";
+            return $"{Title} (finished)";
         }
-        return $"{Title} ({Minutes} min)";
+        return $"{Title} ({Pages} pages)";
     }
 }

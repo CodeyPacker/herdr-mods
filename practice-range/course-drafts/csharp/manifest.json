@@ -217,7 +217,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/classes/module.json"
+        "path": "modules/classes/module.md"
       }
     },
     {
