@@ -1,0 +1,339 @@
+{
+  "schemaVersion": "1-draft",
+  "contentVersion": "0.1.0-draft.1",
+  "kind": "reading",
+  "id": "course:databases",
+  "title": "Databases",
+  "audience": [
+    "Can write SQL queries with joins and grouping",
+    "Wants to know why a query is slow and how to keep data correct under load"
+  ],
+  "prerequisiteConcepts": [],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:databases/module/storage",
+      "order": "listed"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/storage",
+      "description": "Explain what a query costs in pages read, and why a growing table makes an unchanged query slow.",
+      "assessment": "course:databases/module/storage"
+    },
+    {
+      "id": "outcome/indexes",
+      "description": "Say which queries a B-tree index can answer, when the database ignores one, and what each index costs.",
+      "assessment": "course:databases/module/indexes"
+    },
+    {
+      "id": "outcome/composite",
+      "description": "Order the columns of a composite index for a query, and use an index to avoid a sort or a table visit.",
+      "assessment": "course:databases/module/composite"
+    },
+    {
+      "id": "outcome/plans",
+      "description": "Read a query plan, find the step that takes the time, and compare estimated rows with actual rows.",
+      "assessment": "course:databases/module/plans"
+    },
+    {
+      "id": "outcome/joins",
+      "description": "Recognise the three join methods in a plan, and find joins that are slow or that multiply rows.",
+      "assessment": "course:databases/module/joins"
+    },
+    {
+      "id": "outcome/modeling",
+      "description": "Design tables that store each fact once, with keys, types and constraints that keep bad data out.",
+      "assessment": "course:databases/module/modeling"
+    },
+    {
+      "id": "outcome/denormalize",
+      "description": "Decide when to store a derived value, and keep it correct and rebuildable.",
+      "assessment": "course:databases/module/denormalize"
+    },
+    {
+      "id": "outcome/transactions",
+      "description": "Group changes into a transaction, keep it short, and say what it does not cover.",
+      "assessment": "course:databases/module/transactions"
+    },
+    {
+      "id": "outcome/isolation",
+      "description": "Name the anomaly in a concurrency bug and choose a fix: an atomic update, a lock, a constraint or a version check.",
+      "assessment": "course:databases/module/isolation"
+    },
+    {
+      "id": "outcome/locking",
+      "description": "Explain how lock waits and deadlocks arise, and find the transaction that blocks the others.",
+      "assessment": "course:databases/module/locking"
+    },
+    {
+      "id": "outcome/migrations",
+      "description": "Change a schema on a large, busy table in steps that neither lock it for long nor break running code.",
+      "assessment": "course:databases/module/migrations"
+    },
+    {
+      "id": "outcome/connections",
+      "description": "Size and use a connection pool, and remove wasted round trips from application code.",
+      "assessment": "course:databases/module/connections"
+    },
+    {
+      "id": "outcome/maintenance",
+      "description": "Keep a database healthy: cleanup, statistics, query statistics, tested backups and a plan for old data.",
+      "assessment": "course:databases/module/maintenance"
+    },
+    {
+      "id": "outcome/tuning",
+      "description": "Work through a slow query with one method, from measurement to a checked fix.",
+      "assessment": "course:databases/module/tuning"
+    },
+    {
+      "id": "outcome/review",
+      "description": "Review a schema, its queries and a plan, and design a schema for a new product, without help.",
+      "assessment": "course:databases/module/review"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:databases/module/storage",
+      "title": "How a database stores and finds rows",
+      "prerequisites": [],
+      "teaches": [
+        "page",
+        "sequential-scan"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/storage/module.md"
+      }
+    },
+    {
+      "id": "course:databases/module/indexes",
+      "title": "Indexes",
+      "prerequisites": [
+        "course:databases/module/storage"
+      ],
+      "teaches": [
+        "index",
+        "selectivity"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/indexes/module.md"
+      }
+    },
+    {
+      "id": "course:databases/module/composite",
+      "title": "Indexes on several columns",
+      "prerequisites": [
+        "course:databases/module/indexes"
+      ],
+      "teaches": [
+        "composite-index",
+        "covering-index"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/composite/module.md"
+      }
+    },
+    {
+      "id": "course:databases/module/plans",
+      "title": "Read a query plan",
+      "prerequisites": [
+        "course:databases/module/composite"
+      ],
+      "teaches": [
+        "query-plan",
+        "row-estimate"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/plans/module.md"
+      }
+    },
+    {
+      "id": "course:databases/module/joins",
+      "title": "How joins are run",
+      "prerequisites": [
+        "course:databases/module/plans"
+      ],
+      "teaches": [
+        "join-method",
+        "n-plus-one"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/joins/module.md"
+      }
+    },
+    {
+      "id": "course:databases/module/modeling",
+      "title": "Model the data",
+      "prerequisites": [
+        "course:databases/module/joins"
+      ],
+      "teaches": [
+        "normalization",
+        "constraint"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/modeling/module.md"
+      }
+    },
+    {
+      "id": "course:databases/module/denormalize",
+      "title": "When to duplicate data",
+      "prerequisites": [
+        "course:databases/module/modeling"
+      ],
+      "teaches": [
+        "denormalization",
+        "derived-data"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/denormalize/module.md"
+      }
+    },
+    {
+      "id": "course:databases/module/transactions",
+      "title": "Transactions",
+      "prerequisites": [
+        "course:databases/module/denormalize"
+      ],
+      "teaches": [
+        "transaction",
+        "durability"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/transactions/module.md"
+      }
+    },
+    {
+      "id": "course:databases/module/isolation",
+      "title": "Isolation levels",
+      "prerequisites": [
+        "course:databases/module/transactions"
+      ],
+      "teaches": [
+        "isolation-level",
+        "anomaly"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/isolation/module.md"
+      }
+    },
+    {
+      "id": "course:databases/module/locking",
+      "title": "Locks and deadlocks",
+      "prerequisites": [
+        "course:databases/module/isolation"
+      ],
+      "teaches": [
+        "lock",
+        "deadlock"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/locking/module.md"
+      }
+    },
+    {
+      "id": "course:databases/module/migrations",
+      "title": "Change a schema safely",
+      "prerequisites": [
+        "course:databases/module/locking"
+      ],
+      "teaches": [
+        "schema-migration",
+        "expand-contract"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/migrations/module.md"
+      }
+    },
+    {
+      "id": "course:databases/module/connections",
+      "title": "Connections and pools",
+      "prerequisites": [
+        "course:databases/module/migrations"
+      ],
+      "teaches": [
+        "connection-pool",
+        "pagination"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/connections/module.md"
+      }
+    },
+    {
+      "id": "course:databases/module/maintenance",
+      "title": "Keep a database healthy",
+      "prerequisites": [
+        "course:databases/module/connections"
+      ],
+      "teaches": [
+        "vacuum",
+        "backup"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/maintenance/module.md"
+      }
+    },
+    {
+      "id": "course:databases/module/tuning",
+      "title": "Find and fix a slow query",
+      "prerequisites": [
+        "course:databases/module/maintenance"
+      ],
+      "teaches": [
+        "query-tuning"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/tuning/module.md"
+      }
+    },
+    {
+      "id": "course:databases/module/review",
+      "title": "Review a schema and its queries",
+      "prerequisites": [
+        "course:databases/module/tuning"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/review/module.md"
+      }
+    }
+  ],
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  },
+  "runtimeContentVersion": "0.1.0-preview.1"
+}
