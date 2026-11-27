@@ -1,5 +1,5 @@
-// Supplied contract, and a method that works with any task source.
-public interface ITaskSource
+// Supplied contract, and a method that works with any song source.
+public interface ISongSource
 {
     string Name { get; }
     List<string> Titles();
@@ -7,10 +7,10 @@ public interface ITaskSource
 
 public static class Sources
 {
-    public static int Total(List<ITaskSource> sources)
+    public static int Total(List<ISongSource> sources)
     {
         int total = 0;
-        foreach (ITaskSource source in sources)
+        foreach (ISongSource source in sources)
         {
             total = total + source.Titles().Count;
         }

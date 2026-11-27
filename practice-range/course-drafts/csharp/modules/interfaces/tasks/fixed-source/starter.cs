@@ -1,4 +1,4 @@
-public class FixedSource : ITaskSource
+public class FixedSource : ISongSource
 {
     public FixedSource(List<string> titles)
     {

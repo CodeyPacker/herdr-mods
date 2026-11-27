@@ -1,15 +1,15 @@
-public class UrgentCard : Card
+public class UrgentNotice : Notice
 {
     public int Hours { get; }
 
-    public UrgentCard(string title, int hours) : base(title)
+    public UrgentNotice(string title, int hours) : base(title)
     {
     }
 }
 
-public static class Cards
+public static class Notices
 {
-    public static List<string> Labels(List<Card> cards)
+    public static List<string> Labels(List<Notice> notices)
     {
         return new List<string>();
     }

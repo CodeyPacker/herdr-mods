@@ -1,8 +1,8 @@
-public class UrgentCard : Card
+public class UrgentNotice : Notice
 {
     public int Hours { get; }
 
-    public UrgentCard(string title, int hours) : base(title)
+    public UrgentNotice(string title, int hours) : base(title)
     {
         Hours = hours;
     }
@@ -10,14 +10,14 @@ public class UrgentCard : Card
     public override string Label() => base.Label() + " (within " + Hours + " h)";
 }
 
-public static class Cards
+public static class Notices
 {
-    public static List<string> Labels(List<Card> cards)
+    public static List<string> Labels(List<Notice> notices)
     {
         var labels = new List<string>();
-        for (int i = 0; i < cards.Count; i++)
+        for (int i = 0; i < notices.Count; i++)
         {
-            labels.Add(cards[i].Label());
+            labels.Add(notices[i].Label());
         }
         return labels;
     }

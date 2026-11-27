@@ -1,9 +1,9 @@
 // Supplied base class.
-public class Card
+public class Notice
 {
     public string Title { get; }
 
-    public Card(string title)
+    public Notice(string title)
     {
         Title = title;
     }

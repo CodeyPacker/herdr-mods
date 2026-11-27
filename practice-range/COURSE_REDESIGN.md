@@ -171,7 +171,7 @@ New content version `0.2.0-preview.1`, no compatibility with 0.1.0 (old enrollme
 - [x] C8 Nullable types
 - [x] C9 Dictionaries and sets
 - [x] C10 LINQ
-- [ ] C11 Interfaces and inheritance
+- [x] C11 Interfaces and inheritance
 - [ ] C12 Pattern matching
 - [ ] C13 Exceptions
 - [ ] C14 Generics

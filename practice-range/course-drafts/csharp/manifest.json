@@ -306,7 +306,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/interfaces/module.json"
+        "path": "modules/interfaces/module.md"
       }
     },
     {

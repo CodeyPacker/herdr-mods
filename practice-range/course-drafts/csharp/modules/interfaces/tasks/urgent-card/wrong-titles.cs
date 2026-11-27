@@ -1,8 +1,8 @@
-public class UrgentCard : Card
+public class UrgentNotice : Notice
 {
     public int Hours { get; }
 
-    public UrgentCard(string title, int hours) : base(title)
+    public UrgentNotice(string title, int hours) : base(title)
     {
         Hours = hours;
     }
@@ -13,14 +13,14 @@ public class UrgentCard : Card
     }
 }
 
-public static class Cards
+public static class Notices
 {
-    public static List<string> Labels(List<Card> cards)
+    public static List<string> Labels(List<Notice> notices)
     {
         List<string> labels = new List<string>();
-        foreach (Card card in cards)
+        foreach (Notice notice in notices)
         {
-            labels.Add(card.Title);
+            labels.Add(notice.Title);
         }
         return labels;
     }
