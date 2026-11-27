@@ -3,7 +3,7 @@
   "contentVersion": "0.1.0-preview.1",
   "kind": "reading",
   "id": "course:ci-cd",
-  "title": "Ship changes safely with CI/CD",
+  "title": "CI/CD",
   "audience": [
     "Uses version control and has opened a pull request",
     "Wants to understand, write and review build and deployment pipelines"

@@ -3,7 +3,7 @@
   "contentVersion": "0.1.0-draft.1",
   "kind": "reading",
   "id": "course:docker",
-  "title": "Run software in containers with Docker",
+  "title": "Docker",
   "audience": [
     "Can use a terminal and has run a program from the command line",
     "Wants to package and run software with Docker"

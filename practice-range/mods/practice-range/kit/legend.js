@@ -2,7 +2,6 @@
 import { div, svg } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { SIZE } from "./theme.js";
-import { keysAreHidden } from "./controls.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("./theme.js").Theme} Theme */
@@ -34,6 +33,5 @@ export function hint(t, [key, what], button) {
 
 /** The whole line: each key in the accent color, its meaning dim. Wraps when it runs out of room. @param {Theme} t @param {Hint[]} hints */
 export function legend(t, hints) {
-  if (keysAreHidden()) hints = [];
   return h_flex().flex_none().flex_wrap().gap(12).text_size(SIZE.small).children(hints.map((h) => hint(t, h)));
 }
