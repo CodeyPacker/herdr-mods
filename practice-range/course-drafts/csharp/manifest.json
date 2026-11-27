@@ -392,7 +392,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/checks/module.json"
+        "path": "modules/checks/module.md"
       }
     }
   ],

@@ -49,7 +49,7 @@
     },
     {
       "source": "wrong-one-early.cs",
-      "misconception": "Overcorrects, so the limit is reached one task too soon.",
+      "misconception": "Overcorrects, so the limit is reached one item too soon.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
