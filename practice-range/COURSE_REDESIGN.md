@@ -174,7 +174,7 @@ New content version `0.2.0-preview.1`, no compatibility with 0.1.0 (old enrollme
 - [x] C10 LINQ
 - [x] C11 Interfaces and inheritance
 - [x] C12 Pattern matching
-- [ ] C13 Exceptions
+- [x] C13 Exceptions
 - [ ] C14 Generics
 - [ ] C15 async and await
 - [ ] C16 Writing unit tests

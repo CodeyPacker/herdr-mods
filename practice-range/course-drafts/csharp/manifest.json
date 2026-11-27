@@ -341,7 +341,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/exceptions/module.json"
+        "path": "modules/exceptions/module.md"
       }
     },
     {
