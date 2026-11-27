@@ -18,6 +18,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 
 const COURSE_LANGUAGES = ["csharp", "typescript", "sql"];
 const FRONT = ["id", "title", "requires", "outcomes", "intro", "tasks", "review", "drills", "drillGap"];
@@ -184,7 +185,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const language = path.includes("/typescript/") ? "typescript" : path.includes("/sql/") ? "sql" : "csharp";
   const text = moduleToMarkdown({ ...module, codeFence: language });
   const back = parseModuleMarkdown(text);
-  if (JSON.stringify(back) !== JSON.stringify(module)) throw new Error("The Markdown does not convert back to the same module. Not written.");
+  if (!isDeepStrictEqual(back, module)) throw new Error("The Markdown does not convert back to the same module. Not written.");
   await writeFile(join(dirname(path), "module.md"), text);
   console.log(`Wrote ${join(dirname(path), "module.md")}`);
 }

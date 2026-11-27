@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { validatePack } from "./loader.mjs";
+import { isDeepStrictEqual } from "node:util";
 
 const pathOf = path => path instanceof URL ? fileURLToPath(path) : path;
 const archivePath = (file, id, version) => join(dirname(pathOf(file)), "archive", encodeURIComponent(id), `${version}.json`);
@@ -33,7 +34,8 @@ export async function writeCoursePack(file, pack) {
   if (previous) {
     if (previous.id !== pack.id || previous.languageId !== pack.languageId) throw new Error("Cannot replace a different course or language pack.");
     if (previous.contentVersion === pack.contentVersion) {
-      if (serialize(previous) !== serialize(pack)) throw new Error("Course content changed. Bump runtimeContentVersion before rebuilding so existing enrollments retain their lessons.");
+      // Same content in a different key order (module.md vs module.json) is not a change.
+      if (!isDeepStrictEqual(previous, pack)) throw new Error("Course content changed. Bump runtimeContentVersion before rebuilding so existing enrollments retain their lessons.");
       return;
     }
     const archive = archivePath(file, previous.id, previous.contentVersion);
