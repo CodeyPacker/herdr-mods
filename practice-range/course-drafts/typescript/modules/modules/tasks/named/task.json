@@ -6,11 +6,11 @@
     "import-export",
     "compiler-config"
   ],
-  "prompt": "The supplied numbers.ts exports starting and add. Export next(delta: number): number. Return add(starting, delta). The starter asks for the wrong export. Use \"./numbers.js\" as the import path.",
+  "prompt": "The supplied `numbers.ts` exports `starting` and `add`. Export `next(delta: number): number` that returns `add(starting, delta)`. The starter imports a name that does not exist. Import from `\"./numbers.js\"`.",
   "hints": [
-    "Inspect the supplied file’s exported names.",
-    "A named import must match the original export or explicitly rename it.",
-    "Read the supplied starting value and pass both numbers to the helper."
+    "Open `numbers.ts` and read its exported names.",
+    "A named import must use the exact exported name, or rename it with `as`.",
+    "Pass `starting` and `delta` to `add`."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -37,7 +37,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Adds the delta to zero.",
+      "misconception": "Adds `delta` to 0 instead of `starting`.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -46,7 +46,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Imports a missing name.",
+      "misconception": "Imports `start`, a name `numbers.ts` does not export.",
       "witness": {
         "fixture": "cases",
         "kind": "compile",
@@ -54,7 +54,7 @@
       }
     }
   ],
-  "feedback": "Inspect the supplied file’s exported names.",
+  "feedback": "Open `numbers.ts` and read its exported names.",
   "moduleSources": {
     "numbers.ts": "supplied-numbers.ts"
   }

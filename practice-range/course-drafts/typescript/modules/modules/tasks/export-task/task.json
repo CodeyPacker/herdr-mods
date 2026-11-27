@@ -1,15 +1,15 @@
 {
   "id": "course:ts-foundations/task/modules-export-task",
   "role": "independent",
-  "title": "Publish a typed task constructor",
+  "title": "Export a typed song constructor",
   "concepts": [
     "import-export",
     "compiler-config"
   ],
-  "prompt": "The supplied model.ts exports the type Task with id and title fields. Import this type and export makeTask(id: number, title: string): Task. Return exactly those two fields.",
+  "prompt": "The supplied `model.ts` exports the type `Song` with `id` and `title` fields. Import that type and export `makeSong(id: number, title: string): Song`. Return an object with exactly those two fields.",
   "hints": [
-    "Read the type declaration in model.ts.",
-    "Keep the named function or value visible to other files.",
+    "Read the type in `model.ts`.",
+    "`export` in front of the function makes it visible to other files.",
     "Build the return object from the two parameters."
   ],
   "starter": "starter.ts",
@@ -19,15 +19,15 @@
   "rules": [
     {
       "kind": "ImportDeclaration",
-      "message": "Import the supplied Task type."
+      "message": "Import the supplied Song type."
     }
   ],
   "checks": [
-    "__same(answer.makeTask(8,\"\"), {id:8,title:\"\"})",
-    "__same(answer.makeTask(0,\"Open\"), {id:0,title:\"Open\"})"
+    "__same(answer.makeSong(8,\"\"), {id:8,title:\"\"})",
+    "__same(answer.makeSong(0,\"Intro\"), {id:0,title:\"Intro\"})"
   ],
   "typeChecks": [
-    "__Equal<typeof answer.makeTask, (id: number, title: string) => { id: number; title: string }>"
+    "__Equal<typeof answer.makeSong, (id: number, title: string) => { id: number; title: string }>"
   ],
   "rejects": [],
   "fixtures": [
@@ -39,7 +39,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Drops the supplied id.",
+      "misconception": "Ignores the `id` parameter.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -48,7 +48,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Makes the title constant.",
+      "misconception": "Returns the same title every time.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -56,7 +56,7 @@
       }
     }
   ],
-  "feedback": "Read the type declaration in model.ts.",
+  "feedback": "Read the type in `model.ts`.",
   "moduleSources": {
     "model.ts": "supplied-model.ts"
   }

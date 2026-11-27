@@ -1,1 +1,1 @@
-export interface Task { id: number; title: string }
+export interface Song { id: number; title: string }

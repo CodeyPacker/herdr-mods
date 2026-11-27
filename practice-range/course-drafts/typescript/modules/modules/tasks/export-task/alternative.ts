@@ -1,2 +1,2 @@
-import type { Task as Item } from "./model.js";
-export const makeTask = (id: number, title: string): Item => ({ id, title });
+import type { Song as Item } from "./model.js";
+export const makeSong = (id: number, title: string): Item => ({ id, title });

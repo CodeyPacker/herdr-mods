@@ -326,7 +326,7 @@
       "status": "reviewed",
       "source": {
         "kind": "bundled",
-        "path": "modules/modules/module.json"
+        "path": "modules/modules/module.md"
       }
     },
     {

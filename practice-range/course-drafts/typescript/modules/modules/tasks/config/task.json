@@ -6,11 +6,11 @@
     "import-export",
     "compiler-config"
   ],
-  "prompt": "Return a Settings object for a project that checks null access and emits ES2022. The supplied Settings type contains strictNullChecks (boolean) and target (text). This exercise asks for a description of settings and leaves the course's real configuration intact.",
+  "prompt": "Write `settings(): Settings` describing a project that checks null access and outputs ES2022 JavaScript. `Settings` has `strictNullChecks` (boolean) and `target` (string). This only returns a description. It does not change the course's real settings.",
   "hints": [
-    "Name the option that checks null access.",
-    "Keep the checking choice separate from the emitted language level.",
-    "The requested target is an exact string."
+    "Which option makes the compiler flag a possible `null` access?",
+    "Checking and output version are separate settings.",
+    "The target is the exact string `\"ES2022\"`."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -31,7 +31,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Turns off the requested null check.",
+      "misconception": "Turns off the null check.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -40,7 +40,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Changes the emit target.",
+      "misconception": "Changes the output version.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -48,5 +48,5 @@
       }
     }
   ],
-  "feedback": "Name the option that checks null access."
+  "feedback": "Which option makes the compiler flag a possible `null` access?"
 }

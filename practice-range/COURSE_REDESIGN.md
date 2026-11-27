@@ -250,7 +250,8 @@ Same rules as Phase C, new content version, 16 modules from the table.
     - Tasks now use `Product`/`stockedNames`, `voteCounts` and bus stops. Added a Map counting prediction (`count`).
 - [x] D11 boundary · unknown and type guards
     - `valid-task` now checks member records (`validMember`, `active`). Added a type guard (`value is T`) step and prediction (`guard`).
-- [ ] D12 modules · Modules
+- [x] D12 modules · Modules
+    - `export-task` now builds a `Song` (`makeSong`). Added a "Ways to import" reading step. Every question needs a runnable example, and examples are one file, so import forms have no question.
 - [ ] D13 checks · Writing tests
 - [ ] D14 errors · Errors and failure
 - [ ] D15 async · async and Promises
