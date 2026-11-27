@@ -1,0 +1,55 @@
+{
+  "id": "course:ts-foundations/task/mapped-item-of",
+  "role": "review",
+  "title": "Find the item type of an array",
+  "concepts": [
+    "keyof",
+    "mapped-type",
+    "conditional-type"
+  ],
+  "prompt": "Write the conditional type `ItemOf<T>`. When `T` is an array, it is the array's item type: `ItemOf<string[]>` is `string`. Any other type stays as it is: `ItemOf<number>` is `number`. Only the type is checked.",
+  "hints": [
+    "`T extends X ? A : B` picks `A` when `T` fits `X`, else `B`.",
+    "`infer U` names a type inside the pattern, as in `(infer U)[]`.",
+    "When `T` is not an array, give back `T` itself."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [],
+  "typeChecks": [
+    "__Equal<ItemOf<string[]>, string>",
+    "__Equal<ItemOf<number>, number>",
+    "__Equal<ItemOf<boolean[][]>, boolean[]>"
+  ],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Gives `unknown` for arrays instead of the item type.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "types",
+        "detail": "Type check 1"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Gives `never` for non-arrays instead of the type itself.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "types",
+        "detail": "Type check 2"
+      }
+    }
+  ],
+  "feedback": "`T extends X ? A : B` picks `A` when `T` fits `X`, else `B`."
+}

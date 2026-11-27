@@ -262,7 +262,8 @@ Same rules as Phase C, new content version, 16 modules from the table.
     - `edit-shapes` now uses `Article`. Pick, Omit and Partial stay here because `edit-shapes` and R4 use them, so D16a should go further (Record, Readonly, Required, ReturnType). Added a constraint step and prediction (`constraint`).
 - [x] D16a utility · Utility types (new module)
     - Teaches Record, Required, Readonly and ReturnType. Tasks: `utility-tally`, `utility-finalize` (types only), `utility-promote` (review after Mapped). Added `outcome/utility`.
-- [ ] D16b mapped · Mapped and conditional types (new module, last in the course: its review uses `"afterCompletion": true`)
+- [x] D16b mapped · Mapped and conditional types (new module, last in the course: its review uses `"afterCompletion": true`)
+    - Teaches `keyof`, `T[K]`, mapped types, conditional types and `infer`. Tasks: `mapped-get-field`, `mapped-flags`, `mapped-item-of` (review after completion). Added `outcome/mapped`.
 - [ ] D17 Readiness checks
 - [ ] D18 Build, verify, tests (update `tests/course-pack.test.mjs`, `tests/course-project.test.mjs` and the TypeScript fixtures in `tests/check-courses.mjs` that use `report-audit` or the project), screenshots
 

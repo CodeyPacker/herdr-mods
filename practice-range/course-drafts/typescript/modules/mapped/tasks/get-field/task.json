@@ -1,0 +1,58 @@
+{
+  "id": "course:ts-foundations/task/mapped-get-field",
+  "role": "guided",
+  "title": "Read a field with its real type",
+  "concepts": [
+    "keyof",
+    "mapped-type",
+    "conditional-type"
+  ],
+  "prompt": "Repair `getField`. It takes an object and one of its keys, and returns that field's value. The return type must be the type of that field: `getField({ name: \"Ana\", age: 3 }, \"age\")` is a `number`. A key the object does not have must be a type error.",
+  "hints": [
+    "What type does the starter return? Compare it with `number`.",
+    "Add a second type parameter `K extends keyof T` for the key.",
+    "`T[K]` is the type of field `K` in `T`. Use it as the return type."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(getField({ name: \"Ana\", age: 3 }, \"age\"), 3)",
+    "__same(getField({ name: \"Ana\", age: 3 }, \"name\"), \"Ana\")"
+  ],
+  "typeChecks": [
+    "__Equal<ReturnType<typeof getField<{ name: string; age: number }, \"age\">>, number>"
+  ],
+  "rejects": [
+    "getField({ a: 1 }, \"b\")"
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Keeps `unknown` as the return type, so callers lose the field's type.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "types",
+        "detail": "Type check 1"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Accepts any string key, so a missing key is not an error.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "types",
+        "detail": "This should be a type error, but it compiles"
+      }
+    }
+  ],
+  "feedback": "What type does the starter return? Compare it with `number`."
+}

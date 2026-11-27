@@ -120,6 +120,11 @@
       "id": "outcome/utility",
       "description": "Build types with Record, Required, Readonly and ReturnType.",
       "assessment": "course:ts-foundations/module/utility"
+    },
+    {
+      "id": "outcome/mapped",
+      "description": "Write your own types with keyof, T[K], mapped types and conditional types.",
+      "assessment": "course:ts-foundations/module/mapped"
     }
   ],
   "modules": [
@@ -431,7 +436,11 @@
         "mapped-type",
         "conditional-type"
       ],
-      "status": "planned"
+      "status": "reviewed",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/mapped/module.md"
+      }
     }
   ],
   "compatibility": {

@@ -1,0 +1,59 @@
+{
+  "id": "course:ts-foundations/task/mapped-flags",
+  "role": "independent",
+  "title": "Turn every field into a flag",
+  "concepts": [
+    "keyof",
+    "mapped-type",
+    "conditional-type"
+  ],
+  "prompt": "Write the mapped type `Flags<T>`: an object with the same keys as `T`, where every field is a `boolean`. Then write `allOff<T extends object>(obj: T): Flags<T>` that returns an object with every key of `obj` set to `false`.",
+  "hints": [
+    "`{ [K in keyof T]: ... }` makes one field per key of `T`.",
+    "Every field is `boolean`, whatever its type was in `T`.",
+    "At runtime, loop over `Object.keys(obj)` and set each key to `false`."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(allOff({ email: \"a@b.c\", age: 3 }), { email: false, age: false })",
+    "__same(allOff({}), {})"
+  ],
+  "typeChecks": [
+    "__Equal<Flags<{ email: string; age: number }>, { email: boolean; age: boolean }>"
+  ],
+  "rejects": [
+    "const f: Flags<{ a: string }> = { a: \"yes\" }",
+    "const f: Flags<{ a: string }> = {}"
+  ],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-1.ts",
+      "misconception": "Adds `?`, so every flag is optional and `allOff` can return `{}`.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "types",
+        "detail": "Type check 1"
+      }
+    },
+    {
+      "source": "wrong-2.ts",
+      "misconception": "Uses `Record<string, boolean>`, which allows any key.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "types",
+        "detail": "Type check 1"
+      }
+    }
+  ],
+  "feedback": "`{ [K in keyof T]: ... }` makes one field per key of `T`."
+}
