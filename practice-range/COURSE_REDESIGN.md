@@ -93,53 +93,59 @@ Notes on Phase A:
 - [x] B1 Find how to colour code: test whether `TextView.markdown` colours ```` ```csharp ````, ```` ```typescript ```` and ```` ```sql ```` fences. If not, try a read-only `EditorState` with `language`. If neither covers all three, write a small colourer (keywords, strings, numbers, comments). Write the result here.
     - Result: `TextView.markdown` never colours code. The read-only code editor colours `cs` (C#), `sql`, and `javascript` (used for TypeScript; type annotations stay plain). `csharp`, `typescript`, `ts` and `tsx` do not colour. Editor state cannot be made during render, so `courses/code.js` makes 16 editors per language when the panel starts and lends them to code blocks. Any other fence (text, http, json) stays a Markdown block.
 - [x] B2 Use that for every code block in lessons, tasks, hints and solutions.
-- [ ] B3 Define the module Markdown format (below) and write `scripts/course-markdown.mjs` that turns `module.md` into the same module object `build-course.mjs` reads from `module.json` today. Add a test.
+- [x] B3 Define the module Markdown format (below) and write `scripts/course-markdown.mjs` that turns `module.md` into the same module object `build-course.mjs` reads from `module.json` today. Add a test.
 - [ ] B4 `build-course.mjs` reads `module.md` when present, else `module.json`.
 - [ ] B5 Convert one existing C# module to `module.md`, rebuild, verify, screenshot.
 
 #### Module Markdown format
 
+The full rules are at the top of `scripts/course-markdown.mjs`. Short version:
+
 ````markdown
 ---
-id: methods
+id: course:cs-foundations/module/methods
 title: Methods
-requires: [control-flow]
-outcomes:
-  - id: return
-    can: Write a static method that returns a value.
-practice: [methods/return-value]
+requires: ["control-flow"]
+outcomes: [{"id":"return","can":"Write a static method that returns a value.","assessment":["empty-average"]}]
+tasks: [{"id":"course:cs-foundations/task/methods-average","path":"tasks/average/task.json"}]
+drills: ["methods/return"]
 ---
 
 Intro paragraph shown on step 1.
 
 ## Return a value
 
-Step text with `inline code`.
-
-```csharp
-static double Average(double[] temps) { ... }
-```
+Step text with `inline code`. A plain fence stays part of the text and is coloured.
 
 ```csharp example average
-// Runnable example. Expected output lives in examples/average.json.
+Console.WriteLine(Average(new double[] { 18, 21, 22.5 }));
 ```
 
-:::question empty-average
+```output
+20.5
+```
+
+## Empty input {prediction}
+
+@example average
+
+:::question empty-average example=average
 What does `Average(new double[0])` return?
 - [x] 0 :: The empty check returns 0 before dividing.
 - [ ] NaN :: The early return runs first.
 - [ ] It throws an exception :: Dividing a double by 0 does not throw.
 :::
 
-:::task average-temp
-:::
+@task methods-average
 ````
 
-- Front matter holds what `module.json` holds outside steps.
-- Each `##` heading is one step. Its text is everything until the next `##`.
-- A plain fence is display code. A fence with `example <id>` is a runnable example whose expected output stays in `examples/<id>.json`.
-- `:::question <id>` holds the prompt, then one `- [x]`/`- [ ]` line per choice, feedback after `::`.
-- `:::task <id>` places a task. The task stays in `tasks/<id>/task.json` with its files, as today.
+- Front matter: one `key: value` per line. A value starting with `[`, `{` or `"` is JSON.
+- Each `## Title {kind}` is one step. The kind defaults to `explanation`.
+- A fence whose info is `<language> example <id>` is a runnable example. Flags: `readonly`, `diagnostics=[...]` (JSON). An ```` ```output ```` block right after it lists the printed lines.
+- `@example <id>` shows an example from an earlier step. `@task <id>` and `@tasks <id> <id>` place tasks (full id, or the key after `/task/`).
+- `:::question <id> [example=<id>]`: prompt, then `- [x] text :: feedback` per choice.
+- Tasks stay in `tasks/<key>/task.json` with their files, as today.
+- `node scripts/course-markdown.mjs <module.json>` writes `module.md` from an existing module and refuses if it would not convert back exactly. `tests/course-markdown.test.mjs` round-trips every authored module.
 
 ### Phase C: C# course rewrite
 
