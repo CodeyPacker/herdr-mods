@@ -32,6 +32,11 @@ Status: in progress. Phase acceptance criteria below define completion, rather t
 | D8 | Do not import Tutor courses. Tutor stays a separate, unchanged mod. Tourist stays separate. Changed on 2026-11-26: the import was built, then removed, because only the project owner had Tutor data and did not need it. |
 | D10 | A course does not have to be about a language. A reading course teaches a subject with text, plain-text diagrams, questions and design exercises. It names no language and no runner, holds no checked exercises, and needs no dependency. Its modules can be read but never count as demonstrated skill. API design is the first. Decided on 2026-11-26. |
 | D9 | A course teaches its language on its own terms. Lesson text, hints and feedback never compare it with another language or assume the learner knows one. The experienced entry path and readiness checks stay, because they only let a learner skip modules. Decided on 2026-11-26. |
+| D11 | Courses teach the language one concept at a time. No project theme, no project checkpoints, no capstone modules. Replaces the tracker project in the C#, TypeScript and SQL courses. Decided on 2026-11-26. Plan: `COURSE_REDESIGN.md`. |
+| D12 | Each language course has its own module list, titles and examples. Examples vary by module instead of sharing one theme. Decided on 2026-11-26. |
+| D13 | Every course screen has one obvious next action. The course page is an "Up next" box with one Continue button, then the numbered module list. Decided on 2026-11-26. |
+| D14 | Known languages, repo attachment and AI options move off the catalog and module list into a course settings page. Decided on 2026-11-26. |
+| D15 | Lessons are written as one Markdown file per module, and code blocks show syntax colours. Decided on 2026-11-26. |
 
 ## Current implementation
 
