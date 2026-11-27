@@ -1,17 +1,17 @@
 {
   "id": "course:ts-foundations/task/async-in-order",
   "role": "review",
-  "title": "Read two notes in order",
+  "title": "Load two notes in order",
   "concepts": [
     "promise",
     "await",
     "async-fixture"
   ],
-  "prompt": "Return the first source’s text followed by a slash and the second source’s text. Call each exactly once, and call the second only after the first resolves. If the first rejects, propagate the rejection and leave the second uncalled.",
+  "prompt": "Write `joinNotes(first, second): Promise<string>`. Return the text from `first`, a slash, then the text from `second`. Call each once, and call `second` only after `first` has resolved. If `first` rejects, let the rejection through and never call `second`.",
   "hints": [
-    "Sequence matters for starting the readers as well as combining text.",
-    "Wait for the first result before invoking the second reader.",
-    "A rejected first await exits before the next call unless it is caught."
+    "The order of starting the loads matters, not just the order of the text.",
+    "`await first()` before you call `second()`.",
+    "If `await first()` rejects and you do not catch it, the function stops there."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -34,7 +34,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Reverses the text.",
+      "misconception": "Joins the texts in the wrong order.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -43,7 +43,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Starts the second reader early.",
+      "misconception": "Starts the second load before the first one finishes.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -51,5 +51,5 @@
       }
     }
   ],
-  "feedback": "Sequence matters for starting the readers as well as combining text."
+  "feedback": "The order of starting the loads matters, not just the order of the text."
 }

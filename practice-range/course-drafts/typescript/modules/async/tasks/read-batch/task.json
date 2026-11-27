@@ -1,17 +1,17 @@
 {
   "id": "course:ts-foundations/task/async-read-batch",
   "role": "independent",
-  "title": "Report a rejected local read",
+  "title": "Report a failed load",
   "concepts": [
     "promise",
     "await",
     "async-fixture"
   ],
-  "prompt": "Call the supplied source once. Resolve with {kind:\"loaded\", items} when it returns a string array, including an empty array. Resolve with {kind:\"failed\"} if it rejects for any reason.",
+  "prompt": "Write `loadBatch(source: () => Promise<string[]>): Promise<Batch>`. Call `source` once. If it resolves, return `{ kind: \"loaded\", items }`, even when `items` is empty. If it rejects for any reason, return `{ kind: \"failed\" }`.",
   "hints": [
-    "A fulfilled empty array still counts as a loaded batch.",
-    "Wait for the reader inside a try block.",
-    "Build different tagged results for fulfillment and rejection."
+    "A resolved empty array is still a successful load.",
+    "Put `await source()` inside `try`.",
+    "Return a different `kind` from `try` and from `catch`."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -35,7 +35,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Drops the actual items.",
+      "misconception": "Waits for the items but returns an empty array.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -44,7 +44,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Treats rejection as an empty success.",
+      "misconception": "Turns a failure into an empty success.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -52,5 +52,5 @@
       }
     }
   ],
-  "feedback": "A fulfilled empty array still counts as a loaded batch."
+  "feedback": "A resolved empty array is still a successful load."
 }

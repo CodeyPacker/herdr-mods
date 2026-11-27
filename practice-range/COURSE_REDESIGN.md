@@ -256,7 +256,8 @@ Same rules as Phase C, new content version, 16 modules from the table.
     - Tasks had no tracker theme. Prompts rewritten. Added a test helper prediction (`helper`) where the test itself is wrong.
 - [x] D14 errors · Errors and failure
     - Tasks had no tracker theme. Prompts rewritten. Added a throw/finally step and prediction (`finally`).
-- [ ] D15 async · async and Promises
+- [x] D15 async · async and Promises
+    - Tasks had no tracker theme. Prompts rewritten. Added a `Promise.all` step and prediction (`all`).
 - [ ] D16 generic · Generics
 - [ ] D16a utility · Utility types (new module)
 - [ ] D16b mapped · Mapped and conditional types (new module, last in the course: its review uses `"afterCompletion": true`)
