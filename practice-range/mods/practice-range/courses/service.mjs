@@ -166,7 +166,14 @@ export async function courseCommand(root, action, request = {}, options = {}) {
     try {
       const selected = await readJson(join(parent, "current.json"));
       const versions = (await readdir(parent, { withFileTypes: true })).filter(entry => entry.isDirectory() && /^\d+\.\d+\.\d+(?:-[a-z0-9.]+)?$/.test(entry.name)).map(entry => entry.name);
-      return { ...course, enrolledVersion: selected?.contentVersion, versions };
+      // Done = every step of a module read. The catalog card shows the count.
+      let done = 0;
+      if (selected?.contentVersion) {
+        const pack = await loadCourse(course.id, selected.contentVersion);
+        const enrollment = await readJson(join(enrollmentDirectory(root, pack), "enrollment.json"));
+        done = pack.lessons.filter(lesson => new Set(enrollment?.modules?.[lesson.id]?.seen ?? []).size >= lesson.steps.length).length;
+      }
+      return { ...course, enrolledVersion: selected?.contentVersion, versions, done };
     } catch (error) { return error.code === "ENOENT" ? course : { ...course, error: error.message }; }
   })) };
   const latest = await loadCourse(request.courseId, request.contentVersion);

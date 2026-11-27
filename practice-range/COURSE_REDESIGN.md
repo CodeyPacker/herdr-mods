@@ -76,12 +76,17 @@ Readiness checks stay, renamed "Skip-ahead test", as one link at the bottom of t
 ### Phase A: Interface, with today's content
 
 - [x] A0 Add `scripts/shoot-courses.mjs`: build course fixtures (as `tests/check-courses.mjs` does), open each in an isolated Herdr window (`HERDR_APP_HOME`), save PNGs to a folder, clean up the space and window.
-- [ ] A1 Catalog: cards with title, summary, progress, one Start/Continue button, Preview label. Remove the known-languages form and the "I know another language" button from the catalog.
-- [ ] A2 Course settings page: known languages, repo attach/detach, Explain repo architecture, older versions. Header Settings button on catalog and course page.
-- [ ] A3 Course page: Up next box with one Continue button (uses `enrollment.position`, else `recommendation`, else module 1), numbered module rows with status marks, Review line only when ready > 0, skip-ahead link at the bottom. Remove the project section and per-row Skip buttons from this page.
-- [ ] A4 Lesson step: header with module and "Step X of Y", step progress bar, footer with Previous and Continue only. Drill links and extra practice only on the last step. Repo button only with a repo and AI on. Remove the preview banner from every page.
-- [ ] A5 Exercise: actions first, then task text, then a results box with one line per check. Fold fixtures behind "Show test inputs (N)". Next exercise button.
-- [ ] A6 Update `tests/check-courses.mjs` fixtures and any course tests for the new layout. All checks pass. Screenshots taken with A0 and reviewed.
+- [x] A1 Catalog: cards with title, summary, progress, one Start/Continue button, Preview label. Remove the known-languages form and the "I know another language" button from the catalog.
+- [x] A2 Course settings page: known languages, repo attach/detach, Explain repo architecture, older versions. Header Settings button on catalog and course page.
+- [x] A3 Course page: Up next box with one Continue button (uses `enrollment.position`, else `recommendation`, else module 1), numbered module rows with status marks, Review line only when ready > 0, skip-ahead link at the bottom. Remove the project section and per-row Skip buttons from this page.
+- [x] A4 Lesson step: header with module and "Step X of Y", step progress bar, footer with Previous and Continue only. Drill links and extra practice only on the last step. Repo button only with a repo and AI on. Remove the preview banner from every page.
+- [x] A5 Exercise: actions first, then task text, then a results box with one line per check. Fold fixtures behind "Show test inputs (N)". Next exercise button.
+- [x] A6 Update `tests/check-courses.mjs` fixtures and any course tests for the new layout. All checks pass. Screenshots taken with A0 and reviewed.
+
+Notes on Phase A:
+- The results box lists the runner's failure details. The runner does not report passing checks one by one yet, so passed checks are not listed. Adding per-check results to the C#, TypeScript and SQL runners is open (do it in Phase C if wanted).
+- Module titles still read "Build a task tracker with C#" until Phase C renames the courses.
+- `tests/check-courses.mjs` needed no changes: all 49 fixtures pass. A full run can stop with "interrupted" while loading the SQL catalog (known, see RELEASE.md). Rerun the fixtures it did not reach by name. `course-*.test.mjs`: 43 of 43 pass.
 
 ### Phase B: Markdown lessons and code colours
 

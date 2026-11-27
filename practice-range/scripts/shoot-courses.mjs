@@ -78,6 +78,7 @@ export default class Fixture extends Syntax {
     this.courses.catalog = ${JSON.stringify(catalog)};
     this.courses.data = ${JSON.stringify(value)};
     this.courses.page = ${JSON.stringify(page)};
+    this.courses.settingsReturn = this.courses.page === "settings" ? "modules" : "catalog";
     this.courses.run = () => {};
   }
 }
