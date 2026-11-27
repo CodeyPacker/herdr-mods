@@ -1,0 +1,340 @@
+{
+  "schemaVersion": "1-draft",
+  "contentVersion": "0.1.0-draft.1",
+  "kind": "reading",
+  "id": "course:security",
+  "title": "Security",
+  "audience": [
+    "Has built or worked on a web application or an API",
+    "Wants to recognise and prevent the common security flaws in their own code"
+  ],
+  "prerequisiteConcepts": [],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:security/module/mindset",
+      "order": "listed"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/mindset",
+      "description": "Name what a system protects, mark its trust boundaries, and list threats to a feature with STRIDE.",
+      "assessment": "course:security/module/mindset"
+    },
+    {
+      "id": "outcome/input",
+      "description": "Validate input at the boundary with allowlists, and say why it must also be made safe where it is used.",
+      "assessment": "course:security/module/input"
+    },
+    {
+      "id": "outcome/injection",
+      "description": "Recognise injection in SQL and shell commands, and prevent it by keeping code and data apart.",
+      "assessment": "course:security/module/injection"
+    },
+    {
+      "id": "outcome/xss",
+      "description": "Explain how cross-site scripting happens, and prevent it with output encoding for the right context.",
+      "assessment": "course:security/module/xss"
+    },
+    {
+      "id": "outcome/authentication",
+      "description": "Describe how logins are attacked, and design login, MFA and password reset flows that resist it.",
+      "assessment": "course:security/module/authentication"
+    },
+    {
+      "id": "outcome/passwords",
+      "description": "Store passwords with a salted, slow hash, and migrate an old scheme without a mass reset.",
+      "assessment": "course:security/module/passwords"
+    },
+    {
+      "id": "outcome/sessions",
+      "description": "Choose between server-side sessions and tokens, protect the credential, and end a session properly.",
+      "assessment": "course:security/module/sessions"
+    },
+    {
+      "id": "outcome/csrf",
+      "description": "Explain cross-site request forgery and the same-origin policy, and say what CORS does and does not do.",
+      "assessment": "course:security/module/csrf"
+    },
+    {
+      "id": "outcome/authorization",
+      "description": "Find missing access checks, and structure authorization so that a forgotten check means no access.",
+      "assessment": "course:security/module/authorization"
+    },
+    {
+      "id": "outcome/crypto",
+      "description": "Choose between hashing, a MAC, encryption and a signature for a need, and avoid the common misuse of each.",
+      "assessment": "course:security/module/crypto"
+    },
+    {
+      "id": "outcome/secrets",
+      "description": "Keep secrets out of code, store and rotate them properly, and respond in the right order when one leaks.",
+      "assessment": "course:security/module/secrets"
+    },
+    {
+      "id": "outcome/dependencies",
+      "description": "Manage the risk of third-party code with scanning, pinning and updates, and protect the build pipeline.",
+      "assessment": "course:security/module/dependencies"
+    },
+    {
+      "id": "outcome/data",
+      "description": "Classify data, hold less of it for less time, and find where sensitive data ends up by accident.",
+      "assessment": "course:security/module/data"
+    },
+    {
+      "id": "outcome/detect",
+      "description": "Decide what to log and alert on, and follow the stages of incident response in the right order.",
+      "assessment": "course:security/module/detect"
+    },
+    {
+      "id": "outcome/review",
+      "description": "Review an application and a change for security flaws, and design a feature securely, without help.",
+      "assessment": "course:security/module/review"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:security/module/mindset",
+      "title": "Think like a defender",
+      "prerequisites": [],
+      "teaches": [
+        "threat-model",
+        "trust-boundary"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/mindset/module.md"
+      }
+    },
+    {
+      "id": "course:security/module/input",
+      "title": "Treat all input as untrusted",
+      "prerequisites": [
+        "course:security/module/mindset"
+      ],
+      "teaches": [
+        "input-validation",
+        "allowlist"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/input/module.md"
+      }
+    },
+    {
+      "id": "course:security/module/injection",
+      "title": "Injection",
+      "prerequisites": [
+        "course:security/module/input"
+      ],
+      "teaches": [
+        "injection",
+        "parameterised-query"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/injection/module.md"
+      }
+    },
+    {
+      "id": "course:security/module/xss",
+      "title": "Cross-site scripting",
+      "prerequisites": [
+        "course:security/module/injection"
+      ],
+      "teaches": [
+        "cross-site-scripting",
+        "output-encoding"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/xss/module.md"
+      }
+    },
+    {
+      "id": "course:security/module/authentication",
+      "title": "Authentication",
+      "prerequisites": [
+        "course:security/module/xss"
+      ],
+      "teaches": [
+        "authentication",
+        "multi-factor"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/authentication/module.md"
+      }
+    },
+    {
+      "id": "course:security/module/passwords",
+      "title": "Store passwords safely",
+      "prerequisites": [
+        "course:security/module/authentication"
+      ],
+      "teaches": [
+        "password-hashing",
+        "salt"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/passwords/module.md"
+      }
+    },
+    {
+      "id": "course:security/module/sessions",
+      "title": "Sessions and tokens",
+      "prerequisites": [
+        "course:security/module/passwords"
+      ],
+      "teaches": [
+        "session",
+        "token"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/sessions/module.md"
+      }
+    },
+    {
+      "id": "course:security/module/csrf",
+      "title": "Cross-site requests",
+      "prerequisites": [
+        "course:security/module/sessions"
+      ],
+      "teaches": [
+        "same-origin-policy",
+        "csrf"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/csrf/module.md"
+      }
+    },
+    {
+      "id": "course:security/module/authorization",
+      "title": "Authorization",
+      "prerequisites": [
+        "course:security/module/csrf"
+      ],
+      "teaches": [
+        "authorization",
+        "least-privilege"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/authorization/module.md"
+      }
+    },
+    {
+      "id": "course:security/module/crypto",
+      "title": "Cryptography in practice",
+      "prerequisites": [
+        "course:security/module/authorization"
+      ],
+      "teaches": [
+        "encryption",
+        "signature"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/crypto/module.md"
+      }
+    },
+    {
+      "id": "course:security/module/secrets",
+      "title": "Secrets",
+      "prerequisites": [
+        "course:security/module/crypto"
+      ],
+      "teaches": [
+        "secret-management",
+        "rotation"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/secrets/module.md"
+      }
+    },
+    {
+      "id": "course:security/module/dependencies",
+      "title": "Dependencies and the supply chain",
+      "prerequisites": [
+        "course:security/module/secrets"
+      ],
+      "teaches": [
+        "supply-chain",
+        "lock-file"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/dependencies/module.md"
+      }
+    },
+    {
+      "id": "course:security/module/data",
+      "title": "Protect personal and sensitive data",
+      "prerequisites": [
+        "course:security/module/dependencies"
+      ],
+      "teaches": [
+        "data-classification",
+        "data-minimisation"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/data/module.md"
+      }
+    },
+    {
+      "id": "course:security/module/detect",
+      "title": "Detect and respond",
+      "prerequisites": [
+        "course:security/module/data"
+      ],
+      "teaches": [
+        "security-logging",
+        "incident-response"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/detect/module.md"
+      }
+    },
+    {
+      "id": "course:security/module/review",
+      "title": "Review an application",
+      "prerequisites": [
+        "course:security/module/detect"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/review/module.md"
+      }
+    }
+  ],
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  },
+  "runtimeContentVersion": "0.1.0-preview.1"
+}

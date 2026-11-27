@@ -10,7 +10,7 @@ Ship the TypeScript course preview (content version 0.2.0-preview.1), the C# cou
 
 | Feature | Needs |
 | --- | --- |
-| Reading lessons, quizzes, readiness results, and the whole of each reading course (API design, Docker, CI/CD, Networking, System design, Databases) | Node.js 20 or newer. No compiler, repo or AI. |
+| Reading lessons, quizzes, readiness results, and the whole of each reading course (API design, Docker, CI/CD, Networking, System design, Databases, Security) | Node.js 20 or newer. No compiler, repo or AI. |
 | TypeScript course and practice checks | The pack's pinned TypeScript 6.0.3 (`npm ci` in `languages/typescript`, or Install on the Languages screen). |
 | C# course and practice checks | .NET SDK 8 or newer. |
 | SQL course and practice checks | The pack's pinned PGlite (`npm ci` in `languages/sql`). |
@@ -72,7 +72,7 @@ Tutor stays a separate mod and is unchanged. Practice Range does not import Tuto
 - **C# course.** A preview with 16 modules, 53 lesson tasks and four skip-ahead tests. It teaches C# on its own terms and needs a .NET SDK 8 or newer for coding checks.
 - **SQL course.** A preview with 16 modules, 48 lesson tasks and four skip-ahead tests. It runs on the practice database and needs the pinned PGlite engine for checks.
 - **API design course.** A reading course preview with 15 modules on designing APIs: resources, methods, status codes, bodies, errors, lists, safe writes, versioning, access, limits, slow work, styles and review. It has diagrams, questions and design exercises, no code to write, and needs no compiler, repo or AI.
-- **Docker, CI/CD, Networking, System design and Databases courses.** Five more reading course previews, with 16, 16, 15, 16 and 15 modules. Each module has explanations, plain-text diagrams, two questions, and an exercise on paper with one possible answer. No command, workflow or SQL statement in them is run by the app, and none was run while writing them.
+- **Docker, CI/CD, Networking, System design, Databases and Security courses.** Six more reading course previews, with 16, 16, 15, 16, 15 and 15 modules. The Security course marks its advice as general guidance and has not been reviewed by a security specialist. Each module has explanations, plain-text diagrams, two questions, and an exercise on paper with one possible answer. No command, workflow or SQL statement in them is run by the app, and none was run while writing them.
 - **Data structures and algorithms course.** A second TypeScript course preview with 14 modules, 42 lesson tasks and three skip-ahead tests. Where speed is the point of a task, a check counts array reads or comparisons, so a correct but slow answer fails. It uses the TypeScript pack's pinned compiler.
 - **Setup.** Setup and every language card offer that language's course, as a Course button beside Practice. Reading works before the compiler is installed.
 - **Updates.** A newer compatible course version is offered on its catalog card. Progress moves only when you choose Update. The earlier version stays available.
