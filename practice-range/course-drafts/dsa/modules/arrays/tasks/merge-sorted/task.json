@@ -1,0 +1,70 @@
+{
+  "id": "course:dsa/task/arrays-merge-sorted",
+  "role": "independent",
+  "title": "Combine two sorted arrays",
+  "concepts": [
+    "two-pointers",
+    "array-cost"
+  ],
+  "prompt": "a and b are each sorted from smallest to largest. Return a new sorted array that holds every number from both. Do it in one pass, with one index in each array.",
+  "hints": [
+    "At each step, which two numbers are the only candidates for the next output?",
+    "Compare a[i] with b[j], push the smaller, and move that index forward.",
+    "When one array runs out, the rest of the other still has to be added."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [
+    {
+      "kind": "CallExpression",
+      "name": "sort",
+      "max": 0,
+      "message": "Use the fact that both arrays are already sorted. Do not call sort."
+    }
+  ],
+  "checks": [
+    "__same(mergeSorted([1, 4, 9], [2, 3, 10]), [1, 2, 3, 4, 9, 10])",
+    "__same(mergeSorted([], [1, 2]), [1, 2])",
+    "__same(mergeSorted([5], []), [5])",
+    "__same(mergeSorted([1, 1], [1]), [1, 1, 1])",
+    "__same(mergeSorted([1, 2, 3], [7, 8]), [1, 2, 3, 7, 8])"
+  ],
+  "checkLabels": [
+    "The two arrays are woven together in order.",
+    "An empty first array gives the second.",
+    "An empty second array gives the first.",
+    "Equal numbers are all kept.",
+    "The rest of the longer array is added."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-tail.ts",
+      "misconception": "Stops when one array runs out and drops the rest of the other.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-sorts.ts",
+      "misconception": "Joins the arrays and sorts again, which ignores that they are already sorted.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "syntax",
+        "detail": "Do not call sort"
+      }
+    }
+  ],
+  "feedback": "Trace both indexes on the first check. When one index reaches the end of its array, what is left in the other?"
+}

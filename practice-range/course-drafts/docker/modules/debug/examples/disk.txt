@@ -1,0 +1,14 @@
+$ docker system df
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          41        3         18.6GB    16.9GB (90%)
+Containers      27        3         1.1GB     1.0GB (93%)
+Local Volumes   9         2         6.4GB     2.2GB (34%)
+Build Cache     310       0         11.3GB    11.3GB
+
+# Safe first steps: stopped containers, unused images, build cache.
+$ docker container prune
+$ docker image prune -a
+$ docker builder prune
+
+# Volumes hold data. List them and decide one by one.
+$ docker volume ls

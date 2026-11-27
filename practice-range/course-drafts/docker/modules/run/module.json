@@ -1,0 +1,164 @@
+{
+  "id": "course:docker/module/run",
+  "title": "Run and manage containers",
+  "requires": [],
+  "outcomes": [],
+  "intro": "This module covers the commands used every day: starting a container, seeing what is running, reading its output, getting inside it, and cleaning up. The main idea is the life of a container. It exists from the moment it is created until it is removed, and it is running only while its main process is alive.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "What docker run does",
+      "text": "`docker run` takes an image name and starts a container from it.\n\n```bash\ndocker run nginx:1.27\n```\n\nFour things happen, in order.\n\n1. Docker looks for the image `nginx:1.27` on this machine.\n2. If it is missing, Docker downloads it from the registry. This is called a **pull**.\n3. Docker creates a container: a private writable area on top of the image, a network address, and a name.\n4. Docker starts the image's main command inside it.\n\nRun like this, the container holds on to your terminal and prints the program's output. Pressing Ctrl+C stops it.",
+      "example": "run-steps"
+    },
+    {
+      "kind": "explanation",
+      "title": "In the background, with a name",
+      "text": "A service should not hold a terminal. Two options fix that.\n\n- `-d` (detached) starts the container in the background and prints its identifier.\n- `--name` gives it a name you choose. Without one Docker invents a name such as `brave_wilson`.\n\n`docker ps` lists the running containers. Every later command accepts either the name or the first few characters of the identifier.",
+      "example": "ps"
+    },
+    {
+      "kind": "explanation",
+      "title": "The life of a container",
+      "text": "A container is **running** while its main process is alive. When that process ends, for any reason, the container stops. Docker does not keep an empty container running.\n\nA stopped container still exists. Its files and its output are kept, and it can be started again. It is gone only when you remove it.\n\n`docker ps` shows only running containers. `docker ps -a` shows stopped ones too, with the code the main process ended with.",
+      "example": "lifecycle"
+    },
+    {
+      "kind": "prediction",
+      "title": "A command that finishes",
+      "text": "You run this, and it prints `hello`.\n\n```bash\ndocker run ubuntu:24.04 echo hello\n```",
+      "questions": [
+        "after-echo"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Stop, start and remove",
+      "text": "| Command | What it does |\n| --- | --- |\n| `docker stop web` | Asks the main process to end, waits up to 10 seconds, then forces it. |\n| `docker start web` | Starts a stopped container again, with the files it had. |\n| `docker restart web` | Stop, then start. |\n| `docker rm web` | Removes a stopped container and its private files. |\n| `docker rm -f web` | Forces a running container to end, then removes it. |\n\nRemoving is the step people forget. Every `docker run` creates a new container, so a machine collects stopped ones over time.\n\nFor a container you will not need again, add `--rm` to `docker run`. Docker then removes the container as soon as it stops."
+    },
+    {
+      "kind": "explanation",
+      "title": "Look at a running container",
+      "text": "Two commands answer most questions about a container.\n\n`docker logs` prints what the main process wrote to its output. Add `-f` to keep following it, and `--tail 50` to see only the last lines. Logs are kept after the container stops, until it is removed.\n\n`docker exec` runs an extra command inside a container that is already running. With `-it` it gives you an interactive terminal, which is how you open a shell inside one.\n\nKeep `run` and `exec` apart. `run` creates a **new** container. `exec` goes into an **existing** one.",
+      "example": "inside"
+    },
+    {
+      "kind": "debugging",
+      "title": "A crowded list",
+      "text": "This is `docker ps -a` on a developer's machine after a week of work.",
+      "example": "pile",
+      "questions": [
+        "pile"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Containers you type into",
+      "text": "A container does not have to be a service. It can be a throwaway place to try a tool without installing it.\n\n```bash\ndocker run --rm -it ubuntu:24.04 bash\n```\n\n`-i` keeps the input open and `-t` gives the program a terminal, so together they give you a working shell. The shell is the container's main process. When you type `exit`, the main process ends, the container stops, and `--rm` removes it. Nothing is left on your machine except the image."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: a day with one container",
+      "text": "Write the command for each step. Use the image `nginx:1.27` and the name `web`.\n\n1. Start it in the background.\n2. Check that it is running.\n3. See the last 20 lines of its output.\n4. Open a shell inside it.\n5. Stop it and remove it.\n6. Run `nginx -v` in a fresh container of the same image, leaving nothing behind."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "The commands are below. Two points are worth noticing.\n\nStep 5 can be one command, `docker rm -f web`, when you do not care how the program shuts down. Stopping first gives it the chance to finish its work.\n\nIn step 6 the words after the image name replace the image's usual command. The container runs `nginx -v`, prints the version, and ends. `--rm` removes it.",
+      "example": "day"
+    }
+  ],
+  "questions": [
+    {
+      "id": "after-echo",
+      "prompt": "What state is the container in afterwards?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "Running, waiting for another command",
+          "feedback": "A container runs only while its main process is alive. `echo` ended, so the container stopped."
+        },
+        {
+          "text": "Removed",
+          "feedback": "Nothing removes it unless you add `--rm` or run `docker rm`."
+        },
+        {
+          "text": "Stopped, and still listed by `docker ps -a`",
+          "feedback": "The main process ended with code 0, so the container stopped. It stays on disk until it is removed."
+        }
+      ]
+    },
+    {
+      "id": "pile",
+      "example": "pile",
+      "prompt": "Which habit would have prevented most of this list?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Adding `--rm` to one-off runs",
+          "feedback": "Each of those rows is a finished one-off command. With `--rm` every one would have been removed when it ended."
+        },
+        {
+          "text": "Using `-d` on every run",
+          "feedback": "Running in the background does not remove anything. The stopped containers would still pile up."
+        },
+        {
+          "text": "Pulling the image first",
+          "feedback": "Pulling affects the image, not the containers. Each `docker run` still creates a new container."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "run-steps": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/run-steps.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "ps": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/ps.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "lifecycle": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/lifecycle.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "inside": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/inside.txt"
+      },
+      "readOnly": true,
+      "fence": "bash"
+    },
+    "pile": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/pile.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "day": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/day.txt"
+      },
+      "readOnly": true,
+      "fence": "bash"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

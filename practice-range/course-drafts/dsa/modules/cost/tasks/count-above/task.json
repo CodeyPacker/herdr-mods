@@ -1,0 +1,60 @@
+{
+  "id": "course:dsa/task/cost-count-above",
+  "role": "independent",
+  "title": "Count the values above a limit",
+  "concepts": [
+    "step-count"
+  ],
+  "prompt": "Return how many numbers in values are greater than limit. A number equal to the limit does not count.",
+  "hints": [
+    "What should the answer be for an empty array?",
+    "Keep a counter, and add one inside the loop when the test is true.",
+    "The test is value > limit, with a strict greater-than."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(countAbove([1, 5, 8], 4), 2)",
+    "__same(countAbove([4, 4, 4], 4), 0)",
+    "__same(countAbove([], 1), 0)",
+    "__same(countAbove([9, 2, 7], 0), 3)"
+  ],
+  "checkLabels": [
+    "Two of 1, 5 and 8 are above 4.",
+    "A number equal to the limit does not count.",
+    "An empty array has none.",
+    "All three are above 0."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-inclusive.ts",
+      "misconception": "Counts a number equal to the limit.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-sum.ts",
+      "misconception": "Adds the values up instead of counting them.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Check the comparison against a value exactly at the limit, and check that the counter goes up by one each time."
+}

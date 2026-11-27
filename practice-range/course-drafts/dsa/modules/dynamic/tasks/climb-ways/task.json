@@ -1,0 +1,64 @@
+{
+  "id": "course:dsa/task/dynamic-climb-ways",
+  "role": "guided",
+  "title": "Speed up a count of ways",
+  "concepts": [
+    "memoization",
+    "tabulation",
+    "recursion"
+  ],
+  "prompt": "A staircase has n steps. You climb one or two steps at a time. Return the number of different ways to reach the top. There is one way to climb 0 steps. The starter is correct, but for 60 steps it would run for years, so the last check reports a time limit. Rewrite it so that each smaller answer is worked out once.",
+  "hints": [
+    "How many times does the starter work out the answer for 3 steps while answering for 6?",
+    "Store each answer the first time it is worked out, in a Map or an array.",
+    "Fill an array from the bottom: ways[0] = 1, ways[1] = 1, and ways[i] = ways[i - 1] + ways[i - 2] up to n."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(climbWays(1), 1)",
+    "__same(climbWays(2), 2)",
+    "__same(climbWays(5), 8)",
+    "__same(climbWays(0), 1)",
+    "__same(climbWays(60), 2504730781961)"
+  ],
+  "checkLabels": [
+    "One step can be climbed in 1 way.",
+    "Two steps can be climbed in 2 ways.",
+    "Five steps can be climbed in 8 ways.",
+    "There is one way to climb no steps.",
+    "Sixty steps must be answered within the time limit."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-repeats.ts",
+      "misconception": "Works out the same smaller answers again and again, so a large input never finishes.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "runtime",
+        "detail": "exceeded the time limit"
+      }
+    },
+    {
+      "source": "wrong-shifted.ts",
+      "misconception": "Starts the table one place off, so every answer belongs to the staircase one step shorter.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "The recursion is right. What it lacks is memory: every smaller staircase should be answered once and then looked up."
+}

@@ -1,0 +1,12 @@
+  "CI is red on my PR but it's just the export test again.
+   Hit re-run, it'll go green."
+
+  test: "exports the report within 2 seconds"
+
+  Mon  pass  pass  FAIL  pass
+  Tue  pass  FAIL  pass
+  Wed  pass  pass  pass  FAIL  pass
+  Thu  FAIL  pass  pass
+  Fri  pass  pass  FAIL  pass  pass
+  ...
+  22 runs in two weeks, 6 failures, no change to the export code.

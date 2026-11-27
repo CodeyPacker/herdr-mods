@@ -1,0 +1,10 @@
+  container "web"                 container "web2"
+  +------------------------+      +------------------------+
+  | writable layer         |      | writable layer         |   private,
+  | (what this one wrote)  |      | (what this one wrote)  |   removed with
+  +------------------------+      +------------------------+   its container
+              \                          /
+               v                        v
+          +----------------------------------+
+          | image layers (read-only, shared) |
+          +----------------------------------+

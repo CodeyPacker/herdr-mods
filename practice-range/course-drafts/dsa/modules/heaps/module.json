@@ -1,0 +1,182 @@
+{
+  "id": "course:dsa/module/heaps",
+  "title": "Heaps",
+  "requires": [
+    "binary-tree",
+    "array-cost"
+  ],
+  "outcomes": [
+    {
+      "id": "shape",
+      "can": "Find the parent and the children of a position in a heap stored in an array.",
+      "assessment": [
+        "parents"
+      ]
+    },
+    {
+      "id": "operations",
+      "can": "Add to a heap by sifting up and remove the smallest by sifting down.",
+      "assessment": [
+        "sift-up",
+        "course:dsa/task/heaps-heap-push",
+        "course:dsa/task/heaps-heap-pop"
+      ]
+    },
+    {
+      "id": "use",
+      "can": "Use a heap to take items in order without sorting everything.",
+      "assessment": [
+        "course:dsa/task/heaps-k-smallest"
+      ]
+    }
+  ],
+  "intro": "Often you do not need everything in order. You only need the smallest item, again and again: the next job to run, the nearest place to visit. A heap is built for exactly that. It gives the smallest item at once and takes about log n steps to add or remove one. This module covers how a heap is laid out in a plain array and the two operations that keep it valid.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "A tree packed into an array",
+      "text": "A **min-heap** is a binary tree with one rule: every node's value is less than or equal to the values of its children. So the smallest value is always at the root. Nothing is promised about left against right, and a heap is **not** fully sorted.\n\nA heap is always filled level by level, from left to right, with no gaps. That lets it live in an array with no links at all. The root is at index 0, and positions are found by arithmetic.\n\n| For the node at index i | Index |\n| --- | --- |\n| Its parent | `Math.floor((i - 1) / 2)` |\n| Its left child | `2 * i + 1` |\n| Its right child | `2 * i + 2` |\n\nBecause the tree has no gaps, its height is about log n. Every heap operation walks one path between the root and a leaf, which is why they cost O(log n)."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict the parents",
+      "text": "The array below is a valid min-heap. The loop prints each element with its parent. Predict the five lines.",
+      "example": "shape",
+      "questions": [
+        "parents"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Every parent is smaller",
+      "text": "3 and 2 are the children of the root, 1. Then 7 and 4 are the children of 3, and 5 is the left child of 2. In every line the parent is the smaller number, which is the heap rule.\n\nNotice that the array is not sorted: 3 comes before 2. A heap keeps just enough order to know where the smallest is.",
+      "example": "shape"
+    },
+    {
+      "kind": "explanation",
+      "title": "Sift up and sift down",
+      "text": "**To add a value**, put it at the end of the array, which is the next free place in the bottom level. It may now be smaller than its parent. While it is, swap the two and continue from the parent's position. This is called **sifting up**.\n\n**To remove the smallest**, take the root. To fill the hole, move the last element of the array to the root. It is probably too large for that place. While it is larger than its smaller child, swap it with that child and continue from there. This is **sifting down**.\n\nAlways swap with the **smaller** child when sifting down. The smaller child is about to become the parent of the other one, so it has to be the smaller of the two."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict a sift up",
+      "text": "The example adds 0 to the heap and prints the array after each swap. Predict the two lines.",
+      "example": "sift",
+      "questions": [
+        "sift-up"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Two swaps to the root",
+      "text": "0 went in at index 6. Its parent, at index 2, held 2, so they swapped. Then its parent at index 0 held 1, so they swapped again. At index 0 there is no parent, and the loop ended.\n\nSeven elements needed at most two swaps. A heap of a million elements needs at most twenty. Only the nodes on one path from a leaf to the root were touched.",
+      "example": "sift"
+    },
+    {
+      "kind": "modification",
+      "title": "Repair a push",
+      "text": "The starter adds a value and moves it up one level at most. Save it, read the failing check, and make it sift all the way.",
+      "task": "course:dsa/task/heaps-heap-push"
+    },
+    {
+      "kind": "independent",
+      "title": "Remove the smallest",
+      "text": "Work from the prompt. The starter returns the right value and leaves the array in the wrong shape.",
+      "task": "course:dsa/task/heaps-heap-pop"
+    },
+    {
+      "kind": "independent",
+      "title": "Take the k smallest",
+      "text": "Work from the prompt. A working heap is supplied.",
+      "task": "course:dsa/task/heaps-k-smallest"
+    }
+  ],
+  "questions": [
+    {
+      "id": "parents",
+      "example": "shape",
+      "prompt": "What is the last line printed?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "5 has parent 3",
+          "feedback": "5 is at index 5. Its parent is at index 2, which holds 2."
+        },
+        {
+          "text": "5 has parent 2",
+          "feedback": "5 is at index 5, and Math.floor((5 - 1) / 2) is 2. Index 2 holds 2."
+        },
+        {
+          "text": "5 has parent 4",
+          "feedback": "The element just before it in the array is not its parent. The parent is found by arithmetic on the index."
+        }
+      ]
+    },
+    {
+      "id": "sift-up",
+      "example": "sift",
+      "prompt": "What is the first line printed?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "1 3 0 7 4 5 2",
+          "feedback": "0 starts at index 6 and swaps with its parent at index 2, which held 2."
+        },
+        {
+          "text": "0 3 1 7 4 5 2",
+          "feedback": "That is the array after the second swap. The first swap is with the parent at index 2."
+        },
+        {
+          "text": "1 3 2 7 4 0 5",
+          "feedback": "The parent of index 6 is index 2, not the element next to it."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "shape": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/shape.ts"
+      },
+      "stdout": [
+        "3 has parent 1",
+        "2 has parent 1",
+        "7 has parent 3",
+        "4 has parent 3",
+        "5 has parent 2"
+      ]
+    },
+    "sift": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/sift.ts"
+      },
+      "stdout": [
+        "1 3 0 7 4 5 2",
+        "0 3 1 7 4 5 2"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:dsa/task/heaps-heap-push",
+      "path": "tasks/heap-push/task.json"
+    },
+    {
+      "id": "course:dsa/task/heaps-heap-pop",
+      "path": "tasks/heap-pop/task.json"
+    },
+    {
+      "id": "course:dsa/task/heaps-k-smallest",
+      "path": "tasks/k-smallest/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:dsa/task/heaps-heap-pop",
+    "afterModule": "course:dsa/module/depth",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [],
+  "drillGap": "The practice catalog has no drills for this topic yet. The module's own exercises are the practice."
+}

@@ -1,0 +1,18 @@
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v5
+      # One run, before any new code starts.
+      - name: Apply new migrations
+        run: npm run migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  deploy:
+    needs: migrate            # skipped if the migration failed
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - run: echo "deploy the new image here"

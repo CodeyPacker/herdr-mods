@@ -1,0 +1,13 @@
+  PULL REQUEST                                              about 7 min
+
+    stage 1          lint (20 s) | type check (40 s) | dep scan (1 min)
+                                        |
+    stage 2          unit (3 min) | integration (6 min) | image (4 min)
+
+  AFTER MERGE TO MAIN
+
+    publish image -> deploy to test -> smoke tests (a few journeys)
+
+  NIGHTLY
+
+    full end-to-end (35 min) | performance (25 min)  -> report failures

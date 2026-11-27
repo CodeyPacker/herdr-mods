@@ -1,0 +1,10 @@
+  Management set goals:  "10 deployments a week" and
+                         "change failure rate under 5%".
+
+  Six months later:
+
+  - Each release is split into several deployments of a few lines,
+    made minutes apart. Deployments a week: 14.
+  - Problems after a release are fixed quietly and not recorded as
+    incidents. Change failure rate: 2%.
+  - Customers report as many problems as before.

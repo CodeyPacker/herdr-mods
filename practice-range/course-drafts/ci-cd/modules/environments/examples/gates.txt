@@ -1,0 +1,15 @@
+  Environment "production"          (set in the repository's settings)
+
+    Required reviewers:   2 of the release group, not the person
+                          who started the run
+    Wait timer:           none
+    Deployment branches:  main only
+
+  A run that reaches a job with  environment: production
+
+    deploy-production     WAITING    "Review required"
+                             |
+                  a reviewer approves
+                             |
+                             v
+    deploy-production     RUNNING

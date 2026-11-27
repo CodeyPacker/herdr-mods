@@ -1,0 +1,12 @@
+$ docker volume ls
+DRIVER    VOLUME NAME
+local     tracker-data
+
+# Replace the container. The data stays in the volume.
+$ docker rm -f db
+$ docker run -d --name db \
+    -v tracker-data:/var/lib/postgresql/data \
+    postgres:17.2
+
+# The other way to write the same mount, with each part named:
+#   --mount type=volume,source=tracker-data,target=/var/lib/postgresql/data

@@ -1,0 +1,383 @@
+{
+  "schemaVersion": "1-draft",
+  "contentVersion": "0.1.0-draft.1",
+  "id": "course:dsa",
+  "languageId": "typescript",
+  "runner": {
+    "registeredLanguage": "typescript",
+    "compiler": {
+      "name": "typescript",
+      "range": "=6.0.3"
+    },
+    "node": ">=20"
+  },
+  "title": "Data structures and algorithms",
+  "audience": [
+    "Can write functions, loops and arrays in TypeScript",
+    "Wants to choose data structures and algorithms deliberately"
+  ],
+  "prerequisiteConcepts": [
+    "functions",
+    "loops",
+    "arrays",
+    "objects"
+  ],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:dsa/module/cost",
+      "order": "listed"
+    },
+    {
+      "id": "experienced",
+      "start": "course:dsa/module/cost",
+      "readiness": [
+        "R1",
+        "R2",
+        "R3"
+      ],
+      "description": "Try each group's readiness task or skip freely. A skip records navigation only."
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/cost",
+      "description": "Count the steps a loop takes and name how they grow with the size of the input.",
+      "assessment": "course:dsa/module/cost"
+    },
+    {
+      "id": "outcome/arrays",
+      "description": "Say what each array operation costs and solve a problem with two indexes in one pass.",
+      "assessment": "course:dsa/module/arrays"
+    },
+    {
+      "id": "outcome/search",
+      "description": "Find a position in sorted data by halving the range, without off-by-one mistakes.",
+      "assessment": "course:dsa/module/search"
+    },
+    {
+      "id": "outcome/hashing",
+      "description": "Use a Map or a Set to replace a search through a list with one lookup.",
+      "assessment": "course:dsa/module/hashing"
+    },
+    {
+      "id": "outcome/stacks",
+      "description": "Choose last-in-first-out or first-in-first-out order and build each on an array.",
+      "assessment": "course:dsa/module/stacks"
+    },
+    {
+      "id": "outcome/linked",
+      "description": "Walk, change and reverse a chain of nodes without losing part of it.",
+      "assessment": "course:dsa/module/linked"
+    },
+    {
+      "id": "outcome/recursion",
+      "description": "Write a function that solves a problem by calling itself on a smaller one.",
+      "assessment": "course:dsa/module/recursion"
+    },
+    {
+      "id": "outcome/sorting",
+      "description": "Sort with a simple method and with merge sort, and order records with a comparator.",
+      "assessment": "course:dsa/module/sorting"
+    },
+    {
+      "id": "outcome/trees",
+      "description": "Walk a binary tree and search a binary search tree along one path.",
+      "assessment": "course:dsa/module/trees"
+    },
+    {
+      "id": "outcome/heaps",
+      "description": "Keep the smallest item at hand with a heap stored in an array.",
+      "assessment": "course:dsa/module/heaps"
+    },
+    {
+      "id": "outcome/graphs",
+      "description": "Store a graph and explore it level by level to find the fewest steps.",
+      "assessment": "course:dsa/module/graphs"
+    },
+    {
+      "id": "outcome/depth",
+      "description": "Explore a graph depth first, detect a cycle, and order items by what they need.",
+      "assessment": "course:dsa/module/depth"
+    },
+    {
+      "id": "outcome/dynamic",
+      "description": "Speed up a recursive solution by remembering answers to smaller problems.",
+      "assessment": "course:dsa/module/dynamic"
+    },
+    {
+      "id": "outcome/choose",
+      "description": "Pick a data structure and an algorithm for a new problem, and justify the cost.",
+      "assessment": "course:dsa/module/choose"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:dsa/module/cost",
+      "title": "Count the work",
+      "prerequisites": [],
+      "teaches": [
+        "step-count",
+        "big-o"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/cost/module.json"
+      }
+    },
+    {
+      "id": "course:dsa/module/arrays",
+      "title": "Arrays and two pointers",
+      "prerequisites": [
+        "course:dsa/module/cost"
+      ],
+      "teaches": [
+        "array-cost",
+        "two-pointers"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/arrays/module.json"
+      }
+    },
+    {
+      "id": "course:dsa/module/search",
+      "title": "Binary search",
+      "prerequisites": [
+        "course:dsa/module/arrays"
+      ],
+      "teaches": [
+        "binary-search"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/search/module.json"
+      }
+    },
+    {
+      "id": "course:dsa/module/hashing",
+      "title": "Maps and sets",
+      "prerequisites": [
+        "course:dsa/module/cost"
+      ],
+      "teaches": [
+        "hash-map",
+        "hash-set"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/hashing/module.json"
+      }
+    },
+    {
+      "id": "course:dsa/module/stacks",
+      "title": "Stacks and queues",
+      "prerequisites": [
+        "course:dsa/module/arrays"
+      ],
+      "teaches": [
+        "stack",
+        "queue"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/stacks/module.json"
+      }
+    },
+    {
+      "id": "course:dsa/module/linked",
+      "title": "Linked lists",
+      "prerequisites": [
+        "course:dsa/module/arrays"
+      ],
+      "teaches": [
+        "linked-list"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/linked/module.json"
+      }
+    },
+    {
+      "id": "course:dsa/module/recursion",
+      "title": "Recursion",
+      "prerequisites": [
+        "course:dsa/module/cost"
+      ],
+      "teaches": [
+        "recursion"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/recursion/module.json"
+      }
+    },
+    {
+      "id": "course:dsa/module/sorting",
+      "title": "Sorting",
+      "prerequisites": [
+        "course:dsa/module/recursion",
+        "course:dsa/module/arrays"
+      ],
+      "teaches": [
+        "sorting",
+        "merge-sort"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/sorting/module.json"
+      }
+    },
+    {
+      "id": "course:dsa/module/trees",
+      "title": "Trees",
+      "prerequisites": [
+        "course:dsa/module/recursion",
+        "course:dsa/module/search"
+      ],
+      "teaches": [
+        "binary-tree",
+        "search-tree"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/trees/module.json"
+      }
+    },
+    {
+      "id": "course:dsa/module/heaps",
+      "title": "Heaps",
+      "prerequisites": [
+        "course:dsa/module/trees"
+      ],
+      "teaches": [
+        "heap"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/heaps/module.json"
+      }
+    },
+    {
+      "id": "course:dsa/module/graphs",
+      "title": "Graphs and breadth-first search",
+      "prerequisites": [
+        "course:dsa/module/hashing",
+        "course:dsa/module/stacks"
+      ],
+      "teaches": [
+        "graph",
+        "breadth-first"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/graphs/module.json"
+      }
+    },
+    {
+      "id": "course:dsa/module/depth",
+      "title": "Depth-first search and ordering",
+      "prerequisites": [
+        "course:dsa/module/graphs",
+        "course:dsa/module/recursion"
+      ],
+      "teaches": [
+        "depth-first",
+        "topological-order"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/depth/module.json"
+      }
+    },
+    {
+      "id": "course:dsa/module/dynamic",
+      "title": "Dynamic programming",
+      "prerequisites": [
+        "course:dsa/module/recursion",
+        "course:dsa/module/hashing"
+      ],
+      "teaches": [
+        "memoization",
+        "tabulation"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/dynamic/module.json"
+      }
+    },
+    {
+      "id": "course:dsa/module/choose",
+      "title": "Choose the structure",
+      "prerequisites": [
+        "course:dsa/module/sorting",
+        "course:dsa/module/linked",
+        "course:dsa/module/heaps",
+        "course:dsa/module/depth",
+        "course:dsa/module/dynamic"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/choose/module.json"
+      }
+    }
+  ],
+  "readiness": [
+    {
+      "id": "R1",
+      "title": "Cost through maps",
+      "modules": [
+        "course:dsa/module/cost",
+        "course:dsa/module/arrays",
+        "course:dsa/module/search",
+        "course:dsa/module/hashing"
+      ],
+      "task": "readiness/r1/task.json"
+    },
+    {
+      "id": "R2",
+      "title": "Stacks through sorting",
+      "modules": [
+        "course:dsa/module/stacks",
+        "course:dsa/module/linked",
+        "course:dsa/module/recursion",
+        "course:dsa/module/sorting"
+      ],
+      "task": "readiness/r2/task.json"
+    },
+    {
+      "id": "R3",
+      "title": "Trees through dynamic programming",
+      "modules": [
+        "course:dsa/module/trees",
+        "course:dsa/module/heaps",
+        "course:dsa/module/graphs",
+        "course:dsa/module/depth",
+        "course:dsa/module/dynamic"
+      ],
+      "task": "readiness/r3/task.json"
+    }
+  ],
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  },
+  "runtimeContentVersion": "0.1.0-preview.1"
+}

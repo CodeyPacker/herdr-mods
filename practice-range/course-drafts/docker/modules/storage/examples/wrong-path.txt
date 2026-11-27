@@ -1,0 +1,3 @@
+docker run -d --name db \
+  -v tracker-data:/data \
+  postgres:17.2

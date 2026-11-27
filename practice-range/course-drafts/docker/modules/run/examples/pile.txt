@@ -1,0 +1,8 @@
+IMAGE          COMMAND          STATUS                  NAMES
+ubuntu:24.04   "echo hello"     Exited (0) 6 days ago   brave_wilson
+ubuntu:24.04   "ls /etc"        Exited (0) 6 days ago   zen_morse
+node:24-slim   "node -v"        Exited (0) 4 days ago   keen_hopper
+ubuntu:24.04   "cat /etc/..."   Exited (0) 2 days ago   sad_turing
+nginx:1.27     "nginx -g ..."   Up 3 hours              web
+
+(the CONTAINER ID column is left out to save space)

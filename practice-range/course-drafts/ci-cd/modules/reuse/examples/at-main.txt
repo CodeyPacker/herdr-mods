@@ -1,0 +1,10 @@
+  "Heads up: ALL deploys are failing since 14:10 with
+
+     Invalid workflow file: input 'slot' is required but not provided
+
+   Looks like the change to the shared deploy workflow that merged at
+   14:09 added a required input. Every service calls it like this:
+
+     uses: acme/pipelines/.github/workflows/deploy.yml@main
+
+   There are 30 of them. We are reverting now."

@@ -1,0 +1,12 @@
+  HOST MACHINE
+  +----------------------------------------------------------------+
+  |  container A                    container B                    |
+  |  +--------------------------+   +--------------------------+   |
+  |  | files:     from image    |   | files:     from image    |   |
+  |  | processes: its own       |   | processes: its own       |   |
+  |  | network:   its own       |   | network:   its own       |   |
+  |  | limits:    512 MB, 1 CPU |   | limits:    2 GB, 2 CPUs  |   |
+  |  +--------------------------+   +--------------------------+   |
+  |                                                                |
+  |  ONE KERNEL, shared by the host and every container            |
+  +----------------------------------------------------------------+

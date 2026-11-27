@@ -1,0 +1,9 @@
+  Title:  Rename owner_id to assignee_id (cleanup)
+
+  "Just a rename so the column matches the API. Migration and code in
+   one PR so they can't get out of sync. Tests pass."
+
+  -- migrations/0007_rename_owner.sql
+  ALTER TABLE tasks RENAME COLUMN owner_id TO assignee_id;
+
+  -- and in the code, every "owner_id" becomes "assignee_id"

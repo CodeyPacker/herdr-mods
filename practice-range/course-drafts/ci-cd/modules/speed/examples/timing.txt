@@ -1,0 +1,11 @@
+  Run #4182   total 19 min 10 s
+
+  Checkout                  0:10   |
+  Install dependencies      3:30   |#######
+  Lint                      0:30   |#
+  Unit tests                4:00   |########
+  Integration tests         9:00   |##################
+  Build                     2:00   |####
+
+  Largest: integration tests. Easiest to remove: the install,
+  which downloads the same files on every run.

@@ -1,0 +1,6 @@
+$ docker run -d --name web nginx:1.27
+3f2a9c81d0b7e6a5...
+
+$ docker ps
+CONTAINER ID   IMAGE        STATUS         PORTS    NAMES
+3f2a9c81d0b7   nginx:1.27   Up 5 seconds   80/tcp   web

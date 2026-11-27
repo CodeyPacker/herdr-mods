@@ -1,0 +1,21 @@
+function heapPop(heap: number[]): number | undefined {
+  if (heap.length === 0) return undefined;
+  const top = heap[0];
+  const last = heap.pop()!;
+  if (heap.length === 0) return top;
+  heap[0] = last;
+  let index = 0;
+  while (true) {
+    const left = 2 * index + 1;
+    const right = left + 1;
+    let smallest = index;
+    if (left < heap.length && heap[left] < heap[smallest]) smallest = left;
+    if (right < heap.length && heap[right] < heap[smallest]) smallest = right;
+    if (smallest === index) break;
+    const held = heap[index];
+    heap[index] = heap[smallest];
+    heap[smallest] = held;
+    index = smallest;
+  }
+  return top;
+}

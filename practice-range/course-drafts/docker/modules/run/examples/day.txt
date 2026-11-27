@@ -1,0 +1,7 @@
+docker run -d --name web nginx:1.27      # 1
+docker ps                                # 2
+docker logs --tail 20 web                # 3
+docker exec -it web sh                   # 4
+docker stop web                          # 5
+docker rm web
+docker run --rm nginx:1.27 nginx -v      # 6

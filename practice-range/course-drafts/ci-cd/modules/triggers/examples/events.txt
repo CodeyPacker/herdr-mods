@@ -1,0 +1,14 @@
+on:
+  # Checks on every proposed change.
+  pull_request:
+
+  # After a merge to main.
+  push:
+    branches: [main]
+
+  # Every weekday at 06:00 UTC.
+  schedule:
+    - cron: "0 6 * * 1-5"
+
+  # A button, for people.
+  workflow_dispatch:

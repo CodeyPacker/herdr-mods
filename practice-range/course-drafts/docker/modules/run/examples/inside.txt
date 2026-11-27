@@ -1,0 +1,9 @@
+# What has it printed?
+docker logs web
+docker logs -f --tail 50 web
+
+# Run one extra command inside the running container.
+docker exec web nginx -v
+
+# Open a shell inside it. Type "exit" to leave. It keeps running.
+docker exec -it web sh

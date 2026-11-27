@@ -1,0 +1,10 @@
+  STAGE 1: build                          STAGE 2: what you ship
+  +-----------------------------+         +-------------------------+
+  | full base image             |         | slim base image         |
+  | compilers and build tools   |         |                         |
+  | development dependencies    |         | run-time dependencies   |
+  | source code                 |         |                         |
+  |                             |  COPY   |                         |
+  | build output  --------------+-------> | build output            |
+  +-----------------------------+ --from  +-------------------------+
+        thrown away after the build              this is the image

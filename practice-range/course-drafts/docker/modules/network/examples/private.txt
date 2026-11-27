@@ -1,0 +1,9 @@
+  HOST                                     nothing published:
+
+    browser --- localhost:3000 ---X        the host cannot reach it
+
+    +----------------------+   +----------------------+
+    | container web        |   | container web2       |
+    | own address          |   | own address          |
+    | listening on :3000   |   | listening on :3000   |   no conflict
+    +----------------------+   +----------------------+

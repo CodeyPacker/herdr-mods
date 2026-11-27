@@ -1,0 +1,73 @@
+{
+  "id": "course:dsa/task/search-sqrt-floor",
+  "role": "independent",
+  "title": "Search a range of answers",
+  "concepts": [
+    "binary-search"
+  ],
+  "prompt": "n is a whole number, 0 or more. Return the largest whole number r for which r times r is less than or equal to n. Do not call Math.sqrt. Halve the range of possible answers, which is 0 to n.",
+  "hints": [
+    "For a guess r, how do you tell whether the answer is at least r?",
+    "If r * r <= n, the answer is r or larger. Otherwise it is smaller than r.",
+    "Keep the best guess that passed. Search low to high: when middle * middle <= n, record middle and set low = middle + 1, else high = middle - 1."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [
+    {
+      "kind": "CallExpression",
+      "name": "sqrt",
+      "max": 0,
+      "message": "Search for the answer yourself. Do not call Math.sqrt."
+    }
+  ],
+  "checks": [
+    "__same(sqrtFloor(16), 4)",
+    "__same(sqrtFloor(17), 4)",
+    "__same(sqrtFloor(0), 0)",
+    "__same(sqrtFloor(1), 1)",
+    "__same(sqrtFloor(15), 3)",
+    "__same(sqrtFloor(1000000), 1000)",
+    "__same(sqrtFloor(999999), 999)"
+  ],
+  "checkLabels": [
+    "4 times 4 is exactly 16.",
+    "5 times 5 is too large for 17.",
+    "The answer for 0 is 0.",
+    "The answer for 1 is 1.",
+    "4 times 4 is too large for 15.",
+    "It works for a million.",
+    "One below a square gives one less."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-over.ts",
+      "misconception": "Finds the first number whose square reaches n, which is one too many unless n is a square.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-strict.ts",
+      "misconception": "Treats an exact square as too large.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Try your code by hand on 16 and on 17. One is an exact square and one is not, and both must give 4."
+}

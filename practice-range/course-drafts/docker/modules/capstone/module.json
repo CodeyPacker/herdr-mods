@@ -1,0 +1,154 @@
+{
+  "id": "course:docker/module/capstone",
+  "title": "Review and containerize an app",
+  "requires": [],
+  "outcomes": [],
+  "intro": "This last module has no new ideas. It asks you to use the earlier ones together, twice: first to review a setup that works and has many faults, then to plan how to containerize a small application from a description. Do each exercise on paper before reading the answer. The reviewing is the useful part.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "How to review",
+      "text": "A setup that runs can still be slow to build, unsafe, fragile or impossible to roll back. Reading for those faults is a skill of its own, and it gets quicker with a fixed list of questions.\n\n| Question | Module |\n| --- | --- |\n| Is every image named by a specific version? | Images |\n| What does the build context contain, and what is copied? | Dockerfile |\n| Does a source change rebuild the dependencies? | Layers |\n| Is the start command in exec form? | Start |\n| Are settings and secrets outside the image? | Config |\n| Where does each piece of data live? | Storage |\n| Which ports are published, and to whom? | Network |\n| Does anything wait for readiness, restart, or have a limit? | Health |\n| Does the image hold only what runs? | Small |\n| Which user does it run as? | Privilege |\n| Can each release be identified and brought back? | Ship |"
+    },
+    {
+      "kind": "independent",
+      "title": "Review 1: a Dockerfile",
+      "text": "This Dockerfile builds and the service works. Find as many problems as you can. There are at least eight. For each, say what could go wrong.\n\nThen continue.",
+      "example": "bad-dockerfile"
+    },
+    {
+      "kind": "prediction",
+      "title": "The most urgent one",
+      "text": "You have read the Dockerfile above. The image is pushed to a registry that every employee, and several outside contractors, can pull from.",
+      "questions": [
+        "worst-dockerfile"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Review 1: what is wrong",
+      "text": "1. **`FROM node:latest`.** The base can change to a new major version on any rebuild. Name a version.\n2. **`COPY . .` before the install.** Any source change reinstalls every dependency. Copy the dependency list first.\n3. **`COPY . .` with a `.env` in the project.** Unless a `.dockerignore` excludes it, the file is in the image.\n4. **`ENV DATABASE_PASSWORD=...`.** A secret stored in the image, readable by anyone who can pull it.\n5. **`apt-get` in two steps, with no cleanup.** The install can run against stale lists, and the lists stay in a layer.\n6. **`vim` and `net-tools`.** Tools that the service does not use, shipped to production.\n7. **`npm install`.** It may pick newer versions than the ones tested, and it includes development dependencies. `npm ci --omit=dev` installs exactly what the lock file names.\n8. **No `USER`.** The service runs as root.\n9. **Shell form `CMD`.** A shell is PID 1, so a stop waits ten seconds and then kills the service.\n10. **A single stage on the full base.** The image is far larger than it needs to be.\n\nA repaired version is below. It uses two stages only to keep build tools out, and it would work as one stage on the slim base for a project with no build step.",
+      "example": "good-dockerfile"
+    },
+    {
+      "kind": "independent",
+      "title": "Review 2: a Compose file",
+      "text": "The same team's Compose file for production. Find the problems. There are at least seven.\n\nThen continue.",
+      "example": "bad-compose"
+    },
+    {
+      "kind": "prediction",
+      "title": "What a redeploy does",
+      "text": "You have read the Compose file above. The team upgrades the database by changing nothing and running `docker compose pull` and then `docker compose up -d`.",
+      "questions": [
+        "worst-compose"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Review 2: what is wrong",
+      "text": "1. **`image: postgres` and `tracker:latest`.** Neither names a version. A pull can change the database's major version, and no release can be identified or rolled back.\n2. **No volume on `db`.** The data is in the writable layer and is lost whenever the container is replaced.\n3. **`5432:5432`.** The database is published to every machine that can reach the server. `web` reaches it over the network and needs no published port.\n4. **The password in the file.** It is in version control. Use a secret file.\n5. **`DATABASE_HOST: localhost`.** Inside `web`, that is `web` itself. It must be `db`.\n6. **Short-form `depends_on` and no health check.** `web` can start before the database is ready.\n7. **No restart policy.** Nothing comes back after a crash or a reboot.\n8. **`privileged: true` and the Docker socket.** Either one hands the host to whoever takes over the service.\n9. **No limits.** A leak in one service can take down the machine.\n\nA repaired version is below.",
+      "example": "good-compose"
+    },
+    {
+      "kind": "independent",
+      "title": "Design: containerize a notes application",
+      "text": "A small team has a notes application that runs on one developer's laptop and nowhere else. Plan how to containerize it. You do not need to write every file. Decide, and give reasons.\n\n- A **web service** that serves pages and an API on port 3000. It has a build step.\n- A **worker** from the same code that creates search indexes in the background.\n- A **PostgreSQL** database.\n- **Attachments** that users upload, stored as files.\n- It needs a database password and a key for an email provider.\n- It will run on one server, and developers want to run all of it on their laptops.\n\nDecide: how many images and how they are built, how each is tagged, what is published, where each kind of data lives, how settings and secrets arrive, what starts in which order, and how a release and a rollback happen."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Design: one possible answer",
+      "text": "**Images.** One image for the application, built in two stages: a build stage on the full base, and a final stage on the slim base running as an ordinary user, started in exec form. `web` and `worker` are two services from that one image with different commands. The database uses the official image, pinned to a version.\n\n**Tags.** Each build is pushed as a version and as its commit identifier. The production file names the version.\n\n**Network.** Only `web` is published, on the server's port 80. `db` is published nowhere. On laptops, an override file publishes the database on `127.0.0.1` for local tools.\n\n**Data.** One volume for the database's files and one for attachments, mounted into both `web` and `worker`. Both are backed up, the database with its own dump tool. Logs go to output.\n\n**Settings.** Ordinary values come from the environment through an `env_file`. The two secrets are files under `/run/secrets`, never in the image or in version control.\n\n**Start.** `db` has a health check. A one-off `migrate` job waits for it. `web` and `worker` wait for the job to finish. All long-running services use `unless-stopped`, retry their connections, and have memory limits.\n\n**Release.** Build once, test that image, then change the version in the production file and run `docker compose up -d`. A rollback is the previous version and the same command.",
+      "example": "design"
+    },
+    {
+      "kind": "explanation",
+      "title": "Where to go next",
+      "text": "This course stopped at one machine, deliberately. Everything in it still holds when you move to many machines, where a tool called an orchestrator starts containers across a group of servers, replaces failed ones and spreads traffic between them. Kubernetes is the best known. Images, tags, start commands, settings from outside, volumes, health checks and limits all appear there under similar names.\n\nThe habits are what carry over:\n\n- An image holds what is the same everywhere. Settings and secrets come from outside.\n- A container is disposable. Data lives in a volume.\n- Name exact versions, build once, and promote the same image.\n- Give a program the least power it can work with.\n- When something fails, ask in order: state, output, exit code, what it sees."
+    }
+  ],
+  "questions": [
+    {
+      "id": "worst-dockerfile",
+      "prompt": "Which problem should be fixed first?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "The image is too large",
+          "feedback": "Size costs time and adds risk, but nothing is exposed by it today."
+        },
+        {
+          "text": "The database password is stored in the image",
+          "feedback": "Everyone who can pull the image can read it with `docker inspect`. Remove it from the image, and then change the password, because the old one is in every copy that was ever pushed."
+        },
+        {
+          "text": "The base image is `latest`",
+          "feedback": "That makes future builds unpredictable. It leaks nothing by itself."
+        }
+      ]
+    },
+    {
+      "id": "worst-compose",
+      "prompt": "What happens to the notes in the database?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "They are lost if the database container is replaced",
+          "feedback": "The `db` service has no volume. If the pull brings a newer image, Compose replaces the container, and the data in the old writable layer goes with it."
+        },
+        {
+          "text": "They are kept, because `up` reuses containers",
+          "feedback": "It reuses a container only when nothing about it changed. A newer image under the same tag is a change."
+        },
+        {
+          "text": "They are kept in the image",
+          "feedback": "A container never writes to its image."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "bad-dockerfile": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/bad-dockerfile.txt"
+      },
+      "readOnly": true,
+      "fence": "dockerfile"
+    },
+    "good-dockerfile": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/good-dockerfile.txt"
+      },
+      "readOnly": true,
+      "fence": "dockerfile"
+    },
+    "bad-compose": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/bad-compose.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "good-compose": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/good-compose.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "design": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/design.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

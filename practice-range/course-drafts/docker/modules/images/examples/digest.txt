@@ -1,0 +1,11 @@
+  By tag (can move):
+    nginx:1.27
+
+  By digest (cannot move). The real value has 64 characters:
+    nginx@sha256:4c0fdaa8b6341bfdeca5f18f7837...e1c327beac
+
+  Both, so that people can read the version and machines get exact content:
+    nginx:1.27@sha256:4c0fdaa8...
+
+  See the digests of the images you have:
+    docker image ls --digests

@@ -1,0 +1,64 @@
+{
+  "id": "course:dsa/task/stacks-is-balanced",
+  "role": "guided",
+  "title": "Repair a bracket checker",
+  "concepts": [
+    "stack"
+  ],
+  "prompt": "Return true when every bracket in text is closed by the right kind of bracket, in the right order. The brackets are ( ), [ ] and { }. Ignore every other character.",
+  "hints": [
+    "Why does counting pass a text such as \"(]\"?",
+    "When a closing bracket arrives, it must match the most recent opening bracket that is still open. That is the top of a stack.",
+    "Push each opening bracket. On a closing bracket, pop and compare. Return false on a mismatch or an empty stack, and at the end return whether the stack is empty."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(isBalanced(\"(a[b]{c})\"), true)",
+    "__same(isBalanced(\"(]\"), false)",
+    "__same(isBalanced(\"((\"), false)",
+    "__same(isBalanced(\"())\"), false)",
+    "__same(isBalanced(\"\"), true)",
+    "__same(isBalanced(\"([)]\"), false)"
+  ],
+  "checkLabels": [
+    "Nested brackets of three kinds are balanced.",
+    "A round bracket is not closed by a square one.",
+    "Brackets left open are not balanced.",
+    "A closing bracket with nothing to close is not balanced.",
+    "A text with no brackets is balanced.",
+    "Brackets must close in the reverse of the order they opened."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-counter.ts",
+      "misconception": "Counts brackets without checking that the kinds match.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-leftover.ts",
+      "misconception": "Forgets to check that nothing is left open at the end.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "A count cannot remember which kind of bracket is open. A stack can: its top is the bracket that must be closed next."
+}

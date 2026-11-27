@@ -1,0 +1,6 @@
+$ docker logs web
+exec /usr/local/bin/node: exec format error
+
+$ docker ps -a
+IMAGE                                     STATUS
+registry.example.com/team/tracker:1.5.0   Exited (255) 5 seconds ago

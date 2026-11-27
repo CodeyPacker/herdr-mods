@@ -1,0 +1,11 @@
+  Rebuilding for each environment
+
+    commit --build--> artifact A --> development
+    commit --build--> artifact B --> staging        tested here
+    commit --build--> artifact C --> production     never tested
+
+  Building once
+
+    commit --build--> artifact --+--> development
+                    (one name)   +--> staging        tested here
+                                 +--> production     the same bytes

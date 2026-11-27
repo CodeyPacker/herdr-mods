@@ -1,0 +1,11 @@
+  10:00  merge A  -> run 1 starts   (slow: 6 minutes)
+  10:01  merge B  -> run 2 starts   (fast: 3 minutes)
+
+  10:04  run 2 finishes   production = B
+  10:06  run 1 finishes   production = A     <- older code, deployed last
+
+  With a concurrency group:
+  10:00  run 1 starts
+  10:01  run 2 waits
+  10:06  run 1 finishes   production = A
+  10:09  run 2 finishes   production = B

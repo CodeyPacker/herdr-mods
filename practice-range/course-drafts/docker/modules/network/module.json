@@ -1,0 +1,155 @@
+{
+  "id": "course:docker/module/network",
+  "title": "Connect containers",
+  "requires": [],
+  "outcomes": [],
+  "intro": "A container has its own network, separate from the host's. That is why a service can be running and still unreachable. This module covers letting the outside in by publishing a port, letting containers find each other by name, and the most common confusion of all: what `localhost` means inside a container.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "A container has its own network",
+      "text": "Each container gets its own network address and its own set of ports. Port 3000 in one container has nothing to do with port 3000 in another, or with port 3000 on the host. Ten containers can all listen on port 3000 without conflict.\n\nThe other side of that privacy is that nothing outside can reach a container's ports by default. A service listening on port 3000 inside a container is, at first, reachable only from inside that container.\n\nThere are two ways in. **Publishing** a port opens it to the host and beyond. A shared **network** lets chosen containers talk to each other.",
+      "example": "private"
+    },
+    {
+      "kind": "explanation",
+      "title": "Publish a port",
+      "text": "`-p` connects a port on the host to a port in the container. The host port is written first.\n\n```bash\ndocker run -d --name web -p 8080:3000 tracker:1.4.2\n```\n\nRequests to port 8080 on the host are passed to port 3000 in the container. The two numbers need not match, and the host port must be free.\n\n- `-p 8080:3000` accepts connections from any machine that can reach the host.\n- `-p 127.0.0.1:8080:3000` accepts them only from the host itself.\n\n`EXPOSE` in a Dockerfile publishes nothing. It records which port the program uses, for people and tools to read.",
+      "example": "publish"
+    },
+    {
+      "kind": "prediction",
+      "title": "Which address?",
+      "text": "A container is started with `-p 8080:3000`. The service inside listens on port 3000. You open a browser on the same machine.",
+      "questions": [
+        "which-port"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Listen on every interface",
+      "text": "One more thing has to be right, and it is inside the program. A service chooses which network interface to listen on.\n\nIf it listens on `127.0.0.1`, it accepts only connections that start **inside the same container**. Traffic arriving through a published port comes in from outside the container, and is refused.\n\nA service in a container must listen on `0.0.0.0`, which means every interface. Many frameworks listen on `127.0.0.1` by default when run in development mode. A published port that refuses every connection is very often this."
+    },
+    {
+      "kind": "explanation",
+      "title": "Containers that talk to each other",
+      "text": "The tracker needs to reach its database. Put both containers on a network you create, and each can reach the other **by container name**. Docker runs a small name service on such networks.\n\nTwo details matter.\n\n- Use the **container's** port, 5432 here. Published ports are for traffic from the host. Between containers on one network they play no part, and the database needs no `-p` at all.\n- Use a network you created. The default network that containers join when you name none has no lookup by name.",
+      "example": "net"
+    },
+    {
+      "kind": "debugging",
+      "title": "Connection refused",
+      "text": "The web service and the database run as two containers on the same network. The web service was given the settings below, which worked on the developer's laptop before Docker was used. Now it logs `connection refused`.",
+      "example": "localhost",
+      "questions": [
+        "localhost"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Out to the world, and back to the host",
+      "text": "Outbound traffic works without any setup. A container can reach the internet and other machines as the host can.\n\nReaching a service that runs **on the host itself**, outside Docker, needs a name for the host. Inside a container, `localhost` is the container. Docker Desktop provides the name `host.docker.internal` for this. On Linux, add it yourself:\n\n```bash\ndocker run --add-host=host.docker.internal:host-gateway ...\n```\n\nThis is useful in development, for example when the database runs directly on your laptop."
+    },
+    {
+      "kind": "explanation",
+      "title": "Publish as little as you can",
+      "text": "Every published port is a door into the host. Open only the ones that are needed.\n\n- **Publish the front door only.** The web service is published. The database is reached over the shared network and is published nowhere.\n- **Bind to `127.0.0.1` in development.** A plain `-p 5432:5432` offers the database to everyone on the same network as your laptop.\n- **Check from outside.** On Linux, Docker opens published ports with its own firewall rules, and those can take effect ahead of the rules of a host firewall tool. Test from another machine before trusting that a port is closed.",
+      "example": "front-door"
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: three containers",
+      "text": "The tracker now has three containers: `web` (port 3000), `db` (port 5432) and `cache` (port 6379). Users reach the web service on port 80 of the server. Only `web` talks to `db` and `cache`.\n\n1. Which ports do you publish, and how?\n2. What address does `web` use for the database, and for the cache?\n3. A developer wants to open the database with a tool on their own laptop while developing. What do you add, on the laptop only?"
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. One port: `-p 80:3000` on `web`. Nothing on `db` or `cache`.\n2. `db:5432` and `cache:6379`, with all three containers on one created network. The names are the container names and the ports are the containers' own.\n3. `-p 127.0.0.1:5432:5432` on `db`, in the development setup only. The tool on the laptop connects to `localhost:5432`, and no other machine can.\n\nThe pattern to remember: names and container ports between containers, published ports only for what must come in from outside."
+    }
+  ],
+  "questions": [
+    {
+      "id": "which-port",
+      "prompt": "Which address shows the service?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "`http://localhost:8080`",
+          "feedback": "The host port is the first number. The host passes port 8080 to port 3000 inside the container."
+        },
+        {
+          "text": "`http://localhost:3000`",
+          "feedback": "3000 is the port inside the container. On the host, nothing listens there."
+        },
+        {
+          "text": "`http://web:3000`",
+          "feedback": "Container names work between containers on a shared network, not from a browser on the host."
+        }
+      ]
+    },
+    {
+      "id": "localhost",
+      "example": "localhost",
+      "prompt": "Why is the connection refused?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "The database port is not published",
+          "feedback": "Publishing is for traffic from the host. Two containers on one network do not need it."
+        },
+        {
+          "text": "The two containers are on different networks",
+          "feedback": "They share a network. The name used to find the database is the problem."
+        },
+        {
+          "text": "Inside the web container, `localhost` is the web container",
+          "feedback": "Each container has its own `localhost`. Nothing listens on port 5432 in the web container. The host should be the database container's name, `db`."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "private": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/private.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "publish": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/publish.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "net": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/net.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "localhost": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/localhost.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "front-door": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/front-door.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

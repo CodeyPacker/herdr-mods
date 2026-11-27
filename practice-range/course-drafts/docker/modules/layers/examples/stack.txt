@@ -1,0 +1,15 @@
+  Dockerfile                         The image
+
+  CMD ["node", "server.js"]          (a note, no files)
+  COPY . .                           +----------------------------+
+                                     | layer 5: the source files  |
+  RUN npm ci --omit=dev              +----------------------------+
+                                     | layer 4: node_modules      |
+  COPY package*.json ./              +----------------------------+
+                                     | layer 3: two package files |
+  WORKDIR /app                       +----------------------------+
+                                     | layer 2: the /app folder   |
+  FROM node:24.11.1-slim             +----------------------------+
+                                     | layer 1: the base image    |
+                                     |          (several layers)  |
+                                     +----------------------------+

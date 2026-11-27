@@ -1,0 +1,173 @@
+{
+  "id": "course:ci-cd/module/deploy",
+  "title": "Deploy without downtime",
+  "requires": [],
+  "outcomes": [],
+  "intro": "Deploying means replacing the running version with a new one while people are using it. This module covers three ways to do that without an outage, how to choose between them, and how the pipeline checks that a new version works before users are sent to it.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "The simple way, and its cost",
+      "text": "The obvious deployment is: stop the old version, start the new one.\n\nIt has two faults. Between the stop and the start, nobody is served. And if the new version fails to start, the old one is already gone, so the outage lasts until someone gets either version running again.\n\nEvery better strategy follows one idea: **have the new version running and checked before the old one stops taking traffic.**",
+      "example": "naive"
+    },
+    {
+      "kind": "explanation",
+      "title": "Rolling",
+      "text": "A service usually runs as several identical copies, called instances, behind a load balancer that spreads requests among them.\n\nA **rolling** deployment replaces the instances a few at a time. Take one out of service, replace it with the new version, check that it is healthy, put it back, move to the next.\n\nIt needs no extra capacity beyond one spare instance, and it is the default on most platforms. Its important consequence is that **both versions serve users at the same time** for the length of the roll. A user may get the new version on one request and the old one on the next. The two versions must therefore work side by side, against the same database.",
+      "example": "rolling"
+    },
+    {
+      "kind": "explanation",
+      "title": "Blue-green",
+      "text": "A **blue-green** deployment keeps two complete copies of the environment. One, call it blue, serves all users. The new version is deployed to the other, green, which receives no user traffic.\n\nGreen can be tested at leisure, at its own address, with production's settings. When it is ready, traffic is switched from blue to green in one step.\n\nBlue is left running the old version. If something is wrong, switching back is the same single step, and takes seconds.\n\nOn Azure App Service this is built in. An app has **deployment slots**, each a running copy with its own address. You deploy to a slot, check it, and **swap** it with the production slot.",
+      "example": "blue-green"
+    },
+    {
+      "kind": "prediction",
+      "title": "After the switch",
+      "text": "A team deploys version 1.5 to the idle slot, checks it, and swaps. Production now runs 1.5. Ten minutes later, error reports start to arrive.",
+      "questions": [
+        "swap-back"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Canary",
+      "text": "A **canary** release sends a small share of real traffic, perhaps 5 percent, to the new version while everyone else stays on the old one. The team compares the two: error rate, response time, anything the business measures.\n\nIf the new version looks healthy, its share is raised in steps until it has all the traffic. If it does not, the share goes back to zero, and only a few users saw the problem.\n\nA canary is the only strategy that tests with real users at limited risk. It asks more of you: a way to split traffic, measurements good enough to tell the versions apart, and enough traffic for 5 percent to mean something.",
+      "example": "canary"
+    },
+    {
+      "kind": "explanation",
+      "title": "Choosing",
+      "text": "| | Rolling | Blue-green | Canary |\n| --- | --- | --- | --- |\n| Extra capacity | Little | A second copy | Little |\n| Both versions live at once | Yes, during the roll | Only for a moment | Yes, for as long as you choose |\n| Going back | Roll the old version out again | Switch back, in seconds | Set the share to zero |\n| Tested before users see it | Each instance's health check | Fully, at its own address | No. Users are the test, a few at a time |\n| Needs | A load balancer | Two environments or slots | Traffic splitting and good measurements |\n\nFor a small service on a platform with slots, blue-green is a strong default: simple to reason about, and quick to undo. Canary pays off when traffic is high and a bad release is costly."
+    },
+    {
+      "kind": "explanation",
+      "title": "Check before the switch, and after",
+      "text": "Whichever strategy you use, the pipeline should prove the new version works before giving it users.\n\n- **A health endpoint.** The service answers at an address such as `/health` with success only when it has started and can reach what it depends on.\n- **A smoke test.** After deploying to the idle slot, the pipeline calls the health endpoint and a few important pages. It retries for a short while, because a service takes time to start, and fails the job if they never succeed. No switch happens.\n- **A check after the switch.** The same smoke test against the production address, and a look at the error rate for the next few minutes.\n\nA deploy job that ends as soon as the platform accepts the new image has checked nothing. Accepting the command is not the same as the service running.",
+      "example": "smoke"
+    },
+    {
+      "kind": "debugging",
+      "title": "Green, and down",
+      "text": "A deploy job and what happened next.",
+      "example": "unchecked",
+      "questions": [
+        "unchecked"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: write the deploy job as a list",
+      "text": "The tracker runs on Azure App Service with a production slot and a second slot named `next`. Write, as a numbered list in plain words, the steps of the production deploy job. Include what makes it stop."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. Wait for approval, through the `production` environment.\n2. Sign in to Azure with the production identity.\n3. Check that the image tag exists in the registry. Stop if not.\n4. Point the `next` slot at that image.\n5. Smoke test the `next` slot at its own address, retrying for up to two minutes. **Stop if it never passes.** Production is untouched.\n6. Swap `next` with production.\n7. Smoke test the production address. **If it fails, swap back** and fail the job.\n8. Record what was deployed, and what the previous image was.\n\nThe workflow below is the same list as code. After step 6 the old version sits in the `next` slot, which is what makes step 7's swap back possible.",
+      "example": "deploy-job"
+    }
+  ],
+  "questions": [
+    {
+      "id": "swap-back",
+      "prompt": "What is the fastest safe action?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Fix the bug and deploy 1.5.1",
+          "feedback": "That takes a diagnosis, a fix, a review and a full pipeline run, while users see errors."
+        },
+        {
+          "text": "Swap the slots again",
+          "feedback": "The previous version is still running in the other slot. Swapping back returns users to it in seconds. Then the cause can be found without pressure."
+        },
+        {
+          "text": "Restart the production slot",
+          "feedback": "A restart brings back the same faulty version."
+        }
+      ]
+    },
+    {
+      "id": "unchecked",
+      "example": "unchecked",
+      "prompt": "What was missing from the job?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "A check that the new version actually works",
+          "feedback": "The job ended when the platform accepted the new image. It never asked the service anything. A smoke test against the health endpoint would have failed the job, and with a slot the broken version would never have received traffic."
+        },
+        {
+          "text": "A longer wait before finishing",
+          "feedback": "Waiting without checking would only have delayed the same green tick."
+        },
+        {
+          "text": "A second reviewer",
+          "feedback": "A reviewer approves the intent. No reviewer can see that a setting is missing at start-up."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "naive": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/naive.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "rolling": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/rolling.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "blue-green": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/blue-green.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "canary": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/canary.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "smoke": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/smoke.txt"
+      },
+      "readOnly": true,
+      "fence": "bash"
+    },
+    "unchecked": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/unchecked.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "deploy-job": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/deploy-job.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

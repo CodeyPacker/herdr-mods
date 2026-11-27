@@ -1,0 +1,11 @@
+  CONTAINER                                  HOST
+
+  /var/lib/postgresql/data  <-- volume ----  area managed by Docker
+                                             (name: tracker-data)
+
+  /app/src                  <-- bind ------  /home/ana/tracker/src
+                                             (a folder you chose)
+
+  /tmp/work                 <-- tmpfs -----  memory only
+
+  everything else           writable layer, removed with the container

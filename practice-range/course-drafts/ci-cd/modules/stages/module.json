@@ -1,0 +1,164 @@
+{
+  "id": "course:ci-cd/module/stages",
+  "title": "Order the checks",
+  "requires": [],
+  "outcomes": [],
+  "intro": "A pipeline runs many checks. The order they run in decides how quickly a developer learns of a mistake and how much machine time is spent finding it. This module covers the kinds of check, the rule for ordering them, and what should run before a merge, after it, or overnight.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Cheapest first",
+      "text": "Every check has a cost, which is the time it takes, and a chance of failing. The rule for ordering them is simple: **run the checks that are cheap and likely to fail before the ones that are slow.**\n\nA formatting check takes ten seconds. If it is going to fail, there is no reason to wait for a twenty-minute test run to finish first. Finding the cheap failure early is called **failing fast**.\n\nThe same rule says where to stop. Once a check has failed, the change will not be merged as it stands, so later stages need not run.",
+      "example": "order"
+    },
+    {
+      "kind": "explanation",
+      "title": "Three levels of test",
+      "text": "Tests differ in how much of the system they exercise.\n\n| Level | Exercises | Speed | When it fails |\n| --- | --- | --- | --- |\n| **Unit** | One function or class, alone | Milliseconds each | You know exactly where |\n| **Integration** | Several parts together, such as code with a real database | Seconds each | You know roughly where |\n| **End-to-end** | The whole running system, through its user interface or API | Many seconds each | Something, somewhere |\n\nThe broader a test, the more it proves and the more it costs: it is slower, harder to diagnose, and more likely to fail for reasons unrelated to the change.\n\nSo aim for many unit tests, fewer integration tests, and a small number of end-to-end tests for the journeys that must never break. The shape is often drawn as a pyramid.",
+      "example": "pyramid"
+    },
+    {
+      "kind": "prediction",
+      "title": "Where does the slow suite go?",
+      "text": "A team has an end-to-end suite that takes 40 minutes and covers every screen. They want confidence, so they make it a required check on every pull request.",
+      "questions": [
+        "slow-suite"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Checks that are not tests",
+      "text": "Some of the most valuable checks run no test at all.\n\n- **Formatting and lint** catch style drift and common mistakes in seconds.\n- **Type check or compile** proves the code fits together.\n- **Dependency scan** compares your libraries against lists of known flaws.\n- **Secret scan** looks for keys and passwords committed by accident.\n- **Static analysis** searches the code for patterns that are often security bugs.\n- **Build** proves that the artifact can actually be produced.\n\nMost of these are fast and give clear answers, which makes them good early gates."
+    },
+    {
+      "kind": "explanation",
+      "title": "In a row or side by side",
+      "text": "Checks that do not depend on each other can run at the same time, as separate jobs. The pipeline then takes as long as its slowest job, not the sum of all of them.\n\n`needs:` creates the stages. Jobs with no `needs` start at once. A job that needs them forms the next stage.\n\nA **matrix** runs one job several times with different values, for example on three versions of a runtime or on two operating systems. Each combination is its own job on its own runner.",
+      "example": "matrix"
+    },
+    {
+      "kind": "explanation",
+      "title": "Before the merge, after it, and overnight",
+      "text": "Not every check belongs on the pull request. Sort them by speed and by how often they catch something.\n\n| When | Budget | What runs |\n| --- | --- | --- |\n| On every pull request | About 10 minutes | Lint, build, unit tests, quick scans, a few key integration tests |\n| After each merge to `main` | Up to 30 minutes | The full integration suite, building the artifact, deploying to a test environment, smoke tests |\n| On a schedule | Hours | The full end-to-end suite, performance tests, deep scans |\n\nA check that moves later still matters. Its failure must reach the team and be treated as a broken `main`. The only difference is that it no longer makes every change wait."
+    },
+    {
+      "kind": "debugging",
+      "title": "An expensive order",
+      "text": "A pipeline runs its jobs one after another in this order. Most failed runs are caused by lint errors.",
+      "example": "backwards",
+      "questions": [
+        "backwards"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "A failure must be readable",
+      "text": "A red pipeline is only useful if its author can tell what failed in under a minute.\n\n- **Name every step** for what it checks, so that the summary reads as a list of results.\n- **One concern per job.** \"lint\" failing says more than \"checks\" failing.\n- **Keep the evidence.** Save test reports, screenshots and logs as files attached to the run, and do it even when the tests fail. That needs `if: always()`, because steps after a failure are skipped by default.\n- **Put the cause first.** A step that fails should print what went wrong and what to do, not only a stack trace.",
+      "example": "evidence"
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: arrange a pipeline",
+      "text": "A service has these checks. Arrange them into stages for the pull request, say which run side by side, and move anything that does not belong there.\n\n| Check | Time |\n| --- | --- |\n| Lint | 20 s |\n| Type check | 40 s |\n| Unit tests | 3 min |\n| Integration tests with a database | 6 min |\n| Build the container image | 4 min |\n| End-to-end tests | 35 min |\n| Dependency scan | 1 min |\n| Performance test | 25 min |"
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "**Pull request, stage 1, side by side:** lint, type check, dependency scan. All under a minute. Most mistakes stop here.\n\n**Pull request, stage 2, side by side:** unit tests, integration tests, and the image build. They start only if stage 1 passed. The stage takes 6 minutes, the length of its slowest job.\n\n**After the merge:** build and publish the image, deploy to a test environment, run a handful of end-to-end smoke tests.\n\n**Nightly:** the full end-to-end suite and the performance test, with failures reported to the team.\n\nThe pull request gets its answer in about 7 minutes, against 75 if everything ran in a row.",
+      "example": "arranged"
+    }
+  ],
+  "questions": [
+    {
+      "id": "slow-suite",
+      "prompt": "What is the most likely result?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "Fewer defects, with no real cost",
+          "feedback": "The cost is 40 minutes of waiting on every change, many times a day."
+        },
+        {
+          "text": "The suite will be sped up to a few minutes",
+          "feedback": "Broad tests through a user interface are slow by nature. Wishing does not shorten them."
+        },
+        {
+          "text": "Developers batch changes together and stop trusting the check",
+          "feedback": "A 40-minute wait pushes people to merge less often and in larger pieces, which is the opposite of integrating continuously. Broad suites also fail at random more often, so the check is rerun without being read. Keep a few key journeys on the pull request and run the rest after the merge or nightly."
+        }
+      ]
+    },
+    {
+      "id": "backwards",
+      "example": "backwards",
+      "prompt": "What does the order cost?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Every lint error is reported 47 minutes late",
+          "feedback": "The cheapest, most frequent failure runs last, behind the two slowest jobs. Run lint first, and side by side with the other quick checks, and the same error is reported in 20 seconds."
+        },
+        {
+          "text": "Nothing, since every check runs anyway",
+          "feedback": "They do all run when the change is good. When it is not, the order decides how long the author waits to find out."
+        },
+        {
+          "text": "The end-to-end tests are less accurate",
+          "feedback": "Their accuracy is the same. What suffers is the wait for every other result."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "order": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/order.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "pyramid": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/pyramid.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "matrix": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/matrix.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "backwards": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/backwards.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "evidence": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/evidence.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "arranged": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/arranged.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

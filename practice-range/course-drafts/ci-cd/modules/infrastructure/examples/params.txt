@@ -1,0 +1,12 @@
+  infra/
+  |-- main.bicep              one description
+  |-- staging.bicepparam
+  +-- prod.bicepparam
+
+// staging.bicepparam               // prod.bicepparam
+using './main.bicep'                using './main.bicep'
+param environmentName = 'staging'   param environmentName = 'prod'
+param planSize = 'B1'               param planSize = 'P1v3'
+
+  Same resources, same settings, same shape.
+  Different only where a parameter says so.

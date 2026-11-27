@@ -1,0 +1,178 @@
+{
+  "id": "course:dsa/module/cost",
+  "title": "Count the work",
+  "requires": [],
+  "outcomes": [
+    {
+      "id": "count",
+      "can": "Count the steps a loop or a pair of nested loops takes for an input of size n.",
+      "assessment": [
+        "pairs",
+        "course:dsa/task/cost-largest"
+      ]
+    },
+    {
+      "id": "growth",
+      "can": "Name the growth of a step count as constant, logarithmic, linear or quadratic.",
+      "assessment": [
+        "halving",
+        "course:dsa/task/cost-has-pair-sum"
+      ]
+    },
+    {
+      "id": "transfer",
+      "can": "Write a single pass and a nested pass over an array from a description.",
+      "assessment": [
+        "course:dsa/task/cost-count-above",
+        "course:dsa/task/cost-has-pair-sum"
+      ]
+    }
+  ],
+  "intro": "This course is about choosing how to store data and how to work on it, so that a program stays fast as its input grows. Every module explains an idea, shows it running, and then asks you to write code that is checked. This first module gives you the measuring tool that the rest of the course uses: counting the steps a piece of code takes, and describing how that count grows.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Count steps, not seconds",
+      "text": "The time a program takes depends on the machine, so seconds are a poor way to compare two solutions. A better measure is the number of basic steps the code performs, as a function of the size of its input. The size is usually called **n**: the length of an array, the number of items.\n\nOne loop over an array does about n steps. Two loops, one inside the other, do about n times n. What matters is how the count **grows** when n grows, because that decides whether the code still works on a large input."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict the two counts",
+      "text": "Read the example. It counts the steps of a single loop and of a loop over every pair. Predict the output before you check.",
+      "example": "count",
+      "questions": [
+        "pairs"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Read the counts",
+      "text": "With 10 items the single loop took 10 steps and the pair loop 45. With 100 items they took 100 and 4,950.\n\nTen times the input made the single loop ten times the work. It made the pair loop about a hundred times the work. That difference is the whole subject of this course. At a million items the single loop takes a million steps, and the pair loop takes about five hundred billion.",
+      "example": "count"
+    },
+    {
+      "kind": "explanation",
+      "title": "Name the growth",
+      "text": "Growth is written with a capital O, which is read as \"order of\". Keep only the part that grows fastest and drop constant factors, because they do not change the shape.\n\n| Name | Written | Steps for n = 1,000 | Typical code |\n| --- | --- | --- | --- |\n| Constant | O(1) | 1 | Read one array element |\n| Logarithmic | O(log n) | about 10 | Halve the range each time |\n| Linear | O(n) | 1,000 | One loop |\n| Linearithmic | O(n log n) | about 10,000 | A good sort |\n| Quadratic | O(n²) | 1,000,000 | A loop inside a loop |\n\nThe pair loop took n(n - 1)/2 steps. Its fastest-growing part is n², so it is O(n²). The same measure applies to memory: an algorithm that builds a second array of the same length uses O(n) extra space."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict a halving loop",
+      "text": "This loop cuts n in half until it reaches 1. Predict the three numbers it prints.",
+      "example": "halve",
+      "questions": [
+        "halving"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Why halving is so cheap",
+      "text": "A million was cut to 1 in 19 steps. Doubling the input adds only one more step. That is logarithmic growth, and it is why searching sorted data, a later module, is so fast.\n\nWhen you read code from now on, ask two questions. How many times does each loop run, in terms of n? And are the loops one after another, which adds their counts, or one inside another, which multiplies them?",
+      "example": "halve"
+    },
+    {
+      "kind": "modification",
+      "title": "Repair a single pass",
+      "text": "The starter makes one pass over the array, which is the right shape. It gives a wrong answer for some inputs. Save it, read the failing check, and repair it.",
+      "task": "course:dsa/task/cost-largest"
+    },
+    {
+      "kind": "independent",
+      "title": "Write a single pass",
+      "text": "Work from the prompt. One loop is enough.",
+      "task": "course:dsa/task/cost-count-above"
+    },
+    {
+      "kind": "independent",
+      "title": "Write a pass over pairs",
+      "text": "Work from the prompt. This one needs a loop inside a loop. A later module shows how to do the same job in one pass.",
+      "task": "course:dsa/task/cost-has-pair-sum"
+    }
+  ],
+  "questions": [
+    {
+      "id": "pairs",
+      "example": "count",
+      "prompt": "What does the second line print?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "100 1000",
+          "feedback": "Ten times the input does not make ten times the pairs. Each item pairs with every later item."
+        },
+        {
+          "text": "100 4950",
+          "feedback": "The single loop takes 100 steps. The pair loop takes 100 times 99 divided by 2, which is 4,950."
+        },
+        {
+          "text": "100 10000",
+          "feedback": "That would count every ordered pair, including an item with itself. The inner loop starts after the outer index."
+        }
+      ]
+    },
+    {
+      "id": "halving",
+      "example": "halve",
+      "prompt": "What does `halvings(1000000)` print?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "19",
+          "feedback": "A million is a little under 2 to the power 20, so 19 halvings bring it down to 1."
+        },
+        {
+          "text": "500000",
+          "feedback": "That is the value after one halving. The function counts how many halvings it takes."
+        },
+        {
+          "text": "1000",
+          "feedback": "That is the square root. Halving shrinks the number far faster."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "count": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/count.ts"
+      },
+      "stdout": [
+        "10 45",
+        "100 4950"
+      ]
+    },
+    "halve": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/halve.ts"
+      },
+      "stdout": [
+        "3",
+        "10",
+        "19"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:dsa/task/cost-largest",
+      "path": "tasks/largest/task.json"
+    },
+    {
+      "id": "course:dsa/task/cost-count-above",
+      "path": "tasks/count-above/task.json"
+    },
+    {
+      "id": "course:dsa/task/cost-has-pair-sum",
+      "path": "tasks/has-pair-sum/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:dsa/task/cost-count-above",
+    "afterModule": "course:dsa/module/search",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [],
+  "drillGap": "The practice catalog has no drills for this topic yet. The module's own exercises are the practice."
+}

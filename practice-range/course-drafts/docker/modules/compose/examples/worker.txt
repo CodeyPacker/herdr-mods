@@ -1,0 +1,10 @@
+services:
+  worker:
+    build: .
+    image: tracker:dev
+    command: ["node", "worker.js"]
+    environment:
+      DATABASE_HOST: db
+      DATABASE_NAME: tracker
+    depends_on:
+      - db

@@ -1,0 +1,12 @@
+  feature branch                               main  (always releasable)
+        |                                        ^
+        |  pull request                          |
+        +---------> +---------------------+      |
+                    | checks pass?        |      |
+                    | review approved?    | -----+  merge allowed
+                    | up to date?         |
+                    +---------------------+
+                              |
+                         any "no"  -->  merge refused
+
+  Direct pushes to main:  refused for everyone

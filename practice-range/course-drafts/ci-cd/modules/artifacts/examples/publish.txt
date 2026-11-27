@@ -1,0 +1,28 @@
+  publish:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write          # lets the job prove who it is to Azure
+      contents: read
+    env:
+      IMAGE: ${{ vars.REGISTRY_NAME }}.azurecr.io/tracker
+    outputs:
+      tag: ${{ steps.name.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - id: name
+        run: echo "tag=git-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - run: az acr login --name "${{ vars.REGISTRY_NAME }}"
+
+      - name: Build and push
+        run: |
+          docker build -t "$IMAGE:${{ steps.name.outputs.tag }}" .
+          docker push "$IMAGE:${{ steps.name.outputs.tag }}"

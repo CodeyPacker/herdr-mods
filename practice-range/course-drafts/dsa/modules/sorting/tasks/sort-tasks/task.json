@@ -1,0 +1,60 @@
+{
+  "id": "course:dsa/task/sorting-sort-tasks",
+  "role": "independent",
+  "title": "Sort records",
+  "concepts": [
+    "sorting"
+  ],
+  "prompt": "Return a new array of the tasks, sorted by priority from smallest to largest. Tasks with the same priority are sorted by title, A to Z. Leave the array you were given unchanged. Use the built-in sort with a comparator.",
+  "hints": [
+    "What should the comparator return when two priorities differ, and what when they are equal?",
+    "Return the difference of the priorities. When it is 0, compare the titles.",
+    "Copy first with [...tasks]. Compare titles with < and >, returning -1, 1 or 0."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(sortTasks([{ title: \"write\", priority: 2 }, { title: \"call\", priority: 1 }, { title: \"plan\", priority: 2 }]).map(task => task.title), [\"call\", \"plan\", \"write\"])",
+    "__same(sortTasks([]), [])",
+    "__same(sortTasks([{ title: \"a\", priority: 10 }, { title: \"b\", priority: 9 }]).map(task => task.title), [\"b\", \"a\"])",
+    "(() => { const input = [{ title: \"b\", priority: 2 }, { title: \"a\", priority: 1 }]; sortTasks(input); return input[0].title === \"b\"; })()"
+  ],
+  "checkLabels": [
+    "Priority 1 comes first. Within priority 2, plan comes before write.",
+    "No tasks give an empty array.",
+    "Priorities are compared as numbers: 9 comes before 10.",
+    "The array you were given must not change."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-priority-only.ts",
+      "misconception": "Compares priorities and leaves equal ones in the order they arrived.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-in-place.ts",
+      "misconception": "Sorts the caller's array instead of a copy.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 4 failed"
+      }
+    }
+  ],
+  "feedback": "A comparator answers one question about two items: which comes first? Decide that for different priorities, then for equal ones."
+}

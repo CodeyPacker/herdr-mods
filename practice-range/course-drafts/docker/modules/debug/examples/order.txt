@@ -1,0 +1,10 @@
+  1. What state is it in?     docker ps -a
+              |
+  2. What did it say?         docker logs --tail 100 web
+              |
+  3. How did it end?          docker inspect web   (exit code, OOMKilled)
+              |
+  4. What does it see?        docker exec -it web sh       (if running)
+                              docker run --rm -it --entrypoint sh IMAGE
+                                                           (if it will
+                                                            not stay up)

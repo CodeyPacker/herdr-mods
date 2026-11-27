@@ -1,0 +1,28 @@
+# In the shared repository: .github/workflows/deploy.yml
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      tag:
+        type: string
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}   # the gate is part of it
+    permissions: { id-token: write, contents: read }
+    steps:
+      - run: echo "sign in, deploy ${{ inputs.tag }} to a slot"
+      - run: echo "smoke test, then swap"
+
+# ---------------------------------------------------------------
+# In each service's repository: a job with no steps of its own.
+jobs:
+  deploy-staging:
+    uses: acme/pipelines/.github/workflows/deploy.yml@v2
+    with:
+      environment: staging
+      tag: git-3f2a9c8

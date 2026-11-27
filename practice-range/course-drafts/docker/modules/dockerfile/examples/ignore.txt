@@ -1,0 +1,16 @@
+# .dockerignore
+
+# Made by the build itself
+node_modules
+dist
+
+# Not needed in the image
+.git
+.vscode
+docs
+*.md
+
+# Must never be in an image
+.env
+.env.*
+*.pem

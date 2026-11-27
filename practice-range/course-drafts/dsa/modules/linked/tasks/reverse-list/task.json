@@ -1,0 +1,60 @@
+{
+  "id": "course:dsa/task/linked-reverse-list",
+  "role": "independent",
+  "title": "Reverse a list",
+  "concepts": [
+    "linked-list"
+  ],
+  "prompt": "Reverse the list that starts at head by changing its links, and return the new head. An empty list stays null. The supplied toArray reads a list back into an array.",
+  "hints": [
+    "When you turn one node's link around, how will you still reach the node that came after it?",
+    "Keep three things: the node before, the current node, and the node after. Save the node after before changing the link.",
+    "previous = null. While node: next = node.next, node.next = previous, previous = node, node = next. Return previous."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(toArray(reverseList(listOf([1, 2, 3]))), [3, 2, 1])",
+    "reverseList(null) === null",
+    "__same(toArray(reverseList(listOf([5]))), [5])",
+    "__same(toArray(reverseList(listOf([1, 2]))), [2, 1])"
+  ],
+  "checkLabels": [
+    "1, 2, 3 becomes 3, 2, 1.",
+    "An empty list stays null.",
+    "One node stays as it is.",
+    "Two nodes swap."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-lost.ts",
+      "misconception": "Overwrites the link before saving where it pointed, so the rest of the list is lost.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-old-head.ts",
+      "misconception": "Reverses the links and then returns the old head, which is now the last node.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Draw three nodes and their arrows. For each pass through the loop, redraw the arrows and mark which node each variable holds."
+}

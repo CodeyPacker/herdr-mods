@@ -1,0 +1,155 @@
+{
+  "id": "course:docker/module/secure",
+  "title": "Run with less privilege",
+  "requires": [],
+  "outcomes": [],
+  "intro": "A container limits what a program can see. It is not a strong wall. This module covers the habits that reduce what a container can do if the program inside it is broken into, and what you are trusting when you build on someone else's image. It is general guidance and not a complete security standard. Where you work, your organization's own security policy and review decide what is required.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "What can go wrong",
+      "text": "Assume that one day the program in a container will be taken over, through a flaw in its own code or in a library. The question is what the attacker can do next.\n\nTwo facts from the first module set the stakes. Containers share the host's kernel, so the boundary is thinner than a virtual machine's. And unless you say otherwise, the process in a container runs as **root**, the all-powerful user, which is by default the same user as root on the host.\n\nRoot inside a container is still restricted by the container. A mistake in the setup or a flaw in the kernel can remove that restriction. So the aim is to give the program as little power as it can work with. Each habit below removes something an attacker would otherwise have.",
+      "example": "layers-of-defence"
+    },
+    {
+      "kind": "explanation",
+      "title": "Do not run as root",
+      "text": "The most valuable single change is to run the program as an ordinary user. The `USER` instruction sets the user for the rest of the Dockerfile and for the container.\n\nMany official images ship a suitable user. The Node.js image has one named `node`. Where none exists, create one in a `RUN` step.\n\nDo the steps that need root first: installing system packages, creating folders. Then switch. Files that the program must write to need to belong to that user, which `COPY --chown` arranges.\n\nAn ordinary user cannot install packages, change system files or read other users' files. Most services need none of those.",
+      "example": "user"
+    },
+    {
+      "kind": "prediction",
+      "title": "Who is it running as?",
+      "text": "You run this against a production container, and it prints `root`.\n\n```bash\ndocker exec web whoami\n```",
+      "questions": [
+        "whoami"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Take away what is not used",
+      "text": "Docker can remove more, one option at a time.\n\n- **A read-only file system.** The container cannot change its own files. Give it a memory-backed scratch folder for the few places it must write.\n- **No capabilities.** Root's power is divided into named pieces called capabilities, and Docker grants a container a default set. Most services need none. Drop them all and add back only what proves necessary.\n- **No new privileges.** This stops a process from gaining more power than it started with.\n- **Limits.** The memory and CPU limits from the module on health stop one container from exhausting the host.\n\nAnd never use `--privileged` for an application. It switches off nearly all of the isolation.",
+      "example": "harden"
+    },
+    {
+      "kind": "explanation",
+      "title": "The Docker socket",
+      "text": "The Docker daemon is controlled through a file, `/var/run/docker.sock`. Whoever can write to that file can tell the daemon to do anything, including starting a new container with the whole host disk mounted inside it.\n\nSo access to the socket is, in effect, root on the host. Two consequences follow.\n\n- **Do not mount the socket into a container** unless the container's job is to manage Docker, and then treat that container as fully trusted.\n- **Membership of the `docker` group on a server is administrator access.** Grant it as carefully as you would a root password."
+    },
+    {
+      "kind": "debugging",
+      "title": "Three settings",
+      "text": "Part of a Compose file from a project that \"had permission problems\" and \"needed to reach the database from a laptop\".",
+      "example": "risky",
+      "questions": [
+        "risky"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Trust what you build on",
+      "text": "Your image is mostly other people's files: the base image and every dependency. Their flaws become yours.\n\n- **Choose the publisher.** Prefer official images and the software maker's own. Read how any other image is built.\n- **Pin what you use.** A specific version, and a digest for production, so that nothing changes without a decision.\n- **Rebuild regularly.** Pinning keeps out surprises and also keeps out fixes. Update the pinned versions and rebuild on a schedule, not only when the code changes.\n- **Scan.** An image scanner lists known flaws in the packages an image contains. Docker's own is `docker scout cves <image>`, and registries and build systems offer others. Run one in the build, and decide in advance which findings stop a release.\n- **Ship less.** Everything the last module removed is something that no longer needs scanning or patching."
+    },
+    {
+      "kind": "explanation",
+      "title": "Secrets during a build",
+      "text": "Sometimes the build itself needs a secret, for example a token to download private dependencies. The module on configuration ruled out `ARG`, `ENV` and `COPY`, because each leaves the value in the image.\n\nA **secret mount** is the safe way. The secret is given to `docker build` from outside. It appears as a file for the length of one `RUN` step and is stored in no layer.\n\nSecrets that the program needs while running are supplied when the container starts, as a file under `/run/secrets`, as the module on Compose showed.",
+      "example": "build-secret"
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: review a service",
+      "text": "A web service is described this way. List what you would change, most important first.\n\n```yaml\n  web:\n    image: tracker\n    user: root\n    ports:\n      - \"80:3000\"\n      - \"9229:9229\"   # debugger\n    environment:\n      API_KEY: \"...\"\n    volumes:\n      - /:/host\n```"
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. **`/:/host`.** The whole host disk is mounted into the container, writable. Anyone who takes over the program owns the server. Remove it, and mount only the specific folder that is needed, read-only if possible.\n2. **`user: root`.** Run as an ordinary user.\n3. **The debugger port.** A debugger lets whoever connects run code inside the process, and this one is open to every machine that can reach the host. Remove it from anything that is not a developer's own machine.\n4. **The key in the file.** Supply it as a secret file, and keep it out of version control.\n5. **`image: tracker`.** It resolves to `latest`. Name a version.\n6. Then add what is missing: a read-only file system, dropped capabilities, no new privileges, and a memory limit.\n\nThe order is by how much damage each allows, not by how easy it is to fix."
+    }
+  ],
+  "questions": [
+    {
+      "id": "whoami",
+      "prompt": "What does that tell you?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Nothing, containers always report root",
+          "feedback": "They report whichever user the process runs as. An image with a `USER` instruction reports that user."
+        },
+        {
+          "text": "The service runs with more power than it needs",
+          "feedback": "No `USER` was set, so the service runs as root. Anyone who takes over the service gets root inside the container, which makes every other weakness more serious."
+        },
+        {
+          "text": "The container has been broken into",
+          "feedback": "Root is the default, not a sign of an attack. It is a setting to fix."
+        }
+      ]
+    },
+    {
+      "id": "risky",
+      "example": "risky",
+      "prompt": "Which line is the most serious?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "`privileged: true`",
+          "feedback": "It removes nearly all of the container's isolation. A program taken over inside it can reach the host's devices and take control of the host. The permission problem it was hiding should be fixed by giving the right user access to the right folder."
+        },
+        {
+          "text": "Publishing port 5432",
+          "feedback": "This exposes the database to other machines, which is bad and should be bound to `127.0.0.1` or removed. It still leaves the attacker outside the host."
+        },
+        {
+          "text": "`restart: always`",
+          "feedback": "This is an ordinary restart policy."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "layers-of-defence": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/layers-of-defence.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "user": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/user.txt"
+      },
+      "readOnly": true,
+      "fence": "dockerfile"
+    },
+    "harden": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/harden.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "risky": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/risky.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "build-secret": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/build-secret.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

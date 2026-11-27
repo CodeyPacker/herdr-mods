@@ -1,0 +1,10 @@
+  main (Monday):   function sendMail(to, text) { ... }
+
+  Pull request 1   renames sendMail to sendEmail everywhere.
+                   Checks pass. Merged Tuesday 10:00.
+
+  Pull request 2   adds a new file that calls sendMail(...).
+                   Checks pass. Merged Tuesday 10:05.
+
+  main (Tuesday):  the new file calls sendMail, which no longer exists.
+                   Build fails.

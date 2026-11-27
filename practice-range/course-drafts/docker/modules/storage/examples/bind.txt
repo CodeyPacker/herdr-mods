@@ -1,0 +1,12 @@
+# Development: the container sees the source folder as you edit it.
+docker run --rm -it \
+  -v ./src:/app/src \
+  tracker:dev
+
+# A config file the container may read and not change.
+docker run -d \
+  -v ./tracker.conf:/etc/tracker/tracker.conf:ro \
+  tracker:1.4.2
+
+# Left side starts with ./ or /   -> a path on the host (bind mount)
+# Left side is a plain word       -> the name of a volume

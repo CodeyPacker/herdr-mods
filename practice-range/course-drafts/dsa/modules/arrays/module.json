@@ -1,0 +1,180 @@
+{
+  "id": "course:dsa/module/arrays",
+  "title": "Arrays and two pointers",
+  "requires": [
+    "step-count",
+    "big-o"
+  ],
+  "outcomes": [
+    {
+      "id": "cost",
+      "can": "Say which array operations are constant and which move other elements.",
+      "assessment": [
+        "front-cost",
+        "course:dsa/task/arrays-merge-sorted"
+      ]
+    },
+    {
+      "id": "pointers",
+      "can": "Solve a problem in one pass with two indexes that move towards each other or side by side.",
+      "assessment": [
+        "meet",
+        "course:dsa/task/arrays-reverse-in-place",
+        "course:dsa/task/arrays-is-palindrome"
+      ]
+    },
+    {
+      "id": "transfer",
+      "can": "Combine two sorted arrays in one pass.",
+      "assessment": [
+        "course:dsa/task/arrays-merge-sorted"
+      ]
+    }
+  ],
+  "intro": "An array is the structure you already use most. This module looks at what each array operation costs, which explains when an array is the right choice and when it is not. Then it introduces two pointers: a way to solve many array problems in one pass by moving two indexes.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "What an array is good at",
+      "text": "An array keeps its elements side by side in memory, numbered from 0. Because of that, reading or writing the element at any index takes one step, however long the array is. So does adding or removing at the **end**.\n\nThe cost is at the front and in the middle. To insert at index 0, every existing element has to move one place along. To remove from the front, every later element moves back.\n\n| Operation | Steps |\n| --- | --- |\n| Read or write `values[i]` | O(1) |\n| `push` and `pop`, at the end | O(1) |\n| `unshift` and `shift`, at the front | O(n) |\n| Insert or remove in the middle, with `splice` | O(n) |\n| Search for a value, with `indexOf` or `includes` | O(n) |"
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict the cost at the front",
+      "text": "The example inserts at the front by hand, so that the moves can be counted. Predict what it prints.",
+      "example": "shift",
+      "questions": [
+        "front-cost"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Every element moved",
+      "text": "Inserting in front of 3 elements took 3 moves. In front of 1,000 it took 1,000. The built-in `unshift` does the same work out of sight.\n\nThis matters inside a loop. Calling `unshift` or `shift` n times costs about n² moves in total. Whenever you see one of them in a loop over a large array, look for a way to work at the end instead.",
+      "example": "shift"
+    },
+    {
+      "kind": "explanation",
+      "title": "Two pointers",
+      "text": "Many array problems look as if they need a loop inside a loop, and can be done in one pass with two indexes. The indexes are called pointers.\n\n- **Opposite ends.** One pointer starts at the front and one at the back, and they move towards each other. Use it to reverse, or to compare a sequence with its mirror image.\n- **Side by side.** Both start at the front and move at their own pace, often one in each of two arrays. Use it to combine two sorted arrays.\n\nEach pointer only ever moves forward, or only backward, so together they take at most n steps."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict where the pointers stop",
+      "text": "The example reverses an array in place with two pointers. Predict both lines of output.",
+      "example": "pointers",
+      "questions": [
+        "meet"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "They met in the middle",
+      "text": "Each pass through the loop swapped one pair and moved both pointers inward. After two swaps both pointers were at index 2, the middle element, which needs no swap. The condition `left < right` stopped the loop there.\n\nThe array was changed **in place**: no second array was made, so the extra memory used is O(1). The condition matters. With `left <= right` the middle element would be swapped with itself, which is harmless. Looping over the whole length would swap every pair twice and undo the work.",
+      "example": "pointers"
+    },
+    {
+      "kind": "modification",
+      "title": "Repair a reversal",
+      "text": "The starter swaps elements, and the array comes out unchanged. Save it, read the failing check, and repair the loop.",
+      "task": "course:dsa/task/arrays-reverse-in-place"
+    },
+    {
+      "kind": "independent",
+      "title": "Compare from both ends",
+      "text": "Work from the prompt. Two pointers that move towards each other are enough.",
+      "task": "course:dsa/task/arrays-is-palindrome"
+    },
+    {
+      "kind": "independent",
+      "title": "Combine two sorted arrays",
+      "text": "Work from the prompt. Use one pointer in each array.",
+      "task": "course:dsa/task/arrays-merge-sorted"
+    }
+  ],
+  "questions": [
+    {
+      "id": "front-cost",
+      "example": "shift",
+      "prompt": "What does the second line print?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "1",
+          "feedback": "Only the new element is written once, but every existing element has to move first."
+        },
+        {
+          "text": "3",
+          "feedback": "That was the count for the array of three. This array has a thousand elements."
+        },
+        {
+          "text": "1000",
+          "feedback": "Each of the thousand existing elements moves one place along before the new one is written."
+        }
+      ]
+    },
+    {
+      "id": "meet",
+      "example": "pointers",
+      "prompt": "What does the second line print?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "2 2",
+          "feedback": "After two swaps both pointers are on the middle element, and left < right is false."
+        },
+        {
+          "text": "0 4",
+          "feedback": "Those are the starting values. Each pass moves both pointers inward."
+        },
+        {
+          "text": "3 1",
+          "feedback": "The pointers would cross like that only if the loop ran one more time. It stops when they meet."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "shift": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/shift.ts"
+      },
+      "stdout": [
+        "3 [0,1,2,3]",
+        "1000"
+      ]
+    },
+    "pointers": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/pointers.ts"
+      },
+      "stdout": [
+        "edcba",
+        "2 2"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:dsa/task/arrays-reverse-in-place",
+      "path": "tasks/reverse-in-place/task.json"
+    },
+    {
+      "id": "course:dsa/task/arrays-is-palindrome",
+      "path": "tasks/is-palindrome/task.json"
+    },
+    {
+      "id": "course:dsa/task/arrays-merge-sorted",
+      "path": "tasks/merge-sorted/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:dsa/task/arrays-is-palindrome",
+    "afterModule": "course:dsa/module/hashing",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [],
+  "drillGap": "The practice catalog has no drills for this topic yet. The module's own exercises are the practice."
+}

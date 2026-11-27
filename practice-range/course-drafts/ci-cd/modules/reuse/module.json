@@ -1,0 +1,146 @@
+{
+  "id": "course:ci-cd/module/reuse",
+  "title": "Reuse pipeline code",
+  "requires": [],
+  "outcomes": [],
+  "intro": "One good pipeline is soon copied to the next repository, and the next. A year later there are thirty slightly different copies and a flaw to fix in each. This module covers the two ways to share pipeline logic properly, how to version what is shared, and the price of putting it all in one place.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Copies drift",
+      "text": "Copying a working workflow into a new repository is the fastest way to start. It is also a fork. From that moment the two files change separately.\n\nThen a problem is found in the deploy steps: a missing check, an action that needs updating, a security fix. It has to be made in every copy, by hand. Some are missed. Some copies have been edited and no longer match the fix.\n\nShared pipeline logic should be written once, kept in one place, and **called** from each repository. Pipeline tools provide two shapes for this, at two different sizes.",
+      "example": "drift"
+    },
+    {
+      "kind": "explanation",
+      "title": "Two sizes of reuse",
+      "text": "| | Composite action | Reusable workflow |\n| --- | --- | --- |\n| Replaces | A few **steps** inside a job | One or more whole **jobs** |\n| Called from | A step, with `uses:` | A job, with `uses:` |\n| Runs on | The calling job's runner | Its own runners |\n| Can set an environment, approvals, permissions | No, the calling job does | Yes |\n| Good for | \"Sign in and push an image\", \"set up the tools\" | \"The standard deployment\", \"the standard checks\" |\n\nChoose by what you are sharing. A handful of commands that appear in the middle of different jobs is a composite action. A complete procedure with its own gates is a reusable workflow."
+    },
+    {
+      "kind": "explanation",
+      "title": "A composite action",
+      "text": "A **composite action** is a folder with a file named `action.yml`. The file declares inputs and lists steps, written as in any job.\n\nIt can live in the same repository, and is then called by its path. Or it can live in a shared repository, and is called by that repository's name, the folder, and a version.\n\nTwo details differ from an ordinary job. Every `run` step must name its `shell`. And the action runs inside the caller's job, so it sees that job's files and has that job's access.",
+      "example": "composite"
+    },
+    {
+      "kind": "explanation",
+      "title": "A reusable workflow",
+      "text": "A **reusable workflow** is an ordinary workflow file whose trigger is `workflow_call`. It declares the inputs and secrets it expects.\n\nAnother workflow calls it from a job. That job has no steps of its own. It names the file with `uses:`, passes values under `with:`, and passes secrets under `secrets:`.\n\nThe called workflow brings its own jobs, runners, environment and permissions. That makes it the right shape for a deployment: the approval gate and the smoke tests are part of what is shared, so no repository can leave them out.",
+      "example": "reusable"
+    },
+    {
+      "kind": "prediction",
+      "title": "Which shape?",
+      "text": "Twelve repositories each have a build job. The jobs differ, because the projects are built differently. In the middle of each are the same four steps: sign in to the cloud, sign in to the registry, build the image, push it.",
+      "questions": [
+        "which-shape"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Version what you share",
+      "text": "Shared code is a dependency of every repository that calls it. Treat it as one.\n\nA caller names a version after the `@`: a branch, a tag, or a commit identifier.\n\n- **A branch**, such as `@main`, means every caller picks up every change the moment it is merged. A fix reaches everyone at once. So does a mistake.\n- **A tag**, such as `@v2`, means callers change when they choose to. A fix must be adopted repository by repository.\n- **A commit identifier** cannot change at all.\n\nA common arrangement: release shared code with version tags, and keep a moving major tag such as `v2` that receives only compatible fixes. A breaking change gets `v3`, and callers move when ready. This is the versioning discipline of any library, applied to pipelines."
+    },
+    {
+      "kind": "explanation",
+      "title": "The price of one place",
+      "text": "Centralizing is a trade, and it is worth seeing both sides.\n\n**What you gain.** One fix reaches every repository. Every team gets the same gates. A new repository has a full pipeline in ten lines.\n\n**What you pay.** One mistake can stop every team's deployments. Someone has to own the shared code, review changes to it, and answer questions. And teams lose some freedom: the shared workflow does things one way.\n\nThree habits keep the price down.\n\n- **Keep the interface small.** A few clear inputs. Every extra option is a thing to support for ever.\n- **Test the shared code.** Give it a sample repository that calls it on every change.\n- **Write it down.** Inputs, what it does, how to move between versions."
+    },
+    {
+      "kind": "debugging",
+      "title": "Everything stopped at once",
+      "text": "A message to an engineering channel on a Tuesday afternoon.",
+      "example": "at-main",
+      "questions": [
+        "at-main"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: what to share",
+      "text": "An organization has twenty services. Each repository has its own copies of the items below. For each, say whether you would share it, in which shape, and why.\n\n1. The six steps that sign in to Azure and push an image.\n2. The production deployment: approval, deploy to a slot, smoke test, swap.\n3. The unit test command, which is different in every repository.\n4. The step that posts a message to chat when a deployment finishes.\n5. The list of required checks on pull requests."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. **Composite action.** The same steps, used inside build jobs that otherwise differ.\n2. **Reusable workflow.** It is a whole procedure with its own environment and gates, and sharing it guarantees no service skips the smoke test.\n3. **Do not share.** It differs everywhere. A shared wrapper would need an option for every project and help nobody.\n4. **Composite action.** One small step with a couple of inputs.\n5. **Not pipeline code at all.** It is a repository setting. Many platforms let an organization apply such rules to many repositories at once, which is the right tool.\n\nThe test for sharing is whether the logic is truly the same. Sharing things that only look alike produces an abstraction with twenty special cases."
+    }
+  ],
+  "questions": [
+    {
+      "id": "which-shape",
+      "prompt": "How should the four steps be shared?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "As a composite action",
+          "feedback": "They are steps that run inside a larger job, on that job's runner, among steps that differ from project to project. That is what a composite action is for."
+        },
+        {
+          "text": "As a reusable workflow",
+          "feedback": "A reusable workflow replaces whole jobs on its own runners. These steps need the files that the surrounding build steps produced on the same machine."
+        },
+        {
+          "text": "By copying them, since they are short",
+          "feedback": "Four steps in twelve places is forty-eight chances to miss the next fix."
+        }
+      ]
+    },
+    {
+      "id": "at-main",
+      "example": "at-main",
+      "prompt": "What would have limited the damage?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Not sharing the deploy workflow",
+          "feedback": "Then the same change would be needed in thirty files by hand. Sharing is right. How callers follow changes is the issue."
+        },
+        {
+          "text": "Callers pinned to a version tag, and a test repository for the shared workflow",
+          "feedback": "With `@main`, an unreleased change reached thirty repositories the instant it merged. With tags, it would have reached none until released, and a sample caller run on every change would have caught the missing input first."
+        },
+        {
+          "text": "A second approval on production deployments",
+          "feedback": "The deployments never reached the approval step. The workflow file itself was invalid for every caller."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "drift": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/drift.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "composite": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/composite.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "reusable": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/reusable.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "at-main": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/at-main.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

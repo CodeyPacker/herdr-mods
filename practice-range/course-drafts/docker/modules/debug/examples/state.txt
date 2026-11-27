@@ -1,0 +1,13 @@
+$ docker ps -a
+IMAGE           STATUS                       NAMES
+tracker:1.5.0   Exited (137) 2 minutes ago   web
+postgres:17.2   Up 3 days (healthy)          db
+
+$ docker inspect --format '{{.State.ExitCode}} {{.State.OOMKilled}}' web
+137 true
+
+$ docker inspect --format '{{.State.Error}}' web
+
+$ docker inspect --format '{{json .Mounts}}' db
+[{"Type":"volume","Name":"tracker_db-data",
+  "Destination":"/var/lib/postgresql/data", ...}]

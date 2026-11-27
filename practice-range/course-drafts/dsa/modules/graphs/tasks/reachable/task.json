@@ -1,0 +1,61 @@
+{
+  "id": "course:dsa/task/graphs-reachable",
+  "role": "guided",
+  "title": "Repair a search",
+  "concepts": [
+    "graph",
+    "breadth-first"
+  ],
+  "prompt": "Return every name that can be reached from start by following connections, including start itself, in the order a breadth-first search first finds them. Visit a name's neighbours in the order they are listed.",
+  "hints": [
+    "Which places in the failing check are more than one step from the start?",
+    "Each name that is found has neighbours of its own to look at. A queue holds the names still to be explored.",
+    "Keep a Set of seen names and a queue starting with start. For each name in the queue, add every unseen neighbour to both."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(reachable(__roads, \"home\"), [\"home\", \"shop\", \"park\", \"school\", \"library\"])",
+    "__same(reachable(__islands, \"c\"), [\"c\"])",
+    "__same(reachable(__islands, \"a\"), [\"a\", \"b\"])",
+    "__same(reachable({ a: [\"b\"], b: [], c: [\"a\"] }, \"a\"), [\"a\", \"b\"])"
+  ],
+  "checkLabels": [
+    "From home, the search finds shop, park, school and library, in that order.",
+    "A name with no connections reaches only itself.",
+    "A search stays inside its own group.",
+    "A one-way connection is followed forwards only."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-neighbours.ts",
+      "misconception": "Stops after the direct neighbours of the start.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-newest.ts",
+      "misconception": "Explores the newest name first, which is a depth-first order.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Write the queue out by hand for the first check. Each name is explored in the order it was added, oldest first."
+}

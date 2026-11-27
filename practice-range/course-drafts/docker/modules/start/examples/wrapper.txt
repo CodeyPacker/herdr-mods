@@ -1,0 +1,9 @@
+#!/bin/sh
+# docker-entrypoint.sh: prepare, then hand over to the real program.
+set -e
+
+echo "tracker starting, environment: ${APP_ENV:-development}"
+
+# exec replaces this script with the command, so the command becomes
+# PID 1 and receives signals. Without exec, the script would stay PID 1.
+exec "$@"

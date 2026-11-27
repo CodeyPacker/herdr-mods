@@ -1,0 +1,173 @@
+{
+  "id": "course:docker/module/layers",
+  "title": "Use layers and the build cache",
+  "requires": [],
+  "outcomes": [],
+  "intro": "A Dockerfile that works can still be slow to build and larger than it needs to be. Both problems have the same cause, which is how an image is stored: as a stack of layers. This module explains layers and the build cache, and shows how the order of instructions decides whether a rebuild takes a second or several minutes.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Every step adds a layer",
+      "text": "An image is a stack of **layers**. Each layer holds the files that one build step added, changed or removed, compared with the layers below it.\n\nThe instructions that change files each produce a layer: `FROM` brings in the base image's layers, and every `RUN` and `COPY` adds one more. Instructions such as `CMD`, `ENV` and `EXPOSE` change only the image's notes and add no files.\n\nWhen a container starts, Docker stacks the layers and shows them as one folder tree. Layers are read-only and identified by their content, which is why two images built on the same base can share them.",
+      "example": "stack"
+    },
+    {
+      "kind": "explanation",
+      "title": "The cache rule",
+      "text": "Building a layer can be slow, so the builder keeps every layer it makes. On the next build it reuses a kept layer when it can. This is the **build cache**.\n\nThe rule has two parts.\n\n1. A step is reused if the instruction is the same as last time **and** its inputs are the same. For `COPY`, the inputs are the contents of the files being copied. For `RUN`, the input is the text of the command.\n2. A step can be reused only if **every step above it** was reused. The first step that has to run again forces every later step to run again too.\n\nSo one change near the top of a Dockerfile rebuilds everything below it.",
+      "example": "cache"
+    },
+    {
+      "kind": "prediction",
+      "title": "One changed file",
+      "text": "A Dockerfile contains these two lines in this order. You fix a typo in one source file and build again.\n\n```dockerfile\nCOPY . .\nRUN npm ci --omit=dev\n```",
+      "questions": [
+        "copy-all-first"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Order by how often things change",
+      "text": "The fix is to put the things that change rarely near the top and the things that change often near the bottom.\n\nIn most projects the list of dependencies changes a few times a month, and the source code changes many times a day. So copy only the dependency list first, install, and copy the source last.\n\nNow a change to a source file invalidates only the final `COPY`. The install step above it is reused, and the build takes a second or two.",
+      "example": "ordered"
+    },
+    {
+      "kind": "explanation",
+      "title": "A deleted file is still in the image",
+      "text": "Layers only add. If one step creates a file and a later step deletes it, the file is still stored in the earlier layer. The later layer merely hides it. The image is no smaller, and anyone with the image can read the hidden file by looking at that layer.\n\nTwo rules follow.\n\n- **Clean up in the same `RUN` that made the mess.** Join the commands with `&&` so that the temporary files never reach a finished layer.\n- **Never copy a secret in and delete it afterwards.** It remains in the image. The module on privilege shows the safe way to use a secret during a build.",
+      "example": "cleanup"
+    },
+    {
+      "kind": "debugging",
+      "title": "Two lines that should be one",
+      "text": "This fragment installs a system package. It was written three months ago and the first line has been cached ever since. Today someone adds a second package to the last line.",
+      "example": "stale",
+      "questions": [
+        "stale"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "See the layers",
+      "text": "`docker history` lists an image's layers, newest first, with the instruction that made each one and its size. It is the quickest way to find out where an image's size comes from.\n\nIt is also a reminder that the instructions are not private. Anyone who has the image can read every line, including any value written into a `RUN` or `ENV`.",
+      "example": "history"
+    },
+    {
+      "kind": "explanation",
+      "title": "Keep the download cache between builds",
+      "text": "Even a well ordered file reinstalls everything when the dependency list does change. A **cache mount** softens that. It gives one `RUN` step a folder that is kept between builds and is not part of the image.\n\n```dockerfile\nRUN --mount=type=cache,target=/root/.npm npm ci --omit=dev\n```\n\nThe package manager keeps its downloads in that folder. When the list changes, it fetches only what is new. The image gets the installed result and none of the download cache."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: a slow build",
+      "text": "This Dockerfile takes four minutes to rebuild after any change, even to a comment in a source file.\n\n```dockerfile\nFROM node:24.11.1-slim\nWORKDIR /app\nCOPY . .\nRUN apt-get update\nRUN apt-get install -y curl\nRUN npm ci --omit=dev\nCMD [\"node\", \"server.js\"]\n```\n\n1. Say which steps run again after a one-line source change, and why.\n2. Rewrite it so that such a change rebuilds as little as possible.\n3. Fix anything else this module warned about."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. Everything from `COPY . .` down. The copied files changed, so that step runs, and every step after a step that ran must run as well: both `apt-get` lines and the install.\n\n2. and 3. The rewrite is below. System packages change least, so they go first. The two `apt-get` commands become one step that also removes the package lists, so the lists are never stored in a layer. The dependency list is copied alone, then installed. The source comes last.\n\nAfter this, a source change reruns only the last `COPY`.",
+      "example": "fast"
+    }
+  ],
+  "questions": [
+    {
+      "id": "copy-all-first",
+      "prompt": "Which steps run again?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "Neither, the instructions did not change",
+          "feedback": "The text is the same, but the input to `COPY . .` is the content of the files, and one of them changed."
+        },
+        {
+          "text": "Only `COPY . .`",
+          "feedback": "Once a step runs again, every step after it runs again. The install is below the copy."
+        },
+        {
+          "text": "Both, so the dependencies are installed again",
+          "feedback": "The copy has a changed input, and the install comes after it, so the cached install cannot be used."
+        }
+      ]
+    },
+    {
+      "id": "stale",
+      "example": "stale",
+      "prompt": "What goes wrong?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "The install uses a package list that is three months old",
+          "feedback": "The first line is unchanged, so its cached layer is reused. The changed second line runs against old lists and may ask for package versions that no longer exist. One `RUN` with both commands keeps them in step."
+        },
+        {
+          "text": "The build fails because `apt-get update` runs twice",
+          "feedback": "It does not run at all. Its layer comes from the cache."
+        },
+        {
+          "text": "Nothing, the cache makes the build faster",
+          "feedback": "It is faster, and wrong. The lists and the install were made at different times."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "stack": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/stack.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "cache": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/cache.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "ordered": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/ordered.txt"
+      },
+      "readOnly": true,
+      "fence": "dockerfile"
+    },
+    "cleanup": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/cleanup.txt"
+      },
+      "readOnly": true,
+      "fence": "dockerfile"
+    },
+    "stale": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/stale.txt"
+      },
+      "readOnly": true,
+      "fence": "dockerfile"
+    },
+    "history": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/history.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "fast": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/fast.txt"
+      },
+      "readOnly": true,
+      "fence": "dockerfile"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

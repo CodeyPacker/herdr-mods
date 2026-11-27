@@ -1,0 +1,15 @@
+# The job
+    steps:
+      - run: |
+          az webapp config container set \
+            --name tracker-prod --resource-group rg-tracker-prod \
+            --container-image-name "$IMAGE:$TAG"
+      - run: echo "Deployed $TAG"
+
+# The run
+  deploy-production    passed   38 s
+  "Deployed git-7c21e0d"
+
+# The service's own log, a minute later
+  Error: required setting PAYMENT_API_URL is not set
+  (process exited with code 1, restarting ...)

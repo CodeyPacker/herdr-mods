@@ -1,0 +1,17 @@
+    steps:
+      - uses: actions/checkout@v5
+
+      # By hand: the key changes whenever the lock file changes.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - run: npm ci
+
+# ---------------------------------------------------------------
+# Or let the setup action do the same thing:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm

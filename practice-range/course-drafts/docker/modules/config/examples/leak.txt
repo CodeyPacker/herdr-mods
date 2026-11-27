@@ -1,0 +1,6 @@
+# build.sh
+docker build --build-arg DB_PASSWORD="$DB_PASSWORD" -t tracker:1.4.2 .
+
+# Dockerfile
+ARG DB_PASSWORD
+ENV DB_PASSWORD=${DB_PASSWORD}

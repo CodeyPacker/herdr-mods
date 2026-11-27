@@ -1,0 +1,13 @@
+                     /\
+                    /  \        END-TO-END    few
+                   / e2e\       whole system, slow, hard to diagnose
+                  /------\
+                 /        \     INTEGRATION   some
+                / integr.  \    several parts together
+               /------------\
+              /              \  UNIT          many
+             /     unit       \ one piece, fast, exact
+            /------------------\
+
+   Upside down (many end-to-end, few unit) gives a slow pipeline
+   whose failures nobody can read.

@@ -1,0 +1,19 @@
+# Five separate workflows. Each block is the top of its own file.
+
+# 1. Checks
+on: { pull_request: }
+concurrency: { group: "ci-${{ github.ref }}", cancel-in-progress: true }
+
+# 2. Deploy to development
+on: { push: { branches: [main] } }
+concurrency: { group: deploy-dev, cancel-in-progress: false }
+
+# 3. Nightly end-to-end tests, 02:00 UTC
+on: { schedule: [{ cron: "0 2 * * *" }] }
+
+# 4. Production release
+on: { workflow_dispatch: { inputs: { version: { type: string } } } }
+concurrency: { group: deploy-production, cancel-in-progress: false }
+
+# 5. Documentation
+on: { push: { branches: [main], paths: ["docs/**"] } }

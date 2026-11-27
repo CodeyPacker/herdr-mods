@@ -1,0 +1,20 @@
+$ az deployment group what-if \
+    --resource-group rg-tracker-prod \
+    --template-file main.bicep --parameters prod.bicepparam
+
+Resource and property changes are indicated with these symbols:
+  + Create
+  ~ Modify
+  - Delete
+
+  ~ Microsoft.Web/serverfarms/tracker-prod-plan
+    ~ sku.name:  "B1" => "P1v3"
+
+  + Microsoft.Web/sites/tracker-prod/slots/next
+
+Resource changes: 1 to create, 1 to modify, 2 no change.
+
+# To make the change, the same arguments with "create":
+$ az deployment group create \
+    --resource-group rg-tracker-prod \
+    --template-file main.bicep --parameters prod.bicepparam

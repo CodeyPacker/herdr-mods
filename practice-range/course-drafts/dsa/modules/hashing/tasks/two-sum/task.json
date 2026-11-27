@@ -1,0 +1,65 @@
+{
+  "id": "course:dsa/task/hashing-two-sum",
+  "role": "independent",
+  "title": "Find a pair in one pass",
+  "concepts": [
+    "hash-map",
+    "hash-set"
+  ],
+  "prompt": "Return the two positions [i, j], with i less than j, whose numbers add up to target. Return undefined when there is no such pair. The tests have at most one pair. Make one pass: the last check counts the reads on 2,000 numbers.",
+  "hints": [
+    "When you are at a number, which other number would complete the pair?",
+    "Keep a Map from each number already seen to its position. Look up target minus the current number.",
+    "For each index: if the Map has target - value, return [that position, index]. Otherwise store value with its index."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(twoSum([2, 7, 11, 15], 9), [0, 1])",
+    "__same(twoSum([3, 2, 4], 6), [1, 2])",
+    "__same(twoSum([3, 3], 6), [0, 1])",
+    "__same(twoSum([1, 2], 7), undefined)",
+    "__same(twoSum(__many, 27979), [1998, 1999])",
+    "__count(() => twoSum(__many, 27979)) <= 100 * __many.length"
+  ],
+  "checkLabels": [
+    "2 and 7 are at positions 0 and 1.",
+    "3 may not be used twice. 2 and 4 are at positions 1 and 2.",
+    "Two equal numbers at different positions count.",
+    "No pair gives undefined.",
+    "It works on 2,000 numbers.",
+    "Do not try every pair. Read each of the 2,000 numbers only a few times."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-same.ts",
+      "misconception": "Lets a number be paired with itself.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-pairs.ts",
+      "misconception": "Tries every pair, which is correct and far too slow.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 6 failed"
+      }
+    }
+  ],
+  "feedback": "At each number, ask the Map one question: have I already seen the number that completes this pair?"
+}

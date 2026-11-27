@@ -1,0 +1,180 @@
+{
+  "id": "course:dsa/module/graphs",
+  "title": "Graphs and breadth-first search",
+  "requires": [
+    "hash-map",
+    "hash-set",
+    "queue"
+  ],
+  "outcomes": [
+    {
+      "id": "store",
+      "can": "Store a graph as a list of neighbours for each node.",
+      "assessment": [
+        "edges",
+        "course:dsa/task/graphs-reachable"
+      ]
+    },
+    {
+      "id": "explore",
+      "can": "Explore a graph breadth first, visiting each node once.",
+      "assessment": [
+        "order",
+        "course:dsa/task/graphs-reachable",
+        "course:dsa/task/graphs-count-groups"
+      ]
+    },
+    {
+      "id": "shortest",
+      "can": "Find the fewest steps between two nodes.",
+      "assessment": [
+        "course:dsa/task/graphs-shortest-steps"
+      ]
+    }
+  ],
+  "intro": "A tree is a special case of something more general. Places joined by roads, people who know each other, tasks that depend on other tasks: each is a set of things with connections between them, called a graph. This module covers how to store a graph and how to explore it level by level, which finds the route with the fewest steps.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Nodes and edges",
+      "text": "A **graph** has **nodes**, which are the things, and **edges**, which are the connections between pairs of them. An edge can be two-way, as with a road, or one-way, as with \"must be done before\". A graph with one-way edges is called **directed**.\n\nUnlike a tree, a graph has no root, and it may contain **cycles**: you can leave a node and come back to it by another route.\n\nThe usual way to store a graph is an **adjacency list**: for each node, the list of its neighbours. In this course that is an object from a name to an array of names. A two-way edge between a and b appears twice, once in each list."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict the size",
+      "text": "The example stores five places and the roads between them, then counts. Predict the line it prints.",
+      "example": "edges",
+      "questions": [
+        "edges"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Each road is listed twice",
+      "text": "There are 5 places. Adding up the lengths of all the neighbour lists gives 10, and every two-way road was counted from both of its ends, so there are 5 roads.\n\nAny algorithm that looks at every node and every neighbour list once costs O(n + e), for n nodes and e edges. That is the cost of every graph algorithm in this course.",
+      "example": "edges"
+    },
+    {
+      "kind": "explanation",
+      "title": "Breadth-first search",
+      "text": "**Breadth-first search** explores a graph in rings. First the starting node, then all its neighbours, then all of their neighbours that are new, and so on.\n\nIt needs two things. A **queue** holds the nodes that have been found and not yet explored, oldest first. A **set of seen nodes** makes sure each node is added to the queue only once.\n\nThe seen set is not optional. A graph can have cycles, and without the set the search would walk round a cycle for ever. Mark a node as seen at the moment it is **added** to the queue, not when it is taken out, or it can be added several times.\n\nBecause nodes are explored in order of distance, the first time breadth-first search reaches a node is by a route with the fewest edges."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict the order",
+      "text": "The example runs a breadth-first search from home and records how many steps each place is away. Predict both lines.",
+      "example": "bfs",
+      "questions": [
+        "order"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Ring by ring",
+      "text": "From home the search found shop and park, one step away. From shop it found school, two steps away. Park's neighbours were already seen. From school it found library, three steps away.\n\nThe queue is the array itself, read with a `head` index as in the module on queues. Nothing is ever removed, so at the end the array holds every reached node in the order it was found.",
+      "example": "bfs"
+    },
+    {
+      "kind": "modification",
+      "title": "Repair a search",
+      "text": "The starter lists the starting place and its direct neighbours. Save it, read the failing check, and make it continue outward.",
+      "task": "course:dsa/task/graphs-reachable"
+    },
+    {
+      "kind": "independent",
+      "title": "Count the fewest steps",
+      "text": "Work from the prompt. Record a distance for each place when you first reach it.",
+      "task": "course:dsa/task/graphs-shortest-steps"
+    },
+    {
+      "kind": "independent",
+      "title": "Count the separate groups",
+      "text": "Work from the prompt. One search finds one whole group.",
+      "task": "course:dsa/task/graphs-count-groups"
+    }
+  ],
+  "questions": [
+    {
+      "id": "edges",
+      "example": "edges",
+      "prompt": "What does the example print?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "5 5",
+          "feedback": "There are five places. The neighbour lists hold ten names in total, and each road appears in two lists."
+        },
+        {
+          "text": "5 10",
+          "feedback": "Ten is the total length of the lists. Each two-way road is counted from both ends, so it is divided by 2."
+        },
+        {
+          "text": "5 4",
+          "feedback": "A graph can have a cycle, so it may have as many edges as nodes or more. Count the names in the lists."
+        }
+      ]
+    },
+    {
+      "id": "order",
+      "example": "bfs",
+      "prompt": "What does the first line print?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "home shop school library park",
+          "feedback": "That follows one route as far as it goes. Breadth-first search finishes all of home's neighbours first."
+        },
+        {
+          "text": "home shop park school library",
+          "feedback": "Both neighbours of home come first, then school, which is two steps away, then library."
+        },
+        {
+          "text": "home shop park school school library",
+          "feedback": "school is a neighbour of both shop and park, but the seen check adds it only once."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "edges": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/edges.ts"
+      },
+      "stdout": [
+        "5 5"
+      ]
+    },
+    "bfs": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/bfs.ts"
+      },
+      "stdout": [
+        "home shop park school library",
+        "3"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:dsa/task/graphs-reachable",
+      "path": "tasks/reachable/task.json"
+    },
+    {
+      "id": "course:dsa/task/graphs-shortest-steps",
+      "path": "tasks/shortest-steps/task.json"
+    },
+    {
+      "id": "course:dsa/task/graphs-count-groups",
+      "path": "tasks/count-groups/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:dsa/task/graphs-shortest-steps",
+    "afterModule": "course:dsa/module/dynamic",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [],
+  "drillGap": "The practice catalog has no drills for this topic yet. The module's own exercises are the practice."
+}

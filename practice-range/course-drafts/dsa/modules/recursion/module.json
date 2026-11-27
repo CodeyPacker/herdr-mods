@@ -1,0 +1,184 @@
+{
+  "id": "course:dsa/module/recursion",
+  "title": "Recursion",
+  "requires": [
+    "step-count",
+    "big-o"
+  ],
+  "outcomes": [
+    {
+      "id": "trace",
+      "can": "Trace the calls a recursive function makes, going in and coming back.",
+      "assessment": [
+        "order",
+        "course:dsa/task/recursion-sum-nested"
+      ]
+    },
+    {
+      "id": "cost",
+      "can": "Count the calls a recursive function makes and say how they grow.",
+      "assessment": [
+        "calls",
+        "course:dsa/task/recursion-power"
+      ]
+    },
+    {
+      "id": "write",
+      "can": "Write a recursive function with a base case and a smaller call.",
+      "assessment": [
+        "course:dsa/task/recursion-sum-nested",
+        "course:dsa/task/recursion-power",
+        "course:dsa/task/recursion-subsets"
+      ]
+    }
+  ],
+  "intro": "Some problems contain smaller copies of themselves: a folder holds folders, a list is one item followed by a shorter list. A recursive function solves such a problem by calling itself on the smaller copy. This module covers how to write one, what the computer does while it runs, and how recursion can be very fast or very slow.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Two parts of a recursive function",
+      "text": "A **recursive** function calls itself. To finish, it needs two parts.\n\n- A **base case**: an input so small that the answer is known at once, with no further call.\n- A **recursive case**: the function calls itself on a **smaller** input and uses the result.\n\nEvery call must move towards the base case. A function with no base case, or one whose calls do not get smaller, never stops. In practice it stops with the error \"Maximum call stack size exceeded\".\n\nThe useful way to write one is to trust it. Assume the call on the smaller input already returns the right answer, and ask only: how do I get my answer from that?"
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict the order",
+      "text": "The function prints before and after it calls itself. Predict the five lines.",
+      "example": "countdown",
+      "questions": [
+        "order"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Going in and coming back",
+      "text": "The calls went in: `countdown(2)` printed 2 and called `countdown(1)`, which printed 1 and called `countdown(0)`, which printed done and returned.\n\nThen they came back out in reverse. `countdown(1)` continued after its call and printed back 1. Then `countdown(2)` continued and printed back 2.\n\nWhile a call waits for the call inside it, the computer keeps its variables on the **call stack**. That is a stack in the sense of the earlier module: the most recent call finishes first. A recursion n calls deep uses O(n) memory for that stack, even when the code creates nothing else.",
+      "example": "countdown"
+    },
+    {
+      "kind": "explanation",
+      "title": "How many calls?",
+      "text": "The cost of a recursive function is the number of calls it makes, times the work in each.\n\n- A function that makes **one** call on an input one smaller makes n calls. That is a loop written another way.\n- A function that makes one call on an input **half** the size makes about log n calls. Binary search is the example.\n- A function that makes **two** calls on inputs one smaller can make about 2ⁿ calls. Each level of calls doubles the one before.\n\nSo the shape of the calls decides everything. Draw them as a tree when you are unsure: one branch for each call."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict the number of calls",
+      "text": "This function makes two calls each time. Predict the output for 10 and for 20.",
+      "example": "calls",
+      "questions": [
+        "calls"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Ten more, a hundred times the work",
+      "text": "For 10 the function was called 177 times. For 20 it was called 21,891 times. Adding 10 to the input multiplied the work by more than a hundred.\n\nThe reason is repeated work. `fib(20)` calls `fib(19)` and `fib(18)`. But `fib(19)` also calls `fib(18)`, which is worked out all over again, and so on all the way down. The module on dynamic programming removes that repetition.",
+      "example": "calls"
+    },
+    {
+      "kind": "modification",
+      "title": "Repair a nested sum",
+      "text": "The starter adds the numbers it can see and ignores the ones inside inner arrays. Save it, read the failing check, and make it recursive.",
+      "task": "course:dsa/task/recursion-sum-nested"
+    },
+    {
+      "kind": "independent",
+      "title": "Raise to a power quickly",
+      "text": "Work from the prompt. Halving the exponent gives far fewer steps than taking one off at a time.",
+      "task": "course:dsa/task/recursion-power"
+    },
+    {
+      "kind": "independent",
+      "title": "List every subset",
+      "text": "Work from the prompt. Trust the call on the shorter list.",
+      "task": "course:dsa/task/recursion-subsets"
+    }
+  ],
+  "questions": [
+    {
+      "id": "order",
+      "example": "countdown",
+      "prompt": "What are the last two lines printed?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "back 2, then back 1",
+          "feedback": "The inner call finishes first, so its line after the call is printed first."
+        },
+        {
+          "text": "back 1, then back 2",
+          "feedback": "The calls return in the reverse of the order they were made: the call for 1 finishes before the call for 2."
+        },
+        {
+          "text": "done, then back 2",
+          "feedback": "done is printed third, by the call for 0. Two more lines follow as the outer calls continue."
+        }
+      ]
+    },
+    {
+      "id": "calls",
+      "example": "calls",
+      "prompt": "What does the second line print?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "6765 354",
+          "feedback": "Twice the input does not mean twice the calls. Each extra step roughly multiplies the calls by 1.6."
+        },
+        {
+          "text": "6765 39",
+          "feedback": "That would be the count if every answer were worked out only once. This version repeats work."
+        },
+        {
+          "text": "6765 21891",
+          "feedback": "The calls roughly double with each level, so 20 takes over a hundred times as many as 10."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "countdown": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/countdown.ts"
+      },
+      "stdout": [
+        "2",
+        "1",
+        "done",
+        "back 1",
+        "back 2"
+      ]
+    },
+    "calls": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/calls.ts"
+      },
+      "stdout": [
+        "55 177",
+        "6765 21891"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:dsa/task/recursion-sum-nested",
+      "path": "tasks/sum-nested/task.json"
+    },
+    {
+      "id": "course:dsa/task/recursion-power",
+      "path": "tasks/power/task.json"
+    },
+    {
+      "id": "course:dsa/task/recursion-subsets",
+      "path": "tasks/subsets/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:dsa/task/recursion-sum-nested",
+    "afterModule": "course:dsa/module/trees",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [],
+  "drillGap": "The practice catalog has no drills for this topic yet. The module's own exercises are the practice."
+}

@@ -1,0 +1,179 @@
+{
+  "id": "course:dsa/module/choose",
+  "title": "Choose the structure",
+  "requires": [
+    "sorting",
+    "hash-map",
+    "breadth-first"
+  ],
+  "outcomes": [
+    {
+      "id": "choose",
+      "can": "Pick a data structure by the operation a problem repeats most often.",
+      "assessment": [
+        "cost-compare",
+        "course:dsa/task/choose-group-anagrams"
+      ]
+    },
+    {
+      "id": "prepare",
+      "can": "Recognize when sorting first makes a problem a single pass.",
+      "assessment": [
+        "overlaps",
+        "course:dsa/task/choose-merge-intervals"
+      ]
+    },
+    {
+      "id": "transfer",
+      "can": "Model a new problem as a graph and choose the search that fits.",
+      "assessment": [
+        "course:dsa/task/choose-shortest-grid-path"
+      ]
+    }
+  ],
+  "intro": "This last module has no new structures. Real problems do not say which structure to use, so the skill that remains is choosing. The module gives a short way to decide, shows how much the choice can matter, and then sets three problems with no hint about which earlier module they belong to.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Ask what is repeated",
+      "text": "To choose a structure, find the operation the solution performs again and again, and pick the structure that makes that one operation cheap.\n\n| The repeated operation | Structure | Cost of it |\n| --- | --- | --- |\n| Read by position | Array | O(1) |\n| Is this value present? Look up by key | Set or Map | O(1) on average |\n| Take the most recent | Stack | O(1) |\n| Take the oldest | Queue | O(1) |\n| Take the smallest | Heap | O(log n) |\n| Find a position in ordered data | Sorted array with binary search | O(log n) |\n| Insert or remove next to a known place | Linked list | O(1) |\n\nThen ask the same of the algorithm. Does the problem have the shape of a walk through connected things, of a choice built from smaller choices, or of a single pass that only needs the data in order?"
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict the difference",
+      "text": "Both halves of the example answer one question: does any number in a also appear in b? Predict the two step counts.",
+      "example": "choices",
+      "questions": [
+        "cost-compare"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "The same answer, 500 times cheaper",
+      "text": "The nested loops compared every pair: a million steps. The second version spent 1,000 steps building a Set from b and 1,000 lookups, 2,000 in all.\n\nNothing about the problem changed. The repeated operation was \"is this value in b?\", and a Set answers that in one step where an array needs a scan. Most speed-ups in everyday code are this one.",
+      "example": "choices"
+    },
+    {
+      "kind": "explanation",
+      "title": "Sort first",
+      "text": "A second move is worth as much as the first: **put the data in order before working on it**. Sorting costs O(n log n), and it often turns the rest of the problem into one pass.\n\n- After sorting, equal items are next to each other, so duplicates and groups are found by comparing neighbours.\n- After sorting by start time, things that overlap are next to each other.\n- After sorting, binary search and two pointers both become available.\n\nWhen a problem seems to need every pair compared, ask whether an order exists in which only neighbours matter."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict a sweep",
+      "text": "The example sorts meetings by start time and then compares each with the one before it. Predict both lines.",
+      "example": "sweep",
+      "questions": [
+        "overlaps"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Only neighbours were compared",
+      "text": "After sorting, the meetings read 9 to 10, 9 to 11, 13 to 15 and 14 to 16. The loop found that the second starts before the first ends, and that the fourth starts before the third ends: two overlaps.\n\nUnsorted, finding those would mean comparing every meeting with every other. Sorted, three comparisons were enough. The first exercise extends this to merging the overlapping ranges.",
+      "example": "sweep"
+    },
+    {
+      "kind": "independent",
+      "title": "Merge overlapping ranges",
+      "text": "Work from the prompt. Decide what order would make this a single pass.",
+      "task": "course:dsa/task/choose-merge-intervals"
+    },
+    {
+      "kind": "independent",
+      "title": "Group words by their letters",
+      "text": "Work from the prompt. Decide what two words in the same group have in common, and how to look that up.",
+      "task": "course:dsa/task/choose-group-anagrams"
+    },
+    {
+      "kind": "independent",
+      "title": "Find the shortest way through a grid",
+      "text": "Work from the prompt. Decide what the nodes and the connections are.",
+      "task": "course:dsa/task/choose-shortest-grid-path"
+    }
+  ],
+  "questions": [
+    {
+      "id": "cost-compare",
+      "example": "choices",
+      "prompt": "What does the example print?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "1000 1000",
+          "feedback": "The nested loops run the inner loop a thousand times for each of a thousand numbers."
+        },
+        {
+          "text": "1000000 2000",
+          "feedback": "Every pair is compared, which is a million steps. The Set version builds the Set in 1,000 steps and makes 1,000 lookups."
+        },
+        {
+          "text": "1000000 1000000",
+          "feedback": "A lookup in a Set is one step, however many values it holds."
+        }
+      ]
+    },
+    {
+      "id": "overlaps",
+      "example": "sweep",
+      "prompt": "What does the second line print?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "2",
+          "feedback": "9 to 11 starts before 9 to 10 ends, and 14 to 16 starts before 13 to 15 ends."
+        },
+        {
+          "text": "1",
+          "feedback": "There are two overlapping pairs: the two morning meetings, and the two afternoon ones."
+        },
+        {
+          "text": "4",
+          "feedback": "Only neighbours in the sorted list are compared, and two of those three comparisons find an overlap."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "choices": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/choices.ts"
+      },
+      "stdout": [
+        "1000000 2000"
+      ]
+    },
+    "sweep": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/sweep.ts"
+      },
+      "stdout": [
+        "9-10 9-11 13-15 14-16",
+        "2"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:dsa/task/choose-merge-intervals",
+      "path": "tasks/merge-intervals/task.json"
+    },
+    {
+      "id": "course:dsa/task/choose-group-anagrams",
+      "path": "tasks/group-anagrams/task.json"
+    },
+    {
+      "id": "course:dsa/task/choose-shortest-grid-path",
+      "path": "tasks/shortest-grid-path/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:dsa/task/choose-merge-intervals",
+    "afterCompletion": true,
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [],
+  "drillGap": "The practice catalog has no drills for this topic yet. The module's own exercises are the practice."
+}

@@ -1,0 +1,146 @@
+{
+  "id": "course:ci-cd/module/rollback",
+  "title": "Go back quickly",
+  "requires": [],
+  "outcomes": [],
+  "intro": "Some releases will be bad, however good the checks. What matters then is how quickly users are back on something that works. This module covers going back, when to go forward instead, what cannot be undone, and how feature flags separate putting code in production from turning it on.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Decide before the incident",
+      "text": "During an incident, people are under pressure and short of information. That is the worst moment to work out how to undo a release, or to argue about whether to.\n\nSo decide in advance, and write it down.\n\n- **How do we go back?** One command or one workflow, which has been tried.\n- **Who may do it?** Anyone on call, with no approval needed to restore service.\n- **When do we do it?** A simple rule, such as: if a release is suspected and the cause is not known within a few minutes, go back first.\n\nRestoring service and finding the cause are separate jobs. Do the first one first."
+    },
+    {
+      "kind": "explanation",
+      "title": "Going back is a deployment",
+      "text": "A **rollback** is nothing special. It is a deployment of the artifact that was running before.\n\nThat is only possible because of earlier decisions in this course. The previous artifact still exists in the registry, under a name that never moved. The pipeline recorded which one it was. And promotion only points an environment at an existing image, so the same workflow goes backwards as easily as forwards.\n\nWith blue-green slots it is faster still, for a short while after a release: the old version is still running in the other slot, and a swap restores it.",
+      "example": "rollback"
+    },
+    {
+      "kind": "explanation",
+      "title": "Back or forward",
+      "text": "The alternative to going back is to **roll forward**: fix the fault and release again.\n\n| | Roll back | Roll forward |\n| --- | --- | --- |\n| Time to restore | Seconds to minutes | A fix, a review and a full pipeline run |\n| Needs the cause to be known | No | Yes |\n| Risk | Low: the old version is known to work | A hurried fix can add a second fault |\n| When it is the only option | | When going back is impossible, usually because of data |\n\nGoing back is the default. Go forward when the fix is a line or two and certain, or when the old version can no longer run."
+    },
+    {
+      "kind": "prediction",
+      "title": "Five percent",
+      "text": "Twelve minutes after a release, 5 percent of requests are failing. The team suspects the release and has two theories about the cause.",
+      "questions": [
+        "back-first"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "What cannot be undone",
+      "text": "Replacing the code does not reverse what the code already did.\n\n- **Data it wrote or changed.** Rows saved in a new format are still there when the old version returns, and it may not understand them.\n- **Changes to the database's structure.** If the release removed a column, the old version that reads it cannot run.\n- **Messages it sent.** Emails, notifications to other systems and payments have left the building.\n\nThis is why a rollback has to be planned when the change is designed, not when it fails. Ask of every change: if this is rolled back after running for an hour, will the old version work with what it left behind? The next module covers the hardest case, the database."
+    },
+    {
+      "kind": "explanation",
+      "title": "Deploying is not releasing",
+      "text": "So far, putting code into production and showing it to users have been one event. They need not be.\n\nA **feature flag** is a setting, read while the program runs, that decides whether a piece of behaviour is on. The code for a new feature is deployed with its flag off. Nobody sees it. Later the flag is turned on, with no deployment.\n\nThis gives three things.\n\n- **Small merges.** Unfinished work can be merged and deployed safely, as the module on integrating promised.\n- **A gradual release.** Turn the feature on for staff, then for 5 percent of users, then for everyone.\n- **An off switch.** If the feature misbehaves, turn the flag off. That takes seconds and needs no rollback.",
+      "example": "flag"
+    },
+    {
+      "kind": "explanation",
+      "title": "Flags have a cost",
+      "text": "Every flag is a fork in the code. With it on and with it off are two programs, and both must work. Ten flags can combine in a thousand ways, and nobody tests them all.\n\nTreat a release flag as temporary scaffolding.\n\n- **Give each flag an owner and a removal date** when it is created.\n- **Remove it once the feature is fully on.** Deleting the flag and the old code path is part of finishing the feature.\n- **Keep a list.** A flag nobody remembers is a setting that can change behaviour by accident.\n- **Do not confuse kinds.** A flag that hides unfinished work is short-lived. A permanent setting, such as a limit that differs by customer, is configuration and should be managed as such."
+    },
+    {
+      "kind": "debugging",
+      "title": "Old switches",
+      "text": "An incident summary from a team that uses flags heavily.",
+      "example": "stale-flags",
+      "questions": [
+        "stale-flags"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: write the page",
+      "text": "Write the one-page instructions for a bad release of the tracker. It runs on slots, and images are tagged by commit. Cover:\n\n1. How someone decides that going back is right.\n2. The exact action in the first ten minutes after a release.\n3. The exact action a day later, when the other slot has been reused.\n4. What to check afterwards.\n5. What must be true of every release for this page to work."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. **Decide.** If errors or complaints rise after a release and the cause is not known within five minutes, go back. No approval is needed.\n2. **Within minutes of the release.** Run the rollback workflow with `mode: swap`. It swaps the slots, which restores the previous version in seconds.\n3. **Later.** Run it with `mode: tag` and the previous image tag, taken from the deployment record. It deploys that image through the usual slot, smoke test and swap.\n4. **Afterwards.** Check the health endpoint and the error rate. Tell the team which version is now running. Then find the cause, with production stable.\n5. **Conditions.** Every release keeps its image. Every release records the previous tag. No release makes a database change the previous version cannot run with.\n\nThe fifth point is the one teams discover too late, and it is the subject of the next module.",
+      "example": "runbook"
+    }
+  ],
+  "questions": [
+    {
+      "id": "back-first",
+      "prompt": "What should they do first?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Roll back, then investigate",
+          "feedback": "Users are affected now, and the cause is not known. Going back restores service in a minute or two and removes the pressure. If the errors continue, the release was not the cause, and that is learned quickly too."
+        },
+        {
+          "text": "Test both theories in production",
+          "feedback": "That keeps users on a failing version for as long as the investigation takes."
+        },
+        {
+          "text": "Write a fix for the likelier theory and release it",
+          "feedback": "A hurried fix for an unconfirmed cause may not help, and can add a second fault."
+        }
+      ]
+    },
+    {
+      "id": "stale-flags",
+      "example": "stale-flags",
+      "prompt": "What habit would have prevented this?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "Using fewer flags for new features",
+          "feedback": "Flags for new work were not the cause. A flag that should have been deleted years ago was."
+        },
+        {
+          "text": "Testing every combination of flags",
+          "feedback": "With 140 flags there are more combinations than could ever be tested."
+        },
+        {
+          "text": "Removing each flag once its feature is fully on",
+          "feedback": "The flag had been on for everyone for three years and guarded code nobody had run since. Deleting it, and the old path, when the rollout finished would have left nothing to switch by mistake."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "rollback": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/rollback.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "flag": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/flag.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "stale-flags": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/stale-flags.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "runbook": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/runbook.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

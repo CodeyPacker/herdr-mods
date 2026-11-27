@@ -1,0 +1,8 @@
+  time  0s      1s      2s      3s      4s      5s      6s
+        |-------|-------|-------|-------|-------|-------|
+
+  db    [ process started .......... preparing .... ][ ready ]
+                                                     ^
+  web      [ started ][ connects --> refused ][ exits with an error ]
+            ^
+            depends_on (short form) waited only for this

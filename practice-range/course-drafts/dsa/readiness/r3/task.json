@@ -1,0 +1,61 @@
+{
+  "id": "course:dsa/task/readiness-r3",
+  "role": "readiness",
+  "title": "Sum each level of a tree",
+  "concepts": [
+    "binary-tree",
+    "breadth-first"
+  ],
+  "prompt": "Return an array with the sum of the values at each depth of the tree: the root first, then its children, then their children. An empty tree gives an empty array. The supplied tree(value, left, right) builds a node.",
+  "hints": [
+    "How can you know the depth of a node when you reach it?",
+    "Carry the depth with each node: the root has depth 0, and a child has its parent's depth plus 1.",
+    "Add each node's value to sums[depth], treating a missing entry as 0. Either a queue or recursion works."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(levelSums(__sample), [8, 13, 21, 24])",
+    "__same(levelSums(null), [])",
+    "__same(levelSums(tree(5)), [5])",
+    "__same(levelSums(tree(1, tree(2, tree(4)), tree(3))), [1, 5, 4])"
+  ],
+  "checkLabels": [
+    "The sample tree has sums 8, 13, 21 and 24.",
+    "An empty tree gives an empty array.",
+    "A single node is one level.",
+    "A lopsided tree works too."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-left-only.ts",
+      "misconception": "Follows the left child only.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-running.ts",
+      "misconception": "Adds each level on top of the levels above it.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Label each node of the sample tree with its depth. Each sum is the total of the values that share a label."
+}

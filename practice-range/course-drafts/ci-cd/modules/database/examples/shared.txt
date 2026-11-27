@@ -1,0 +1,13 @@
+  During a rolling deployment or a swap
+
+      [ code v1 ]    [ code v1 ]    [ code v2 ]    [ code v2 ]
+            \             |              |             /
+             \            |              |            /
+              v           v              v           v
+            +---------------------------------------------+
+            |              ONE DATABASE                   |
+            |   its structure must suit v1 AND v2         |
+            +---------------------------------------------+
+
+  After a rollback:  the code is v1 again. The database is whatever
+                     v2 and its migrations left behind.

@@ -1,0 +1,155 @@
+{
+  "id": "course:docker/module/config",
+  "title": "Configure a container",
+  "requires": [],
+  "outcomes": [],
+  "intro": "An image is built once and run in many places: on a laptop, on a test server, in production. The places differ in their database address, their log level and their passwords. This module covers how one image gets different settings in each place, which settings belong to the build, and why a secret must never be part of an image. The advice on secrets is general guidance. Your organization's own security policy decides what is required where you work.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "One image, many places",
+      "text": "It is tempting to build one image for testing and another for production, each with its settings inside. Then the thing you tested is not the thing you run.\n\nThe better rule is: **build one image, and give it its settings when it starts.** The image holds what is the same everywhere. The differences come from outside, in one of three ways.\n\n- **Environment variables**, for single values.\n- **Files** placed into the container when it starts, for whole configuration files.\n- **Arguments** after the image name, for a tool's options.",
+      "example": "one-image"
+    },
+    {
+      "kind": "explanation",
+      "title": "Environment variables",
+      "text": "An environment variable is a named value that a process can read. Docker sets them in three ways.\n\n- `ENV NAME=value` in the Dockerfile stores a **default** in the image.\n- `-e NAME=value` on `docker run` sets a value for that container.\n- `--env-file settings.env` reads many `NAME=value` lines from a file.\n\nA value given at run time wins over the image's default. So use `ENV` for sensible defaults, such as the port, and leave anything that differs per place to run time.",
+      "example": "env"
+    },
+    {
+      "kind": "prediction",
+      "title": "Which value wins?",
+      "text": "The Dockerfile contains `ENV PORT=3000`. The container is started with:\n\n```bash\ndocker run -e PORT=8080 tracker:1.4.2\n```",
+      "questions": [
+        "env-wins"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "ARG is for the build",
+      "text": "`ARG` looks like `ENV` and does a different job. It declares a value that exists **only while the image is being built**. You supply it with `--build-arg`.\n\n| | `ARG` | `ENV` |\n| --- | --- | --- |\n| Available to `RUN` during the build | Yes | Yes |\n| Present in the running container | No | Yes |\n| Set from the command line | `docker build --build-arg` | `docker run -e` |\n| Good for | Versions and options of the build | Settings of the program |\n\nA typical use is choosing the version of the base image, or stamping the image with the version being built. An `ARG` is not hidden: the value is recorded in the image's history.",
+      "example": "arg"
+    },
+    {
+      "kind": "explanation",
+      "title": "Secrets do not go in images",
+      "text": "A password, an API key or a private key must never be built into an image. An image is copied to registries, build servers and laptops, and everyone who can pull it can read all of it.\n\nEvery one of these puts a secret in the image for good:\n\n- `ENV DB_PASSWORD=...` is shown by `docker inspect` and `docker history`.\n- `ARG` with `--build-arg` is recorded in the history.\n- `COPY .env .` stores the file in a layer, and deleting it later does not remove it.\n\nSupply secrets when the container starts. An environment variable set at run time is common and acceptable in many places. A file placed into the container is better, because environment variables are shown to anyone who can run `docker inspect` and are easily printed into logs. The modules on Compose and on privilege show the file approach."
+    },
+    {
+      "kind": "debugging",
+      "title": "A password passed through the build",
+      "text": "A build script and a Dockerfile, from a project that wanted to avoid writing the password in the file.",
+      "example": "leak",
+      "questions": [
+        "leak"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Whole files",
+      "text": "Some programs are configured by a file. You can keep one image and place a different file into each container when it starts, read-only.\n\n```bash\ndocker run -d \\\n  -v ./tracker.conf:/etc/tracker/tracker.conf:ro \\\n  tracker:1.4.2\n```\n\nThe part before the colon is a file on the host. The part after it is where the container sees that file. `:ro` stops the container from changing it. The module on storage covers this mechanism properly.\n\nChoose variables for a handful of values, and a file when there is structure or there are dozens of them."
+    },
+    {
+      "kind": "explanation",
+      "title": "Say what the image expects",
+      "text": "Configuration from outside can be missing or wrong, so make that easy to notice.\n\n- **Check at start.** If a required setting is missing, the program should say which one and exit with an error. A container that starts and fails on the first request is much harder to diagnose.\n- **List the settings.** Put the names, meanings and defaults in the project's README, and ship an example file with invented values.\n- **Never print secret values.** Log that a setting is present, not what it is.",
+      "example": "example-env"
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: where does each value go?",
+      "text": "For each value, choose one: a build argument, a default in the image, a setting given at run time, or a secret given at run time.\n\n1. The version of the runtime the image is built on.\n2. The port the service listens on inside the container, almost always 3000.\n3. The address of the database.\n4. The database password.\n5. The log level, usually `info`, sometimes `debug` on one server.\n6. The version number of the build, shown on the service's status page."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. **Build argument.** It selects the base image and means nothing once the image exists.\n2. **Default in the image.** `ENV PORT=3000`. It is the same nearly everywhere and can still be overridden.\n3. **Run time.** It differs in every place.\n4. **Secret at run time.** Never in the Dockerfile, never a build argument.\n5. **Default in the image**, `ENV LOG_LEVEL=info`, overridden with `-e LOG_LEVEL=debug` on the one server.\n6. **Build argument copied into an `ENV`.** The value is known only to the build, and the running program needs to read it. This is the one case where the two are used together, and it is safe because a version number is not a secret."
+    }
+  ],
+  "questions": [
+    {
+      "id": "env-wins",
+      "prompt": "What is `PORT` inside the container?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "3000",
+          "feedback": "`ENV` in the Dockerfile is only a default."
+        },
+        {
+          "text": "8080",
+          "feedback": "A value given when the container starts replaces the image's default."
+        },
+        {
+          "text": "It is an error to set it twice",
+          "feedback": "Overriding a default this way is the intended use."
+        }
+      ]
+    },
+    {
+      "id": "leak",
+      "example": "leak",
+      "prompt": "Who can read the password?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "Nobody, because it is not written in the Dockerfile",
+          "feedback": "It is not in the file, but the build records the value it was given."
+        },
+        {
+          "text": "Only someone with access to the build server",
+          "feedback": "The value travels with the image, far beyond the build server."
+        },
+        {
+          "text": "Anyone who can pull the image",
+          "feedback": "The `ENV` line stores the value in the image, where `docker inspect` shows it, and the build argument is recorded in the history as well."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "one-image": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/one-image.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "env": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/env.txt"
+      },
+      "readOnly": true,
+      "fence": "bash"
+    },
+    "arg": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/arg.txt"
+      },
+      "readOnly": true,
+      "fence": "dockerfile"
+    },
+    "leak": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/leak.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "example-env": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/example-env.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

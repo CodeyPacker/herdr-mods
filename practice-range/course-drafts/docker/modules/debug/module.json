@@ -1,0 +1,173 @@
+{
+  "id": "course:docker/module/debug",
+  "title": "Find out why it failed",
+  "requires": [],
+  "outcomes": [],
+  "intro": "Sooner or later a container will not start, cannot be reached, or loses its data. This module gives an order in which to ask questions, the command that answers each one, and the usual causes. Nearly everything here was introduced in an earlier module. The skill is in knowing where to look first.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Ask in order",
+      "text": "Guessing is slow. Four questions, asked in the same order every time, find most problems.\n\n1. **What state is it in?** Running, stopped, restarting, or never created.\n2. **What did it say?** Its output is the program's own account of what went wrong.\n3. **How did it end?** The exit code separates a program error from a kill.\n4. **What does it see?** Its settings, files, mounts and network, from the inside.\n\nEach question has one command, shown below.",
+      "example": "order"
+    },
+    {
+      "kind": "explanation",
+      "title": "State and exit code",
+      "text": "`docker ps -a` shows every container with its state. The status column holds the exit code in brackets.\n\n`docker inspect` prints everything Docker knows about a container. It is long, so ask for one field with `--format`.\n\n| Exit code | Usual cause | Look at |\n| --- | --- | --- |\n| 0 | The program finished. A service should not. | The start command |\n| 1 or similar | The program reported an error. | The logs |\n| 126, 127 | The command cannot be run, or is not in the image. | `CMD`, and a typing error |\n| 137 | Killed: out of memory, or a stop that timed out. | `OOMKilled`, the memory limit |\n| 143 | Ended by a stop request it did not handle. | Normally nothing |",
+      "example": "state"
+    },
+    {
+      "kind": "prediction",
+      "title": "Killed",
+      "text": "A service runs for about an hour and then stops. `docker ps -a` shows `Exited (137)`. Nobody stopped it. `docker inspect` reports `OOMKilled: true`.",
+      "questions": [
+        "oom"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "It ends as soon as it starts",
+      "text": "`docker logs` works on a stopped container, so start there. The usual causes are a missing setting, a file that is not where the program expects, or a start command with a mistake in it.\n\n`docker exec` does not work, because nothing is running to go into. To look around, start a **new** container from the same image with a shell in place of the usual command.\n\nIf the image has no shell at all, as with a distroless base, copy files out with `docker cp`, or build and inspect the stage before the final one.",
+      "example": "look-around"
+    },
+    {
+      "kind": "explanation",
+      "title": "It runs and cannot be reached",
+      "text": "Work from the outside in.\n\n1. **Is the port published?** In `docker ps`, a published port shows an arrow: `0.0.0.0:8080->3000/tcp`. A bare `3000/tcp` is not published.\n2. **Is it the right container port?** The number after the arrow must be the one the program listens on.\n3. **Does the program listen on every interface?** Listening on `127.0.0.1` refuses everything that comes through a published port.\n4. **Does it answer from inside?** If it does, the program is fine and the problem is in steps 1 to 3.\n\nBetween two containers, check instead that both are on the same created network and that the name used is the other's container or service name.",
+      "example": "reach"
+    },
+    {
+      "kind": "debugging",
+      "title": "No arrow",
+      "text": "A service is running, its logs say it is listening, and the browser on the same machine cannot open `localhost:3000`.",
+      "example": "no-arrow",
+      "questions": [
+        "no-arrow"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "The data is gone, or the disk is full",
+      "text": "**Data that disappeared** was almost always in a writable layer. Ask `docker inspect` which mounts the container has, and compare the mounted folder with the folder the program writes to.\n\n**A full disk** is usually Docker's own storage: old images, stopped containers, build cache and volumes nobody uses. `docker system df` shows how much each takes.\n\n| Command | Deletes |\n| --- | --- |\n| `docker container prune` | Stopped containers |\n| `docker image prune` | Images with no name and no container |\n| `docker builder prune` | Build cache |\n| `docker volume prune` | Volumes that no container uses |\n| `docker system prune` | The first three, and unused networks |\n\nRead each list of what will be removed before you agree. A volume that no container currently uses may still hold the only copy of some data.",
+      "example": "disk"
+    },
+    {
+      "kind": "explanation",
+      "title": "Watch it happen",
+      "text": "Three commands show what is going on now.\n\n- `docker logs -f --since 10m web` follows the output, starting ten minutes back.\n- `docker stats` shows the memory and processor use of each container, updated live. A number that climbs steadily towards the limit is a leak.\n- `docker events` prints what Docker itself does: starts, stops, kills, health changes. It shows a restart loop as it happens."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: three reports",
+      "text": "For each report, name the first command you would run and what you expect it to tell you.\n\n1. \"The worker container is in the list as `Exited (127)` and never did anything.\"\n2. \"The web service is up, but the page will not load from my browser.\"\n3. \"We redeployed the database and all the tasks are gone.\""
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. `docker logs worker`, expecting a \"not found\" message. Code 127 means the start command is not in the image. Look for a typing error in `command:` or `CMD`, or a file that was never copied in.\n2. `docker ps`, to read the ports column. No arrow means the port was never published. With an arrow, check the number after it, then the address the program listens on.\n3. `docker inspect` on the database container, to list its mounts. Expect to find either no volume or one mounted at the wrong folder, which means the data lived in the old container's writable layer. Then check `docker volume ls` in case an older volume still holds it.",
+      "example": "answers"
+    }
+  ],
+  "questions": [
+    {
+      "id": "oom",
+      "prompt": "What happened, and what do you do?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "The stop request was not handled, so use the exec form",
+          "feedback": "That also gives 137, but only after someone stops the container. Nobody did, and `OOMKilled` is true."
+        },
+        {
+          "text": "It went over its memory limit. Find out why memory grows, then set a limit that fits",
+          "feedback": "The kernel killed it for exceeding the limit. Watch `docker stats`: steady growth is a leak to fix in the program, and a level that is merely above the limit means the limit is too low."
+        },
+        {
+          "text": "The image is damaged, so pull it again",
+          "feedback": "A damaged image would fail at the start, not after an hour of running."
+        }
+      ]
+    },
+    {
+      "id": "no-arrow",
+      "example": "no-arrow",
+      "prompt": "What is wrong?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "The port is not published",
+          "feedback": "`3000/tcp` with no arrow only records what the image exposes. The container needs `-p 3000:3000`. `EXPOSE` by itself opens nothing."
+        },
+        {
+          "text": "The program listens on `127.0.0.1`",
+          "feedback": "That is the next thing to check once a port is published. Here nothing is published at all."
+        },
+        {
+          "text": "The container is on the wrong network",
+          "feedback": "Networks matter between containers. From the host, the published port is what counts."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "order": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/order.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "state": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/state.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "look-around": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/look-around.txt"
+      },
+      "readOnly": true,
+      "fence": "bash"
+    },
+    "reach": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/reach.txt"
+      },
+      "readOnly": true,
+      "fence": "bash"
+    },
+    "no-arrow": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/no-arrow.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "disk": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/disk.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "answers": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/answers.txt"
+      },
+      "readOnly": true,
+      "fence": "bash"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

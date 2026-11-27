@@ -1,0 +1,58 @@
+{
+  "id": "course:dsa/task/linked-count-nodes",
+  "role": "guided",
+  "title": "Repair a count",
+  "concepts": [
+    "linked-list"
+  ],
+  "prompt": "Return the number of nodes in the list that starts at head. An empty list is null and has 0 nodes. The supplied listOf builds a list from an array.",
+  "hints": [
+    "Trace the starter on a list of one node. How many times does its loop body run?",
+    "The loop should run once for every node, including the last one.",
+    "Loop while node !== null, and move to node.next inside the loop."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(countNodes(listOf([1, 2, 3])), 3)",
+    "__same(countNodes(null), 0)",
+    "__same(countNodes(listOf([7])), 1)"
+  ],
+  "checkLabels": [
+    "A list of three nodes has 3.",
+    "An empty list has 0.",
+    "A list of one node has 1."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-links.ts",
+      "misconception": "Counts the links between nodes, which is one fewer than the nodes.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-empty.ts",
+      "misconception": "Assumes there is always a first node.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Cannot read properties of null"
+      }
+    }
+  ],
+  "feedback": "Count how many times the loop body runs for a list of one node, and for an empty list."
+}

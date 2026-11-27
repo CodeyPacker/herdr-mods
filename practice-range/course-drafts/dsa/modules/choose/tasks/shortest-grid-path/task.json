@@ -1,0 +1,63 @@
+{
+  "id": "course:dsa/task/choose-shortest-grid-path",
+  "role": "independent",
+  "title": "Find the shortest way through a grid",
+  "concepts": [
+    "transfer",
+    "breadth-first"
+  ],
+  "prompt": "grid is a list of rows of equal length. In each row \".\" is an open cell and \"#\" is a wall. Return the fewest moves needed to get from the top-left cell to the bottom-right cell, moving one cell up, down, left or right at a time, through open cells only. Return 0 when the grid has one cell, and -1 when there is no way. The two corner cells are always open.",
+  "hints": [
+    "This is a graph. What are its nodes, and which nodes are connected?",
+    "Each open cell is a node, connected to the open cells next to it. The fewest moves in such a graph is found by breadth-first search.",
+    "Keep the number of moves for each cell, with -1 for not reached. Start a queue with [0, 0]. For each cell, try the four neighbours that are inside the grid, open and not yet reached."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(shortestGridPath([\"...\", \".#.\", \"...\"]), 4)",
+    "__same(shortestGridPath([\".#\", \"#.\"]), -1)",
+    "__same(shortestGridPath([\".\"]), 0)",
+    "__same(shortestGridPath([\"..#.\", \".##.\", \"....\"]), 5)",
+    "__same(shortestGridPath([\".#...\", \".#.#.\", \"...#.\"]), 10)"
+  ],
+  "checkLabels": [
+    "Going round the wall in the middle takes 4 moves.",
+    "Walls on both sides of the start leave no way.",
+    "A grid of one cell needs no moves.",
+    "The way round the walls takes 5 moves.",
+    "The only way goes down, up again, and down: 10 moves."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-two-ways.ts",
+      "misconception": "Moves only right and down, so it misses a way that has to go up or left.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 5 failed"
+      }
+    },
+    {
+      "source": "wrong-cells.ts",
+      "misconception": "Counts the cells on the way, including the start, instead of the moves between them.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Treat each open cell as a node and each pair of open cells side by side as a connection. Then it is the fewest-steps problem from the module on graphs."
+}

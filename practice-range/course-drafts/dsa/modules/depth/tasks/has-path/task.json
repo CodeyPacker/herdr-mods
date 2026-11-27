@@ -1,0 +1,63 @@
+{
+  "id": "course:dsa/task/depth-has-path",
+  "role": "guided",
+  "title": "Repair a path search",
+  "concepts": [
+    "depth-first",
+    "recursion"
+  ],
+  "prompt": "The connections in graph are one-way. Return true when to can be reached from from by following connections. A name can always reach itself.",
+  "hints": [
+    "The failing check uses a graph in which a points to b and b points back to a. What does the starter do there?",
+    "Remember the names already visited, and do not visit one twice.",
+    "Keep a Set outside the recursive function. Return false for a name that is already in it, and add each name when you visit it."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(hasPath(__line, \"a\", \"c\"), true)",
+    "__same(hasPath(__line, \"c\", \"a\"), false)",
+    "__same(hasPath(__loop, \"a\", \"c\"), false)",
+    "__same(hasPath(__line, \"a\", \"a\"), true)",
+    "__same(hasPath(__loop, \"b\", \"a\"), true)"
+  ],
+  "checkLabels": [
+    "a reaches c through b.",
+    "One-way connections cannot be followed backwards.",
+    "A search that finds nothing must still end when the graph has a cycle.",
+    "A name can reach itself.",
+    "A route inside a cycle is found."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-memory.ts",
+      "misconception": "Does not remember where it has been, so it goes round a cycle until the call stack is full.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Maximum call stack size exceeded"
+      }
+    },
+    {
+      "source": "wrong-direct.ts",
+      "misconception": "Looks only at direct connections.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "The error names the call stack. That means the function kept calling itself. Which names does it visit, in order, on the graph with the cycle?"
+}

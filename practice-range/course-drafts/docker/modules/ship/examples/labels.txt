@@ -1,0 +1,14 @@
+# Dockerfile
+ARG VERSION=dev
+ARG REVISION=unknown
+LABEL org.opencontainers.image.source="https://example.com/team/tracker" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${REVISION}"
+
+# Build
+docker build \
+  --build-arg VERSION=1.5.0 --build-arg REVISION=3f2a9c8 \
+  -t registry.example.com/team/tracker:1.5.0 .
+
+# Read them back from an image or a running container
+docker inspect --format '{{json .Config.Labels}}' web

@@ -1,0 +1,23 @@
+  PULL REQUEST            (cancel older runs, read-only permissions)
+
+    lint | type check  -->  unit | integration          about 6 min
+
+  PUSH TO MAIN            (one at a time for each environment)
+
+    publish image  tracker:git-<commit>     built once, npm ci, cached
+          |
+    deploy development  -->  smoke test
+          |
+    migrate staging (additive only)  -->  deploy staging  -->  smoke test
+
+  MANUAL: PROMOTE TO PRODUCTION      input: tag
+
+    approval (environment: production, federated identity)
+          |
+    migrate (additive only)
+          |
+    deploy to slot "next"  -->  smoke test  -->  swap  -->  smoke test
+                                                   |
+                                         on failure: swap back
+
+  MANUAL: ROLL BACK                  no approval, swap or earlier tag

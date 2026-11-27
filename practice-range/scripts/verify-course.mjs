@@ -1,5 +1,5 @@
 // Authoring-only validation of a course draft. Run from any directory:
-//   node practice-range/scripts/verify-course.mjs <typescript|csharp|sql> [module keys...]
+//   node practice-range/scripts/verify-course.mjs <typescript|csharp|sql|dsa> [module keys...]
 import assert from "node:assert/strict";
 import { access, mkdtemp, readFile, rm } from "node:fs/promises";
 import { readModule } from "./course-markdown.mjs";
@@ -7,9 +7,11 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const [language, ...moduleKeys] = process.argv.slice(2);
-if (!["typescript", "csharp", "sql"].includes(language)) throw new Error("Usage: verify-course.mjs <typescript|csharp|sql> [module keys... | readiness]");
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "../course-drafts", language);
+const [draft, ...moduleKeys] = process.argv.slice(2);
+// A draft folder is named for its language, except a second course in a language, which names its own folder.
+const language = { typescript: "typescript", csharp: "csharp", sql: "sql", dsa: "typescript" }[draft];
+if (!language) throw new Error("Usage: verify-course.mjs <typescript|csharp|sql|dsa> [module keys... | readiness]");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "../course-drafts", draft);
 const runner = await import(`../mods/practice-range/languages/${language}/runner.mjs`);
 const { exercises: drills } = await import(`../mods/practice-range/languages/${language}/catalog.js`);
 const { environment } = runner;
@@ -258,7 +260,7 @@ try {
   if (!candidates.size && !readinessOnly) {
     // Pilot tasks are handed out by an observer, not shipped in the pack. Each uses concepts taught up to its module.
     const all = new Set(manifest.modules.flatMap(m => m.teaches));
-    for (const key of language === "typescript" ? ["new-task", "type-error", "debug"] : []) {
+    for (const key of draft === "typescript" ? ["new-task", "type-error", "debug"] : []) {
       const path = "pilot/" + key + "/task.json", spec = await json(root, path);
       const concepts = conceptsThrough(manifest, manifest.id + "/module/" + spec.after);
       assert.ok(spec.concepts.every(c => all.has(c)));

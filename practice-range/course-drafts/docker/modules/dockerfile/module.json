@@ -1,0 +1,164 @@
+{
+  "id": "course:docker/module/dockerfile",
+  "title": "Write a Dockerfile",
+  "requires": [],
+  "outcomes": [],
+  "intro": "So far every image came from someone else. This module covers building your own. A Dockerfile is a short text file that lists the steps to make an image. You will read one line by line, learn which files the build can see, and keep the wrong files out.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "A recipe for an image",
+      "text": "A **Dockerfile** is a list of instructions, run from top to bottom. Each starts with a word in capitals. The result is an image.\n\nThe file below packages the tracker service. Read it as a set of setup notes that a machine follows exactly: start from an image that already has the runtime, make a folder, copy the list of dependencies, install them, copy the program, and note how to start it.\n\nBy convention the file is named `Dockerfile`, with no extension, and sits at the top of the project.",
+      "example": "first"
+    },
+    {
+      "kind": "explanation",
+      "title": "The instructions you need",
+      "text": "| Instruction | What it does |\n| --- | --- |\n| `FROM` | Names the image to start from. Every Dockerfile begins with one. |\n| `WORKDIR` | Sets the folder for the instructions that follow, and creates it. |\n| `COPY` | Copies files from your project into the image. |\n| `RUN` | Runs a command while building, and saves the result in the image. |\n| `ENV` | Sets an environment variable in the image. |\n| `EXPOSE` | Notes which port the program listens on. It opens nothing. |\n| `USER` | Sets the user that later instructions and the container run as. |\n| `CMD` | Records the command to start when a container runs. |\n\nThe pair to keep apart is `RUN` and `CMD`. `RUN` happens **once, during the build**, and its effect is stored in the image. `CMD` runs nothing during the build. It is a note that says what to start **each time a container runs**."
+    },
+    {
+      "kind": "prediction",
+      "title": "Build time or run time?",
+      "text": "The Dockerfile contains `RUN npm ci`, which downloads the service's dependencies. The image is built once and then started on fifty servers.",
+      "questions": [
+        "run-or-cmd"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "The build context",
+      "text": "The build command ends with a path, usually a dot.\n\n```bash\ndocker build -t tracker:dev .\n```\n\nThat path is the **build context**: the folder whose files the build is allowed to use. `COPY` can read only from the context. It cannot reach `../other-project` or a file elsewhere on your disk.\n\nThe whole context is handed to the builder before the first instruction runs. A context with a few source files is sent in an instant. One that includes downloaded dependencies, build output and the version history can be hundreds of megabytes, and slow every build.",
+      "example": "context"
+    },
+    {
+      "kind": "explanation",
+      "title": "Keep files out with .dockerignore",
+      "text": "A file named `.dockerignore`, placed beside the Dockerfile, lists what to leave out of the context. Each line is a path or a pattern.\n\nLeave out three kinds of file.\n\n- **Things the build makes for itself**, such as installed dependencies and build output. Copies from your machine may be for the wrong system.\n- **Things the image does not need**, such as the version history, editor settings and documentation.\n- **Things that must never be in an image**, such as `.env` files, keys and certificates.\n\nThe last kind is the important one. A file that never enters the context cannot be copied into an image by accident.",
+      "example": "ignore"
+    },
+    {
+      "kind": "debugging",
+      "title": "A broad copy",
+      "text": "A project folder holds the files listed below. Its Dockerfile has no `.dockerignore` beside it.",
+      "example": "broad",
+      "questions": [
+        "broad"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Build it and run it",
+      "text": "`docker build` reads the Dockerfile in the context and runs each instruction. `-t` gives the result a name and tag. Without it the image has only an identifier.\n\nThe image is stored on your machine like any other, and `docker run` starts it.\n\nBuild output is long. The lines worth reading are the numbered steps. When a step fails, the build stops there, prints that command's error, and makes no image.",
+      "example": "build"
+    },
+    {
+      "kind": "explanation",
+      "title": "What belongs in an image",
+      "text": "An image should hold what is the same everywhere the program runs: the program, its runtime and its dependencies.\n\nLeave out what differs from place to place. Database addresses, feature switches and passwords are supplied when the container starts, which a later module covers. Data the program creates is kept outside the container, also covered later.\n\nAnd keep to one concern per image. An image that starts a web server, a database and a scheduler together cannot be updated, scaled or restarted one part at a time. Three images, each doing one job, can."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: a static site",
+      "text": "A folder named `site` holds a small website: `index.html`, a stylesheet and some pictures. The official `nginx` image serves any files placed in `/usr/share/nginx/html`, and it already knows how to start itself.\n\n1. Write a Dockerfile that produces an image serving this site.\n2. Write the command that builds it as `site:1`.\n3. The project folder also holds a `drafts` folder and a `.git` folder. Write a `.dockerignore`."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "Two instructions are enough. `FROM` supplies a working web server, and `COPY` adds the site. No `CMD` is needed, because an image keeps the start command of the image it was built from unless you replace it.\n\nThe tag on `FROM` is a specific version, following the last module. The `.dockerignore` is short, and it still matters: without it the drafts and the whole version history would be sent to the builder on every build, even though this Dockerfile copies only `site/`.",
+      "example": "site"
+    }
+  ],
+  "questions": [
+    {
+      "id": "run-or-cmd",
+      "prompt": "How many times does `npm ci` run?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Once, when the image is built",
+          "feedback": "`RUN` executes during the build and its result is saved in the image. Starting containers does not repeat it."
+        },
+        {
+          "text": "Fifty times, once on each server",
+          "feedback": "That would be true of `CMD`. The servers start containers from an image in which the dependencies are already installed."
+        },
+        {
+          "text": "Every time a container restarts",
+          "feedback": "Nothing in a `RUN` instruction happens when a container starts."
+        }
+      ]
+    },
+    {
+      "id": "broad",
+      "example": "broad",
+      "prompt": "What ends up in the image?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Only `server.js` and the package files",
+          "feedback": "`COPY . .` copies everything in the context, and nothing has been excluded."
+        },
+        {
+          "text": "Everything, including `.env` and `.git`",
+          "feedback": "With no `.dockerignore`, the whole folder is the context and `COPY . .` copies all of it. The passwords in `.env` are now readable by anyone who can pull the image."
+        },
+        {
+          "text": "Everything except hidden files",
+          "feedback": "Files whose names start with a dot are copied like any others."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "first": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/first.txt"
+      },
+      "readOnly": true,
+      "fence": "dockerfile"
+    },
+    "context": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/context.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "ignore": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/ignore.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "broad": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/broad.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "build": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/build.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "site": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/site.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

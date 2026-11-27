@@ -1,0 +1,11 @@
+# The container ends at once. Read what it said.
+docker logs web
+
+# Start a new container from the same image, with a shell in place of
+# the usual command, and the same settings.
+docker run --rm -it --env-file ./tracker.env --entrypoint sh tracker:1.5.0
+
+# Inside it: is the file there? Is the setting set? Can it be run?
+ls -l /app
+env | sort
+node server.js

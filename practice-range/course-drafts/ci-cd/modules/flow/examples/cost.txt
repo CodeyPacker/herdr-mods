@@ -1,0 +1,9 @@
+  Where the mistake is found          What it costs
+  ---------------------------------   ----------------------------------
+  In the editor, as you type          seconds
+  By the pipeline, on the push        minutes, the change is still fresh
+  In review or testing, days later    a discussion, a search, a new build
+  In production, by a customer        an incident, a fix, and lost trust
+
+  earlier  <--------------------------------------------------  later
+  cheaper                                                    dearer

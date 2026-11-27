@@ -1,0 +1,10 @@
+  registry.example.com/team/tracker:1.4.2
+  \__________________/ \__________/ \___/
+        registry        repository    tag
+
+  What you write         What Docker uses
+  ---------------------  --------------------------------------
+  nginx                  docker.io/library/nginx:latest
+  nginx:1.27             docker.io/library/nginx:1.27
+  acme/tracker:1.4.2     docker.io/acme/tracker:1.4.2
+  ghcr.io/acme/tracker   ghcr.io/acme/tracker:latest

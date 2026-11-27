@@ -1,0 +1,164 @@
+{
+  "id": "course:docker/module/compose",
+  "title": "Describe an app with Compose",
+  "requires": [],
+  "outcomes": [],
+  "intro": "By now, starting the tracker takes a network, a volume and two long `docker run` commands that must be typed in the right order. Docker Compose replaces them with one file that describes the whole application, and one command that makes it so. This module covers reading and writing that file and the handful of commands used with it.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "One file for the whole application",
+      "text": "**Docker Compose** reads a file named `compose.yaml` that describes an application as a set of **services**. A service is one container image together with how to run it: its ports, its settings, its storage.\n\nThe file is a description, not a script. It says what should exist. `docker compose up` compares that with what does exist and creates, replaces or leaves each piece as needed.\n\nThe file lives in the project and is committed with the code. A new team member starts the whole application with one command and no setup page.",
+      "example": "compose"
+    },
+    {
+      "kind": "explanation",
+      "title": "Reading the file",
+      "text": "Each entry under `services` uses ideas from earlier modules under a new spelling.\n\n| In the file | Same as | Module |\n| --- | --- | --- |\n| `image:` | The image name in `docker run` | Images |\n| `build:` | `docker build` on that folder | Dockerfile |\n| `ports:` | `-p host:container` | Network |\n| `environment:` | `-e NAME=value` | Config |\n| `volumes:` | `-v name:/path` or `-v ./path:/path` | Storage |\n| `depends_on:` | Start the named service first | The next module |\n\nNamed volumes are also listed once at the top level, under `volumes:`, so that Compose creates them.\n\nCompose makes one network for the application and puts every service on it. Each service can reach the others **by service name**."
+    },
+    {
+      "kind": "prediction",
+      "title": "Finding the database",
+      "text": "In the file you just read, the `web` service has to connect to PostgreSQL in the `db` service.",
+      "questions": [
+        "service-name"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "The commands",
+      "text": "Run these in the folder that holds `compose.yaml`.\n\n| Command | What it does |\n| --- | --- |\n| `docker compose up -d` | Creates and starts everything, in the background. |\n| `docker compose ps` | Lists the application's containers. |\n| `docker compose logs -f web` | Follows one service's output. |\n| `docker compose exec web sh` | Opens a shell in a running service. |\n| `docker compose up -d --build` | Rebuilds images, then replaces what changed. |\n| `docker compose down` | Stops and removes the containers and the network. |\n\n`down` keeps named volumes, so the data is still there at the next `up`. Running `up` again after editing the file replaces only the services whose description changed.\n\nCompose names everything after the **project**, which is the folder's name unless you say otherwise. The volume `db-data` in a folder named `tracker` is really `tracker_db-data`."
+    },
+    {
+      "kind": "debugging",
+      "title": "A cleanup script",
+      "text": "A team's reset script for their shared test server. The server's database holds test data that took a week to prepare.",
+      "example": "down-v",
+      "questions": [
+        "down-v"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Variables in the file",
+      "text": "A Compose file can take values from the environment with `${NAME}`. Add `:-` and a default for when the variable is not set.\n\nCompose also reads a file named `.env` beside `compose.yaml` and uses its lines for this substitution. That makes `.env` the place for per-machine choices such as which port to publish.\n\nTwo features have similar names and do different jobs.\n\n- `.env` supplies values **to the Compose file**, for `${...}`.\n- `env_file:` under a service passes the lines of a file **into the container** as environment variables.\n\nA value in `.env` reaches a container only if the Compose file passes it on.",
+      "example": "vars"
+    },
+    {
+      "kind": "explanation",
+      "title": "Secrets as files",
+      "text": "The module on configuration said that a secret is better supplied as a file than as an environment variable. Compose has a section for this.\n\nA secret listed at the top level is taken from a file on the host. A service that names it sees its content at `/run/secrets/<name>` inside the container. Many images accept a variable ending in `_FILE` that points to such a file, as the official PostgreSQL image does.\n\nThe secret file itself stays out of version control and out of the image. As before, this is general guidance. Where you work, the organization's own policy on storing secrets applies.",
+      "example": "secrets"
+    },
+    {
+      "kind": "explanation",
+      "title": "Compose in development",
+      "text": "The same file serves day-to-day development with small additions.\n\n- **A bind mount of the source** lets the container see edits at once. Compose reads a second file, `compose.override.yaml`, when it exists, and merges it over the first. Put development-only additions there.\n- **`docker compose watch`** copies changed files into the running container, or rebuilds when a file such as the dependency list changes. It avoids the bind mount's habit of hiding files that the image installed.\n\nKeep the main file as the description of the real application, and the extras for development in the override file.",
+      "example": "dev"
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: add a worker",
+      "text": "The tracker gets a background worker that sends email. It is the **same image** as `web`, started with a different command: `node worker.js`. It needs the same database settings, listens on no port, and must be started along with everything else.\n\n1. Write the `worker` service.\n2. Say what you did not include, and why.\n3. Give the one command that shows only the worker's output."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. The service is below. `command:` replaces the image's `CMD` for this service, which is how one image can do two jobs.\n2. No `ports:`, because nothing connects to the worker. It makes outgoing connections only. The `build:` and `image:` lines are the same as in `web`, so that both services use one image.\n3. `docker compose logs -f worker`.\n\nThe two services repeat their database settings. That is acceptable at this size. Larger files share them with an `env_file`.",
+      "example": "worker"
+    }
+  ],
+  "questions": [
+    {
+      "id": "service-name",
+      "prompt": "Which host name should `web` use?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "`localhost`",
+          "feedback": "Inside the `web` container, `localhost` is the `web` container."
+        },
+        {
+          "text": "`db`",
+          "feedback": "Compose puts both services on one network, where each is reachable by its service name."
+        },
+        {
+          "text": "`tracker_db_1`",
+          "feedback": "A generated container name may happen to work, but it changes with the project name. The service name is the stable one."
+        }
+      ]
+    },
+    {
+      "id": "down-v",
+      "example": "down-v",
+      "prompt": "What does the script destroy?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "Only the containers",
+          "feedback": "That is plain `down`. The `-v` adds something."
+        },
+        {
+          "text": "The containers and the images",
+          "feedback": "Images are untouched by `down`."
+        },
+        {
+          "text": "The containers and the named volumes, with the database in them",
+          "feedback": "`-v` removes the volumes declared in the file. The prepared test data is in `db-data`, and it is gone."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "compose": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/compose.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "down-v": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/down-v.txt"
+      },
+      "readOnly": true,
+      "fence": "bash"
+    },
+    "vars": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/vars.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "secrets": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/secrets.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "dev": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/dev.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "worker": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/worker.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

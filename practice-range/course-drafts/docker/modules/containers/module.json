@@ -1,0 +1,140 @@
+{
+  "id": "course:docker/module/containers",
+  "title": "What a container is",
+  "requires": [],
+  "outcomes": [],
+  "intro": "This course is about Docker: packaging a program with everything it needs, and running that package the same way on any machine. It is a reading course. Each module explains a few ideas, shows them as commands, files and diagrams, asks you to judge some situations, and ends with a short exercise and one possible answer. Nothing in the course is run for you. If Docker is installed you can type the commands yourself, and the course works without it. The examples use one running product: a small web service called tracker, and the database it stores its data in.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "The problem",
+      "text": "A program rarely runs alone. It needs a runtime of the right version, libraries, system tools, files in certain places, and settings. On the machine where it was written, all of that is already there. On the next machine, some of it is missing or a different version, and the program fails in a way nobody can reproduce.\n\nThe usual fix is a page of setup instructions. Instructions go out of date, and two people following them still end up with different machines.\n\nDocker takes another approach. You package the program **together with** its runtime, libraries and files, and you run that package as a unit. The machine only needs Docker."
+    },
+    {
+      "kind": "explanation",
+      "title": "Images and containers",
+      "text": "Two words carry the whole course.\n\n- An **image** is the package. It is a read-only set of files (the program, its runtime, its libraries) plus a note saying which command to start. An image does nothing by itself. It sits on disk.\n- A **container** is a running instance of an image. Docker starts the command from the image, and gives it a private copy of the image's files to work in.\n\nOne image can be started many times. Each start gives a separate container with its own files, its own processes and its own network address. Changes made inside one container are not seen by the others, and they do not change the image.",
+      "example": "image-container"
+    },
+    {
+      "kind": "prediction",
+      "title": "One image, two containers",
+      "text": "Two containers, A and B, are started from the same image. A program in container A writes a file to `/tmp/report.txt`.",
+      "questions": [
+        "separate-files"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "What a container isolates",
+      "text": "A container is not a small computer. It is one or more ordinary processes running on the host machine, started with a restricted view of it. The process inside sees:\n\n- **Its own files.** The root folder `/` is the image's files, not the host's.\n- **Its own processes.** It cannot see or signal the host's other processes.\n- **Its own network.** It has its own address and its own ports.\n- **Its own limits.** The host can cap how much memory and processor time it uses.\n\nOn Linux these come from two features of the operating system core (the kernel). **Namespaces** control what a process can see. **Control groups** (cgroups) control how much it may use. Docker is the tool that sets them up for you.\n\nOne thing is not private: the kernel itself. Every container on a host uses the host's kernel.",
+      "example": "isolation"
+    },
+    {
+      "kind": "explanation",
+      "title": "Containers and virtual machines",
+      "text": "A virtual machine also isolates software, and the two are often confused. The difference is where the boundary sits.\n\nA virtual machine pretends to be hardware. It runs a complete operating system with its own kernel. That takes gigabytes of disk and tens of seconds to start.\n\nA container shares the host's kernel and holds only the program and its files. It is usually tens or hundreds of megabytes and starts in about the time the program itself takes to start.\n\nSharing the kernel has two consequences worth remembering. The boundary is thinner than a virtual machine's, which matters for security and is the subject of a later module. And a Linux container needs a Linux kernel. On macOS and Windows, Docker Desktop quietly runs a small Linux virtual machine and puts your containers inside it.",
+      "example": "vm-vs-container"
+    },
+    {
+      "kind": "prediction",
+      "title": "Which kernel?",
+      "text": "An image was built from Ubuntu files. It is run on a server that uses a different Linux distribution.",
+      "questions": [
+        "which-kernel"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "The parts of Docker",
+      "text": "Three parts work together.\n\n- The **client** is the `docker` command you type.\n- The **daemon** (also called the engine) is a background service that does the work: it builds images, starts containers and manages their storage and networks. The client only sends it requests.\n- A **registry** is a server that stores images so that other machines can download them. Docker Hub is the public one that Docker uses when you name no other.\n\nMost commands in this course follow one path: you type a command, the client sends it to the daemon, and the daemon fetches an image from a registry if it does not have it yet.",
+      "example": "parts"
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: image or container?",
+      "text": "Take a few minutes. For each statement, decide whether it describes an image, a container, or neither.\n\n1. It can be copied to a registry and downloaded by another machine.\n2. It has a process list.\n3. It includes its own kernel.\n4. It is read-only.\n5. It can be stopped and started again.\n6. Deleting it loses the files a program wrote while running.\n\nThen continue to compare."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. **Image.** Registries store images. A container is not shipped anywhere.\n2. **Container.** Only something running has processes.\n3. **Neither.** A container uses the host's kernel, and an image holds only files. A virtual machine is what includes a kernel.\n4. **Image.** A container adds a private writable area on top of it.\n5. **Container.** An image is never running, so there is nothing to stop.\n6. **Container.** Files written inside a container live in that container's writable area and are removed with it. A later module shows where to keep data that must survive.\n\nIf you remember one sentence from this module, make it this one: an image is a package of files, and a container is a process started from it."
+    }
+  ],
+  "questions": [
+    {
+      "id": "separate-files",
+      "prompt": "Can a program in container B read that file?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Yes, both share the image's files",
+          "feedback": "They share the read-only image. Anything a container writes goes to its own private area."
+        },
+        {
+          "text": "No, each container has its own files",
+          "feedback": "Each container gets a private writable area on top of the image. B never sees what A wrote, and the image is unchanged."
+        },
+        {
+          "text": "Yes, after A stops",
+          "feedback": "Stopping A does not move its files anywhere. They stay in A's private area until A is removed."
+        }
+      ]
+    },
+    {
+      "id": "which-kernel",
+      "prompt": "Which kernel do the processes in the container use?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "The server's kernel",
+          "feedback": "A container has no kernel of its own. The image supplies files such as tools and libraries, and the host supplies the kernel."
+        },
+        {
+          "text": "Ubuntu's kernel, from the image",
+          "feedback": "An image holds files for programs to use. It does not hold a running kernel, and a container cannot boot one."
+        },
+        {
+          "text": "A small kernel that Docker adds",
+          "feedback": "Docker adds no kernel. On macOS and Windows it runs a Linux virtual machine, and containers share that machine's kernel."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "image-container": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/image-container.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "isolation": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/isolation.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "vm-vs-container": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/vm-vs-container.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "parts": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/parts.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

@@ -1,0 +1,16 @@
+services:
+  web:
+    image: tracker:1.4.2
+    user: node
+    read_only: true            # cannot change its own files
+    tmpfs:
+      - /tmp                   # a scratch folder in memory
+    cap_drop:
+      - ALL                    # none of root's special powers
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+
+# The same thing with docker run:
+#   docker run -d --read-only --tmpfs /tmp --cap-drop ALL \
+#     --security-opt no-new-privileges --memory 512m tracker:1.4.2

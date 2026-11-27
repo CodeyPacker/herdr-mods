@@ -1,0 +1,9 @@
+  Staging
+    Every merge is deployed by the pipeline. It takes four minutes.
+    Nobody has touched the staging servers by hand in a year.
+
+  Production
+    "Sam does production. There's a page in the wiki. He signs in to
+     the portal, changes the image tag, restarts the app and checks
+     the home page. It's only once a fortnight so it never seemed
+     worth automating."

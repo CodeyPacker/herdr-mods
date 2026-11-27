@@ -1,0 +1,25 @@
+name: Deploy
+on: [push, pull_request]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: random-dev/azure-tools@master
+        with:
+          creds: ${{ secrets.AZURE_ADMIN_CREDENTIALS }}
+      - run: npm install
+      - run: npm run test:e2e               # takes 40 minutes
+      - run: npm run lint
+      - run: npm test || true
+      - run: docker build -t "$REGISTRY/tracker:latest" .
+      - run: docker push "$REGISTRY/tracker:latest"
+      - run: npm run migrate                # renames and drops columns
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+      - run: |
+          az webapp config container set --name tracker-prod \
+            --resource-group rg-tracker-prod \
+            --container-image-name "$REGISTRY/tracker:latest"
+      - run: echo "Deployed ${{ github.event.head_commit.message }}"

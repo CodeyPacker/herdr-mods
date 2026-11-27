@@ -1,0 +1,21 @@
+# ---- build ----
+FROM node:24.11.1 AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# ---- final ----
+FROM node:24.11.1-slim
+WORKDIR /app
+ENV PORT=3000
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY --from=build --chown=node:node /app/dist ./dist
+USER node
+EXPOSE 3000
+CMD ["node", "dist/server.js"]
+
+# .dockerignore:  .git  node_modules  dist  .env  .env.*
+# The password is supplied when the container starts.

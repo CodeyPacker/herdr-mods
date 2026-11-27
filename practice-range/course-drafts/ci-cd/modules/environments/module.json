@@ -1,0 +1,155 @@
+{
+  "id": "course:ci-cd/module/environments",
+  "title": "Promote through environments",
+  "requires": [],
+  "outcomes": [],
+  "intro": "An artifact does not go straight from the build to users. It passes through environments, each a more realistic copy of production, with a gate before the next. This module covers what each environment is for, how one artifact gets different settings in each, and what stands between staging and production.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Why there are several",
+      "text": "An **environment** is a complete place where the software runs: its servers, its database, its settings. Most teams have at least three.\n\n| Environment | Purpose | Who uses it | Data |\n| --- | --- | --- | --- |\n| **Development** | See each merge running, minutes after it lands | Developers | Invented |\n| **Staging** | A rehearsal for production, as like it as possible | Testers, the pipeline | Realistic, with nothing personal |\n| **Production** | The real thing | Users | Real |\n\nEach catches a kind of problem the one before cannot. Development shows that the pieces start together. Staging shows that the release procedure works and that the change survives realistic data and settings. Production is the only place that proves it works for users.",
+      "example": "path"
+    },
+    {
+      "kind": "explanation",
+      "title": "The same artifact, different settings",
+      "text": "The artifact is identical in every environment. What differs is **configuration**: the database address, the size of the servers, which outside services it talks to, and the secrets for each.\n\nConfiguration is kept outside the artifact and supplied by the environment. In GitHub Actions, a job names its environment, and that selects a set of variables and secrets stored under that environment's name.\n\nSo `vars.APP_NAME` can be `tracker-dev` in one job and `tracker-prod` in another, with no `if` in the workflow. The steps are the same. Only the environment name changes.",
+      "example": "scoped"
+    },
+    {
+      "kind": "prediction",
+      "title": "Which value?",
+      "text": "A repository has an environment named `staging` with a variable `APP_NAME` set to `tracker-staging`, and an environment named `production` with `APP_NAME` set to `tracker-prod`. A job is declared as below.\n\n```yaml\n  deploy:\n    environment: staging\n    steps:\n      - run: echo \"${{ vars.APP_NAME }}\"\n```",
+      "questions": [
+        "scoped-var"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Gates",
+      "text": "A **gate** is a condition that must hold before the artifact moves on. Gates get stricter towards production.\n\n- **Into development:** automatic. The checks passed and the change was merged.\n- **Into staging:** automatic, once the deployment to development succeeded and its smoke tests passed.\n- **Into production:** a deliberate decision.\n\nAn environment can carry **protection rules** that the pipeline cannot skip: named people who must approve, a waiting period, and a limit on which branches may deploy there. A job that names a protected environment pauses until the rules are satisfied.\n\nThe rules live on the environment, not in the workflow file. A change to the workflow cannot remove them.",
+      "example": "gates"
+    },
+    {
+      "kind": "explanation",
+      "title": "Promotion",
+      "text": "Moving an artifact to the next environment is called **promotion**. Nothing is built. The deploy job is given the name of an image that already exists and points the environment at it.\n\nA promotion workflow for production is usually started by hand, takes the image tag as its input, and names the protected `production` environment. It should refuse a tag that does not exist in the registry, so that a typing error fails at once.\n\nBecause promotion only changes which image an environment runs, it is fast, and it is the same action whether you are moving forward to a new version or back to an old one.",
+      "example": "promote"
+    },
+    {
+      "kind": "explanation",
+      "title": "Keep the environments alike",
+      "text": "Staging is only worth having if a success there predicts a success in production. Every difference between them is a place for a surprise.\n\n- **Same deployment steps.** If staging is deployed by the pipeline and production by hand, the production procedure is never rehearsed.\n- **Same shape.** The same kinds of service and the same versions, described by the same infrastructure files. Staging can be smaller. It should not be different.\n- **Realistic data.** A staging database with twelve rows will not reveal a query that is slow on twelve million. Use data of realistic size with personal details removed.\n- **Configuration that differs only where it must.** Addresses and secrets differ. Feature settings and limits should not, unless there is a reason."
+    },
+    {
+      "kind": "debugging",
+      "title": "Two procedures",
+      "text": "A team describes how each environment is deployed.",
+      "example": "two-ways",
+      "questions": [
+        "two-ways"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Temporary environments",
+      "text": "Some teams go further and create a short-lived environment for each pull request, often called a **preview** environment. A reviewer can open the running change before it is merged.\n\nThey are valuable for changes people need to see, such as a user interface. They also cost money while they exist and are easy to forget. If you use them, the pipeline that creates one must also destroy it when the pull request closes, and something should sweep up any that were missed."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: gates for tracker",
+      "text": "The tracker has development, staging and production environments. Decide the following.\n\n1. What starts a deployment to each?\n2. What must have passed before each?\n3. Which protection rules does production have?\n4. Which variables differ between environments, and which must not?\n5. The team is five people. Who may approve a production deployment?"
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. Development: every merge to `main`. Staging: automatically, after development succeeds. Production: a person starts the promotion workflow and names the tag.\n2. Development: the pull request checks and the image build. Staging: the deployment to development and its smoke tests. Production: the staging deployment and whatever fuller tests run there.\n3. One required reviewer, and only the `main` branch may deploy.\n4. Differ: the application name, the resource group, the database address, and every secret. Must not differ: the deployment steps, the image, and settings that change behaviour.\n5. Any team member except the person who started the deployment. Two people then see every production release, and nobody waits on one named person."
+    }
+  ],
+  "questions": [
+    {
+      "id": "scoped-var",
+      "prompt": "What does the step print?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "`tracker-staging`",
+          "feedback": "The job names the `staging` environment, so `vars` resolves to that environment's values."
+        },
+        {
+          "text": "`tracker-prod`",
+          "feedback": "That value belongs to the `production` environment, which this job does not name."
+        },
+        {
+          "text": "Nothing, because the variable is defined twice",
+          "feedback": "Each environment holds its own value under the same name. That is the point of scoping."
+        }
+      ]
+    },
+    {
+      "id": "two-ways",
+      "example": "two-ways",
+      "prompt": "What is the risk?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Staging is deployed too often",
+          "feedback": "Frequent deployment to staging is good. It is the comparison with production that fails."
+        },
+        {
+          "text": "The production procedure is never tested before it is used",
+          "feedback": "Staging rehearses the pipeline, and production is done by hand from a document. A success in staging says nothing about whether the manual steps will work. Production should be deployed by the same workflow, with a different environment name and an approval."
+        },
+        {
+          "text": "A person should deploy to staging as well",
+          "feedback": "That would make both environments unrehearsed and slow."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "path": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/path.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "scoped": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/scoped.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "gates": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/gates.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "promote": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/promote.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "two-ways": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/two-ways.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

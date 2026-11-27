@@ -1,0 +1,178 @@
+{
+  "id": "course:dsa/module/stacks",
+  "title": "Stacks and queues",
+  "requires": [
+    "array-cost"
+  ],
+  "outcomes": [
+    {
+      "id": "order",
+      "can": "Predict the order in which a stack and a queue give items back.",
+      "assessment": [
+        "stack-order",
+        "queue-order"
+      ]
+    },
+    {
+      "id": "stack",
+      "can": "Use a stack to match each item with the most recent unmatched one.",
+      "assessment": [
+        "course:dsa/task/stacks-is-balanced",
+        "course:dsa/task/stacks-evaluate-rpn"
+      ]
+    },
+    {
+      "id": "queue",
+      "can": "Build a queue whose operations each take one step.",
+      "assessment": [
+        "course:dsa/task/stacks-task-queue"
+      ]
+    }
+  ],
+  "intro": "Some problems only ever need the newest item, and some only the oldest. A stack and a queue are arrays used with that one restriction. The restriction is the point: it makes the code simpler, and it makes every operation take one step. This module covers both, and the trap in building a queue on an array.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Last in, first out",
+      "text": "A **stack** gives back the item that was added most recently. Think of a pile of plates: you add to the top and take from the top. The two operations are **push**, which adds, and **pop**, which removes and returns the newest.\n\nAn array is a ready-made stack. `push` and `pop` both work at the end, so each takes one step.\n\nA stack fits any problem where the thing you need next is the most recent thing you have not dealt with yet: matching brackets, undo, working out an expression, and following a path that you may need to back out of."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict a stack",
+      "text": "Predict both lines of output.",
+      "example": "stack",
+      "questions": [
+        "stack-order"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "The newest came out first",
+      "text": "Three letters went on: a, b, c. The two pops returned c and then b, the newest first. Then d was pushed on top of a, so the stack held a and d.\n\n`pop` on an empty array returns `undefined` and does not fail. Code that uses a stack usually has to decide what an empty stack means: in the bracket exercise below it means a closing bracket with nothing to match.",
+      "example": "stack"
+    },
+    {
+      "kind": "explanation",
+      "title": "First in, first out",
+      "text": "A **queue** gives back the item that has waited longest, like a line of people. The operations are **enqueue**, which adds at the back, and **dequeue**, which removes from the front.\n\nAn array can add at the back in one step with `push`. Removing from the front with `shift` is the trap: as the module on arrays showed, `shift` moves every remaining element, so it costs O(n). A queue that is emptied with `shift` costs O(n²) in total.\n\nThe fix is not to remove anything. Keep an index, `head`, that marks where the front of the queue is, and move the index forward. Reading the front and moving the index are both one step."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict a queue",
+      "text": "This queue uses a head index. Predict both lines of output.",
+      "example": "queue",
+      "questions": [
+        "queue-order"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "The oldest came out first",
+      "text": "Reading `queue[head++]` twice returned a and then b, the oldest first, and moved `head` to 2. After d was added, the items still waiting were c and d.\n\nThe array itself still holds a and b. They are simply behind the head and never looked at again. The number of items waiting is the array's length minus `head`. The later module on graphs uses exactly this queue.",
+      "example": "queue"
+    },
+    {
+      "kind": "modification",
+      "title": "Repair a bracket checker",
+      "text": "The starter counts brackets. That catches some mistakes and misses others. Save it, read the failing check, and rewrite it with a stack.",
+      "task": "course:dsa/task/stacks-is-balanced"
+    },
+    {
+      "kind": "independent",
+      "title": "Work out an expression",
+      "text": "Work from the prompt. A stack holds the numbers that are waiting for an operator.",
+      "task": "course:dsa/task/stacks-evaluate-rpn"
+    },
+    {
+      "kind": "independent",
+      "title": "Build a queue",
+      "text": "Work from the prompt. Every operation must take one step, so do not call shift.",
+      "task": "course:dsa/task/stacks-task-queue"
+    }
+  ],
+  "questions": [
+    {
+      "id": "stack-order",
+      "example": "stack",
+      "prompt": "What does the first line print?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "a b",
+          "feedback": "That is the order they went in. A stack gives back the newest first."
+        },
+        {
+          "text": "c a",
+          "feedback": "After c is popped, the newest remaining item is b."
+        },
+        {
+          "text": "c b",
+          "feedback": "pop returns the newest item each time: c, then b."
+        }
+      ]
+    },
+    {
+      "id": "queue-order",
+      "example": "queue",
+      "prompt": "What does the second line print?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "cd 2",
+          "feedback": "a and b have been taken from the front. c and d are waiting, which is two items."
+        },
+        {
+          "text": "abcd 4",
+          "feedback": "The array still holds four items, but the two behind head have already been taken."
+        },
+        {
+          "text": "d 1",
+          "feedback": "Only a and b were taken. c is still waiting in front of d."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "stack": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/stack.ts"
+      },
+      "stdout": [
+        "c b",
+        "ad"
+      ]
+    },
+    "queue": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/queue.ts"
+      },
+      "stdout": [
+        "a b",
+        "cd 2"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:dsa/task/stacks-is-balanced",
+      "path": "tasks/is-balanced/task.json"
+    },
+    {
+      "id": "course:dsa/task/stacks-evaluate-rpn",
+      "path": "tasks/evaluate-rpn/task.json"
+    },
+    {
+      "id": "course:dsa/task/stacks-task-queue",
+      "path": "tasks/task-queue/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:dsa/task/stacks-evaluate-rpn",
+    "afterModule": "course:dsa/module/recursion",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [],
+  "drillGap": "The practice catalog has no drills for this topic yet. The module's own exercises are the practice."
+}

@@ -1,0 +1,146 @@
+{
+  "id": "course:ci-cd/module/speed",
+  "title": "Keep the pipeline fast",
+  "requires": [],
+  "outcomes": [],
+  "intro": "A slow pipeline is paid for many times a day by everyone on the team. This module covers how to find where the time goes, how caching and parallel work shorten it, and what to do about tests that fail at random, which waste more time than any slow step.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Measure before changing anything",
+      "text": "Every run's page shows how long each job and step took. Read a few typical runs before deciding what to speed up. The slow part is often not the one people complain about.\n\nThe usual places time goes:\n\n- **Downloading dependencies**, again, on a machine that starts empty.\n- **Tests run one after another** that could run side by side.\n- **Work that did not need to happen**, such as rebuilding parts the change did not touch.\n- **Waiting**: for a free runner, or for a person.\n\nFix the largest one first, then measure again.",
+      "example": "timing"
+    },
+    {
+      "kind": "explanation",
+      "title": "Caching",
+      "text": "A runner starts empty, so every run downloads the same dependencies. A **cache** saves a folder at the end of one run and restores it at the start of the next.\n\nA cache is found by its **key**, a text label. The trick is to build the key from whatever decides the folder's contents. For dependencies that is the lock file, the file that lists the exact versions.\n\n- Lock file unchanged: same key, the cache is restored, and the install takes seconds.\n- Lock file changed: new key, nothing is found, the install runs in full, and the result is saved under the new key.\n\nMany setup actions do this for you with one option, as the second half of the example shows.",
+      "example": "cache"
+    },
+    {
+      "kind": "prediction",
+      "title": "A key that never changes",
+      "text": "A workflow caches its dependencies with the key below. A cache saved under a key is never overwritten. Three months later the lock file has changed many times.\n\n```yaml\n        key: npm-cache\n```",
+      "questions": [
+        "fixed-key"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "What a cache must never be",
+      "text": "A cache is a shortcut, and nothing more. Two rules keep it harmless.\n\n**The pipeline must give the same result with an empty cache.** If a run passes only because of something left in a cache, the pipeline is broken and merely looks green. Caches are deleted without notice when they are old or the storage is full.\n\n**A cache is not a safe place.** Never put secrets in one. And remember who can write to it: a cache saved by one run may be restored by another, so do not let a build that will be released trust a cache that unreviewed code could have filled.\n\nThings worth caching are downloads that are slow to fetch and fully determined by a file you can hash: dependencies, tool installations, and base layers of container images."
+    },
+    {
+      "kind": "explanation",
+      "title": "Side by side",
+      "text": "When tests are the slow part, split them. Divide the suite into groups, called **shards**, and run each on its own runner at the same time.\n\nFour shards do not make a suite four times faster. Each shard still checks out the code and installs dependencies, and the groups are never perfectly even. Expect three times.\n\nThe price is machine time: the same work is spread over more runners, plus the repeated setup. That trade is usually worth it, because people's waiting time costs more than runners.",
+      "example": "shards"
+    },
+    {
+      "kind": "explanation",
+      "title": "Do less",
+      "text": "The fastest step is one that does not run.\n\n- **Skip what cannot be affected.** A change to the documentation does not need the test suite. Path filters, from the module on triggers, do this.\n- **Cancel runs that no longer matter.** A new commit makes the old run's result useless. Concurrency groups do this.\n- **Stop at the first failure when later results are worthless.** There is no point running stage 2 after stage 1 failed.\n- **Fetch only what you need.** A checkout brings only the newest commit by default. Keep it that way unless a step needs the history."
+    },
+    {
+      "kind": "explanation",
+      "title": "Flaky tests",
+      "text": "A **flaky** test is one that sometimes passes and sometimes fails with no change to the code. It is the worst thing that can happen to a pipeline, because it destroys the meaning of red.\n\nOnce people learn that a failure might be nothing, they press \"run again\" without reading. From then on a real failure gets the same treatment.\n\nThe usual causes are few: a test that depends on the time or date, on the order tests run in, on data left by another test, on a real network service, or on something finishing within a fixed wait.\n\nThe policy that works: when a test is found to be flaky, take it out of the required set at once, record it, and fix or delete it within days. Automatic retries hide the problem and make every run slower."
+    },
+    {
+      "kind": "debugging",
+      "title": "Just run it again",
+      "text": "A message in a team's chat, and the history of one test over two weeks.",
+      "example": "flaky",
+      "questions": [
+        "flaky"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: shorten this pipeline",
+      "text": "A pull request pipeline takes 19 minutes. Its one job has the steps below. Say what you would change, in order of benefit, and estimate the new time.\n\n| Step | Time |\n| --- | --- |\n| Checkout | 10 s |\n| Install dependencies | 3 min 30 s |\n| Lint | 30 s |\n| Unit tests | 4 min |\n| Integration tests | 9 min |\n| Build | 2 min |"
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. **Cache the dependencies**, keyed on the lock file. The install drops from 3.5 minutes to about 20 seconds on most runs.\n2. **Split into jobs that run side by side:** lint, unit tests, integration tests, build. The pipeline now lasts as long as its slowest job plus setup: about 9.5 minutes.\n3. **Shard the integration tests** in three. That job drops to about 4 minutes.\n4. **Put lint in a first stage**, so a lint error is reported in under a minute and nothing else runs.\n\nResult: about 5 minutes, from 19. The total machine time went **up**, because setup is repeated in each job. The cache keeps that repeat cheap, which is why it comes first."
+    }
+  ],
+  "questions": [
+    {
+      "id": "fixed-key",
+      "prompt": "What does each run do now?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Restores a cache that matches the current lock file",
+          "feedback": "The cache was saved once, three months ago, and never replaced."
+        },
+        {
+          "text": "Restores the three-month-old cache, then downloads everything that has changed since",
+          "feedback": "The key always matches, so the old cache is always found and never updated. Each run fetches the growing difference again. A key built from a hash of the lock file would save a fresh cache whenever the dependencies change."
+        },
+        {
+          "text": "Fails, because the cache is out of date",
+          "feedback": "A stale cache does not fail the run. It quietly stops saving time, which is why the problem goes unnoticed."
+        }
+      ]
+    },
+    {
+      "id": "flaky",
+      "example": "flaky",
+      "prompt": "What should the team do first?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Remove the test from the required checks and record it to be fixed",
+          "feedback": "It fails about one run in four with no code change, so its result carries no information. Taking it out of the gate today restores the meaning of red. Then fix it or delete it."
+        },
+        {
+          "text": "Add an automatic retry, three times",
+          "feedback": "That makes the check green and the problem invisible, at the cost of slower runs. The habit of ignoring failures remains."
+        },
+        {
+          "text": "Keep rerunning, since it usually passes",
+          "feedback": "That is the habit that lets a real failure through. People have stopped reading what failed."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "timing": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/timing.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "cache": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/cache.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "shards": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/shards.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "flaky": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/flaky.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

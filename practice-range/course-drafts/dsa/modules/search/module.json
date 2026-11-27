@@ -1,0 +1,180 @@
+{
+  "id": "course:dsa/module/search",
+  "title": "Binary search",
+  "requires": [
+    "array-cost",
+    "two-pointers"
+  ],
+  "outcomes": [
+    {
+      "id": "halve",
+      "can": "Trace a binary search and say which elements it looks at.",
+      "assessment": [
+        "looks",
+        "not-found"
+      ]
+    },
+    {
+      "id": "write",
+      "can": "Write a binary search that handles the first element, the last element and a missing value.",
+      "assessment": [
+        "course:dsa/task/search-index-of-sorted"
+      ]
+    },
+    {
+      "id": "boundary",
+      "can": "Find a boundary position, and search a range of numbers instead of an array.",
+      "assessment": [
+        "course:dsa/task/search-first-at-least",
+        "course:dsa/task/search-sqrt-floor"
+      ]
+    }
+  ],
+  "intro": "Looking for a value in an array normally means checking every element. When the array is sorted, there is a far faster way: look at the middle, and throw away the half that cannot hold the answer. This module covers binary search, the small mistakes that break it, and two variations that are used at least as often as the plain form.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Halve the range",
+      "text": "Binary search keeps a range of indexes, `low` to `high`, that could still hold the target. Each step looks at the element in the middle of that range.\n\n- If it is the target, the search is over.\n- If it is smaller than the target, the target can only be to the right, so `low` moves to one past the middle.\n- If it is larger, `high` moves to one before the middle.\n\nEach step halves the range, so a million elements need about 20 looks. This only works on **sorted** data. The comparison with the middle element says nothing about either half of an unsorted array."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict what it looks at",
+      "text": "The example prints the range and the middle element at every step, then the result. Predict the output for a target of 23.",
+      "example": "binary",
+      "questions": [
+        "looks"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Three looks among ten",
+      "text": "The search looked at 16, then 56, then 23. Each look removed half of what was left: first indexes 0 to 4, then indexes 7 to 9.\n\nNotice `low = middle + 1` and `high = middle - 1`. The middle element has just been checked, so it is left out of the new range. Keeping it in, with `low = middle`, is the classic mistake: when the range is two elements wide the middle is `low` itself, nothing changes, and the loop never ends.",
+      "example": "binary"
+    },
+    {
+      "kind": "explanation",
+      "title": "The parts that go wrong",
+      "text": "Binary search is short and famously easy to get wrong. Three decisions must agree with each other.\n\n- **What the range means.** Here `low` and `high` are both positions that could still hold the target.\n- **When to stop.** With that meaning, a range of one element is still worth checking, so the loop runs while `low <= high`.\n- **How to shrink.** Always leave out the middle that was just checked.\n\nTest any binary search on four cases: the first element, the last element, a value that is missing, and an empty array. Most broken versions fail one of them."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict a missing value",
+      "text": "The same search, counting its looks. Predict the output for a target that is not in the array.",
+      "example": "absent",
+      "questions": [
+        "not-found"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "The range became empty",
+      "text": "The search looked at 16, 5 and 2. After the third look `low` was 1 and `high` was 0. A range whose low end is past its high end is empty, so the loop ended and the function returned -1.\n\nThe value of `low` at that moment is useful: it is the position where the target would have to be inserted to keep the array sorted. The second exercise is built on that.",
+      "example": "absent"
+    },
+    {
+      "kind": "modification",
+      "title": "Repair a binary search",
+      "text": "The starter finds most values and misses one kind. Save it, read the failing check, and repair it. The last check counts how many elements your code reads.",
+      "task": "course:dsa/task/search-index-of-sorted"
+    },
+    {
+      "kind": "independent",
+      "title": "Find a boundary",
+      "text": "Work from the prompt. This is binary search for a position, not for an exact value.",
+      "task": "course:dsa/task/search-first-at-least"
+    },
+    {
+      "kind": "independent",
+      "title": "Search a range of answers",
+      "text": "Work from the prompt. There is no array here. The range being halved is the range of possible answers.",
+      "task": "course:dsa/task/search-sqrt-floor"
+    }
+  ],
+  "questions": [
+    {
+      "id": "looks",
+      "example": "binary",
+      "prompt": "Which middle elements does the search look at, in order?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "2, 5, 8, 12, 16, 23",
+          "feedback": "That is a search from the front, one element at a time. This search starts in the middle."
+        },
+        {
+          "text": "16, 56, 23",
+          "feedback": "The middle of 0 to 9 is index 4, which holds 16. Then the middle of 5 to 9 holds 56, and the middle of 5 to 6 holds 23."
+        },
+        {
+          "text": "16, 38, 23",
+          "feedback": "After 16 the range is 5 to 9. Its middle is index 7, which holds 56."
+        }
+      ]
+    },
+    {
+      "id": "not-found",
+      "example": "absent",
+      "prompt": "What does the example print?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "-1 10",
+          "feedback": "It does not look at every element. Each look removes half of the range."
+        },
+        {
+          "text": "1 3",
+          "feedback": "The function returns -1 for a missing value. 1 is where low ended up."
+        },
+        {
+          "text": "-1 3",
+          "feedback": "It looks at 16, 5 and 2. Then the range is empty and it returns -1."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "binary": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/binary.ts"
+      },
+      "stdout": [
+        "0 9 16",
+        "5 9 56",
+        "5 6 23",
+        "5"
+      ]
+    },
+    "absent": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/absent.ts"
+      },
+      "stdout": [
+        "-1 3"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:dsa/task/search-index-of-sorted",
+      "path": "tasks/index-of-sorted/task.json"
+    },
+    {
+      "id": "course:dsa/task/search-first-at-least",
+      "path": "tasks/first-at-least/task.json"
+    },
+    {
+      "id": "course:dsa/task/search-sqrt-floor",
+      "path": "tasks/sqrt-floor/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:dsa/task/search-first-at-least",
+    "afterModule": "course:dsa/module/stacks",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [],
+  "drillGap": "The practice catalog has no drills for this topic yet. The module's own exercises are the practice."
+}

@@ -1,0 +1,146 @@
+{
+  "id": "course:docker/module/small",
+  "title": "Build small images",
+  "requires": [],
+  "outcomes": [],
+  "intro": "The first Dockerfile in this course produced a working image that was larger than it needed to be. This module covers why size matters, how a multi-stage build ships only what the program needs to run, and how to choose a base image.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Why size matters",
+      "text": "A large image costs you in three ways.\n\n- **Time.** Every build pushes it and every server pulls it. A deploy, a rollback and a new server all wait for the download.\n- **Space.** Registries and servers keep many versions.\n- **Risk.** Every tool and library in the image is something that can have a security flaw and must be kept patched, whether your program uses it or not.\n\nThe third matters most. A small image has less in it to go wrong."
+    },
+    {
+      "kind": "explanation",
+      "title": "What you build with is not what you run with",
+      "text": "Building a program needs things that running it does not: compilers, build tools, test libraries, the source in its original form.\n\nA single-stage Dockerfile installs all of that to do the build, and then ships it. Cleaning up at the end does not help, because the files remain in earlier layers.\n\nWhat is needed is two separate environments: one to build in, and a clean one that receives only the result.",
+      "example": "two-rooms"
+    },
+    {
+      "kind": "explanation",
+      "title": "Multi-stage builds",
+      "text": "A Dockerfile may contain more than one `FROM`. Each starts a new **stage** with a fresh set of files. A stage can be named with `AS`.\n\n`COPY --from=<stage>` copies files out of an earlier stage into the current one. That is the only thing that crosses from one stage to the next.\n\n**The image is the last stage.** Earlier stages are used during the build and then left behind. Their tools and layers are not part of what you ship.",
+      "example": "multi"
+    },
+    {
+      "kind": "prediction",
+      "title": "What is in the final image?",
+      "text": "In the multi-stage file you just read, the first stage runs `npm ci`, which installs every dependency including the build tools.",
+      "questions": [
+        "final-stage"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Choosing a base image",
+      "text": "The final stage's `FROM` sets the floor for the image's size and contents.\n\n| Base | Contains | Consider |\n| --- | --- | --- |\n| Full, such as `node:24` | A whole distribution with build tools | Convenient for a build stage. Large to ship. |\n| Slim, such as `node:24-slim` | The runtime and a minimal distribution | A sound default for the final stage. |\n| Alpine, such as `node:24-alpine` | The runtime on a very small distribution | Smallest with a shell. Uses a different system library, and some prebuilt packages do not work with it. |\n| Distroless or `scratch` | The runtime only, or nothing at all | No shell and no package manager. Smallest and hardest to look inside. |\n\nStart with slim. Move to something smaller when you have a reason and have tested that everything still works."
+    },
+    {
+      "kind": "explanation",
+      "title": "Smaller in every stage",
+      "text": "A few habits help with or without stages.\n\n- **Use `.dockerignore`**, so that a broad `COPY` cannot bring in unwanted files.\n- **Install only what runs.** Leave out development dependencies in the final stage, for example with `npm ci --omit=dev`.\n- **Skip suggested extras.** With `apt-get install`, add `--no-install-recommends`, and remove the package lists in the same `RUN`.\n- **Do not add tools just in case.** An editor and a network toolkit in every production image are rarely used and always present. The module on debugging shows other ways to look inside."
+    },
+    {
+      "kind": "debugging",
+      "title": "Where did 1.4 GB come from?",
+      "text": "The layers of an image built with a single stage on the full base image.",
+      "example": "big",
+      "questions": [
+        "big"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Stages are also targets",
+      "text": "Stages have a second use. `docker build --target <stage>` stops at the named stage and produces an image of it.\n\nThat lets one Dockerfile serve several purposes: a `build` stage with every tool, in which the tests can run on a build server, and a final stage for shipping. Both come from the same file, so they cannot drift apart.",
+      "example": "target"
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: plan the stages",
+      "text": "A service is written in a language that compiles to a single executable file. Compiling needs the language's toolchain, which is 900 MB. The executable is 20 MB and needs nothing else to run except the certificates used to check secure connections.\n\n1. How many stages, and what does each do?\n2. What does the final stage start from?\n3. What crosses between the stages?\n4. Roughly how large is the image you ship?"
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. Two. A `build` stage from the toolchain's image compiles the program. A final stage holds the result.\n2. A minimal base that has certificates and little else: a distroless image, or a slim distribution if a shell is wanted for looking around.\n3. One file, the executable, with `COPY --from=build`.\n4. A little over 20 MB plus the base, against more than 900 MB for a single stage.\n\nThe same plan fits any language. Only the first stage and the files that are copied across change."
+    }
+  ],
+  "questions": [
+    {
+      "id": "final-stage",
+      "prompt": "Are the build tools in the image that is shipped?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "Yes, every stage is part of the image",
+          "feedback": "Only the last stage is the image. Earlier stages are discarded once the build ends."
+        },
+        {
+          "text": "Yes, but hidden in a lower layer",
+          "feedback": "That is what happens in a single stage. A new `FROM` starts from a fresh set of files, with no layers from the stage before."
+        },
+        {
+          "text": "No, only what the final stage copied or installed",
+          "feedback": "The final stage starts from a clean base. It holds the build output it copied across and the run-time dependencies it installed itself."
+        }
+      ]
+    },
+    {
+      "id": "big",
+      "example": "big",
+      "prompt": "Which single change saves the most?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "A final stage built from the slim base",
+          "feedback": "The base accounts for about 1.1 GB of the total. A final stage from the slim base, about 230 MB, removes most of it at once and leaves the development dependencies behind as well."
+        },
+        {
+          "text": "Adding `.dockerignore`",
+          "feedback": "Useful, but the source layer is only 61 MB."
+        },
+        {
+          "text": "Joining the `RUN` lines into one",
+          "feedback": "That saves almost nothing here. No layer is deleting files left by another."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "two-rooms": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/two-rooms.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "multi": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/multi.txt"
+      },
+      "readOnly": true,
+      "fence": "dockerfile"
+    },
+    "big": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/big.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "target": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/target.txt"
+      },
+      "readOnly": true,
+      "fence": "bash"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

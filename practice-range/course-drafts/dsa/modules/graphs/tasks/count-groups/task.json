@@ -1,0 +1,62 @@
+{
+  "id": "course:dsa/task/graphs-count-groups",
+  "role": "independent",
+  "title": "Count the separate groups",
+  "concepts": [
+    "graph",
+    "breadth-first",
+    "hash-set"
+  ],
+  "prompt": "The connections in graph are two-way. Return the number of separate groups: sets of names that can reach each other. A name with no connections is a group of its own. An empty graph has 0 groups.",
+  "hints": [
+    "What does one breadth-first search from a name find?",
+    "It finds that name's whole group. So each search that starts from a name not yet seen is one new group.",
+    "Keep one seen Set for the whole function. For each name: if it is not seen, add 1 to the count and search from it, marking everything it reaches."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(countGroups(__roads), 1)",
+    "__same(countGroups(__islands), 3)",
+    "__same(countGroups({}), 0)",
+    "__same(countGroups({ a: [] }), 1)"
+  ],
+  "checkLabels": [
+    "Every place can reach every other, so there is one group.",
+    "a and b, c alone, and d and e are three groups.",
+    "An empty graph has no groups.",
+    "One name alone is one group."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-one-ring.ts",
+      "misconception": "Marks only the direct neighbours of each start, not the whole group.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-at-least-one.ts",
+      "misconception": "Assumes there is always at least one group.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "One search marks one whole group. Count how many searches you have to start."
+}

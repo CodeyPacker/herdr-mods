@@ -1,0 +1,15 @@
+  Production deployments, one week
+
+  When         Image         Oldest commit   Lead time   Outcome
+  -----------  ------------  --------------  ----------  --------------
+  Mon 10:12    git-3f2a9c8   Mon 08:40       1 h 32 m    fine
+  Mon 15:30    git-a81d44e   Mon 13:05       2 h 25 m    fine
+  Tue 11:02    git-7c21e0d   Mon 16:20       18 h 42 m   rolled back,
+                                                         restored 11:09
+  Tue 14:45    git-b902f1a   Tue 12:10       2 h 35 m    fine
+  Thu 09:50    git-e44c0d7   Wed 15:15       18 h 35 m   fine
+
+  Deployment frequency   5 this week
+  Lead time (middle)     2 h 35 m
+  Change failure rate    1 of 5 = 20%
+  Time to restore        7 minutes

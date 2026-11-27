@@ -1,0 +1,7 @@
+  time -->
+
+  old   ==================|                              (stopped)
+                          |  nobody is served  |
+  new                                          |======   if it starts
+
+  If the new version fails to start, the gap has no end.

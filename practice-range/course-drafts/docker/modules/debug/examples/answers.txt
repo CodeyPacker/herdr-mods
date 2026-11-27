@@ -1,0 +1,4 @@
+docker logs worker                                    # 1
+docker ps                                             # 2
+docker inspect --format '{{json .Mounts}}' db         # 3
+docker volume ls

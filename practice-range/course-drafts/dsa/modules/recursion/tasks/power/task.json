@@ -1,0 +1,84 @@
+{
+  "id": "course:dsa/task/recursion-power",
+  "role": "independent",
+  "title": "Raise to a power quickly",
+  "concepts": [
+    "recursion",
+    "big-o"
+  ],
+  "prompt": "Return base raised to exponent, where exponent is a whole number, 0 or more. Multiply only with the supplied times(a, b), which the checks count. The last check allows 40 multiplications for an exponent of 1,000, so use the fact that base to the power 10 is base to the power 5, squared.",
+  "hints": [
+    "What is the answer when the exponent is 0? That is the base case.",
+    "Work out the power for half the exponent, once, and multiply it by itself.",
+    "When the exponent is odd, the square is one factor short. Multiply once more by base."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [
+    {
+      "kind": "CallExpression",
+      "name": "pow",
+      "max": 0,
+      "message": "Work it out with times. Do not call Math.pow."
+    },
+    {
+      "kind": "BinaryExpression",
+      "operator": "**",
+      "max": 0,
+      "message": "Work it out with times. Do not use the ** operator."
+    },
+    {
+      "kind": "BinaryExpression",
+      "operator": "*",
+      "max": 0,
+      "message": "Multiply with times(a, b) so that the checks can count."
+    }
+  ],
+  "checks": [
+    "__same(power(2, 10), 1024)",
+    "__same(power(3, 0), 1)",
+    "__same(power(5, 1), 5)",
+    "__same(power(2, 5), 32)",
+    "__same(power(1, 1000), 1)",
+    "__countTimes(() => power(1, 1000)) <= 40"
+  ],
+  "checkLabels": [
+    "2 to the power 10 is 1,024.",
+    "Any number to the power 0 is 1.",
+    "A number to the power 1 is itself.",
+    "An odd exponent works: 2 to the power 5 is 32.",
+    "1 to any power is 1.",
+    "Use no more than 40 multiplications for an exponent of 1,000."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-even-only.ts",
+      "misconception": "Squares the half power and forgets the extra factor when the exponent is odd.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-one-by-one.ts",
+      "misconception": "Takes one off the exponent each time, which needs a multiplication for every step.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 6 failed"
+      }
+    }
+  ],
+  "feedback": "Write out the calls for an exponent of 10 by hand: 10, 5, 2, 1, 0. Check the odd steps."
+}

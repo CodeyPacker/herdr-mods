@@ -1,0 +1,11 @@
+                    the only published port
+                              |
+  internet ---- :80 ----> +-------+ ---- db:5432 ----> +-------+
+                          |  web  |                    |  db   |
+                          +-------+ -- cache:6379 --+  +-------+
+                                                    |
+                                                    +> +-------+
+                                                       | cache |
+                                                       +-------+
+
+  db and cache are reachable only from containers on the same network.

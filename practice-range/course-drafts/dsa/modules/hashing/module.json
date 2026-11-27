@@ -1,0 +1,179 @@
+{
+  "id": "course:dsa/module/hashing",
+  "title": "Maps and sets",
+  "requires": [
+    "step-count",
+    "big-o"
+  ],
+  "outcomes": [
+    {
+      "id": "lookup",
+      "can": "Use a Map to count or to look up, and a Set to remember what has been seen.",
+      "assessment": [
+        "counts",
+        "first-repeat",
+        "course:dsa/task/hashing-count-words"
+      ]
+    },
+    {
+      "id": "speed",
+      "can": "Replace a search inside a loop with a lookup, and say what it costs in memory.",
+      "assessment": [
+        "course:dsa/task/hashing-has-duplicate",
+        "course:dsa/task/hashing-two-sum"
+      ]
+    },
+    {
+      "id": "transfer",
+      "can": "Solve a pair problem in one pass by storing what you have already seen.",
+      "assessment": [
+        "course:dsa/task/hashing-two-sum"
+      ]
+    }
+  ],
+  "intro": "Searching an array for a value takes a step for every element. A Map or a Set answers the same question in about one step, however much it holds. This module covers what those two structures do, why they are fast, and how they turn a loop inside a loop into a single pass.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "One step to find anything",
+      "text": "A **Map** stores pairs of a key and a value. A **Set** stores keys only. Both answer \"is this key here?\" in about one step.\n\nThey manage it with **hashing**. A hash function turns a key into a number, and that number says where in an internal array the key is kept. To find a key, the structure computes the same number and looks in that one place. It never walks through the other keys.\n\n| Operation | Map | Set | Steps |\n| --- | --- | --- | --- |\n| Add or change | `map.set(key, value)` | `set.add(key)` | O(1) on average |\n| Look up | `map.get(key)`, `map.has(key)` | `set.has(key)` | O(1) on average |\n| Remove | `map.delete(key)` | `set.delete(key)` | O(1) on average |\n\nThe price is memory. A Set of n keys takes O(n) extra space. Trading memory for time in this way is one of the most common moves in programming."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict a count",
+      "text": "The example counts how often each word appears. Predict both lines of output.",
+      "example": "counts",
+      "questions": [
+        "counts"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Count with a Map",
+      "text": "For each word, the loop read the count so far, used 0 when there was none, and stored one more. `counts.get(\"pink\")` gave `undefined`, because that key was never set. The `??` operator supplies the 0 in that case.\n\nThe second line shows that a Map remembers the order in which keys were first added. The whole count took one pass over the words, with one lookup and one write for each.",
+      "example": "counts"
+    },
+    {
+      "kind": "explanation",
+      "title": "Replace a search with a lookup",
+      "text": "Here is the pattern to recognize. A loop goes over the items, and for each item the code searches the rest of the list for something: a duplicate, a partner, a match. That inner search makes the whole thing O(n²).\n\nKeep a Set or a Map of what has been seen so far. The inner search becomes one lookup, and the whole thing becomes O(n).\n\nKeys are compared the way `===` compares them. Numbers and strings work as you expect. Two different arrays or objects are different keys even when their contents are equal, so build a string key when you need to look up by contents."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict a first repeat",
+      "text": "The example looks for the first number that appears a second time. Predict what it prints.",
+      "example": "seen",
+      "questions": [
+        "first-repeat"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Remember what was seen",
+      "text": "The loop looked at 4, 9 and 2, adding each to the set. The fourth value, 9, was already there, so the function returned at once after four lookups. It never reached the second 4.\n\nWith an array in place of the set, each check would have searched everything seen so far. For a long list with no repeats, that is the difference between n lookups and about n²/2 comparisons.",
+      "example": "seen"
+    },
+    {
+      "kind": "modification",
+      "title": "Speed up a duplicate check",
+      "text": "The starter gives the right answers. It is too slow: it compares every pair. Save it, read the failing check, and rewrite it to make one pass.",
+      "task": "course:dsa/task/hashing-has-duplicate"
+    },
+    {
+      "kind": "independent",
+      "title": "Count words",
+      "text": "Work from the prompt. Return the Map itself.",
+      "task": "course:dsa/task/hashing-count-words"
+    },
+    {
+      "kind": "independent",
+      "title": "Find a pair in one pass",
+      "text": "Work from the prompt. This is the pair problem from the first module, done in one pass.",
+      "task": "course:dsa/task/hashing-two-sum"
+    }
+  ],
+  "questions": [
+    {
+      "id": "counts",
+      "example": "counts",
+      "prompt": "What does the first line print?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "3 1 undefined",
+          "feedback": "red was counted three times and green once. pink was never set, so get returns undefined."
+        },
+        {
+          "text": "3 1 0",
+          "feedback": "The 0 is only used inside the loop, by the ?? operator. A key that was never set has no value."
+        },
+        {
+          "text": "2 1 undefined",
+          "feedback": "red appears three times in the list: first, third and last."
+        }
+      ]
+    },
+    {
+      "id": "first-repeat",
+      "example": "seen",
+      "prompt": "What does the example print?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "4 5",
+          "feedback": "4 does appear twice, but 9 repeats earlier in the list, at the fourth position."
+        },
+        {
+          "text": "9 4",
+          "feedback": "The fourth value is 9, which is already in the set. The function returns it after four lookups."
+        },
+        {
+          "text": "9 2",
+          "feedback": "It takes four lookups: 4, 9 and 2 are new, and the second 9 is found."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "counts": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/counts.ts"
+      },
+      "stdout": [
+        "3 1 undefined",
+        "red,blue,green"
+      ]
+    },
+    "seen": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/seen.ts"
+      },
+      "stdout": [
+        "9 4"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:dsa/task/hashing-has-duplicate",
+      "path": "tasks/has-duplicate/task.json"
+    },
+    {
+      "id": "course:dsa/task/hashing-count-words",
+      "path": "tasks/count-words/task.json"
+    },
+    {
+      "id": "course:dsa/task/hashing-two-sum",
+      "path": "tasks/two-sum/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:dsa/task/hashing-count-words",
+    "afterModule": "course:dsa/module/linked",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [],
+  "drillGap": "The practice catalog has no drills for this topic yet. The module's own exercises are the practice."
+}

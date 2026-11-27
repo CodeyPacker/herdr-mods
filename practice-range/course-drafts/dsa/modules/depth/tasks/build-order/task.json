@@ -1,0 +1,63 @@
+{
+  "id": "course:dsa/task/depth-build-order",
+  "role": "independent",
+  "title": "Order by need",
+  "concepts": [
+    "topological-order",
+    "depth-first"
+  ],
+  "prompt": "needs maps each item to the items that must come before it. Return all the items in an order in which every item comes after everything it needs. Each item appears once. The tests have no cycles, and any valid order is accepted.",
+  "hints": [
+    "Before an item can be placed, what has to be placed first?",
+    "Write a function that places an item: first place everything it needs, then add the item itself to the order.",
+    "Keep a Set of items already placed, so that each is added once. Call the function for every item."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__valid(__dress, buildOrder(__dress))",
+    "__same(buildOrder({}), [])",
+    "__same(buildOrder({ a: [] }), [\"a\"])",
+    "__same(buildOrder({ c: [\"b\"], b: [\"a\"], a: [] }), [\"a\", \"b\", \"c\"])",
+    "__valid(__diamond, buildOrder(__diamond))"
+  ],
+  "checkLabels": [
+    "Every piece of clothing comes after the pieces it needs, and each appears once.",
+    "No items give an empty order.",
+    "One item with no needs is the whole order.",
+    "A chain has only one valid order.",
+    "An item needed by two others still appears once, before both."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-self-first.ts",
+      "misconception": "Adds an item before the items it needs.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-repeats.ts",
+      "misconception": "Does not remember what has been placed, so shared items are added again.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Place an item only after everything it needs has been placed. Then check that an item needed by two others is not added twice."
+}

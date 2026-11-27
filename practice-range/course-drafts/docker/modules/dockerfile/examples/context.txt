@@ -1,0 +1,15 @@
+  tracker/                     <- the context: "docker build ... ."
+  |-- Dockerfile
+  |-- .dockerignore
+  |-- package.json
+  |-- package-lock.json
+  |-- server.js
+  |-- src/
+  +-- node_modules/            <- left out by .dockerignore
+
+  Your machine                          The builder
+  +-----------------+   whole context   +-------------------------+
+  | tracker/        | ----------------> | COPY can read only what |
+  +-----------------+   sent up front   | was sent                |
+                                        +-------------------------+
+  ../secrets/key.pem  is outside the context. COPY cannot reach it.

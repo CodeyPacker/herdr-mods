@@ -1,0 +1,62 @@
+{
+  "id": "course:dsa/task/heaps-heap-pop",
+  "role": "independent",
+  "title": "Remove the smallest",
+  "concepts": [
+    "heap"
+  ],
+  "prompt": "heap is a valid min-heap stored in an array. Remove its smallest value and return it, leaving a valid min-heap. Return undefined for an empty heap. Move the last element to the root and sift it down, always swapping with the smaller child.",
+  "hints": [
+    "After the root is taken, which element fills the hole, and why that one?",
+    "The last element keeps the tree free of gaps. From the root, compare it with its children and swap with the smaller child while that child is smaller.",
+    "Find the index of the smallest among the node and its children that exist. Stop when it is the node itself. Take care when the heap has one element."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "(() => { const heap = [1, 3, 2, 7, 4]; return heapPop(heap) === 1 && __same(heap, [2, 3, 4, 7]); })()",
+    "heapPop([]) === undefined",
+    "(() => { const heap = [5]; return heapPop(heap) === 5 && heap.length === 0; })()",
+    "(() => { const heap = [1, 2, 3, 4, 5, 6, 7]; const out: number[] = []; for (let count = 0; count < 7; count++) out.push(heapPop(heap) ?? -1); return __same(out, [1, 2, 3, 4, 5, 6, 7]); })()",
+    "(() => { const heap = [1, 5, 2, 9, 6, 3, 8]; const out: number[] = []; for (let count = 0; count < 7; count++) out.push(heapPop(heap) ?? -1); return __same(out, [1, 2, 3, 5, 6, 8, 9]); })()"
+  ],
+  "checkLabels": [
+    "Removing 1 from 1, 3, 2, 7, 4 leaves 2, 3, 4, 7.",
+    "An empty heap gives undefined.",
+    "Removing the only element leaves an empty heap.",
+    "Seven removals give the values in order.",
+    "Removals from another heap also come out in order."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-left-child.ts",
+      "misconception": "Always compares with the left child and never looks at the right one.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-single.ts",
+      "misconception": "Puts the last element back at the root even when it was the only one.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "Do the first check by hand on paper, as a tree. After the last element moves to the root, which child is smaller?"
+}

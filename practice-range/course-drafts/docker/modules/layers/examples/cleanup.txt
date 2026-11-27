@@ -1,0 +1,9 @@
+# Wrong: three layers. The archive is stored in the first one for good.
+RUN curl -fsSLO https://example.com/tool.tar.gz
+RUN tar -xzf tool.tar.gz -C /opt
+RUN rm tool.tar.gz
+
+# Right: one layer, and the archive is gone before the layer is saved.
+RUN curl -fsSLO https://example.com/tool.tar.gz \
+ && tar -xzf tool.tar.gz -C /opt \
+ && rm tool.tar.gz

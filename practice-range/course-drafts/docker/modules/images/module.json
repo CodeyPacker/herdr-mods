@@ -1,0 +1,155 @@
+{
+  "id": "course:docker/module/images",
+  "title": "Name and find images",
+  "requires": [],
+  "outcomes": [],
+  "intro": "Every container starts from an image, and every image has a name. This module covers how to read that name, why a tag is weaker than it looks, what a digest guarantees, and how to choose where your images come from.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "The parts of an image name",
+      "text": "An image name has up to four parts.\n\n- The **registry** is the server the image is stored on.\n- The **repository** is the image's path on that server, often a team and a product.\n- The **tag** names one version of it.\n- The **digest**, when present, identifies the exact content.\n\nShort names work because of defaults. With no registry, Docker uses Docker Hub. With no team on Docker Hub, it uses `library`, which holds the official images. With no tag, it uses `latest`. So `nginx` really means `docker.io/library/nginx:latest`.",
+      "example": "name"
+    },
+    {
+      "kind": "explanation",
+      "title": "A tag can move",
+      "text": "A tag is a label that the publisher attaches to an image, and the publisher can move it to another image at any time.\n\nThat is how updates arrive. `nginx:1.27` points at the newest 1.27 release, and it moves each time a fix is published. This is useful, and it also means the name does not identify one fixed set of files.\n\n`latest` deserves special care. It is only the tag used when you name none. Nothing makes it the newest version, and it can jump to a new major version without warning."
+    },
+    {
+      "kind": "prediction",
+      "title": "The same name, a month apart",
+      "text": "A build server pulls `node:24-slim` today. A second server pulls `node:24-slim` a month from now.",
+      "questions": [
+        "tag-moves"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "A digest cannot",
+      "text": "A **digest** is a fingerprint worked out from the image's content, written as `sha256:` and 64 characters. Change one byte of the image and the digest changes.\n\nYou can name an image by digest in place of a tag. That name can only ever mean those exact files. If a registry returned anything else, Docker would refuse it.\n\nThe cost is that a digest never picks up fixes. Somebody has to change it deliberately. Many teams accept that cost for what runs in production, because they want every change to be a decision.",
+      "example": "digest"
+    },
+    {
+      "kind": "explanation",
+      "title": "Choosing a tag",
+      "text": "| You write | You get | Good for |\n| --- | --- | --- |\n| `node` or `node:latest` | Whatever is newest today | Quick experiments only |\n| `node:24` | The newest release of version 24 | Development |\n| `node:24.11.1` | One release, rebuilt when its base is patched | Builds you want to repeat |\n| `node:24.11.1@sha256:...` | Exactly one image | Production |\n\nMany images also come in variants, named in the tag after a hyphen. `-slim` leaves out tools most programs do not need. `-alpine` is built on a very small Linux distribution. The module on small images compares them.\n\nA reasonable default is a specific version with a variant, such as `node:24.11.1-slim`, updated on purpose."
+    },
+    {
+      "kind": "explanation",
+      "title": "Where images come from",
+      "text": "Anyone can publish to a public registry. An image is software that you are about to run, so who published it matters as much as it does for any download.\n\n- **Official images** are maintained and reviewed for Docker Hub. Their names have no team part: `nginx`, `postgres`, `node`.\n- **Publisher images** come from the company that makes the software, under its own name.\n- **Everything else** is a stranger's build. Read how it was made before you depend on it, or build your own.\n\nImages are kept on your machine after the first pull. `docker pull` fetches one without running it, `docker image ls` lists what you have, and `docker image rm` deletes one.",
+      "example": "image-ls"
+    },
+    {
+      "kind": "debugging",
+      "title": "Two unpinned names",
+      "text": "These two lines come from the files that describe a team's production service.",
+      "example": "unpinned",
+      "questions": [
+        "unpinned"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Images are made of layers",
+      "text": "Watch a pull and you will see several lines, each with its own identifier. An image is a stack of **layers**, and each layer is a set of file changes.\n\nLayers are shared. If two images are built on the same base, the base layers are downloaded and stored once. That is why the second pull of a related image is much faster than the first.\n\nThe next two modules show where layers come from and how to use them well.",
+      "example": "pull"
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: read and choose",
+      "text": "First, name the registry, repository and tag of each.\n\n1. `postgres`\n2. `ghcr.io/acme/tracker:1.4.2`\n3. `registry.example.com:5000/tools/backup`\n\nThen choose how to name the image in each situation, and say why.\n\n4. Trying out a database on your laptop for an afternoon.\n5. The base image in a project five people build every day.\n6. The database a production service runs on."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. Registry `docker.io`, repository `library/postgres`, tag `latest`. All three are defaults.\n2. Registry `ghcr.io`, repository `acme/tracker`, tag `1.4.2`.\n3. Registry `registry.example.com:5000`, repository `tools/backup`, tag `latest`. The `:5000` is a port of the registry, not a tag, because a tag comes after the last slash.\n\n4. `postgres:17` is enough. Nothing depends on it tomorrow.\n5. A specific version and variant, such as `node:24.11.1-slim`. Everyone builds from the same release, and updating it is a change the team can see.\n6. A specific version with its digest. An upgrade of a production database should be planned, never a side effect of a restart."
+    }
+  ],
+  "questions": [
+    {
+      "id": "tag-moves",
+      "prompt": "Do the two servers get the same files?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Yes, the name is the same",
+          "feedback": "A tag is a label the publisher can move. The same name can point at a newer image a month later."
+        },
+        {
+          "text": "Not necessarily, the tag may have moved",
+          "feedback": "`24-slim` follows new releases of version 24. Only a digest names one fixed image."
+        },
+        {
+          "text": "Yes, unless the major version changed",
+          "feedback": "The major version stays 24, but minor and patch releases still replace what the tag points at."
+        }
+      ]
+    },
+    {
+      "id": "unpinned",
+      "example": "unpinned",
+      "prompt": "What is the main risk?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "The images will be large",
+          "feedback": "Size depends on the variant. The concern here is that neither line says which version is meant."
+        },
+        {
+          "text": "Docker Hub may refuse the pull",
+          "feedback": "Both names are valid. They resolve to `latest`."
+        },
+        {
+          "text": "A restart or rebuild can bring in a different version",
+          "feedback": "Both resolve to `latest`. A new major version of the runtime or the database can arrive without anyone choosing it."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "name": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/name.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "digest": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/digest.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "image-ls": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/image-ls.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "unpinned": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/unpinned.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "pull": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/pull.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

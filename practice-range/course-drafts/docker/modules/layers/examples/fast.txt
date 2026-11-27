@@ -1,0 +1,16 @@
+FROM node:24.11.1-slim
+WORKDIR /app
+
+# System packages: one step, and the lists are removed in that same step.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl \
+ && rm -rf /var/lib/apt/lists/*
+
+# Dependencies: only reruns when these two files change.
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+# Source: last.
+COPY . .
+
+CMD ["node", "server.js"]

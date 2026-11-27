@@ -1,0 +1,15 @@
+# .env  (beside compose.yaml, one per machine, not committed)
+WEB_PORT=8081
+TRACKER_VERSION=1.4.2
+
+# compose.yaml
+services:
+  web:
+    image: registry.example.com/team/tracker:${TRACKER_VERSION}
+    ports:
+      - "${WEB_PORT:-8080}:3000"     # 8080 when WEB_PORT is not set
+    env_file:
+      - ./tracker.env                # these lines go into the container
+
+# See the file after substitution, without starting anything:
+#   docker compose config

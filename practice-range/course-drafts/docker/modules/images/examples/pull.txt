@@ -1,0 +1,14 @@
+$ docker pull nginx:1.27
+1.27: Pulling from library/nginx
+a2318d6c47ec: Pull complete
+095d327c79ae: Pull complete
+bbfaa25db775: Pull complete
+7bb6fb0cfb2b: Pull complete
+Digest: sha256:4c0fdaa8b6341bfdeca5f18f7837...e1c327beac
+Status: Downloaded newer image for nginx:1.27
+
+$ docker pull nginx:1.27-perl
+1.27-perl: Pulling from library/nginx
+a2318d6c47ec: Already exists          <- shared layers are not
+095d327c79ae: Already exists             downloaded again
+5d7a0c1e9f3b: Pull complete

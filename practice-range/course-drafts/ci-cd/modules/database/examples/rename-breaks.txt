@@ -1,0 +1,12 @@
+  The release:   migration   ALTER TABLE tasks
+                             RENAME COLUMN owner TO assignee;
+                 code        reads and writes "assignee"
+
+  10:00:00   migration runs          column is now "assignee"
+  10:00:01   old instances           SELECT owner ...   ERROR
+     ...     (still serving)         SELECT owner ...   ERROR
+  10:01:30   all instances updated   works again
+
+  And if the new version is rolled back at 10:20:
+
+  10:20:00   old code everywhere     SELECT owner ...   ERROR, for good

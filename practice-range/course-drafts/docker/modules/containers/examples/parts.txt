@@ -1,0 +1,10 @@
+  you type            does the work               stores images
+
+  +--------+  request  +-----------+    pull     +------------+
+  | docker | --------> |  daemon   | <---------- |  registry  |
+  | client |           | (engine)  | ----------> | (Docker    |
+  +--------+           +-----------+    push     |  Hub, ...) |
+                         |       |               +------------+
+                         v       v
+                      images   containers
+                      on disk  running here

@@ -1,0 +1,17 @@
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    strategy:
+      # Let the other shards finish, so that every failure is reported.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # The test runner takes "which part of how many".
+      - run: npm run test:integration -- --shard=${{ matrix.shard }}/3

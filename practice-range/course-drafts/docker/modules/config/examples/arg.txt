@@ -1,0 +1,12 @@
+# A build argument with a default. It can be used in FROM.
+ARG NODE_VERSION=24.11.1
+FROM node:${NODE_VERSION}-slim
+
+# Declared again after FROM to use it in this stage.
+ARG APP_VERSION=dev
+
+# Copied into ENV so that the running program can read it.
+ENV APP_VERSION=${APP_VERSION}
+
+# Build with:
+#   docker build --build-arg APP_VERSION=1.4.2 -t tracker:1.4.2 .

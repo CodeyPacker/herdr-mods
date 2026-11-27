@@ -1,0 +1,11 @@
+  In the Dockerfile                  docker run img        docker run img sh
+  ---------------------------------  --------------------  -----------------
+  CMD ["node", "server.js"]          node server.js        sh
+
+  ENTRYPOINT ["backup"]              backup                backup sh
+
+  ENTRYPOINT ["backup"]              backup --help         backup sh
+  CMD ["--help"]
+
+  To replace an entrypoint for one run:
+    docker run --rm -it --entrypoint sh img

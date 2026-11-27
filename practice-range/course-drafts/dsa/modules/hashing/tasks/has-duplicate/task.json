@@ -1,0 +1,64 @@
+{
+  "id": "course:dsa/task/hashing-has-duplicate",
+  "role": "guided",
+  "title": "Speed up a duplicate check",
+  "concepts": [
+    "hash-set"
+  ],
+  "prompt": "Return true when any number appears more than once in values. The starter is correct and compares every pair. Rewrite it to read each element about once: the last check counts the reads on 2,000 different numbers.",
+  "hints": [
+    "What does the inner loop search for, and what structure could answer that in one step?",
+    "Keep a Set of the numbers seen so far. Before adding a number, ask whether it is already there.",
+    "for each value: if seen.has(value) return true, otherwise seen.add(value). Return false at the end."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(hasDuplicate([1, 2, 3, 1]), true)",
+    "__same(hasDuplicate([1, 2, 3]), false)",
+    "__same(hasDuplicate([]), false)",
+    "__same(hasDuplicate([5, 5]), true)",
+    "__same(hasDuplicate(__many), false)",
+    "__count(() => hasDuplicate(__many)) <= 100 * __many.length"
+  ],
+  "checkLabels": [
+    "1 appears twice.",
+    "No number repeats.",
+    "An empty array has no duplicate.",
+    "Two equal numbers are a duplicate.",
+    "2,000 different numbers have no duplicate.",
+    "Do not compare every pair. Read each of the 2,000 numbers only a few times."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-pairs.ts",
+      "misconception": "Compares every pair, which is correct and far too slow.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 6 failed"
+      }
+    },
+    {
+      "source": "wrong-adjacent.ts",
+      "misconception": "Compares only neighbours, which works only when the array is sorted.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "The answers are right and the work is too much. Replace the inner loop with one question to a Set."
+}

@@ -1,0 +1,65 @@
+{
+  "id": "course:dsa/task/dynamic-longest-common",
+  "role": "independent",
+  "title": "Find the longest common subsequence",
+  "concepts": [
+    "tabulation",
+    "memoization"
+  ],
+  "prompt": "A subsequence of a string is what is left after deleting any of its characters, without reordering the rest. Return the length of the longest subsequence that a and b have in common. For \"abcde\" and \"ace\" it is 3, from \"ace\". The characters need not be next to each other.",
+  "hints": [
+    "Let one entry mean: the answer for the first i characters of a and the first j characters of b. What is it when either count is 0?",
+    "Look at the last character of each prefix. If they are equal, that character extends the answer for both prefixes one shorter.",
+    "If a[i - 1] equals b[j - 1], the entry is table[i - 1][j - 1] + 1. Otherwise it is the larger of table[i - 1][j] and table[i][j - 1]."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(longestCommon(\"abcde\", \"ace\"), 3)",
+    "__same(longestCommon(\"abc\", \"xyz\"), 0)",
+    "__same(longestCommon(\"\", \"abc\"), 0)",
+    "__same(longestCommon(\"aggtab\", \"gxtxayb\"), 4)",
+    "__same(longestCommon(\"abc\", \"abc\"), 3)",
+    "__same(longestCommon(\"abcbdab\", \"bdcaba\"), 4)"
+  ],
+  "checkLabels": [
+    "abcde and ace share ace.",
+    "Strings with no character in common give 0.",
+    "An empty string shares nothing.",
+    "aggtab and gxtxayb share gtab.",
+    "Equal strings share everything.",
+    "The shared characters must be in the same order in both."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-unbroken.ts",
+      "misconception": "Finds the longest run of characters that are next to each other in both strings.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-letters.ts",
+      "misconception": "Counts characters of b that appear anywhere in a, ignoring their order.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 6 failed"
+      }
+    }
+  ],
+  "feedback": "Fill the table by hand for \"abc\" and \"ac\". Each entry depends on the entry up and to the left, the one above, and the one to the left."
+}

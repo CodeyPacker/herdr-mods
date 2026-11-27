@@ -1,0 +1,13 @@
+  Renaming tasks.owner to tasks.assignee
+
+  Release  Database                  Code reads   Code writes
+  -------  ------------------------  -----------  ------------------
+  (now)    owner                     owner        owner
+  1        owner, assignee (empty)   owner        owner
+  2        owner, assignee           owner        owner + assignee
+           -- backfill: copy owner into assignee for existing rows --
+  3        owner, assignee           assignee     owner + assignee
+  4        owner, assignee           assignee     assignee
+  5        assignee                  assignee     assignee
+
+  After every release, the release before it still runs correctly.

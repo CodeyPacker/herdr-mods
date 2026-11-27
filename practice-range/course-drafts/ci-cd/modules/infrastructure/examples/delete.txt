@@ -1,0 +1,14 @@
+  The diff in the pull request
+
+  - resource db '...flexibleServers@...' = { name: 'tracker-prod-pg' ...
+  + resource db '...flexibleServers@...' = { name: 'tracker-prod-db' ...
+
+  The preview
+
+  - Delete
+      Microsoft.DBforPostgreSQL/flexibleServers/tracker-prod-pg
+
+  + Create
+      Microsoft.DBforPostgreSQL/flexibleServers/tracker-prod-db
+
+  Resource changes: 1 to create, 1 to delete, 6 no change.

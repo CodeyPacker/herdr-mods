@@ -1,0 +1,15 @@
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "package-lock.json"
+
+  pull_request:
+    branches: [main]          # pull requests that target main
+
+# A separate workflow might start on a version tag:
+#
+# on:
+#   push:
+#     tags: ["v*"]            # v1.5.0, v2.0.0, ...

@@ -1,0 +1,61 @@
+{
+  "id": "course:dsa/task/choose-group-anagrams",
+  "role": "independent",
+  "title": "Group words by their letters",
+  "concepts": [
+    "transfer",
+    "hash-map"
+  ],
+  "prompt": "Two words are anagrams when one can be made by rearranging all the letters of the other, such as eat and tea. Return the words in groups of anagrams. Order the groups by the first word of each as it appears in words, and keep the words inside a group in the order they appear. Words are lower-case letters only.",
+  "hints": [
+    "What can you compute from a word that is the same for every word in its group, and different for other groups?",
+    "The word's letters in sorted order work as that key: eat and tea both give aet.",
+    "Keep a Map from the key to an array of words. A Map remembers the order in which keys were added, so its values are the groups in the right order."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(groupAnagrams([\"eat\", \"tea\", \"tan\", \"ate\", \"nat\", \"bat\"]), [[\"eat\", \"tea\", \"ate\"], [\"tan\", \"nat\"], [\"bat\"]])",
+    "__same(groupAnagrams([]), [])",
+    "__same(groupAnagrams([\"a\"]), [[\"a\"]])",
+    "__same(groupAnagrams([\"ab\", \"ba\", \"abb\"]), [[\"ab\", \"ba\"], [\"abb\"]])"
+  ],
+  "checkLabels": [
+    "eat, tea and ate form one group. tan and nat form another. bat is alone.",
+    "No words give no groups.",
+    "One word is one group.",
+    "abb has an extra b, so it is not an anagram of ab."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-letter-set.ts",
+      "misconception": "Groups by which letters a word uses, ignoring how many of each.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 4 failed"
+      }
+    },
+    {
+      "source": "wrong-length.ts",
+      "misconception": "Groups words by their length.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "The repeated operation is: which group does this word belong to? Find a key that all anagrams of a word share, and look the group up by it."
+}

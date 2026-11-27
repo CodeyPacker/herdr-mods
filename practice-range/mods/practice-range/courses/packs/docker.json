@@ -1,0 +1,2601 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": "0.1.0-preview.1",
+  "kind": "reading",
+  "id": "course:docker",
+  "title": "Run software in containers with Docker",
+  "audience": [
+    "Can use a terminal and has run a program from the command line",
+    "Wants to package and run software with Docker"
+  ],
+  "prerequisiteConcepts": [],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:docker/module/containers",
+      "order": "listed"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/containers",
+      "description": "Explain what a container and an image are, and what a container isolates.",
+      "assessment": "course:docker/module/containers"
+    },
+    {
+      "id": "outcome/run",
+      "description": "Start, inspect, stop and remove containers, and know what state each one is in.",
+      "assessment": "course:docker/module/run"
+    },
+    {
+      "id": "outcome/images",
+      "description": "Read an image name, choose a tag deliberately, and say what a digest guarantees.",
+      "assessment": "course:docker/module/images"
+    },
+    {
+      "id": "outcome/dockerfile",
+      "description": "Write a Dockerfile for a small service and control what goes into the build.",
+      "assessment": "course:docker/module/dockerfile"
+    },
+    {
+      "id": "outcome/layers",
+      "description": "Order a Dockerfile so that rebuilds are fast and layers stay small.",
+      "assessment": "course:docker/module/layers"
+    },
+    {
+      "id": "outcome/start",
+      "description": "Choose between CMD and ENTRYPOINT and make a container stop when it is asked to.",
+      "assessment": "course:docker/module/start"
+    },
+    {
+      "id": "outcome/config",
+      "description": "Give one image different settings in different places, without putting secrets in it.",
+      "assessment": "course:docker/module/config"
+    },
+    {
+      "id": "outcome/storage",
+      "description": "Say where a container's data lives and choose a volume, a bind mount or neither.",
+      "assessment": "course:docker/module/storage"
+    },
+    {
+      "id": "outcome/network",
+      "description": "Publish a port, connect two containers by name, and explain what localhost means inside one.",
+      "assessment": "course:docker/module/network"
+    },
+    {
+      "id": "outcome/compose",
+      "description": "Describe a multi-container app in one file and run it with one command.",
+      "assessment": "course:docker/module/compose"
+    },
+    {
+      "id": "outcome/health",
+      "description": "Make services wait for what they need, restart after a failure, and stay within limits.",
+      "assessment": "course:docker/module/health"
+    },
+    {
+      "id": "outcome/small",
+      "description": "Use a multi-stage build and a suitable base image to ship only what runs.",
+      "assessment": "course:docker/module/small"
+    },
+    {
+      "id": "outcome/secure",
+      "description": "Reduce what a container can do and what an image is trusted to contain.",
+      "assessment": "course:docker/module/secure"
+    },
+    {
+      "id": "outcome/ship",
+      "description": "Tag and push an image so that what was tested is exactly what runs.",
+      "assessment": "course:docker/module/ship"
+    },
+    {
+      "id": "outcome/debug",
+      "description": "Work out why a container stopped, cannot be reached, or lost its data.",
+      "assessment": "course:docker/module/debug"
+    },
+    {
+      "id": "outcome/capstone",
+      "description": "Review a flawed setup and plan how to containerize a small app, without help.",
+      "assessment": "course:docker/module/capstone"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:docker/module/containers",
+      "title": "What a container is",
+      "prerequisites": [],
+      "teaches": [
+        "container",
+        "image"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:docker/module/run",
+      "title": "Run and manage containers",
+      "prerequisites": [
+        "course:docker/module/containers"
+      ],
+      "teaches": [
+        "lifecycle",
+        "run"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:docker/module/images",
+      "title": "Name and find images",
+      "prerequisites": [
+        "course:docker/module/run"
+      ],
+      "teaches": [
+        "tag",
+        "registry",
+        "digest"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:docker/module/dockerfile",
+      "title": "Write a Dockerfile",
+      "prerequisites": [
+        "course:docker/module/images"
+      ],
+      "teaches": [
+        "dockerfile",
+        "build-context"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:docker/module/layers",
+      "title": "Use layers and the build cache",
+      "prerequisites": [
+        "course:docker/module/dockerfile"
+      ],
+      "teaches": [
+        "layer",
+        "build-cache"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:docker/module/start",
+      "title": "Start and stop cleanly",
+      "prerequisites": [
+        "course:docker/module/dockerfile"
+      ],
+      "teaches": [
+        "entrypoint",
+        "signals"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:docker/module/config",
+      "title": "Configure a container",
+      "prerequisites": [
+        "course:docker/module/start"
+      ],
+      "teaches": [
+        "environment",
+        "build-args"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:docker/module/storage",
+      "title": "Keep data",
+      "prerequisites": [
+        "course:docker/module/run"
+      ],
+      "teaches": [
+        "volume",
+        "bind-mount"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:docker/module/network",
+      "title": "Connect containers",
+      "prerequisites": [
+        "course:docker/module/run"
+      ],
+      "teaches": [
+        "port",
+        "network"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:docker/module/compose",
+      "title": "Describe an app with Compose",
+      "prerequisites": [
+        "course:docker/module/config",
+        "course:docker/module/storage",
+        "course:docker/module/network"
+      ],
+      "teaches": [
+        "compose"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:docker/module/health",
+      "title": "Start in order and stay up",
+      "prerequisites": [
+        "course:docker/module/compose"
+      ],
+      "teaches": [
+        "healthcheck",
+        "restart"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:docker/module/small",
+      "title": "Build small images",
+      "prerequisites": [
+        "course:docker/module/layers"
+      ],
+      "teaches": [
+        "multi-stage",
+        "base-image"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:docker/module/secure",
+      "title": "Run with less privilege",
+      "prerequisites": [
+        "course:docker/module/small",
+        "course:docker/module/config"
+      ],
+      "teaches": [
+        "least-privilege",
+        "supply-chain"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:docker/module/ship",
+      "title": "Tag, push and release",
+      "prerequisites": [
+        "course:docker/module/images",
+        "course:docker/module/small"
+      ],
+      "teaches": [
+        "release",
+        "promotion"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:docker/module/debug",
+      "title": "Find out why it failed",
+      "prerequisites": [
+        "course:docker/module/start",
+        "course:docker/module/network",
+        "course:docker/module/storage"
+      ],
+      "teaches": [
+        "debugging",
+        "exit-code"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:docker/module/capstone",
+      "title": "Review and containerize an app",
+      "prerequisites": [
+        "course:docker/module/health",
+        "course:docker/module/secure",
+        "course:docker/module/ship",
+        "course:docker/module/debug"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "available"
+    }
+  ],
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  },
+  "preview": true,
+  "readiness": [],
+  "lessons": [
+    {
+      "id": "course:docker/module/containers",
+      "title": "What a container is",
+      "requires": [],
+      "outcomes": [],
+      "intro": "This course is about Docker: packaging a program with everything it needs, and running that package the same way on any machine. It is a reading course. Each module explains a few ideas, shows them as commands, files and diagrams, asks you to judge some situations, and ends with a short exercise and one possible answer. Nothing in the course is run for you. If Docker is installed you can type the commands yourself, and the course works without it. The examples use one running product: a small web service called tracker, and the database it stores its data in.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "The problem",
+          "text": "A program rarely runs alone. It needs a runtime of the right version, libraries, system tools, files in certain places, and settings. On the machine where it was written, all of that is already there. On the next machine, some of it is missing or a different version, and the program fails in a way nobody can reproduce.\n\nThe usual fix is a page of setup instructions. Instructions go out of date, and two people following them still end up with different machines.\n\nDocker takes another approach. You package the program **together with** its runtime, libraries and files, and you run that package as a unit. The machine only needs Docker."
+        },
+        {
+          "kind": "explanation",
+          "title": "Images and containers",
+          "text": "Two words carry the whole course.\n\n- An **image** is the package. It is a read-only set of files (the program, its runtime, its libraries) plus a note saying which command to start. An image does nothing by itself. It sits on disk.\n- A **container** is a running instance of an image. Docker starts the command from the image, and gives it a private copy of the image's files to work in.\n\nOne image can be started many times. Each start gives a separate container with its own files, its own processes and its own network address. Changes made inside one container are not seen by the others, and they do not change the image.",
+          "example": "image-container"
+        },
+        {
+          "kind": "prediction",
+          "title": "One image, two containers",
+          "text": "Two containers, A and B, are started from the same image. A program in container A writes a file to `/tmp/report.txt`.",
+          "questions": [
+            "separate-files"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "What a container isolates",
+          "text": "A container is not a small computer. It is one or more ordinary processes running on the host machine, started with a restricted view of it. The process inside sees:\n\n- **Its own files.** The root folder `/` is the image's files, not the host's.\n- **Its own processes.** It cannot see or signal the host's other processes.\n- **Its own network.** It has its own address and its own ports.\n- **Its own limits.** The host can cap how much memory and processor time it uses.\n\nOn Linux these come from two features of the operating system core (the kernel). **Namespaces** control what a process can see. **Control groups** (cgroups) control how much it may use. Docker is the tool that sets them up for you.\n\nOne thing is not private: the kernel itself. Every container on a host uses the host's kernel.",
+          "example": "isolation"
+        },
+        {
+          "kind": "explanation",
+          "title": "Containers and virtual machines",
+          "text": "A virtual machine also isolates software, and the two are often confused. The difference is where the boundary sits.\n\nA virtual machine pretends to be hardware. It runs a complete operating system with its own kernel. That takes gigabytes of disk and tens of seconds to start.\n\nA container shares the host's kernel and holds only the program and its files. It is usually tens or hundreds of megabytes and starts in about the time the program itself takes to start.\n\nSharing the kernel has two consequences worth remembering. The boundary is thinner than a virtual machine's, which matters for security and is the subject of a later module. And a Linux container needs a Linux kernel. On macOS and Windows, Docker Desktop quietly runs a small Linux virtual machine and puts your containers inside it.",
+          "example": "vm-vs-container"
+        },
+        {
+          "kind": "prediction",
+          "title": "Which kernel?",
+          "text": "An image was built from Ubuntu files. It is run on a server that uses a different Linux distribution.",
+          "questions": [
+            "which-kernel"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "The parts of Docker",
+          "text": "Three parts work together.\n\n- The **client** is the `docker` command you type.\n- The **daemon** (also called the engine) is a background service that does the work: it builds images, starts containers and manages their storage and networks. The client only sends it requests.\n- A **registry** is a server that stores images so that other machines can download them. Docker Hub is the public one that Docker uses when you name no other.\n\nMost commands in this course follow one path: you type a command, the client sends it to the daemon, and the daemon fetches an image from a registry if it does not have it yet.",
+          "example": "parts"
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: image or container?",
+          "text": "Take a few minutes. For each statement, decide whether it describes an image, a container, or neither.\n\n1. It can be copied to a registry and downloaded by another machine.\n2. It has a process list.\n3. It includes its own kernel.\n4. It is read-only.\n5. It can be stopped and started again.\n6. Deleting it loses the files a program wrote while running.\n\nThen continue to compare."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. **Image.** Registries store images. A container is not shipped anywhere.\n2. **Container.** Only something running has processes.\n3. **Neither.** A container uses the host's kernel, and an image holds only files. A virtual machine is what includes a kernel.\n4. **Image.** A container adds a private writable area on top of it.\n5. **Container.** An image is never running, so there is nothing to stop.\n6. **Container.** Files written inside a container live in that container's writable area and are removed with it. A later module shows where to keep data that must survive.\n\nIf you remember one sentence from this module, make it this one: an image is a package of files, and a container is a process started from it."
+        }
+      ],
+      "questions": [
+        {
+          "id": "separate-files",
+          "prompt": "Can a program in container B read that file?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Yes, both share the image's files",
+              "feedback": "They share the read-only image. Anything a container writes goes to its own private area."
+            },
+            {
+              "text": "No, each container has its own files",
+              "feedback": "Each container gets a private writable area on top of the image. B never sees what A wrote, and the image is unchanged."
+            },
+            {
+              "text": "Yes, after A stops",
+              "feedback": "Stopping A does not move its files anywhere. They stay in A's private area until A is removed."
+            }
+          ]
+        },
+        {
+          "id": "which-kernel",
+          "prompt": "Which kernel do the processes in the container use?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "The server's kernel",
+              "feedback": "A container has no kernel of its own. The image supplies files such as tools and libraries, and the host supplies the kernel."
+            },
+            {
+              "text": "Ubuntu's kernel, from the image",
+              "feedback": "An image holds files for programs to use. It does not hold a running kernel, and a container cannot boot one."
+            },
+            {
+              "text": "A small kernel that Docker adds",
+              "feedback": "Docker adds no kernel. On macOS and Windows it runs a Linux virtual machine, and containers share that machine's kernel."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "image-container": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "        IMAGE  tracker:1.4.2            (read-only, on disk)\n        +--------------------------+\n        | program + runtime + libs |\n        | start command            |\n        +--------------------------+\n              |            |            |\n          docker run   docker run   docker run\n              |            |            |\n              v            v            v\n        +-----------+ +-----------+ +-----------+\n        | container | | container | | container |   each has its own\n        |     A     | |     B     | |     C     |   files, processes\n        +-----------+ +-----------+ +-----------+   and network\n"
+        },
+        "isolation": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  HOST MACHINE\n  +----------------------------------------------------------------+\n  |  container A                    container B                    |\n  |  +--------------------------+   +--------------------------+   |\n  |  | files:     from image    |   | files:     from image    |   |\n  |  | processes: its own       |   | processes: its own       |   |\n  |  | network:   its own       |   | network:   its own       |   |\n  |  | limits:    512 MB, 1 CPU |   | limits:    2 GB, 2 CPUs  |   |\n  |  +--------------------------+   +--------------------------+   |\n  |                                                                |\n  |  ONE KERNEL, shared by the host and every container            |\n  +----------------------------------------------------------------+\n"
+        },
+        "vm-vs-container": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  VIRTUAL MACHINES                    CONTAINERS\n\n  +---------+  +---------+            +---------+  +---------+\n  |  app A  |  |  app B  |            |  app A  |  |  app B  |\n  |  libs   |  |  libs   |            |  libs   |  |  libs   |\n  | KERNEL  |  | KERNEL  |            +---------+  +---------+\n  +---------+  +---------+            +------------------------+\n  +------------------------+          |         Docker         |\n  |   virtual hardware     |          +------------------------+\n  +------------------------+          +------------------------+\n  |     host kernel        |          |      host kernel       |\n  +------------------------+          +------------------------+\n\n  Each has its own kernel.            All share one kernel.\n  Gigabytes, slow to start.           Megabytes, quick to start.\n"
+        },
+        "parts": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  you type            does the work               stores images\n\n  +--------+  request  +-----------+    pull     +------------+\n  | docker | --------> |  daemon   | <---------- |  registry  |\n  | client |           | (engine)  | ----------> | (Docker    |\n  +--------+           +-----------+    push     |  Hub, ...) |\n                         |       |               +------------+\n                         v       v\n                      images   containers\n                      on disk  running here\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:docker/module/run",
+      "title": "Run and manage containers",
+      "requires": [],
+      "outcomes": [],
+      "intro": "This module covers the commands used every day: starting a container, seeing what is running, reading its output, getting inside it, and cleaning up. The main idea is the life of a container. It exists from the moment it is created until it is removed, and it is running only while its main process is alive.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "What docker run does",
+          "text": "`docker run` takes an image name and starts a container from it.\n\n```bash\ndocker run nginx:1.27\n```\n\nFour things happen, in order.\n\n1. Docker looks for the image `nginx:1.27` on this machine.\n2. If it is missing, Docker downloads it from the registry. This is called a **pull**.\n3. Docker creates a container: a private writable area on top of the image, a network address, and a name.\n4. Docker starts the image's main command inside it.\n\nRun like this, the container holds on to your terminal and prints the program's output. Pressing Ctrl+C stops it.",
+          "example": "run-steps"
+        },
+        {
+          "kind": "explanation",
+          "title": "In the background, with a name",
+          "text": "A service should not hold a terminal. Two options fix that.\n\n- `-d` (detached) starts the container in the background and prints its identifier.\n- `--name` gives it a name you choose. Without one Docker invents a name such as `brave_wilson`.\n\n`docker ps` lists the running containers. Every later command accepts either the name or the first few characters of the identifier.",
+          "example": "ps"
+        },
+        {
+          "kind": "explanation",
+          "title": "The life of a container",
+          "text": "A container is **running** while its main process is alive. When that process ends, for any reason, the container stops. Docker does not keep an empty container running.\n\nA stopped container still exists. Its files and its output are kept, and it can be started again. It is gone only when you remove it.\n\n`docker ps` shows only running containers. `docker ps -a` shows stopped ones too, with the code the main process ended with.",
+          "example": "lifecycle"
+        },
+        {
+          "kind": "prediction",
+          "title": "A command that finishes",
+          "text": "You run this, and it prints `hello`.\n\n```bash\ndocker run ubuntu:24.04 echo hello\n```",
+          "questions": [
+            "after-echo"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Stop, start and remove",
+          "text": "| Command | What it does |\n| --- | --- |\n| `docker stop web` | Asks the main process to end, waits up to 10 seconds, then forces it. |\n| `docker start web` | Starts a stopped container again, with the files it had. |\n| `docker restart web` | Stop, then start. |\n| `docker rm web` | Removes a stopped container and its private files. |\n| `docker rm -f web` | Forces a running container to end, then removes it. |\n\nRemoving is the step people forget. Every `docker run` creates a new container, so a machine collects stopped ones over time.\n\nFor a container you will not need again, add `--rm` to `docker run`. Docker then removes the container as soon as it stops."
+        },
+        {
+          "kind": "explanation",
+          "title": "Look at a running container",
+          "text": "Two commands answer most questions about a container.\n\n`docker logs` prints what the main process wrote to its output. Add `-f` to keep following it, and `--tail 50` to see only the last lines. Logs are kept after the container stops, until it is removed.\n\n`docker exec` runs an extra command inside a container that is already running. With `-it` it gives you an interactive terminal, which is how you open a shell inside one.\n\nKeep `run` and `exec` apart. `run` creates a **new** container. `exec` goes into an **existing** one.",
+          "example": "inside"
+        },
+        {
+          "kind": "debugging",
+          "title": "A crowded list",
+          "text": "This is `docker ps -a` on a developer's machine after a week of work.",
+          "example": "pile",
+          "questions": [
+            "pile"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Containers you type into",
+          "text": "A container does not have to be a service. It can be a throwaway place to try a tool without installing it.\n\n```bash\ndocker run --rm -it ubuntu:24.04 bash\n```\n\n`-i` keeps the input open and `-t` gives the program a terminal, so together they give you a working shell. The shell is the container's main process. When you type `exit`, the main process ends, the container stops, and `--rm` removes it. Nothing is left on your machine except the image."
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: a day with one container",
+          "text": "Write the command for each step. Use the image `nginx:1.27` and the name `web`.\n\n1. Start it in the background.\n2. Check that it is running.\n3. See the last 20 lines of its output.\n4. Open a shell inside it.\n5. Stop it and remove it.\n6. Run `nginx -v` in a fresh container of the same image, leaving nothing behind."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "The commands are below. Two points are worth noticing.\n\nStep 5 can be one command, `docker rm -f web`, when you do not care how the program shuts down. Stopping first gives it the chance to finish its work.\n\nIn step 6 the words after the image name replace the image's usual command. The container runs `nginx -v`, prints the version, and ends. `--rm` removes it.",
+          "example": "day"
+        }
+      ],
+      "questions": [
+        {
+          "id": "after-echo",
+          "prompt": "What state is the container in afterwards?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "Running, waiting for another command",
+              "feedback": "A container runs only while its main process is alive. `echo` ended, so the container stopped."
+            },
+            {
+              "text": "Removed",
+              "feedback": "Nothing removes it unless you add `--rm` or run `docker rm`."
+            },
+            {
+              "text": "Stopped, and still listed by `docker ps -a`",
+              "feedback": "The main process ended with code 0, so the container stopped. It stays on disk until it is removed."
+            }
+          ]
+        },
+        {
+          "id": "pile",
+          "example": "pile",
+          "prompt": "Which habit would have prevented most of this list?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "Adding `--rm` to one-off runs",
+              "feedback": "Each of those rows is a finished one-off command. With `--rm` every one would have been removed when it ended."
+            },
+            {
+              "text": "Using `-d` on every run",
+              "feedback": "Running in the background does not remove anything. The stopped containers would still pile up."
+            },
+            {
+              "text": "Pulling the image first",
+              "feedback": "Pulling affects the image, not the containers. Each `docker run` still creates a new container."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "run-steps": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  docker run nginx:1.27\n\n  1. image on this machine? ---- no ---> 2. pull it from the registry\n            |                                      |\n           yes <-----------------------------------+\n            |\n  3. create a container   (private files, network address, name)\n            |\n  4. start the image's main command inside it\n"
+        },
+        "ps": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "$ docker run -d --name web nginx:1.27\n3f2a9c81d0b7e6a5...\n\n$ docker ps\nCONTAINER ID   IMAGE        STATUS         PORTS    NAMES\n3f2a9c81d0b7   nginx:1.27   Up 5 seconds   80/tcp   web\n"
+        },
+        "lifecycle": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "                docker run\n                    |\n                    v\n  docker start  +---------+   main process ends,\n  +-----------> | RUNNING |   or docker stop\n  |             +---------+ ----------------+\n  |                                         v\n  |                                    +---------+\n  +----------------------------------- | STOPPED |  files and logs\n                                       +---------+  are still kept\n                                            |\n                                        docker rm\n                                            |\n                                            v\n                                         (gone)\n"
+        },
+        "inside": {
+          "readOnly": true,
+          "fence": "bash",
+          "code": "# What has it printed?\ndocker logs web\ndocker logs -f --tail 50 web\n\n# Run one extra command inside the running container.\ndocker exec web nginx -v\n\n# Open a shell inside it. Type \"exit\" to leave. It keeps running.\ndocker exec -it web sh\n"
+        },
+        "pile": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "IMAGE          COMMAND          STATUS                  NAMES\nubuntu:24.04   \"echo hello\"     Exited (0) 6 days ago   brave_wilson\nubuntu:24.04   \"ls /etc\"        Exited (0) 6 days ago   zen_morse\nnode:24-slim   \"node -v\"        Exited (0) 4 days ago   keen_hopper\nubuntu:24.04   \"cat /etc/...\"   Exited (0) 2 days ago   sad_turing\nnginx:1.27     \"nginx -g ...\"   Up 3 hours              web\n\n(the CONTAINER ID column is left out to save space)\n"
+        },
+        "day": {
+          "readOnly": true,
+          "fence": "bash",
+          "code": "docker run -d --name web nginx:1.27      # 1\ndocker ps                                # 2\ndocker logs --tail 20 web                # 3\ndocker exec -it web sh                   # 4\ndocker stop web                          # 5\ndocker rm web\ndocker run --rm nginx:1.27 nginx -v      # 6\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:docker/module/images",
+      "title": "Name and find images",
+      "requires": [],
+      "outcomes": [],
+      "intro": "Every container starts from an image, and every image has a name. This module covers how to read that name, why a tag is weaker than it looks, what a digest guarantees, and how to choose where your images come from.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "The parts of an image name",
+          "text": "An image name has up to four parts.\n\n- The **registry** is the server the image is stored on.\n- The **repository** is the image's path on that server, often a team and a product.\n- The **tag** names one version of it.\n- The **digest**, when present, identifies the exact content.\n\nShort names work because of defaults. With no registry, Docker uses Docker Hub. With no team on Docker Hub, it uses `library`, which holds the official images. With no tag, it uses `latest`. So `nginx` really means `docker.io/library/nginx:latest`.",
+          "example": "name"
+        },
+        {
+          "kind": "explanation",
+          "title": "A tag can move",
+          "text": "A tag is a label that the publisher attaches to an image, and the publisher can move it to another image at any time.\n\nThat is how updates arrive. `nginx:1.27` points at the newest 1.27 release, and it moves each time a fix is published. This is useful, and it also means the name does not identify one fixed set of files.\n\n`latest` deserves special care. It is only the tag used when you name none. Nothing makes it the newest version, and it can jump to a new major version without warning."
+        },
+        {
+          "kind": "prediction",
+          "title": "The same name, a month apart",
+          "text": "A build server pulls `node:24-slim` today. A second server pulls `node:24-slim` a month from now.",
+          "questions": [
+            "tag-moves"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "A digest cannot",
+          "text": "A **digest** is a fingerprint worked out from the image's content, written as `sha256:` and 64 characters. Change one byte of the image and the digest changes.\n\nYou can name an image by digest in place of a tag. That name can only ever mean those exact files. If a registry returned anything else, Docker would refuse it.\n\nThe cost is that a digest never picks up fixes. Somebody has to change it deliberately. Many teams accept that cost for what runs in production, because they want every change to be a decision.",
+          "example": "digest"
+        },
+        {
+          "kind": "explanation",
+          "title": "Choosing a tag",
+          "text": "| You write | You get | Good for |\n| --- | --- | --- |\n| `node` or `node:latest` | Whatever is newest today | Quick experiments only |\n| `node:24` | The newest release of version 24 | Development |\n| `node:24.11.1` | One release, rebuilt when its base is patched | Builds you want to repeat |\n| `node:24.11.1@sha256:...` | Exactly one image | Production |\n\nMany images also come in variants, named in the tag after a hyphen. `-slim` leaves out tools most programs do not need. `-alpine` is built on a very small Linux distribution. The module on small images compares them.\n\nA reasonable default is a specific version with a variant, such as `node:24.11.1-slim`, updated on purpose."
+        },
+        {
+          "kind": "explanation",
+          "title": "Where images come from",
+          "text": "Anyone can publish to a public registry. An image is software that you are about to run, so who published it matters as much as it does for any download.\n\n- **Official images** are maintained and reviewed for Docker Hub. Their names have no team part: `nginx`, `postgres`, `node`.\n- **Publisher images** come from the company that makes the software, under its own name.\n- **Everything else** is a stranger's build. Read how it was made before you depend on it, or build your own.\n\nImages are kept on your machine after the first pull. `docker pull` fetches one without running it, `docker image ls` lists what you have, and `docker image rm` deletes one.",
+          "example": "image-ls"
+        },
+        {
+          "kind": "debugging",
+          "title": "Two unpinned names",
+          "text": "These two lines come from the files that describe a team's production service.",
+          "example": "unpinned",
+          "questions": [
+            "unpinned"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Images are made of layers",
+          "text": "Watch a pull and you will see several lines, each with its own identifier. An image is a stack of **layers**, and each layer is a set of file changes.\n\nLayers are shared. If two images are built on the same base, the base layers are downloaded and stored once. That is why the second pull of a related image is much faster than the first.\n\nThe next two modules show where layers come from and how to use them well.",
+          "example": "pull"
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: read and choose",
+          "text": "First, name the registry, repository and tag of each.\n\n1. `postgres`\n2. `ghcr.io/acme/tracker:1.4.2`\n3. `registry.example.com:5000/tools/backup`\n\nThen choose how to name the image in each situation, and say why.\n\n4. Trying out a database on your laptop for an afternoon.\n5. The base image in a project five people build every day.\n6. The database a production service runs on."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. Registry `docker.io`, repository `library/postgres`, tag `latest`. All three are defaults.\n2. Registry `ghcr.io`, repository `acme/tracker`, tag `1.4.2`.\n3. Registry `registry.example.com:5000`, repository `tools/backup`, tag `latest`. The `:5000` is a port of the registry, not a tag, because a tag comes after the last slash.\n\n4. `postgres:17` is enough. Nothing depends on it tomorrow.\n5. A specific version and variant, such as `node:24.11.1-slim`. Everyone builds from the same release, and updating it is a change the team can see.\n6. A specific version with its digest. An upgrade of a production database should be planned, never a side effect of a restart."
+        }
+      ],
+      "questions": [
+        {
+          "id": "tag-moves",
+          "prompt": "Do the two servers get the same files?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Yes, the name is the same",
+              "feedback": "A tag is a label the publisher can move. The same name can point at a newer image a month later."
+            },
+            {
+              "text": "Not necessarily, the tag may have moved",
+              "feedback": "`24-slim` follows new releases of version 24. Only a digest names one fixed image."
+            },
+            {
+              "text": "Yes, unless the major version changed",
+              "feedback": "The major version stays 24, but minor and patch releases still replace what the tag points at."
+            }
+          ]
+        },
+        {
+          "id": "unpinned",
+          "example": "unpinned",
+          "prompt": "What is the main risk?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "The images will be large",
+              "feedback": "Size depends on the variant. The concern here is that neither line says which version is meant."
+            },
+            {
+              "text": "Docker Hub may refuse the pull",
+              "feedback": "Both names are valid. They resolve to `latest`."
+            },
+            {
+              "text": "A restart or rebuild can bring in a different version",
+              "feedback": "Both resolve to `latest`. A new major version of the runtime or the database can arrive without anyone choosing it."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "name": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  registry.example.com/team/tracker:1.4.2\n  \\__________________/ \\__________/ \\___/\n        registry        repository    tag\n\n  What you write         What Docker uses\n  ---------------------  --------------------------------------\n  nginx                  docker.io/library/nginx:latest\n  nginx:1.27             docker.io/library/nginx:1.27\n  acme/tracker:1.4.2     docker.io/acme/tracker:1.4.2\n  ghcr.io/acme/tracker   ghcr.io/acme/tracker:latest\n"
+        },
+        "digest": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  By tag (can move):\n    nginx:1.27\n\n  By digest (cannot move). The real value has 64 characters:\n    nginx@sha256:4c0fdaa8b6341bfdeca5f18f7837...e1c327beac\n\n  Both, so that people can read the version and machines get exact content:\n    nginx:1.27@sha256:4c0fdaa8...\n\n  See the digests of the images you have:\n    docker image ls --digests\n"
+        },
+        "image-ls": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "$ docker pull postgres:17\n$ docker image ls\nREPOSITORY   TAG       IMAGE ID       CREATED       SIZE\npostgres     17        a1b2c3d4e5f6   2 weeks ago   438MB\nnginx        1.27      0f9e8d7c6b5a   3 weeks ago   192MB\nnode         24-slim   6a5b4c3d2e1f   3 weeks ago   230MB\n\n$ docker image rm nginx:1.27\n"
+        },
+        "unpinned": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "# Dockerfile\nFROM node\n\n# compose.yaml\n    image: postgres\n"
+        },
+        "pull": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "$ docker pull nginx:1.27\n1.27: Pulling from library/nginx\na2318d6c47ec: Pull complete\n095d327c79ae: Pull complete\nbbfaa25db775: Pull complete\n7bb6fb0cfb2b: Pull complete\nDigest: sha256:4c0fdaa8b6341bfdeca5f18f7837...e1c327beac\nStatus: Downloaded newer image for nginx:1.27\n\n$ docker pull nginx:1.27-perl\n1.27-perl: Pulling from library/nginx\na2318d6c47ec: Already exists          <- shared layers are not\n095d327c79ae: Already exists             downloaded again\n5d7a0c1e9f3b: Pull complete\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:docker/module/dockerfile",
+      "title": "Write a Dockerfile",
+      "requires": [],
+      "outcomes": [],
+      "intro": "So far every image came from someone else. This module covers building your own. A Dockerfile is a short text file that lists the steps to make an image. You will read one line by line, learn which files the build can see, and keep the wrong files out.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "A recipe for an image",
+          "text": "A **Dockerfile** is a list of instructions, run from top to bottom. Each starts with a word in capitals. The result is an image.\n\nThe file below packages the tracker service. Read it as a set of setup notes that a machine follows exactly: start from an image that already has the runtime, make a folder, copy the list of dependencies, install them, copy the program, and note how to start it.\n\nBy convention the file is named `Dockerfile`, with no extension, and sits at the top of the project.",
+          "example": "first"
+        },
+        {
+          "kind": "explanation",
+          "title": "The instructions you need",
+          "text": "| Instruction | What it does |\n| --- | --- |\n| `FROM` | Names the image to start from. Every Dockerfile begins with one. |\n| `WORKDIR` | Sets the folder for the instructions that follow, and creates it. |\n| `COPY` | Copies files from your project into the image. |\n| `RUN` | Runs a command while building, and saves the result in the image. |\n| `ENV` | Sets an environment variable in the image. |\n| `EXPOSE` | Notes which port the program listens on. It opens nothing. |\n| `USER` | Sets the user that later instructions and the container run as. |\n| `CMD` | Records the command to start when a container runs. |\n\nThe pair to keep apart is `RUN` and `CMD`. `RUN` happens **once, during the build**, and its effect is stored in the image. `CMD` runs nothing during the build. It is a note that says what to start **each time a container runs**."
+        },
+        {
+          "kind": "prediction",
+          "title": "Build time or run time?",
+          "text": "The Dockerfile contains `RUN npm ci`, which downloads the service's dependencies. The image is built once and then started on fifty servers.",
+          "questions": [
+            "run-or-cmd"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "The build context",
+          "text": "The build command ends with a path, usually a dot.\n\n```bash\ndocker build -t tracker:dev .\n```\n\nThat path is the **build context**: the folder whose files the build is allowed to use. `COPY` can read only from the context. It cannot reach `../other-project` or a file elsewhere on your disk.\n\nThe whole context is handed to the builder before the first instruction runs. A context with a few source files is sent in an instant. One that includes downloaded dependencies, build output and the version history can be hundreds of megabytes, and slow every build.",
+          "example": "context"
+        },
+        {
+          "kind": "explanation",
+          "title": "Keep files out with .dockerignore",
+          "text": "A file named `.dockerignore`, placed beside the Dockerfile, lists what to leave out of the context. Each line is a path or a pattern.\n\nLeave out three kinds of file.\n\n- **Things the build makes for itself**, such as installed dependencies and build output. Copies from your machine may be for the wrong system.\n- **Things the image does not need**, such as the version history, editor settings and documentation.\n- **Things that must never be in an image**, such as `.env` files, keys and certificates.\n\nThe last kind is the important one. A file that never enters the context cannot be copied into an image by accident.",
+          "example": "ignore"
+        },
+        {
+          "kind": "debugging",
+          "title": "A broad copy",
+          "text": "A project folder holds the files listed below. Its Dockerfile has no `.dockerignore` beside it.",
+          "example": "broad",
+          "questions": [
+            "broad"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Build it and run it",
+          "text": "`docker build` reads the Dockerfile in the context and runs each instruction. `-t` gives the result a name and tag. Without it the image has only an identifier.\n\nThe image is stored on your machine like any other, and `docker run` starts it.\n\nBuild output is long. The lines worth reading are the numbered steps. When a step fails, the build stops there, prints that command's error, and makes no image.",
+          "example": "build"
+        },
+        {
+          "kind": "explanation",
+          "title": "What belongs in an image",
+          "text": "An image should hold what is the same everywhere the program runs: the program, its runtime and its dependencies.\n\nLeave out what differs from place to place. Database addresses, feature switches and passwords are supplied when the container starts, which a later module covers. Data the program creates is kept outside the container, also covered later.\n\nAnd keep to one concern per image. An image that starts a web server, a database and a scheduler together cannot be updated, scaled or restarted one part at a time. Three images, each doing one job, can."
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: a static site",
+          "text": "A folder named `site` holds a small website: `index.html`, a stylesheet and some pictures. The official `nginx` image serves any files placed in `/usr/share/nginx/html`, and it already knows how to start itself.\n\n1. Write a Dockerfile that produces an image serving this site.\n2. Write the command that builds it as `site:1`.\n3. The project folder also holds a `drafts` folder and a `.git` folder. Write a `.dockerignore`."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "Two instructions are enough. `FROM` supplies a working web server, and `COPY` adds the site. No `CMD` is needed, because an image keeps the start command of the image it was built from unless you replace it.\n\nThe tag on `FROM` is a specific version, following the last module. The `.dockerignore` is short, and it still matters: without it the drafts and the whole version history would be sent to the builder on every build, even though this Dockerfile copies only `site/`.",
+          "example": "site"
+        }
+      ],
+      "questions": [
+        {
+          "id": "run-or-cmd",
+          "prompt": "How many times does `npm ci` run?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "Once, when the image is built",
+              "feedback": "`RUN` executes during the build and its result is saved in the image. Starting containers does not repeat it."
+            },
+            {
+              "text": "Fifty times, once on each server",
+              "feedback": "That would be true of `CMD`. The servers start containers from an image in which the dependencies are already installed."
+            },
+            {
+              "text": "Every time a container restarts",
+              "feedback": "Nothing in a `RUN` instruction happens when a container starts."
+            }
+          ]
+        },
+        {
+          "id": "broad",
+          "example": "broad",
+          "prompt": "What ends up in the image?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Only `server.js` and the package files",
+              "feedback": "`COPY . .` copies everything in the context, and nothing has been excluded."
+            },
+            {
+              "text": "Everything, including `.env` and `.git`",
+              "feedback": "With no `.dockerignore`, the whole folder is the context and `COPY . .` copies all of it. The passwords in `.env` are now readable by anyone who can pull the image."
+            },
+            {
+              "text": "Everything except hidden files",
+              "feedback": "Files whose names start with a dot are copied like any others."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "first": {
+          "readOnly": true,
+          "fence": "dockerfile",
+          "code": "# Start from an image that already contains the runtime.\nFROM node:24.11.1-slim\n\n# Work in /app from here on. The folder is created.\nWORKDIR /app\n\n# Copy the dependency list, then install exactly what it names.\nCOPY package.json package-lock.json ./\nRUN npm ci --omit=dev\n\n# Copy the program itself.\nCOPY . .\n\n# The program listens on this port. This line is a note for readers.\nEXPOSE 3000\n\n# What to start when a container runs.\nCMD [\"node\", \"server.js\"]\n"
+        },
+        "context": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  tracker/                     <- the context: \"docker build ... .\"\n  |-- Dockerfile\n  |-- .dockerignore\n  |-- package.json\n  |-- package-lock.json\n  |-- server.js\n  |-- src/\n  +-- node_modules/            <- left out by .dockerignore\n\n  Your machine                          The builder\n  +-----------------+   whole context   +-------------------------+\n  | tracker/        | ----------------> | COPY can read only what |\n  +-----------------+   sent up front   | was sent                |\n                                        +-------------------------+\n  ../secrets/key.pem  is outside the context. COPY cannot reach it.\n"
+        },
+        "ignore": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "# .dockerignore\n\n# Made by the build itself\nnode_modules\ndist\n\n# Not needed in the image\n.git\n.vscode\ndocs\n*.md\n\n# Must never be in an image\n.env\n.env.*\n*.pem\n"
+        },
+        "broad": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "tracker/\n|-- .env                 DATABASE_PASSWORD=...\n|-- .git/                the full version history\n|-- node_modules/        installed on the developer's laptop\n|-- Dockerfile\n|-- package.json\n|-- package-lock.json\n+-- server.js\n\n# Dockerfile\nFROM node:24.11.1-slim\nWORKDIR /app\nCOPY . .\nRUN npm ci --omit=dev\nCMD [\"node\", \"server.js\"]\n"
+        },
+        "build": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "$ docker build -t tracker:dev .\n[+] Building 21.4s (10/10) FINISHED\n => [1/5] FROM docker.io/library/node:24.11.1-slim\n => [2/5] WORKDIR /app\n => [3/5] COPY package.json package-lock.json ./\n => [4/5] RUN npm ci --omit=dev\n => [5/5] COPY . .\n => exporting to image\n => => naming to docker.io/library/tracker:dev\n\n$ docker run --rm tracker:dev\ntracker listening on port 3000\n"
+        },
+        "site": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "# Dockerfile\nFROM nginx:1.27.3\nCOPY site/ /usr/share/nginx/html/\n\n# Build\ndocker build -t site:1 .\n\n# .dockerignore\n.git\ndrafts\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:docker/module/layers",
+      "title": "Use layers and the build cache",
+      "requires": [],
+      "outcomes": [],
+      "intro": "A Dockerfile that works can still be slow to build and larger than it needs to be. Both problems have the same cause, which is how an image is stored: as a stack of layers. This module explains layers and the build cache, and shows how the order of instructions decides whether a rebuild takes a second or several minutes.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Every step adds a layer",
+          "text": "An image is a stack of **layers**. Each layer holds the files that one build step added, changed or removed, compared with the layers below it.\n\nThe instructions that change files each produce a layer: `FROM` brings in the base image's layers, and every `RUN` and `COPY` adds one more. Instructions such as `CMD`, `ENV` and `EXPOSE` change only the image's notes and add no files.\n\nWhen a container starts, Docker stacks the layers and shows them as one folder tree. Layers are read-only and identified by their content, which is why two images built on the same base can share them.",
+          "example": "stack"
+        },
+        {
+          "kind": "explanation",
+          "title": "The cache rule",
+          "text": "Building a layer can be slow, so the builder keeps every layer it makes. On the next build it reuses a kept layer when it can. This is the **build cache**.\n\nThe rule has two parts.\n\n1. A step is reused if the instruction is the same as last time **and** its inputs are the same. For `COPY`, the inputs are the contents of the files being copied. For `RUN`, the input is the text of the command.\n2. A step can be reused only if **every step above it** was reused. The first step that has to run again forces every later step to run again too.\n\nSo one change near the top of a Dockerfile rebuilds everything below it.",
+          "example": "cache"
+        },
+        {
+          "kind": "prediction",
+          "title": "One changed file",
+          "text": "A Dockerfile contains these two lines in this order. You fix a typo in one source file and build again.\n\n```dockerfile\nCOPY . .\nRUN npm ci --omit=dev\n```",
+          "questions": [
+            "copy-all-first"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Order by how often things change",
+          "text": "The fix is to put the things that change rarely near the top and the things that change often near the bottom.\n\nIn most projects the list of dependencies changes a few times a month, and the source code changes many times a day. So copy only the dependency list first, install, and copy the source last.\n\nNow a change to a source file invalidates only the final `COPY`. The install step above it is reused, and the build takes a second or two.",
+          "example": "ordered"
+        },
+        {
+          "kind": "explanation",
+          "title": "A deleted file is still in the image",
+          "text": "Layers only add. If one step creates a file and a later step deletes it, the file is still stored in the earlier layer. The later layer merely hides it. The image is no smaller, and anyone with the image can read the hidden file by looking at that layer.\n\nTwo rules follow.\n\n- **Clean up in the same `RUN` that made the mess.** Join the commands with `&&` so that the temporary files never reach a finished layer.\n- **Never copy a secret in and delete it afterwards.** It remains in the image. The module on privilege shows the safe way to use a secret during a build.",
+          "example": "cleanup"
+        },
+        {
+          "kind": "debugging",
+          "title": "Two lines that should be one",
+          "text": "This fragment installs a system package. It was written three months ago and the first line has been cached ever since. Today someone adds a second package to the last line.",
+          "example": "stale",
+          "questions": [
+            "stale"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "See the layers",
+          "text": "`docker history` lists an image's layers, newest first, with the instruction that made each one and its size. It is the quickest way to find out where an image's size comes from.\n\nIt is also a reminder that the instructions are not private. Anyone who has the image can read every line, including any value written into a `RUN` or `ENV`.",
+          "example": "history"
+        },
+        {
+          "kind": "explanation",
+          "title": "Keep the download cache between builds",
+          "text": "Even a well ordered file reinstalls everything when the dependency list does change. A **cache mount** softens that. It gives one `RUN` step a folder that is kept between builds and is not part of the image.\n\n```dockerfile\nRUN --mount=type=cache,target=/root/.npm npm ci --omit=dev\n```\n\nThe package manager keeps its downloads in that folder. When the list changes, it fetches only what is new. The image gets the installed result and none of the download cache."
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: a slow build",
+          "text": "This Dockerfile takes four minutes to rebuild after any change, even to a comment in a source file.\n\n```dockerfile\nFROM node:24.11.1-slim\nWORKDIR /app\nCOPY . .\nRUN apt-get update\nRUN apt-get install -y curl\nRUN npm ci --omit=dev\nCMD [\"node\", \"server.js\"]\n```\n\n1. Say which steps run again after a one-line source change, and why.\n2. Rewrite it so that such a change rebuilds as little as possible.\n3. Fix anything else this module warned about."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. Everything from `COPY . .` down. The copied files changed, so that step runs, and every step after a step that ran must run as well: both `apt-get` lines and the install.\n\n2. and 3. The rewrite is below. System packages change least, so they go first. The two `apt-get` commands become one step that also removes the package lists, so the lists are never stored in a layer. The dependency list is copied alone, then installed. The source comes last.\n\nAfter this, a source change reruns only the last `COPY`.",
+          "example": "fast"
+        }
+      ],
+      "questions": [
+        {
+          "id": "copy-all-first",
+          "prompt": "Which steps run again?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "Neither, the instructions did not change",
+              "feedback": "The text is the same, but the input to `COPY . .` is the content of the files, and one of them changed."
+            },
+            {
+              "text": "Only `COPY . .`",
+              "feedback": "Once a step runs again, every step after it runs again. The install is below the copy."
+            },
+            {
+              "text": "Both, so the dependencies are installed again",
+              "feedback": "The copy has a changed input, and the install comes after it, so the cached install cannot be used."
+            }
+          ]
+        },
+        {
+          "id": "stale",
+          "example": "stale",
+          "prompt": "What goes wrong?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "The install uses a package list that is three months old",
+              "feedback": "The first line is unchanged, so its cached layer is reused. The changed second line runs against old lists and may ask for package versions that no longer exist. One `RUN` with both commands keeps them in step."
+            },
+            {
+              "text": "The build fails because `apt-get update` runs twice",
+              "feedback": "It does not run at all. Its layer comes from the cache."
+            },
+            {
+              "text": "Nothing, the cache makes the build faster",
+              "feedback": "It is faster, and wrong. The lists and the install were made at different times."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "stack": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  Dockerfile                         The image\n\n  CMD [\"node\", \"server.js\"]          (a note, no files)\n  COPY . .                           +----------------------------+\n                                     | layer 5: the source files  |\n  RUN npm ci --omit=dev              +----------------------------+\n                                     | layer 4: node_modules      |\n  COPY package*.json ./              +----------------------------+\n                                     | layer 3: two package files |\n  WORKDIR /app                       +----------------------------+\n                                     | layer 2: the /app folder   |\n  FROM node:24.11.1-slim             +----------------------------+\n                                     | layer 1: the base image    |\n                                     |          (several layers)  |\n                                     +----------------------------+\n"
+        },
+        "cache": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  Build after changing one source file.\n\n  Source copied before the install:\n\n    FROM node:24.11.1-slim        reused\n    WORKDIR /app                  reused\n    COPY . .                      RUNS    <- a copied file changed\n    RUN npm ci --omit=dev         RUNS    <- everything below a step\n    CMD [\"node\", \"server.js\"]             that ran must run as well\n\n  Source copied after the install:\n\n    FROM node:24.11.1-slim        reused\n    WORKDIR /app                  reused\n    COPY package*.json ./         reused  <- these files did not change\n    RUN npm ci --omit=dev         reused\n    COPY . .                      RUNS    <- one second\n    CMD [\"node\", \"server.js\"]\n"
+        },
+        "ordered": {
+          "readOnly": true,
+          "fence": "dockerfile",
+          "code": "FROM node:24.11.1-slim\nWORKDIR /app\n\n# Changes rarely: the list of dependencies.\nCOPY package.json package-lock.json ./\nRUN npm ci --omit=dev\n\n# Changes often: the source. Keep it last.\nCOPY . .\n\nCMD [\"node\", \"server.js\"]\n"
+        },
+        "cleanup": {
+          "readOnly": true,
+          "fence": "dockerfile",
+          "code": "# Wrong: three layers. The archive is stored in the first one for good.\nRUN curl -fsSLO https://example.com/tool.tar.gz\nRUN tar -xzf tool.tar.gz -C /opt\nRUN rm tool.tar.gz\n\n# Right: one layer, and the archive is gone before the layer is saved.\nRUN curl -fsSLO https://example.com/tool.tar.gz \\\n && tar -xzf tool.tar.gz -C /opt \\\n && rm tool.tar.gz\n"
+        },
+        "stale": {
+          "readOnly": true,
+          "fence": "dockerfile",
+          "code": "RUN apt-get update\nRUN apt-get install -y curl ca-certificates\n"
+        },
+        "history": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "$ docker history tracker:dev\nIMAGE          CREATED BY                              SIZE\n5c1d9e0a7b3f   CMD [\"node\" \"server.js\"]                0B\n<missing>      COPY . .                                412kB\n<missing>      RUN npm ci --omit=dev                   38.2MB\n<missing>      COPY package.json package-lock.json     96kB\n<missing>      WORKDIR /app                            0B\n<missing>      ... the base image's layers ...         229MB\n"
+        },
+        "fast": {
+          "readOnly": true,
+          "fence": "dockerfile",
+          "code": "FROM node:24.11.1-slim\nWORKDIR /app\n\n# System packages: one step, and the lists are removed in that same step.\nRUN apt-get update \\\n && apt-get install -y --no-install-recommends curl \\\n && rm -rf /var/lib/apt/lists/*\n\n# Dependencies: only reruns when these two files change.\nCOPY package.json package-lock.json ./\nRUN npm ci --omit=dev\n\n# Source: last.\nCOPY . .\n\nCMD [\"node\", \"server.js\"]\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:docker/module/start",
+      "title": "Start and stop cleanly",
+      "requires": [],
+      "outcomes": [],
+      "intro": "A container is one main process. How that process is started decides how it can be given arguments, and how it is started also decides whether it can be stopped cleanly. This module covers the two instructions that set the start command, the two ways of writing them, and what happens when Docker asks a container to stop.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "The main process",
+          "text": "When a container starts, Docker runs one command inside it. That is the **main process**. Inside the container it has process number 1, written PID 1.\n\nEverything about the container's life hangs on it. The container is running while PID 1 is alive. Its output is what `docker logs` shows. Its exit code becomes the container's exit code. When it ends, the container stops, even if other processes were still working.\n\nThe image decides what the command is, with two instructions: `CMD` and `ENTRYPOINT`."
+        },
+        {
+          "kind": "explanation",
+          "title": "CMD and ENTRYPOINT",
+          "text": "- `CMD` sets a **default** that is easy to replace. Anything typed after the image name in `docker run` replaces it entirely.\n- `ENTRYPOINT` sets a **fixed** start. Anything typed after the image name is added to it as arguments.\n- With both, the entrypoint is the program and `CMD` supplies its default arguments.\n\nUse `CMD` alone for a service, where the image has one obvious thing to run and replacing it now and then is handy. Use `ENTRYPOINT` when the image *is* a command-line tool and people will pass it arguments.",
+          "example": "entry"
+        },
+        {
+          "kind": "prediction",
+          "title": "What runs?",
+          "text": "An image is built with these two lines, and then run as shown.\n\n```dockerfile\nENTRYPOINT [\"node\", \"cli.js\"]\nCMD [\"--help\"]\n```\n\n```bash\ndocker run tool list --all\n```",
+          "questions": [
+            "entry-args"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Two ways to write a command",
+          "text": "`CMD`, `ENTRYPOINT` and `RUN` can each be written in two forms, and the difference matters.\n\nThe **exec form** is a list in square brackets. Docker starts that program directly, with those arguments. The program is PID 1.\n\nThe **shell form** is a plain line of text. Docker hands it to a shell, as `/bin/sh -c \"...\"`. The shell is PID 1 and your program is its child.\n\nThe shell form is convenient, because variables and `&&` work in it. For the command a container starts with, it has a cost that the next step explains. Prefer the exec form for `CMD` and `ENTRYPOINT`.",
+          "example": "forms"
+        },
+        {
+          "kind": "explanation",
+          "title": "How a container is asked to stop",
+          "text": "`docker stop` does not pull the plug. It sends PID 1 a polite request to end, the signal named `SIGTERM`. A well behaved service responds by finishing the requests it is handling, closing its connections and exiting.\n\nDocker waits 10 seconds. If the process is still alive, Docker sends `SIGKILL`, which the process cannot catch. It ends at once, in the middle of whatever it was doing.\n\nNow recall the shell form. The request goes to PID 1, which is the shell. A shell does not pass the request on to its child. The service never hears it, keeps running, and is killed 10 seconds later.\n\nSome shells step aside when the line is one plain command, so you will not see this in every image. Do not depend on it. The exec form behaves the same way everywhere.",
+          "example": "stop"
+        },
+        {
+          "kind": "debugging",
+          "title": "Ten seconds, every time",
+          "text": "A team notices that every deploy of their service pauses for exactly ten seconds, and that some requests fail during it. This is what they see.",
+          "example": "slow-stop",
+          "questions": [
+            "slow-stop"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "PID 1 has to listen",
+          "text": "Writing the command in exec form puts your program at PID 1, where it receives the request. It still has to act on it.\n\nPID 1 is treated specially by the kernel: a signal that the process has not chosen to handle is ignored, where any other process would be ended by it. So a program that does nothing about `SIGTERM` behaves just like the shell did.\n\nThere are two fixes. The better one is for the program to handle `SIGTERM`: stop accepting work, finish what is in progress, exit. The other is `docker run --init`, which puts a tiny helper at PID 1 that forwards signals to your program.\n\nWhen an image starts through a wrapper script, end the script with `exec` so that the program replaces the script as PID 1.",
+          "example": "wrapper"
+        },
+        {
+          "kind": "explanation",
+          "title": "Exit codes",
+          "text": "When the main process ends, its exit code is recorded and shown by `docker ps -a`. A few values come up again and again.\n\n| Code | Meaning |\n| --- | --- |\n| 0 | The program ended normally. |\n| 1, or another small number | The program reported an error. Read its logs. |\n| 125 | Docker itself could not start the container. |\n| 126 | The command was found and could not be executed. |\n| 127 | The command was not found in the image. |\n| 137 | Ended by `SIGKILL` (128 + 9): a stop that timed out, or out of memory. |\n| 143 | Ended by `SIGTERM` (128 + 15) without handling it. |\n\nThe module on debugging returns to these."
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: two images",
+          "text": "Write the start instructions for each image, and nothing else.\n\n1. A web service started with `node server.js`. During an incident, an operator sometimes needs to start a shell in the same image.\n2. A backup tool, `backup`, that is always given a subcommand such as `backup run` or `backup list`. With no subcommand it should print its help.\n\n3. Then explain what is wrong with `CMD node server.js`."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. `CMD [\"node\", \"server.js\"]`. With only a `CMD`, the operator can run `docker run --rm -it tracker:1.4.2 sh` and the shell replaces the default.\n2. `ENTRYPOINT [\"backup\"]` with `CMD [\"--help\"]`. `docker run backup-tool list` runs `backup list`, and `docker run backup-tool` runs `backup --help`.\n3. It is the shell form. A shell becomes PID 1, the service never receives the stop request, and every stop waits ten seconds and ends in a kill. Square brackets fix it."
+        }
+      ],
+      "questions": [
+        {
+          "id": "entry-args",
+          "prompt": "Which command runs inside the container?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "`list --all`",
+              "feedback": "That would be the result with only a `CMD`. Here the entrypoint is fixed, and the words after the image name are added to it."
+            },
+            {
+              "text": "`node cli.js list --all`",
+              "feedback": "The entrypoint stays. The words after the image name replace the `CMD`, so `--help` is dropped."
+            },
+            {
+              "text": "`node cli.js --help list --all`",
+              "feedback": "Arguments given at run time replace the `CMD`. They are not added after it."
+            }
+          ]
+        },
+        {
+          "id": "slow-stop",
+          "example": "slow-stop",
+          "prompt": "What is the cause?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "The service never receives the stop request",
+              "feedback": "The command is in shell form, so a shell is PID 1 and does not forward `SIGTERM`. Docker waits its ten seconds and kills everything, which gives exit code 137."
+            },
+            {
+              "text": "The service needs more than ten seconds to finish",
+              "feedback": "It could be given longer, but it is not finishing anything. It was never told to stop."
+            },
+            {
+              "text": "The container ran out of memory",
+              "feedback": "Memory also gives 137, but it would not happen exactly ten seconds after every stop."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "entry": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  In the Dockerfile                  docker run img        docker run img sh\n  ---------------------------------  --------------------  -----------------\n  CMD [\"node\", \"server.js\"]          node server.js        sh\n\n  ENTRYPOINT [\"backup\"]              backup                backup sh\n\n  ENTRYPOINT [\"backup\"]              backup --help         backup sh\n  CMD [\"--help\"]\n\n  To replace an entrypoint for one run:\n    docker run --rm -it --entrypoint sh img\n"
+        },
+        "forms": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  Exec form                            Shell form\n  CMD [\"node\", \"server.js\"]            CMD node server.js\n\n  Inside the container:                Inside the container:\n\n  PID 1   node server.js               PID 1   /bin/sh -c \"node server.js\"\n                                       PID 7     node server.js\n\n  Your program gets the signals.       The shell gets them, and keeps them.\n"
+        },
+        "stop": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  docker stop web\n\n    0 s    SIGTERM --> PID 1      \"please finish and exit\"\n            |\n            +-- program handles it:  finishes requests, exits     exit 0\n            |\n            +-- program ignores it, or a shell is PID 1:\n                   ... nothing happens ...\n   10 s    SIGKILL --> everything  ended at once, work is lost    exit 137\n\n  Allow longer when the program needs it:   docker stop --time 30 web\n"
+        },
+        "slow-stop": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "# Dockerfile\nCMD npm start\n\n$ time docker stop web\nweb\nreal    0m10.4s\n\n$ docker ps -a\nIMAGE           STATUS                       NAMES\ntracker:1.4.1   Exited (137) 3 seconds ago   web\n"
+        },
+        "wrapper": {
+          "readOnly": true,
+          "fence": "bash",
+          "code": "#!/bin/sh\n# docker-entrypoint.sh: prepare, then hand over to the real program.\nset -e\n\necho \"tracker starting, environment: ${APP_ENV:-development}\"\n\n# exec replaces this script with the command, so the command becomes\n# PID 1 and receives signals. Without exec, the script would stay PID 1.\nexec \"$@\"\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:docker/module/config",
+      "title": "Configure a container",
+      "requires": [],
+      "outcomes": [],
+      "intro": "An image is built once and run in many places: on a laptop, on a test server, in production. The places differ in their database address, their log level and their passwords. This module covers how one image gets different settings in each place, which settings belong to the build, and why a secret must never be part of an image. The advice on secrets is general guidance. Your organization's own security policy decides what is required where you work.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "One image, many places",
+          "text": "It is tempting to build one image for testing and another for production, each with its settings inside. Then the thing you tested is not the thing you run.\n\nThe better rule is: **build one image, and give it its settings when it starts.** The image holds what is the same everywhere. The differences come from outside, in one of three ways.\n\n- **Environment variables**, for single values.\n- **Files** placed into the container when it starts, for whole configuration files.\n- **Arguments** after the image name, for a tool's options.",
+          "example": "one-image"
+        },
+        {
+          "kind": "explanation",
+          "title": "Environment variables",
+          "text": "An environment variable is a named value that a process can read. Docker sets them in three ways.\n\n- `ENV NAME=value` in the Dockerfile stores a **default** in the image.\n- `-e NAME=value` on `docker run` sets a value for that container.\n- `--env-file settings.env` reads many `NAME=value` lines from a file.\n\nA value given at run time wins over the image's default. So use `ENV` for sensible defaults, such as the port, and leave anything that differs per place to run time.",
+          "example": "env"
+        },
+        {
+          "kind": "prediction",
+          "title": "Which value wins?",
+          "text": "The Dockerfile contains `ENV PORT=3000`. The container is started with:\n\n```bash\ndocker run -e PORT=8080 tracker:1.4.2\n```",
+          "questions": [
+            "env-wins"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "ARG is for the build",
+          "text": "`ARG` looks like `ENV` and does a different job. It declares a value that exists **only while the image is being built**. You supply it with `--build-arg`.\n\n| | `ARG` | `ENV` |\n| --- | --- | --- |\n| Available to `RUN` during the build | Yes | Yes |\n| Present in the running container | No | Yes |\n| Set from the command line | `docker build --build-arg` | `docker run -e` |\n| Good for | Versions and options of the build | Settings of the program |\n\nA typical use is choosing the version of the base image, or stamping the image with the version being built. An `ARG` is not hidden: the value is recorded in the image's history.",
+          "example": "arg"
+        },
+        {
+          "kind": "explanation",
+          "title": "Secrets do not go in images",
+          "text": "A password, an API key or a private key must never be built into an image. An image is copied to registries, build servers and laptops, and everyone who can pull it can read all of it.\n\nEvery one of these puts a secret in the image for good:\n\n- `ENV DB_PASSWORD=...` is shown by `docker inspect` and `docker history`.\n- `ARG` with `--build-arg` is recorded in the history.\n- `COPY .env .` stores the file in a layer, and deleting it later does not remove it.\n\nSupply secrets when the container starts. An environment variable set at run time is common and acceptable in many places. A file placed into the container is better, because environment variables are shown to anyone who can run `docker inspect` and are easily printed into logs. The modules on Compose and on privilege show the file approach."
+        },
+        {
+          "kind": "debugging",
+          "title": "A password passed through the build",
+          "text": "A build script and a Dockerfile, from a project that wanted to avoid writing the password in the file.",
+          "example": "leak",
+          "questions": [
+            "leak"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Whole files",
+          "text": "Some programs are configured by a file. You can keep one image and place a different file into each container when it starts, read-only.\n\n```bash\ndocker run -d \\\n  -v ./tracker.conf:/etc/tracker/tracker.conf:ro \\\n  tracker:1.4.2\n```\n\nThe part before the colon is a file on the host. The part after it is where the container sees that file. `:ro` stops the container from changing it. The module on storage covers this mechanism properly.\n\nChoose variables for a handful of values, and a file when there is structure or there are dozens of them."
+        },
+        {
+          "kind": "explanation",
+          "title": "Say what the image expects",
+          "text": "Configuration from outside can be missing or wrong, so make that easy to notice.\n\n- **Check at start.** If a required setting is missing, the program should say which one and exit with an error. A container that starts and fails on the first request is much harder to diagnose.\n- **List the settings.** Put the names, meanings and defaults in the project's README, and ship an example file with invented values.\n- **Never print secret values.** Log that a setting is present, not what it is.",
+          "example": "example-env"
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: where does each value go?",
+          "text": "For each value, choose one: a build argument, a default in the image, a setting given at run time, or a secret given at run time.\n\n1. The version of the runtime the image is built on.\n2. The port the service listens on inside the container, almost always 3000.\n3. The address of the database.\n4. The database password.\n5. The log level, usually `info`, sometimes `debug` on one server.\n6. The version number of the build, shown on the service's status page."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. **Build argument.** It selects the base image and means nothing once the image exists.\n2. **Default in the image.** `ENV PORT=3000`. It is the same nearly everywhere and can still be overridden.\n3. **Run time.** It differs in every place.\n4. **Secret at run time.** Never in the Dockerfile, never a build argument.\n5. **Default in the image**, `ENV LOG_LEVEL=info`, overridden with `-e LOG_LEVEL=debug` on the one server.\n6. **Build argument copied into an `ENV`.** The value is known only to the build, and the running program needs to read it. This is the one case where the two are used together, and it is safe because a version number is not a secret."
+        }
+      ],
+      "questions": [
+        {
+          "id": "env-wins",
+          "prompt": "What is `PORT` inside the container?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "3000",
+              "feedback": "`ENV` in the Dockerfile is only a default."
+            },
+            {
+              "text": "8080",
+              "feedback": "A value given when the container starts replaces the image's default."
+            },
+            {
+              "text": "It is an error to set it twice",
+              "feedback": "Overriding a default this way is the intended use."
+            }
+          ]
+        },
+        {
+          "id": "leak",
+          "example": "leak",
+          "prompt": "Who can read the password?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "Nobody, because it is not written in the Dockerfile",
+              "feedback": "It is not in the file, but the build records the value it was given."
+            },
+            {
+              "text": "Only someone with access to the build server",
+              "feedback": "The value travels with the image, far beyond the build server."
+            },
+            {
+              "text": "Anyone who can pull the image",
+              "feedback": "The `ENV` line stores the value in the image, where `docker inspect` shows it, and the build argument is recorded in the history as well."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "one-image": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "                       tracker:1.4.2   (built once)\n                              |\n        +---------------------+---------------------+\n        |                     |                     |\n        v                     v                     v\n  +-------------+       +-------------+       +-------------+\n  | laptop      |       | test        |       | production  |\n  | DB=db:5432  |       | DB=test-db  |       | DB=prod-db  |\n  | LOG=debug   |       | LOG=info    |       | LOG=warn    |\n  +-------------+       +-------------+       +-------------+\n\n  The same files run in all three. Only the settings differ, and they\n  are given when each container starts.\n"
+        },
+        "env": {
+          "readOnly": true,
+          "fence": "bash",
+          "code": "# One value.\ndocker run -d -e LOG_LEVEL=debug tracker:1.4.2\n\n# Many values, from a file of NAME=value lines.\ndocker run -d --env-file ./test.env tracker:1.4.2\n\n# See what a running container was given.\ndocker exec web env\n"
+        },
+        "arg": {
+          "readOnly": true,
+          "fence": "dockerfile",
+          "code": "# A build argument with a default. It can be used in FROM.\nARG NODE_VERSION=24.11.1\nFROM node:${NODE_VERSION}-slim\n\n# Declared again after FROM to use it in this stage.\nARG APP_VERSION=dev\n\n# Copied into ENV so that the running program can read it.\nENV APP_VERSION=${APP_VERSION}\n\n# Build with:\n#   docker build --build-arg APP_VERSION=1.4.2 -t tracker:1.4.2 .\n"
+        },
+        "leak": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "# build.sh\ndocker build --build-arg DB_PASSWORD=\"$DB_PASSWORD\" -t tracker:1.4.2 .\n\n# Dockerfile\nARG DB_PASSWORD\nENV DB_PASSWORD=${DB_PASSWORD}\n"
+        },
+        "example-env": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "# tracker.env.example\n# Copy to tracker.env and fill in. Do not commit tracker.env.\n\n# Required. Where the database is.\nDATABASE_HOST=db\nDATABASE_NAME=tracker\n\n# Required. The path of a file that holds the database password.\nDATABASE_PASSWORD_FILE=/run/secrets/db_password\n\n# Optional. Defaults shown.\nPORT=3000\nLOG_LEVEL=info\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:docker/module/storage",
+      "title": "Keep data",
+      "requires": [],
+      "outcomes": [],
+      "intro": "Containers are meant to be thrown away and replaced. Data is not. This module covers where a container's files really live, what is lost when a container is removed, and the three ways to keep data somewhere that outlives it.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "The writable layer",
+          "text": "An image is read-only, and yet a program in a container can create and change files. It can because Docker gives every container a thin **writable layer** on top of the image's layers.\n\nEverything the container writes goes there. When it changes a file that came from the image, the file is first copied up into the writable layer, and the copy is changed.\n\nThe writable layer belongs to that one container. It survives a stop and a start. It is deleted when the container is removed.",
+          "example": "writable"
+        },
+        {
+          "kind": "prediction",
+          "title": "A database with no storage set up",
+          "text": "A database is started with the command below. It runs for a month and holds real data. Then it is upgraded the usual way: the container is removed and a new one is started from a newer image.\n\n```bash\ndocker run -d --name db example/database:1.0\n```",
+          "questions": [
+            "lost-data"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Three places to put data",
+          "text": "To keep data, mount storage from outside the container at the folder where the program writes. A **mount** makes outside storage appear as a folder inside. Writes to that folder skip the writable layer.\n\n| Kind | Where the data is | Use it for |\n| --- | --- | --- |\n| **Volume** | A storage area that Docker manages | Data the app owns: databases, uploads |\n| **Bind mount** | A folder or file you choose on the host | Source code in development, config files |\n| **tmpfs** | Memory only, never on disk | Scratch files that must not be kept |\n\nWhatever is not in a mount is in the writable layer, and should be treated as disposable.",
+          "example": "mounts"
+        },
+        {
+          "kind": "explanation",
+          "title": "Named volumes",
+          "text": "A **volume** is the default choice for data. Give it a name and say where it appears in the container.\n\n```bash\ndocker run -d --name db \\\n  -v tracker-data:/var/lib/postgresql/data \\\n  postgres:17\n```\n\nThe name comes before the colon and the folder inside the container after it. Docker creates the volume the first time it is used. Removing the container leaves the volume alone, and a new container given the same volume finds the same data.\n\nThe folder must be the one the program actually writes to. An image's documentation says which it is.",
+          "example": "volume"
+        },
+        {
+          "kind": "explanation",
+          "title": "Bind mounts",
+          "text": "A **bind mount** makes a folder or file from the host appear in the container. The left side is a path, not a name, which is how Docker tells the two apart.\n\nBoth sides see the same files at the same moment. That makes bind mounts ideal in development: edit the source on your machine and the container sees the change with no rebuild.\n\nThey have two costs. The container depends on a path existing on that particular host, so the setup is less portable. And the container can change or delete your files, so add `:ro` whenever it only needs to read.",
+          "example": "bind"
+        },
+        {
+          "kind": "debugging",
+          "title": "A volume that kept nothing",
+          "text": "This database was given a volume, and its data still disappeared when the container was replaced. PostgreSQL stores its data in `/var/lib/postgresql/data`.",
+          "example": "wrong-path",
+          "questions": [
+            "wrong-path"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "What a mount hides",
+          "text": "A mount covers whatever the image had at that folder. Two cases surprise people.\n\n- An **empty named volume** is filled first: Docker copies the image's files at that folder into the new volume. So the first start works as expected.\n- A **bind mount** is never filled. If the host folder is empty, the container sees an empty folder, and the image's files there are hidden.\n\nThe classic example is mounting your project folder over `/app` in development. The dependencies installed into `/app` during the build vanish from view, because your host folder has none. The module on Compose shows a tidy way to handle it."
+        },
+        {
+          "kind": "explanation",
+          "title": "A volume is yours to look after",
+          "text": "A volume is not a backup. It is one copy of the data on one machine.\n\n- **Back it up.** A throwaway container can mount the volume and write an archive to a host folder, as below. For a database, prefer the database's own dump tool, which gives a consistent copy while it is running.\n- **Remove it deliberately.** `docker volume rm` deletes one volume and `docker volume prune` deletes those no container uses. Both are permanent.\n- **Keep containers stateless.** If every piece of data that matters is in a volume, any container can be removed and replaced without thought. That is the goal.",
+          "example": "backup"
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: where should it live?",
+          "text": "The tracker has these kinds of data. For each, choose a volume, a bind mount, tmpfs, or nothing at all, and give a reason.\n\n1. The database's files.\n2. Pictures that users upload.\n3. The source code, while a developer is working on it.\n4. A configuration file written by the operations team.\n5. Temporary files made while resizing a picture.\n6. The service's log output."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. **Volume.** It is the application's own data and must outlive every container.\n2. **Volume.** The same reason. On several servers it would move to shared storage, which is outside this course.\n3. **Bind mount.** The developer edits on the host and the container must see each change.\n4. **Bind mount, read-only.** The file is managed on the host and the container only reads it.\n5. **tmpfs, or nothing.** They are worthless a second later. The writable layer is fine, and tmpfs keeps them off the disk.\n6. **Nothing.** Write logs to the program's output. Docker collects them, and `docker logs` shows them. A log file inside the container grows unseen in the writable layer."
+        }
+      ],
+      "questions": [
+        {
+          "id": "lost-data",
+          "prompt": "What happens to the month of data?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "It is deleted with the old container",
+              "feedback": "No storage was mounted, so the database wrote into the container's writable layer, and removing the container removes that layer."
+            },
+            {
+              "text": "It moves to the new container",
+              "feedback": "Nothing connects the two containers. Each has its own writable layer."
+            },
+            {
+              "text": "It stays in the image",
+              "feedback": "A running container never changes its image."
+            }
+          ]
+        },
+        {
+          "id": "wrong-path",
+          "example": "wrong-path",
+          "prompt": "Why was the data lost?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Volumes are removed along with their container",
+              "feedback": "A named volume stays until someone removes it. This one still exists, and it is empty."
+            },
+            {
+              "text": "The volume was mounted at a folder the database does not use",
+              "feedback": "The database wrote to `/var/lib/postgresql/data`, which was not a mount, so the data went to the writable layer. The volume at `/data` was never written to."
+            },
+            {
+              "text": "The volume needed `:ro`",
+              "feedback": "Read-only would stop the database from writing to it at all."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "writable": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  container \"web\"                 container \"web2\"\n  +------------------------+      +------------------------+\n  | writable layer         |      | writable layer         |   private,\n  | (what this one wrote)  |      | (what this one wrote)  |   removed with\n  +------------------------+      +------------------------+   its container\n              \\                          /\n               v                        v\n          +----------------------------------+\n          | image layers (read-only, shared) |\n          +----------------------------------+\n"
+        },
+        "mounts": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  CONTAINER                                  HOST\n\n  /var/lib/postgresql/data  <-- volume ----  area managed by Docker\n                                             (name: tracker-data)\n\n  /app/src                  <-- bind ------  /home/ana/tracker/src\n                                             (a folder you chose)\n\n  /tmp/work                 <-- tmpfs -----  memory only\n\n  everything else           writable layer, removed with the container\n"
+        },
+        "volume": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "$ docker volume ls\nDRIVER    VOLUME NAME\nlocal     tracker-data\n\n# Replace the container. The data stays in the volume.\n$ docker rm -f db\n$ docker run -d --name db \\\n    -v tracker-data:/var/lib/postgresql/data \\\n    postgres:17.2\n\n# The other way to write the same mount, with each part named:\n#   --mount type=volume,source=tracker-data,target=/var/lib/postgresql/data\n"
+        },
+        "bind": {
+          "readOnly": true,
+          "fence": "bash",
+          "code": "# Development: the container sees the source folder as you edit it.\ndocker run --rm -it \\\n  -v ./src:/app/src \\\n  tracker:dev\n\n# A config file the container may read and not change.\ndocker run -d \\\n  -v ./tracker.conf:/etc/tracker/tracker.conf:ro \\\n  tracker:1.4.2\n\n# Left side starts with ./ or /   -> a path on the host (bind mount)\n# Left side is a plain word       -> the name of a volume\n"
+        },
+        "wrong-path": {
+          "readOnly": true,
+          "fence": "bash",
+          "code": "docker run -d --name db \\\n  -v tracker-data:/data \\\n  postgres:17.2\n"
+        },
+        "backup": {
+          "readOnly": true,
+          "fence": "bash",
+          "code": "# Archive the volume's contents into the current folder.\n# The volume is mounted read-only, and the container removes itself.\ndocker run --rm \\\n  -v tracker-uploads:/source:ro \\\n  -v ./backups:/backup \\\n  ubuntu:24.04 \\\n  tar -czf /backup/uploads.tar.gz -C /source .\n\n# For a database, use its own tool while it is running:\ndocker exec db pg_dump -U postgres tracker > tracker.sql\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:docker/module/network",
+      "title": "Connect containers",
+      "requires": [],
+      "outcomes": [],
+      "intro": "A container has its own network, separate from the host's. That is why a service can be running and still unreachable. This module covers letting the outside in by publishing a port, letting containers find each other by name, and the most common confusion of all: what `localhost` means inside a container.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "A container has its own network",
+          "text": "Each container gets its own network address and its own set of ports. Port 3000 in one container has nothing to do with port 3000 in another, or with port 3000 on the host. Ten containers can all listen on port 3000 without conflict.\n\nThe other side of that privacy is that nothing outside can reach a container's ports by default. A service listening on port 3000 inside a container is, at first, reachable only from inside that container.\n\nThere are two ways in. **Publishing** a port opens it to the host and beyond. A shared **network** lets chosen containers talk to each other.",
+          "example": "private"
+        },
+        {
+          "kind": "explanation",
+          "title": "Publish a port",
+          "text": "`-p` connects a port on the host to a port in the container. The host port is written first.\n\n```bash\ndocker run -d --name web -p 8080:3000 tracker:1.4.2\n```\n\nRequests to port 8080 on the host are passed to port 3000 in the container. The two numbers need not match, and the host port must be free.\n\n- `-p 8080:3000` accepts connections from any machine that can reach the host.\n- `-p 127.0.0.1:8080:3000` accepts them only from the host itself.\n\n`EXPOSE` in a Dockerfile publishes nothing. It records which port the program uses, for people and tools to read.",
+          "example": "publish"
+        },
+        {
+          "kind": "prediction",
+          "title": "Which address?",
+          "text": "A container is started with `-p 8080:3000`. The service inside listens on port 3000. You open a browser on the same machine.",
+          "questions": [
+            "which-port"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Listen on every interface",
+          "text": "One more thing has to be right, and it is inside the program. A service chooses which network interface to listen on.\n\nIf it listens on `127.0.0.1`, it accepts only connections that start **inside the same container**. Traffic arriving through a published port comes in from outside the container, and is refused.\n\nA service in a container must listen on `0.0.0.0`, which means every interface. Many frameworks listen on `127.0.0.1` by default when run in development mode. A published port that refuses every connection is very often this."
+        },
+        {
+          "kind": "explanation",
+          "title": "Containers that talk to each other",
+          "text": "The tracker needs to reach its database. Put both containers on a network you create, and each can reach the other **by container name**. Docker runs a small name service on such networks.\n\nTwo details matter.\n\n- Use the **container's** port, 5432 here. Published ports are for traffic from the host. Between containers on one network they play no part, and the database needs no `-p` at all.\n- Use a network you created. The default network that containers join when you name none has no lookup by name.",
+          "example": "net"
+        },
+        {
+          "kind": "debugging",
+          "title": "Connection refused",
+          "text": "The web service and the database run as two containers on the same network. The web service was given the settings below, which worked on the developer's laptop before Docker was used. Now it logs `connection refused`.",
+          "example": "localhost",
+          "questions": [
+            "localhost"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Out to the world, and back to the host",
+          "text": "Outbound traffic works without any setup. A container can reach the internet and other machines as the host can.\n\nReaching a service that runs **on the host itself**, outside Docker, needs a name for the host. Inside a container, `localhost` is the container. Docker Desktop provides the name `host.docker.internal` for this. On Linux, add it yourself:\n\n```bash\ndocker run --add-host=host.docker.internal:host-gateway ...\n```\n\nThis is useful in development, for example when the database runs directly on your laptop."
+        },
+        {
+          "kind": "explanation",
+          "title": "Publish as little as you can",
+          "text": "Every published port is a door into the host. Open only the ones that are needed.\n\n- **Publish the front door only.** The web service is published. The database is reached over the shared network and is published nowhere.\n- **Bind to `127.0.0.1` in development.** A plain `-p 5432:5432` offers the database to everyone on the same network as your laptop.\n- **Check from outside.** On Linux, Docker opens published ports with its own firewall rules, and those can take effect ahead of the rules of a host firewall tool. Test from another machine before trusting that a port is closed.",
+          "example": "front-door"
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: three containers",
+          "text": "The tracker now has three containers: `web` (port 3000), `db` (port 5432) and `cache` (port 6379). Users reach the web service on port 80 of the server. Only `web` talks to `db` and `cache`.\n\n1. Which ports do you publish, and how?\n2. What address does `web` use for the database, and for the cache?\n3. A developer wants to open the database with a tool on their own laptop while developing. What do you add, on the laptop only?"
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. One port: `-p 80:3000` on `web`. Nothing on `db` or `cache`.\n2. `db:5432` and `cache:6379`, with all three containers on one created network. The names are the container names and the ports are the containers' own.\n3. `-p 127.0.0.1:5432:5432` on `db`, in the development setup only. The tool on the laptop connects to `localhost:5432`, and no other machine can.\n\nThe pattern to remember: names and container ports between containers, published ports only for what must come in from outside."
+        }
+      ],
+      "questions": [
+        {
+          "id": "which-port",
+          "prompt": "Which address shows the service?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "`http://localhost:8080`",
+              "feedback": "The host port is the first number. The host passes port 8080 to port 3000 inside the container."
+            },
+            {
+              "text": "`http://localhost:3000`",
+              "feedback": "3000 is the port inside the container. On the host, nothing listens there."
+            },
+            {
+              "text": "`http://web:3000`",
+              "feedback": "Container names work between containers on a shared network, not from a browser on the host."
+            }
+          ]
+        },
+        {
+          "id": "localhost",
+          "example": "localhost",
+          "prompt": "Why is the connection refused?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "The database port is not published",
+              "feedback": "Publishing is for traffic from the host. Two containers on one network do not need it."
+            },
+            {
+              "text": "The two containers are on different networks",
+              "feedback": "They share a network. The name used to find the database is the problem."
+            },
+            {
+              "text": "Inside the web container, `localhost` is the web container",
+              "feedback": "Each container has its own `localhost`. Nothing listens on port 5432 in the web container. The host should be the database container's name, `db`."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "private": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  HOST                                     nothing published:\n\n    browser --- localhost:3000 ---X        the host cannot reach it\n\n    +----------------------+   +----------------------+\n    | container web        |   | container web2       |\n    | own address          |   | own address          |\n    | listening on :3000   |   | listening on :3000   |   no conflict\n    +----------------------+   +----------------------+\n"
+        },
+        "publish": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  docker run -d --name web -p 8080:3000 tracker:1.4.2\n                              |    |\n                      host port    container port\n\n  HOST\n    browser --- localhost:8080 ---+\n                                  |  passed on by Docker\n                                  v\n                       +----------------------+\n                       | container web        |\n                       | listening on :3000   |\n                       +----------------------+\n\n$ docker ps\nIMAGE           STATUS         PORTS                    NAMES\ntracker:1.4.2   Up 2 minutes   0.0.0.0:8080->3000/tcp   web\n"
+        },
+        "net": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "$ docker network create tracker-net\n$ docker run -d --name db  --network tracker-net postgres:17.2\n$ docker run -d --name web --network tracker-net \\\n    -e DATABASE_HOST=db -p 8080:3000 tracker:1.4.2\n\n  HOST\n    browser --- localhost:8080\n                    |\n     ...............|............ network: tracker-net ..............\n     :              v                                               :\n     :    +------------------+    db:5432     +------------------+  :\n     :    | web       :3000  | -------------> | db        :5432  |  :\n     :    +------------------+   by name      +------------------+  :\n     :                                         (not published)      :\n     :..............................................................:\n"
+        },
+        "localhost": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "DATABASE_HOST=localhost\nDATABASE_PORT=5432\n\n  +------------------------+          +------------------------+\n  | container web          |          | container db           |\n  |                        |          |                        |\n  | connects to            |          | listening on :5432     |\n  | localhost:5432  --+    |          |                        |\n  |                   |    |          |                        |\n  |    <--------------+    |          |                        |\n  | (itself: nothing here) |          |                        |\n  +------------------------+          +------------------------+\n"
+        },
+        "front-door": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "                    the only published port\n                              |\n  internet ---- :80 ----> +-------+ ---- db:5432 ----> +-------+\n                          |  web  |                    |  db   |\n                          +-------+ -- cache:6379 --+  +-------+\n                                                    |\n                                                    +> +-------+\n                                                       | cache |\n                                                       +-------+\n\n  db and cache are reachable only from containers on the same network.\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:docker/module/compose",
+      "title": "Describe an app with Compose",
+      "requires": [],
+      "outcomes": [],
+      "intro": "By now, starting the tracker takes a network, a volume and two long `docker run` commands that must be typed in the right order. Docker Compose replaces them with one file that describes the whole application, and one command that makes it so. This module covers reading and writing that file and the handful of commands used with it.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "One file for the whole application",
+          "text": "**Docker Compose** reads a file named `compose.yaml` that describes an application as a set of **services**. A service is one container image together with how to run it: its ports, its settings, its storage.\n\nThe file is a description, not a script. It says what should exist. `docker compose up` compares that with what does exist and creates, replaces or leaves each piece as needed.\n\nThe file lives in the project and is committed with the code. A new team member starts the whole application with one command and no setup page.",
+          "example": "compose"
+        },
+        {
+          "kind": "explanation",
+          "title": "Reading the file",
+          "text": "Each entry under `services` uses ideas from earlier modules under a new spelling.\n\n| In the file | Same as | Module |\n| --- | --- | --- |\n| `image:` | The image name in `docker run` | Images |\n| `build:` | `docker build` on that folder | Dockerfile |\n| `ports:` | `-p host:container` | Network |\n| `environment:` | `-e NAME=value` | Config |\n| `volumes:` | `-v name:/path` or `-v ./path:/path` | Storage |\n| `depends_on:` | Start the named service first | The next module |\n\nNamed volumes are also listed once at the top level, under `volumes:`, so that Compose creates them.\n\nCompose makes one network for the application and puts every service on it. Each service can reach the others **by service name**."
+        },
+        {
+          "kind": "prediction",
+          "title": "Finding the database",
+          "text": "In the file you just read, the `web` service has to connect to PostgreSQL in the `db` service.",
+          "questions": [
+            "service-name"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "The commands",
+          "text": "Run these in the folder that holds `compose.yaml`.\n\n| Command | What it does |\n| --- | --- |\n| `docker compose up -d` | Creates and starts everything, in the background. |\n| `docker compose ps` | Lists the application's containers. |\n| `docker compose logs -f web` | Follows one service's output. |\n| `docker compose exec web sh` | Opens a shell in a running service. |\n| `docker compose up -d --build` | Rebuilds images, then replaces what changed. |\n| `docker compose down` | Stops and removes the containers and the network. |\n\n`down` keeps named volumes, so the data is still there at the next `up`. Running `up` again after editing the file replaces only the services whose description changed.\n\nCompose names everything after the **project**, which is the folder's name unless you say otherwise. The volume `db-data` in a folder named `tracker` is really `tracker_db-data`."
+        },
+        {
+          "kind": "debugging",
+          "title": "A cleanup script",
+          "text": "A team's reset script for their shared test server. The server's database holds test data that took a week to prepare.",
+          "example": "down-v",
+          "questions": [
+            "down-v"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Variables in the file",
+          "text": "A Compose file can take values from the environment with `${NAME}`. Add `:-` and a default for when the variable is not set.\n\nCompose also reads a file named `.env` beside `compose.yaml` and uses its lines for this substitution. That makes `.env` the place for per-machine choices such as which port to publish.\n\nTwo features have similar names and do different jobs.\n\n- `.env` supplies values **to the Compose file**, for `${...}`.\n- `env_file:` under a service passes the lines of a file **into the container** as environment variables.\n\nA value in `.env` reaches a container only if the Compose file passes it on.",
+          "example": "vars"
+        },
+        {
+          "kind": "explanation",
+          "title": "Secrets as files",
+          "text": "The module on configuration said that a secret is better supplied as a file than as an environment variable. Compose has a section for this.\n\nA secret listed at the top level is taken from a file on the host. A service that names it sees its content at `/run/secrets/<name>` inside the container. Many images accept a variable ending in `_FILE` that points to such a file, as the official PostgreSQL image does.\n\nThe secret file itself stays out of version control and out of the image. As before, this is general guidance. Where you work, the organization's own policy on storing secrets applies.",
+          "example": "secrets"
+        },
+        {
+          "kind": "explanation",
+          "title": "Compose in development",
+          "text": "The same file serves day-to-day development with small additions.\n\n- **A bind mount of the source** lets the container see edits at once. Compose reads a second file, `compose.override.yaml`, when it exists, and merges it over the first. Put development-only additions there.\n- **`docker compose watch`** copies changed files into the running container, or rebuilds when a file such as the dependency list changes. It avoids the bind mount's habit of hiding files that the image installed.\n\nKeep the main file as the description of the real application, and the extras for development in the override file.",
+          "example": "dev"
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: add a worker",
+          "text": "The tracker gets a background worker that sends email. It is the **same image** as `web`, started with a different command: `node worker.js`. It needs the same database settings, listens on no port, and must be started along with everything else.\n\n1. Write the `worker` service.\n2. Say what you did not include, and why.\n3. Give the one command that shows only the worker's output."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. The service is below. `command:` replaces the image's `CMD` for this service, which is how one image can do two jobs.\n2. No `ports:`, because nothing connects to the worker. It makes outgoing connections only. The `build:` and `image:` lines are the same as in `web`, so that both services use one image.\n3. `docker compose logs -f worker`.\n\nThe two services repeat their database settings. That is acceptable at this size. Larger files share them with an `env_file`.",
+          "example": "worker"
+        }
+      ],
+      "questions": [
+        {
+          "id": "service-name",
+          "prompt": "Which host name should `web` use?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "`localhost`",
+              "feedback": "Inside the `web` container, `localhost` is the `web` container."
+            },
+            {
+              "text": "`db`",
+              "feedback": "Compose puts both services on one network, where each is reachable by its service name."
+            },
+            {
+              "text": "`tracker_db_1`",
+              "feedback": "A generated container name may happen to work, but it changes with the project name. The service name is the stable one."
+            }
+          ]
+        },
+        {
+          "id": "down-v",
+          "example": "down-v",
+          "prompt": "What does the script destroy?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "Only the containers",
+              "feedback": "That is plain `down`. The `-v` adds something."
+            },
+            {
+              "text": "The containers and the images",
+              "feedback": "Images are untouched by `down`."
+            },
+            {
+              "text": "The containers and the named volumes, with the database in them",
+              "feedback": "`-v` removes the volumes declared in the file. The prepared test data is in `db-data`, and it is gone."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "compose": {
+          "readOnly": true,
+          "fence": "yaml",
+          "code": "# compose.yaml\nservices:\n  web:\n    build: .\n    image: tracker:dev\n    ports:\n      - \"8080:3000\"\n    environment:\n      DATABASE_HOST: db\n      DATABASE_NAME: tracker\n      LOG_LEVEL: info\n    depends_on:\n      - db\n\n  db:\n    image: postgres:17.2\n    environment:\n      POSTGRES_DB: tracker\n      POSTGRES_PASSWORD: example-only\n    volumes:\n      - db-data:/var/lib/postgresql/data\n\nvolumes:\n  db-data:\n"
+        },
+        "down-v": {
+          "readOnly": true,
+          "fence": "bash",
+          "code": "#!/bin/sh\n# reset.sh: restart the test environment with the newest images\ndocker compose pull\ndocker compose down -v\ndocker compose up -d\n"
+        },
+        "vars": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "# .env  (beside compose.yaml, one per machine, not committed)\nWEB_PORT=8081\nTRACKER_VERSION=1.4.2\n\n# compose.yaml\nservices:\n  web:\n    image: registry.example.com/team/tracker:${TRACKER_VERSION}\n    ports:\n      - \"${WEB_PORT:-8080}:3000\"     # 8080 when WEB_PORT is not set\n    env_file:\n      - ./tracker.env                # these lines go into the container\n\n# See the file after substitution, without starting anything:\n#   docker compose config\n"
+        },
+        "secrets": {
+          "readOnly": true,
+          "fence": "yaml",
+          "code": "services:\n  db:\n    image: postgres:17.2\n    environment:\n      POSTGRES_DB: tracker\n      # The image reads the password from the file this names.\n      POSTGRES_PASSWORD_FILE: /run/secrets/db_password\n    secrets:\n      - db_password\n    volumes:\n      - db-data:/var/lib/postgresql/data\n\nsecrets:\n  db_password:\n    file: ./secrets/db_password.txt   # on the host, never committed\n\nvolumes:\n  db-data:\n"
+        },
+        "dev": {
+          "readOnly": true,
+          "fence": "yaml",
+          "code": "# compose.override.yaml  (merged over compose.yaml automatically)\nservices:\n  web:\n    environment:\n      LOG_LEVEL: debug\n    develop:\n      watch:\n        # Copy edited source files into the running container.\n        - action: sync\n          path: ./src\n          target: /app/src\n        # Rebuild the image when the dependency list changes.\n        - action: rebuild\n          path: package-lock.json\n\n# Start with:  docker compose watch\n"
+        },
+        "worker": {
+          "readOnly": true,
+          "fence": "yaml",
+          "code": "services:\n  worker:\n    build: .\n    image: tracker:dev\n    command: [\"node\", \"worker.js\"]\n    environment:\n      DATABASE_HOST: db\n      DATABASE_NAME: tracker\n    depends_on:\n      - db\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:docker/module/health",
+      "title": "Start in order and stay up",
+      "requires": [],
+      "outcomes": [],
+      "intro": "An application made of several containers has to start in a workable order, recover when a part fails, and not take the whole machine down when a part misbehaves. This module covers health checks, waiting for a dependency to be ready, restart policies and resource limits.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Started is not ready",
+          "text": "`depends_on` in its short form makes Compose start the database container before the web container. It does not wait for the database to be **ready**.\n\nA database needs several seconds after its process starts before it accepts connections. The web service starts a moment later, tries to connect, and fails.\n\nDocker knows when a process has started. It cannot know by itself when a program is ready to do its job. You have to tell it how to find out.",
+          "example": "timeline"
+        },
+        {
+          "kind": "explanation",
+          "title": "Health checks",
+          "text": "A **health check** is a command that Docker runs inside the container at intervals. Exit code 0 means healthy. Anything else means not healthy.\n\n| Setting | Meaning |\n| --- | --- |\n| `test` | The command to run. |\n| `interval` | How long to wait between checks. |\n| `timeout` | How long one check may take before it counts as failed. |\n| `retries` | How many failures in a row make the container unhealthy. |\n| `start_period` | Time at the start during which failures do not count. |\n\nA container with a health check is `starting`, then `healthy` or `unhealthy`. `docker ps` shows the state.\n\nThe command must exist in the image. A good check asks the program a real question, such as whether it accepts a connection, and is cheap enough to run every few seconds.",
+          "example": "healthcheck"
+        },
+        {
+          "kind": "explanation",
+          "title": "Wait for healthy",
+          "text": "With a health check in place, `depends_on` can use its long form and name a condition.\n\n- `service_started` is the default: the container has been started.\n- `service_healthy` waits until the health check passes.\n- `service_completed_successfully` waits until the container has finished with exit code 0. It suits a one-off job that must run first, such as updating the database's tables.",
+          "example": "depends"
+        },
+        {
+          "kind": "prediction",
+          "title": "The short form",
+          "text": "A Compose file says this, and the `db` service has no health check.\n\n```yaml\n  web:\n    depends_on:\n      - db\n```",
+          "questions": [
+            "short-form"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "It can still fail later",
+          "text": "Start order solves the first minute. It does nothing about the rest of the application's life. A database can restart at three in the morning, long after every `depends_on` was satisfied.\n\nSo the real fix belongs in the program: **when a connection fails, wait a little and try again.** A service that retries does not care which container started first.\n\nUse health checks and conditions to make a clean start likely. Do not use them as a reason to skip retrying."
+        },
+        {
+          "kind": "explanation",
+          "title": "Restart policies",
+          "text": "A restart policy tells Docker what to do when a container's main process ends.\n\n| Policy | Restarts when |\n| --- | --- |\n| `no` | Never. This is the default. |\n| `on-failure` | The exit code is not 0. |\n| `always` | It ends for any reason, and when the Docker daemon starts. |\n| `unless-stopped` | As `always`, except after you stopped it yourself. |\n\n`unless-stopped` suits most long-running services. They come back after a crash and after the machine reboots, and stay down when you stop them on purpose.\n\nDocker waits a little longer before each new attempt. And note what a policy does not do: Docker by itself does not restart a container for being **unhealthy**. It restarts one only when the main process ends.",
+          "example": "restart"
+        },
+        {
+          "kind": "debugging",
+          "title": "Up, down, up, down",
+          "text": "After a change to its settings, a service looks like this. Each time anyone checks, the uptime is a few seconds.",
+          "example": "loop",
+          "questions": [
+            "loop"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Limits",
+          "text": "With no limit, one container can use all of the host's memory and processor time, and starve every other container on the machine.\n\n- A **memory limit** is a hard cap. A container that goes over it is killed by the kernel. It ends with exit code 137, and `docker inspect` reports `OOMKilled: true`.\n- A **CPU limit** is a throttle. The container is slowed down and is not killed.\n\nSet a memory limit somewhat above what the service needs in normal use. A leak then takes down one container, which its restart policy brings back, and the rest of the machine carries on.",
+          "example": "limits"
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: a start that works",
+          "text": "The tracker has three services: `db`, a one-off `migrate` job that updates the database's tables and exits, and `web`.\n\n1. Describe the order they must become ready in.\n2. Write the `depends_on` section of `migrate` and of `web`.\n3. Choose a restart policy for each of the three, with a reason."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. `db` must be healthy, then `migrate` must finish successfully, then `web` may start.\n2. The sections are below. `web` waits for both. Waiting for `migrate` alone would be enough for the order, and naming `db` too states the real dependency.\n3. `db` and `web`: `unless-stopped`, so they return after a crash or a reboot. `migrate`: `no`. It is meant to run once and end. With `always` it would run again and again for ever. If it fails, a person should read why.",
+          "example": "order"
+        }
+      ],
+      "questions": [
+        {
+          "id": "short-form",
+          "prompt": "What does this guarantee when `web` starts?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "That the `db` container has been started",
+              "feedback": "The short form only orders the starts. The database may still be seconds away from accepting connections."
+            },
+            {
+              "text": "That the database accepts connections",
+              "feedback": "That needs a health check on `db` and the condition `service_healthy`."
+            },
+            {
+              "text": "Nothing about order at all",
+              "feedback": "It does order the starts. It does not wait for readiness."
+            }
+          ]
+        },
+        {
+          "id": "loop",
+          "example": "loop",
+          "prompt": "What is the best next step?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Change the policy to `unless-stopped`",
+              "feedback": "The policy is doing its job. The program ends with an error each time it starts."
+            },
+            {
+              "text": "Read the container's logs",
+              "feedback": "Exit code 1 means the program reported an error, and it does so at every start. The logs say what the new settings broke. Restarting cannot fix a wrong setting."
+            },
+            {
+              "text": "Give the container more memory",
+              "feedback": "Running out of memory gives 137. This is exit code 1, an error the program reported itself."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "timeline": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  time  0s      1s      2s      3s      4s      5s      6s\n        |-------|-------|-------|-------|-------|-------|\n\n  db    [ process started .......... preparing .... ][ ready ]\n                                                     ^\n  web      [ started ][ connects --> refused ][ exits with an error ]\n            ^\n            depends_on (short form) waited only for this\n"
+        },
+        "healthcheck": {
+          "readOnly": true,
+          "fence": "yaml",
+          "code": "services:\n  db:\n    image: postgres:17.2\n    healthcheck:\n      # Exit code 0 when the database accepts connections.\n      test: [\"CMD-SHELL\", \"pg_isready -U postgres\"]\n      interval: 5s\n      timeout: 3s\n      retries: 5\n      start_period: 10s\n\n# $ docker compose ps\n# NAME           STATUS\n# tracker-db-1   Up 12 seconds (healthy)\n"
+        },
+        "depends": {
+          "readOnly": true,
+          "fence": "yaml",
+          "code": "services:\n  web:\n    image: tracker:1.4.2\n    depends_on:\n      db:\n        condition: service_healthy\n"
+        },
+        "restart": {
+          "readOnly": true,
+          "fence": "yaml",
+          "code": "services:\n  web:\n    image: tracker:1.4.2\n    restart: unless-stopped\n\n  db:\n    image: postgres:17.2\n    restart: unless-stopped\n\n# The same thing with docker run:\n#   docker run -d --restart unless-stopped tracker:1.4.2\n"
+        },
+        "loop": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "$ docker compose ps\nNAME            STATUS\ntracker-web-1   Restarting (1) 4 seconds ago\ntracker-db-1    Up 2 hours (healthy)\n\n# compose.yaml\n  web:\n    restart: always\n"
+        },
+        "limits": {
+          "readOnly": true,
+          "fence": "yaml",
+          "code": "services:\n  web:\n    image: tracker:1.4.2\n    mem_limit: 512m     # killed if it uses more (exit code 137)\n    cpus: 1.5           # slowed down beyond one and a half processors\n\n# The same thing with docker run:\n#   docker run -d --memory 512m --cpus 1.5 tracker:1.4.2\n#\n# Watch what containers actually use:\n#   docker stats\n"
+        },
+        "order": {
+          "readOnly": true,
+          "fence": "yaml",
+          "code": "services:\n  db:\n    image: postgres:17.2\n    restart: unless-stopped\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U postgres\"]\n      interval: 5s\n      retries: 5\n\n  migrate:\n    image: tracker:1.4.2\n    command: [\"node\", \"migrate.js\"]\n    restart: \"no\"\n    depends_on:\n      db:\n        condition: service_healthy\n\n  web:\n    image: tracker:1.4.2\n    restart: unless-stopped\n    depends_on:\n      db:\n        condition: service_healthy\n      migrate:\n        condition: service_completed_successfully\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:docker/module/small",
+      "title": "Build small images",
+      "requires": [],
+      "outcomes": [],
+      "intro": "The first Dockerfile in this course produced a working image that was larger than it needed to be. This module covers why size matters, how a multi-stage build ships only what the program needs to run, and how to choose a base image.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Why size matters",
+          "text": "A large image costs you in three ways.\n\n- **Time.** Every build pushes it and every server pulls it. A deploy, a rollback and a new server all wait for the download.\n- **Space.** Registries and servers keep many versions.\n- **Risk.** Every tool and library in the image is something that can have a security flaw and must be kept patched, whether your program uses it or not.\n\nThe third matters most. A small image has less in it to go wrong."
+        },
+        {
+          "kind": "explanation",
+          "title": "What you build with is not what you run with",
+          "text": "Building a program needs things that running it does not: compilers, build tools, test libraries, the source in its original form.\n\nA single-stage Dockerfile installs all of that to do the build, and then ships it. Cleaning up at the end does not help, because the files remain in earlier layers.\n\nWhat is needed is two separate environments: one to build in, and a clean one that receives only the result.",
+          "example": "two-rooms"
+        },
+        {
+          "kind": "explanation",
+          "title": "Multi-stage builds",
+          "text": "A Dockerfile may contain more than one `FROM`. Each starts a new **stage** with a fresh set of files. A stage can be named with `AS`.\n\n`COPY --from=<stage>` copies files out of an earlier stage into the current one. That is the only thing that crosses from one stage to the next.\n\n**The image is the last stage.** Earlier stages are used during the build and then left behind. Their tools and layers are not part of what you ship.",
+          "example": "multi"
+        },
+        {
+          "kind": "prediction",
+          "title": "What is in the final image?",
+          "text": "In the multi-stage file you just read, the first stage runs `npm ci`, which installs every dependency including the build tools.",
+          "questions": [
+            "final-stage"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Choosing a base image",
+          "text": "The final stage's `FROM` sets the floor for the image's size and contents.\n\n| Base | Contains | Consider |\n| --- | --- | --- |\n| Full, such as `node:24` | A whole distribution with build tools | Convenient for a build stage. Large to ship. |\n| Slim, such as `node:24-slim` | The runtime and a minimal distribution | A sound default for the final stage. |\n| Alpine, such as `node:24-alpine` | The runtime on a very small distribution | Smallest with a shell. Uses a different system library, and some prebuilt packages do not work with it. |\n| Distroless or `scratch` | The runtime only, or nothing at all | No shell and no package manager. Smallest and hardest to look inside. |\n\nStart with slim. Move to something smaller when you have a reason and have tested that everything still works."
+        },
+        {
+          "kind": "explanation",
+          "title": "Smaller in every stage",
+          "text": "A few habits help with or without stages.\n\n- **Use `.dockerignore`**, so that a broad `COPY` cannot bring in unwanted files.\n- **Install only what runs.** Leave out development dependencies in the final stage, for example with `npm ci --omit=dev`.\n- **Skip suggested extras.** With `apt-get install`, add `--no-install-recommends`, and remove the package lists in the same `RUN`.\n- **Do not add tools just in case.** An editor and a network toolkit in every production image are rarely used and always present. The module on debugging shows other ways to look inside."
+        },
+        {
+          "kind": "debugging",
+          "title": "Where did 1.4 GB come from?",
+          "text": "The layers of an image built with a single stage on the full base image.",
+          "example": "big",
+          "questions": [
+            "big"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Stages are also targets",
+          "text": "Stages have a second use. `docker build --target <stage>` stops at the named stage and produces an image of it.\n\nThat lets one Dockerfile serve several purposes: a `build` stage with every tool, in which the tests can run on a build server, and a final stage for shipping. Both come from the same file, so they cannot drift apart.",
+          "example": "target"
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: plan the stages",
+          "text": "A service is written in a language that compiles to a single executable file. Compiling needs the language's toolchain, which is 900 MB. The executable is 20 MB and needs nothing else to run except the certificates used to check secure connections.\n\n1. How many stages, and what does each do?\n2. What does the final stage start from?\n3. What crosses between the stages?\n4. Roughly how large is the image you ship?"
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. Two. A `build` stage from the toolchain's image compiles the program. A final stage holds the result.\n2. A minimal base that has certificates and little else: a distroless image, or a slim distribution if a shell is wanted for looking around.\n3. One file, the executable, with `COPY --from=build`.\n4. A little over 20 MB plus the base, against more than 900 MB for a single stage.\n\nThe same plan fits any language. Only the first stage and the files that are copied across change."
+        }
+      ],
+      "questions": [
+        {
+          "id": "final-stage",
+          "prompt": "Are the build tools in the image that is shipped?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "Yes, every stage is part of the image",
+              "feedback": "Only the last stage is the image. Earlier stages are discarded once the build ends."
+            },
+            {
+              "text": "Yes, but hidden in a lower layer",
+              "feedback": "That is what happens in a single stage. A new `FROM` starts from a fresh set of files, with no layers from the stage before."
+            },
+            {
+              "text": "No, only what the final stage copied or installed",
+              "feedback": "The final stage starts from a clean base. It holds the build output it copied across and the run-time dependencies it installed itself."
+            }
+          ]
+        },
+        {
+          "id": "big",
+          "example": "big",
+          "prompt": "Which single change saves the most?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "A final stage built from the slim base",
+              "feedback": "The base accounts for about 1.1 GB of the total. A final stage from the slim base, about 230 MB, removes most of it at once and leaves the development dependencies behind as well."
+            },
+            {
+              "text": "Adding `.dockerignore`",
+              "feedback": "Useful, but the source layer is only 61 MB."
+            },
+            {
+              "text": "Joining the `RUN` lines into one",
+              "feedback": "That saves almost nothing here. No layer is deleting files left by another."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "two-rooms": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  STAGE 1: build                          STAGE 2: what you ship\n  +-----------------------------+         +-------------------------+\n  | full base image             |         | slim base image         |\n  | compilers and build tools   |         |                         |\n  | development dependencies    |         | run-time dependencies   |\n  | source code                 |         |                         |\n  |                             |  COPY   |                         |\n  | build output  --------------+-------> | build output            |\n  +-----------------------------+ --from  +-------------------------+\n        thrown away after the build              this is the image\n"
+        },
+        "multi": {
+          "readOnly": true,
+          "fence": "dockerfile",
+          "code": "# ---- Stage 1: build ----\nFROM node:24.11.1 AS build\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build          # writes the result to /app/dist\n\n# ---- Stage 2: the image that is shipped ----\nFROM node:24.11.1-slim\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci --omit=dev\nCOPY --from=build /app/dist ./dist\n\nCMD [\"node\", \"dist/server.js\"]\n"
+        },
+        "big": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "$ docker image ls tracker\nREPOSITORY   TAG      SIZE\ntracker      single   1.42GB\n\n$ docker history tracker:single\nCREATED BY                                   SIZE\nCMD [\"node\" \"dist/server.js\"]                0B\nRUN npm run build                            14MB\nCOPY . .                                     61MB\nRUN npm ci                                   212MB\nCOPY package.json package-lock.json ./       96kB\nWORKDIR /app                                 0B\n... base image node:24.11.1 ...              1.13GB\n"
+        },
+        "target": {
+          "readOnly": true,
+          "fence": "bash",
+          "code": "# Build only the first stage and run the tests in it.\ndocker build --target build -t tracker:build .\ndocker run --rm tracker:build npm test\n\n# Build the whole file. The result is the last stage.\ndocker build -t tracker:1.4.2 .\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:docker/module/secure",
+      "title": "Run with less privilege",
+      "requires": [],
+      "outcomes": [],
+      "intro": "A container limits what a program can see. It is not a strong wall. This module covers the habits that reduce what a container can do if the program inside it is broken into, and what you are trusting when you build on someone else's image. It is general guidance and not a complete security standard. Where you work, your organization's own security policy and review decide what is required.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "What can go wrong",
+          "text": "Assume that one day the program in a container will be taken over, through a flaw in its own code or in a library. The question is what the attacker can do next.\n\nTwo facts from the first module set the stakes. Containers share the host's kernel, so the boundary is thinner than a virtual machine's. And unless you say otherwise, the process in a container runs as **root**, the all-powerful user, which is by default the same user as root on the host.\n\nRoot inside a container is still restricted by the container. A mistake in the setup or a flaw in the kernel can remove that restriction. So the aim is to give the program as little power as it can work with. Each habit below removes something an attacker would otherwise have.",
+          "example": "layers-of-defence"
+        },
+        {
+          "kind": "explanation",
+          "title": "Do not run as root",
+          "text": "The most valuable single change is to run the program as an ordinary user. The `USER` instruction sets the user for the rest of the Dockerfile and for the container.\n\nMany official images ship a suitable user. The Node.js image has one named `node`. Where none exists, create one in a `RUN` step.\n\nDo the steps that need root first: installing system packages, creating folders. Then switch. Files that the program must write to need to belong to that user, which `COPY --chown` arranges.\n\nAn ordinary user cannot install packages, change system files or read other users' files. Most services need none of those.",
+          "example": "user"
+        },
+        {
+          "kind": "prediction",
+          "title": "Who is it running as?",
+          "text": "You run this against a production container, and it prints `root`.\n\n```bash\ndocker exec web whoami\n```",
+          "questions": [
+            "whoami"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Take away what is not used",
+          "text": "Docker can remove more, one option at a time.\n\n- **A read-only file system.** The container cannot change its own files. Give it a memory-backed scratch folder for the few places it must write.\n- **No capabilities.** Root's power is divided into named pieces called capabilities, and Docker grants a container a default set. Most services need none. Drop them all and add back only what proves necessary.\n- **No new privileges.** This stops a process from gaining more power than it started with.\n- **Limits.** The memory and CPU limits from the module on health stop one container from exhausting the host.\n\nAnd never use `--privileged` for an application. It switches off nearly all of the isolation.",
+          "example": "harden"
+        },
+        {
+          "kind": "explanation",
+          "title": "The Docker socket",
+          "text": "The Docker daemon is controlled through a file, `/var/run/docker.sock`. Whoever can write to that file can tell the daemon to do anything, including starting a new container with the whole host disk mounted inside it.\n\nSo access to the socket is, in effect, root on the host. Two consequences follow.\n\n- **Do not mount the socket into a container** unless the container's job is to manage Docker, and then treat that container as fully trusted.\n- **Membership of the `docker` group on a server is administrator access.** Grant it as carefully as you would a root password."
+        },
+        {
+          "kind": "debugging",
+          "title": "Three settings",
+          "text": "Part of a Compose file from a project that \"had permission problems\" and \"needed to reach the database from a laptop\".",
+          "example": "risky",
+          "questions": [
+            "risky"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Trust what you build on",
+          "text": "Your image is mostly other people's files: the base image and every dependency. Their flaws become yours.\n\n- **Choose the publisher.** Prefer official images and the software maker's own. Read how any other image is built.\n- **Pin what you use.** A specific version, and a digest for production, so that nothing changes without a decision.\n- **Rebuild regularly.** Pinning keeps out surprises and also keeps out fixes. Update the pinned versions and rebuild on a schedule, not only when the code changes.\n- **Scan.** An image scanner lists known flaws in the packages an image contains. Docker's own is `docker scout cves <image>`, and registries and build systems offer others. Run one in the build, and decide in advance which findings stop a release.\n- **Ship less.** Everything the last module removed is something that no longer needs scanning or patching."
+        },
+        {
+          "kind": "explanation",
+          "title": "Secrets during a build",
+          "text": "Sometimes the build itself needs a secret, for example a token to download private dependencies. The module on configuration ruled out `ARG`, `ENV` and `COPY`, because each leaves the value in the image.\n\nA **secret mount** is the safe way. The secret is given to `docker build` from outside. It appears as a file for the length of one `RUN` step and is stored in no layer.\n\nSecrets that the program needs while running are supplied when the container starts, as a file under `/run/secrets`, as the module on Compose showed.",
+          "example": "build-secret"
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: review a service",
+          "text": "A web service is described this way. List what you would change, most important first.\n\n```yaml\n  web:\n    image: tracker\n    user: root\n    ports:\n      - \"80:3000\"\n      - \"9229:9229\"   # debugger\n    environment:\n      API_KEY: \"...\"\n    volumes:\n      - /:/host\n```"
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. **`/:/host`.** The whole host disk is mounted into the container, writable. Anyone who takes over the program owns the server. Remove it, and mount only the specific folder that is needed, read-only if possible.\n2. **`user: root`.** Run as an ordinary user.\n3. **The debugger port.** A debugger lets whoever connects run code inside the process, and this one is open to every machine that can reach the host. Remove it from anything that is not a developer's own machine.\n4. **The key in the file.** Supply it as a secret file, and keep it out of version control.\n5. **`image: tracker`.** It resolves to `latest`. Name a version.\n6. Then add what is missing: a read-only file system, dropped capabilities, no new privileges, and a memory limit.\n\nThe order is by how much damage each allows, not by how easy it is to fix."
+        }
+      ],
+      "questions": [
+        {
+          "id": "whoami",
+          "prompt": "What does that tell you?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Nothing, containers always report root",
+              "feedback": "They report whichever user the process runs as. An image with a `USER` instruction reports that user."
+            },
+            {
+              "text": "The service runs with more power than it needs",
+              "feedback": "No `USER` was set, so the service runs as root. Anyone who takes over the service gets root inside the container, which makes every other weakness more serious."
+            },
+            {
+              "text": "The container has been broken into",
+              "feedback": "Root is the default, not a sign of an attack. It is a setting to fix."
+            }
+          ]
+        },
+        {
+          "id": "risky",
+          "example": "risky",
+          "prompt": "Which line is the most serious?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "`privileged: true`",
+              "feedback": "It removes nearly all of the container's isolation. A program taken over inside it can reach the host's devices and take control of the host. The permission problem it was hiding should be fixed by giving the right user access to the right folder."
+            },
+            {
+              "text": "Publishing port 5432",
+              "feedback": "This exposes the database to other machines, which is bad and should be bound to `127.0.0.1` or removed. It still leaves the attacker outside the host."
+            },
+            {
+              "text": "`restart: always`",
+              "feedback": "This is an ordinary restart policy."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "layers-of-defence": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  If the program is taken over, what does the attacker have?\n\n  +----------------------------------------------------------------+\n  | default: root, writable files, default capabilities            |\n  |                                                                |\n  |  +----------------------------------------------------------+  |\n  |  | + USER: an ordinary user                                 |  |\n  |  |                                                          |  |\n  |  |  +----------------------------------------------------+  |  |\n  |  |  | + read-only files, no capabilities,                |  |  |\n  |  |  |   no new privileges, memory limit                  |  |  |\n  |  |  |                                                    |  |  |\n  |  |  |  +----------------------------------------------+  |  |  |\n  |  |  |  | + small image: no shell tools to use         |  |  |  |\n  |  |  |  +----------------------------------------------+  |  |  |\n  |  |  +----------------------------------------------------+  |  |\n  |  +----------------------------------------------------------+  |\n  +----------------------------------------------------------------+\n  Each ring leaves the attacker with less.\n"
+        },
+        "user": {
+          "readOnly": true,
+          "fence": "dockerfile",
+          "code": "FROM node:24.11.1-slim\nWORKDIR /app\n\n# Steps that need root come first.\nCOPY package.json package-lock.json ./\nRUN npm ci --omit=dev\n\n# Program files belong to the ordinary user that the image provides.\nCOPY --chown=node:node . .\n\n# Everything from here on, and the container, runs as that user.\nUSER node\n\nCMD [\"node\", \"server.js\"]\n\n# Where the base image has no such user, create one first:\n#   RUN useradd --system --create-home app\n#   USER app\n"
+        },
+        "harden": {
+          "readOnly": true,
+          "fence": "yaml",
+          "code": "services:\n  web:\n    image: tracker:1.4.2\n    user: node\n    read_only: true            # cannot change its own files\n    tmpfs:\n      - /tmp                   # a scratch folder in memory\n    cap_drop:\n      - ALL                    # none of root's special powers\n    security_opt:\n      - no-new-privileges:true\n    mem_limit: 512m\n\n# The same thing with docker run:\n#   docker run -d --read-only --tmpfs /tmp --cap-drop ALL \\\n#     --security-opt no-new-privileges --memory 512m tracker:1.4.2\n"
+        },
+        "risky": {
+          "readOnly": true,
+          "fence": "yaml",
+          "code": "services:\n  web:\n    image: tracker:1.4.2\n    privileged: true\n    restart: always\n\n  db:\n    image: postgres:17.2\n    ports:\n      - \"5432:5432\"\n"
+        },
+        "build-secret": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "# Dockerfile\n# The token is readable at /run/secrets/npm_token during this step only.\n# It is not stored in the image.\nRUN --mount=type=secret,id=npm_token \\\n    NPM_TOKEN=\"$(cat /run/secrets/npm_token)\" npm ci --omit=dev\n\n# Build. The token comes from a file outside the build context.\ndocker build --secret id=npm_token,src=$HOME/.npm_token -t tracker:1.4.2 .\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:docker/module/ship",
+      "title": "Tag, push and release",
+      "requires": [],
+      "outcomes": [],
+      "intro": "An image on your laptop helps nobody else. This module covers getting an image to the machines that run it: pushing it to a registry, naming it so that every release can be identified, and making sure that the image that was tested is the image that runs.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "From a laptop to a server",
+          "text": "The path is the same for every project.\n\n1. **Build** the image, usually on a build server so that no one's laptop is part of the process.\n2. **Push** it to a registry.\n3. **Pull** it on each machine that will run it.\n4. **Run** it there with that place's settings.\n\nThe registry is the meeting point. Nothing is copied from the build machine to the servers directly.",
+          "example": "path"
+        },
+        {
+          "kind": "explanation",
+          "title": "Tag and push",
+          "text": "An image's name says where it goes. To push to a registry, the image needs a name that begins with that registry's address.\n\n`docker tag` adds a second name to an existing image. It copies nothing. The image then has two names for the same content.\n\n`docker push` uploads it. Layers the registry already has are skipped, so pushing a new version of a familiar image sends only the layers that changed.\n\nA registry needs to know who you are before it accepts a push. `docker login` does that, and it is something you do yourself with your own account.",
+          "example": "push"
+        },
+        {
+          "kind": "explanation",
+          "title": "What to call a release",
+          "text": "Give every build a tag that will never be used for anything else.\n\n- **A version**, such as `1.4.2`, when the project has releases.\n- **The commit identifier**, such as `git-3f2a9c8`, when it does not. It leads straight back to the exact source.\n\nTreat these tags as permanent. Never push different content under a tag that was already used. Many registries can enforce that.\n\nMoving tags such as `1.4` or `latest` may be offered as a convenience for people trying the image. Nothing you deploy should refer to them."
+        },
+        {
+          "kind": "prediction",
+          "title": "Which image was running?",
+          "text": "Production runs `tracker:latest`. Every build pushes a new `latest`. On Tuesday a bad build is deployed and the team wants to go back to Monday's.",
+          "questions": [
+            "rollback"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Build once, promote the same image",
+          "text": "It is common to see an image rebuilt for each environment: one build for testing, another for production. The two are different images even when the source is the same. A base tag may have moved between the builds, and a dependency may have published a new version.\n\nBuild **once**. Test that image. Then run **that same image**, by the same tag or digest, in the next environment. Moving one image forward through environments is called promotion.\n\nThis works only because settings live outside the image, as the module on configuration required. An image with production's settings built in cannot be tested anywhere else.",
+          "example": "promote"
+        },
+        {
+          "kind": "explanation",
+          "title": "Platforms",
+          "text": "An image contains programs compiled for one kind of processor. The two common platforms are `linux/amd64`, used by most servers, and `linux/arm64`, used by recent Apple laptops and a growing share of servers.\n\nBy default a build targets the machine it runs on. An image built on an arm64 laptop and run on an amd64 server fails at once with the error `exec format error`.\n\nEither build on the same kind of machine you deploy to, or name the platforms. One tag can hold a version for each, and every machine pulls the one that fits it.",
+          "example": "platform"
+        },
+        {
+          "kind": "debugging",
+          "title": "It worked on the laptop",
+          "text": "A developer builds and pushes an image from a new laptop. The server pulls it and the container ends immediately.",
+          "example": "format",
+          "questions": [
+            "format"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Record where an image came from",
+          "text": "Months later, someone will look at a running container and ask which source it was built from. **Labels** answer that. A label is a name and a value stored in the image.\n\nThere are standard names for the common facts: the source repository, the commit, the version and the build time. `docker inspect` shows them.\n\nSet them from build arguments, so that the build server fills them in.",
+          "example": "labels"
+        },
+        {
+          "kind": "explanation",
+          "title": "Replace, do not repair",
+          "text": "A running container is never updated in place. To release a new version, start a new container from the new image and remove the old one.\n\nThe same rule covers emergencies. Do not fix production with `docker exec` and an editor. The fix lives only in that one container's writable layer. It is lost at the next restart and nobody else knows it exists. Fix the source, build, and deploy.\n\nGoing back is then the same action as going forward: run the previous tag. Keep enough old tags in the registry for that to be possible."
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: a release",
+          "text": "A team builds `tracker` from commit `3f2a9c8`, version 1.5.0, and keeps images at `registry.example.com/team/tracker`.\n\n1. Which tags do you push for this build?\n2. Which name does the production Compose file refer to?\n3. The image is tested on the test server on Monday. What is deployed to production on Tuesday, and what is not done?\n4. On Wednesday version 1.5.0 turns out to be faulty. What is the rollback?"
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. `registry.example.com/team/tracker:1.5.0` and `:git-3f2a9c8`. Both are permanent names for one image.\n2. The version tag, `...tracker:1.5.0`, or that tag with its digest. Never `latest`.\n3. The image that was tested, pulled by the same tag. It is not rebuilt for production. Only the settings differ.\n4. Change the production file back to `1.4.2` and run `docker compose up -d`. The old image is still in the registry, so going back takes one pull and one restart."
+        }
+      ],
+      "questions": [
+        {
+          "id": "rollback",
+          "prompt": "What is the problem?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "Nothing, they can pull `latest` again",
+              "feedback": "`latest` now points at Tuesday's bad build. Pulling it again fetches the same thing."
+            },
+            {
+              "text": "Old images are deleted when a tag moves",
+              "feedback": "The old image may well still exist in the registry. The trouble is that it no longer has a name anyone can use."
+            },
+            {
+              "text": "No name points at Monday's image any more",
+              "feedback": "Each push moved `latest`, so Monday's image has no tag. A permanent tag per build would have made the rollback a one-line change."
+            }
+          ]
+        },
+        {
+          "id": "format",
+          "example": "format",
+          "prompt": "What is the cause?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "The image was built for a different kind of processor",
+              "feedback": "`exec format error` means the kernel was asked to run a program compiled for another processor type. The laptop built for arm64 and the server is amd64."
+            },
+            {
+              "text": "The start command is missing from the image",
+              "feedback": "A missing command gives exit code 127 and the message \"not found\"."
+            },
+            {
+              "text": "The image was damaged while being pushed",
+              "feedback": "Layers are checked against their digests. Damaged content would be refused at the pull."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "path": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  +---------------+          +--------------+          +-------------+\n  | build server  |   push   |   registry   |   pull   |  servers    |\n  |               | -------> |              | -------> |             |\n  | docker build  |          | tracker:1.5.0|          | docker run  |\n  +---------------+          +--------------+          +-------------+\n         ^                                                    ^\n     source code                                  settings for that place\n"
+        },
+        "push": {
+          "readOnly": true,
+          "fence": "bash",
+          "code": "# Build with the full name straight away ...\ndocker build -t registry.example.com/team/tracker:1.5.0 .\n\n# ... or add the name to an image that already exists.\ndocker tag tracker:dev registry.example.com/team/tracker:1.5.0\n\n# Upload it. You sign in to the registry yourself first (docker login).\ndocker push registry.example.com/team/tracker:1.5.0\n\n# On a server:\ndocker pull registry.example.com/team/tracker:1.5.0\n"
+        },
+        "promote": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  Rebuilding for each place: two different images\n\n    source --build--> image A --> test         \"it passed\"\n    source --build--> image B --> production   never tested\n\n  Building once and promoting: one image\n\n    source --build--> tracker:1.5.0 --> test --> staging --> production\n                      (one digest)       |          |            |\n                                      settings   settings     settings\n                                      for test   for staging  for prod\n"
+        },
+        "platform": {
+          "readOnly": true,
+          "fence": "bash",
+          "code": "# See which platform an image was built for.\ndocker image inspect --format '{{.Os}}/{{.Architecture}}' tracker:1.5.0\n\n# Build for one named platform.\ndocker build --platform linux/amd64 -t tracker:1.5.0 .\n\n# Build for both and push them under one tag.\ndocker buildx build \\\n  --platform linux/amd64,linux/arm64 \\\n  -t registry.example.com/team/tracker:1.5.0 \\\n  --push .\n"
+        },
+        "format": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "$ docker logs web\nexec /usr/local/bin/node: exec format error\n\n$ docker ps -a\nIMAGE                                     STATUS\nregistry.example.com/team/tracker:1.5.0   Exited (255) 5 seconds ago\n"
+        },
+        "labels": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "# Dockerfile\nARG VERSION=dev\nARG REVISION=unknown\nLABEL org.opencontainers.image.source=\"https://example.com/team/tracker\" \\\n      org.opencontainers.image.version=\"${VERSION}\" \\\n      org.opencontainers.image.revision=\"${REVISION}\"\n\n# Build\ndocker build \\\n  --build-arg VERSION=1.5.0 --build-arg REVISION=3f2a9c8 \\\n  -t registry.example.com/team/tracker:1.5.0 .\n\n# Read them back from an image or a running container\ndocker inspect --format '{{json .Config.Labels}}' web\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:docker/module/debug",
+      "title": "Find out why it failed",
+      "requires": [],
+      "outcomes": [],
+      "intro": "Sooner or later a container will not start, cannot be reached, or loses its data. This module gives an order in which to ask questions, the command that answers each one, and the usual causes. Nearly everything here was introduced in an earlier module. The skill is in knowing where to look first.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Ask in order",
+          "text": "Guessing is slow. Four questions, asked in the same order every time, find most problems.\n\n1. **What state is it in?** Running, stopped, restarting, or never created.\n2. **What did it say?** Its output is the program's own account of what went wrong.\n3. **How did it end?** The exit code separates a program error from a kill.\n4. **What does it see?** Its settings, files, mounts and network, from the inside.\n\nEach question has one command, shown below.",
+          "example": "order"
+        },
+        {
+          "kind": "explanation",
+          "title": "State and exit code",
+          "text": "`docker ps -a` shows every container with its state. The status column holds the exit code in brackets.\n\n`docker inspect` prints everything Docker knows about a container. It is long, so ask for one field with `--format`.\n\n| Exit code | Usual cause | Look at |\n| --- | --- | --- |\n| 0 | The program finished. A service should not. | The start command |\n| 1 or similar | The program reported an error. | The logs |\n| 126, 127 | The command cannot be run, or is not in the image. | `CMD`, and a typing error |\n| 137 | Killed: out of memory, or a stop that timed out. | `OOMKilled`, the memory limit |\n| 143 | Ended by a stop request it did not handle. | Normally nothing |",
+          "example": "state"
+        },
+        {
+          "kind": "prediction",
+          "title": "Killed",
+          "text": "A service runs for about an hour and then stops. `docker ps -a` shows `Exited (137)`. Nobody stopped it. `docker inspect` reports `OOMKilled: true`.",
+          "questions": [
+            "oom"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "It ends as soon as it starts",
+          "text": "`docker logs` works on a stopped container, so start there. The usual causes are a missing setting, a file that is not where the program expects, or a start command with a mistake in it.\n\n`docker exec` does not work, because nothing is running to go into. To look around, start a **new** container from the same image with a shell in place of the usual command.\n\nIf the image has no shell at all, as with a distroless base, copy files out with `docker cp`, or build and inspect the stage before the final one.",
+          "example": "look-around"
+        },
+        {
+          "kind": "explanation",
+          "title": "It runs and cannot be reached",
+          "text": "Work from the outside in.\n\n1. **Is the port published?** In `docker ps`, a published port shows an arrow: `0.0.0.0:8080->3000/tcp`. A bare `3000/tcp` is not published.\n2. **Is it the right container port?** The number after the arrow must be the one the program listens on.\n3. **Does the program listen on every interface?** Listening on `127.0.0.1` refuses everything that comes through a published port.\n4. **Does it answer from inside?** If it does, the program is fine and the problem is in steps 1 to 3.\n\nBetween two containers, check instead that both are on the same created network and that the name used is the other's container or service name.",
+          "example": "reach"
+        },
+        {
+          "kind": "debugging",
+          "title": "No arrow",
+          "text": "A service is running, its logs say it is listening, and the browser on the same machine cannot open `localhost:3000`.",
+          "example": "no-arrow",
+          "questions": [
+            "no-arrow"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "The data is gone, or the disk is full",
+          "text": "**Data that disappeared** was almost always in a writable layer. Ask `docker inspect` which mounts the container has, and compare the mounted folder with the folder the program writes to.\n\n**A full disk** is usually Docker's own storage: old images, stopped containers, build cache and volumes nobody uses. `docker system df` shows how much each takes.\n\n| Command | Deletes |\n| --- | --- |\n| `docker container prune` | Stopped containers |\n| `docker image prune` | Images with no name and no container |\n| `docker builder prune` | Build cache |\n| `docker volume prune` | Volumes that no container uses |\n| `docker system prune` | The first three, and unused networks |\n\nRead each list of what will be removed before you agree. A volume that no container currently uses may still hold the only copy of some data.",
+          "example": "disk"
+        },
+        {
+          "kind": "explanation",
+          "title": "Watch it happen",
+          "text": "Three commands show what is going on now.\n\n- `docker logs -f --since 10m web` follows the output, starting ten minutes back.\n- `docker stats` shows the memory and processor use of each container, updated live. A number that climbs steadily towards the limit is a leak.\n- `docker events` prints what Docker itself does: starts, stops, kills, health changes. It shows a restart loop as it happens."
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: three reports",
+          "text": "For each report, name the first command you would run and what you expect it to tell you.\n\n1. \"The worker container is in the list as `Exited (127)` and never did anything.\"\n2. \"The web service is up, but the page will not load from my browser.\"\n3. \"We redeployed the database and all the tasks are gone.\""
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. `docker logs worker`, expecting a \"not found\" message. Code 127 means the start command is not in the image. Look for a typing error in `command:` or `CMD`, or a file that was never copied in.\n2. `docker ps`, to read the ports column. No arrow means the port was never published. With an arrow, check the number after it, then the address the program listens on.\n3. `docker inspect` on the database container, to list its mounts. Expect to find either no volume or one mounted at the wrong folder, which means the data lived in the old container's writable layer. Then check `docker volume ls` in case an older volume still holds it.",
+          "example": "answers"
+        }
+      ],
+      "questions": [
+        {
+          "id": "oom",
+          "prompt": "What happened, and what do you do?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "The stop request was not handled, so use the exec form",
+              "feedback": "That also gives 137, but only after someone stops the container. Nobody did, and `OOMKilled` is true."
+            },
+            {
+              "text": "It went over its memory limit. Find out why memory grows, then set a limit that fits",
+              "feedback": "The kernel killed it for exceeding the limit. Watch `docker stats`: steady growth is a leak to fix in the program, and a level that is merely above the limit means the limit is too low."
+            },
+            {
+              "text": "The image is damaged, so pull it again",
+              "feedback": "A damaged image would fail at the start, not after an hour of running."
+            }
+          ]
+        },
+        {
+          "id": "no-arrow",
+          "example": "no-arrow",
+          "prompt": "What is wrong?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "The port is not published",
+              "feedback": "`3000/tcp` with no arrow only records what the image exposes. The container needs `-p 3000:3000`. `EXPOSE` by itself opens nothing."
+            },
+            {
+              "text": "The program listens on `127.0.0.1`",
+              "feedback": "That is the next thing to check once a port is published. Here nothing is published at all."
+            },
+            {
+              "text": "The container is on the wrong network",
+              "feedback": "Networks matter between containers. From the host, the published port is what counts."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "order": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "  1. What state is it in?     docker ps -a\n              |\n  2. What did it say?         docker logs --tail 100 web\n              |\n  3. How did it end?          docker inspect web   (exit code, OOMKilled)\n              |\n  4. What does it see?        docker exec -it web sh       (if running)\n                              docker run --rm -it --entrypoint sh IMAGE\n                                                           (if it will\n                                                            not stay up)\n"
+        },
+        "state": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "$ docker ps -a\nIMAGE           STATUS                       NAMES\ntracker:1.5.0   Exited (137) 2 minutes ago   web\npostgres:17.2   Up 3 days (healthy)          db\n\n$ docker inspect --format '{{.State.ExitCode}} {{.State.OOMKilled}}' web\n137 true\n\n$ docker inspect --format '{{.State.Error}}' web\n\n$ docker inspect --format '{{json .Mounts}}' db\n[{\"Type\":\"volume\",\"Name\":\"tracker_db-data\",\n  \"Destination\":\"/var/lib/postgresql/data\", ...}]\n"
+        },
+        "look-around": {
+          "readOnly": true,
+          "fence": "bash",
+          "code": "# The container ends at once. Read what it said.\ndocker logs web\n\n# Start a new container from the same image, with a shell in place of\n# the usual command, and the same settings.\ndocker run --rm -it --env-file ./tracker.env --entrypoint sh tracker:1.5.0\n\n# Inside it: is the file there? Is the setting set? Can it be run?\nls -l /app\nenv | sort\nnode server.js\n"
+        },
+        "reach": {
+          "readOnly": true,
+          "fence": "bash",
+          "code": "# 1 and 2. Which ports are published, and to what?\ndocker ps\ndocker port web\n\n# 3 and 4. Ask the service from inside its own container.\n# Use whatever the image has. Here the runtime itself makes the request.\ndocker exec web node -e \\\n  \"fetch('http://localhost:3000/health').then(r => console.log(r.status))\"\n\n# Between containers: are both on the network, and does the name resolve?\ndocker network inspect tracker-net\ndocker exec web getent hosts db\n"
+        },
+        "no-arrow": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "$ docker logs web\ntracker listening on port 3000\n\n$ docker ps\nIMAGE           STATUS         PORTS      NAMES\ntracker:1.5.0   Up 4 minutes   3000/tcp   web\n"
+        },
+        "disk": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "$ docker system df\nTYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE\nImages          41        3         18.6GB    16.9GB (90%)\nContainers      27        3         1.1GB     1.0GB (93%)\nLocal Volumes   9         2         6.4GB     2.2GB (34%)\nBuild Cache     310       0         11.3GB    11.3GB\n\n# Safe first steps: stopped containers, unused images, build cache.\n$ docker container prune\n$ docker image prune -a\n$ docker builder prune\n\n# Volumes hold data. List them and decide one by one.\n$ docker volume ls\n"
+        },
+        "answers": {
+          "readOnly": true,
+          "fence": "bash",
+          "code": "docker logs worker                                    # 1\ndocker ps                                             # 2\ndocker inspect --format '{{json .Mounts}}' db         # 3\ndocker volume ls\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:docker/module/capstone",
+      "title": "Review and containerize an app",
+      "requires": [],
+      "outcomes": [],
+      "intro": "This last module has no new ideas. It asks you to use the earlier ones together, twice: first to review a setup that works and has many faults, then to plan how to containerize a small application from a description. Do each exercise on paper before reading the answer. The reviewing is the useful part.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "How to review",
+          "text": "A setup that runs can still be slow to build, unsafe, fragile or impossible to roll back. Reading for those faults is a skill of its own, and it gets quicker with a fixed list of questions.\n\n| Question | Module |\n| --- | --- |\n| Is every image named by a specific version? | Images |\n| What does the build context contain, and what is copied? | Dockerfile |\n| Does a source change rebuild the dependencies? | Layers |\n| Is the start command in exec form? | Start |\n| Are settings and secrets outside the image? | Config |\n| Where does each piece of data live? | Storage |\n| Which ports are published, and to whom? | Network |\n| Does anything wait for readiness, restart, or have a limit? | Health |\n| Does the image hold only what runs? | Small |\n| Which user does it run as? | Privilege |\n| Can each release be identified and brought back? | Ship |"
+        },
+        {
+          "kind": "independent",
+          "title": "Review 1: a Dockerfile",
+          "text": "This Dockerfile builds and the service works. Find as many problems as you can. There are at least eight. For each, say what could go wrong.\n\nThen continue.",
+          "example": "bad-dockerfile"
+        },
+        {
+          "kind": "prediction",
+          "title": "The most urgent one",
+          "text": "You have read the Dockerfile above. The image is pushed to a registry that every employee, and several outside contractors, can pull from.",
+          "questions": [
+            "worst-dockerfile"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Review 1: what is wrong",
+          "text": "1. **`FROM node:latest`.** The base can change to a new major version on any rebuild. Name a version.\n2. **`COPY . .` before the install.** Any source change reinstalls every dependency. Copy the dependency list first.\n3. **`COPY . .` with a `.env` in the project.** Unless a `.dockerignore` excludes it, the file is in the image.\n4. **`ENV DATABASE_PASSWORD=...`.** A secret stored in the image, readable by anyone who can pull it.\n5. **`apt-get` in two steps, with no cleanup.** The install can run against stale lists, and the lists stay in a layer.\n6. **`vim` and `net-tools`.** Tools that the service does not use, shipped to production.\n7. **`npm install`.** It may pick newer versions than the ones tested, and it includes development dependencies. `npm ci --omit=dev` installs exactly what the lock file names.\n8. **No `USER`.** The service runs as root.\n9. **Shell form `CMD`.** A shell is PID 1, so a stop waits ten seconds and then kills the service.\n10. **A single stage on the full base.** The image is far larger than it needs to be.\n\nA repaired version is below. It uses two stages only to keep build tools out, and it would work as one stage on the slim base for a project with no build step.",
+          "example": "good-dockerfile"
+        },
+        {
+          "kind": "independent",
+          "title": "Review 2: a Compose file",
+          "text": "The same team's Compose file for production. Find the problems. There are at least seven.\n\nThen continue.",
+          "example": "bad-compose"
+        },
+        {
+          "kind": "prediction",
+          "title": "What a redeploy does",
+          "text": "You have read the Compose file above. The team upgrades the database by changing nothing and running `docker compose pull` and then `docker compose up -d`.",
+          "questions": [
+            "worst-compose"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Review 2: what is wrong",
+          "text": "1. **`image: postgres` and `tracker:latest`.** Neither names a version. A pull can change the database's major version, and no release can be identified or rolled back.\n2. **No volume on `db`.** The data is in the writable layer and is lost whenever the container is replaced.\n3. **`5432:5432`.** The database is published to every machine that can reach the server. `web` reaches it over the network and needs no published port.\n4. **The password in the file.** It is in version control. Use a secret file.\n5. **`DATABASE_HOST: localhost`.** Inside `web`, that is `web` itself. It must be `db`.\n6. **Short-form `depends_on` and no health check.** `web` can start before the database is ready.\n7. **No restart policy.** Nothing comes back after a crash or a reboot.\n8. **`privileged: true` and the Docker socket.** Either one hands the host to whoever takes over the service.\n9. **No limits.** A leak in one service can take down the machine.\n\nA repaired version is below.",
+          "example": "good-compose"
+        },
+        {
+          "kind": "independent",
+          "title": "Design: containerize a notes application",
+          "text": "A small team has a notes application that runs on one developer's laptop and nowhere else. Plan how to containerize it. You do not need to write every file. Decide, and give reasons.\n\n- A **web service** that serves pages and an API on port 3000. It has a build step.\n- A **worker** from the same code that creates search indexes in the background.\n- A **PostgreSQL** database.\n- **Attachments** that users upload, stored as files.\n- It needs a database password and a key for an email provider.\n- It will run on one server, and developers want to run all of it on their laptops.\n\nDecide: how many images and how they are built, how each is tagged, what is published, where each kind of data lives, how settings and secrets arrive, what starts in which order, and how a release and a rollback happen."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Design: one possible answer",
+          "text": "**Images.** One image for the application, built in two stages: a build stage on the full base, and a final stage on the slim base running as an ordinary user, started in exec form. `web` and `worker` are two services from that one image with different commands. The database uses the official image, pinned to a version.\n\n**Tags.** Each build is pushed as a version and as its commit identifier. The production file names the version.\n\n**Network.** Only `web` is published, on the server's port 80. `db` is published nowhere. On laptops, an override file publishes the database on `127.0.0.1` for local tools.\n\n**Data.** One volume for the database's files and one for attachments, mounted into both `web` and `worker`. Both are backed up, the database with its own dump tool. Logs go to output.\n\n**Settings.** Ordinary values come from the environment through an `env_file`. The two secrets are files under `/run/secrets`, never in the image or in version control.\n\n**Start.** `db` has a health check. A one-off `migrate` job waits for it. `web` and `worker` wait for the job to finish. All long-running services use `unless-stopped`, retry their connections, and have memory limits.\n\n**Release.** Build once, test that image, then change the version in the production file and run `docker compose up -d`. A rollback is the previous version and the same command.",
+          "example": "design"
+        },
+        {
+          "kind": "explanation",
+          "title": "Where to go next",
+          "text": "This course stopped at one machine, deliberately. Everything in it still holds when you move to many machines, where a tool called an orchestrator starts containers across a group of servers, replaces failed ones and spreads traffic between them. Kubernetes is the best known. Images, tags, start commands, settings from outside, volumes, health checks and limits all appear there under similar names.\n\nThe habits are what carry over:\n\n- An image holds what is the same everywhere. Settings and secrets come from outside.\n- A container is disposable. Data lives in a volume.\n- Name exact versions, build once, and promote the same image.\n- Give a program the least power it can work with.\n- When something fails, ask in order: state, output, exit code, what it sees."
+        }
+      ],
+      "questions": [
+        {
+          "id": "worst-dockerfile",
+          "prompt": "Which problem should be fixed first?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "The image is too large",
+              "feedback": "Size costs time and adds risk, but nothing is exposed by it today."
+            },
+            {
+              "text": "The database password is stored in the image",
+              "feedback": "Everyone who can pull the image can read it with `docker inspect`. Remove it from the image, and then change the password, because the old one is in every copy that was ever pushed."
+            },
+            {
+              "text": "The base image is `latest`",
+              "feedback": "That makes future builds unpredictable. It leaks nothing by itself."
+            }
+          ]
+        },
+        {
+          "id": "worst-compose",
+          "prompt": "What happens to the notes in the database?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "They are lost if the database container is replaced",
+              "feedback": "The `db` service has no volume. If the pull brings a newer image, Compose replaces the container, and the data in the old writable layer goes with it."
+            },
+            {
+              "text": "They are kept, because `up` reuses containers",
+              "feedback": "It reuses a container only when nothing about it changed. A newer image under the same tag is a change."
+            },
+            {
+              "text": "They are kept in the image",
+              "feedback": "A container never writes to its image."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "bad-dockerfile": {
+          "readOnly": true,
+          "fence": "dockerfile",
+          "code": "FROM node:latest\nWORKDIR /app\nCOPY . .\nENV DATABASE_PASSWORD=example-only-not-a-real-password\nRUN apt-get update\nRUN apt-get install -y vim net-tools curl\nRUN npm install\nRUN npm run build\nEXPOSE 3000\nCMD npm start\n\n# The project folder also contains: .env  .git/  node_modules/\n# There is no .dockerignore.\n"
+        },
+        "good-dockerfile": {
+          "readOnly": true,
+          "fence": "dockerfile",
+          "code": "# ---- build ----\nFROM node:24.11.1 AS build\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build\n\n# ---- final ----\nFROM node:24.11.1-slim\nWORKDIR /app\nENV PORT=3000\nCOPY package.json package-lock.json ./\nRUN npm ci --omit=dev\nCOPY --from=build --chown=node:node /app/dist ./dist\nUSER node\nEXPOSE 3000\nCMD [\"node\", \"dist/server.js\"]\n\n# .dockerignore:  .git  node_modules  dist  .env  .env.*\n# The password is supplied when the container starts.\n"
+        },
+        "bad-compose": {
+          "readOnly": true,
+          "fence": "yaml",
+          "code": "services:\n  web:\n    image: tracker:latest\n    privileged: true\n    ports:\n      - \"80:3000\"\n    environment:\n      DATABASE_HOST: localhost\n      DATABASE_PASSWORD: example-only-not-a-real-password\n    volumes:\n      - /var/run/docker.sock:/var/run/docker.sock\n    depends_on:\n      - db\n\n  db:\n    image: postgres\n    ports:\n      - \"5432:5432\"\n    environment:\n      POSTGRES_PASSWORD: example-only-not-a-real-password\n"
+        },
+        "good-compose": {
+          "readOnly": true,
+          "fence": "yaml",
+          "code": "services:\n  web:\n    image: registry.example.com/team/tracker:1.5.0\n    restart: unless-stopped\n    user: node\n    read_only: true\n    tmpfs: [/tmp]\n    cap_drop: [ALL]\n    mem_limit: 512m\n    ports:\n      - \"80:3000\"\n    environment:\n      DATABASE_HOST: db\n      DATABASE_PASSWORD_FILE: /run/secrets/db_password\n    secrets: [db_password]\n    depends_on:\n      db:\n        condition: service_healthy\n\n  db:\n    image: postgres:17.2\n    restart: unless-stopped\n    mem_limit: 1g\n    environment:\n      POSTGRES_PASSWORD_FILE: /run/secrets/db_password\n    secrets: [db_password]\n    volumes:\n      - db-data:/var/lib/postgresql/data\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U postgres\"]\n      interval: 5s\n      retries: 5\n\nsecrets:\n  db_password:\n    file: ./secrets/db_password.txt\n\nvolumes:\n  db-data:\n"
+        },
+        "design": {
+          "readOnly": true,
+          "fence": "text",
+          "code": "                 only published port\n                         |\n  users ---- :80 ---> +-------+                    +----------------+\n                      |  web  | ---- db:5432 ----> |       db       |\n                      +-------+                    | (health check) |\n                        |   ^                      +----------------+\n        attachments     |   | same image,            ^         |\n        volume  <-------+   | other command          |         v\n           ^            +--------+                   |    db-data volume\n           +----------- | worker | ------------------+\n                        +--------+\n\n  start order:   db healthy  ->  migrate finishes  ->  web, worker\n  secrets:       files under /run/secrets, from outside the image\n  release:       notes:1.0.0 built once, same image on test and server\n"
+        }
+      },
+      "tasks": [],
+      "drills": []
+    }
+  ]
+}

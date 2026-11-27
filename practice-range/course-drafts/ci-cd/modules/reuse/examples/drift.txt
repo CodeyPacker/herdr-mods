@@ -1,0 +1,13 @@
+  Day 1       repo A: deploy.yml  ---copy--->  repo B: deploy.yml
+                                  ---copy--->  repo C: deploy.yml
+
+  Month 6     repo A: smoke test added
+              repo B: unchanged
+              repo C: someone removed the approval "temporarily"
+
+  Month 12    a flaw is found in the sign-in step
+
+              repo A: fixed
+              repo B: fixed
+              repo C: the fix does not apply cleanly ... skipped
+              repo D to Z: nobody remembers they have a copy

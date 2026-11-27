@@ -1,0 +1,22 @@
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: npm ci && npm run build          # writes dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: dist/
+          retention-days: 3
+
+  check-links:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # A new, empty runner. Fetch what the build job produced.
+      - uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: dist/
+      - run: npx check-links dist/

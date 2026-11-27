@@ -1,0 +1,9 @@
+  docker run nginx:1.27
+
+  1. image on this machine? ---- no ---> 2. pull it from the registry
+            |                                      |
+           yes <-----------------------------------+
+            |
+  3. create a container   (private files, network address, name)
+            |
+  4. start the image's main command inside it

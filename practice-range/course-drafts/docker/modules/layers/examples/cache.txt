@@ -1,0 +1,18 @@
+  Build after changing one source file.
+
+  Source copied before the install:
+
+    FROM node:24.11.1-slim        reused
+    WORKDIR /app                  reused
+    COPY . .                      RUNS    <- a copied file changed
+    RUN npm ci --omit=dev         RUNS    <- everything below a step
+    CMD ["node", "server.js"]             that ran must run as well
+
+  Source copied after the install:
+
+    FROM node:24.11.1-slim        reused
+    WORKDIR /app                  reused
+    COPY package*.json ./         reused  <- these files did not change
+    RUN npm ci --omit=dev         reused
+    COPY . .                      RUNS    <- one second
+    CMD ["node", "server.js"]

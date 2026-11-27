@@ -1,0 +1,62 @@
+{
+  "id": "course:dsa/task/recursion-sum-nested",
+  "role": "guided",
+  "title": "Repair a nested sum",
+  "concepts": [
+    "recursion"
+  ],
+  "prompt": "A Nested value is a number, or an array of Nested values, to any depth. Return the sum of every number inside value.",
+  "hints": [
+    "What does the starter do when an item of the array is itself an array?",
+    "An inner array is a smaller Nested value. The function already knows how to sum a Nested value.",
+    "Inside the loop, add sumNested(item) for every item, whether it is a number or an array."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(sumNested([1, [2, 3], [[4]]]), 10)",
+    "__same(sumNested(5), 5)",
+    "__same(sumNested([]), 0)",
+    "__same(sumNested([[[]]]), 0)",
+    "__same(sumNested([1, 2]), 3)"
+  ],
+  "checkLabels": [
+    "1 + 2 + 3 + 4 is 10, at any depth.",
+    "A number is its own sum.",
+    "An empty array sums to 0.",
+    "Empty arrays inside each other sum to 0.",
+    "A flat array works too."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-one-level.ts",
+      "misconception": "Adds only the numbers at the top level.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-no-base.ts",
+      "misconception": "Has no case for a plain number, so it tries to loop over one.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "is not iterable"
+      }
+    }
+  ],
+  "feedback": "Name the base case and the recursive case. A number is the base case. An array is handled by asking the same function about each of its items."
+}

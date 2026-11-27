@@ -1,0 +1,15 @@
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: version
+        run: echo "tag=git-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: build              # waits for build, skipped if it fails
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Deploying ${{ needs.build.outputs.tag }}"

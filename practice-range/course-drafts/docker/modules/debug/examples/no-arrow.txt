@@ -1,0 +1,6 @@
+$ docker logs web
+tracker listening on port 3000
+
+$ docker ps
+IMAGE           STATUS         PORTS      NAMES
+tracker:1.5.0   Up 4 minutes   3000/tcp   web

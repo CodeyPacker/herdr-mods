@@ -1,0 +1,69 @@
+{
+  "id": "course:dsa/task/heaps-heap-push",
+  "role": "guided",
+  "title": "Repair a push",
+  "concepts": [
+    "heap"
+  ],
+  "prompt": "heap is a valid min-heap stored in an array. Add value to it so that it is still a valid min-heap. Put the value at the end and sift it up.",
+  "hints": [
+    "In the failing check, the new value has to travel more than one level. How many times does the starter compare it with a parent?",
+    "Repeat the comparison from the new position until the parent is not larger, or the value reaches index 0.",
+    "Turn the if into a loop: while index > 0 and the parent is larger, swap and set index to the parent's index."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [
+    {
+      "kind": "CallExpression",
+      "name": "sort",
+      "max": 0,
+      "message": "Sift the value up yourself. Do not call sort."
+    }
+  ],
+  "checks": [
+    "__same(__afterPush([1, 3, 2], 0), [0, 1, 2, 3])",
+    "__same(__afterPush([], 5), [5])",
+    "__same(__afterPush([1, 3, 2], 9), [1, 3, 2, 9])",
+    "__same(__afterPush([2, 4, 3], 2), [2, 2, 3, 4])",
+    "(() => { const heap: number[] = []; for (const value of [5, 9, 1, 8, 2, 7, 3]) heapPush(heap, value); return __isHeap(heap) && heap.length === 7 && heap[0] === 1; })()"
+  ],
+  "checkLabels": [
+    "0 rises from the bottom to the root in two swaps.",
+    "Adding to an empty heap gives one element.",
+    "A large value stays at the end.",
+    "A value equal to its parent stops below it.",
+    "Seven pushes leave a valid heap with 1 at the root."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-once.ts",
+      "misconception": "Compares with one parent and stops, so the value rises one level at most.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-sorts.ts",
+      "misconception": "Sorts the whole array on every push, which costs far more than one path.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "syntax",
+        "detail": "Sift the value up yourself"
+      }
+    }
+  ],
+  "feedback": "Follow the new value by hand in the failing check. After one swap, is its new parent still larger?"
+}

@@ -1,0 +1,6 @@
+services:
+  web:
+    image: tracker:1.4.2
+    depends_on:
+      db:
+        condition: service_healthy

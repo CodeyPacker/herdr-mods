@@ -1,0 +1,370 @@
+{
+  "schemaVersion": "1-draft",
+  "contentVersion": "0.1.0-draft.1",
+  "kind": "reading",
+  "id": "course:docker",
+  "title": "Run software in containers with Docker",
+  "audience": [
+    "Can use a terminal and has run a program from the command line",
+    "Wants to package and run software with Docker"
+  ],
+  "prerequisiteConcepts": [],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:docker/module/containers",
+      "order": "listed"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/containers",
+      "description": "Explain what a container and an image are, and what a container isolates.",
+      "assessment": "course:docker/module/containers"
+    },
+    {
+      "id": "outcome/run",
+      "description": "Start, inspect, stop and remove containers, and know what state each one is in.",
+      "assessment": "course:docker/module/run"
+    },
+    {
+      "id": "outcome/images",
+      "description": "Read an image name, choose a tag deliberately, and say what a digest guarantees.",
+      "assessment": "course:docker/module/images"
+    },
+    {
+      "id": "outcome/dockerfile",
+      "description": "Write a Dockerfile for a small service and control what goes into the build.",
+      "assessment": "course:docker/module/dockerfile"
+    },
+    {
+      "id": "outcome/layers",
+      "description": "Order a Dockerfile so that rebuilds are fast and layers stay small.",
+      "assessment": "course:docker/module/layers"
+    },
+    {
+      "id": "outcome/start",
+      "description": "Choose between CMD and ENTRYPOINT and make a container stop when it is asked to.",
+      "assessment": "course:docker/module/start"
+    },
+    {
+      "id": "outcome/config",
+      "description": "Give one image different settings in different places, without putting secrets in it.",
+      "assessment": "course:docker/module/config"
+    },
+    {
+      "id": "outcome/storage",
+      "description": "Say where a container's data lives and choose a volume, a bind mount or neither.",
+      "assessment": "course:docker/module/storage"
+    },
+    {
+      "id": "outcome/network",
+      "description": "Publish a port, connect two containers by name, and explain what localhost means inside one.",
+      "assessment": "course:docker/module/network"
+    },
+    {
+      "id": "outcome/compose",
+      "description": "Describe a multi-container app in one file and run it with one command.",
+      "assessment": "course:docker/module/compose"
+    },
+    {
+      "id": "outcome/health",
+      "description": "Make services wait for what they need, restart after a failure, and stay within limits.",
+      "assessment": "course:docker/module/health"
+    },
+    {
+      "id": "outcome/small",
+      "description": "Use a multi-stage build and a suitable base image to ship only what runs.",
+      "assessment": "course:docker/module/small"
+    },
+    {
+      "id": "outcome/secure",
+      "description": "Reduce what a container can do and what an image is trusted to contain.",
+      "assessment": "course:docker/module/secure"
+    },
+    {
+      "id": "outcome/ship",
+      "description": "Tag and push an image so that what was tested is exactly what runs.",
+      "assessment": "course:docker/module/ship"
+    },
+    {
+      "id": "outcome/debug",
+      "description": "Work out why a container stopped, cannot be reached, or lost its data.",
+      "assessment": "course:docker/module/debug"
+    },
+    {
+      "id": "outcome/capstone",
+      "description": "Review a flawed setup and plan how to containerize a small app, without help.",
+      "assessment": "course:docker/module/capstone"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:docker/module/containers",
+      "title": "What a container is",
+      "prerequisites": [],
+      "teaches": [
+        "container",
+        "image"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/containers/module.json"
+      }
+    },
+    {
+      "id": "course:docker/module/run",
+      "title": "Run and manage containers",
+      "prerequisites": [
+        "course:docker/module/containers"
+      ],
+      "teaches": [
+        "lifecycle",
+        "run"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/run/module.json"
+      }
+    },
+    {
+      "id": "course:docker/module/images",
+      "title": "Name and find images",
+      "prerequisites": [
+        "course:docker/module/run"
+      ],
+      "teaches": [
+        "tag",
+        "registry",
+        "digest"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/images/module.json"
+      }
+    },
+    {
+      "id": "course:docker/module/dockerfile",
+      "title": "Write a Dockerfile",
+      "prerequisites": [
+        "course:docker/module/images"
+      ],
+      "teaches": [
+        "dockerfile",
+        "build-context"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/dockerfile/module.json"
+      }
+    },
+    {
+      "id": "course:docker/module/layers",
+      "title": "Use layers and the build cache",
+      "prerequisites": [
+        "course:docker/module/dockerfile"
+      ],
+      "teaches": [
+        "layer",
+        "build-cache"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/layers/module.json"
+      }
+    },
+    {
+      "id": "course:docker/module/start",
+      "title": "Start and stop cleanly",
+      "prerequisites": [
+        "course:docker/module/dockerfile"
+      ],
+      "teaches": [
+        "entrypoint",
+        "signals"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/start/module.json"
+      }
+    },
+    {
+      "id": "course:docker/module/config",
+      "title": "Configure a container",
+      "prerequisites": [
+        "course:docker/module/start"
+      ],
+      "teaches": [
+        "environment",
+        "build-args"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/config/module.json"
+      }
+    },
+    {
+      "id": "course:docker/module/storage",
+      "title": "Keep data",
+      "prerequisites": [
+        "course:docker/module/run"
+      ],
+      "teaches": [
+        "volume",
+        "bind-mount"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/storage/module.json"
+      }
+    },
+    {
+      "id": "course:docker/module/network",
+      "title": "Connect containers",
+      "prerequisites": [
+        "course:docker/module/run"
+      ],
+      "teaches": [
+        "port",
+        "network"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/network/module.json"
+      }
+    },
+    {
+      "id": "course:docker/module/compose",
+      "title": "Describe an app with Compose",
+      "prerequisites": [
+        "course:docker/module/config",
+        "course:docker/module/storage",
+        "course:docker/module/network"
+      ],
+      "teaches": [
+        "compose"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/compose/module.json"
+      }
+    },
+    {
+      "id": "course:docker/module/health",
+      "title": "Start in order and stay up",
+      "prerequisites": [
+        "course:docker/module/compose"
+      ],
+      "teaches": [
+        "healthcheck",
+        "restart"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/health/module.json"
+      }
+    },
+    {
+      "id": "course:docker/module/small",
+      "title": "Build small images",
+      "prerequisites": [
+        "course:docker/module/layers"
+      ],
+      "teaches": [
+        "multi-stage",
+        "base-image"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/small/module.json"
+      }
+    },
+    {
+      "id": "course:docker/module/secure",
+      "title": "Run with less privilege",
+      "prerequisites": [
+        "course:docker/module/small",
+        "course:docker/module/config"
+      ],
+      "teaches": [
+        "least-privilege",
+        "supply-chain"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/secure/module.json"
+      }
+    },
+    {
+      "id": "course:docker/module/ship",
+      "title": "Tag, push and release",
+      "prerequisites": [
+        "course:docker/module/images",
+        "course:docker/module/small"
+      ],
+      "teaches": [
+        "release",
+        "promotion"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/ship/module.json"
+      }
+    },
+    {
+      "id": "course:docker/module/debug",
+      "title": "Find out why it failed",
+      "prerequisites": [
+        "course:docker/module/start",
+        "course:docker/module/network",
+        "course:docker/module/storage"
+      ],
+      "teaches": [
+        "debugging",
+        "exit-code"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/debug/module.json"
+      }
+    },
+    {
+      "id": "course:docker/module/capstone",
+      "title": "Review and containerize an app",
+      "prerequisites": [
+        "course:docker/module/health",
+        "course:docker/module/secure",
+        "course:docker/module/ship",
+        "course:docker/module/debug"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/capstone/module.json"
+      }
+    }
+  ],
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  },
+  "runtimeContentVersion": "0.1.0-preview.1"
+}

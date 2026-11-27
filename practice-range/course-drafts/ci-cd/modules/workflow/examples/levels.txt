@@ -1,0 +1,16 @@
+  WORKFLOW  ci.yml
+  |
+  +-- TRIGGER    on: pull_request, push to main
+  |
+  +-- JOB  test                    (one fresh runner)
+  |     +-- STEP  checkout the code
+  |     +-- STEP  install the runtime
+  |     +-- STEP  npm ci
+  |     +-- STEP  npm test
+  |
+  +-- JOB  lint                    (another fresh runner)
+        +-- STEP  checkout the code
+        +-- STEP  npm run lint
+
+  One event  ->  one RUN of the workflow  ->  every job, each on its
+                                              own machine

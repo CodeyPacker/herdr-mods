@@ -1,0 +1,17 @@
+  Before                              After the swap
+
+  users                               users
+    |                                   |
+    v                                   v
+  +----------------+                  +----------------+
+  | production     |  v1.4            | production     |  v1.5
+  +----------------+                  +----------------+
+  +----------------+                  +----------------+
+  | slot "next"    |  v1.5  tested    | slot "next"    |  v1.4  kept
+  +----------------+  at its own      +----------------+  for going
+                      address                             back
+
+# Azure App Service
+az webapp deployment slot swap \
+  --name tracker-prod --resource-group rg-tracker-prod \
+  --slot next --target-slot production

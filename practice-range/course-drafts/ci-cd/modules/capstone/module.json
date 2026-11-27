@@ -1,0 +1,126 @@
+{
+  "id": "course:ci-cd/module/capstone",
+  "title": "Review and design a pipeline",
+  "requires": [],
+  "outcomes": [],
+  "intro": "This last module has no new ideas. It asks you to use the earlier ones together, twice: first to review a pipeline that works and has many faults, then to design a pipeline for a small service from a description. Do each exercise on paper before reading the answer.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "How to review a pipeline",
+      "text": "A pipeline that goes green can still be slow, unsafe, or impossible to undo. Read one with a fixed list of questions.\n\n| Question | Module |\n| --- | --- |\n| What starts it, and can unreviewed code start a deployment? | Triggers, Secrets |\n| Do the cheap checks run first, and can a failure be hidden? | Stages |\n| Is anything downloaded or run that need not be? | Speed |\n| Is the artifact built once and named permanently? | Artifacts |\n| Does it pass through environments with a gate before production? | Environments |\n| How does it sign in, and how much can it reach? | Secrets |\n| Is the new version checked before users reach it? | Deploy |\n| Can the previous version be restored in minutes? | Rollback |\n| Can old and new code both run against the database? | Database |\n| Is shared logic called at a pinned version? | Reuse |\n| Is the infrastructure described and previewed? | Infrastructure |\n| Would anyone notice a bad release? | Measure |"
+    },
+    {
+      "kind": "independent",
+      "title": "Review: one workflow",
+      "text": "This workflow is a small team's whole pipeline. It works: changes reach production. Find as many problems as you can. There are at least twelve. For each, say what could go wrong.\n\nThen continue.",
+      "example": "bad"
+    },
+    {
+      "kind": "prediction",
+      "title": "The most urgent one",
+      "text": "You have read the workflow above. The repository is public, and anyone can open a pull request.",
+      "questions": [
+        "worst"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Review: what is wrong",
+      "text": "**Who can deploy**\n\n1. `on: [push, pull_request]` deploys from every branch and every pull request. Unreviewed code reaches production.\n2. No `environment`, so no approval and no scoped secrets.\n3. No `concurrency`. Two runs can deploy at once and finish in the wrong order.\n\n**Access**\n\n4. A stored, long-lived admin credential. Use federated identity with rights over one resource group.\n5. An unknown third-party action at `@master`, handed that credential.\n6. No `permissions:` block.\n7. The commit message is pasted into a script. Its author chooses what runs.\n\n**Checks**\n\n8. The 40-minute end-to-end suite runs before lint. Cheap checks should come first.\n9. `npm test || true` can never fail. Unit test failures are hidden.\n10. `npm install` may fetch versions other than the ones tested. Use `npm ci`, with a cache.\n\n**Artifact and release**\n\n11. The image is tagged `latest`. No release can be identified or restored.\n12. Build and deploy are one job, straight to production. There is no staging and no promotion.\n13. No smoke test and no slot. The job ends when the command is accepted.\n14. The migration renames and drops columns in the same release as the code, directly on production.\n\nA repaired design is below, as an outline. Each box is a job or a reusable workflow from an earlier module.",
+      "example": "good"
+    },
+    {
+      "kind": "independent",
+      "title": "Design: a pipeline for a notes service",
+      "text": "A team of four is building a notes service. Design its delivery pipeline. You do not need to write the files. Decide, and give reasons.\n\n- The service is a container image, deployed to Azure App Service with a second slot.\n- It has a PostgreSQL database with migrations.\n- There are development, staging and production environments.\n- Unit tests take 2 minutes, integration tests 5 minutes, end-to-end tests 30 minutes.\n- The team wants to release several times a day.\n\nDecide: the triggers, the order of the checks, where the image is built and how it is named, how it moves between environments, how the pipeline signs in, how a release is checked, how it is rolled back, how migrations are handled, and what is measured."
+    },
+    {
+      "kind": "prediction",
+      "title": "One decision",
+      "text": "In your design, a change has been merged, built as `notes:git-5b3e9aa`, and tested in staging. It is now to go to production.",
+      "questions": [
+        "promote"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Design: one possible answer",
+      "text": "**Triggers.** Checks on `pull_request`, with newer commits cancelling older runs. Build and deploy to development and staging on `push` to `main`. Production by `workflow_dispatch` with the tag as input. One concurrency group for each environment, never cancelled.\n\n**Checks.** On the pull request: lint and type check first, then unit and integration tests side by side, about 6 minutes in all. After the merge: a few end-to-end smoke tests against staging. Nightly: the full 30-minute suite, with failures sent to the team.\n\n**Artifact.** Built once, after the merge, tagged `git-<commit>`, pushed to the registry. Nothing later builds.\n\n**Environments.** Development and staging automatically, in turn. Production after one approval from someone other than the person who started it. Each environment has its own variables and its own identity.\n\n**Access.** Federated identity, no stored keys, rights over one resource group each. `permissions` set to the minimum. Outside actions pinned to commit identifiers.\n\n**Release.** Deploy to the idle slot, smoke test it, swap, smoke test production, swap back on failure.\n\n**Rollback.** A manual workflow that needs no approval: swap back within minutes of a release, or deploy an earlier tag. The deployment record names the previous tag.\n\n**Database.** Additive migrations only, run as a job before the new code, in staging first. Renames and removals go through expand and contract over several releases.\n\n**Measures.** The four delivery numbers from the deployment record, the time of the pull request checks, and the error rate with a marker for each deployment.",
+      "example": "design"
+    },
+    {
+      "kind": "explanation",
+      "title": "Where to go next",
+      "text": "This course used one pipeline tool and one cloud so that its examples could be compared. The file formats differ elsewhere. The decisions do not.\n\nThe habits that carry over:\n\n- Merge small changes often, and keep the shared branch releasable.\n- Run cheap checks first, and never let a failure be hidden or ignored.\n- Build once, name it permanently, and promote the same artifact.\n- Give the pipeline short-lived access to as little as possible.\n- Check a new version before users reach it, and keep the way back open.\n- Change the database in steps that the previous version can live with.\n- Describe infrastructure in files, and read the preview.\n- Measure, to learn and not to judge."
+    }
+  ],
+  "questions": [
+    {
+      "id": "worst",
+      "prompt": "Which problem should be fixed first?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "The end-to-end tests run before lint",
+          "feedback": "That wastes time on every run. It exposes nothing."
+        },
+        {
+          "text": "The image is tagged `latest`",
+          "feedback": "That makes rollback impossible, which matters a great deal. It still needs someone inside the team to trigger harm."
+        },
+        {
+          "text": "Any pull request deploys its code to production with admin credentials",
+          "feedback": "A stranger can open a pull request that changes the build or the tests, and the workflow will run it with a credential that controls the cloud account, then deploy the result. Limit the deploy to `main` and remove the stored credential before anything else."
+        }
+      ]
+    },
+    {
+      "id": "promote",
+      "prompt": "What does the production workflow do with that tag?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Points production's idle slot at the existing image, checks it, and swaps",
+          "feedback": "Nothing is rebuilt. The image that staging tested is the one that runs, and the slot keeps the old version ready for a swap back."
+        },
+        {
+          "text": "Checks out the commit and builds a fresh image for production",
+          "feedback": "A second build is a different artifact, which staging never tested."
+        },
+        {
+          "text": "Retags it as `latest` and restarts production",
+          "feedback": "A moving tag cannot say what is running or what ran before, and a restart gives no check before users arrive."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "bad": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/bad.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "good": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/good.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "design": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/design.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

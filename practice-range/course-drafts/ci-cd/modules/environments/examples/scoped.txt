@@ -1,0 +1,14 @@
+  Repository settings
+
+  Environment: staging                 Environment: production
+    vars.APP_NAME       tracker-stg      vars.APP_NAME       tracker-prod
+    vars.RESOURCE_GROUP rg-tracker-stg   vars.RESOURCE_GROUP rg-tracker-prod
+    secrets.DB_PASSWORD ********         secrets.DB_PASSWORD ********
+
+  Workflow
+
+    deploy-staging:                      deploy-production:
+      environment: staging                 environment: production
+      steps: (the same steps)              steps: (the same steps)
+
+  The steps read vars.APP_NAME. The environment decides its value.

@@ -1,0 +1,12 @@
+$ docker build -t tracker:dev .
+[+] Building 21.4s (10/10) FINISHED
+ => [1/5] FROM docker.io/library/node:24.11.1-slim
+ => [2/5] WORKDIR /app
+ => [3/5] COPY package.json package-lock.json ./
+ => [4/5] RUN npm ci --omit=dev
+ => [5/5] COPY . .
+ => exporting to image
+ => => naming to docker.io/library/tracker:dev
+
+$ docker run --rm tracker:dev
+tracker listening on port 3000

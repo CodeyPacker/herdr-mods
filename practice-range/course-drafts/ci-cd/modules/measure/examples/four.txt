@@ -1,0 +1,12 @@
+                 SPEED                          STABILITY
+
+   Deployment frequency              Change failure rate
+   how often we release              how many releases go wrong
+
+   Lead time for changes             Time to restore service
+   commit --> production             failure --> working again
+
+   commit         merged        deployed          failure    restored
+     |--------------|--------------|                 |----------|
+     |<------- lead time --------->|                 |<-------->|
+                                                   time to restore

@@ -1,0 +1,164 @@
+{
+  "id": "course:docker/module/storage",
+  "title": "Keep data",
+  "requires": [],
+  "outcomes": [],
+  "intro": "Containers are meant to be thrown away and replaced. Data is not. This module covers where a container's files really live, what is lost when a container is removed, and the three ways to keep data somewhere that outlives it.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "The writable layer",
+      "text": "An image is read-only, and yet a program in a container can create and change files. It can because Docker gives every container a thin **writable layer** on top of the image's layers.\n\nEverything the container writes goes there. When it changes a file that came from the image, the file is first copied up into the writable layer, and the copy is changed.\n\nThe writable layer belongs to that one container. It survives a stop and a start. It is deleted when the container is removed.",
+      "example": "writable"
+    },
+    {
+      "kind": "prediction",
+      "title": "A database with no storage set up",
+      "text": "A database is started with the command below. It runs for a month and holds real data. Then it is upgraded the usual way: the container is removed and a new one is started from a newer image.\n\n```bash\ndocker run -d --name db example/database:1.0\n```",
+      "questions": [
+        "lost-data"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Three places to put data",
+      "text": "To keep data, mount storage from outside the container at the folder where the program writes. A **mount** makes outside storage appear as a folder inside. Writes to that folder skip the writable layer.\n\n| Kind | Where the data is | Use it for |\n| --- | --- | --- |\n| **Volume** | A storage area that Docker manages | Data the app owns: databases, uploads |\n| **Bind mount** | A folder or file you choose on the host | Source code in development, config files |\n| **tmpfs** | Memory only, never on disk | Scratch files that must not be kept |\n\nWhatever is not in a mount is in the writable layer, and should be treated as disposable.",
+      "example": "mounts"
+    },
+    {
+      "kind": "explanation",
+      "title": "Named volumes",
+      "text": "A **volume** is the default choice for data. Give it a name and say where it appears in the container.\n\n```bash\ndocker run -d --name db \\\n  -v tracker-data:/var/lib/postgresql/data \\\n  postgres:17\n```\n\nThe name comes before the colon and the folder inside the container after it. Docker creates the volume the first time it is used. Removing the container leaves the volume alone, and a new container given the same volume finds the same data.\n\nThe folder must be the one the program actually writes to. An image's documentation says which it is.",
+      "example": "volume"
+    },
+    {
+      "kind": "explanation",
+      "title": "Bind mounts",
+      "text": "A **bind mount** makes a folder or file from the host appear in the container. The left side is a path, not a name, which is how Docker tells the two apart.\n\nBoth sides see the same files at the same moment. That makes bind mounts ideal in development: edit the source on your machine and the container sees the change with no rebuild.\n\nThey have two costs. The container depends on a path existing on that particular host, so the setup is less portable. And the container can change or delete your files, so add `:ro` whenever it only needs to read.",
+      "example": "bind"
+    },
+    {
+      "kind": "debugging",
+      "title": "A volume that kept nothing",
+      "text": "This database was given a volume, and its data still disappeared when the container was replaced. PostgreSQL stores its data in `/var/lib/postgresql/data`.",
+      "example": "wrong-path",
+      "questions": [
+        "wrong-path"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "What a mount hides",
+      "text": "A mount covers whatever the image had at that folder. Two cases surprise people.\n\n- An **empty named volume** is filled first: Docker copies the image's files at that folder into the new volume. So the first start works as expected.\n- A **bind mount** is never filled. If the host folder is empty, the container sees an empty folder, and the image's files there are hidden.\n\nThe classic example is mounting your project folder over `/app` in development. The dependencies installed into `/app` during the build vanish from view, because your host folder has none. The module on Compose shows a tidy way to handle it."
+    },
+    {
+      "kind": "explanation",
+      "title": "A volume is yours to look after",
+      "text": "A volume is not a backup. It is one copy of the data on one machine.\n\n- **Back it up.** A throwaway container can mount the volume and write an archive to a host folder, as below. For a database, prefer the database's own dump tool, which gives a consistent copy while it is running.\n- **Remove it deliberately.** `docker volume rm` deletes one volume and `docker volume prune` deletes those no container uses. Both are permanent.\n- **Keep containers stateless.** If every piece of data that matters is in a volume, any container can be removed and replaced without thought. That is the goal.",
+      "example": "backup"
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: where should it live?",
+      "text": "The tracker has these kinds of data. For each, choose a volume, a bind mount, tmpfs, or nothing at all, and give a reason.\n\n1. The database's files.\n2. Pictures that users upload.\n3. The source code, while a developer is working on it.\n4. A configuration file written by the operations team.\n5. Temporary files made while resizing a picture.\n6. The service's log output."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. **Volume.** It is the application's own data and must outlive every container.\n2. **Volume.** The same reason. On several servers it would move to shared storage, which is outside this course.\n3. **Bind mount.** The developer edits on the host and the container must see each change.\n4. **Bind mount, read-only.** The file is managed on the host and the container only reads it.\n5. **tmpfs, or nothing.** They are worthless a second later. The writable layer is fine, and tmpfs keeps them off the disk.\n6. **Nothing.** Write logs to the program's output. Docker collects them, and `docker logs` shows them. A log file inside the container grows unseen in the writable layer."
+    }
+  ],
+  "questions": [
+    {
+      "id": "lost-data",
+      "prompt": "What happens to the month of data?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "It is deleted with the old container",
+          "feedback": "No storage was mounted, so the database wrote into the container's writable layer, and removing the container removes that layer."
+        },
+        {
+          "text": "It moves to the new container",
+          "feedback": "Nothing connects the two containers. Each has its own writable layer."
+        },
+        {
+          "text": "It stays in the image",
+          "feedback": "A running container never changes its image."
+        }
+      ]
+    },
+    {
+      "id": "wrong-path",
+      "example": "wrong-path",
+      "prompt": "Why was the data lost?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Volumes are removed along with their container",
+          "feedback": "A named volume stays until someone removes it. This one still exists, and it is empty."
+        },
+        {
+          "text": "The volume was mounted at a folder the database does not use",
+          "feedback": "The database wrote to `/var/lib/postgresql/data`, which was not a mount, so the data went to the writable layer. The volume at `/data` was never written to."
+        },
+        {
+          "text": "The volume needed `:ro`",
+          "feedback": "Read-only would stop the database from writing to it at all."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "writable": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/writable.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "mounts": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/mounts.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "volume": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/volume.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "bind": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/bind.txt"
+      },
+      "readOnly": true,
+      "fence": "bash"
+    },
+    "wrong-path": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/wrong-path.txt"
+      },
+      "readOnly": true,
+      "fence": "bash"
+    },
+    "backup": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/backup.txt"
+      },
+      "readOnly": true,
+      "fence": "bash"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

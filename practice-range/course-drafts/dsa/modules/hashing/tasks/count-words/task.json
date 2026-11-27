@@ -1,0 +1,60 @@
+{
+  "id": "course:dsa/task/hashing-count-words",
+  "role": "independent",
+  "title": "Count words",
+  "concepts": [
+    "hash-map"
+  ],
+  "prompt": "Return a Map from each word to the number of times it appears in words. Words are compared exactly, so Go and go are different words. Keys must be added in the order the words first appear.",
+  "hints": [
+    "What should the count become for a word that is not in the Map yet?",
+    "Read the current count with get, use 0 when it is undefined, and set one more.",
+    "counts.set(word, (counts.get(word) ?? 0) + 1) inside a loop over the words."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(countWords([\"a\", \"b\", \"a\"]), new Map([[\"a\", 2], [\"b\", 1]]))",
+    "__same(countWords([]), new Map())",
+    "__same(countWords([\"x\", \"x\", \"x\"]).get(\"x\"), 3)",
+    "__same(countWords([\"Go\", \"go\"]).size, 2)"
+  ],
+  "checkLabels": [
+    "a appears twice and b once.",
+    "No words give an empty Map.",
+    "Three of the same word count as 3.",
+    "Go and go are different words."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-overwrite.ts",
+      "misconception": "Stores 1 every time instead of adding to the count.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-lowercase.ts",
+      "misconception": "Changes the words before counting them.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 4 failed"
+      }
+    }
+  ],
+  "feedback": "Trace the Map by hand for a list in which one word appears twice. What is stored the second time?"
+}

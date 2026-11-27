@@ -1,0 +1,65 @@
+{
+  "id": "course:dsa/task/cost-has-pair-sum",
+  "role": "independent",
+  "title": "Find a pair that adds up",
+  "concepts": [
+    "step-count",
+    "big-o"
+  ],
+  "prompt": "Return true when two numbers at different positions in values add up to target. The same position may not be used twice. Check every pair with a loop inside a loop.",
+  "hints": [
+    "How do you make sure the two positions are different?",
+    "Let the inner index start one after the outer index, so that each pair is tried once.",
+    "for i from 0, for j from i + 1: return true when values[i] + values[j] equals target. Return false after both loops."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(hasPairSum([2, 7, 11], 9), true)",
+    "__same(hasPairSum([2, 7, 11], 4), false)",
+    "__same(hasPairSum([3, 3], 6), true)",
+    "__same(hasPairSum([], 0), false)",
+    "__same(hasPairSum([5], 10), false)",
+    "__same(hasPairSum([1, 4, 8], 9), true)"
+  ],
+  "checkLabels": [
+    "2 and 7 add up to 9.",
+    "2 may not be paired with itself.",
+    "Two equal numbers at different positions count.",
+    "An empty array has no pair.",
+    "One number has no pair.",
+    "The pair need not be next to each other."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-same.ts",
+      "misconception": "Lets a number be paired with itself.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-adjacent.ts",
+      "misconception": "Tries only numbers that are next to each other.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 6 failed"
+      }
+    }
+  ],
+  "feedback": "List the pairs of positions your loops visit for a three-item array. Every pair of different positions should appear once."
+}

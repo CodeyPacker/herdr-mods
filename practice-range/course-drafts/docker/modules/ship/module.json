@@ -1,0 +1,169 @@
+{
+  "id": "course:docker/module/ship",
+  "title": "Tag, push and release",
+  "requires": [],
+  "outcomes": [],
+  "intro": "An image on your laptop helps nobody else. This module covers getting an image to the machines that run it: pushing it to a registry, naming it so that every release can be identified, and making sure that the image that was tested is the image that runs.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "From a laptop to a server",
+      "text": "The path is the same for every project.\n\n1. **Build** the image, usually on a build server so that no one's laptop is part of the process.\n2. **Push** it to a registry.\n3. **Pull** it on each machine that will run it.\n4. **Run** it there with that place's settings.\n\nThe registry is the meeting point. Nothing is copied from the build machine to the servers directly.",
+      "example": "path"
+    },
+    {
+      "kind": "explanation",
+      "title": "Tag and push",
+      "text": "An image's name says where it goes. To push to a registry, the image needs a name that begins with that registry's address.\n\n`docker tag` adds a second name to an existing image. It copies nothing. The image then has two names for the same content.\n\n`docker push` uploads it. Layers the registry already has are skipped, so pushing a new version of a familiar image sends only the layers that changed.\n\nA registry needs to know who you are before it accepts a push. `docker login` does that, and it is something you do yourself with your own account.",
+      "example": "push"
+    },
+    {
+      "kind": "explanation",
+      "title": "What to call a release",
+      "text": "Give every build a tag that will never be used for anything else.\n\n- **A version**, such as `1.4.2`, when the project has releases.\n- **The commit identifier**, such as `git-3f2a9c8`, when it does not. It leads straight back to the exact source.\n\nTreat these tags as permanent. Never push different content under a tag that was already used. Many registries can enforce that.\n\nMoving tags such as `1.4` or `latest` may be offered as a convenience for people trying the image. Nothing you deploy should refer to them."
+    },
+    {
+      "kind": "prediction",
+      "title": "Which image was running?",
+      "text": "Production runs `tracker:latest`. Every build pushes a new `latest`. On Tuesday a bad build is deployed and the team wants to go back to Monday's.",
+      "questions": [
+        "rollback"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Build once, promote the same image",
+      "text": "It is common to see an image rebuilt for each environment: one build for testing, another for production. The two are different images even when the source is the same. A base tag may have moved between the builds, and a dependency may have published a new version.\n\nBuild **once**. Test that image. Then run **that same image**, by the same tag or digest, in the next environment. Moving one image forward through environments is called promotion.\n\nThis works only because settings live outside the image, as the module on configuration required. An image with production's settings built in cannot be tested anywhere else.",
+      "example": "promote"
+    },
+    {
+      "kind": "explanation",
+      "title": "Platforms",
+      "text": "An image contains programs compiled for one kind of processor. The two common platforms are `linux/amd64`, used by most servers, and `linux/arm64`, used by recent Apple laptops and a growing share of servers.\n\nBy default a build targets the machine it runs on. An image built on an arm64 laptop and run on an amd64 server fails at once with the error `exec format error`.\n\nEither build on the same kind of machine you deploy to, or name the platforms. One tag can hold a version for each, and every machine pulls the one that fits it.",
+      "example": "platform"
+    },
+    {
+      "kind": "debugging",
+      "title": "It worked on the laptop",
+      "text": "A developer builds and pushes an image from a new laptop. The server pulls it and the container ends immediately.",
+      "example": "format",
+      "questions": [
+        "format"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Record where an image came from",
+      "text": "Months later, someone will look at a running container and ask which source it was built from. **Labels** answer that. A label is a name and a value stored in the image.\n\nThere are standard names for the common facts: the source repository, the commit, the version and the build time. `docker inspect` shows them.\n\nSet them from build arguments, so that the build server fills them in.",
+      "example": "labels"
+    },
+    {
+      "kind": "explanation",
+      "title": "Replace, do not repair",
+      "text": "A running container is never updated in place. To release a new version, start a new container from the new image and remove the old one.\n\nThe same rule covers emergencies. Do not fix production with `docker exec` and an editor. The fix lives only in that one container's writable layer. It is lost at the next restart and nobody else knows it exists. Fix the source, build, and deploy.\n\nGoing back is then the same action as going forward: run the previous tag. Keep enough old tags in the registry for that to be possible."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: a release",
+      "text": "A team builds `tracker` from commit `3f2a9c8`, version 1.5.0, and keeps images at `registry.example.com/team/tracker`.\n\n1. Which tags do you push for this build?\n2. Which name does the production Compose file refer to?\n3. The image is tested on the test server on Monday. What is deployed to production on Tuesday, and what is not done?\n4. On Wednesday version 1.5.0 turns out to be faulty. What is the rollback?"
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. `registry.example.com/team/tracker:1.5.0` and `:git-3f2a9c8`. Both are permanent names for one image.\n2. The version tag, `...tracker:1.5.0`, or that tag with its digest. Never `latest`.\n3. The image that was tested, pulled by the same tag. It is not rebuilt for production. Only the settings differ.\n4. Change the production file back to `1.4.2` and run `docker compose up -d`. The old image is still in the registry, so going back takes one pull and one restart."
+    }
+  ],
+  "questions": [
+    {
+      "id": "rollback",
+      "prompt": "What is the problem?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "Nothing, they can pull `latest` again",
+          "feedback": "`latest` now points at Tuesday's bad build. Pulling it again fetches the same thing."
+        },
+        {
+          "text": "Old images are deleted when a tag moves",
+          "feedback": "The old image may well still exist in the registry. The trouble is that it no longer has a name anyone can use."
+        },
+        {
+          "text": "No name points at Monday's image any more",
+          "feedback": "Each push moved `latest`, so Monday's image has no tag. A permanent tag per build would have made the rollback a one-line change."
+        }
+      ]
+    },
+    {
+      "id": "format",
+      "example": "format",
+      "prompt": "What is the cause?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "The image was built for a different kind of processor",
+          "feedback": "`exec format error` means the kernel was asked to run a program compiled for another processor type. The laptop built for arm64 and the server is amd64."
+        },
+        {
+          "text": "The start command is missing from the image",
+          "feedback": "A missing command gives exit code 127 and the message \"not found\"."
+        },
+        {
+          "text": "The image was damaged while being pushed",
+          "feedback": "Layers are checked against their digests. Damaged content would be refused at the pull."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "path": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/path.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "push": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/push.txt"
+      },
+      "readOnly": true,
+      "fence": "bash"
+    },
+    "promote": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/promote.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "platform": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/platform.txt"
+      },
+      "readOnly": true,
+      "fence": "bash"
+    },
+    "format": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/format.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "labels": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/labels.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

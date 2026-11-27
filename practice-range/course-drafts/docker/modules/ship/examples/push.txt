@@ -1,0 +1,11 @@
+# Build with the full name straight away ...
+docker build -t registry.example.com/team/tracker:1.5.0 .
+
+# ... or add the name to an image that already exists.
+docker tag tracker:dev registry.example.com/team/tracker:1.5.0
+
+# Upload it. You sign in to the registry yourself first (docker login).
+docker push registry.example.com/team/tracker:1.5.0
+
+# On a server:
+docker pull registry.example.com/team/tracker:1.5.0

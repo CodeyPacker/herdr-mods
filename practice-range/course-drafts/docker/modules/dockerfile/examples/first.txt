@@ -1,0 +1,18 @@
+# Start from an image that already contains the runtime.
+FROM node:24.11.1-slim
+
+# Work in /app from here on. The folder is created.
+WORKDIR /app
+
+# Copy the dependency list, then install exactly what it names.
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+# Copy the program itself.
+COPY . .
+
+# The program listens on this port. This line is a note for readers.
+EXPOSE 3000
+
+# What to start when a container runs.
+CMD ["node", "server.js"]

@@ -1,0 +1,63 @@
+{
+  "id": "course:dsa/task/readiness-r1",
+  "role": "readiness",
+  "title": "Values in both sorted arrays",
+  "concepts": [
+    "two-pointers",
+    "step-count"
+  ],
+  "prompt": "a and b are each sorted from smallest to largest and may contain repeats. Return a sorted array of the numbers that appear in both, each listed once.",
+  "hints": [
+    "With one index in each array, what do you do when the two numbers differ?",
+    "Move the index that points at the smaller number. When they are equal, record the number and move both.",
+    "Before recording, skip the number if it equals the last one you recorded."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(commonSorted([1, 2, 4, 7], [2, 3, 4, 8]), [2, 4])",
+    "__same(commonSorted([], [1]), [])",
+    "__same(commonSorted([1, 1, 2], [1, 1, 3]), [1])",
+    "__same(commonSorted([1, 2, 3], [4, 5]), [])",
+    "__same(commonSorted([5], [5]), [5])"
+  ],
+  "checkLabels": [
+    "2 and 4 are in both arrays.",
+    "An empty array shares nothing.",
+    "A shared number is listed once.",
+    "Arrays with nothing in common give an empty array.",
+    "One shared number is found."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-repeats.ts",
+      "misconception": "Lists a shared number once for every time it repeats.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    },
+    {
+      "source": "wrong-positions.ts",
+      "misconception": "Compares only the numbers at the same position in each array.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Trace one index in each array on the first check. Only the index at the smaller number should move."
+}

@@ -1,0 +1,173 @@
+{
+  "id": "course:docker/module/health",
+  "title": "Start in order and stay up",
+  "requires": [],
+  "outcomes": [],
+  "intro": "An application made of several containers has to start in a workable order, recover when a part fails, and not take the whole machine down when a part misbehaves. This module covers health checks, waiting for a dependency to be ready, restart policies and resource limits.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Started is not ready",
+      "text": "`depends_on` in its short form makes Compose start the database container before the web container. It does not wait for the database to be **ready**.\n\nA database needs several seconds after its process starts before it accepts connections. The web service starts a moment later, tries to connect, and fails.\n\nDocker knows when a process has started. It cannot know by itself when a program is ready to do its job. You have to tell it how to find out.",
+      "example": "timeline"
+    },
+    {
+      "kind": "explanation",
+      "title": "Health checks",
+      "text": "A **health check** is a command that Docker runs inside the container at intervals. Exit code 0 means healthy. Anything else means not healthy.\n\n| Setting | Meaning |\n| --- | --- |\n| `test` | The command to run. |\n| `interval` | How long to wait between checks. |\n| `timeout` | How long one check may take before it counts as failed. |\n| `retries` | How many failures in a row make the container unhealthy. |\n| `start_period` | Time at the start during which failures do not count. |\n\nA container with a health check is `starting`, then `healthy` or `unhealthy`. `docker ps` shows the state.\n\nThe command must exist in the image. A good check asks the program a real question, such as whether it accepts a connection, and is cheap enough to run every few seconds.",
+      "example": "healthcheck"
+    },
+    {
+      "kind": "explanation",
+      "title": "Wait for healthy",
+      "text": "With a health check in place, `depends_on` can use its long form and name a condition.\n\n- `service_started` is the default: the container has been started.\n- `service_healthy` waits until the health check passes.\n- `service_completed_successfully` waits until the container has finished with exit code 0. It suits a one-off job that must run first, such as updating the database's tables.",
+      "example": "depends"
+    },
+    {
+      "kind": "prediction",
+      "title": "The short form",
+      "text": "A Compose file says this, and the `db` service has no health check.\n\n```yaml\n  web:\n    depends_on:\n      - db\n```",
+      "questions": [
+        "short-form"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "It can still fail later",
+      "text": "Start order solves the first minute. It does nothing about the rest of the application's life. A database can restart at three in the morning, long after every `depends_on` was satisfied.\n\nSo the real fix belongs in the program: **when a connection fails, wait a little and try again.** A service that retries does not care which container started first.\n\nUse health checks and conditions to make a clean start likely. Do not use them as a reason to skip retrying."
+    },
+    {
+      "kind": "explanation",
+      "title": "Restart policies",
+      "text": "A restart policy tells Docker what to do when a container's main process ends.\n\n| Policy | Restarts when |\n| --- | --- |\n| `no` | Never. This is the default. |\n| `on-failure` | The exit code is not 0. |\n| `always` | It ends for any reason, and when the Docker daemon starts. |\n| `unless-stopped` | As `always`, except after you stopped it yourself. |\n\n`unless-stopped` suits most long-running services. They come back after a crash and after the machine reboots, and stay down when you stop them on purpose.\n\nDocker waits a little longer before each new attempt. And note what a policy does not do: Docker by itself does not restart a container for being **unhealthy**. It restarts one only when the main process ends.",
+      "example": "restart"
+    },
+    {
+      "kind": "debugging",
+      "title": "Up, down, up, down",
+      "text": "After a change to its settings, a service looks like this. Each time anyone checks, the uptime is a few seconds.",
+      "example": "loop",
+      "questions": [
+        "loop"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Limits",
+      "text": "With no limit, one container can use all of the host's memory and processor time, and starve every other container on the machine.\n\n- A **memory limit** is a hard cap. A container that goes over it is killed by the kernel. It ends with exit code 137, and `docker inspect` reports `OOMKilled: true`.\n- A **CPU limit** is a throttle. The container is slowed down and is not killed.\n\nSet a memory limit somewhat above what the service needs in normal use. A leak then takes down one container, which its restart policy brings back, and the rest of the machine carries on.",
+      "example": "limits"
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: a start that works",
+      "text": "The tracker has three services: `db`, a one-off `migrate` job that updates the database's tables and exits, and `web`.\n\n1. Describe the order they must become ready in.\n2. Write the `depends_on` section of `migrate` and of `web`.\n3. Choose a restart policy for each of the three, with a reason."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. `db` must be healthy, then `migrate` must finish successfully, then `web` may start.\n2. The sections are below. `web` waits for both. Waiting for `migrate` alone would be enough for the order, and naming `db` too states the real dependency.\n3. `db` and `web`: `unless-stopped`, so they return after a crash or a reboot. `migrate`: `no`. It is meant to run once and end. With `always` it would run again and again for ever. If it fails, a person should read why.",
+      "example": "order"
+    }
+  ],
+  "questions": [
+    {
+      "id": "short-form",
+      "prompt": "What does this guarantee when `web` starts?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "That the `db` container has been started",
+          "feedback": "The short form only orders the starts. The database may still be seconds away from accepting connections."
+        },
+        {
+          "text": "That the database accepts connections",
+          "feedback": "That needs a health check on `db` and the condition `service_healthy`."
+        },
+        {
+          "text": "Nothing about order at all",
+          "feedback": "It does order the starts. It does not wait for readiness."
+        }
+      ]
+    },
+    {
+      "id": "loop",
+      "example": "loop",
+      "prompt": "What is the best next step?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Change the policy to `unless-stopped`",
+          "feedback": "The policy is doing its job. The program ends with an error each time it starts."
+        },
+        {
+          "text": "Read the container's logs",
+          "feedback": "Exit code 1 means the program reported an error, and it does so at every start. The logs say what the new settings broke. Restarting cannot fix a wrong setting."
+        },
+        {
+          "text": "Give the container more memory",
+          "feedback": "Running out of memory gives 137. This is exit code 1, an error the program reported itself."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "timeline": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/timeline.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "healthcheck": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/healthcheck.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "depends": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/depends.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "restart": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/restart.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "loop": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/loop.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "limits": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/limits.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "order": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/order.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

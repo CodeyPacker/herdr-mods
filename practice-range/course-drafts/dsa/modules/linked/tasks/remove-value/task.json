@@ -1,0 +1,64 @@
+{
+  "id": "course:dsa/task/linked-remove-value",
+  "role": "independent",
+  "title": "Remove matching nodes",
+  "concepts": [
+    "linked-list"
+  ],
+  "prompt": "Remove every node whose value equals target from the list that starts at head, and return the head of what is left. Return null when nothing is left.",
+  "hints": [
+    "Which node's link has to change to remove a node? What is different about removing the first node?",
+    "Put a temporary node in front of the head. Then every real node has a node before it, and the head is no longer a special case.",
+    "From the temporary node: while node.next exists, if node.next.value is the target then skip it with node.next = node.next.next, otherwise move on. Return the temporary node's next."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(toArray(removeValue(listOf([1, 2, 3, 2]), 2)), [1, 3])",
+    "__same(toArray(removeValue(listOf([1, 2, 2, 3]), 2)), [1, 3])",
+    "__same(toArray(removeValue(listOf([2, 1]), 2)), [1])",
+    "__same(toArray(removeValue(listOf([2]), 2)), [])",
+    "__same(toArray(removeValue(null, 1)), [])",
+    "__same(toArray(removeValue(listOf([1, 2, 3]), 9)), [1, 2, 3])"
+  ],
+  "checkLabels": [
+    "Both 2s are removed from 1, 2, 3, 2.",
+    "Two matching nodes in a row are both removed.",
+    "The first node can be removed.",
+    "Removing the only node leaves an empty list.",
+    "An empty list stays empty.",
+    "A value that is not there changes nothing."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-skips.ts",
+      "misconception": "Moves on after every removal, so the second of two matching nodes in a row is never checked.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-head.ts",
+      "misconception": "Never checks the first node.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "Check two cases by hand: the target in the first node, and the target in two nodes in a row."
+}

@@ -1,0 +1,16 @@
+    steps:
+      # An action, at a version, with options.
+      - name: Install the runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # A command. A name makes the run's page easier to read.
+      - name: Run the unit tests
+        run: npm test
+
+      # Several commands in one step.
+      - name: Build
+        run: |
+          npm run build
+          ls -l dist

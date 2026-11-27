@@ -1,0 +1,65 @@
+{
+  "id": "course:dsa/task/dynamic-min-coins",
+  "role": "independent",
+  "title": "Use the fewest coins",
+  "concepts": [
+    "tabulation",
+    "memoization"
+  ],
+  "prompt": "coins lists the values of the coins available, and each may be used any number of times. Return the fewest coins that add up to exactly amount. Return 0 for an amount of 0, and -1 when the amount cannot be made. Always taking the largest coin first does not work: with coins 1, 3 and 4, the amount 6 is best made as 3 + 3.",
+  "hints": [
+    "Let one entry mean: the fewest coins that make this total. Which totals are known at the start?",
+    "Total 0 needs 0 coins. For a larger total, try each coin as the last coin used: the rest is a smaller total that is already answered.",
+    "best[total] is the smallest of best[total - coin] + 1 over the coins that fit. Start every entry at Infinity, and turn Infinity into -1 at the end."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(minCoins([1, 5, 10], 18), 5)",
+    "__same(minCoins([1, 3, 4], 6), 2)",
+    "__same(minCoins([2], 3), -1)",
+    "__same(minCoins([1], 0), 0)",
+    "__same(minCoins([5, 10], 30), 3)",
+    "__same(minCoins([3, 7], 11), -1)"
+  ],
+  "checkLabels": [
+    "18 is 10 + 5 + 1 + 1 + 1, which is 5 coins.",
+    "6 is 3 + 3, which beats 4 + 1 + 1.",
+    "3 cannot be made from coins of 2.",
+    "An amount of 0 needs no coins.",
+    "30 is three coins of 10.",
+    "11 cannot be made from coins of 3 and 7."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-greedy.ts",
+      "misconception": "Always takes the largest coin that fits, which is not always the fewest coins.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-infinity.ts",
+      "misconception": "Returns the table entry as it is, which is Infinity when the amount cannot be made.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "Write the table by hand for coins 1, 3 and 4 up to a total of 6. Each entry looks back by the value of one coin."
+}

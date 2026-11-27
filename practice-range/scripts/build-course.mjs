@@ -8,9 +8,9 @@ import { readModule } from "./course-markdown.mjs";
 import { access } from "node:fs/promises";
 
 const base = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-// node practice-range/scripts/build-course.mjs [typescript|csharp|sql|api-design]
+// node practice-range/scripts/build-course.mjs [typescript|csharp|sql|api-design|docker|ci-cd|dsa]
 const language = process.argv[2] ?? "typescript";
-if (!["typescript", "csharp", "sql", "api-design"].includes(language)) throw new Error("Usage: build-course.mjs [typescript|csharp|sql|api-design]");
+if (!["typescript", "csharp", "sql", "api-design", "docker", "ci-cd", "dsa"].includes(language)) throw new Error("Usage: build-course.mjs [typescript|csharp|sql|api-design|docker|ci-cd|dsa]");
 const draft = resolve(base, "course-drafts", language);
 async function source(folder, path) {
   const file = resolve(folder, path);
@@ -69,7 +69,9 @@ const pack = {
   lessons: modules,
 };
 validatePack(pack);
-// A language course is named for its language. A reading course has none and keeps its draft folder's name.
-const destination = resolve(base, `mods/practice-range/courses/packs/${manifest.kind === "reading" ? language : `${language}-foundations`}.json`);
+// A language's first course is named for the language. A reading course, or a later course in a
+// language (its draft folder is not the language's name), keeps its draft folder's name.
+const ownName = manifest.kind === "reading" || manifest.languageId !== language;
+const destination = resolve(base, `mods/practice-range/courses/packs/${ownName ? language : `${language}-foundations`}.json`);
 await writeCoursePack(destination, pack);
 console.log(`Built ${pack.id}: ${modules.length} preview modules, ${modules.reduce((n, m) => n + m.tasks.length, 0)} tasks.`);

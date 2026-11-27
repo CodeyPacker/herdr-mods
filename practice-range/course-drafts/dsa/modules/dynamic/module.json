@@ -1,0 +1,180 @@
+{
+  "id": "course:dsa/module/dynamic",
+  "title": "Dynamic programming",
+  "requires": [
+    "recursion",
+    "hash-map"
+  ],
+  "outcomes": [
+    {
+      "id": "memo",
+      "can": "Add a memo to a recursive function and count how many calls it saves.",
+      "assessment": [
+        "memo-calls",
+        "course:dsa/task/dynamic-climb-ways"
+      ]
+    },
+    {
+      "id": "table",
+      "can": "Fill a table from the smallest problem up to the one that was asked.",
+      "assessment": [
+        "table-last",
+        "course:dsa/task/dynamic-climb-ways",
+        "course:dsa/task/dynamic-min-coins"
+      ]
+    },
+    {
+      "id": "model",
+      "can": "State what each entry of a table means and how it follows from earlier entries.",
+      "assessment": [
+        "course:dsa/task/dynamic-min-coins",
+        "course:dsa/task/dynamic-longest-common"
+      ]
+    }
+  ],
+  "intro": "The module on recursion ended with a function that took 21,891 calls to work out one small number, because it kept solving the same smaller problems again. Dynamic programming is the fix: solve each smaller problem once, and remember its answer. This module covers the two ways to do that, and how to recognize a problem it applies to.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Remember the answers",
+      "text": "Some recursive functions call themselves with the same input many times. When that happens, the smaller problems **overlap**, and most of the work is repetition.\n\n**Memoization** removes it. Keep a Map from an input to its answer. At the start of each call, look the input up. If the answer is there, return it. If not, work it out as before, and store it before returning.\n\nThe function is otherwise unchanged, and each distinct input is now worked out once. The cost becomes the number of distinct inputs times the work for one of them."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict the calls with a memo",
+      "text": "This is the function from the module on recursion, with a memo added. It took 21,891 calls there. Predict both lines.",
+      "example": "memo",
+      "questions": [
+        "memo-calls"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "From 21,891 calls to 39",
+      "text": "The answer is the same, 6765, and it took 39 calls. Each value from 2 to 20 was worked out once. Its second request was answered from the Map.\n\nThe second line asks for the fiftieth number. Without the memo that would take tens of billions of calls. With it, the answer appears at once. The cost went from about 2ⁿ to about n, in exchange for O(n) memory.",
+      "example": "memo"
+    },
+    {
+      "kind": "explanation",
+      "title": "Fill a table from the bottom",
+      "text": "Memoization starts at the big problem and works down. The other way is to start at the smallest problems and work **up**, storing each answer in an array. This is called **tabulation**, and it needs no recursion at all.\n\nTo design either kind, answer three questions.\n\n1. **What does one entry mean?** For example: entry i is the number of ways to climb i steps.\n2. **How does an entry follow from earlier ones?** For example: the last move was one step or two, so entry i is entry i - 1 plus entry i - 2.\n3. **Which entries are known at the start?** For example: there is one way to climb 0 steps, and one way to climb 1.\n\nOnce those are written down, the code is a loop. Most of the difficulty in dynamic programming is in the first question."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict a table",
+      "text": "The table holds the number of ways to climb a staircase, taking one or two steps at a time. Predict the line it prints.",
+      "example": "table",
+      "questions": [
+        "table-last"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Each entry from the two before",
+      "text": "The table started with 1 and 1. Each later entry is the sum of the two entries before it: 2, 3, 5, 8, 13. So there are 13 ways to climb six steps.\n\nOnly the last two entries are ever read. When that is true, the table can be replaced by two variables, and the memory drops from O(n) to O(1).",
+      "example": "table"
+    },
+    {
+      "kind": "modification",
+      "title": "Speed up a count of ways",
+      "text": "The starter gives the right answers for small inputs and never finishes for a large one. Save it, read the failing check, and rewrite it with a table or a memo.",
+      "task": "course:dsa/task/dynamic-climb-ways"
+    },
+    {
+      "kind": "independent",
+      "title": "Use the fewest coins",
+      "text": "Work from the prompt. Decide first what one entry of your table means.",
+      "task": "course:dsa/task/dynamic-min-coins"
+    },
+    {
+      "kind": "independent",
+      "title": "Find the longest common subsequence",
+      "text": "Work from the prompt. This table has two dimensions: a position in each string.",
+      "task": "course:dsa/task/dynamic-longest-common"
+    }
+  ],
+  "questions": [
+    {
+      "id": "memo-calls",
+      "example": "memo",
+      "prompt": "What does the first line print?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "6765 39",
+          "feedback": "Each value from 2 to 20 is worked out once and looked up once, which comes to 39 calls."
+        },
+        {
+          "text": "6765 21891",
+          "feedback": "That was the count without a memo. Here a stored answer is returned without further calls."
+        },
+        {
+          "text": "6765 20",
+          "feedback": "Close. Each value is also requested a second time, and that request is a call that returns from the Map."
+        }
+      ]
+    },
+    {
+      "id": "table-last",
+      "example": "table",
+      "prompt": "What is the last number printed?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "8",
+          "feedback": "8 is the entry for five steps. The loop runs up to and including six."
+        },
+        {
+          "text": "21",
+          "feedback": "21 would be the entry for seven steps. The loop stops at six."
+        },
+        {
+          "text": "13",
+          "feedback": "The entries are 1, 1, 2, 3, 5, 8 and 13. Each is the sum of the two before it."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "memo": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/memo.ts"
+      },
+      "stdout": [
+        "6765 39",
+        "12586269025"
+      ]
+    },
+    "table": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/table.ts"
+      },
+      "stdout": [
+        "1 1 2 3 5 8 13"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:dsa/task/dynamic-climb-ways",
+      "path": "tasks/climb-ways/task.json"
+    },
+    {
+      "id": "course:dsa/task/dynamic-min-coins",
+      "path": "tasks/min-coins/task.json"
+    },
+    {
+      "id": "course:dsa/task/dynamic-longest-common",
+      "path": "tasks/longest-common/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:dsa/task/dynamic-min-coins",
+    "afterModule": "course:dsa/module/choose",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [],
+  "drillGap": "The practice catalog has no drills for this topic yet. The module's own exercises are the practice."
+}

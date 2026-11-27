@@ -1,0 +1,13 @@
+$ docker image ls tracker
+REPOSITORY   TAG      SIZE
+tracker      single   1.42GB
+
+$ docker history tracker:single
+CREATED BY                                   SIZE
+CMD ["node" "dist/server.js"]                0B
+RUN npm run build                            14MB
+COPY . .                                     61MB
+RUN npm ci                                   212MB
+COPY package.json package-lock.json ./       96kB
+WORKDIR /app                                 0B
+... base image node:24.11.1 ...              1.13GB

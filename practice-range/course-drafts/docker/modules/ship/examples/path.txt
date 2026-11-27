@@ -1,0 +1,7 @@
+  +---------------+          +--------------+          +-------------+
+  | build server  |   push   |   registry   |   pull   |  servers    |
+  |               | -------> |              | -------> |             |
+  | docker build  |          | tracker:1.5.0|          | docker run  |
+  +---------------+          +--------------+          +-------------+
+         ^                                                    ^
+     source code                                  settings for that place

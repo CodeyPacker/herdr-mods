@@ -1,0 +1,13 @@
+  stage 1 (seconds)      stage 2 (minutes)        stage 3 (longer)
+
+  +-------------+        +------------------+     +----------------+
+  | lint        |        | unit tests       |     | build artifact |
+  | type check  | -----> | integration      | --> | deploy to test |
+  | quick scans |        | tests            |     | smoke tests    |
+  +-------------+        +------------------+     +----------------+
+        |                        |                       |
+       fail                     fail                    fail
+        |                        |                       |
+        +------------------------+-----------------------+--> stop
+
+  Most bad changes stop in stage 1, after seconds.

@@ -1,0 +1,69 @@
+{
+  "id": "course:dsa/task/trees-bst-contains",
+  "role": "independent",
+  "title": "Search a binary search tree",
+  "concepts": [
+    "search-tree",
+    "binary-search"
+  ],
+  "prompt": "root is a binary search tree: smaller values are to the left of each node, and larger values to the right. Return true when target is in the tree. Follow one path from the root: the last check allows 60 looks at a value in a tree of 4,095 nodes.",
+  "hints": [
+    "At each node, what does comparing the target with the node's value tell you about where to go?",
+    "Smaller means go left, larger means go right, equal means found.",
+    "Loop while the node is not null. Returning false after the loop covers a value that is not there."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(bstContains(__sample, 6), true)",
+    "__same(bstContains(__sample, 9), false)",
+    "__same(bstContains(null, 1), false)",
+    "__same(bstContains(__sample, 14), true)",
+    "__same(bstContains(__sample, 13), true)",
+    "__same(bstContains(__large, 5000), true)",
+    "__same(bstContains(__large, 5001), false)",
+    "__countLooks(() => bstContains(__large, 5001)) <= 60"
+  ],
+  "checkLabels": [
+    "6 is in the sample tree.",
+    "9 is not in the sample tree.",
+    "An empty tree contains nothing.",
+    "A value down the right side is found.",
+    "A value that needs a left turn after right turns is found.",
+    "It finds a value among 4,095 nodes.",
+    "It reports a missing value among 4,095 nodes.",
+    "Follow one path. Look at no more than 60 values in the tree of 4,095 nodes."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-wrong-side.ts",
+      "misconception": "Goes right for a smaller target and left for a larger one.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-everywhere.ts",
+      "misconception": "Searches both subtrees of every node, which ignores the ordering.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 8 failed"
+      }
+    }
+  ],
+  "feedback": "A binary search tree lets you discard one whole subtree at every node. If your code can visit both sides of a node, it is doing too much."
+}

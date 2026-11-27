@@ -1,0 +1,64 @@
+{
+  "id": "course:dsa/task/arrays-is-palindrome",
+  "role": "independent",
+  "title": "Compare from both ends",
+  "concepts": [
+    "two-pointers"
+  ],
+  "prompt": "Return true when text reads the same forwards and backwards. Compare characters exactly: capital letters and spaces count. An empty string is a palindrome.",
+  "hints": [
+    "Which two characters do you compare first, and which two next?",
+    "Use a left index from 0 and a right index from the last character. Move both inward.",
+    "Return false at the first pair that differs. Return true when the indexes meet."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(isPalindrome(\"level\"), true)",
+    "__same(isPalindrome(\"abca\"), false)",
+    "__same(isPalindrome(\"\"), true)",
+    "__same(isPalindrome(\"ab\"), false)",
+    "__same(isPalindrome(\"abba\"), true)",
+    "__same(isPalindrome(\"abcda\"), false)"
+  ],
+  "checkLabels": [
+    "level reads the same both ways.",
+    "The ends match, and the middle does not.",
+    "An empty string is a palindrome.",
+    "Two different characters are not.",
+    "An even length works too.",
+    "Every pair must match, not only the ends."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-ends.ts",
+      "misconception": "Compares only the first and last characters.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-halves.ts",
+      "misconception": "Compares the first half with the second half in the same direction.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Trace the two indexes on a four-letter word. Every pair, not only the outer one, has to be compared."
+}

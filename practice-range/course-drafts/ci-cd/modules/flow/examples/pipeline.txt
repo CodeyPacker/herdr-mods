@@ -1,0 +1,13 @@
+   push
+    |
+    v
+  +-------+    +-------+    +---------+    +---------+    +------------+
+  | build | -> | test  | -> | package | -> | staging | -> | production |
+  +-------+    +-------+    +---------+    +---------+    +------------+
+      |            |             |              |
+     fail         fail          fail           fail
+      |            |             |              |
+      +------------+-------------+--------------+--> stop, tell the author
+
+  seconds ------------------ minutes --------------------- longer
+  every change                                    only changes that passed

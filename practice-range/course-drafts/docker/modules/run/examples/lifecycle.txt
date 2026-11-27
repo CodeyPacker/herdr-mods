@@ -1,0 +1,15 @@
+                docker run
+                    |
+                    v
+  docker start  +---------+   main process ends,
+  +-----------> | RUNNING |   or docker stop
+  |             +---------+ ----------------+
+  |                                         v
+  |                                    +---------+
+  +----------------------------------- | STOPPED |  files and logs
+                                       +---------+  are still kept
+                                            |
+                                        docker rm
+                                            |
+                                            v
+                                         (gone)

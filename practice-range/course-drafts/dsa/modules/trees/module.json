@@ -1,0 +1,183 @@
+{
+  "id": "course:dsa/module/trees",
+  "title": "Trees",
+  "requires": [
+    "recursion",
+    "binary-search"
+  ],
+  "outcomes": [
+    {
+      "id": "walk",
+      "can": "Walk a binary tree recursively and predict the order in which nodes are visited.",
+      "assessment": [
+        "in-order",
+        "course:dsa/task/trees-height",
+        "course:dsa/task/trees-inorder"
+      ]
+    },
+    {
+      "id": "search",
+      "can": "Search a binary search tree along a single path from the root.",
+      "assessment": [
+        "path",
+        "course:dsa/task/trees-bst-contains"
+      ]
+    },
+    {
+      "id": "transfer",
+      "can": "Write a recursive function whose answer combines the answers for two subtrees.",
+      "assessment": [
+        "course:dsa/task/trees-height"
+      ]
+    }
+  ],
+  "intro": "A linked list gives each node one link. Give each node two, and the chain becomes a tree: a structure that branches. Trees appear wherever things contain other things, and a tree kept in order can be searched as fast as a sorted array while still allowing cheap inserts. This module covers walking a binary tree and searching a binary search tree.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Nodes with two links",
+      "text": "A **binary tree** is made of nodes. Each node holds a value and two links, `left` and `right`, each to another node or to `null`. The node at the top is the **root**. A node with no children is a **leaf**.\n\nEvery node is itself the root of a smaller tree, called a **subtree**. That is why recursion fits trees so well: do something with the node, and ask the same function about its left and right subtrees. The base case is an empty tree, `null`.\n\nThe **height** of a tree is the number of nodes on the longest path from the root down to a leaf. A tree of n nodes has a height of about log n when it is bushy, and of n when every node has only one child, which is a linked list in disguise."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict a walk",
+      "text": "The function visits the left subtree, then prints the node and its depth, then visits the right subtree. Predict the five lines.",
+      "example": "shape",
+      "questions": [
+        "in-order"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Left, node, right",
+      "text": "The walk went as far left as it could before printing anything, so 1 came first. It printed 3 only after everything to the left of 3, and 8 only after the whole left subtree.\n\nThis order is called **in-order**. There are two others, which differ only in where the node itself is handled: **pre-order** handles the node before its subtrees, and **post-order** after both. Whichever order is used, every node is visited once, so a full walk costs O(n).",
+      "example": "shape"
+    },
+    {
+      "kind": "explanation",
+      "title": "A tree kept in order",
+      "text": "A **binary search tree** adds one rule. For every node, all the values in its left subtree are smaller than the node's value, and all the values in its right subtree are larger.\n\nThe rule makes searching fast. Compare the target with the root. If the target is smaller, it can only be in the left subtree, so the whole right subtree is ignored. This is binary search, laid out as a structure.\n\nA search follows one path from the root, so it costs as many steps as the tree is high: O(log n) for a bushy tree. The rule has another consequence. An in-order walk of a binary search tree visits the values from smallest to largest."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict a search path",
+      "text": "The function records each value it looks at while searching. Predict both lines.",
+      "example": "path",
+      "questions": [
+        "path"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One path down",
+      "text": "To find 6, the search looked at 8, went left to 3, and went right to 6. It never looked at 1 or 10.\n\nTo look for 9, it looked at 8, went right to 10, and then went left, where there was nothing. Reaching `null` means the value is not in the tree. Two looks were enough to rule out all five values.",
+      "example": "path"
+    },
+    {
+      "kind": "modification",
+      "title": "Repair a height",
+      "text": "The starter follows one branch only. Save it, read the failing check, and make it consider both subtrees.",
+      "task": "course:dsa/task/trees-height"
+    },
+    {
+      "kind": "independent",
+      "title": "Walk in order",
+      "text": "Work from the prompt. The supplied tree function builds nodes.",
+      "task": "course:dsa/task/trees-inorder"
+    },
+    {
+      "kind": "independent",
+      "title": "Search a binary search tree",
+      "text": "Work from the prompt. The last check counts how many nodes your code looks at.",
+      "task": "course:dsa/task/trees-bst-contains"
+    }
+  ],
+  "questions": [
+    {
+      "id": "in-order",
+      "example": "shape",
+      "prompt": "What is the first line printed?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "8 0",
+          "feedback": "The root is printed only after its whole left subtree has been visited."
+        },
+        {
+          "text": "3 1",
+          "feedback": "3 has a left child. That child is visited, and printed, before 3 is."
+        },
+        {
+          "text": "1 2",
+          "feedback": "The walk goes left from 8 to 3 to 1. 1 has no left child, so it is printed first, at depth 2."
+        }
+      ]
+    },
+    {
+      "id": "path",
+      "example": "path",
+      "prompt": "What does the second line print?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "8 10",
+          "feedback": "9 is larger than 8, so the search goes right to 10. 9 is smaller than 10, and there is nothing to the left of 10."
+        },
+        {
+          "text": "8 3 6 10",
+          "feedback": "A search never visits both sides of a node. From 8 it goes right only."
+        },
+        {
+          "text": "8",
+          "feedback": "After 8 there is still a right child to look at. The search stops when it reaches an empty link."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "shape": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/shape.ts"
+      },
+      "stdout": [
+        "1 2",
+        "3 1",
+        "6 2",
+        "8 0",
+        "10 1"
+      ]
+    },
+    "path": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/path.ts"
+      },
+      "stdout": [
+        "8 3 6",
+        "8 10"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:dsa/task/trees-height",
+      "path": "tasks/height/task.json"
+    },
+    {
+      "id": "course:dsa/task/trees-inorder",
+      "path": "tasks/inorder/task.json"
+    },
+    {
+      "id": "course:dsa/task/trees-bst-contains",
+      "path": "tasks/bst-contains/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:dsa/task/trees-inorder",
+    "afterModule": "course:dsa/module/graphs",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [],
+  "drillGap": "The practice catalog has no drills for this topic yet. The module's own exercises are the practice."
+}

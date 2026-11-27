@@ -1,0 +1,47 @@
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: production                        # 1
+    permissions: { id-token: write, contents: read }
+    env:
+      APP: ${{ vars.APP_NAME }}
+      GROUP: ${{ vars.RESOURCE_GROUP }}
+      IMAGE: ${{ vars.REGISTRY_NAME }}.azurecr.io/tracker
+      TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: azure/login@v3                       # 2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: The image must exist                 # 3
+        run: |
+          az acr repository show \
+            --name "${{ vars.REGISTRY_NAME }}" --image "tracker:$TAG"
+
+      - name: Deploy to the idle slot              # 4
+        run: |
+          az webapp config container set --slot next \
+            --name "$APP" --resource-group "$GROUP" \
+            --container-image-name "$IMAGE:$TAG"
+
+      - name: Smoke test the idle slot             # 5
+        run: ./smoke-test.sh "https://$APP-next.azurewebsites.net"
+
+      - name: Swap                                 # 6
+        run: |
+          az webapp deployment slot swap --slot next \
+            --target-slot production \
+            --name "$APP" --resource-group "$GROUP"
+
+      - name: Smoke test production                # 7
+        id: verify
+        run: ./smoke-test.sh "https://$APP.azurewebsites.net"
+
+      - name: Swap back if production is unhealthy
+        if: failure() && steps.verify.conclusion == 'failure'
+        run: |
+          az webapp deployment slot swap --slot next \
+            --target-slot production \
+            --name "$APP" --resource-group "$GROUP"

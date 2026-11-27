@@ -1,0 +1,75 @@
+{
+  "id": "course:dsa/task/sorting-merge-sort",
+  "role": "independent",
+  "title": "Write merge sort",
+  "concepts": [
+    "merge-sort",
+    "recursion",
+    "two-pointers"
+  ],
+  "prompt": "Return a new array with the numbers of values sorted from smallest to largest. Leave values unchanged. Use merge sort, and compare with the supplied before(a, b), which is true when a must come before b. The checks count the comparisons: 1,024 numbers may use at most 12,000.",
+  "hints": [
+    "What is the base case, and how do you split the rest?",
+    "An array of one element or none is returned as it is. Otherwise slice it at the middle and sort each half with mergeSort.",
+    "Merge with one index in each half. Take from the right half only when before(right[j], left[i]) is true. Add what is left of either half at the end."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [
+    {
+      "kind": "CallExpression",
+      "name": "sort",
+      "max": 0,
+      "message": "Write the sort yourself. Do not call sort."
+    }
+  ],
+  "checks": [
+    "__same(mergeSort([5, 2, 4, 1]), [1, 2, 4, 5])",
+    "__same(mergeSort([]), [])",
+    "__same(mergeSort([7]), [7])",
+    "__same(mergeSort([3, 1, 3, 2]), [1, 2, 3, 3])",
+    "__same(mergeSort(__shuffled), __ordered)",
+    "__countCompares(() => mergeSort(__shuffled)) <= 12000",
+    "(() => { const input = [2, 1]; mergeSort(input); return __same(input, [2, 1]); })()"
+  ],
+  "checkLabels": [
+    "5, 2, 4, 1 becomes 1, 2, 4, 5.",
+    "An empty array gives an empty array.",
+    "One element is already sorted.",
+    "Equal numbers are kept.",
+    "It sorts 1,024 shuffled numbers.",
+    "Use at most 12,000 comparisons for 1,024 numbers.",
+    "The array you were given must not change."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-tail.ts",
+      "misconception": "Drops what is left of one half when the other runs out.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-insertion.ts",
+      "misconception": "Sorts correctly with insertion sort, which needs far too many comparisons.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 6 failed"
+      }
+    }
+  ],
+  "feedback": "Check the merge on its own with two short sorted halves, such as [2, 5] and [1, 4]. Then check that both halves are fully used."
+}

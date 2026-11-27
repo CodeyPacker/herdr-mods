@@ -1,0 +1,16 @@
+# ---- Stage 1: build ----
+FROM node:24.11.1 AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build          # writes the result to /app/dist
+
+# ---- Stage 2: the image that is shipped ----
+FROM node:24.11.1-slim
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY --from=build /app/dist ./dist
+
+CMD ["node", "dist/server.js"]

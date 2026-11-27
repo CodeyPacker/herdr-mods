@@ -1,0 +1,69 @@
+{
+  "id": "course:dsa/task/cost-largest",
+  "role": "guided",
+  "title": "Repair a single pass",
+  "concepts": [
+    "step-count"
+  ],
+  "prompt": "Return the largest number in values. The array has at least one number, and the numbers may be negative. Use one loop.",
+  "hints": [
+    "Which check fails, and what is special about its numbers?",
+    "The starting value of best must be a number that is really in the array.",
+    "Start best at values[0] instead of 0."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [
+    {
+      "kind": "CallExpression",
+      "name": "max",
+      "max": 0,
+      "message": "Write the loop yourself. Do not call Math.max."
+    }
+  ],
+  "checks": [
+    "__same(largest([3, 9, 4]), 9)",
+    "__same(largest([-5, -2, -9]), -2)",
+    "__same(largest([7]), 7)",
+    "__same(largest([4, 4, 1]), 4)",
+    "__same(largest([1, 5, 2, 3]), 5)"
+  ],
+  "checkLabels": [
+    "The largest of 3, 9 and 4 is 9.",
+    "The largest of -5, -2 and -9 is -2.",
+    "A single number is the largest.",
+    "Equal numbers are fine.",
+    "The largest may be in the middle."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-zero.ts",
+      "misconception": "Starts from 0, which is larger than every negative number.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-neighbour.ts",
+      "misconception": "Compares each number with the one before it, not with the best so far.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 5 failed"
+      }
+    }
+  ],
+  "feedback": "Find the check that fails and trace the loop by hand with those numbers. Watch what best holds before the first comparison."
+}

@@ -1,0 +1,15 @@
+  migrations/
+  |-- 0001_create_tasks.sql
+  |-- 0002_create_comments.sql
+  |-- 0003_add_tasks_due_date.sql
+  +-- 0004_add_tasks_assignee.sql        <- new in this release
+
+  Table kept by the migration tool, in the database:
+
+    applied
+    ---------------------------
+    0001_create_tasks
+    0002_create_comments
+    0003_add_tasks_due_date
+
+  "migrate" compares the folder with the table and runs only 0004.

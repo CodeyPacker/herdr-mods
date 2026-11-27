@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# smoke-test.sh URL
+# Succeeds when the health endpoint answers within two minutes.
+set -euo pipefail
+url="$1"
+
+for attempt in $(seq 1 24); do
+  if curl --fail --silent --max-time 5 "$url/health" > /dev/null; then
+    echo "healthy after $attempt attempt(s)"
+    exit 0
+  fi
+  echo "not ready yet (attempt $attempt), waiting 5 seconds"
+  sleep 5
+done
+
+echo "the service did not become healthy: $url" >&2
+exit 1

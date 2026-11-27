@@ -1,0 +1,13 @@
+  Step                              Who       Time      If it fails
+  --------------------------------  --------  --------  ----------------
+  1. Open a pull request            person    1 min     -
+  2. Wait for a reviewer            person    1 day     nothing happens
+  3. Build and run the tests        machine   8 min     author is told
+  4. Merge                          person    1 min     -
+  5. Wait for the weekly release    -         4 days    -
+  6. Build the release by hand      person    30 min    rebuild, retry
+  7. Copy files to the server       person    20 min    site is half new
+  8. Check the site by eye          person    10 min    phone calls
+
+  Longest: steps 2 and 5, both waiting.
+  Most error-prone: steps 6 and 7, both manual.

@@ -1,0 +1,17 @@
+                        tracker:git-3f2a9c8   (built once)
+                                 |
+       merge to main             |
+            |                    v
+            |        +---------------+
+            +------> |  development  |   automatic
+                     +---------------+
+                             |  smoke tests pass
+                             v
+                     +---------------+
+                     |    staging    |   automatic
+                     +---------------+
+                             |  a person approves
+                             v
+                     +---------------+
+                     |  production   |   deliberate
+                     +---------------+

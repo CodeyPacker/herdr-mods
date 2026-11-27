@@ -1,0 +1,13 @@
+  The file says            Production really is
+
+  planSize = 'P1v3'        P2v3     <- raised by hand during an incident
+  no firewall rule         a rule allowing one office address
+                                    <- added by hand "to test"
+
+  Next deployment:  the tool sees two differences and removes both.
+                    The plan shrinks at 11:00 on a weekday.
+
+  Nightly drift check:
+
+    $ az deployment group what-if ...
+    Resource changes: 2 to modify.        <- should be "no change"

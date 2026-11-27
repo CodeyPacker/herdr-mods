@@ -1,0 +1,67 @@
+{
+  "id": "course:dsa/task/arrays-reverse-in-place",
+  "role": "guided",
+  "title": "Repair a reversal",
+  "concepts": [
+    "two-pointers"
+  ],
+  "prompt": "Reverse values in place: change the array you are given, and return nothing. Do the swaps yourself.",
+  "hints": [
+    "Trace the starter on [1, 2, 3]. What happens to the pair at positions 0 and 2 the second time it is reached?",
+    "Each pair must be swapped exactly once. Stop when the two positions meet.",
+    "Loop while index is less than its mirror position, or use left and right pointers with while (left < right)."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [
+    {
+      "kind": "CallExpression",
+      "name": "reverse",
+      "max": 0,
+      "message": "Write the swaps yourself. Do not call reverse."
+    }
+  ],
+  "checks": [
+    "__same(__after([1, 2, 3], reverseInPlace), [3, 2, 1])",
+    "__same(__after([1, 2, 3, 4], reverseInPlace), [4, 3, 2, 1])",
+    "__same(__after([], reverseInPlace), [])",
+    "__same(__after([5], reverseInPlace), [5])"
+  ],
+  "checkLabels": [
+    "[1, 2, 3] becomes [3, 2, 1].",
+    "An even length works too.",
+    "An empty array stays empty.",
+    "One element stays where it is."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-twice.ts",
+      "misconception": "Swaps every pair twice, which puts each element back.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-builtin.ts",
+      "misconception": "Calls the built-in method instead of practising the swaps.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "syntax",
+        "detail": "Write the swaps yourself"
+      }
+    }
+  ],
+  "feedback": "Write down which pairs of positions are swapped for a three-element array. Each pair should appear once."
+}

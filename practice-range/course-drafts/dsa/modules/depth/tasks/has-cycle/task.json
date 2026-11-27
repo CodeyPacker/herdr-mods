@@ -1,0 +1,64 @@
+{
+  "id": "course:dsa/task/depth-has-cycle",
+  "role": "independent",
+  "title": "Detect a cycle",
+  "concepts": [
+    "depth-first"
+  ],
+  "prompt": "The connections in graph are one-way. Return true when the graph contains a cycle: a route that starts at some name and leads back to it. A name connected to itself is a cycle. The cycle may be in any part of the graph.",
+  "hints": [
+    "In a diamond, where a points to b and c and both point to d, the search reaches d twice. Why is that not a cycle?",
+    "A cycle is found only when the search reaches a name that is still being explored, which means it is on the current path.",
+    "Keep a state for each name: visiting or done. Reaching a visiting name is a cycle. Reaching a done name is not. Start a search from every name not yet done."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(hasCycle({ a: [\"b\"], b: [\"c\"], c: [\"a\"] }), true)",
+    "__same(hasCycle({ a: [\"b\"], b: [\"c\"], c: [] }), false)",
+    "__same(hasCycle({ a: [\"b\", \"c\"], b: [\"d\"], c: [\"d\"], d: [] }), false)",
+    "__same(hasCycle({ a: [\"a\"] }), true)",
+    "__same(hasCycle({}), false)",
+    "__same(hasCycle({ a: [], b: [\"c\"], c: [\"b\"] }), true)"
+  ],
+  "checkLabels": [
+    "a to b to c and back to a is a cycle.",
+    "A straight line has no cycle.",
+    "Two routes to the same name are not a cycle.",
+    "A name connected to itself is a cycle.",
+    "An empty graph has no cycle.",
+    "A cycle is found even when the first name is not part of it."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-seen-twice.ts",
+      "misconception": "Treats any name reached a second time as a cycle.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    },
+    {
+      "source": "wrong-first-only.ts",
+      "misconception": "Searches from the first name only and misses a cycle elsewhere.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 6 failed"
+      }
+    }
+  ],
+  "feedback": "Draw the diamond and trace your search. When it reaches the bottom name the second time, is that name still on the current path?"
+}

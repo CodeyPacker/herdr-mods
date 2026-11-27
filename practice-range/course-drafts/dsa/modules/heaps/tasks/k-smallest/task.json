@@ -1,0 +1,70 @@
+{
+  "id": "course:dsa/task/heaps-k-smallest",
+  "role": "independent",
+  "title": "Take the k smallest",
+  "concepts": [
+    "heap",
+    "array-cost"
+  ],
+  "prompt": "Return the k smallest numbers of values, from smallest to largest. When values has fewer than k numbers, return all of them in order. Leave values unchanged. Do not sort: use the supplied heapAdd(heap, value) and heapTake(heap), which work on a min-heap held in an array.",
+  "hints": [
+    "How do you get a heap that holds all the numbers?",
+    "Start with an empty array and call heapAdd for every number.",
+    "Then call heapTake up to k times, stopping early when the heap is empty."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [
+    {
+      "kind": "CallExpression",
+      "name": "sort",
+      "max": 0,
+      "message": "Use the heap. Do not call sort."
+    }
+  ],
+  "checks": [
+    "__same(kSmallest([5, 1, 4, 2, 3], 2), [1, 2])",
+    "__same(kSmallest([3, 1, 2], 0), [])",
+    "__same(kSmallest([3, 1, 2], 5), [1, 2, 3])",
+    "__same(kSmallest([2, 2, 1], 2), [1, 2])",
+    "(() => { const input = [3, 1, 2]; kSmallest(input, 2); return __same(input, [3, 1, 2]); })()"
+  ],
+  "checkLabels": [
+    "The two smallest of 5, 1, 4, 2, 3 are 1 and 2.",
+    "Asking for none gives an empty array.",
+    "Asking for more than there are gives all of them.",
+    "Equal numbers each count.",
+    "The array you were given must not change."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-first.ts",
+      "misconception": "Returns the first k numbers as they are.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-too-many.ts",
+      "misconception": "Takes k times even when the heap has run out.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "Each heapTake gives the smallest number that is left. Check what happens when k is larger than the number of values."
+}

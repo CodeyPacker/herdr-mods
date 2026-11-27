@@ -1,0 +1,16 @@
+# compose.override.yaml  (merged over compose.yaml automatically)
+services:
+  web:
+    environment:
+      LOG_LEVEL: debug
+    develop:
+      watch:
+        # Copy edited source files into the running container.
+        - action: sync
+          path: ./src
+          target: /app/src
+        # Rebuild the image when the dependency list changes.
+        - action: rebuild
+          path: package-lock.json
+
+# Start with:  docker compose watch

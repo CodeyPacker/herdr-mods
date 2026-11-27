@@ -1,0 +1,10 @@
+                    +--- 95% ---> [ v1.4 ]   error rate 0.2%
+  users --> split --+
+                    +---  5% ---> [ v1.5 ]   error rate 0.2%   healthy
+
+  Then, in steps, while the numbers stay level:
+
+     5%  ->  25%  ->  50%  ->  100%
+
+  If v1.5 shows 4% errors at the first step:   5%  ->  0%
+  Only one user in twenty ever reached it.

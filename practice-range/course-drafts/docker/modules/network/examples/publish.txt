@@ -1,0 +1,16 @@
+  docker run -d --name web -p 8080:3000 tracker:1.4.2
+                              |    |
+                      host port    container port
+
+  HOST
+    browser --- localhost:8080 ---+
+                                  |  passed on by Docker
+                                  v
+                       +----------------------+
+                       | container web        |
+                       | listening on :3000   |
+                       +----------------------+
+
+$ docker ps
+IMAGE           STATUS         PORTS                    NAMES
+tracker:1.4.2   Up 2 minutes   0.0.0.0:8080->3000/tcp   web

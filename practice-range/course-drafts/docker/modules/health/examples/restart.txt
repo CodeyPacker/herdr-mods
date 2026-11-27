@@ -1,0 +1,11 @@
+services:
+  web:
+    image: tracker:1.4.2
+    restart: unless-stopped
+
+  db:
+    image: postgres:17.2
+    restart: unless-stopped
+
+# The same thing with docker run:
+#   docker run -d --restart unless-stopped tracker:1.4.2

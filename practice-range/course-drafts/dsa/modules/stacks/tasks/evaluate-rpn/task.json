@@ -1,0 +1,62 @@
+{
+  "id": "course:dsa/task/stacks-evaluate-rpn",
+  "role": "independent",
+  "title": "Work out an expression",
+  "concepts": [
+    "stack"
+  ],
+  "prompt": "tokens is an expression written with each operator after its two numbers, such as [\"2\", \"3\", \"+\"] for 2 + 3. The operators are +, - and *. Return the result. For \"-\", the number that was pushed first is on the left: [\"9\", \"4\", \"-\"] is 9 - 4.",
+  "hints": [
+    "What should happen when the token is a number, and what when it is an operator?",
+    "Push numbers. On an operator, pop two numbers, combine them, and push the result.",
+    "The first pop gives the right-hand number and the second pop gives the left-hand one."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(evaluateRpn([\"2\", \"3\", \"+\"]), 5)",
+    "__same(evaluateRpn([\"5\", \"1\", \"2\", \"+\", \"4\", \"*\", \"+\", \"3\", \"-\"]), 14)",
+    "__same(evaluateRpn([\"7\"]), 7)",
+    "__same(evaluateRpn([\"9\", \"4\", \"-\"]), 5)",
+    "__same(evaluateRpn([\"2\", \"3\", \"4\", \"*\", \"+\"]), 14)"
+  ],
+  "checkLabels": [
+    "2 3 + is 5.",
+    "5 + (1 + 2) * 4 - 3 is 14.",
+    "A single number is its own result.",
+    "9 4 - is 9 - 4.",
+    "2 + 3 * 4 is 14."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-swapped.ts",
+      "misconception": "Uses the two popped numbers in the wrong order for subtraction.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-oldest.ts",
+      "misconception": "Takes the two oldest numbers instead of the two newest.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Write the stack out by hand after each token of the long check. An operator always uses the two newest numbers."
+}

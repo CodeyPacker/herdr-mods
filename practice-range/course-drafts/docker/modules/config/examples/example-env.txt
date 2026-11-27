@@ -1,0 +1,13 @@
+# tracker.env.example
+# Copy to tracker.env and fill in. Do not commit tracker.env.
+
+# Required. Where the database is.
+DATABASE_HOST=db
+DATABASE_NAME=tracker
+
+# Required. The path of a file that holds the database password.
+DATABASE_PASSWORD_FILE=/run/secrets/db_password
+
+# Optional. Defaults shown.
+PORT=3000
+LOG_LEVEL=info

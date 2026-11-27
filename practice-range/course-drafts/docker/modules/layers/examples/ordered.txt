@@ -1,0 +1,11 @@
+FROM node:24.11.1-slim
+WORKDIR /app
+
+# Changes rarely: the list of dependencies.
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+# Changes often: the source. Keep it last.
+COPY . .
+
+CMD ["node", "server.js"]

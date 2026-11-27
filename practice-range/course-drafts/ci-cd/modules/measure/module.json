@@ -1,0 +1,146 @@
+{
+  "id": "course:ci-cd/module/measure",
+  "title": "Know whether it is working",
+  "requires": [],
+  "outcomes": [],
+  "intro": "A pipeline exists to make delivery faster and safer. This module covers how to tell whether it does: four numbers that describe a delivery process, a few that describe the pipeline itself, and the signals that reveal a bad release in minutes.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Opinions and numbers",
+      "text": "Ask a team whether its delivery is good and you get feelings. \"Releases are stressful.\" \"The pipeline is slow.\" \"We break things a lot.\" These are worth hearing, and impossible to track or compare.\n\nA small set of numbers turns the feeling into something you can watch change. The aim is not a score. It is to see whether last quarter's improvement actually improved anything, and where the next one should go."
+    },
+    {
+      "kind": "explanation",
+      "title": "Four numbers",
+      "text": "Research on software delivery settled on four measures. Two describe speed, and two describe stability.\n\n| Measure | Question it answers |\n| --- | --- |\n| **Deployment frequency** | How often do we release to production? |\n| **Lead time for changes** | How long from a commit to that commit running in production? |\n| **Change failure rate** | What share of releases cause a failure that needs fixing or rolling back? |\n| **Time to restore service** | When a release does fail, how long until users are served properly again? |\n\nThe finding that surprises people is that speed and stability are **not** a trade-off. Teams that release more often tend to fail less and recover faster. The cause is batch size: a small release has less in it to go wrong and less to search when it does.",
+      "example": "four"
+    },
+    {
+      "kind": "prediction",
+      "title": "Releasing rarely, to be safe",
+      "text": "A team releases once a month \"to be careful\". Each release contains about 200 changes. One release in three causes an incident, and incidents take hours to resolve.",
+      "questions": [
+        "batch"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Where the numbers come from",
+      "text": "All four can be worked out from records the pipeline already keeps.\n\n- **Deployment frequency:** count the successful production deployments each week.\n- **Lead time:** for each deployment, the time from the oldest commit in it to the deployment finishing. Use the middle value over a month, since a few stuck changes distort an average.\n- **Change failure rate:** deployments followed by a rollback, a fix released in a hurry, or an incident, divided by all deployments.\n- **Time to restore:** from when the failure began to when service was normal again.\n\nThe first two need only the deployment record. The second two need each rollback and incident to be linked to the release that caused it, which is a habit worth starting early.",
+      "example": "log"
+    },
+    {
+      "kind": "explanation",
+      "title": "Numbers about the pipeline itself",
+      "text": "The four measures describe the outcome. A few more describe the tool.\n\n| Measure | Why it matters |\n| --- | --- |\n| Time for a pull request's checks | This is what every developer waits for, many times a day. |\n| Share of runs on `main` that pass | A low share means `main` is often broken. |\n| Share of failures that pass on a rerun | This is the flaky rate. It should be close to zero. |\n| Time waiting for a runner | Queueing is delay that no one sees in the step timings. |\n| Time `main` stays red after it breaks | How quickly the team notices and reverts. |\n\nLook at the slow end, not only the typical run. If one run in ten takes three times as long, that is the one people remember."
+    },
+    {
+      "kind": "explanation",
+      "title": "Knowing a release is bad",
+      "text": "The pipeline's checks end when the release finishes. The first minutes after it are when a bad release shows itself, and something has to be looking.\n\nFour signals cover most failures: the **error rate**, the **response time**, the **amount of traffic**, and how **full** the service's resources are. A release that doubles the error rate or halves the traffic is wrong, whatever the tests said.\n\n- **Mark deployments on the graphs.** A line at the moment of each release makes \"did this start with the deploy?\" a glance.\n- **Put the version in every log line.** Then errors can be counted by version.\n- **Alert on what users feel.** An alert for a rising error rate is acted on. An alert for a busy processor at 3 a.m. is ignored.",
+      "example": "marker"
+    },
+    {
+      "kind": "explanation",
+      "title": "Letting the pipeline decide",
+      "text": "The next step is for the pipeline to watch those signals itself. After a release, it waits a few minutes, compares the error rate with the rate before, and rolls back without being asked if the release made things worse.\n\nThis is powerful and has a precondition: the signals must be trustworthy. An automatic rollback driven by a noisy measurement will undo good releases, and people will switch it off.\n\nGet there in steps. First, a person watches after each release. Then the pipeline posts the comparison and a person decides. Only then does the pipeline act alone."
+    },
+    {
+      "kind": "debugging",
+      "title": "A number became a goal",
+      "text": "Six months after a team began reporting its four measures to management.",
+      "example": "target",
+      "questions": [
+        "target"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: work out the four",
+      "text": "From the month of records below, work out each of the four measures. Then say which one you would work on first.\n\n| Release | Oldest commit to production | Outcome |\n| --- | --- | --- |\n| 1 | 6 days | Fine |\n| 2 | 9 days | Rolled back, restored in 3 hours |\n| 3 | 5 days | Fine |\n| 4 | 12 days | Hurried fix, restored in 5 hours |"
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "- **Deployment frequency:** 4 a month, about one a week.\n- **Lead time:** the middle of 5, 6, 9 and 12 days is 7.5 days.\n- **Change failure rate:** 2 of 4, so 50 percent.\n- **Time to restore:** 3 and 5 hours, so about 4 hours.\n\nWork on **lead time and frequency first**, which are one problem. A week between a commit and production means changes pile up into large releases, and large releases are why half of them fail. Releasing each merged change by itself would shrink every release.\n\nSecond, time to restore. Three hours for a rollback says that going back is not one practised step. With kept artifacts and a rollback workflow it should be minutes."
+    }
+  ],
+  "questions": [
+    {
+      "id": "batch",
+      "prompt": "What is the most likely effect of releasing weekly instead?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Four times as many incidents",
+          "feedback": "That assumes each release is as risky as before. Each would hold a quarter of the changes."
+        },
+        {
+          "text": "Smaller releases that fail less often and are quicker to diagnose",
+          "feedback": "Fifty changes go wrong less often than two hundred, and when one does there is far less to search. Releasing more often lowers the risk of each release."
+        },
+        {
+          "text": "No change, since the same changes ship in the end",
+          "feedback": "The same changes ship, in smaller groups. The size of the group is what decides how often a release fails and how long a failure takes to trace."
+        }
+      ]
+    },
+    {
+      "id": "target",
+      "example": "target",
+      "prompt": "What went wrong?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "The measures were turned into targets, so people changed the numbers and not the work",
+          "feedback": "Splitting one release into five and declining to record incidents improve the figures and nothing else. Measures are for the team to learn from. Once they are used to judge people, they stop describing reality."
+        },
+        {
+          "text": "The team measured the wrong four things",
+          "feedback": "The measures are sound. The way they were used is the problem."
+        },
+        {
+          "text": "Deployment frequency should not be measured",
+          "feedback": "It is a useful signal when nobody is rewarded for inflating it."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "four": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/four.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "log": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/log.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "marker": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/marker.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "target": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/target.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

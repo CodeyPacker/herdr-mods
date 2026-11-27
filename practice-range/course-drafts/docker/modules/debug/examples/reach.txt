@@ -1,0 +1,12 @@
+# 1 and 2. Which ports are published, and to what?
+docker ps
+docker port web
+
+# 3 and 4. Ask the service from inside its own container.
+# Use whatever the image has. Here the runtime itself makes the request.
+docker exec web node -e \
+  "fetch('http://localhost:3000/health').then(r => console.log(r.status))"
+
+# Between containers: are both on the network, and does the name resolve?
+docker network inspect tracker-net
+docker exec web getent hosts db

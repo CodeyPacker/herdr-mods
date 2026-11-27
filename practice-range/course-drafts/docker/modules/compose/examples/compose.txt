@@ -1,0 +1,24 @@
+# compose.yaml
+services:
+  web:
+    build: .
+    image: tracker:dev
+    ports:
+      - "8080:3000"
+    environment:
+      DATABASE_HOST: db
+      DATABASE_NAME: tracker
+      LOG_LEVEL: info
+    depends_on:
+      - db
+
+  db:
+    image: postgres:17.2
+    environment:
+      POSTGRES_DB: tracker
+      POSTGRES_PASSWORD: example-only
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:

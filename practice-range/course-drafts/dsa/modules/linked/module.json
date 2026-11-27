@@ -1,0 +1,179 @@
+{
+  "id": "course:dsa/module/linked",
+  "title": "Linked lists",
+  "requires": [
+    "array-cost"
+  ],
+  "outcomes": [
+    {
+      "id": "walk",
+      "can": "Walk a linked list from its head and say what each step costs.",
+      "assessment": [
+        "hops",
+        "course:dsa/task/linked-count-nodes"
+      ]
+    },
+    {
+      "id": "links",
+      "can": "Insert and remove nodes by changing links in the right order.",
+      "assessment": [
+        "insert-order",
+        "course:dsa/task/linked-remove-value"
+      ]
+    },
+    {
+      "id": "reverse",
+      "can": "Reverse a linked list without losing the rest of it.",
+      "assessment": [
+        "course:dsa/task/linked-reverse-list"
+      ]
+    }
+  ],
+  "intro": "An array keeps its elements side by side, which is why inserting at the front is slow. A linked list makes the opposite trade. Each element sits in its own small object, called a node, with a link to the next one. This module covers walking a list, changing its links, and the two mistakes that lose part of a list.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Nodes and links",
+      "text": "A **linked list** is a chain of nodes. Each node holds a value and a link, `next`, to the node after it. The last node's `next` is `null`. The list as a whole is known by its first node, the **head**.\n\nThere are no indexes. To reach the fifth node you start at the head and follow four links. So reading by position costs O(n), where an array costs O(1).\n\nWhat a list gains is at the links. If you already hold a node, inserting or removing right after it means changing one or two links, and nothing else moves.\n\n| Operation | Array | Linked list |\n| --- | --- | --- |\n| Read the element at a position | O(1) | O(n) |\n| Insert or remove at the front | O(n) | O(1) |\n| Insert or remove after a node you hold | O(n) | O(1) |\n| Search for a value | O(n) | O(n) |"
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict a walk",
+      "text": "The example builds a list of three nodes by hand and walks it. Predict the output.",
+      "example": "walk",
+      "questions": [
+        "hops"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One hop for each node",
+      "text": "The loop started at the head, printed its value, and followed `next` until it reached `null`. It printed 10, 20 and 30, and took three hops.\n\nThis loop is the basic shape of nearly all list code: `for (let node = head; node !== null; node = node.next)`. The variable has the type `ListNode | null`, and the condition is what tells TypeScript that `node` is a real node inside the loop.",
+      "example": "walk"
+    },
+    {
+      "kind": "explanation",
+      "title": "Change links in the right order",
+      "text": "To insert a node b between a and c, two links change: b must point to c, and a must point to b.\n\nThe order matters. `a.next` is the only way to reach c. If you set `a.next = b` first, the link to c is gone, and everything after it is lost. So first copy the old link into the new node, and only then redirect the old node.\n\nThe rule in general: **before you overwrite a link, make sure something else still points to what it pointed to.**"
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict an insert",
+      "text": "The example inserts a node between two others. Predict the line it prints.",
+      "example": "insert",
+      "questions": [
+        "insert-order"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Nothing was lost",
+      "text": "The new node b was created with its `next` already set to `a.next`, which was c. Then `a.next` was pointed at b. The chain is now a, b, c, and c is still the last node, so its `next` is `null`.\n\nRemoving is the reverse. To remove the node after a, set `a.next = a.next.next`. The removed node is no longer reachable from the list.",
+      "example": "insert"
+    },
+    {
+      "kind": "modification",
+      "title": "Repair a count",
+      "text": "The starter walks the list and gives a wrong count. Save it, read the failing check, and repair the loop.",
+      "task": "course:dsa/task/linked-count-nodes"
+    },
+    {
+      "kind": "independent",
+      "title": "Reverse a list",
+      "text": "Work from the prompt. Each node's link has to be turned around without losing the rest of the list.",
+      "task": "course:dsa/task/linked-reverse-list"
+    },
+    {
+      "kind": "independent",
+      "title": "Remove matching nodes",
+      "text": "Work from the prompt. Remember that the head itself may have to go.",
+      "task": "course:dsa/task/linked-remove-value"
+    }
+  ],
+  "questions": [
+    {
+      "id": "hops",
+      "example": "walk",
+      "prompt": "What does the last line print?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "2",
+          "feedback": "There are two links between the three nodes, but the loop body runs once for every node."
+        },
+        {
+          "text": "3",
+          "feedback": "The loop body runs once for each of the three nodes before node becomes null."
+        },
+        {
+          "text": "4",
+          "feedback": "The loop stops when node is null. That fourth test does not run the body."
+        }
+      ]
+    },
+    {
+      "id": "insert-order",
+      "example": "insert",
+      "prompt": "What does the example print?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "2 3 null",
+          "feedback": "a now points to b, b points to c, and c is still last."
+        },
+        {
+          "text": "2 null null",
+          "feedback": "b was given a.next as its link before a was redirected, so b points to c."
+        },
+        {
+          "text": "3 3 null",
+          "feedback": "a.next was changed to b on the last assignment, so a.next.value is 2."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "walk": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/walk.ts"
+      },
+      "stdout": [
+        "10",
+        "20",
+        "30",
+        "3"
+      ]
+    },
+    "insert": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/insert.ts"
+      },
+      "stdout": [
+        "2 3 null"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:dsa/task/linked-count-nodes",
+      "path": "tasks/count-nodes/task.json"
+    },
+    {
+      "id": "course:dsa/task/linked-reverse-list",
+      "path": "tasks/reverse-list/task.json"
+    },
+    {
+      "id": "course:dsa/task/linked-remove-value",
+      "path": "tasks/remove-value/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:dsa/task/linked-reverse-list",
+    "afterModule": "course:dsa/module/sorting",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [],
+  "drillGap": "The practice catalog has no drills for this topic yet. The module's own exercises are the practice."
+}

@@ -1,0 +1,6 @@
+# Build only the first stage and run the tests in it.
+docker build --target build -t tracker:build .
+docker run --rm tracker:build npm test
+
+# Build the whole file. The result is the last stage.
+docker build -t tracker:1.4.2 .

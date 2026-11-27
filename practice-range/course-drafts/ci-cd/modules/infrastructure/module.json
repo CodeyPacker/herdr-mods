@@ -1,0 +1,155 @@
+{
+  "id": "course:ci-cd/module/infrastructure",
+  "title": "Describe infrastructure as code",
+  "requires": [],
+  "outcomes": [],
+  "intro": "The pipeline deploys to servers, databases and networks that had to come from somewhere. This module covers describing that infrastructure in files, previewing a change before making it, keeping environments alike, and what happens when someone changes things by hand. The examples use Bicep, the description language for Azure. Other tools, such as Terraform, follow the same ideas.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Clicks do not repeat",
+      "text": "An environment built by clicking through a cloud portal has three problems.\n\n- **Nobody knows exactly what it is.** The settings are whatever was clicked, months ago, by someone who may have left.\n- **It cannot be made again.** A second environment built the same way will differ in small ways, and those are the ways that matter.\n- **Changes leave no trace.** There is no review beforehand and no history afterwards.\n\n**Infrastructure as code** means the environment is described in text files, kept in a repository, and created by a tool that reads them. The description gets everything that code gets: review, history, and a pipeline."
+    },
+    {
+      "kind": "explanation",
+      "title": "Describe, do not instruct",
+      "text": "There are two ways to write down infrastructure.\n\nA **script** lists actions: create a server, then create a database, then connect them. Run it twice and it tries to create everything twice.\n\nA **declarative** file states what should exist: there is a server like this and a database like that. A tool compares the description with what is really there and makes only the changes needed to close the gap.\n\nThat gives the property that matters most. Applying the same description twice changes nothing the second time. It is safe to run on every merge.\n\nThe file below describes an App Service plan and a web app. It takes the environment's name as a parameter and builds every other name from it.",
+      "example": "bicep"
+    },
+    {
+      "kind": "prediction",
+      "title": "Apply it again",
+      "text": "A description of an environment is applied by the pipeline, and everything is created. Nothing in the file changes. The pipeline applies it again the next day.",
+      "questions": [
+        "idempotent"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Preview before applying",
+      "text": "Because the tool works out the difference itself, it can show that difference **without making it**. On Azure the command is `what-if`. Terraform calls it `plan`.\n\nThe preview lists what would be created, modified and deleted. It is the most important safety step in infrastructure work, because the file alone does not show what will happen. A one-word change can mean \"alter a setting\" or \"delete this database and make a new, empty one\".\n\nPut the preview where the reviewer will see it: run it on the pull request and attach the output. Reviewing an infrastructure change means reading the preview, not only the diff.",
+      "example": "what-if"
+    },
+    {
+      "kind": "explanation",
+      "title": "One description, several environments",
+      "text": "The module on environments asked that staging and production be alike. Infrastructure as code is how.\n\nWrite **one** description. Give it parameters for the few things that should differ: the name, the size, the number of instances. Keep a small parameter file for each environment.\n\nStaging and production are then built from the same file. A setting cannot be added to production and forgotten in staging, because there is nowhere to write it that applies to only one, except in a parameter that everyone can see.",
+      "example": "params"
+    },
+    {
+      "kind": "explanation",
+      "title": "Drift",
+      "text": "**Drift** is the gap that opens when someone changes real infrastructure without changing the description. A size is raised in the portal during an incident. A firewall rule is added by hand to test something and left.\n\nNow the file is wrong, and the next deployment is a surprise. It may undo the manual change in the middle of the day. Or it may fail because the real state no longer fits.\n\n- **Change the file, not the resource.** The pipeline applies it.\n- **Allow emergencies, then record them.** If a manual change is unavoidable, the same person opens a pull request that makes the file match, the same day.\n- **Look for drift on a schedule.** Run the preview nightly against each environment. If it reports any change, something moved.",
+      "example": "drift"
+    },
+    {
+      "kind": "explanation",
+      "title": "In the pipeline",
+      "text": "An infrastructure pipeline has the same shape as an application pipeline.\n\n- **On a pull request:** check the files, run the preview against each environment, and show the output to the reviewer.\n- **After the merge:** apply to development, then staging.\n- **Production:** apply after approval, with the preview shown to the approver.\n\nTwo cautions are particular to infrastructure. The identity that applies it can create and delete resources, which is far more power than deploying an image needs. Keep it separate from the application's deploy identity and guard it more tightly. And treat any **delete** in a preview of production as a stop sign until a person has confirmed it is intended."
+    },
+    {
+      "kind": "debugging",
+      "title": "A small rename",
+      "text": "A pull request renames the database resource in the description \"for consistency\". This is part of the preview for production.",
+      "example": "delete",
+      "questions": [
+        "delete"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: bring an environment under control",
+      "text": "A team has a production environment that was built by hand two years ago, and no staging. They want infrastructure as code. Put these steps in a sensible order and say why.\n\n- Apply the description to production.\n- Write a description that matches production as it is today.\n- Build a staging environment from the description.\n- Run the preview against production until it reports no changes.\n- Remove people's rights to change production by hand.\n- Add a nightly drift check."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. **Write a description that matches production as it is.** Change nothing yet. The aim is a true picture.\n2. **Run the preview against production until it reports no changes.** Each difference it shows is a place where the file is wrong. Fix the file, not production.\n3. **Build staging from the description.** This proves the description is complete: if staging does not work, something exists in production that the file does not mention.\n4. **Apply the description to production.** With a clean preview, this changes nothing, and from now on the file is the source of truth.\n5. **Add the nightly drift check.**\n6. **Remove rights to change production by hand,** keeping an emergency route that is logged.\n\nThe order matters. Applying before the preview is clean would let the tool \"correct\" production to match an incomplete file."
+    }
+  ],
+  "questions": [
+    {
+      "id": "idempotent",
+      "prompt": "What does the second run do?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "Creates a second copy of everything",
+          "feedback": "That is what a script of create commands would attempt. A declarative tool compares first."
+        },
+        {
+          "text": "Fails, because the resources already exist",
+          "feedback": "Existing resources that match the description are simply left as they are."
+        },
+        {
+          "text": "Nothing, because reality already matches the description",
+          "feedback": "The tool finds no difference and makes no change. That is why applying on every merge is safe."
+        }
+      ]
+    },
+    {
+      "id": "delete",
+      "example": "delete",
+      "prompt": "What should the reviewer do?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Stop the change: it would delete the production database",
+          "feedback": "To the tool, a new name is a new resource, and the old one is no longer described. The preview shows a delete and a create, which means an empty database. The name must stay, or the change needs a planned migration of the data."
+        },
+        {
+          "text": "Approve it, since only a name changes",
+          "feedback": "The diff shows a name. The preview shows what the tool will actually do with it."
+        },
+        {
+          "text": "Approve it, and restore from backup afterwards",
+          "feedback": "That is a planned outage with data loss, for a cosmetic change."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "bicep": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/bicep.txt"
+      },
+      "readOnly": true,
+      "fence": "bicep"
+    },
+    "what-if": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/what-if.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "params": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/params.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "drift": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/drift.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "delete": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/delete.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

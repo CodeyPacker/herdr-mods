@@ -1,0 +1,10 @@
+services:
+  web:
+    image: tracker:1.4.2
+    privileged: true
+    restart: always
+
+  db:
+    image: postgres:17.2
+    ports:
+      - "5432:5432"

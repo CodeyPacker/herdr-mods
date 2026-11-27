@@ -1,0 +1,150 @@
+{
+  "id": "course:ci-cd/module/flow",
+  "title": "From a commit to production",
+  "requires": [],
+  "outcomes": [],
+  "intro": "This course is about CI/CD: the automated path that takes a change from a developer's machine to the people who use the software. It is a reading course. Each module explains a few ideas, shows them as pipeline files, commands and diagrams, asks you to judge some situations, and ends with a short exercise and one possible answer. The ideas apply to any pipeline tool. So that the examples stay comparable, they are written for one tool, GitHub Actions, and deploy one running product, a small web service called tracker, to Microsoft Azure.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "The problem",
+      "text": "Picture a team that releases by hand. Each developer works alone for weeks. At the end, everyone's work is combined, and it does not fit together. Then someone follows a long checklist to put the result on a server, late at night, and a step is missed.\n\nTwo things made that painful. The changes were **large**, so problems were found late and were hard to trace. And the release was **manual**, so it was slow, different every time, and frightening enough to be done rarely.\n\nCI/CD attacks both. It makes changes small and checks each one at once, and it turns the release into a script that runs the same way every time."
+    },
+    {
+      "kind": "explanation",
+      "title": "Three terms",
+      "text": "- **Continuous integration** (CI) means every developer merges into one shared branch often, at least daily, and every change is built and tested automatically.\n- **Continuous delivery** (CD) means every change that passes is packaged and proven ready to release. Releasing is one button, pressed by a person.\n- **Continuous deployment** goes one step further: every change that passes is released automatically, with no button.\n\nThe two CDs share their initials, which causes confusion. The difference is only who starts the final step. Most teams practise continuous delivery, and automate the last step once they trust their checks.",
+      "example": "three-terms"
+    },
+    {
+      "kind": "explanation",
+      "title": "The pipeline",
+      "text": "A **pipeline** is the series of automated steps a change passes through. It starts when the change is pushed and ends when the change is in production or has been rejected.\n\nEach step is a **gate**. A change that fails a step goes no further, and its author is told. A change that passes moves on to a slower, more thorough step.\n\nThe pipeline is written in a file kept in the same repository as the code. That matters: the release process is reviewed, versioned and changed in the same way as the code it releases.",
+      "example": "pipeline"
+    },
+    {
+      "kind": "prediction",
+      "title": "Which practice?",
+      "text": "A team's pipeline builds and tests every change, packages it, and puts it on a staging server. A release manager reads the test results each afternoon and presses a button to release to production.",
+      "questions": [
+        "which-cd"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Feedback is the product",
+      "text": "The most useful thing a pipeline makes is not the release. It is **feedback**: a fast, trustworthy answer to \"did my change break anything?\"\n\nThe speed of that answer changes how people work. When it arrives in five minutes, the author still has the change in mind and fixes it at once. When it arrives the next morning, the author has moved on, three more changes have landed on top, and nobody is sure which one is at fault.\n\nTwo properties matter above all others.\n\n- **Fast.** Minutes, not hours.\n- **Trustworthy.** Green means it works, and red means it does not. A pipeline that fails at random teaches everyone to ignore it."
+    },
+    {
+      "kind": "explanation",
+      "title": "The cost of a defect grows with time",
+      "text": "The same mistake costs more the later it is found.\n\nFound as you type, it costs seconds. Found by the pipeline, minutes. Found by a tester a week later, it costs a conversation, a search and a second release. Found by a customer, it costs trust as well.\n\nSo a good pipeline moves checks as early as it can. The cheap, fast ones run on every change. The slow, broad ones run later, on the few changes that got that far.",
+      "example": "cost"
+    },
+    {
+      "kind": "debugging",
+      "title": "A release day",
+      "text": "A team describes how it ships.",
+      "example": "release-day",
+      "questions": [
+        "release-day"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: trace a change",
+      "text": "Think of a project you know. Write down, in order, every step between a developer finishing a change and a user being able to use it. Include the waiting.\n\nFor each step note:\n\n1. Is it done by a person or a machine?\n2. Roughly how long does it take, including waiting for someone?\n3. What happens if it fails?\n\nThen mark the step that takes longest and the step most likely to be done wrongly."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "A typical list for a small web service might read as below. The lengths are invented, and the pattern is common.\n\nTwo things stand out in lists like this. Most of the elapsed time is **waiting for a person**, not work. And the manual steps are the ones that fail in new ways each time.\n\nThe rest of this course goes through that list from top to bottom: checking changes, packaging them once, moving the package through environments, releasing it safely, and going back when it is wrong.",
+      "example": "trace"
+    }
+  ],
+  "questions": [
+    {
+      "id": "which-cd",
+      "prompt": "What is the team practising?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Continuous integration only",
+          "feedback": "They go further. Every passing change is packaged and placed where it is ready to release."
+        },
+        {
+          "text": "Continuous delivery",
+          "feedback": "Every change is proven releasable, and a person decides when to release. That is delivery."
+        },
+        {
+          "text": "Continuous deployment",
+          "feedback": "That would release every passing change with no button."
+        }
+      ]
+    },
+    {
+      "id": "release-day",
+      "example": "release-day",
+      "prompt": "What is the root of the team's trouble?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Releases are large and rare",
+          "feedback": "Six weeks of changes go out together, so a failure could be caused by any of hundreds of changes, and the manual steps are practised only eight times a year. Smaller, more frequent releases shrink both problems."
+        },
+        {
+          "text": "The release happens on a Friday",
+          "feedback": "Moving it to Tuesday changes when the pain happens. The release would still be large and manual."
+        },
+        {
+          "text": "They need more testers",
+          "feedback": "More people checking a large batch by hand makes it slower, and the batch is still large."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "three-terms": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/three-terms.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "pipeline": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/pipeline.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "cost": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/cost.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "release-day": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/release-day.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "trace": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/trace.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

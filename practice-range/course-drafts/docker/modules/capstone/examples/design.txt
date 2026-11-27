@@ -1,0 +1,15 @@
+                 only published port
+                         |
+  users ---- :80 ---> +-------+                    +----------------+
+                      |  web  | ---- db:5432 ----> |       db       |
+                      +-------+                    | (health check) |
+                        |   ^                      +----------------+
+        attachments     |   | same image,            ^         |
+        volume  <-------+   | other command          |         v
+           ^            +--------+                   |    db-data volume
+           +----------- | worker | ------------------+
+                        +--------+
+
+  start order:   db healthy  ->  migrate finishes  ->  web, worker
+  secrets:       files under /run/secrets, from outside the image
+  release:       notes:1.0.0 built once, same image on test and server

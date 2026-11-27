@@ -1,0 +1,10 @@
+# Dockerfile
+FROM nginx:1.27.3
+COPY site/ /usr/share/nginx/html/
+
+# Build
+docker build -t site:1 .
+
+# .dockerignore
+.git
+drafts

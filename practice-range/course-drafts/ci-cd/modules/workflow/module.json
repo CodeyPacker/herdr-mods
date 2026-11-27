@@ -1,0 +1,173 @@
+{
+  "id": "course:ci-cd/module/workflow",
+  "title": "Read a pipeline file",
+  "requires": [],
+  "outcomes": [],
+  "intro": "A pipeline is described in a file. This module teaches you to read one. The examples use GitHub Actions, where a pipeline is called a workflow. Other tools use other words, and the same four ideas appear in all of them: what starts it, which machine runs it, what the units of work are, and how they are ordered.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Where the file lives",
+      "text": "In GitHub Actions a pipeline is a **workflow**: a YAML file in the folder `.github/workflows` of the repository. A repository can have several.\n\nBecause the file is in the repository, a change to the pipeline is a commit like any other. It is reviewed in a pull request, and each branch runs the version of the workflow that the branch contains.\n\nRead the file below once from top to bottom before the next step takes it apart.",
+      "example": "first"
+    },
+    {
+      "kind": "explanation",
+      "title": "Four levels",
+      "text": "| Level | What it is | In the file |\n| --- | --- | --- |\n| **Workflow** | The whole file. One automated process. | `name:` and everything under it |\n| **Trigger** | The event that starts a run. | `on:` |\n| **Job** | A group of steps that run on one machine. | Each entry under `jobs:` |\n| **Step** | One command or one reusable action. | Each `-` under `steps:` |\n\nA **run** is one execution of the workflow, started by one event. The run's page shows each job and each step with its output, and whether it passed.",
+      "example": "levels"
+    },
+    {
+      "kind": "explanation",
+      "title": "Runners",
+      "text": "A job needs a machine to run on. That machine is a **runner**, and `runs-on` chooses which kind.\n\n`ubuntu-latest` asks for a fresh Linux virtual machine provided by GitHub. It is created for the job and destroyed afterwards. An organization can also register its own machines, called self-hosted runners, when a job needs something special such as access to a private network.\n\nThe important property is that a hosted runner starts **empty**. Your code is not on it, and nothing is left over from the last run. That is why nearly every job begins by fetching the code, and why a job cannot rely on a file an earlier run created."
+    },
+    {
+      "kind": "explanation",
+      "title": "Two kinds of step",
+      "text": "A step does one of two things.\n\n- `run:` executes a command in a shell on the runner, as you would type it in a terminal.\n- `uses:` runs an **action**: a packaged piece of pipeline logic that someone published. `actions/checkout` fetches the repository. `actions/setup-node` installs a runtime.\n\nAn action is named with a version after `@`. Options are passed under `with:`.\n\nSteps in a job run in order, on the same machine, and share its files. If a step fails, meaning its command exits with a code other than zero, the remaining steps are skipped and the job fails.",
+      "example": "steps"
+    },
+    {
+      "kind": "prediction",
+      "title": "An empty machine",
+      "text": "A job has these steps, in this order, on a hosted runner.\n\n```yaml\n    steps:\n      - run: npm ci\n      - uses: actions/checkout@v5\n      - run: npm test\n```",
+      "questions": [
+        "no-checkout"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Jobs run apart",
+      "text": "Each job gets its **own** runner. Two jobs share no files, and by default they run at the same time.\n\n`needs:` makes one job wait for another. It also means the waiting job is skipped if the first one fails.\n\nBecause jobs share nothing, passing something from one to the next takes a deliberate step: a job **output** for a small value such as a version number, or an uploaded **artifact** for files. A later module covers artifacts.",
+      "example": "needs"
+    },
+    {
+      "kind": "explanation",
+      "title": "Values in the file",
+      "text": "An expression in `${{ ... }}` is replaced with a value before the step runs. The values come from **contexts**.\n\n| Context | Holds | Example |\n| --- | --- | --- |\n| `github` | Facts about the run and its event | `github.sha`, `github.ref_name` |\n| `env` | Environment variables set in the file | `env.NODE_VERSION` |\n| `vars` | Settings stored in the repository | `vars.REGISTRY_NAME` |\n| `secrets` | Secret values stored in the repository | `secrets.API_TOKEN` |\n| `needs` | Outputs of jobs this job waits for | `needs.build.outputs.tag` |\n\n`env:` can be set for the whole workflow, one job or one step. `if:` on a job or step runs it only when an expression is true.",
+      "example": "contexts"
+    },
+    {
+      "kind": "debugging",
+      "title": "Two jobs, one mistake",
+      "text": "This workflow is meant to build the project and then run the tests against the build output. The `test` job fails with \"dist folder not found\".",
+      "example": "shared-nothing",
+      "questions": [
+        "shared-nothing"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: read a workflow",
+      "text": "Answer from the file below, without running it.\n\n1. What starts it?\n2. How many runners does one run use?\n3. Which jobs can run at the same time?\n4. If `lint` fails, which jobs run?\n5. What does `deploy` know about the build, and how?",
+      "example": "read-me"
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. A push to `main`.\n2. Four, one for each job.\n3. `lint` and `test`. Neither waits for anything.\n4. `test` still runs, because it does not depend on `lint`. `build` needs both, so it is skipped, and `deploy` needs `build`, so it is skipped too.\n5. Only the value `tag`, which `build` published as a job output and `deploy` reads through the `needs` context. It has none of the build's files."
+    }
+  ],
+  "questions": [
+    {
+      "id": "no-checkout",
+      "prompt": "What happens?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "The first step fails, because the code is not on the runner yet",
+          "feedback": "A hosted runner starts empty. `npm ci` finds no `package.json`, exits with an error, and the later steps are skipped. The checkout has to come first."
+        },
+        {
+          "text": "The steps are reordered so that the checkout runs first",
+          "feedback": "Steps run in the order written. Nothing reorders them."
+        },
+        {
+          "text": "It works, because the runner keeps the code from the last run",
+          "feedback": "A hosted runner is created fresh for each job and destroyed afterwards."
+        }
+      ]
+    },
+    {
+      "id": "shared-nothing",
+      "example": "shared-nothing",
+      "prompt": "Why is the folder missing?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "The `build` job failed",
+          "feedback": "It passed. Its output was written to its own runner."
+        },
+        {
+          "text": "`needs` runs the jobs in the wrong order",
+          "feedback": "`needs: build` does make `test` wait. Waiting does not copy any files."
+        },
+        {
+          "text": "Each job has its own runner, and files are not shared between them",
+          "feedback": "The `dist` folder was created on the first runner, which was then destroyed. The files must be uploaded as an artifact and downloaded in the second job, or both parts must be steps of one job."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "first": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/first.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "levels": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/levels.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "steps": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/steps.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "needs": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/needs.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "contexts": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/contexts.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "shared-nothing": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/shared-nothing.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "read-me": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/read-me.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

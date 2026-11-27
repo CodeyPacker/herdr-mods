@@ -1,0 +1,19 @@
+   pull request                     about 6 min
+   +------------------+   +---------------------+
+   | lint, type check |-->| unit | integration  |
+   +------------------+   +---------------------+
+
+   merge to main
+   +---------+   +-------------+   +---------+   +----------------+
+   | publish |-->| development |-->| staging |-->| e2e smoke test |
+   |  image  |   +-------------+   +---------+   +----------------+
+   +---------+        notes:git-5b3e9aa in every box
+
+   a person runs "promote", tag = git-5b3e9aa
+   +----------+   +---------+   +-----------+   +------+   +-------+
+   | approval |-->| migrate |-->| slot next |-->| swap |-->| check |
+   +----------+   +---------+   | + smoke   |   +------+   +-------+
+                                +-----------+       ^          |
+                                                    +-- back --+
+   nightly:  full end-to-end suite, drift check
+   measured: four delivery numbers, check time, error rate by version

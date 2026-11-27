@@ -1,0 +1,5 @@
+# Dockerfile
+FROM node
+
+# compose.yaml
+    image: postgres

@@ -1,0 +1,10 @@
+# Archive the volume's contents into the current folder.
+# The volume is mounted read-only, and the container removes itself.
+docker run --rm \
+  -v tracker-uploads:/source:ro \
+  -v ./backups:/backup \
+  ubuntu:24.04 \
+  tar -czf /backup/uploads.tar.gz -C /source .
+
+# For a database, use its own tool while it is running:
+docker exec db pg_dump -U postgres tracker > tracker.sql

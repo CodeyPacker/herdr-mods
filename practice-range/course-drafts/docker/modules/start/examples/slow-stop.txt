@@ -1,0 +1,10 @@
+# Dockerfile
+CMD npm start
+
+$ time docker stop web
+web
+real    0m10.4s
+
+$ docker ps -a
+IMAGE           STATUS                       NAMES
+tracker:1.4.1   Exited (137) 3 seconds ago   web

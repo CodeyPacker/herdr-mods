@@ -1,0 +1,164 @@
+{
+  "id": "course:ci-cd/module/triggers",
+  "title": "Decide when a pipeline runs",
+  "requires": [],
+  "outcomes": [],
+  "intro": "A pipeline that runs at the wrong time is wasteful or dangerous. This module covers the events that start a workflow, how to narrow them, how to start one by hand, and how to stop two runs of the same pipeline from working against each other.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Events",
+      "text": "`on:` names the events that start a workflow. Four cover most needs.\n\n| Event | Starts a run when | Typical use |\n| --- | --- | --- |\n| `pull_request` | A pull request is opened or gets new commits | Checks before merging |\n| `push` | Commits arrive on a branch or a tag is pushed | Build and deploy after merging |\n| `schedule` | A set time arrives | Nightly tests, dependency scans |\n| `workflow_dispatch` | A person presses \"Run workflow\" | Production release, rollback |\n\nA workflow can list several events. Each event that happens starts its own run.",
+      "example": "events"
+    },
+    {
+      "kind": "explanation",
+      "title": "Narrowing an event",
+      "text": "Most events take filters, so that a run starts only when it is useful.\n\n- `branches:` limits a `push` to named branches. For a `pull_request` it names the branch being merged **into**.\n- `tags:` starts a run when a matching tag is pushed, which is a common way to mark a release.\n- `paths:` starts a run only when the changed files match a pattern. A change to the documentation need not rebuild the service.\n\nTake care with `paths` on a required check. If the workflow does not start, the check never reports, and the pull request waits for it without end. Either leave required checks unfiltered or make sure something always reports a result.",
+      "example": "filters"
+    },
+    {
+      "kind": "prediction",
+      "title": "What runs?",
+      "text": "A workflow has the trigger below. A developer pushes a commit to a branch named `fix-login` and has not opened a pull request yet.\n\n```yaml\non:\n  pull_request:\n  push:\n    branches: [main]\n```",
+      "questions": [
+        "no-pr-yet"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Starting a run by hand",
+      "text": "`workflow_dispatch` adds a \"Run workflow\" button, and the same can be done from the command line. It is the right trigger for anything a person should decide: releasing to production, rolling back, running a one-off job.\n\nA manual workflow can declare **inputs**: values the person supplies when starting it. An input can be free text, a true-or-false box, or a choice from a fixed list.\n\nPrefer a choice to free text whenever the valid values are known. A typed environment name can be mistyped. A list cannot.",
+      "example": "dispatch"
+    },
+    {
+      "kind": "explanation",
+      "title": "Schedules",
+      "text": "`schedule` takes a cron expression: five fields for minute, hour, day of month, month and day of week. `0 6 * * 1-5` means 06:00 on Monday to Friday.\n\nThree facts save trouble.\n\n- Times are in **UTC**, not your local time.\n- A scheduled run uses the workflow file on the **default branch** and may start several minutes late when the service is busy.\n- Nobody is watching when it runs. A scheduled job that fails silently might as well not exist, so send its failures somewhere a person will see them.\n\nSchedules suit work that is too slow for every change, such as a full end-to-end run, and work that depends on the outside world, such as checking dependencies for newly reported flaws."
+    },
+    {
+      "kind": "explanation",
+      "title": "Two runs at once",
+      "text": "Events can arrive faster than runs finish. Push three commits to a pull request in a minute and three runs start. Merge two pull requests in a minute and two deployments start, and the older may finish last and overwrite the newer.\n\n`concurrency` prevents this. Runs that share a **group** name do not run at the same time.\n\n- For **checks**, add `cancel-in-progress: true`. A new commit makes the old run's answer worthless, so cancel it and save the time.\n- For **deployments**, leave cancelling off. A deployment stopped halfway can leave an environment in a mixed state. Let the running one finish, and the next waits its turn.",
+      "example": "concurrency"
+    },
+    {
+      "kind": "debugging",
+      "title": "The older one won",
+      "text": "A deploy workflow starts on every push to `main` and has no `concurrency` setting. Two changes were merged a minute apart. Afterwards, production is running the first change and not the second.",
+      "example": "race",
+      "questions": [
+        "race"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Which code is this run using?",
+      "text": "Each event decides which commit the workflow checks out, and it is not always the one you expect.\n\n- `push` uses the commit that was pushed.\n- `pull_request` uses a temporary **merge commit**: the pull request's branch combined with the current target branch. That is what makes the check answer \"will `main` still work after merging?\".\n- `schedule` and `workflow_dispatch` use the newest commit on the default branch, unless a person picks another branch when starting it.\n\nWhen a run's result surprises you, check which commit it ran on before anything else."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: choose the triggers",
+      "text": "Choose the trigger for each workflow, with any filter or concurrency setting it needs.\n\n1. Lint and unit tests for every proposed change.\n2. Build the service and deploy it to the development environment after each merge.\n3. A full end-to-end test run that takes 50 minutes.\n4. Release a chosen version to production.\n5. Rebuild the documentation site, which lives in the `docs` folder."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. `pull_request`, with a concurrency group per pull request and `cancel-in-progress: true`.\n2. `push` to `main`, with a concurrency group for the development environment and no cancelling.\n3. `schedule`, nightly, with failures reported to the team. It is too slow to gate every change.\n4. `workflow_dispatch` with an input for the version. A person chooses when, and the concurrency group is the production environment.\n5. `push` to `main` with `paths: ['docs/**']`. It is not a required check, so the filter is safe.",
+      "example": "answers"
+    }
+  ],
+  "questions": [
+    {
+      "id": "no-pr-yet",
+      "prompt": "Does the workflow run?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Yes, because of the `push` trigger",
+          "feedback": "The `push` trigger is limited to `main`. The commit went to `fix-login`."
+        },
+        {
+          "text": "No, neither trigger matches yet",
+          "feedback": "The push is to a branch other than `main`, and there is no pull request. It runs once a pull request is opened, and again on each later push to that branch."
+        },
+        {
+          "text": "Yes, twice",
+          "feedback": "Twice is what happens with an unfiltered `push` once a pull request is open: one run for each event."
+        }
+      ]
+    },
+    {
+      "id": "race",
+      "example": "race",
+      "prompt": "What went wrong?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Both deployments ran at once, and the older one finished last",
+          "feedback": "Nothing made the second run wait for the first. A concurrency group for the environment would run them one at a time, in order."
+        },
+        {
+          "text": "The second merge did not start a run",
+          "feedback": "Both runs started. The first was simply slower to finish."
+        },
+        {
+          "text": "The trigger should have been `pull_request`",
+          "feedback": "That would deploy unmerged code. The trigger is right. The missing piece is ordering."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "events": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/events.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "filters": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/filters.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "dispatch": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/dispatch.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "concurrency": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/concurrency.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "race": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/race.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "answers": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/answers.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

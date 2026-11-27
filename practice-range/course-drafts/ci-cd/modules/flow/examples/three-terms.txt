@@ -1,0 +1,8 @@
+  commit --> build --> test --> package --> staging --> PRODUCTION
+  |________________________|
+    continuous integration
+  |_________________________________________________|     ^
+    continuous delivery                                   | a person
+                                                          | presses
+  |___________________________________________________________|
+    continuous deployment                         (no button: automatic)

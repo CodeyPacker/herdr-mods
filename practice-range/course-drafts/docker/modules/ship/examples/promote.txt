@@ -1,0 +1,11 @@
+  Rebuilding for each place: two different images
+
+    source --build--> image A --> test         "it passed"
+    source --build--> image B --> production   never tested
+
+  Building once and promoting: one image
+
+    source --build--> tracker:1.5.0 --> test --> staging --> production
+                      (one digest)       |          |            |
+                                      settings   settings     settings
+                                      for test   for staging  for prod

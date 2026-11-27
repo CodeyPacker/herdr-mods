@@ -1,0 +1,13 @@
+                       tracker:1.4.2   (built once)
+                              |
+        +---------------------+---------------------+
+        |                     |                     |
+        v                     v                     v
+  +-------------+       +-------------+       +-------------+
+  | laptop      |       | test        |       | production  |
+  | DB=db:5432  |       | DB=test-db  |       | DB=prod-db  |
+  | LOG=debug   |       | LOG=info    |       | LOG=warn    |
+  +-------------+       +-------------+       +-------------+
+
+  The same files run in all three. Only the settings differ, and they
+  are given when each container starts.

@@ -1,0 +1,7 @@
+  1. End-to-end tests            35 min
+  2. Integration tests            6 min
+  3. Unit tests                   3 min
+  4. Build                        3 min
+  5. Lint                        20 s
+
+  Time until a lint error is reported:  47 minutes

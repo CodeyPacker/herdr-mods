@@ -1,0 +1,15 @@
+  Deployment record, production
+
+  When               Image                  Previous
+  -----------------  ---------------------  ---------------------
+  2026-03-03 14:05   tracker:git-3f2a9c8    tracker:git-a81d44e
+  2026-03-05 10:30   tracker:git-7c21e0d    tracker:git-3f2a9c8   <- bad
+
+  Roll back = run the promotion workflow with  tag: git-3f2a9c8
+
+  Nothing is built. The image is already in the registry.
+
+  Within minutes of a release on slots, quicker still:
+
+    production: git-7c21e0d (bad)      swap     production: git-3f2a9c8
+    next:       git-3f2a9c8        --------->   next:       git-7c21e0d

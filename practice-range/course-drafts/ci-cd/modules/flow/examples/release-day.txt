@@ -1,0 +1,10 @@
+  "We release every six weeks, on a Friday evening.
+
+   On Thursday we stop merging and combine all the feature branches.
+   That usually takes a day, because they conflict.
+
+   Two of us follow the release document. It has 34 steps.
+   Last time step 19 had changed and nobody had updated the document.
+
+   When something breaks afterwards we do not know which change did it.
+   There are a few hundred of them."

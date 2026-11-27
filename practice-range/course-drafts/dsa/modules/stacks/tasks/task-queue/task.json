@@ -1,0 +1,70 @@
+{
+  "id": "course:dsa/task/stacks-task-queue",
+  "role": "independent",
+  "title": "Build a queue",
+  "concepts": [
+    "queue",
+    "array-cost"
+  ],
+  "prompt": "Finish the class TaskQueue. enqueue adds a title at the back. dequeue removes and returns the title at the front, or returns undefined when the queue is empty. size is the number of titles waiting. Every operation must take one step, so do not call shift.",
+  "hints": [
+    "How can you take from the front without moving the other titles?",
+    "Keep a head index. dequeue returns items[head] and then adds one to head.",
+    "Do not move head when the queue is empty. size is items.length - head."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [
+    {
+      "kind": "CallExpression",
+      "name": "shift",
+      "max": 0,
+      "message": "shift moves every remaining element. Keep a head index instead."
+    }
+  ],
+  "checks": [
+    "(() => { const queue = new TaskQueue(); queue.enqueue(\"a\"); queue.enqueue(\"b\"); return __same([queue.dequeue(), queue.dequeue()], [\"a\", \"b\"]); })()",
+    "new TaskQueue().dequeue() === undefined",
+    "(() => { const queue = new TaskQueue(); queue.enqueue(\"a\"); queue.enqueue(\"b\"); queue.dequeue(); return queue.size === 1; })()",
+    "(() => { const queue = new TaskQueue(); queue.enqueue(\"a\"); queue.dequeue(); queue.enqueue(\"b\"); queue.enqueue(\"c\"); return queue.dequeue() === \"b\" && queue.size === 1; })()",
+    "(() => { const queue = new TaskQueue(); queue.dequeue(); queue.enqueue(\"a\"); return queue.size === 1 && queue.dequeue() === \"a\"; })()"
+  ],
+  "checkLabels": [
+    "Titles come out in the order they went in.",
+    "An empty queue gives undefined.",
+    "After two in and one out, size is 1.",
+    "Adding and removing can be mixed.",
+    "Taking from an empty queue must not lose the next title."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-newest.ts",
+      "misconception": "Takes from the back, which makes it a stack.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-runaway.ts",
+      "misconception": "Moves the head forward even when the queue is empty.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 5 failed"
+      }
+    }
+  ],
+  "feedback": "Draw the array and the head index after each call in the failing check. head must never pass the end of the array."
+}

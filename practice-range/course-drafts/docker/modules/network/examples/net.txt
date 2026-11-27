@@ -1,0 +1,15 @@
+$ docker network create tracker-net
+$ docker run -d --name db  --network tracker-net postgres:17.2
+$ docker run -d --name web --network tracker-net \
+    -e DATABASE_HOST=db -p 8080:3000 tracker:1.4.2
+
+  HOST
+    browser --- localhost:8080
+                    |
+     ...............|............ network: tracker-net ..............
+     :              v                                               :
+     :    +------------------+    db:5432     +------------------+  :
+     :    | web       :3000  | -------------> | db        :5432  |  :
+     :    +------------------+   by name      +------------------+  :
+     :                                         (not published)      :
+     :..............................................................:

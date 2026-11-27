@@ -1,0 +1,43 @@
+# .github/workflows/promote-production.yml
+name: Promote to production
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag that is running in staging
+        type: string
+        required: true
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: production        # pauses here for approval
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      IMAGE: ${{ vars.REGISTRY_NAME }}.azurecr.io/tracker
+    steps:
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Refuse a tag that does not exist
+        run: |
+          az acr repository show \
+            --name "${{ vars.REGISTRY_NAME }}" \
+            --image "tracker:${{ inputs.tag }}"
+
+      - name: Point production at that image
+        run: |
+          az webapp config container set \
+            --name "${{ vars.APP_NAME }}" \
+            --resource-group "${{ vars.RESOURCE_GROUP }}" \
+            --container-image-name "$IMAGE:${{ inputs.tag }}"

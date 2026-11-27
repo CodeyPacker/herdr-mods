@@ -1,0 +1,12 @@
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+
+  +------------------------+          +------------------------+
+  | container web          |          | container db           |
+  |                        |          |                        |
+  | connects to            |          | listening on :5432     |
+  | localhost:5432  --+    |          |                        |
+  |                   |    |          |                        |
+  |    <--------------+    |          |                        |
+  | (itself: nothing here) |          |                        |
+  +------------------------+          +------------------------+

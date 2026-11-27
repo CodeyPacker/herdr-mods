@@ -1,0 +1,182 @@
+{
+  "id": "course:dsa/module/sorting",
+  "title": "Sorting",
+  "requires": [
+    "recursion",
+    "two-pointers",
+    "array-cost"
+  ],
+  "outcomes": [
+    {
+      "id": "simple",
+      "can": "Trace insertion sort and say why it takes about n² steps.",
+      "assessment": [
+        "passes",
+        "course:dsa/task/sorting-insertion-sort"
+      ]
+    },
+    {
+      "id": "fast",
+      "can": "Write merge sort and explain where n log n comes from.",
+      "assessment": [
+        "course:dsa/task/sorting-merge-sort"
+      ]
+    },
+    {
+      "id": "compare",
+      "can": "Sort records with a comparator, and say what a stable sort guarantees.",
+      "assessment": [
+        "default-sort",
+        "course:dsa/task/sorting-sort-tasks"
+      ]
+    }
+  ],
+  "intro": "Sorted data is what makes binary search, merging and many other fast techniques possible, so sorting is worth understanding from the inside. This module covers one simple sort, one fast sort, and how to use the built-in sort correctly, which is what you will do in practice.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "A simple sort",
+      "text": "**Insertion sort** works the way most people sort a hand of cards. Keep the left part of the array sorted. Take the next element, and slide it left past every element that is larger, until it is in place.\n\nEach element may have to slide past all the elements before it. In the worst case, an array in reverse order, that is 1 + 2 + ... + (n - 1) moves, which is about n²/2. So insertion sort is O(n²).\n\nIt has two real merits. On an array that is already nearly sorted it does almost no work, close to O(n). And it needs no extra memory."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict each pass",
+      "text": "The example prints the array after each element is put in place. Predict the three lines.",
+      "example": "insertion",
+      "questions": [
+        "passes"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One element at a time",
+      "text": "First 2 slid in front of 5. Then 4 slid in front of 5 and stopped behind 2. Last, 1 slid past all three.\n\nThe inner loop shifts larger elements one place to the right to make a gap, and the saved element is written into the gap. Its condition has two parts, and both matter: `j >= 0` stops at the front of the array, and `values[j] > current` stops at the first element that is not larger.",
+      "example": "insertion"
+    },
+    {
+      "kind": "explanation",
+      "title": "A fast sort",
+      "text": "**Merge sort** is recursive. Split the array into two halves, sort each half with the same function, and then **merge** the two sorted halves. Merging is the two-pointer pass from the module on arrays, and it takes n steps.\n\nThe base case is an array of one element or none, which is already sorted.\n\nCount the work by levels. The array is halved until the pieces have one element, which takes log n levels. At every level, all the merging together handles n elements. So the total is n times log n, written **O(n log n)**. For a million elements that is about 20 million steps, where insertion sort needs about 500 billion.\n\nMerge sort uses O(n) extra memory for the merged halves."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict the built-in sort",
+      "text": "In practice you call the built-in sort. Predict all three lines. The second line has a surprise.",
+      "example": "stable",
+      "questions": [
+        "default-sort"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Comparators and stability",
+      "text": "With no argument, `sort` compares elements **as text**. As text, \"10\" comes before \"9\", because \"1\" comes before \"9\". That gave 1, 10, 100, 9.\n\nA **comparator** fixes it. It is a function of two elements that returns a negative number when the first should come first, a positive number when the second should, and 0 when they are equal in order. `(a, b) => a - b` sorts numbers from smallest to largest.\n\nThe first line shows **stability**. Two tasks with the same priority kept the order they had before: call before mail, and write before plan. The built-in sort is stable, and so is a merge sort that takes from the left half on a tie. Stability is what lets you sort by one field and then by another.\n\nNote also that `sort` changes the array it is called on. Copy first, with `[...values]`, when the caller's array must stay as it was.",
+      "example": "stable"
+    },
+    {
+      "kind": "modification",
+      "title": "Repair an insertion sort",
+      "text": "The starter is an insertion sort with one mistake in its inner loop. Save it, read the failing check, and repair it.",
+      "task": "course:dsa/task/sorting-insertion-sort"
+    },
+    {
+      "kind": "independent",
+      "title": "Write merge sort",
+      "text": "Work from the prompt. Split, sort each half with the same function, and merge.",
+      "task": "course:dsa/task/sorting-merge-sort"
+    },
+    {
+      "kind": "independent",
+      "title": "Sort records",
+      "text": "Work from the prompt. This one uses the built-in sort with a comparator.",
+      "task": "course:dsa/task/sorting-sort-tasks"
+    }
+  ],
+  "questions": [
+    {
+      "id": "passes",
+      "example": "insertion",
+      "prompt": "What is the second line printed?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "2 4 5 1",
+          "feedback": "4 slides in front of 5 and stops behind 2. The 1 has not been reached yet."
+        },
+        {
+          "text": "2 5 4 1",
+          "feedback": "That is the first line. On the second pass, 4 moves in front of 5."
+        },
+        {
+          "text": "1 2 4 5",
+          "feedback": "That is the last line. The 1 is only put in place on the third pass."
+        }
+      ]
+    },
+    {
+      "id": "default-sort",
+      "example": "stable",
+      "prompt": "What does the second line print?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "1 9 10 100",
+          "feedback": "That is the numeric order, which needs a comparator. With no argument, sort compares as text."
+        },
+        {
+          "text": "100 10 9 1",
+          "feedback": "The default order is ascending, but by text, not by value."
+        },
+        {
+          "text": "1 10 100 9",
+          "feedback": "With no comparator the numbers are compared as text, and \"10\" and \"100\" come before \"9\"."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "insertion": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/insertion.ts"
+      },
+      "stdout": [
+        "2 5 4 1",
+        "2 4 5 1",
+        "1 2 4 5"
+      ]
+    },
+    "stable": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/stable.ts"
+      },
+      "stdout": [
+        "call mail write plan",
+        "1 10 100 9",
+        "1 9 10 100"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:dsa/task/sorting-insertion-sort",
+      "path": "tasks/insertion-sort/task.json"
+    },
+    {
+      "id": "course:dsa/task/sorting-merge-sort",
+      "path": "tasks/merge-sort/task.json"
+    },
+    {
+      "id": "course:dsa/task/sorting-sort-tasks",
+      "path": "tasks/sort-tasks/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:dsa/task/sorting-merge-sort",
+    "afterModule": "course:dsa/module/heaps",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [],
+  "drillGap": "The practice catalog has no drills for this topic yet. The module's own exercises are the practice."
+}

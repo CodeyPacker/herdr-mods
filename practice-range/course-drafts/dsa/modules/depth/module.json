@@ -1,0 +1,185 @@
+{
+  "id": "course:dsa/module/depth",
+  "title": "Depth-first search and ordering",
+  "requires": [
+    "graph",
+    "breadth-first",
+    "recursion"
+  ],
+  "outcomes": [
+    {
+      "id": "explore",
+      "can": "Explore a graph depth first and predict when each node is entered and left.",
+      "assessment": [
+        "enter-leave",
+        "course:dsa/task/depth-has-path"
+      ]
+    },
+    {
+      "id": "cycle",
+      "can": "Detect a cycle in a directed graph by tracking the current path.",
+      "assessment": [
+        "course:dsa/task/depth-has-cycle"
+      ]
+    },
+    {
+      "id": "order",
+      "can": "Order items so that each comes after everything it needs.",
+      "assessment": [
+        "finish-order",
+        "course:dsa/task/depth-build-order"
+      ]
+    }
+  ],
+  "intro": "Breadth-first search explores in rings. The other way to explore is to follow one route as far as it goes, and only then back up and try another. That is depth-first search. It is short to write with recursion, and it answers questions that rings cannot: whether a graph has a cycle, and in what order to do things that depend on each other.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Go deep, then back up",
+      "text": "**Depth-first search** starts at a node and moves to a neighbour it has not seen, then to a neighbour of that one, and so on. When a node has no unseen neighbours left, the search **backs up** to the node it came from and continues with that node's next neighbour.\n\nRecursion does the backing up for you. A function `visit(node)` marks the node as seen and calls itself on each unseen neighbour. When a call returns, the search is back at the node before.\n\nIt visits every node and edge once, so it costs O(n + e), the same as breadth-first search. The differences are the order and what it finds. Depth-first search does **not** find the route with the fewest steps. Like breadth-first search, it needs a seen set, or a cycle makes it recurse for ever."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict enter and leave",
+      "text": "The function prints when it enters a node and when it has finished with it. Predict the eight lines. In this graph, edges point one way.",
+      "example": "dfs",
+      "questions": [
+        "enter-leave"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Entered early, left late",
+      "text": "The search entered a, then b, then d. Node d has no neighbours, so it was left at once. Then b was left. Back at a, the search entered c. From c the neighbour d was already seen, so c was left, and last of all a.\n\nLook at the leave order: d, b, c, a. A node is left only after everything reachable from it has been left. That one fact is the basis of both ideas in the rest of this module.",
+      "example": "dfs"
+    },
+    {
+      "kind": "explanation",
+      "title": "Cycles and order",
+      "text": "**Finding a cycle.** In a directed graph, a cycle exists when the search, while exploring from some node, arrives back at a node that is **still being explored**: one that has been entered and not yet left. Such a node is on the current path, so there is a route from it back to itself.\n\nArriving at a node that was entered **and left** earlier is not a cycle. It only means two routes lead to the same place. So one seen set is not enough. Track three states for each node: not visited, being visited, and done.\n\n**Ordering by need.** Suppose an edge from x to y means \"x needs y first\". Then the leave order is a valid order to do things in: a node is left only after everything it needs has been left. An order in which every item comes after what it needs is called a **topological order**. It exists only when the graph has no cycle."
+    },
+    {
+      "kind": "prediction",
+      "title": "Predict the finishing order",
+      "text": "Here an edge from a node points to something that must come after it. The function records each node as it is left, then reverses the list. Predict the line it prints.",
+      "example": "order",
+      "questions": [
+        "finish-order"
+      ]
+    },
+    {
+      "kind": "walkthrough",
+      "title": "Reverse of the leave order",
+      "text": "The leave order was d, b, c, a. In this graph an edge means \"comes before\", so the node left last must come first, and the list is reversed: a, c, b, d.\n\nCheck it: a comes before b and c, and both come before d. The direction of the edges decides whether to reverse. When an edge means \"needs\", as in the last exercise, the leave order is already the answer.",
+      "example": "order"
+    },
+    {
+      "kind": "modification",
+      "title": "Repair a path search",
+      "text": "The starter works on graphs without cycles. Save it, read the failing check, and stop it from going round a cycle.",
+      "task": "course:dsa/task/depth-has-path"
+    },
+    {
+      "kind": "independent",
+      "title": "Detect a cycle",
+      "text": "Work from the prompt. Two routes to the same node are not a cycle.",
+      "task": "course:dsa/task/depth-has-cycle"
+    },
+    {
+      "kind": "independent",
+      "title": "Order by need",
+      "text": "Work from the prompt. Any valid order is accepted.",
+      "task": "course:dsa/task/depth-build-order"
+    }
+  ],
+  "questions": [
+    {
+      "id": "enter-leave",
+      "example": "dfs",
+      "prompt": "What is the fourth line printed?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "enter c",
+          "feedback": "c is entered only after the search has finished with b, and b has a neighbour to explore first."
+        },
+        {
+          "text": "leave b",
+          "feedback": "b is left after d. d was entered third and has no neighbours, so it is left next."
+        },
+        {
+          "text": "leave d",
+          "feedback": "The first three lines enter a, b and d. d has no neighbours, so it is left straight away."
+        }
+      ]
+    },
+    {
+      "id": "finish-order",
+      "example": "order",
+      "prompt": "What does the example print?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "a c b d",
+          "feedback": "The nodes are left in the order d, b, c, a, and the list is reversed."
+        },
+        {
+          "text": "d b c a",
+          "feedback": "That is the order in which nodes are left. The example reverses it before printing."
+        },
+        {
+          "text": "a b c d",
+          "feedback": "b is left before c, so after reversing, c comes before b. Both orders happen to be valid for this graph."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "dfs": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/dfs.ts"
+      },
+      "stdout": [
+        "enter a",
+        "enter b",
+        "enter d",
+        "leave d",
+        "leave b",
+        "enter c",
+        "leave c",
+        "leave a"
+      ]
+    },
+    "order": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/order.ts"
+      },
+      "stdout": [
+        "a c b d"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "course:dsa/task/depth-has-path",
+      "path": "tasks/has-path/task.json"
+    },
+    {
+      "id": "course:dsa/task/depth-has-cycle",
+      "path": "tasks/has-cycle/task.json"
+    },
+    {
+      "id": "course:dsa/task/depth-build-order",
+      "path": "tasks/build-order/task.json"
+    }
+  ],
+  "review": {
+    "task": "course:dsa/task/depth-has-cycle",
+    "afterModule": "course:dsa/module/choose",
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+  },
+  "drills": [],
+  "drillGap": "The practice catalog has no drills for this topic yet. The module's own exercises are the practice."
+}

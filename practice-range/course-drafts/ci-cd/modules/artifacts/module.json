@@ -1,0 +1,164 @@
+{
+  "id": "course:ci-cd/module/artifacts",
+  "title": "Build once and keep the result",
+  "requires": [],
+  "outcomes": [],
+  "intro": "Between the checks and the deployment sits the thing that actually gets deployed. This module covers that thing, the artifact: why it is built exactly once, how to name it so that every build can be told apart, and where it is kept.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "What an artifact is",
+      "text": "An **artifact** is the output of a build: the packaged form of the software that will run. Depending on the project it is a container image, a compiled program, a package for a library registry, or an archive of files for a web server.\n\nThe artifact is the unit that moves through the rest of the pipeline. Tests run against it. Environments receive it. Production runs it.\n\nThis course uses a container image as its artifact, since that is the common case for services. Nothing in this module depends on that choice."
+    },
+    {
+      "kind": "explanation",
+      "title": "Build once",
+      "text": "The central rule of delivery is: **build the artifact once, and deploy that same artifact everywhere.**\n\nIt is tempting to give each environment its own build step. Then staging and production run two different builds of the same source. They can differ, because a build has inputs beyond the source: the versions of dependencies that are available that day, the base image, the build tools on the runner.\n\nIf the artifact that passed your tests is not the artifact you release, the tests proved nothing about the release.",
+      "example": "build-once"
+    },
+    {
+      "kind": "prediction",
+      "title": "The same commit, built twice",
+      "text": "On Monday the pipeline builds commit `3f2a9c8` and deploys it to staging, where it is tested all week. On Friday a production workflow checks out the same commit, builds it again, and deploys the result.",
+      "questions": [
+        "rebuilt"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Give every build a name",
+      "text": "For one artifact to be carried through the pipeline, it needs a name that means exactly one build.\n\n- The **commit identifier** is the simplest. Every build of `main` gets a tag such as `git-3f2a9c8`. It is unique and leads straight back to the source.\n- A **version number** such as `1.5.0` is added when the project has releases that people talk about.\n\nWhichever you use, the name is **permanent**. A tag is never moved to a different build. Names that move, such as `latest` or `stable`, cannot be used to say what is running or to go back to what was running before.\n\nCompute the name once, early in the pipeline, and pass it to every later job.",
+      "example": "naming"
+    },
+    {
+      "kind": "explanation",
+      "title": "Where artifacts are kept",
+      "text": "There are two kinds of storage, with different jobs.\n\n| | Workflow artifacts | A registry |\n| --- | --- | --- |\n| What | Files attached to one run | A server made for storing versions of packages or images |\n| Lives | Days, then deleted | As long as you decide |\n| Use for | Passing files between jobs, keeping test reports | Anything that will be deployed |\n\nThe module on reading a pipeline file showed that jobs share no files. Uploading a workflow artifact in one job and downloading it in the next is how files cross that gap.\n\nWhat gets deployed belongs in a registry, where it has a permanent name and every environment can fetch it. For container images on Azure, that is Azure Container Registry.",
+      "example": "upload"
+    },
+    {
+      "kind": "explanation",
+      "title": "Publishing an image",
+      "text": "The job below is the heart of a delivery pipeline. It runs after the checks pass on `main`. It builds the image, names it after the commit, and pushes it to the registry.\n\nFrom this point on, no later job builds anything. Each one takes the tag and uses the image that is already in the registry.\n\nThe sign-in step uses an identity for the pipeline with no stored password. The module on secrets explains how that works.",
+      "example": "publish"
+    },
+    {
+      "kind": "debugging",
+      "title": "Three builds",
+      "text": "A team's pipeline, summarized. Each deploy job contains its own build step.",
+      "example": "three-builds",
+      "questions": [
+        "three-builds"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "From a running system back to its source",
+      "text": "Months from now someone will look at production and ask what exactly is running. Make that a one-step question.\n\n- **Stamp the artifact.** Record the commit and build time inside it, as image labels or a small version file.\n- **Expose it.** A `/version` address on the service that returns the commit turns \"what is running?\" into one request.\n- **Record each deployment.** Which artifact, to which environment, when, started by whom. The pipeline's own history often serves.\n- **Decide how long to keep things.** Keep every artifact that is or recently was in production, so that going back is possible. Clean up the rest on a schedule.",
+      "example": "version"
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: design the artifact flow",
+      "text": "A service is built from `main` and runs in three environments: development, staging and production.\n\n1. How many times is the image built for one commit that reaches production?\n2. What is the image called?\n3. Which job computes that name, and how do later jobs learn it?\n4. A test report is produced by the integration tests. Where is it kept, and for how long?\n5. Which images does the registry keep?"
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. Once.\n2. `<registry>/tracker:git-<commit>`, with a version tag added to the same image when a release is cut.\n3. The build job, as a job output. Deploy jobs read it through `needs`. A manual production workflow takes it as an input.\n4. As a workflow artifact on the run, for a week or two. It is evidence about one run, not something to deploy.\n5. Every image that reached staging or production in, say, the last 90 days, and the current production image always. Images that only ever reached development can go after a few days."
+    }
+  ],
+  "questions": [
+    {
+      "id": "rebuilt",
+      "prompt": "Is production running what was tested?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "Yes, it is the same commit",
+          "feedback": "The source is the same. The build has other inputs, and four days passed between the two builds."
+        },
+        {
+          "text": "Yes, as long as the build passes",
+          "feedback": "A passing build shows the second artifact could be made. It says nothing about whether it matches the first."
+        },
+        {
+          "text": "Not necessarily: it is a second build, made four days later",
+          "feedback": "A dependency or the base image may have published a new version in between. The week of testing was done on a different artifact. Deploying Monday's image by its tag would have removed the doubt."
+        }
+      ]
+    },
+    {
+      "id": "three-builds",
+      "example": "three-builds",
+      "prompt": "What is the weakness?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Production runs an artifact that was never tested",
+          "feedback": "Each environment gets its own build, so the one tested in staging is thrown away and a new one goes to production. Build in one job, publish the image, and have every deploy job use that tag."
+        },
+        {
+          "text": "Three builds use too much machine time",
+          "feedback": "They do waste time, and that is the smaller problem."
+        },
+        {
+          "text": "The jobs are in the wrong order",
+          "feedback": "The order is right. The repetition is the fault."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "build-once": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/build-once.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "naming": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/naming.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "upload": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/upload.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "publish": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/publish.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "three-builds": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/three-builds.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "version": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/version.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

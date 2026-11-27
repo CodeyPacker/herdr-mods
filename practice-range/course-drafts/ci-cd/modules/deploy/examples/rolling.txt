@@ -1,0 +1,10 @@
+               load balancer
+              /      |      \
+  start      [v1]   [v1]   [v1]
+
+  step 1     [v2]   [v1]   [v1]     one replaced, checked, back in
+  step 2     [v2]   [v2]   [v1]
+  step 3     [v2]   [v2]   [v2]     done
+
+  During steps 1 and 2, users reach v1 and v2 at random.
+  Both must work against the same database.

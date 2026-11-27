@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:17.2
+    healthcheck:
+      # Exit code 0 when the database accepts connections.
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+# $ docker compose ps
+# NAME           STATUS
+# tracker-db-1   Up 12 seconds (healthy)

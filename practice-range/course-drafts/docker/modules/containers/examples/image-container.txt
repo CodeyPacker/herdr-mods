@@ -1,0 +1,13 @@
+        IMAGE  tracker:1.4.2            (read-only, on disk)
+        +--------------------------+
+        | program + runtime + libs |
+        | start command            |
+        +--------------------------+
+              |            |            |
+          docker run   docker run   docker run
+              |            |            |
+              v            v            v
+        +-----------+ +-----------+ +-----------+
+        | container | | container | | container |   each has its own
+        |     A     | |     B     | |     C     |   files, processes
+        +-----------+ +-----------+ +-----------+   and network

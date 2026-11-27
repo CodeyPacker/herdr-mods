@@ -1,0 +1,9 @@
+  Exec form                            Shell form
+  CMD ["node", "server.js"]            CMD node server.js
+
+  Inside the container:                Inside the container:
+
+  PID 1   node server.js               PID 1   /bin/sh -c "node server.js"
+                                       PID 7     node server.js
+
+  Your program gets the signals.       The shell gets them, and keeps them.

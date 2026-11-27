@@ -1,0 +1,61 @@
+{
+  "id": "course:dsa/task/readiness-r2",
+  "role": "readiness",
+  "title": "Merge two sorted linked lists",
+  "concepts": [
+    "linked-list",
+    "two-pointers"
+  ],
+  "prompt": "a and b are the heads of two linked lists, each sorted from smallest to largest. Join their nodes into one sorted list and return its head. Either list may be null.",
+  "hints": [
+    "At each step, which two nodes are the only candidates for the next node of the result?",
+    "Keep a tail for the result. Attach the smaller of the two front nodes, and move forward in the list it came from.",
+    "When one list runs out, attach the whole of the other. A temporary first node saves a special case for the head."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(toArray(mergeLists(listOf([1, 4]), listOf([2, 3, 9]))), [1, 2, 3, 4, 9])",
+    "__same(toArray(mergeLists(null, null)), [])",
+    "__same(toArray(mergeLists(listOf([1]), null)), [1])",
+    "__same(toArray(mergeLists(listOf([2, 2]), listOf([2]))), [2, 2, 2])"
+  ],
+  "checkLabels": [
+    "1, 4 and 2, 3, 9 merge into 1, 2, 3, 4, 9.",
+    "Two empty lists give an empty list.",
+    "One empty list gives the other.",
+    "Equal values are all kept."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-tail.ts",
+      "misconception": "Stops when one list runs out and drops the rest of the other.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-either-empty.ts",
+      "misconception": "Returns nothing when either list is empty, instead of returning the other list.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "Trace the first check by hand, drawing the tail after each step. Then ask what happens to the nodes left in the longer list."
+}

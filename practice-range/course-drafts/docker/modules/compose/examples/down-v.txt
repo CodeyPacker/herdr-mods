@@ -1,0 +1,5 @@
+#!/bin/sh
+# reset.sh: restart the test environment with the newest images
+docker compose pull
+docker compose down -v
+docker compose up -d

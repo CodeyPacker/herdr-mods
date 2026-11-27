@@ -1,0 +1,32 @@
+# .github/actions/push-image/action.yml
+name: Push image
+description: Sign in to the registry, then build and push an image.
+
+inputs:
+  registry:
+    description: Name of the container registry
+    required: true
+  tag:
+    description: Tag for the image
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: az acr login --name "${{ inputs.registry }}"
+
+    - shell: bash
+      env:
+        IMAGE: ${{ inputs.registry }}.azurecr.io/tracker:${{ inputs.tag }}
+      run: |
+        docker build -t "$IMAGE" .
+        docker push "$IMAGE"
+
+# ---------------------------------------------------------------
+# Called from a job, as one step:
+#
+#     - uses: ./.github/actions/push-image
+#       with:
+#         registry: ${{ vars.REGISTRY_NAME }}
+#         tag: ${{ steps.name.outputs.tag }}

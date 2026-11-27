@@ -1,0 +1,39 @@
+services:
+  web:
+    image: registry.example.com/team/tracker:1.5.0
+    restart: unless-stopped
+    user: node
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    mem_limit: 512m
+    ports:
+      - "80:3000"
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17.2
+    restart: unless-stopped
+    mem_limit: 1g
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 5
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+
+volumes:
+  db-data:

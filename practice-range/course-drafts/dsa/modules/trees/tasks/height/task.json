@@ -1,0 +1,61 @@
+{
+  "id": "course:dsa/task/trees-height",
+  "role": "guided",
+  "title": "Repair a height",
+  "concepts": [
+    "binary-tree",
+    "recursion"
+  ],
+  "prompt": "Return the height of the tree: the number of nodes on the longest path from root down to a leaf. An empty tree, null, has height 0. The supplied tree(value, left, right) builds a node.",
+  "hints": [
+    "In the sample tree, the longest path does not go down the left edge. Which way does it turn?",
+    "The height of a node is one more than the height of its taller subtree.",
+    "Return 1 + Math.max(height(root.left), height(root.right)), with 0 for null."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(height(__sample), 4)",
+    "__same(height(null), 0)",
+    "__same(height(tree(1)), 1)",
+    "__same(height(tree(1, null, tree(2, null, tree(3)))), 3)"
+  ],
+  "checkLabels": [
+    "The longest path in the sample is 8, 3, 6, 4.",
+    "An empty tree has height 0.",
+    "A single node has height 1.",
+    "A path down the right side counts."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-left.ts",
+      "misconception": "Follows the left branch only.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-count.ts",
+      "misconception": "Counts every node instead of the longest path.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Trust the two recursive calls: each returns the height of one subtree. What do you do with two heights to get the height of the whole tree?"
+}

@@ -1,0 +1,8 @@
+$ docker compose ps
+NAME            STATUS
+tracker-web-1   Restarting (1) 4 seconds ago
+tracker-db-1    Up 2 hours (healthy)
+
+# compose.yaml
+  web:
+    restart: always

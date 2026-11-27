@@ -1,0 +1,15 @@
+    steps:
+      - uses: actions/checkout@v5
+      - run: npm ci
+
+      - name: Run the integration tests
+        run: npm run test:integration
+
+      # Runs even when the tests failed, so the report is always kept.
+      - name: Keep the test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-report
+          path: reports/
+          retention-days: 7

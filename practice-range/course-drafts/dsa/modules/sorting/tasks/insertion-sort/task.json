@@ -1,0 +1,69 @@
+{
+  "id": "course:dsa/task/sorting-insertion-sort",
+  "role": "guided",
+  "title": "Repair an insertion sort",
+  "concepts": [
+    "sorting"
+  ],
+  "prompt": "Sort values from smallest to largest, in place, and return the same array. Use insertion sort.",
+  "hints": [
+    "In the failing check, which element never moves?",
+    "The inner loop must be allowed to compare with the element at index 0.",
+    "Change the inner condition from j > 0 to j >= 0."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [
+    {
+      "kind": "CallExpression",
+      "name": "sort",
+      "max": 0,
+      "message": "Write the sort yourself. Do not call sort."
+    }
+  ],
+  "checks": [
+    "__same(insertionSort([5, 2, 4, 1]), [1, 2, 4, 5])",
+    "__same(insertionSort([]), [])",
+    "__same(insertionSort([3, 3, 1]), [1, 3, 3])",
+    "__same(insertionSort([1, 2, 3]), [1, 2, 3])",
+    "__same(insertionSort([2, 1]), [1, 2])"
+  ],
+  "checkLabels": [
+    "5, 2, 4, 1 becomes 1, 2, 4, 5.",
+    "An empty array stays empty.",
+    "Equal numbers are kept.",
+    "A sorted array stays sorted.",
+    "Two elements swap."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-front.ts",
+      "misconception": "Never compares with the first element, so it stays where it is.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-builtin.ts",
+      "misconception": "Calls the built-in sort instead of practising the method.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "syntax",
+        "detail": "Write the sort yourself"
+      }
+    }
+  ],
+  "feedback": "Trace the inner loop for the pass that should move an element to the very front. Which value of j does it stop at?"
+}

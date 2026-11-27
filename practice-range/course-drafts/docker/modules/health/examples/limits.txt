@@ -1,0 +1,11 @@
+services:
+  web:
+    image: tracker:1.4.2
+    mem_limit: 512m     # killed if it uses more (exit code 137)
+    cpus: 1.5           # slowed down beyond one and a half processors
+
+# The same thing with docker run:
+#   docker run -d --memory 512m --cpus 1.5 tracker:1.4.2
+#
+# Watch what containers actually use:
+#   docker stats

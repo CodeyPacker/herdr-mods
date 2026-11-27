@@ -1,0 +1,15 @@
+  VIRTUAL MACHINES                    CONTAINERS
+
+  +---------+  +---------+            +---------+  +---------+
+  |  app A  |  |  app B  |            |  app A  |  |  app B  |
+  |  libs   |  |  libs   |            |  libs   |  |  libs   |
+  | KERNEL  |  | KERNEL  |            +---------+  +---------+
+  +---------+  +---------+            +------------------------+
+  +------------------------+          |         Docker         |
+  |   virtual hardware     |          +------------------------+
+  +------------------------+          +------------------------+
+  |     host kernel        |          |      host kernel       |
+  +------------------------+          +------------------------+
+
+  Each has its own kernel.            All share one kernel.
+  Gigabytes, slow to start.           Megabytes, quick to start.

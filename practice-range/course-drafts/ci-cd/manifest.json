@@ -1,0 +1,369 @@
+{
+  "schemaVersion": "1-draft",
+  "contentVersion": "0.1.0-draft.1",
+  "kind": "reading",
+  "id": "course:ci-cd",
+  "title": "Ship changes safely with CI/CD",
+  "audience": [
+    "Uses version control and has opened a pull request",
+    "Wants to understand, write and review build and deployment pipelines"
+  ],
+  "prerequisiteConcepts": [],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:ci-cd/module/flow",
+      "order": "listed"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/flow",
+      "description": "Explain what continuous integration and continuous delivery are, and trace a change from a commit to production.",
+      "assessment": "course:ci-cd/module/flow"
+    },
+    {
+      "id": "outcome/integrate",
+      "description": "Keep a shared branch releasable with small changes and checks on every pull request.",
+      "assessment": "course:ci-cd/module/integrate"
+    },
+    {
+      "id": "outcome/workflow",
+      "description": "Read a GitHub Actions workflow and say what runs, where, and in what order.",
+      "assessment": "course:ci-cd/module/workflow"
+    },
+    {
+      "id": "outcome/triggers",
+      "description": "Choose the events that start a pipeline and stop runs from colliding.",
+      "assessment": "course:ci-cd/module/triggers"
+    },
+    {
+      "id": "outcome/stages",
+      "description": "Arrange checks so that the cheapest failures are found first.",
+      "assessment": "course:ci-cd/module/stages"
+    },
+    {
+      "id": "outcome/speed",
+      "description": "Shorten a pipeline with caching and parallel work, and deal with tests that fail at random.",
+      "assessment": "course:ci-cd/module/speed"
+    },
+    {
+      "id": "outcome/artifacts",
+      "description": "Produce one identified artifact per change and reuse it in every later step.",
+      "assessment": "course:ci-cd/module/artifacts"
+    },
+    {
+      "id": "outcome/environments",
+      "description": "Move one artifact through development, staging and production with the right gates.",
+      "assessment": "course:ci-cd/module/environments"
+    },
+    {
+      "id": "outcome/secrets",
+      "description": "Give a pipeline the access it needs without storing long-lived keys, and limit what untrusted code can reach.",
+      "assessment": "course:ci-cd/module/secrets"
+    },
+    {
+      "id": "outcome/deploy",
+      "description": "Choose between rolling, blue-green and canary deployment, and check a release before users see it.",
+      "assessment": "course:ci-cd/module/deploy"
+    },
+    {
+      "id": "outcome/rollback",
+      "description": "Plan how to undo a release, and separate deploying code from turning a feature on.",
+      "assessment": "course:ci-cd/module/rollback"
+    },
+    {
+      "id": "outcome/database",
+      "description": "Change a database's structure in steps that old and new code can both run against.",
+      "assessment": "course:ci-cd/module/database"
+    },
+    {
+      "id": "outcome/reuse",
+      "description": "Share pipeline logic between repositories without copying it.",
+      "assessment": "course:ci-cd/module/reuse"
+    },
+    {
+      "id": "outcome/infrastructure",
+      "description": "Describe an environment in a file, preview a change to it, and explain drift.",
+      "assessment": "course:ci-cd/module/infrastructure"
+    },
+    {
+      "id": "outcome/measure",
+      "description": "Measure a delivery process with four numbers and notice a bad release quickly.",
+      "assessment": "course:ci-cd/module/measure"
+    },
+    {
+      "id": "outcome/capstone",
+      "description": "Review a flawed pipeline and design one for a small service, without help.",
+      "assessment": "course:ci-cd/module/capstone"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:ci-cd/module/flow",
+      "title": "From a commit to production",
+      "prerequisites": [],
+      "teaches": [
+        "pipeline",
+        "feedback"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/flow/module.json"
+      }
+    },
+    {
+      "id": "course:ci-cd/module/integrate",
+      "title": "Integrate small changes often",
+      "prerequisites": [
+        "course:ci-cd/module/flow"
+      ],
+      "teaches": [
+        "trunk",
+        "pull-request-checks"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/integrate/module.json"
+      }
+    },
+    {
+      "id": "course:ci-cd/module/workflow",
+      "title": "Read a pipeline file",
+      "prerequisites": [
+        "course:ci-cd/module/flow"
+      ],
+      "teaches": [
+        "workflow",
+        "job",
+        "step"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/workflow/module.json"
+      }
+    },
+    {
+      "id": "course:ci-cd/module/triggers",
+      "title": "Decide when a pipeline runs",
+      "prerequisites": [
+        "course:ci-cd/module/workflow"
+      ],
+      "teaches": [
+        "trigger",
+        "concurrency"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/triggers/module.json"
+      }
+    },
+    {
+      "id": "course:ci-cd/module/stages",
+      "title": "Order the checks",
+      "prerequisites": [
+        "course:ci-cd/module/workflow"
+      ],
+      "teaches": [
+        "fail-fast",
+        "test-levels"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/stages/module.json"
+      }
+    },
+    {
+      "id": "course:ci-cd/module/speed",
+      "title": "Keep the pipeline fast",
+      "prerequisites": [
+        "course:ci-cd/module/stages"
+      ],
+      "teaches": [
+        "cache",
+        "flaky-test"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/speed/module.json"
+      }
+    },
+    {
+      "id": "course:ci-cd/module/artifacts",
+      "title": "Build once and keep the result",
+      "prerequisites": [
+        "course:ci-cd/module/stages"
+      ],
+      "teaches": [
+        "artifact",
+        "version"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/artifacts/module.json"
+      }
+    },
+    {
+      "id": "course:ci-cd/module/environments",
+      "title": "Promote through environments",
+      "prerequisites": [
+        "course:ci-cd/module/artifacts"
+      ],
+      "teaches": [
+        "environment",
+        "promotion",
+        "approval"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/environments/module.json"
+      }
+    },
+    {
+      "id": "course:ci-cd/module/secrets",
+      "title": "Handle secrets and identity",
+      "prerequisites": [
+        "course:ci-cd/module/environments"
+      ],
+      "teaches": [
+        "secret",
+        "federated-identity",
+        "least-privilege"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/secrets/module.json"
+      }
+    },
+    {
+      "id": "course:ci-cd/module/deploy",
+      "title": "Deploy without downtime",
+      "prerequisites": [
+        "course:ci-cd/module/environments"
+      ],
+      "teaches": [
+        "deployment-strategy",
+        "smoke-test"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/deploy/module.json"
+      }
+    },
+    {
+      "id": "course:ci-cd/module/rollback",
+      "title": "Go back quickly",
+      "prerequisites": [
+        "course:ci-cd/module/deploy"
+      ],
+      "teaches": [
+        "rollback",
+        "feature-flag"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/rollback/module.json"
+      }
+    },
+    {
+      "id": "course:ci-cd/module/database",
+      "title": "Change the database safely",
+      "prerequisites": [
+        "course:ci-cd/module/rollback"
+      ],
+      "teaches": [
+        "migration",
+        "expand-contract"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/database/module.json"
+      }
+    },
+    {
+      "id": "course:ci-cd/module/reuse",
+      "title": "Reuse pipeline code",
+      "prerequisites": [
+        "course:ci-cd/module/workflow",
+        "course:ci-cd/module/secrets"
+      ],
+      "teaches": [
+        "reusable-workflow",
+        "composite-action"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/reuse/module.json"
+      }
+    },
+    {
+      "id": "course:ci-cd/module/infrastructure",
+      "title": "Describe infrastructure as code",
+      "prerequisites": [
+        "course:ci-cd/module/environments"
+      ],
+      "teaches": [
+        "infrastructure-as-code",
+        "drift"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/infrastructure/module.json"
+      }
+    },
+    {
+      "id": "course:ci-cd/module/measure",
+      "title": "Know whether it is working",
+      "prerequisites": [
+        "course:ci-cd/module/deploy"
+      ],
+      "teaches": [
+        "delivery-metrics",
+        "observability"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/measure/module.json"
+      }
+    },
+    {
+      "id": "course:ci-cd/module/capstone",
+      "title": "Review and design a pipeline",
+      "prerequisites": [
+        "course:ci-cd/module/rollback",
+        "course:ci-cd/module/database",
+        "course:ci-cd/module/reuse",
+        "course:ci-cd/module/infrastructure",
+        "course:ci-cd/module/measure"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/capstone/module.json"
+      }
+    }
+  ],
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  },
+  "runtimeContentVersion": "0.1.0-preview.1"
+}

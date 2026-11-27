@@ -1,0 +1,62 @@
+{
+  "id": "course:dsa/task/recursion-subsets",
+  "role": "independent",
+  "title": "List every subset",
+  "concepts": [
+    "recursion"
+  ],
+  "prompt": "Return every subset of items, in any order. A subset is any selection of the items, including none of them and all of them. The items are all different. Three items have 8 subsets.",
+  "hints": [
+    "What are the subsets of an empty list? There is exactly one.",
+    "Take the first item away. Every subset of the whole list is a subset of the rest, either without the first item or with it.",
+    "Base case: return [[]]. Otherwise get the subsets of the rest, and return them together with a copy of each that has the first item added."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(__normal(subsets([])), [[]])",
+    "__same(__normal(subsets([\"a\"])), [[], [\"a\"]])",
+    "__same(__normal(subsets([\"a\", \"b\"])), [[], [\"a\"], [\"a\", \"b\"], [\"b\"]])",
+    "subsets([\"a\", \"b\", \"c\"]).length === 8",
+    "new Set(__normal(subsets([\"a\", \"b\", \"c\", \"d\"])).map(set => set.join(\",\"))).size === 16"
+  ],
+  "checkLabels": [
+    "An empty list has one subset: the empty one.",
+    "One item has two subsets.",
+    "Two items have four subsets.",
+    "Three items have 8 subsets.",
+    "Four items have 16 different subsets."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-no-empty.ts",
+      "misconception": "Returns no subsets for an empty list, so there is nothing to build on.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-with-only.ts",
+      "misconception": "Keeps only the subsets that contain the first item.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    }
+  ],
+  "feedback": "Check the base case first: the empty list has one subset, not none. Then check that each call returns both groups."
+}

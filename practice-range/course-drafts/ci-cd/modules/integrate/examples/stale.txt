@@ -1,0 +1,10 @@
+  Monday      main:  A
+              branch made from A, checks run on  A + change      GREEN
+
+  Tuesday     main:  A --- B --- C     (other people's merges)
+
+              What the green check proved:   A + change works
+              What will exist after merging: A + B + C + change   ???
+
+  "Require branches to be up to date"  reruns the checks on
+                                       A + B + C + change

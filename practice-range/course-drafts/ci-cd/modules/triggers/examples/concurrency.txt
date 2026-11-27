@@ -1,0 +1,11 @@
+# Checks: a newer commit replaces the run for the same pull request.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# ---------------------------------------------------------------
+# Deployment, in another workflow: one at a time per environment,
+# and never cancelled halfway.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false

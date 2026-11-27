@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:17.2
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 5
+
+  migrate:
+    image: tracker:1.4.2
+    command: ["node", "migrate.js"]
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: tracker:1.4.2
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully

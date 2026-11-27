@@ -1,0 +1,146 @@
+{
+  "id": "course:ci-cd/module/integrate",
+  "title": "Integrate small changes often",
+  "requires": [],
+  "outcomes": [],
+  "intro": "Continuous integration is a habit before it is a tool. This module covers the habit: one shared branch that always works, small changes merged into it often, and automatic checks on every proposed change. The pipeline file comes in the next module.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "One branch that always works",
+      "text": "Continuous integration rests on one agreement: there is a single shared branch, usually called `main`, and it is always in a state that could be released.\n\nEverything else follows from protecting that. Nobody pushes to `main` directly. A change is proposed as a **pull request**, checked automatically, reviewed, and merged only when the checks pass.\n\nThe hosting service enforces the agreement with **branch protection**: rules that refuse a merge until named checks have passed and a reviewer has approved.",
+      "example": "protected"
+    },
+    {
+      "kind": "explanation",
+      "title": "Why small and often",
+      "text": "A branch that lives for three weeks drifts away from `main`. Everyone else's work lands in the meantime. When the branch finally merges, the conflicts are large and the combined result has never been tested.\n\nA branch that lives for a day barely drifts. Its conflicts are small, its review takes minutes, and if it breaks something there are only a few lines to suspect.\n\nThe work of integrating does not go away when it is postponed. It grows faster than the delay. Ten small merges cost far less than one merge ten times the size.",
+      "example": "drift"
+    },
+    {
+      "kind": "prediction",
+      "title": "Two ways to build a feature",
+      "text": "A feature needs about 1,500 lines of changes. One developer builds it on a branch for three weeks and opens one pull request. Another merges a 150-line piece every day or two, each one safe to release, with the unfinished feature hidden from users.",
+      "questions": [
+        "small-batches"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Merging unfinished work safely",
+      "text": "Merging daily raises a fair question: what about a feature that takes three weeks?\n\nThe answer is to separate **merging code** from **showing a feature**. Unfinished code can be in `main`, and in production, as long as users cannot reach it.\n\n- Build the new thing beside the old one and switch over at the end.\n- Put the new behaviour behind a **feature flag**, a setting that turns it on or off without a release. A later module covers flags.\n- Merge the parts nobody can see first: the data structure, then the logic, then the screen.\n\nEach merge must leave `main` working. It does not have to leave the feature finished."
+    },
+    {
+      "kind": "explanation",
+      "title": "What a pull request check proves",
+      "text": "A check on a pull request should answer one question: **if this is merged, will `main` still work?**\n\nThat is a statement about the combination, not about the branch alone. A branch can pass by itself and still break `main`, because `main` has moved since the branch was made.\n\nHosting services deal with this in two ways. They can test the merged result of the branch and the current `main`. And they can require the branch to be up to date before it merges. For busy repositories, a **merge queue** tests each change on top of the ones ahead of it and merges them in order.",
+      "example": "stale"
+    },
+    {
+      "kind": "debugging",
+      "title": "Green, merged, broken",
+      "text": "Two pull requests were opened on Monday from the same commit of `main`. Both passed every check. Both were merged on Tuesday. `main` now fails to build.",
+      "example": "two-prs",
+      "questions": [
+        "two-prs"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "When main breaks",
+      "text": "Even with every guard, `main` will sometimes fail. What the team does next decides whether CI works.\n\nA broken `main` blocks everybody: nobody can tell whether their own change is at fault, and nothing can be released. So it is the most urgent work there is.\n\n- **Stop merging** on top of the break.\n- **Revert first.** Undo the offending change to get back to green in minutes, then fix it properly on a branch. Debugging on `main` while the team waits is the slow way.\n- **Close the gap.** Ask why the checks did not catch it, and add the missing check."
+    },
+    {
+      "kind": "explanation",
+      "title": "Checks worth requiring",
+      "text": "A required check must be fast and dependable, because every change waits for it.\n\n| Check | Finds |\n| --- | --- |\n| Formatting and lint | Style problems and common mistakes, in seconds |\n| Build or type check | Code that does not fit together |\n| Unit tests | Logic that gives wrong answers |\n| Dependency and secret scan | Known flaws in libraries, and keys committed by accident |\n\nSlow and broad checks, such as a full end-to-end run, usually belong after the merge. The module on ordering checks explains where to draw the line."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: rules for main",
+      "text": "You are setting up a new repository for a team of six. Write the branch protection rules for `main`.\n\n1. Who may push directly?\n2. What must be true before a pull request can merge?\n3. Which checks are required? Name three.\n4. What should happen when a required check fails at random about one time in twenty?"
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. Nobody, including administrators. An exception that exists will be used on the worst possible day.\n2. One approving review from someone other than the author, every required check green, and the branch up to date with `main`, or a merge queue.\n3. Lint, build, and unit tests. They are fast and their failures are clear. A scan for committed secrets is a good fourth.\n4. Treat it as a defect and fix or remove the test. A required check that fails at random teaches people to press \"run again\" without reading, and then it stops protecting anything. The module on speed returns to this."
+    }
+  ],
+  "questions": [
+    {
+      "id": "small-batches",
+      "prompt": "Which approach carries less risk, and why?",
+      "answer": 2,
+      "choices": [
+        {
+          "text": "The single pull request, because the feature is reviewed as a whole",
+          "feedback": "A 1,500-line review is rarely thorough, and the branch has had three weeks to drift from `main`."
+        },
+        {
+          "text": "They are the same, since the same lines are written",
+          "feedback": "The lines are the same. What differs is how much is untested against `main` at any moment, and how hard a failure is to trace."
+        },
+        {
+          "text": "The small pieces, because each merge is easy to review and to undo",
+          "feedback": "Each piece is checked against the current `main`, reviewed properly, and small enough to revert alone. Hiding the unfinished feature keeps `main` releasable throughout."
+        }
+      ]
+    },
+    {
+      "id": "two-prs",
+      "example": "two-prs",
+      "prompt": "How did two passing changes break `main`?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "Each was tested against Monday's `main`, not against the other",
+          "feedback": "One renamed a function and the other added a call to the old name. Each is correct alone. Requiring branches to be up to date, or a merge queue, tests the combination before it lands."
+        },
+        {
+          "text": "One of the checks must have been skipped",
+          "feedback": "Both ran and both passed. They answered a question about an older `main`."
+        },
+        {
+          "text": "The reviewers approved too quickly",
+          "feedback": "Neither change is wrong when read alone. Only the combination fails, and a machine has to check that."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "protected": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/protected.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "drift": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/drift.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "stale": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/stale.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "two-prs": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/two-prs.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

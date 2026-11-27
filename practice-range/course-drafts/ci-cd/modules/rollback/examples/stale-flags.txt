@@ -1,0 +1,11 @@
+  Summary
+
+  A support engineer was asked to turn off "export-v2" for one customer.
+  The flag tool lists 140 flags. They switched off "export_v2_enabled",
+  which is a different flag: the global one, created three years ago
+  and on for everyone since.
+
+  With it off, every export used the old code path. That path had not
+  run in three years and failed against today's database.
+
+  Exports were down for 50 minutes.

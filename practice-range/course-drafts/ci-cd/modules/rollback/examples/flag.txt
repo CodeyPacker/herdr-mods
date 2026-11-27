@@ -1,0 +1,15 @@
+  DEPLOY (code reaches production)        RELEASE (users see it)
+
+  Monday     merge part 1, flag off       nobody sees anything
+  Tuesday    merge part 2, flag off
+  Thursday   merge part 3, flag off
+  Friday                                  flag on for staff
+  Monday                                  flag on for 5% of users
+  Tuesday                                 flag on for everyone
+  next week  delete the flag and the old code
+
+  if (flags.isOn("new-export", user)) {
+    newExport(report)
+  } else {
+    oldExport(report)
+  }

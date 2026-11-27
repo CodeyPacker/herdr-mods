@@ -1,0 +1,63 @@
+{
+  "id": "course:dsa/task/graphs-shortest-steps",
+  "role": "independent",
+  "title": "Count the fewest steps",
+  "concepts": [
+    "breadth-first",
+    "hash-map"
+  ],
+  "prompt": "Return the fewest connections that must be followed to get from one name to another. Return 0 when they are the same name, and -1 when there is no route.",
+  "hints": [
+    "How many steps away is a newly found name, in terms of the name it was found from?",
+    "Keep a Map from each seen name to its number of steps. A new neighbour is one step further than the name being explored.",
+    "Run a breadth-first search from the first name. Return the recorded steps when you reach the target, and -1 when the queue runs out."
+  ],
+  "starter": "starter.ts",
+  "solution": "solution.ts",
+  "alternative": "alternative.ts",
+  "mode": "script",
+  "rules": [],
+  "checks": [
+    "__same(shortestSteps(__roads, \"home\", \"library\"), 3)",
+    "__same(shortestSteps(__roads, \"home\", \"home\"), 0)",
+    "__same(shortestSteps(__islands, \"a\", \"d\"), -1)",
+    "__same(shortestSteps(__roads, \"shop\", \"park\"), 2)",
+    "__same(shortestSteps(__roads, \"library\", \"home\"), 3)"
+  ],
+  "checkLabels": [
+    "home to library takes 3 steps.",
+    "A name is 0 steps from itself.",
+    "Names in different groups have no route.",
+    "shop to park takes 2 steps.",
+    "The search works from any starting name."
+  ],
+  "typeChecks": [],
+  "rejects": [],
+  "fixtures": [
+    {
+      "id": "cases",
+      "declarations": "fixture-cases.ts"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-visits.ts",
+      "misconception": "Counts how many names were explored instead of how far away the target is.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-no-route.ts",
+      "misconception": "Returns 0 when there is no route.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "Record a number of steps for each name when it is first found. The answer is that number for the target, not a count of the work done."
+}

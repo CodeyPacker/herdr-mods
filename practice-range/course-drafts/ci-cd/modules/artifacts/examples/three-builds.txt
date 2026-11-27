@@ -1,0 +1,5 @@
+  deploy-dev:         checkout -> npm run build -> docker build -> deploy
+  deploy-staging:     checkout -> npm run build -> docker build -> deploy
+  deploy-production:  checkout -> npm run build -> docker build -> deploy
+
+  All three tag the image "tracker:latest".

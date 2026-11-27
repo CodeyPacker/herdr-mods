@@ -1,0 +1,13 @@
+  A long-lived branch
+
+  main    o---o---o---o---o---o---o---o---o---o---o---o
+           \                                         /
+  feature   o---o---o---o---o---o---o---o---o---o---o    one huge merge
+                                                         3 weeks of drift
+
+  Short-lived branches
+
+  main    o---o---o---o---o---o---o---o---o---o---o---o
+           \ /     \ /         \ /     \ /     \ /
+            o       o           o       o       o        five small
+                                                         merges

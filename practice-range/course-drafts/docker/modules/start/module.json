@@ -1,0 +1,155 @@
+{
+  "id": "course:docker/module/start",
+  "title": "Start and stop cleanly",
+  "requires": [],
+  "outcomes": [],
+  "intro": "A container is one main process. How that process is started decides how it can be given arguments, and how it is started also decides whether it can be stopped cleanly. This module covers the two instructions that set the start command, the two ways of writing them, and what happens when Docker asks a container to stop.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "The main process",
+      "text": "When a container starts, Docker runs one command inside it. That is the **main process**. Inside the container it has process number 1, written PID 1.\n\nEverything about the container's life hangs on it. The container is running while PID 1 is alive. Its output is what `docker logs` shows. Its exit code becomes the container's exit code. When it ends, the container stops, even if other processes were still working.\n\nThe image decides what the command is, with two instructions: `CMD` and `ENTRYPOINT`."
+    },
+    {
+      "kind": "explanation",
+      "title": "CMD and ENTRYPOINT",
+      "text": "- `CMD` sets a **default** that is easy to replace. Anything typed after the image name in `docker run` replaces it entirely.\n- `ENTRYPOINT` sets a **fixed** start. Anything typed after the image name is added to it as arguments.\n- With both, the entrypoint is the program and `CMD` supplies its default arguments.\n\nUse `CMD` alone for a service, where the image has one obvious thing to run and replacing it now and then is handy. Use `ENTRYPOINT` when the image *is* a command-line tool and people will pass it arguments.",
+      "example": "entry"
+    },
+    {
+      "kind": "prediction",
+      "title": "What runs?",
+      "text": "An image is built with these two lines, and then run as shown.\n\n```dockerfile\nENTRYPOINT [\"node\", \"cli.js\"]\nCMD [\"--help\"]\n```\n\n```bash\ndocker run tool list --all\n```",
+      "questions": [
+        "entry-args"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Two ways to write a command",
+      "text": "`CMD`, `ENTRYPOINT` and `RUN` can each be written in two forms, and the difference matters.\n\nThe **exec form** is a list in square brackets. Docker starts that program directly, with those arguments. The program is PID 1.\n\nThe **shell form** is a plain line of text. Docker hands it to a shell, as `/bin/sh -c \"...\"`. The shell is PID 1 and your program is its child.\n\nThe shell form is convenient, because variables and `&&` work in it. For the command a container starts with, it has a cost that the next step explains. Prefer the exec form for `CMD` and `ENTRYPOINT`.",
+      "example": "forms"
+    },
+    {
+      "kind": "explanation",
+      "title": "How a container is asked to stop",
+      "text": "`docker stop` does not pull the plug. It sends PID 1 a polite request to end, the signal named `SIGTERM`. A well behaved service responds by finishing the requests it is handling, closing its connections and exiting.\n\nDocker waits 10 seconds. If the process is still alive, Docker sends `SIGKILL`, which the process cannot catch. It ends at once, in the middle of whatever it was doing.\n\nNow recall the shell form. The request goes to PID 1, which is the shell. A shell does not pass the request on to its child. The service never hears it, keeps running, and is killed 10 seconds later.\n\nSome shells step aside when the line is one plain command, so you will not see this in every image. Do not depend on it. The exec form behaves the same way everywhere.",
+      "example": "stop"
+    },
+    {
+      "kind": "debugging",
+      "title": "Ten seconds, every time",
+      "text": "A team notices that every deploy of their service pauses for exactly ten seconds, and that some requests fail during it. This is what they see.",
+      "example": "slow-stop",
+      "questions": [
+        "slow-stop"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "PID 1 has to listen",
+      "text": "Writing the command in exec form puts your program at PID 1, where it receives the request. It still has to act on it.\n\nPID 1 is treated specially by the kernel: a signal that the process has not chosen to handle is ignored, where any other process would be ended by it. So a program that does nothing about `SIGTERM` behaves just like the shell did.\n\nThere are two fixes. The better one is for the program to handle `SIGTERM`: stop accepting work, finish what is in progress, exit. The other is `docker run --init`, which puts a tiny helper at PID 1 that forwards signals to your program.\n\nWhen an image starts through a wrapper script, end the script with `exec` so that the program replaces the script as PID 1.",
+      "example": "wrapper"
+    },
+    {
+      "kind": "explanation",
+      "title": "Exit codes",
+      "text": "When the main process ends, its exit code is recorded and shown by `docker ps -a`. A few values come up again and again.\n\n| Code | Meaning |\n| --- | --- |\n| 0 | The program ended normally. |\n| 1, or another small number | The program reported an error. Read its logs. |\n| 125 | Docker itself could not start the container. |\n| 126 | The command was found and could not be executed. |\n| 127 | The command was not found in the image. |\n| 137 | Ended by `SIGKILL` (128 + 9): a stop that timed out, or out of memory. |\n| 143 | Ended by `SIGTERM` (128 + 15) without handling it. |\n\nThe module on debugging returns to these."
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: two images",
+      "text": "Write the start instructions for each image, and nothing else.\n\n1. A web service started with `node server.js`. During an incident, an operator sometimes needs to start a shell in the same image.\n2. A backup tool, `backup`, that is always given a subcommand such as `backup run` or `backup list`. With no subcommand it should print its help.\n\n3. Then explain what is wrong with `CMD node server.js`."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. `CMD [\"node\", \"server.js\"]`. With only a `CMD`, the operator can run `docker run --rm -it tracker:1.4.2 sh` and the shell replaces the default.\n2. `ENTRYPOINT [\"backup\"]` with `CMD [\"--help\"]`. `docker run backup-tool list` runs `backup list`, and `docker run backup-tool` runs `backup --help`.\n3. It is the shell form. A shell becomes PID 1, the service never receives the stop request, and every stop waits ten seconds and ends in a kill. Square brackets fix it."
+    }
+  ],
+  "questions": [
+    {
+      "id": "entry-args",
+      "prompt": "Which command runs inside the container?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "`list --all`",
+          "feedback": "That would be the result with only a `CMD`. Here the entrypoint is fixed, and the words after the image name are added to it."
+        },
+        {
+          "text": "`node cli.js list --all`",
+          "feedback": "The entrypoint stays. The words after the image name replace the `CMD`, so `--help` is dropped."
+        },
+        {
+          "text": "`node cli.js --help list --all`",
+          "feedback": "Arguments given at run time replace the `CMD`. They are not added after it."
+        }
+      ]
+    },
+    {
+      "id": "slow-stop",
+      "example": "slow-stop",
+      "prompt": "What is the cause?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "The service never receives the stop request",
+          "feedback": "The command is in shell form, so a shell is PID 1 and does not forward `SIGTERM`. Docker waits its ten seconds and kills everything, which gives exit code 137."
+        },
+        {
+          "text": "The service needs more than ten seconds to finish",
+          "feedback": "It could be given longer, but it is not finishing anything. It was never told to stop."
+        },
+        {
+          "text": "The container ran out of memory",
+          "feedback": "Memory also gives 137, but it would not happen exactly ten seconds after every stop."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "entry": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/entry.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "forms": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/forms.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "stop": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/stop.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "slow-stop": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/slow-stop.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "wrapper": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/wrapper.txt"
+      },
+      "readOnly": true,
+      "fence": "bash"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}

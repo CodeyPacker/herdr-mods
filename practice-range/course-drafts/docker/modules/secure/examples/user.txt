@@ -1,0 +1,18 @@
+FROM node:24.11.1-slim
+WORKDIR /app
+
+# Steps that need root come first.
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+# Program files belong to the ordinary user that the image provides.
+COPY --chown=node:node . .
+
+# Everything from here on, and the container, runs as that user.
+USER node
+
+CMD ["node", "server.js"]
+
+# Where the base image has no such user, create one first:
+#   RUN useradd --system --create-home app
+#   USER app

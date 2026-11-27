@@ -1,0 +1,164 @@
+{
+  "id": "course:ci-cd/module/database",
+  "title": "Change the database safely",
+  "requires": [],
+  "outcomes": [],
+  "intro": "Code can be replaced in seconds and put back just as fast. A database cannot: it holds the only copy of the data, and its structure is shared by every version of the code that is running. This module covers how to change a database's structure through a pipeline so that a deployment, and a rollback, both keep working.",
+  "steps": [
+    {
+      "kind": "explanation",
+      "title": "Why the database is different",
+      "text": "Three facts set the database apart from everything else in a release.\n\n- **There is one.** You cannot keep the old database beside the new one and switch between them, as you can with code.\n- **Old and new code share it.** During a rolling deployment, or the moment of a swap, both versions are running against the same tables.\n- **Going back does not undo it.** A rollback replaces the code. The database stays as the new version left it.\n\nSo a change to the database has to work with the version of the code before it **and** the version after it. That one requirement drives everything in this module.",
+      "example": "shared"
+    },
+    {
+      "kind": "explanation",
+      "title": "Migrations",
+      "text": "A **migration** is a small script that changes the database's structure: add a table, add a column, create an index. Migrations are kept in the repository, numbered in order.\n\nA migration tool applies them. It keeps a table in the database that lists which migrations have already run, and runs only the new ones, in order, each exactly once.\n\nTwo rules make this dependable.\n\n- **Never edit a migration that has been applied anywhere.** Write a new one. An edited script has already run in some environments in its old form, and they will never match again.\n- **Only the pipeline runs migrations.** A change typed into production by hand exists in one environment and in nobody's records.",
+      "example": "migrations"
+    },
+    {
+      "kind": "explanation",
+      "title": "The change that breaks",
+      "text": "Suppose the column `owner` on the tasks table should be called `assignee`. The obvious release renames the column and updates the code to match.\n\nFollow it through a deployment. The migration runs first and the column is renamed. For the next minute, instances of the old code are still serving users. They ask for `owner`, which no longer exists, and every such request fails.\n\nNow suppose the new version has a fault and is rolled back. The old code returns for good, still asking for `owner`. The rollback has made things worse.\n\nA rename, a removal, or a change of type in a single step is a **breaking** change to the database, for the same reason it would be in an API: something that depends on the old shape is still running.",
+      "example": "rename-breaks"
+    },
+    {
+      "kind": "prediction",
+      "title": "One release",
+      "text": "A release contains a migration that drops the column `legacy_code`, and code that no longer reads it. The service runs four instances and deploys by rolling.",
+      "questions": [
+        "drop-column"
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Expand, then contract",
+      "text": "The safe pattern splits one breaking change into several releases, none of which breaks anything.\n\n1. **Expand.** Add the new structure beside the old. Nothing uses it yet, so nothing can break.\n2. **Write both.** Release code that writes to the old and the new, and still reads the old.\n3. **Backfill.** Copy existing data from the old structure to the new, in small batches.\n4. **Read new.** Release code that reads the new structure. It still writes both, so going back to step 2's code is safe.\n5. **Stop writing old.** Release code that uses only the new.\n6. **Contract.** Once nothing has used the old structure for a while, remove it.\n\nEach step is its own release, and after each one the previous version of the code still runs. It is slower than one release. It is also the only way that never has a moment where running code and the database disagree.",
+      "example": "expand-contract"
+    },
+    {
+      "kind": "explanation",
+      "title": "Rules for a safe migration",
+      "text": "- **Add, do not change.** New tables and new columns are safe. Renames, removals and type changes go through expand and contract.\n- **New columns must be optional.** Allow them to be empty, or give them a default. The old code does not know the column exists and will not fill it in.\n- **Removal waits a release.** Drop something only after a release in which no code touches it has been running without trouble.\n- **Mind the size.** A change that is instant on a small table can lock a large one for minutes, and requests queue behind it. Try migrations against a copy of realistic size.\n- **Move data in batches.** One statement that updates ten million rows holds its locks until it finishes. A loop over a few thousand at a time does not."
+    },
+    {
+      "kind": "explanation",
+      "title": "Migrations in the pipeline",
+      "text": "- **Run them as their own step, before the new code.** With additive migrations the old code keeps working after the step, so the order is always safe.\n- **Run them once.** Several instances starting together must not all try to migrate. A separate job, or the tool's own lock, ensures a single run.\n- **Run them everywhere the same way.** Staging gets the same migrations by the same step, first, on realistic data. That is where a slow or failing one is found.\n- **Do not rely on \"down\" scripts.** A script that reverses a migration cannot bring back removed data. Prefer changes that never need reversing, and fix problems with a new migration.\n- **Have a backup, and have restored one.** A backup that has never been restored is a hope. Practise the restore.",
+      "example": "pipeline"
+    },
+    {
+      "kind": "debugging",
+      "title": "A tidy pull request",
+      "text": "A pull request described this way, with one migration and the matching code change.",
+      "example": "tidy",
+      "questions": [
+        "tidy"
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Exercise: split a column",
+      "text": "The `users` table has one column, `full_name`. The product now needs `first_name` and `last_name` separately. The service deploys by rolling and must be able to roll back one release at any point.\n\nPlan the releases. For each, say what the migration does and what the code does."
+    },
+    {
+      "kind": "walkthrough",
+      "title": "One possible answer",
+      "text": "1. **Release 1, expand.** Migration: add `first_name` and `last_name`, both allowed to be empty. Code: unchanged.\n2. **Release 2, write both.** Code: when a name is saved, write `full_name` and also the two new columns. Reads still use `full_name`.\n3. **Backfill.** A batch job fills the two new columns for existing rows. Names that cannot be split cleanly are listed for a person to check.\n4. **Release 3, read new.** Code: read the two new columns, still write all three. Rolling back to release 2 is safe, because `full_name` is still kept up to date.\n5. **Release 4, stop writing old.** Code: `full_name` is no longer written or read.\n6. **Release 5, contract.** Migration: drop `full_name`, after release 4 has run without trouble.\n\nFive releases for one rename looks like a lot. Each is tiny and safe, and none of them can cause an outage."
+    }
+  ],
+  "questions": [
+    {
+      "id": "drop-column",
+      "prompt": "What happens during the deployment?",
+      "answer": 1,
+      "choices": [
+        {
+          "text": "Nothing, the new code does not read the column",
+          "feedback": "The new code does not. The old code is still running on some instances while the roll is in progress."
+        },
+        {
+          "text": "Requests served by the old instances fail until the roll finishes",
+          "feedback": "The migration removes the column while old instances are still reading it. And if the release is rolled back, the old code cannot run at all. The column should be dropped in a later release, after one in which no code reads it."
+        },
+        {
+          "text": "The migration waits until every instance is updated",
+          "feedback": "Migrations run before the new code starts. Nothing makes them wait for the old code to stop."
+        }
+      ]
+    },
+    {
+      "id": "tidy",
+      "example": "tidy",
+      "prompt": "What is wrong with this pull request?",
+      "answer": 0,
+      "choices": [
+        {
+          "text": "It renames a column and changes the code in a single release",
+          "feedback": "Between the migration and the end of the deployment, old code asks for `owner_id` and fails. A rollback would fail for the same reason. It needs the expand and contract steps: add the new column, write both, backfill, read new, then remove the old."
+        },
+        {
+          "text": "The migration should be edited into an earlier one",
+          "feedback": "A migration that has already run is never edited. A new one is correct."
+        },
+        {
+          "text": "Nothing, the code and the database match",
+          "feedback": "They match once the release is complete. During it, and after a rollback, they do not."
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "shared": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/shared.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "migrations": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/migrations.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "rename-breaks": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/rename-breaks.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "expand-contract": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/expand-contract.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    },
+    "pipeline": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/pipeline.txt"
+      },
+      "readOnly": true,
+      "fence": "yaml"
+    },
+    "tidy": {
+      "source": {
+        "kind": "bundled",
+        "path": "examples/tidy.txt"
+      },
+      "readOnly": true,
+      "fence": "text"
+    }
+  },
+  "tasks": [],
+  "drills": []
+}
