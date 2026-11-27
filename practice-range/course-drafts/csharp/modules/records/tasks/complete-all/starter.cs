@@ -1,4 +1,4 @@
-public static List<TaskItem> CompleteAll(List<TaskItem> tasks)
+public static List<Song> LikeAll(List<Song> songs)
 {
-    return tasks;
+    return songs;
 }

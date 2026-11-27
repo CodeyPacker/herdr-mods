@@ -1,1 +1,1 @@
-public static TaskItem Rename(TaskItem task, string title) => new TaskItem(task.Id, title, task.Done);
+public static Song Rename(Song song, string title) => new Song(song.Id, title, song.Liked);

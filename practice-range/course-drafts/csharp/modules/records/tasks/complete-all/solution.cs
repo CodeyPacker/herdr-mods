@@ -1,9 +1,9 @@
-public static List<TaskItem> CompleteAll(List<TaskItem> tasks)
+public static List<Song> LikeAll(List<Song> songs)
 {
-    List<TaskItem> result = new List<TaskItem>();
-    foreach (TaskItem task in tasks)
+    List<Song> result = new List<Song>();
+    foreach (Song song in songs)
     {
-        result.Add(task with { Done = true });
+        result.Add(song with { Liked = true });
     }
     return result;
 }

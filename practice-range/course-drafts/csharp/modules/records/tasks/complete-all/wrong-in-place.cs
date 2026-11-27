@@ -1,8 +1,8 @@
-public static List<TaskItem> CompleteAll(List<TaskItem> tasks)
+public static List<Song> LikeAll(List<Song> songs)
 {
-    for (int i = 0; i < tasks.Count; i++)
+    for (int i = 0; i < songs.Count; i++)
     {
-        tasks[i] = tasks[i] with { Done = true };
+        songs[i] = songs[i] with { Liked = true };
     }
-    return tasks;
+    return songs;
 }

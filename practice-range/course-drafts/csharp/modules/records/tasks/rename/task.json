@@ -1,17 +1,17 @@
 {
   "id": "course:cs-foundations/task/records-rename",
   "role": "guided",
-  "title": "Rename a task",
+  "title": "Rename a song",
   "concepts": [
     "record",
     "method",
     "equality"
   ],
-  "prompt": "TaskItem is supplied. Rename(TaskItem task, string title) should return a copy of the task with the new title. Its Id and Done must stay the same. The starter returns the task unchanged.",
+  "prompt": "Song is supplied. Rename(Song song, string title) should return a copy of the song with the new title. Its Id and Liked must stay the same. The starter returns the song unchanged.",
   "hints": [
     "Which of the three values changes, and which two must be carried over?",
     "with copies every value you do not mention.",
-    "Return task with { Title = title }."
+    "Return song with { Title = title }."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -19,13 +19,13 @@
   "mode": "members",
   "rules": [],
   "checks": [
-    "Practice.Rename(new TaskItem(1, \"Pack\", false), \"Ship\") == new TaskItem(1, \"Ship\", false)",
-    "Practice.Rename(new TaskItem(7, \"Pack\", true), \"Ship\") == new TaskItem(7, \"Ship\", true)",
-    "Practice.Rename(new TaskItem(2, \"Pack\", false), \"\") == new TaskItem(2, \"\", false)"
+    "Practice.Rename(new Song(1, \"Intro\", false), \"Finale\") == new Song(1, \"Finale\", false)",
+    "Practice.Rename(new Song(7, \"Intro\", true), \"Finale\") == new Song(7, \"Finale\", true)",
+    "Practice.Rename(new Song(2, \"Intro\", false), \"\") == new Song(2, \"\", false)"
   ],
   "checkLabels": [
-    "Renaming task 1 to Ship must give task 1 with the title Ship.",
-    "A done task must still be done, with the same Id, after renaming.",
+    "Renaming song 1 to Finale must give song 1 with the title Finale.",
+    "A liked song must still be liked, with the same Id, after renaming.",
     "An empty title is allowed."
   ],
   "fixtures": [
@@ -37,7 +37,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-lose-done.cs",
-      "misconception": "Builds a fresh record and resets Done.",
+      "misconception": "Builds a fresh record and resets Liked.",
       "witness": {
         "fixture": "tasks",
         "kind": "result",
@@ -46,7 +46,7 @@
     },
     {
       "source": "wrong-new-id.cs",
-      "misconception": "Treats a rename as a new task and drops the Id.",
+      "misconception": "Treats a rename as a new song and drops the Id.",
       "witness": {
         "fixture": "tasks",
         "kind": "result",
@@ -54,5 +54,5 @@
       }
     }
   ],
-  "feedback": "Compare all three values of the failing result with the task that went in. Only the title should differ."
+  "feedback": "Compare all three values of the failing result with the song that went in. Only the title should differ."
 }

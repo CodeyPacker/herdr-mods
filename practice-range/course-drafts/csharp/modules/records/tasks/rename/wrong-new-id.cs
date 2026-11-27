@@ -1,4 +1,4 @@
-public static TaskItem Rename(TaskItem task, string title)
+public static Song Rename(Song song, string title)
 {
-    return new TaskItem(0, title, task.Done);
+    return new Song(0, title, song.Liked);
 }

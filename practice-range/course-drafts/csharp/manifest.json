@@ -235,7 +235,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/records/module.json"
+        "path": "modules/records/module.md"
       }
     },
     {

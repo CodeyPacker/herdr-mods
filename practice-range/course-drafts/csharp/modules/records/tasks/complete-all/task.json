@@ -1,34 +1,34 @@
 {
   "id": "course:cs-foundations/task/records-complete-all",
   "role": "review",
-  "title": "Complete every task",
+  "title": "Like every song",
   "concepts": [
     "record",
     "value-reference",
     "list",
     "loop"
   ],
-  "prompt": "TaskItem is supplied. Write public static List<TaskItem> CompleteAll(List<TaskItem> tasks). Return a new list holding a done copy of every task, in the same order. The list passed in must not change: it keeps the same items, and they are still not done.",
+  "prompt": "Song is supplied. Write public static List<Song> LikeAll(List<Song> songs). Return a new list holding a liked copy of every song, in the same order. The list passed in must not change: it keeps the same items, and they are still not liked.",
   "hints": [
     "A List is a class. If you change the list you were given, who else sees the change?",
-    "Create a new list for the result, and add a changed copy of each task to it.",
-    "Loop over tasks and Add task with { Done = true } to a new List<TaskItem>. Return the new list."
+    "Create a new list for the result, and add a changed copy of each song to it.",
+    "Loop over songs and Add song with { Liked = true } to a new List<Song>. Return the new list."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
   "alternative": "alternative.cs",
   "mode": "members",
   "rules": [],
-  "support": "static bool InputUnchanged()\n{\n    var tasks = new List<TaskItem> { new TaskItem(1, \"Pack\", false) };\n    Practice.CompleteAll(tasks);\n    return tasks.Count == 1 && tasks[0] == new TaskItem(1, \"Pack\", false);\n}\n",
+  "support": "static bool InputUnchanged()\n{\n    var songs = new List<Song> { new Song(1, \"Intro\", false) };\n    Practice.LikeAll(songs);\n    return songs.Count == 1 && songs[0] == new Song(1, \"Intro\", false);\n}\n",
   "checks": [
-    "Practice.CompleteAll(new List<TaskItem> { new TaskItem(1, \"Pack\", false), new TaskItem(2, \"Ship\", true) }).SequenceEqual(new List<TaskItem> { new TaskItem(1, \"Pack\", true), new TaskItem(2, \"Ship\", true) })",
-    "Practice.CompleteAll(new List<TaskItem>()).Count == 0",
+    "Practice.LikeAll(new List<Song> { new Song(1, \"Intro\", false), new Song(2, \"Finale\", true) }).SequenceEqual(new List<Song> { new Song(1, \"Intro\", true), new Song(2, \"Finale\", true) })",
+    "Practice.LikeAll(new List<Song>()).Count == 0",
     "InputUnchanged()"
   ],
   "checkLabels": [
-    "Every task in the result must be done, in the original order.",
+    "Every song in the result must be liked, in the original order.",
     "An empty list must give an empty list.",
-    "The list passed in must keep its original, not-done task."
+    "The list passed in must keep its original, not-liked song."
   ],
   "fixtures": [
     {
@@ -48,7 +48,7 @@
     },
     {
       "source": "wrong-copy-only.cs",
-      "misconception": "Copies the list but never completes the tasks.",
+      "misconception": "Copies the list but never completes the songs.",
       "witness": {
         "fixture": "tasks",
         "kind": "result",

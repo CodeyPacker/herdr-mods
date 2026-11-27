@@ -1,4 +1,4 @@
-public static TaskItem Rename(TaskItem task, string title)
+public static Song Rename(Song song, string title)
 {
-    return task;
+    return song;
 }

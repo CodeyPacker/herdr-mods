@@ -1,2 +1,2 @@
 // Supplied record type.
-public record TaskItem(int Id, string Title, bool Done);
+public record Song(int Id, string Title, bool Liked);
