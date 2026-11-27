@@ -13,7 +13,7 @@ Filtering, transforming and counting come up so often that C# has a set of metho
 
 ## A lambda is a small method
 
-A lambda is a method written in place, without a name. movie => !movie.Watched takes one movie and returns whether it is still unwatched. The part before => is the parameter and the part after it is the result. LINQ methods take lambdas. Where keeps the items for which the lambda returns true. Select replaces each item with the lambda's result. Count() counts the items, Any() says whether there is at least one, and Sum adds up a number taken from each item. The methods chain: the result of one is the input of the next.
+A lambda is a method written in place, without a name. movie => !`movie.Watched` takes one movie and returns whether it is still unwatched. The part before => is the parameter and the part after it is the result. LINQ methods take lambdas. Where keeps the items for which the lambda returns true. Select replaces each item with the lambda's result. `Count()` counts the items, `Any()` says whether there is at least one, and Sum adds up a number taken from each item. The methods chain: the result of one is the input of the next.
 
 ```csharp example query
 List<Movie> movies = new List<Movie>
@@ -58,13 +58,13 @@ What are the first two lines of output?
 
 ## Follow the query {walkthrough}
 
-Where keeps Jaws and Heat, because Up is watched, so Count() is 2. Select then replaces each kept movie with its Title, and string.Join puts a comma and a space between them. The order of the original list is preserved. GroupBy collects the items that share a key. Each group has a Key, here the genre, and can itself be counted or summed. Drama has two movies and Comedy has one.
+Where keeps Jaws and Heat, because Up is watched, so `Count()` is 2. Select then replaces each kept movie with its Title, and `string.Join` puts a comma and a space between them. The order of the original list is preserved. GroupBy collects the items that share a key. Each group has a Key, here the genre, and can itself be counted or summed. Drama has two movies and Comedy has one.
 
 @example query
 
 ## A query runs when it is read
 
-Where and Select do not do their work when you call them. They return a description of the work, called a query. Its type is IEnumerable<T>, which means something you can loop over. Lists and arrays fit that type too. The query runs each time something reads it: a foreach, Count(), or ToList(). This is called deferred execution. ToList() runs the query once and stores the results in a new list, which does not change afterwards. ToDictionary does the same into a dictionary, from one lambda for the key and one for the value.
+Where and Select do not do their work when you call them. They return a description of the work, called a query. Its type is `IEnumerable<T>`, which means something you can loop over. Lists and arrays fit that type too. The query runs each time something reads it: a `foreach`, `Count()`, or `ToList()`. This is called deferred execution. `ToList()` runs the query once and stores the results in a new list, which does not change afterwards. ToDictionary does the same into a dictionary, from one lambda for the key and one for the value.
 
 ```csharp example deferred
 List<int> minutes = new List<int> { 10, 40 };
@@ -89,14 +89,14 @@ Console.WriteLine(saved.Count);
 
 :::question predict-deferred example=deferred
 What are the two lines of output?
-- [x] 2, then 1 :: longOnes runs when it is counted, after 50 was added. saved was captured earlier by ToList().
-- [ ] 1, then 1 :: longOnes has not run yet when 50 is added. It runs at Count() and sees the new item.
-- [ ] 2, then 2 :: ToList() already ran its query and stored the results. Later changes to minutes do not reach it.
+- [x] 2, then 1 :: longOnes runs when it is counted, after 50 was added. saved was captured earlier by `ToList()`.
+- [ ] 1, then 1 :: longOnes has not run yet when 50 is added. It runs at `Count()` and sees the new item.
+- [ ] 2, then 2 :: `ToList()` already ran its query and stored the results. Later changes to minutes do not reach it.
 :::
 
 ## Follow the timing {walkthrough}
 
-longOnes is only a description. It runs when Count() reads it, after 50 was added, so it finds 40 and 50 and prints 2. saved called ToList() straight away, when the list held only 10 and 40, so it captured one item and stays at 1. When a result must not change later, end the query with ToList().
+longOnes is only a description. It runs when `Count()` reads it, after 50 was added, so it finds 40 and 50 and prints 2. saved called `ToList()` straight away, when the list held only 10 and 40, so it captured one item and stays at 1. When a result must not change later, end the query with `ToList()`.
 
 @example deferred
 

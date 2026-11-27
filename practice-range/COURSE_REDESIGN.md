@@ -180,7 +180,8 @@ New content version `0.2.0-preview.1`, no compatibility with 0.1.0 (old enrollme
 - [x] C14 Generics
 - [x] C15 async and await
 - [x] C16 Writing unit tests
-- [ ] C16b Markdown polish: modules 7 to 16 were rethemed by renaming, so their prose has no backticks or lists yet (modules 1 to 6 do). Add `code` formatting and short lists to their step text. Content and ids stay.
+- [x] C16b Markdown polish: modules 7 to 16 were rethemed by renaming, so their prose has no backticks or lists yet (modules 1 to 6 do). Add `code` formatting and short lists to their step text. Content and ids stay.
+    - Done with `scripts/course-polish.py <module.md>`: it wraps member access, calls, generic types, exception names, C# keywords that are not English words, and short quoted strings in backticks, outside code fences and directive lines. Then two fixes: `` `int`? `` to `` `int?` ``, and `` x[`"a"`] `` to `` `x["a"]` ``. Never strip doubled backticks: that breaks the fences. C# pack is now 0.2.0-preview.2, compatible with 0.1.0-preview.1 and 0.2.0-preview.1.
 - [x] C17 Rewrite readiness checks R1 to R4 as skip-ahead tests over the new modules.
     - Full verifier run passed all 16 modules on 2026-11-26. `node scripts/verify-course.mjs csharp readiness` checks only R1 to R4.
 - [x] C18 Build, run `scripts/verify-course.mjs csharp` (about 20 minutes), update `tests/course-csharp.test.mjs` and its native fixtures, screenshots. Owner reviews before Phase D.
@@ -202,6 +203,8 @@ Mockup: "Screen 3, revised after first use" in the redesign doc.
 - [x] A2.4 Feedback and choices render inline code (feedback still shows raw backticks).
 - [x] A2.5 Apply the same narrow column and bottom bar to the course page and the exercise page.
     - Course and exercise pages use a 760-wide centred column; the lesson uses 1040 for the step list plus a 680-wide step. "Open in editor" is the filled button on exercises. GPUI elements take no children after they are added to a parent, so containers are attached last.
+
+Also done: a language card ("Start or resume course") with exactly one course opens that course page directly instead of a one-item list.
 
 ### Phase D: TypeScript course rewrite
 

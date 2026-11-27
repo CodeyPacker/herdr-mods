@@ -13,7 +13,7 @@ Some types exist to carry data. This module covers records, which compare by val
 
 ## A record carries data
 
-record Movie(string Title, int Minutes); declares a record in one line. It has a constructor with those two parameters and a property for each. The properties can be set only when the record is created. To change something you make a copy: first with { Minutes = 45 } is a new Movie with the same Title and a different Minutes. Two records are equal with == when all their values are equal. Printing a record shows its type name and values.
+record `Movie(string Title, int Minutes)`; declares a record in one line. It has a constructor with those two parameters and a property for each. The properties can be set only when the record is created. To change something you make a copy: first with { Minutes = 45 } is a new Movie with the same Title and a different Minutes. Two records are equal with == when all their values are equal. Printing a record shows its type name and values.
 
 ```csharp example copies
 Movie first = new Movie("Dune", 30);
@@ -69,13 +69,13 @@ What is the first line of output?
 
 ## Follow the copy {walkthrough}
 
-with created a second Movie and left first alone, so first.Minutes is still 30. The second line shows the copy: the same Title and the new Minutes. Nothing can change a Movie after it is created, so code that holds one can rely on it.
+with created a second Movie and left first alone, so `first.Minutes` is still 30. The second line shows the copy: the same Title and the new Minutes. Nothing can change a Movie after it is created, so code that holds one can rely on it.
 
 @example copies
 
 ## Value or reference
 
-A struct is a value type, like int. Assigning it copies the whole value, so Size b = a; gives b its own Width. A class is a reference type: assignment copies the reference and both names refer to one object. For == the rule also depends on the type. Records compare their values. Classes compare references, so two separate objects are not equal even when they hold the same data.
+A `struct` is a value type, like `int`. Assigning it copies the whole value, so Size b = a; gives b its own Width. A class is a reference type: assignment copies the reference and both names refer to one object. For == the rule also depends on the type. Records compare their values. Classes compare references, so two separate objects are not equal even when they hold the same data.
 
 @example copies
 
@@ -87,14 +87,14 @@ Predict the last three lines of output.
 
 :::question predict-equal example=copies
 What are the last three lines of output?
-- [ ] True, 9, False :: Size is a struct, so b is a separate copy. Changing b leaves a.Width at 2.
+- [ ] True, 9, False :: Size is a `struct`, so b is a separate copy. Changing b leaves `a.Width` at 2.
 - [ ] False, 2, False :: Records compare by value, and both have Dune and 30.
-- [x] True, 2, False :: Records compare values, the struct was copied, and the two Box objects are different objects.
+- [x] True, 2, False :: Records compare values, the `struct` was copied, and the two Box objects are different objects.
 :::
 
 ## Check each type {walkthrough}
 
-first == new Movie("Dune", 30) is True because records compare values. a.Width is 2 because b is a separate copy, so setting b.Width to 9 changed only b. boxA == boxB is False because they are two different objects, and a class compares references.
+first == new `Movie("Dune", 30)` is True because records compare values. `a.Width` is 2 because b is a separate copy, so setting `b.Width` to 9 changed only b. boxA == boxB is False because they are two different objects, and a class compares references.
 
 @example copies
 

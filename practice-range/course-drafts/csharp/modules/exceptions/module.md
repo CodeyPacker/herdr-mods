@@ -13,7 +13,7 @@ Some failures are bugs, and some are expected: text that is not a number, a stor
 
 ## Throw and catch
 
-An exception is an object that reports a failure. throw new ArgumentException("Minutes cannot be negative."); stops the current method at once and passes the exception to its caller. If nothing catches it, the program stops. A try block marks code that may fail, and a catch block after it runs only when an exception of the named type is thrown inside the try. catch (FormatException) catches that type and no other. Naming a variable, as in catch (ArgumentException error), lets you read error.Message. Some built-in methods throw: int.Parse("soon") throws a FormatException because the text is not a number.
+An exception is an object that reports a failure. throw new `ArgumentException("Minutes cannot be negative.")`; stops the current method at once and passes the exception to its caller. If nothing catches it, the program stops. A try block marks code that may fail, and a catch block after it runs only when an exception of the named type is thrown inside the try. catch (`FormatException`) catches that type and no other. Naming a variable, as in catch (`ArgumentException` error), lets you read `error.Message`. Some built-in methods throw: `int.Parse("soon")` throws a `FormatException` because the text is not a number.
 
 ```csharp example parse
 int ReadMinutes(string text)
@@ -65,37 +65,37 @@ ReadMinutes is called with text that is a number and text that is not. Predict t
 
 :::question predict-catch example=parse
 What are the first two lines of output?
-- [x] 30, then -1 :: "30" parses. "soon" throws a FormatException, and the catch returns -1.
-- [ ] 30, then the program stops with an error :: The FormatException is caught inside ReadMinutes, so the program continues.
+- [x] 30, then -1 :: `"30"` parses. `"soon"` throws a `FormatException`, and the catch returns -1.
+- [ ] 30, then the program stops with an error :: The `FormatException` is caught inside ReadMinutes, so the program continues.
 - [ ] 30, then 0 :: The catch block returns -1. Nothing here turns bad text into 0.
 :::
 
 ## Follow both calls {walkthrough}
 
-int.Parse("30") works, so the try block returns 30 and the catch never runs. int.Parse("soon") throws a FormatException. The rest of the try block is skipped, the catch block runs and returns -1. The caller sees an ordinary return value in both cases.
+`int.Parse("30")` works, so the try block returns 30 and the catch never runs. `int.Parse("soon")` throws a `FormatException`. The rest of the try block is skipped, the catch block runs and returns -1. The caller sees an ordinary return value in both cases.
 
 @example parse
 
 ## What runs after a throw? {prediction}
 
-Check(-5) throws inside the second try block. Predict the last line of output.
+`Check(-5)` throws inside the second try block. Predict the last line of output.
 
 @example parse
 
 :::question predict-skip example=parse
 What is the last line of output?
-- [ ] checked :: Check(-5) throws, so the rest of the try block is skipped.
-- [ ] checked, then Minutes cannot be negative. :: A throw leaves the try block at once. The line after Check(-5) never runs.
+- [ ] checked :: `Check(-5)` throws, so the rest of the try block is skipped.
+- [ ] checked, then Minutes cannot be negative. :: A throw leaves the try block at once. The line after `Check(-5)` never runs.
 - [x] Minutes cannot be negative. :: The throw jumps to the catch, which prints the exception's Message.
 :::
 
 ## Follow the exception {walkthrough}
 
-Check throws, so it ends at once. Back in the try block, the line that prints "checked" is skipped, because control jumps straight to the matching catch. That block prints the exception's Message. Catch the most specific type you can handle. catch (Exception) catches everything, including bugs you would want to see, so it is rarely the right choice.
+Check throws, so it ends at once. Back in the try block, the line that prints `"checked"` is skipped, because control jumps straight to the matching catch. That block prints the exception's Message. Catch the most specific type you can handle. catch (Exception) catches everything, including bugs you would want to see, so it is rarely the right choice.
 
 ## Expected failures can be values
 
-An exception suits a failure the caller is not expected to handle on every call, such as a broken promise about the input. When failure is a normal outcome, a return value is often clearer. A result type holds either the answer or the reason there is none, for example record Parsed(bool Ok, int Minutes, string Error). The caller reads Ok and cannot forget that failure is possible. Built-in methods offer the same choice. int.TryParse(text, out int value) returns false for bad text instead of throwing.
+An exception suits a failure the caller is not expected to handle on every call, such as a broken promise about the input. When failure is a normal outcome, a return value is often clearer. A result type holds either the answer or the reason there is none, for example record `Parsed(bool Ok, int Minutes, string Error)`. The caller reads Ok and cannot forget that failure is possible. Built-in methods offer the same choice. `int.TryParse`(text, out `int` value) returns false for bad text instead of throwing.
 
 ## Reject negative minutes {modification}
 

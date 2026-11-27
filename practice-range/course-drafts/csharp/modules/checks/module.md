@@ -13,7 +13,7 @@ A check calls code with a known input and compares what comes back with what sho
 
 ## Expected and actual
 
-Every check has an input, an expected result and an actual result. The expected result comes from the rule the code is meant to follow. The actual result is what the code returned. When they differ, the check has failed, and the input tells you which call to trace. The most useful inputs sit at an edge, where the rule changes its answer. For "three or more", the edge is exactly 3. A bug at an edge is easy to miss with inputs far away from it.
+Every check has an input, an expected result and an actual result. The expected result comes from the rule the code is meant to follow. The actual result is what the code returned. When they differ, the check has failed, and the input tells you which call to trace. The most useful inputs sit at an edge, where the rule changes its answer. For `"three or more"`, the edge is exactly 3. A bug at an edge is easy to miss with inputs far away from it.
 
 ```csharp example trace
 bool AtLimit(int count, int limit)
@@ -41,9 +41,9 @@ AtLimit should return true when count has reached the limit or passed it. Predic
 
 :::question predict-boundary example=trace
 Which call shows the bug?
-- [ ] AtLimit(4, 3) :: It prints True, and the rule also expects true for 4.
-- [x] AtLimit(3, 3) :: The rule expects true once the limit is reached, and the code prints False.
-- [ ] AtLimit(2, 3) :: It prints False, and the rule also expects false below the limit.
+- [ ] `AtLimit(4, 3)` :: It prints True, and the rule also expects true for 4.
+- [x] `AtLimit(3, 3)` :: The rule expects true once the limit is reached, and the code prints False.
+- [ ] `AtLimit(2, 3)` :: It prints False, and the rule also expects false below the limit.
 :::
 
 ## Compare with the rule {walkthrough}
@@ -54,7 +54,7 @@ The rule expects True, True, False. The code prints True, False, False. Only the
 
 ## A check is code too
 
-A method can receive another method as a parameter. Func<int, int, bool> is the type of a method that takes two ints and returns a bool. The last type in the list is the return type. A lambda such as (count, limit) => count >= limit fits it. A check written this way takes a candidate, calls it with chosen inputs, and returns true only when every result matches what is expected. A good check returns true for correct code and false for the faulty versions you know about. A check kept to make sure a fixed bug stays fixed is called a regression check.
+A method can receive another method as a parameter. `Func<int, int, bool>` is the type of a method that takes two ints and returns a `bool`. The last type in the list is the return type. A lambda such as (count, limit) => count >= limit fits it. A check written this way takes a candidate, calls it with chosen inputs, and returns true only when every result matches what is expected. A good check returns true for correct code and false for the faulty versions you know about. A check kept to make sure a fixed bug stays fixed is called a regression check.
 
 ```csharp example check
 bool Check(Func<int, int, bool> candidate)

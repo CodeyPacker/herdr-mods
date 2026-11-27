@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "0.2.0-preview.1",
+  "contentVersion": "0.2.0-preview.2",
   "id": "course:cs-foundations",
   "languageId": "csharp",
   "runner": {
@@ -334,7 +334,8 @@
   ],
   "compatibility": {
     "fromVersions": [
-      "0.1.0-preview.1"
+      "0.1.0-preview.1",
+      "0.2.0-preview.1"
     ],
     "replacements": []
   },
@@ -2604,7 +2605,7 @@
         {
           "kind": "explanation",
           "title": "A record carries data",
-          "text": "record Movie(string Title, int Minutes); declares a record in one line. It has a constructor with those two parameters and a property for each. The properties can be set only when the record is created. To change something you make a copy: first with { Minutes = 45 } is a new Movie with the same Title and a different Minutes. Two records are equal with == when all their values are equal. Printing a record shows its type name and values.",
+          "text": "record `Movie(string Title, int Minutes)`; declares a record in one line. It has a constructor with those two parameters and a property for each. The properties can be set only when the record is created. To change something you make a copy: first with { Minutes = 45 } is a new Movie with the same Title and a different Minutes. Two records are equal with == when all their values are equal. Printing a record shows its type name and values.",
           "example": "copies"
         },
         {
@@ -2619,13 +2620,13 @@
         {
           "kind": "walkthrough",
           "title": "Follow the copy",
-          "text": "with created a second Movie and left first alone, so first.Minutes is still 30. The second line shows the copy: the same Title and the new Minutes. Nothing can change a Movie after it is created, so code that holds one can rely on it.",
+          "text": "with created a second Movie and left first alone, so `first.Minutes` is still 30. The second line shows the copy: the same Title and the new Minutes. Nothing can change a Movie after it is created, so code that holds one can rely on it.",
           "example": "copies"
         },
         {
           "kind": "explanation",
           "title": "Value or reference",
-          "text": "A struct is a value type, like int. Assigning it copies the whole value, so Size b = a; gives b its own Width. A class is a reference type: assignment copies the reference and both names refer to one object. For == the rule also depends on the type. Records compare their values. Classes compare references, so two separate objects are not equal even when they hold the same data.",
+          "text": "A `struct` is a value type, like `int`. Assigning it copies the whole value, so Size b = a; gives b its own Width. A class is a reference type: assignment copies the reference and both names refer to one object. For == the rule also depends on the type. Records compare their values. Classes compare references, so two separate objects are not equal even when they hold the same data.",
           "example": "copies"
         },
         {
@@ -2640,7 +2641,7 @@
         {
           "kind": "walkthrough",
           "title": "Check each type",
-          "text": "first == new Movie(\"Dune\", 30) is True because records compare values. a.Width is 2 because b is a separate copy, so setting b.Width to 9 changed only b. boxA == boxB is False because they are two different objects, and a class compares references.",
+          "text": "first == new `Movie(\"Dune\", 30)` is True because records compare values. `a.Width` is 2 because b is a separate copy, so setting `b.Width` to 9 changed only b. boxA == boxB is False because they are two different objects, and a class compares references.",
           "example": "copies"
         },
         {
@@ -2700,7 +2701,7 @@
           "choices": [
             {
               "text": "True, 9, False",
-              "feedback": "Size is a struct, so b is a separate copy. Changing b leaves a.Width at 2."
+              "feedback": "Size is a `struct`, so b is a separate copy. Changing b leaves `a.Width` at 2."
             },
             {
               "text": "False, 2, False",
@@ -2708,7 +2709,7 @@
             },
             {
               "text": "True, 2, False",
-              "feedback": "Records compare values, the struct was copied, and the two Box objects are different objects."
+              "feedback": "Records compare values, the `struct` was copied, and the two Box objects are different objects."
             }
           ]
         },
@@ -2936,18 +2937,18 @@
           ]
         }
       ],
-      "intro": "Sometimes there is no value: a person with no nickname, a library book with no due date. C# calls that null. This module covers marking a value that may be missing, checking it before use, and supplying a fallback.",
+      "intro": "Sometimes there is no value: a person with no nickname, a library book with no due date. C# calls that `null`. This module covers marking a value that may be missing, checking it before use, and supplying a fallback.",
       "steps": [
         {
           "kind": "explanation",
           "title": "null means no value",
-          "text": "null means a variable refers to nothing. string? nickname = null; declares a string that may be missing. The ? after the type is a promise to readers and tools that null is allowed here, and editors use it to warn you when you use such a value without a check. Using a member of null, such as nickname.Length, stops the program with a NullReferenceException. Test first with nickname == null or nickname != null. The ?? operator supplies a fallback: nickname ?? \"Guest\" is nickname when it has a value and \"Guest\" when it is null. The ?. operator reads a member only when there is a value. nickname?.Length is null when nickname is null, and no exception is thrown.",
+          "text": "`null` means a variable refers to nothing. string? nickname = `null`; declares a string that may be missing. The ? after the type is a promise to readers and tools that `null` is allowed here, and editors use it to warn you when you use such a value without a check. Using a member of `null`, such as `nickname.Length`, stops the program with a `NullReferenceException`. Test first with nickname == `null` or nickname != `null`. The ?? operator supplies a fallback: nickname ?? `\"Guest\"` is nickname when it has a value and `\"Guest\"` when it is `null`. The ?. operator reads a member only when there is a value. `nickname?.Length` is `null` when nickname is `null`, and no exception is thrown.",
           "example": "nickname"
         },
         {
           "kind": "prediction",
           "title": "Predict a fallback",
-          "text": "nickname is null. Predict the first two lines of output.",
+          "text": "nickname is `null`. Predict the first two lines of output.",
           "example": "nickname",
           "questions": [
             "predict-fallback"
@@ -2956,7 +2957,7 @@
         {
           "kind": "walkthrough",
           "title": "Follow the operators",
-          "text": "nickname is null, so nickname ?? \"Guest\" gives the fallback. On the next line nickname?.Length is null because there is no string to measure, and ?? 0 turns that into 0. No member of null was ever used, so nothing was thrown.",
+          "text": "nickname is `null`, so nickname ?? `\"Guest\"` gives the fallback. On the next line `nickname?.Length` is `null` because there is no string to measure, and ?? 0 turns that into 0. No member of `null` was ever used, so nothing was thrown.",
           "example": "nickname"
         },
         {
@@ -2971,13 +2972,13 @@
         {
           "kind": "walkthrough",
           "title": "Keep real values",
-          "text": "\"\" is a real string, so ?? leaves it alone and the comparison prints True. The same holds for numbers. An int always has a value and can never be null. int? is a different type that holds either an int or null. due.HasValue is False while due is null. After due = 0; it holds a real 0, and due ?? -1 gives 0, not the fallback. Zero and empty text are values. Only null means missing.",
+          "text": "`\"\"` is a real string, so ?? leaves it alone and the comparison prints True. The same holds for numbers. An `int` always has a value and can never be `null`. `int?` is a different type that holds either an `int` or `null`. `due.HasValue` is False while due is `null`. After due = 0; it holds a real 0, and due ?? -1 gives 0, not the fallback. Zero and empty text are values. Only `null` means missing.",
           "example": "nickname"
         },
         {
           "kind": "prediction",
           "title": "Give an int no value",
-          "text": "Line 1 assigns null to a plain int. Read the example before checking.",
+          "text": "Line 1 assigns `null` to a plain `int`. Read the example before checking.",
           "example": "bad-null",
           "questions": [
             "predict-int-null"
@@ -2986,7 +2987,7 @@
         {
           "kind": "walkthrough",
           "title": "Read the compiler error",
-          "text": "Check the example. CS0037 says null cannot be converted to int because int is a non-nullable value type. If a number can be missing, declare it as int?.",
+          "text": "Check the example. CS0037 says `null` cannot be converted to `int` because `int` is a non-nullable value type. If a number can be missing, declare it as `int?`.",
           "example": "bad-null"
         },
         {
@@ -3011,7 +3012,7 @@
           "choices": [
             {
               "text": "Guest, 0",
-              "feedback": "nickname is null, so both fallbacks are used."
+              "feedback": "nickname is `null`, so both fallbacks are used."
             },
             {
               "text": "Guest, then the program stops with an error",
@@ -3019,7 +3020,7 @@
             },
             {
               "text": "An empty line, 0",
-              "feedback": "null is not empty text. ?? replaces it with the fallback."
+              "feedback": "`null` is not empty text. ?? replaces it with the fallback."
             }
           ]
         },
@@ -3031,11 +3032,11 @@
           "choices": [
             {
               "text": "False",
-              "feedback": "\"\" is a real value, so ?? keeps it and the result equals \"\"."
+              "feedback": "`\"\"` is a real value, so ?? keeps it and the result equals `\"\"`."
             },
             {
               "text": "True",
-              "feedback": "?? replaces only null. An empty string is kept."
+              "feedback": "?? replaces only `null`. An empty string is kept."
             },
             {
               "text": "Guest",
@@ -3051,7 +3052,7 @@
           "choices": [
             {
               "text": "It prints 0.",
-              "feedback": "null is not turned into 0. An int cannot be given null at all."
+              "feedback": "`null` is not turned into 0. An `int` cannot be given `null` at all."
             },
             {
               "text": "It prints an empty line.",
@@ -3059,7 +3060,7 @@
             },
             {
               "text": "The compiler reports an error on line 1.",
-              "feedback": "int always holds a number. Assigning null to it is CS0037."
+              "feedback": "`int` always holds a number. Assigning `null` to it is CS0037."
             }
           ]
         }
@@ -3264,13 +3265,13 @@
         {
           "kind": "explanation",
           "title": "Find a value by its key",
-          "text": "A Dictionary<string, int> stores pairs: a string key and an int value for it. votes[\"Ana\"] = 2; stores 2 under the key \"Ana\", adding the key if it is new and replacing the value if it exists. votes[\"Ana\"] reads the value. Reading a key that is not there stops the program with a KeyNotFoundException. To be safe, ask first with ContainsKey, or use TryGetValue. votes.TryGetValue(\"Cy\", out int found) returns true and puts the value in found when the key exists, and returns false when it does not. The word out marks a variable that the method fills in. Count is the number of keys.",
+          "text": "A `Dictionary<string, int>` stores pairs: a string key and an `int` value for it. `votes[\"Ana\"]` = 2; stores 2 under the key `\"Ana\"`, adding the key if it is new and replacing the value if it exists. `votes[\"Ana\"]` reads the value. Reading a key that is not there stops the program with a `KeyNotFoundException`. To be safe, ask first with ContainsKey, or use TryGetValue. `votes.TryGetValue`(`\"Cy\"`, out `int` found) returns true and puts the value in found when the key exists, and returns false when it does not. The word out marks a variable that the method fills in. Count is the number of keys.",
           "example": "counts"
         },
         {
           "kind": "prediction",
           "title": "Update a count",
-          "text": "Follow the value stored under \"Ana\". Predict the first two lines of output.",
+          "text": "Follow the value stored under `\"Ana\"`. Predict the first two lines of output.",
           "example": "counts",
           "questions": [
             "predict-count"
@@ -3279,19 +3280,19 @@
         {
           "kind": "walkthrough",
           "title": "Follow the dictionary",
-          "text": "Ana starts at 2. The fourth line reads 2, adds 1 and stores 3 back under the same key, so Ana is 3 and there are still only two keys. \"Cy\" was never added. ContainsKey returns False, and TryGetValue returns false, so the else block prints \"no entry\". Reading votes[\"Cy\"] directly would have stopped the program.",
+          "text": "Ana starts at 2. The fourth line reads 2, adds 1 and stores 3 back under the same key, so Ana is 3 and there are still only two keys. `\"Cy\"` was never added. ContainsKey returns False, and TryGetValue returns false, so the else block prints `\"no entry\"`. Reading `votes[\"Cy\"]` directly would have stopped the program.",
           "example": "counts"
         },
         {
           "kind": "explanation",
           "title": "Keep each value once",
-          "text": "A HashSet<string> holds values with no repeats. Add returns true when the value was new and false when the set already had it. Contains tests for a value, and Count is the number of different values.",
+          "text": "A `HashSet<string>` holds values with no repeats. Add returns true when the value was new and false when the set already had it. Contains tests for a value, and Count is the number of different values.",
           "example": "counts"
         },
         {
           "kind": "prediction",
           "title": "Add a repeat",
-          "text": "\"Ana\" is added to the set twice. Predict the last two lines of output.",
+          "text": "`\"Ana\"` is added to the set twice. Predict the last two lines of output.",
           "example": "counts",
           "questions": [
             "predict-set"
@@ -3300,7 +3301,7 @@
         {
           "kind": "walkthrough",
           "title": "Follow the set",
-          "text": "The first two Add calls return true, and their results are not used. The third adds \"Ana\" again. The set already has it, so Add returns False and the set does not grow. Count is 2.",
+          "text": "The first two Add calls return true, and their results are not used. The third adds `\"Ana\"` again. The set already has it, so Add returns False and the set does not grow. Count is 2.",
           "example": "counts"
         },
         {
@@ -3554,7 +3555,7 @@
         {
           "kind": "explanation",
           "title": "A lambda is a small method",
-          "text": "A lambda is a method written in place, without a name. movie => !movie.Watched takes one movie and returns whether it is still unwatched. The part before => is the parameter and the part after it is the result. LINQ methods take lambdas. Where keeps the items for which the lambda returns true. Select replaces each item with the lambda's result. Count() counts the items, Any() says whether there is at least one, and Sum adds up a number taken from each item. The methods chain: the result of one is the input of the next.",
+          "text": "A lambda is a method written in place, without a name. movie => !`movie.Watched` takes one movie and returns whether it is still unwatched. The part before => is the parameter and the part after it is the result. LINQ methods take lambdas. Where keeps the items for which the lambda returns true. Select replaces each item with the lambda's result. `Count()` counts the items, `Any()` says whether there is at least one, and Sum adds up a number taken from each item. The methods chain: the result of one is the input of the next.",
           "example": "query"
         },
         {
@@ -3569,13 +3570,13 @@
         {
           "kind": "walkthrough",
           "title": "Follow the query",
-          "text": "Where keeps Jaws and Heat, because Up is watched, so Count() is 2. Select then replaces each kept movie with its Title, and string.Join puts a comma and a space between them. The order of the original list is preserved. GroupBy collects the items that share a key. Each group has a Key, here the genre, and can itself be counted or summed. Drama has two movies and Comedy has one.",
+          "text": "Where keeps Jaws and Heat, because Up is watched, so `Count()` is 2. Select then replaces each kept movie with its Title, and `string.Join` puts a comma and a space between them. The order of the original list is preserved. GroupBy collects the items that share a key. Each group has a Key, here the genre, and can itself be counted or summed. Drama has two movies and Comedy has one.",
           "example": "query"
         },
         {
           "kind": "explanation",
           "title": "A query runs when it is read",
-          "text": "Where and Select do not do their work when you call them. They return a description of the work, called a query. Its type is IEnumerable<T>, which means something you can loop over. Lists and arrays fit that type too. The query runs each time something reads it: a foreach, Count(), or ToList(). This is called deferred execution. ToList() runs the query once and stores the results in a new list, which does not change afterwards. ToDictionary does the same into a dictionary, from one lambda for the key and one for the value.",
+          "text": "Where and Select do not do their work when you call them. They return a description of the work, called a query. Its type is `IEnumerable<T>`, which means something you can loop over. Lists and arrays fit that type too. The query runs each time something reads it: a `foreach`, `Count()`, or `ToList()`. This is called deferred execution. `ToList()` runs the query once and stores the results in a new list, which does not change afterwards. ToDictionary does the same into a dictionary, from one lambda for the key and one for the value.",
           "example": "deferred"
         },
         {
@@ -3590,7 +3591,7 @@
         {
           "kind": "walkthrough",
           "title": "Follow the timing",
-          "text": "longOnes is only a description. It runs when Count() reads it, after 50 was added, so it finds 40 and 50 and prints 2. saved called ToList() straight away, when the list held only 10 and 40, so it captured one item and stays at 1. When a result must not change later, end the query with ToList().",
+          "text": "longOnes is only a description. It runs when `Count()` reads it, after 50 was added, so it finds 40 and 50 and prints 2. saved called `ToList()` straight away, when the list held only 10 and 40, so it captured one item and stays at 1. When a result must not change later, end the query with `ToList()`.",
           "example": "deferred"
         },
         {
@@ -3635,15 +3636,15 @@
           "choices": [
             {
               "text": "2, then 1",
-              "feedback": "longOnes runs when it is counted, after 50 was added. saved was captured earlier by ToList()."
+              "feedback": "longOnes runs when it is counted, after 50 was added. saved was captured earlier by `ToList()`."
             },
             {
               "text": "1, then 1",
-              "feedback": "longOnes has not run yet when 50 is added. It runs at Count() and sees the new item."
+              "feedback": "longOnes has not run yet when 50 is added. It runs at `Count()` and sees the new item."
             },
             {
               "text": "2, then 2",
-              "feedback": "ToList() already ran its query and stored the results. Later changes to minutes do not reach it."
+              "feedback": "`ToList()` already ran its query and stored the results. Later changes to minutes do not reach it."
             }
           ]
         }
@@ -3853,7 +3854,7 @@
         {
           "kind": "explanation",
           "title": "A class can build on another",
-          "text": "class UrgentNotice : Notice makes UrgentNotice a kind of Notice. It gets Title and Text from Notice (inheritance). : base(title) passes the title on to Notice's constructor. A method marked virtual in the base class may be replaced, and the derived class replaces it with override. Records can inherit the same way, for example record Arrived(int Count) : Update. A type marked abstract cannot be created itself. It exists only to be inherited from.",
+          "text": "class UrgentNotice : Notice makes UrgentNotice a kind of Notice. It gets Title and Text from Notice (inheritance). : `base(title)` passes the title on to Notice's constructor. A method marked `virtual` in the base class may be replaced, and the derived class replaces it with `override`. Records can inherit the same way, for example record `Arrived(int Count)` : Update. A type marked `abstract` cannot be created itself. It exists only to be inherited from.",
           "example": "sources"
         },
         {
@@ -3868,7 +3869,7 @@
         {
           "kind": "walkthrough",
           "title": "Follow the calls",
-          "text": "The loop calls Name and Count through ISource and never needs to know the class. Each object answers with its own version. The same holds for notice.Text(). The variable's type is Notice, but the object is an UrgentNotice, and with virtual and override the object's own version runs, so the line is \"Storm!\". Without override, the derived method would only hide the base one, and a call through a Notice variable would run the base version.",
+          "text": "The loop calls Name and Count through ISource and never needs to know the class. Each object answers with its own version. The same holds for `notice.Text()`. The variable's type is Notice, but the object is an UrgentNotice, and with `virtual` and `override` the object's own version runs, so the line is `\"Storm!\"`. Without `override`, the derived method would only hide the base one, and a call through a Notice variable would run the base version.",
           "example": "sources"
         },
         {
@@ -3883,7 +3884,7 @@
         {
           "kind": "walkthrough",
           "title": "Read the compiler error",
-          "text": "Check the example. CS0535 says EmptySource does not implement the interface member ISource.Count(). The error is on the line that names the interface, because that is where the promise was made.",
+          "text": "Check the example. CS0535 says EmptySource does not implement the interface member `ISource.Count()`. The error is on the line that names the interface, because that is where the promise was made.",
           "example": "missing-member"
         },
         {
@@ -3908,11 +3909,11 @@
           "choices": [
             {
               "text": "Storm",
-              "feedback": "Text is virtual and UrgentNotice overrides it, so the object's own version runs."
+              "feedback": "Text is `virtual` and UrgentNotice overrides it, so the object's own version runs."
             },
             {
               "text": "Storm!",
-              "feedback": "The object is an UrgentNotice. With virtual and override, its version runs whatever the variable's type is."
+              "feedback": "The object is an UrgentNotice. With `virtual` and `override`, its version runs whatever the variable's type is."
             },
             {
               "text": "The compiler reports an error",
@@ -4164,7 +4165,7 @@
         {
           "kind": "explanation",
           "title": "Test a type and name the result",
-          "text": "A pattern is a test that a value either matches or does not. The simplest is a type pattern. update is Finished f asks whether update is a Finished record. When it is, f is that same object seen as a Finished, so f.Title is available. A switch expression tries several patterns in order and produces a value. Write the value to test, the word switch, then the arms in braces. Each arm is pattern => result, with a comma between arms. The first arm that matches wins. The discard _ matches anything, so it goes last.",
+          "text": "A pattern is a test that a value either matches or does not. The simplest is a type pattern. update is Finished f asks whether update is a Finished record. When it is, f is that same object seen as a Finished, so `f.Title` is available. A switch expression tries several patterns in order and produces a value. Write the value to test, the word switch, then the arms in braces. Each arm is pattern => result, with a comma between arms. The first arm that matches wins. The discard _ matches anything, so it goes last.",
           "example": "board"
         },
         {
@@ -4179,7 +4180,7 @@
         {
           "kind": "walkthrough",
           "title": "Follow the arms",
-          "text": "Describe is called twice. new Waiting(0) matches the first arm and returns \"Place 0\". The arm tests the type, so a Place of 0 is handled like any other number. new Finished(\"Soup\") does not match the first arm, matches the second and returns its Title. The last arm runs only for a Notice type that the arms above do not name. Without it the compiler warns that the switch does not handle every input (CS8509), and a value that matches no arm throws SwitchExpressionException when the program runs.",
+          "text": "Describe is called twice. new `Waiting(0)` matches the first arm and returns `\"Place 0\"`. The arm tests the type, so a Place of 0 is handled like any other number. new `Finished(\"Soup\")` does not match the first arm, matches the second and returns its Title. The last arm runs only for a Notice type that the arms above do not name. Without it the compiler warns that the switch does not handle every input (CS8509), and a value that matches no arm throws `SwitchExpressionException` when the program runs.",
           "example": "board"
         },
         {
@@ -4200,7 +4201,7 @@
         {
           "kind": "walkthrough",
           "title": "Read the arms in order",
-          "text": "Order(0, true) matches the first arm, so it is \"empty\" even though it is urgent. Order(10, true) is not 0 but is below 30, so it is \"short\". Order(45, true) fails both Minutes tests and reaches the Urgent arm. Order(45, false) falls through to the discard. If the Urgent arm moved to the top, the first three results would all become \"long and urgent\".",
+          "text": "`Order(0, true)` matches the first arm, so it is `\"empty\"` even though it is urgent. `Order(10, true)` is not 0 but is below 30, so it is `\"short\"`. `Order(45, true)` fails both Minutes tests and reaches the Urgent arm. `Order(45, false)` falls through to the discard. If the Urgent arm moved to the top, the first three results would all become `\"long and urgent\"`.",
           "example": "sizes"
         },
         {
@@ -4264,7 +4265,7 @@
         {
           "id": "predict-arm",
           "example": "sizes",
-          "prompt": "What does Size(new Order(0, true)) return?",
+          "prompt": "What does Size(new `Order(0, true)`) return?",
           "answer": 0,
           "choices": [
             {
@@ -4601,7 +4602,7 @@
         {
           "kind": "explanation",
           "title": "Throw and catch",
-          "text": "An exception is an object that reports a failure. throw new ArgumentException(\"Minutes cannot be negative.\"); stops the current method at once and passes the exception to its caller. If nothing catches it, the program stops. A try block marks code that may fail, and a catch block after it runs only when an exception of the named type is thrown inside the try. catch (FormatException) catches that type and no other. Naming a variable, as in catch (ArgumentException error), lets you read error.Message. Some built-in methods throw: int.Parse(\"soon\") throws a FormatException because the text is not a number.",
+          "text": "An exception is an object that reports a failure. throw new `ArgumentException(\"Minutes cannot be negative.\")`; stops the current method at once and passes the exception to its caller. If nothing catches it, the program stops. A try block marks code that may fail, and a catch block after it runs only when an exception of the named type is thrown inside the try. catch (`FormatException`) catches that type and no other. Naming a variable, as in catch (`ArgumentException` error), lets you read `error.Message`. Some built-in methods throw: `int.Parse(\"soon\")` throws a `FormatException` because the text is not a number.",
           "example": "parse"
         },
         {
@@ -4616,13 +4617,13 @@
         {
           "kind": "walkthrough",
           "title": "Follow both calls",
-          "text": "int.Parse(\"30\") works, so the try block returns 30 and the catch never runs. int.Parse(\"soon\") throws a FormatException. The rest of the try block is skipped, the catch block runs and returns -1. The caller sees an ordinary return value in both cases.",
+          "text": "`int.Parse(\"30\")` works, so the try block returns 30 and the catch never runs. `int.Parse(\"soon\")` throws a `FormatException`. The rest of the try block is skipped, the catch block runs and returns -1. The caller sees an ordinary return value in both cases.",
           "example": "parse"
         },
         {
           "kind": "prediction",
           "title": "What runs after a throw?",
-          "text": "Check(-5) throws inside the second try block. Predict the last line of output.",
+          "text": "`Check(-5)` throws inside the second try block. Predict the last line of output.",
           "example": "parse",
           "questions": [
             "predict-skip"
@@ -4631,12 +4632,12 @@
         {
           "kind": "walkthrough",
           "title": "Follow the exception",
-          "text": "Check throws, so it ends at once. Back in the try block, the line that prints \"checked\" is skipped, because control jumps straight to the matching catch. That block prints the exception's Message. Catch the most specific type you can handle. catch (Exception) catches everything, including bugs you would want to see, so it is rarely the right choice."
+          "text": "Check throws, so it ends at once. Back in the try block, the line that prints `\"checked\"` is skipped, because control jumps straight to the matching catch. That block prints the exception's Message. Catch the most specific type you can handle. catch (Exception) catches everything, including bugs you would want to see, so it is rarely the right choice."
         },
         {
           "kind": "explanation",
           "title": "Expected failures can be values",
-          "text": "An exception suits a failure the caller is not expected to handle on every call, such as a broken promise about the input. When failure is a normal outcome, a return value is often clearer. A result type holds either the answer or the reason there is none, for example record Parsed(bool Ok, int Minutes, string Error). The caller reads Ok and cannot forget that failure is possible. Built-in methods offer the same choice. int.TryParse(text, out int value) returns false for bad text instead of throwing."
+          "text": "An exception suits a failure the caller is not expected to handle on every call, such as a broken promise about the input. When failure is a normal outcome, a return value is often clearer. A result type holds either the answer or the reason there is none, for example record `Parsed(bool Ok, int Minutes, string Error)`. The caller reads Ok and cannot forget that failure is possible. Built-in methods offer the same choice. `int.TryParse`(text, out `int` value) returns false for bad text instead of throwing."
         },
         {
           "kind": "modification",
@@ -4660,11 +4661,11 @@
           "choices": [
             {
               "text": "30, then -1",
-              "feedback": "\"30\" parses. \"soon\" throws a FormatException, and the catch returns -1."
+              "feedback": "`\"30\"` parses. `\"soon\"` throws a `FormatException`, and the catch returns -1."
             },
             {
               "text": "30, then the program stops with an error",
-              "feedback": "The FormatException is caught inside ReadMinutes, so the program continues."
+              "feedback": "The `FormatException` is caught inside ReadMinutes, so the program continues."
             },
             {
               "text": "30, then 0",
@@ -4680,11 +4681,11 @@
           "choices": [
             {
               "text": "checked",
-              "feedback": "Check(-5) throws, so the rest of the try block is skipped."
+              "feedback": "`Check(-5)` throws, so the rest of the try block is skipped."
             },
             {
               "text": "checked, then Minutes cannot be negative.",
-              "feedback": "A throw leaves the try block at once. The line after Check(-5) never runs."
+              "feedback": "A throw leaves the try block at once. The line after `Check(-5)` never runs."
             },
             {
               "text": "Minutes cannot be negative.",
@@ -4889,7 +4890,7 @@
         {
           "kind": "explanation",
           "title": "A type that the caller chooses",
-          "text": "T FirstOr<T>(List<T> items, T fallback) is a generic method. T is a type parameter: a placeholder that each call fills in. Called with a List<int>, T is int, so the fallback must be an int and the result is an int. Called with a List<string>, the same code returns a string. The compiler works T out from the arguments, so you rarely write it yourself. A type can be generic too. record Pair<T>(T First, T Second) holds two values of one type, whichever type the code that uses it picks. List<T> and Dictionary<TKey, TValue> are generic types you have used already.",
+          "text": "T `FirstOr<T>`(`List<T>` items, T fallback) is a generic method. T is a type parameter: a placeholder that each call fills in. Called with a `List<int>`, T is `int`, so the fallback must be an `int` and the result is an `int`. Called with a `List<string>`, the same code returns a string. The compiler works T out from the arguments, so you rarely write it yourself. A type can be generic too. record `Pair<T>`(T First, T Second) holds two values of one type, whichever type the code that uses it picks. `List<T>` and `Dictionary<TKey, TValue>` are generic types you have used already.",
           "example": "first"
         },
         {
@@ -4904,7 +4905,7 @@
         {
           "kind": "walkthrough",
           "title": "Follow each call",
-          "text": "The first call returns 4, the first item, as an int, so number + 1 is 5. The second list is empty, so the fallback \"none\" comes back as a string, and its Length is 4. No conversion was needed in either case: the result has the caller's type. pair is a Pair<string>, so Second is a string.",
+          "text": "The first call returns 4, the first item, as an `int`, so number + 1 is 5. The second list is empty, so the fallback `\"none\"` comes back as a string, and its Length is 4. No conversion was needed in either case: the result has the caller's type. pair is a `Pair<string>`, so Second is a string.",
           "example": "first"
         },
         {
@@ -4919,13 +4920,13 @@
         {
           "kind": "walkthrough",
           "title": "Read the compiler error",
-          "text": "Check the example. T has to be one type for the whole call. The list says int and the fallback says string, so the compiler cannot choose and reports CS0411: the type arguments cannot be inferred from the usage. The relationship between the parameters is checked before anything runs.",
+          "text": "Check the example. T has to be one type for the whole call. The list says `int` and the fallback says string, so the compiler cannot choose and reports CS0411: the type arguments cannot be inferred from the usage. The relationship between the parameters is checked before anything runs.",
           "example": "bad-mix"
         },
         {
           "kind": "explanation",
           "title": "Ask for an ability",
-          "text": "Inside a generic method you know nothing about T, so you cannot compare two T values with > or call methods on them. A constraint states what T must be able to do. where T : IComparable<T> accepts only types that can be compared with themselves, which includes int and string. Then a.CompareTo(b) is allowed. It returns a number above 0 when a comes after b, 0 when they are equal, and a number below 0 when a comes before b."
+          "text": "Inside a generic method you know nothing about T, so you cannot compare two T values with > or call methods on them. A constraint states what T must be able to do. where T : `IComparable<T>` accepts only types that can be compared with themselves, which includes `int` and string. Then `a.CompareTo(b)` is allowed. It returns a number above 0 when a comes after b, 0 when they are equal, and a number below 0 when a comes before b."
         },
         {
           "kind": "modification",
@@ -4953,11 +4954,11 @@
             },
             {
               "text": "5, 4, right",
-              "feedback": "number is 4, so 5 prints. title is \"none\", which has 4 characters. Second is \"right\"."
+              "feedback": "number is 4, so 5 prints. title is `\"none\"`, which has 4 characters. Second is `\"right\"`."
             },
             {
               "text": "5, 0, right",
-              "feedback": "The second list is empty, so title is the fallback \"none\", and its Length is 4."
+              "feedback": "The second list is empty, so title is the fallback `\"none\"`, and its Length is 4."
             }
           ]
         },
@@ -4969,7 +4970,7 @@
           "choices": [
             {
               "text": "It prints 4.",
-              "feedback": "The call does not compile, because T cannot be both int and string."
+              "feedback": "The call does not compile, because T cannot be both `int` and string."
             },
             {
               "text": "It prints none.",
@@ -4977,7 +4978,7 @@
             },
             {
               "text": "The compiler reports an error on line 10.",
-              "feedback": "One call needs one T. A List<int> with a string fallback gives CS0411."
+              "feedback": "One call needs one T. A `List<int>` with a string fallback gives CS0411."
             }
           ]
         }
@@ -5185,12 +5186,12 @@
           ]
         }
       ],
-      "intro": "Reading a file, a database or a network takes time. C# represents work that finishes later as a Task. This module covers async methods, await, running reads in order, and what happens when a task fails. Every source here is local, so nothing depends on timing.",
+      "intro": "Reading a file, a database or a network takes time. C# represents work that finishes later as a Task. This module covers `async` methods, `await`, running reads in order, and what happens when a task fails. Every source here is local, so nothing depends on timing.",
       "steps": [
         {
           "kind": "explanation",
           "title": "A Task is a result that comes later",
-          "text": "A method that returns Task<int> hands back a task at once: a promise that an int will be available later. await waits for that task and gives you the int. A method that uses await must be marked async, and its return type is Task or Task<T>. Inside it you return the plain value, and C# wraps it in the task. By convention the names of such methods end in Async. While a method waits at an await, the program is free to do other work, which is the point of writing code this way.",
+          "text": "A method that returns `Task<int>` hands back a task at once: a promise that an `int` will be available later. `await` waits for that task and gives you the `int`. A method that uses `await` must be marked `async`, and its return type is Task or `Task<T>`. Inside it you return the plain value, and C# wraps it in the task. By convention the names of such methods end in Async. While a method waits at an `await`, the program is free to do other work, which is the point of writing code this way.",
           "example": "trace"
         },
         {
@@ -5205,13 +5206,13 @@
         {
           "kind": "walkthrough",
           "title": "Follow the awaits",
-          "text": "\"start\" prints first. Calling ReadCountAsync runs its body up to the first await, so \"reading\" prints next. The await in the caller then waits for the task to finish and receives 3. Code after an await runs only when the awaited task is done, so awaits in a row run one after another, in order.",
+          "text": "`\"start\"` prints first. Calling ReadCountAsync runs its body up to the first `await`, so `\"reading\"` prints next. The `await` in the caller then waits for the task to finish and receives 3. Code after an `await` runs only when the awaited task is done, so awaits in a row run one after another, in order.",
           "example": "trace"
         },
         {
           "kind": "prediction",
           "title": "When a task fails",
-          "text": "ReadBrokenAsync throws after its await. Predict the last line of output.",
+          "text": "ReadBrokenAsync throws after its `await`. Predict the last line of output.",
           "example": "trace",
           "questions": [
             "predict-failure"
@@ -5220,13 +5221,13 @@
         {
           "kind": "walkthrough",
           "title": "Follow the failure",
-          "text": "An exception thrown inside an async method is stored in its task. It is thrown again at the await, so a try and catch around the await handles it like any other exception. Here the catch prints the message. A task you never await keeps its exception to itself and the failure goes unnoticed, so await every task you start.",
+          "text": "An exception thrown inside an `async` method is stored in its task. It is thrown again at the `await`, so a try and catch around the `await` handles it like any other exception. Here the catch prints the message. A task you never `await` keeps its exception to itself and the failure goes unnoticed, so `await` every task you start.",
           "example": "trace"
         },
         {
           "kind": "prediction",
           "title": "Forget the await",
-          "text": "Line 7 calls the method without await. Read the example before checking.",
+          "text": "Line 7 calls the method without `await`. Read the example before checking.",
           "example": "bad-await",
           "questions": [
             "predict-await"
@@ -5235,7 +5236,7 @@
         {
           "kind": "walkthrough",
           "title": "Read the compiler error",
-          "text": "Check the example. Without await, the call gives you the task, not the number. CS0029 says a Task<int> cannot be converted to int. Add await in front of the call. There is also a way to wait without await: reading a task's Result blocks the whole thread until the task is done. Prefer await, which lets other work continue.",
+          "text": "Check the example. Without `await`, the call gives you the task, not the number. CS0029 says a `Task<int>` cannot be converted to `int`. Add `await` in front of the call. There is also a way to wait without `await`: reading a task's Result blocks the whole thread until the task is done. Prefer `await`, which lets other work continue.",
           "example": "bad-await"
         },
         {
@@ -5260,15 +5261,15 @@
           "choices": [
             {
               "text": "start, reading, 3",
-              "feedback": "The call runs the method up to its first await, then the caller's await receives 3."
+              "feedback": "The call runs the method up to its first `await`, then the caller's `await` receives 3."
             },
             {
               "text": "reading, start, 3",
-              "feedback": "Nothing in ReadCountAsync runs until it is called, and \"start\" prints before the call."
+              "feedback": "Nothing in ReadCountAsync runs until it is called, and `\"start\"` prints before the call."
             },
             {
               "text": "start, 3, reading",
-              "feedback": "\"reading\" prints inside the method, before it returns its result."
+              "feedback": "`\"reading\"` prints inside the method, before it returns its result."
             }
           ]
         },
@@ -5280,11 +5281,11 @@
           "choices": [
             {
               "text": "Nothing, because the program stops with an error",
-              "feedback": "The await is inside a try, and the catch names the exception's type."
+              "feedback": "The `await` is inside a try, and the catch names the exception's type."
             },
             {
               "text": "Source is offline.",
-              "feedback": "The exception is thrown again at the await, and the catch prints its Message."
+              "feedback": "The exception is thrown again at the `await`, and the catch prints its Message."
             },
             {
               "text": "3",
@@ -5300,7 +5301,7 @@
           "choices": [
             {
               "text": "It prints 3.",
-              "feedback": "Without await the call returns a task, and a task is not an int."
+              "feedback": "Without `await` the call returns a task, and a task is not an `int`."
             },
             {
               "text": "It prints 0, because the task has not finished.",
@@ -5308,7 +5309,7 @@
             },
             {
               "text": "The compiler reports an error on line 7.",
-              "feedback": "Line 7 stores a Task<int> in an int. That is CS0029. The fix is await."
+              "feedback": "Line 7 stores a `Task<int>` in an `int`. That is CS0029. The fix is `await`."
             }
           ]
         }
@@ -5510,7 +5511,7 @@
         {
           "kind": "explanation",
           "title": "Expected and actual",
-          "text": "Every check has an input, an expected result and an actual result. The expected result comes from the rule the code is meant to follow. The actual result is what the code returned. When they differ, the check has failed, and the input tells you which call to trace. The most useful inputs sit at an edge, where the rule changes its answer. For \"three or more\", the edge is exactly 3. A bug at an edge is easy to miss with inputs far away from it.",
+          "text": "Every check has an input, an expected result and an actual result. The expected result comes from the rule the code is meant to follow. The actual result is what the code returned. When they differ, the check has failed, and the input tells you which call to trace. The most useful inputs sit at an edge, where the rule changes its answer. For `\"three or more\"`, the edge is exactly 3. A bug at an edge is easy to miss with inputs far away from it.",
           "example": "trace"
         },
         {
@@ -5531,7 +5532,7 @@
         {
           "kind": "explanation",
           "title": "A check is code too",
-          "text": "A method can receive another method as a parameter. Func<int, int, bool> is the type of a method that takes two ints and returns a bool. The last type in the list is the return type. A lambda such as (count, limit) => count >= limit fits it. A check written this way takes a candidate, calls it with chosen inputs, and returns true only when every result matches what is expected. A good check returns true for correct code and false for the faulty versions you know about. A check kept to make sure a fixed bug stays fixed is called a regression check.",
+          "text": "A method can receive another method as a parameter. `Func<int, int, bool>` is the type of a method that takes two ints and returns a `bool`. The last type in the list is the return type. A lambda such as (count, limit) => count >= limit fits it. A check written this way takes a candidate, calls it with chosen inputs, and returns true only when every result matches what is expected. A good check returns true for correct code and false for the faulty versions you know about. A check kept to make sure a fixed bug stays fixed is called a regression check.",
           "example": "check"
         },
         {
@@ -5570,15 +5571,15 @@
           "answer": 1,
           "choices": [
             {
-              "text": "AtLimit(4, 3)",
+              "text": "`AtLimit(4, 3)`",
               "feedback": "It prints True, and the rule also expects true for 4."
             },
             {
-              "text": "AtLimit(3, 3)",
+              "text": "`AtLimit(3, 3)`",
               "feedback": "The rule expects true once the limit is reached, and the code prints False."
             },
             {
-              "text": "AtLimit(2, 3)",
+              "text": "`AtLimit(2, 3)`",
               "feedback": "It prints False, and the rule also expects false below the limit."
             }
           ]

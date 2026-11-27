@@ -81,7 +81,7 @@ Storm!
 
 ## A class can build on another
 
-class UrgentNotice : Notice makes UrgentNotice a kind of Notice. It gets Title and Text from Notice (inheritance). : base(title) passes the title on to Notice's constructor. A method marked virtual in the base class may be replaced, and the derived class replaces it with override. Records can inherit the same way, for example record Arrived(int Count) : Update. A type marked abstract cannot be created itself. It exists only to be inherited from.
+class UrgentNotice : Notice makes UrgentNotice a kind of Notice. It gets Title and Text from Notice (inheritance). : `base(title)` passes the title on to Notice's constructor. A method marked `virtual` in the base class may be replaced, and the derived class replaces it with `override`. Records can inherit the same way, for example record `Arrived(int Count)` : Update. A type marked `abstract` cannot be created itself. It exists only to be inherited from.
 
 @example sources
 
@@ -93,14 +93,14 @@ notice is declared as a Notice but holds an UrgentNotice. Predict the last line 
 
 :::question predict-dispatch example=sources
 What is the last line of output?
-- [ ] Storm :: Text is virtual and UrgentNotice overrides it, so the object's own version runs.
-- [x] Storm! :: The object is an UrgentNotice. With virtual and override, its version runs whatever the variable's type is.
+- [ ] Storm :: Text is `virtual` and UrgentNotice overrides it, so the object's own version runs.
+- [x] Storm! :: The object is an UrgentNotice. With `virtual` and `override`, its version runs whatever the variable's type is.
 - [ ] The compiler reports an error :: An UrgentNotice is a Notice, so the assignment is allowed.
 :::
 
 ## Follow the calls {walkthrough}
 
-The loop calls Name and Count through ISource and never needs to know the class. Each object answers with its own version. The same holds for notice.Text(). The variable's type is Notice, but the object is an UrgentNotice, and with virtual and override the object's own version runs, so the line is "Storm!". Without override, the derived method would only hide the base one, and a call through a Notice variable would run the base version.
+The loop calls Name and Count through ISource and never needs to know the class. Each object answers with its own version. The same holds for `notice.Text()`. The variable's type is Notice, but the object is an UrgentNotice, and with `virtual` and `override` the object's own version runs, so the line is `"Storm!"`. Without `override`, the derived method would only hide the base one, and a call through a Notice variable would run the base version.
 
 @example sources
 
@@ -134,7 +134,7 @@ What happens when you check this example?
 
 ## Read the compiler error {walkthrough}
 
-Check the example. CS0535 says EmptySource does not implement the interface member ISource.Count(). The error is on the line that names the interface, because that is where the promise was made.
+Check the example. CS0535 says EmptySource does not implement the interface member `ISource.Count()`. The error is on the line that names the interface, because that is where the promise was made.
 
 @example missing-member
 

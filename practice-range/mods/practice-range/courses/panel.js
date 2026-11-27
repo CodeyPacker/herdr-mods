@@ -47,6 +47,7 @@ export class CoursePanel {
     this.data = null;
     this.page = "catalog";
     this.languageFilter = "";
+    this.openAfterList = "";
     this.returnScreen = "topics";
     /** @type {import("./types.js").LearningProfile} */
     this.profile = {configured:false,knownLanguages:[]};
@@ -179,6 +180,9 @@ export class CoursePanel {
       } else if (action === "list") {
         this.catalog = result.courses;
         this.page = "catalog";
+        // A language card with one course opens that course, not a list of one.
+        const matches = this.languageFilter ? this.catalog.filter(course => course.languageId === this.languageFilter && !course.error) : [];
+        if (matches.length === 1) this.openAfterList = matches[0].id;
       } else if (action === "source") {
         if (this.page !== "source") this.sourceReturnPage = this.page;
         this.source = result.source; this.sourceRequest = value; this.page = "source"; this.pause();
@@ -198,6 +202,11 @@ export class CoursePanel {
       if (this.host.sync && !["list", "status", "source"].includes(action)) this.host.pushSoon(cx);
     } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
     finally { this.busy = ""; cx.notify(); }
+    if (this.openAfterList) {
+      const courseId = this.openAfterList;
+      this.openAfterList = ""; this.languageFilter = "";
+      await this.dispatch("enroll", { courseId, entryPath: "beginner" }, cx);
+    }
   }
 
   /** @param {Context} cx */

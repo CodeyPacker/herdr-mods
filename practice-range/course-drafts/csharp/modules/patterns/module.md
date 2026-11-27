@@ -13,7 +13,7 @@ Code often has to ask two questions at once: what kind of value is this, and wha
 
 ## Test a type and name the result
 
-A pattern is a test that a value either matches or does not. The simplest is a type pattern. update is Finished f asks whether update is a Finished record. When it is, f is that same object seen as a Finished, so f.Title is available. A switch expression tries several patterns in order and produces a value. Write the value to test, the word switch, then the arms in braces. Each arm is pattern => result, with a comma between arms. The first arm that matches wins. The discard _ matches anything, so it goes last.
+A pattern is a test that a value either matches or does not. The simplest is a type pattern. update is Finished f asks whether update is a Finished record. When it is, f is that same object seen as a Finished, so `f.Title` is available. A switch expression tries several patterns in order and produces a value. Write the value to test, the word switch, then the arms in braces. Each arm is pattern => result, with a comma between arms. The first arm that matches wins. The discard _ matches anything, so it goes last.
 
 ```csharp example board
 string Describe(Notice notice) => notice switch
@@ -52,7 +52,7 @@ What does the kitchen screen example print?
 
 ## Follow the arms {walkthrough}
 
-Describe is called twice. new Waiting(0) matches the first arm and returns "Place 0". The arm tests the type, so a Place of 0 is handled like any other number. new Finished("Soup") does not match the first arm, matches the second and returns its Title. The last arm runs only for a Notice type that the arms above do not name. Without it the compiler warns that the switch does not handle every input (CS8509), and a value that matches no arm throws SwitchExpressionException when the program runs.
+Describe is called twice. new `Waiting(0)` matches the first arm and returns `"Place 0"`. The arm tests the type, so a Place of 0 is handled like any other number. new `Finished("Soup")` does not match the first arm, matches the second and returns its Title. The last arm runs only for a Notice type that the arms above do not name. Without it the compiler warns that the switch does not handle every input (CS8509), and a value that matches no arm throws `SwitchExpressionException` when the program runs.
 
 @example board
 
@@ -92,7 +92,7 @@ More than one arm can match the same order. Read the arms from the top and predi
 @example sizes
 
 :::question predict-arm example=sizes
-What does Size(new Order(0, true)) return?
+What does Size(new `Order(0, true)`) return?
 - [x] empty :: The first arm matches, and no later arm is tried.
 - [ ] long and urgent :: The Urgent arm is third. The first arm already matched Minutes: 0.
 - [ ] short :: 0 is below 30, but the arm above it matched first.
@@ -100,7 +100,7 @@ What does Size(new Order(0, true)) return?
 
 ## Read the arms in order {walkthrough}
 
-Order(0, true) matches the first arm, so it is "empty" even though it is urgent. Order(10, true) is not 0 but is below 30, so it is "short". Order(45, true) fails both Minutes tests and reaches the Urgent arm. Order(45, false) falls through to the discard. If the Urgent arm moved to the top, the first three results would all become "long and urgent".
+`Order(0, true)` matches the first arm, so it is `"empty"` even though it is urgent. `Order(10, true)` is not 0 but is below 30, so it is `"short"`. `Order(45, true)` fails both Minutes tests and reaches the Urgent arm. `Order(45, false)` falls through to the discard. If the Urgent arm moved to the top, the first three results would all become `"long and urgent"`.
 
 @example sizes
 
