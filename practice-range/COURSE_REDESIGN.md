@@ -278,5 +278,6 @@ Same rules as Phase C, new content version, 16 modules from the table.
 
 ### Phase F: Wrap up
 
-- [ ] F1 Update `README.md`, `RELEASE.md` and `LEARNING_PROGRESS.md` for the new courses and screens.
+- [x] F1 Update `README.md`, `RELEASE.md` and `LEARNING_PROGRESS.md` for the new courses and screens.
+    - Also rewrote `course-drafts/typescript/OUTLINE.md` from the manifest. The C#, full-suite and native-panel rows in `RELEASE.md` still hold older numbers until F2 reruns them.
 - [ ] F2 Full test run and owner walkthrough.
