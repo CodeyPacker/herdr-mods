@@ -1,2 +1,2 @@
-type Preview=Task;
-type Patch=Partial<Omit<Task,"id">>;
+type Preview=Article;
+type Patch=Partial<Omit<Article,"id">>;

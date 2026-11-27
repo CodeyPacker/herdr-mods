@@ -1,16 +1,16 @@
 {
   "id": "course:ts-foundations/task/generic-edit-shapes",
   "role": "independent",
-  "title": "Describe a task preview and patch",
+  "title": "Describe an article preview and patch",
   "concepts": [
     "generic",
     "utility"
   ],
-  "prompt": "The supplied Task has id, title and done. Define Preview containing only id and title, and Patch accepting optional title and done fields. A patch cannot set id. Use the supplied field types. No runtime transformation is requested.",
+  "prompt": "The supplied `Article` has `id`, `title` and `published`. Define `Preview` with only `id` and `title`. Define `Patch` with optional `title` and `published`, and no `id`, so a patch cannot change it. Only the types are checked.",
   "hints": [
-    "Describe the visible preview fields first.",
-    "A patch can leave both editable fields absent.",
-    "Remove id before making the editable fields optional."
+    "Start with `Preview`: which two fields does it keep?",
+    "A patch can leave out every field, so `{}` must be a valid `Patch`.",
+    "Remove `id` with `Omit`, then make the rest optional with `Partial`."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -22,13 +22,13 @@
     "__Extends<{id:number;title:string},Preview>",
     "__Extends<Preview,{id:number;title:string}>",
     "__Extends<{},Patch>",
-    "__Extends<{title:string;done:boolean},Patch>"
+    "__Extends<{title:string;published:boolean},Patch>"
   ],
   "rejects": [
     "const p: Patch = {id: 4}",
-    "const p: Patch = {done: \"yes\"}",
+    "const p: Patch = {published: \"yes\"}",
     "const p: Preview = {id: 2}",
-    "const p: Preview = {id: 2,title:\"\",done:false}"
+    "const p: Preview = {id: 2,title:\"\",published:false}"
   ],
   "fixtures": [
     {
@@ -39,7 +39,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Requires done on a preview.",
+      "misconception": "Uses the full `Article` for `Preview`, so it requires `published`.",
       "witness": {
         "fixture": "cases",
         "kind": "types",
@@ -48,7 +48,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Allows id in a patch.",
+      "misconception": "Uses `Partial<Article>`, so a patch can change `id`.",
       "witness": {
         "fixture": "cases",
         "kind": "types",
@@ -56,5 +56,5 @@
       }
     }
   ],
-  "feedback": "Describe the visible preview fields first."
+  "feedback": "Start with `Preview`: which two fields does it keep?"
 }

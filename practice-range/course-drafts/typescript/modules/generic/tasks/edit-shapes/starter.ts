@@ -1,2 +1,2 @@
-type Preview = Task;
-type Patch = Task;
+type Preview = Article;
+type Patch = Article;

@@ -1,2 +1,2 @@
-type Preview=Pick<Task,"id"|"title">;
-type Patch=Partial<Task>;
+type Preview=Pick<Article,"id"|"title">;
+type Patch=Partial<Article>;

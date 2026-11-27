@@ -258,7 +258,8 @@ Same rules as Phase C, new content version, 16 modules from the table.
     - Tasks had no tracker theme. Prompts rewritten. Added a throw/finally step and prediction (`finally`).
 - [x] D15 async · async and Promises
     - Tasks had no tracker theme. Prompts rewritten. Added a `Promise.all` step and prediction (`all`).
-- [ ] D16 generic · Generics
+- [x] D16 generic · Generics
+    - `edit-shapes` now uses `Article`. Pick, Omit and Partial stay here because `edit-shapes` and R4 use them, so D16a should go further (Record, Readonly, Required, ReturnType). Added a constraint step and prediction (`constraint`).
 - [ ] D16a utility · Utility types (new module)
 - [ ] D16b mapped · Mapped and conditional types (new module, last in the course: its review uses `"afterCompletion": true`)
 - [ ] D17 Readiness checks

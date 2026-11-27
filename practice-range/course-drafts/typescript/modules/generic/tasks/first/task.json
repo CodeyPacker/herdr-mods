@@ -1,16 +1,16 @@
 {
   "id": "course:ts-foundations/task/generic-first",
   "role": "guided",
-  "title": "Keep the first value even when falsey",
+  "title": "Keep the first value even when falsy",
   "concepts": [
     "generic",
     "utility"
   ],
-  "prompt": "Write firstOr<T>. Return the first item when the array is nonempty and the supplied fallback when empty. Preserve the relationship to T, including null or empty-string items.",
+  "prompt": "Write `firstOr<T>(items: T[], fallback: T): T`. Return the first item when `items` is not empty, and `fallback` when it is. The first item can be `0`, `\"\"` or `null`, and must still be returned.",
   "hints": [
-    "Check whether a position exists.",
-    "The first item can be zero, empty or null.",
-    "Use the array length to distinguish empty input."
+    "How can you tell an empty array from one whose first item is `0`?",
+    "`||` and `??` both replace some real values.",
+    "Check `items.length` instead."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -39,7 +39,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Treats zero as missing.",
+      "misconception": "Uses `||`, so a first item of 0 is replaced.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -48,7 +48,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Treats null as missing.",
+      "misconception": "Uses `??`, so a first item of `null` is replaced.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -56,5 +56,5 @@
       }
     }
   ],
-  "feedback": "Check whether a position exists."
+  "feedback": "How can you tell an empty array from one whose first item is `0`?"
 }

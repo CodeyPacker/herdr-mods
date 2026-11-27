@@ -1,2 +1,2 @@
 type Preview = { id: number; title: string };
-type Patch = { title?: string; done?: boolean };
+type Patch = { title?: string; published?: boolean };

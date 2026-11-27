@@ -113,7 +113,7 @@
     },
     {
       "id": "outcome/generic",
-      "description": "Preserve input/output types with a generic function and describe task projections with Pick, Omit and Partial.",
+      "description": "Preserve input and output types with a generic function, limit T with a constraint, and build types with Pick, Omit and Partial.",
       "assessment": "course:ts-foundations/module/generic"
     }
   ],
@@ -396,7 +396,7 @@
       "status": "reviewed",
       "source": {
         "kind": "bundled",
-        "path": "modules/generic/module.json"
+        "path": "modules/generic/module.md"
       }
     },
     {
