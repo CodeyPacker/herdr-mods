@@ -160,7 +160,7 @@
       "status": "reviewed",
       "source": {
         "kind": "bundled",
-        "path": "modules/decisions/module.json"
+        "path": "modules/decisions/module.md"
       }
     },
     {

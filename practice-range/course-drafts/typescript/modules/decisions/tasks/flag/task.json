@@ -1,16 +1,16 @@
 {
   "id": "course:ts-foundations/task/decisions-flag",
   "role": "independent",
-  "title": "Flag urgent work",
+  "title": "Flag a library book",
   "concepts": [
     "branch",
     "truthiness",
     "boolean"
   ],
-  "prompt": "The supplied inputs are open (boolean), age (number of days), and escalated (boolean). Set flag to true only for open tasks that are at least three days old or escalated. Closed tasks are always false.",
+  "prompt": "The supplied inputs are `open` (boolean: the book is still borrowed), `age` (days since it was due), and `escalated` (boolean). Set `flag` to `true` only for borrowed books that are at least three days late or escalated. Returned books are always `false`.",
   "hints": [
     "Which condition must always hold?",
-    "List the two reasons an open task could qualify.",
+    "List the two reasons an open book could qualify.",
     "Group the two alternative reasons together when combining them with the open check."
   ],
   "starter": "starter.ts",
@@ -44,7 +44,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Lets an escalated closed task through.",
+      "misconception": "Lets an escalated closed book through.",
       "witness": {
         "fixture": "closed",
         "kind": "result",
@@ -61,5 +61,6 @@
       }
     }
   ],
-  "feedback": "Which condition must always hold?"
+  "feedback": "Which condition must always hold?",
+  "checkLabels": null
 }
