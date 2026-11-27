@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "0.1.0-preview.1",
+  "contentVersion": "0.1.0-preview.2",
   "kind": "reading",
   "id": "course:api-design",
-  "title": "Design APIs people can rely on",
+  "title": "API design",
   "audience": [
     "Can read JSON and has called or built an API",
     "Wants to design one well"
@@ -279,7 +279,9 @@
     }
   ],
   "compatibility": {
-    "fromVersions": [],
+    "fromVersions": [
+      "0.1.0-preview.1"
+    ],
     "replacements": []
   },
   "preview": true,

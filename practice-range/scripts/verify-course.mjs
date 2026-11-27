@@ -8,7 +8,7 @@ import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const [language, ...moduleKeys] = process.argv.slice(2);
-if (!["typescript", "csharp", "sql"].includes(language)) throw new Error("Usage: verify-course.mjs <typescript|csharp|sql> [module keys...]");
+if (!["typescript", "csharp", "sql"].includes(language)) throw new Error("Usage: verify-course.mjs <typescript|csharp|sql> [module keys... | readiness]");
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../course-drafts", language);
 const runner = await import(`../mods/practice-range/languages/${language}/runner.mjs`);
 const { exercises: drills } = await import(`../mods/practice-range/languages/${language}/catalog.js`);
@@ -233,26 +233,29 @@ try {
   else if (language === "sql") assert.ok(compiler.version.includes(" " + manifest.runner.compiler.range.slice(1) + " "), "Installed PGlite differs from the course's pinned version");
   else assert.equal(manifest.runner.compiler.range, "=" + compiler.version.split(" ").at(-1));
   console.log(compiler.label ?? compiler.version, process.version);
-  const candidates = new Set(moduleKeys);
+  // "readiness" checks only the skip-ahead tests.
+  const readinessOnly = moduleKeys.includes("readiness");
+  const candidates = new Set(moduleKeys.filter(key => key !== "readiness"));
   for (const key of candidates) assert.ok(manifest.modules.some(m => m.id === manifest.id + "/module/" + key), "Unknown module " + key);
   for (const entry of manifest.modules) {
     entry.prerequisites.forEach(id => assert.ok(ids.has(id), "Missing or out-of-order prerequisite " + id));
     unique(entry.id);
     const key = entry.id.split("/").at(-1);
+    if (readinessOnly) continue;
     if (candidates.has(key)) {
       entry.source ??= { kind: "bundled", path: "modules/" + key + "/module.json" };
       await checkModule(entry, manifest);
     } else if (!candidates.size && entry.source) await checkModule(entry, manifest);
   }
-  manifest.outcomes.forEach(o => assert.ok(ids.has(o.assessment)));
-  if (!candidates.size) await checkProject(manifest);
+  if (!readinessOnly) manifest.outcomes.forEach(o => assert.ok(ids.has(o.assessment)));
+  if (!candidates.size && !readinessOnly) await checkProject(manifest);
   if (!candidates.size) for (const group of manifest.readiness ?? []) {
     // Each readiness check is a fresh problem using only concepts from its group and earlier.
     group.modules.forEach(id => assert.ok(ids.has(id), "Unknown readiness module " + id));
     const concepts = new Set(group.modules.flatMap(id => [...conceptsThrough(manifest, id)]));
     await checkTask(root, { id: (await json(root, group.task)).id, path: group.task }, concepts);
   }
-  if (!candidates.size) {
+  if (!candidates.size && !readinessOnly) {
     // Pilot tasks are handed out by an observer, not shipped in the pack. Each uses concepts taught up to its module.
     const all = new Set(manifest.modules.flatMap(m => m.teaches));
     for (const key of language === "typescript" ? ["new-task", "type-error", "debug"] : []) {

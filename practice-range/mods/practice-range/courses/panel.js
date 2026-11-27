@@ -16,6 +16,8 @@ const markdown = (id, text) => TextView.markdown(id, text).selectable();
 /** A progress bar whose empty part shows on a raised card. @param {Theme} t @param {number} fraction */
 const progressBar = (t, fraction) => div().w_full().h(4).rounded(2).bg(t.border).overflow_hidden()
   .child(div().h_full().rounded(2).bg(t.accent).w(`${Math.round(Math.min(1, Math.max(0, fraction)) * 1000) / 10}%`));
+/** A course's short name: its language (TypeScript, C#, SQL), or its own title for a reading course. @param {{ languageId?: string, title?: string, id: string }} course */
+const courseName = course => (course.languageId && findLanguage(course.languageId)?.name) || course.title || course.id;
 /** @param {string} path */
 const normalized = path => appWindow()?.platform === "windows" ? path.replaceAll("\\", "/").toLowerCase() : path.replaceAll("\\", "/");
 
@@ -379,7 +381,7 @@ export class CoursePanel {
       const total = course.total ?? 0, done = course.done ?? 0, started = Boolean(course.enrolledVersion);
       const summary = course.error ?? `${total} ${course.reading ? "reading modules" : "modules"}${course.preview ? " \u00b7 Preview" : ""}`;
       body.child(card(t, { id: `course-card-${course.id}` })
-        .child(div().font_semibold().child(course.title ?? course.id))
+        .child(div().font_semibold().child(courseName(course)))
         .child(div().text_size(12).text_color(t.muted).child(summary))
         .child(h_flex().gap(10).items_center()
           .child(div().w(200).child(progressBar(t, total ? done / total : 0)))
@@ -391,7 +393,7 @@ export class CoursePanel {
 
   /** Course settings: known languages, the repo, older versions. @param {import("gpui-kit").Element} body @param {Theme} t */
   settingsView(body, t) {
-    body.child(this.header(t, this.settingsReturn === "catalog" ? "Courses" : "Back", this.data && this.settingsReturn !== "catalog" ? `${this.data.course.title} settings` : "Course settings"));
+    body.child(this.header(t, this.settingsReturn === "catalog" ? "Courses" : "Back", this.data && this.settingsReturn !== "catalog" ? `${courseName(this.data.course)} settings` : "Course settings"));
     this.profileView(body, t);
     const summary = this.data && this.settingsReturn !== "catalog" ? this.catalog.find(course => course.id === this.data?.course.id) : null;
     if (summary) {
@@ -428,7 +430,7 @@ export class CoursePanel {
   /** The course page: one Continue box, then the numbered modules. @param {import("gpui-kit").Element} body @param {Theme} t */
   modules(body, t) {
     const course = this.data.course;
-    body.child(this.header(t, "Courses", course.title, this.settingsButton(t, "course-settings")));
+    body.child(this.header(t, "Courses", courseName(course), this.settingsButton(t, "course-settings")));
     this.updateView(body, t);
     if (this.data.drillError) body.child(banner(t, this.data.drillError));
     const next = this.nextStep();
@@ -518,7 +520,7 @@ export class CoursePanel {
     const lesson = this.lesson(), position = this.data.enrollment.position;
     if (!lesson || !position) return;
     const step = lesson.steps[position.step], last = position.step + 1 === lesson.steps.length;
-    body.child(this.header(t, this.data.course.title, `${this.moduleNumber(lesson.id)}. ${lesson.title}`,
+    body.child(this.header(t, courseName(this.data.course), `${this.moduleNumber(lesson.id)}. ${lesson.title}`,
       div().text_size(12).text_color(t.muted).child(`Step ${position.step + 1} of ${lesson.steps.length}`)))
       .child(progressBar(t, (position.step + 1) / lesson.steps.length));
     if (!this.data.course.reading && this.data.attachment?.available && this.host.tutor.enabled) body.child(keyButton(t,"course-repo-module","","Explain this topic using my repo",!this.busy,cx=>this.generateRepoLesson(lesson.id,cx)));
@@ -620,7 +622,7 @@ export class CoursePanel {
     const readiness = this.isReadiness(task.id);
     const siblings = lesson?.tasks.filter(item => item.role !== "review") ?? [];
     const place = siblings.findIndex(item => item.id === task.id);
-    body.child(this.header(t, readiness ? this.data.course.title : lesson ? `${this.moduleNumber(lesson.id)}. ${lesson.title}` : "Lesson",
+    body.child(this.header(t, readiness ? courseName(this.data.course) : lesson ? `${this.moduleNumber(lesson.id)}. ${lesson.title}` : "Lesson",
       readiness ? `Skip-ahead test: ${task.title}` : `Exercise: ${task.title}`,
       place >= 0 ? div().text_size(12).text_color(t.muted).child(`${place + 1} of ${siblings.length}`) : null));
     if(task.generated) body.child(banner(t,`AI-generated exercise. Its reference passed and known wrong answers failed before saving. It checks printed output only.${this.isExtra(task.id) ? " Extra practice does not count toward module status or course review." : ""}`));

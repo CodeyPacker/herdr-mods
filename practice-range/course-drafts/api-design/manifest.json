@@ -3,7 +3,7 @@
   "contentVersion": "0.1.0-draft.1",
   "kind": "reading",
   "id": "course:api-design",
-  "title": "Design APIs people can rely on",
+  "title": "API design",
   "audience": [
     "Can read JSON and has called or built an API",
     "Wants to design one well"
@@ -339,8 +339,10 @@
     }
   ],
   "compatibility": {
-    "fromVersions": [],
+    "fromVersions": [
+      "0.1.0-preview.1"
+    ],
     "replacements": []
   },
-  "runtimeContentVersion": "0.1.0-preview.1"
+  "runtimeContentVersion": "0.1.0-preview.2"
 }

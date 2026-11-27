@@ -149,6 +149,8 @@ What does `Average(new double[0])` return?
 
 ### Phase C: C# course rewrite
 
+Course names (owner, 2026-11-26): language courses show just the language name, "TypeScript", "C#", "SQL". The panel takes it from the language (`courseName` in `courses/panel.js`), so packs need no rebuild for it. The API course is titled "API design" (pack 0.1.0-preview.2, compatible with preview.1).
+
 New content version `0.2.0-preview.1`, no compatibility with 0.1.0 (old enrollments stay readable from Course settings). Each module: 6 to 10 steps, at least one prediction question, 2 to 4 tasks, examples from varied everyday data. No task tracker. Teach C# on its own terms (D9).
 
 - [x] C0 New `course-drafts/csharp/OUTLINE.md` and `manifest.json` for the 16 modules. Remove the project file and capstone modules from the manifest.
@@ -179,7 +181,8 @@ New content version `0.2.0-preview.1`, no compatibility with 0.1.0 (old enrollme
 - [x] C15 async and await
 - [x] C16 Writing unit tests
 - [ ] C16b Markdown polish: modules 7 to 16 were rethemed by renaming, so their prose has no backticks or lists yet (modules 1 to 6 do). Add `code` formatting and short lists to their step text. Content and ids stay.
-- [ ] C17 Rewrite readiness checks R1 to R4 as skip-ahead tests over the new modules.
+- [x] C17 Rewrite readiness checks R1 to R4 as skip-ahead tests over the new modules.
+    - Full verifier run passed all 16 modules on 2026-11-26. `node scripts/verify-course.mjs csharp readiness` checks only R1 to R4.
 - [ ] C18 Build, run `scripts/verify-course.mjs csharp` (about 20 minutes), update `tests/course-csharp.test.mjs` and its native fixtures, screenshots. Owner reviews before Phase D.
 
 ### Phase D: TypeScript course rewrite
