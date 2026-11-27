@@ -1,4 +1,4 @@
-function caption(entry: Entry): string {
-  if (entry.kind === "ready") return "Ready";
-  return entry.reason;
+function caption(door: Door): string {
+  if (door.kind === "open") return "Open";
+  return door.reason;
 }

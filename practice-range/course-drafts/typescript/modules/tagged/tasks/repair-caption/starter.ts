@@ -1,5 +1,5 @@
-function caption(entry: Entry): string {
-  const text = entry.reason;
-  if (entry.kind === "blocked") return text;
-  return "Ready";
+function caption(door: Door): string {
+  const text = door.reason;
+  if (door.kind === "locked") return text;
+  return "Open";
 }

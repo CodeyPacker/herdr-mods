@@ -1,4 +1,4 @@
-function describe(update: Update): string {
-  if (update.kind === "queued") return "Next: " + update.title;
+function describe(workout: Workout): string {
+  if (workout.kind === "planned") return "Next: " + workout.title;
   return "Minutes: 0";
 }

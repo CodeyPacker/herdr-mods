@@ -1,4 +1,4 @@
-function describe(update: Update): string {
-  if (update.kind === "done") return "Minutes: " + update.minutes;
-  return "Next: " + update.title;
+function describe(workout: Workout): string {
+  if (workout.kind === "done") return "Minutes: " + workout.minutes;
+  return "Next: " + workout.title;
 }

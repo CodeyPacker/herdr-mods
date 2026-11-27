@@ -6,7 +6,7 @@
     "discriminant",
     "object-union"
   ],
-  "prompt": "Declare the type Delivery for exactly two message shapes. { kind: \"sent\", receipt: string } describes success. { kind: \"failed\", reason: string } describes failure. Require the matching field for each tag and reject other tag values. These are ordinary structural object types. Extra keys on existing objects are outside the task. No runtime code is required.",
+  "prompt": "Declare `type Delivery` with exactly two shapes: `{ kind: \"sent\"; receipt: string }` for success and `{ kind: \"failed\"; reason: string }` for failure. Each tag must require its own field, and any other `kind` must be rejected. Only the type is checked. No runtime code is needed.",
   "hints": [
     "Each shape has a required kind and one required text field.",
     "A type with two optional fields permits a message missing both fields.",

@@ -1,1 +1,1 @@
-type Entry = { kind: "ready" } | { kind: "blocked"; reason: string };
+type Door = { kind: "open" } | { kind: "locked"; reason: string };

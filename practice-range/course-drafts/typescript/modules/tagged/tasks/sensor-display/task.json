@@ -6,7 +6,7 @@
     "discriminant",
     "narrowing"
   ],
-  "prompt": "A sensor returns Reading. Its boolean tag ok identifies a measurement or a failure. Implement display(reading: Reading): string. For a measurement return its degrees as text followed by \" C\". For a failure return its message exactly. Zero and negative degrees and an empty message are valid.",
+  "prompt": "A sensor returns a `Reading`. Its boolean tag `ok` says whether it is a measurement or a failure. Write `display(reading: Reading): string`. For a measurement, return the degrees followed by `\" C\"`. For a failure, return its `message` exactly. Zero and negative degrees and an empty message are valid.",
   "hints": [
     "Find the field present in both shapes.",
     "The boolean tag tells you which payload exists even if its value is zero or empty.",

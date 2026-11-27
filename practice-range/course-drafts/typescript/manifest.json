@@ -262,7 +262,8 @@
         "course:ts-foundations/module/missing",
         "course:ts-foundations/module/functions",
         "course:ts-foundations/module/shapes",
-        "course:ts-foundations/module/decisions"
+        "course:ts-foundations/module/decisions",
+        "course:ts-foundations/module/unions"
       ],
       "teaches": [
         "discriminant",
@@ -271,7 +272,7 @@
       "status": "sample",
       "source": {
         "kind": "bundled",
-        "path": "modules/tagged/module.json"
+        "path": "modules/tagged/module.md"
       }
     },
     {

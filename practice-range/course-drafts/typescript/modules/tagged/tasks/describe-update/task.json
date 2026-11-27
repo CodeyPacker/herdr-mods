@@ -1,16 +1,16 @@
 {
   "id": "course:ts-foundations/task/describe-update",
   "role": "guided",
-  "title": "Print the actual duration",
+  "title": "Print the workout length",
   "concepts": [
     "discriminant",
     "narrowing"
   ],
-  "prompt": "Update has two shapes. A queued update carries title, and a done update carries minutes. The supplied starter handles queued updates. Complete describe so a done update produces \"Minutes: \" followed by its minutes, including zero. Preserve \"Next: \" followed by the title for queued updates, including an empty title.",
+  "prompt": "`Workout` has two shapes. A planned workout has a `title`. A done workout has `minutes`. The starter handles planned workouts. Complete `describe` so a done workout gives `\"Minutes: \"` followed by its minutes, including 0. Keep `\"Next: \"` followed by the title for planned workouts, even an empty title.",
   "hints": [
-    "Which shape reaches the final return after the early return?",
-    "Look at the field paired with the done tag.",
-    "Combine the required prefix with the numeric field. String(value) converts a number to text."
+    "After the early `return`, which shape is left?",
+    "Look at the field that goes with the `\"done\"` tag.",
+    "`String(workout.minutes)` turns the number into text."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -18,10 +18,10 @@
   "mode": "script",
   "rules": [],
   "checks": [
-    "describe({ kind: \"queued\", title: \"Paint\" }) === \"Next: Paint\"",
+    "describe({ kind: \"planned\", title: \"Run\" }) === \"Next: Run\"",
     "describe({ kind: \"done\", minutes: 0 }) === \"Minutes: 0\"",
     "describe({ kind: \"done\", minutes: 23 }) === \"Minutes: 23\"",
-    "describe({ kind: \"queued\", title: \"\" }) === \"Next: \""
+    "describe({ kind: \"planned\", title: \"\" }) === \"Next: \""
   ],
   "typeChecks": [],
   "rejects": [],
@@ -34,7 +34,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-fixed.ts",
-      "misconception": "Uses the sample zero for every duration.",
+      "misconception": "Prints the same 0 for every done workout.",
       "witness": {
         "fixture": "updates",
         "kind": "result",
@@ -43,7 +43,7 @@
     },
     {
       "source": "wrong-shared.ts",
-      "misconception": "Reads a field before checking which shape arrived.",
+      "misconception": "Reads `title` before checking which shape arrived.",
       "witness": {
         "fixture": "updates",
         "kind": "compile",
@@ -51,5 +51,5 @@
       }
     }
   ],
-  "feedback": "Look at the tag in the failing input and use the value that belongs to that shape."
+  "feedback": "After the early `return`, which shape is left?"
 }

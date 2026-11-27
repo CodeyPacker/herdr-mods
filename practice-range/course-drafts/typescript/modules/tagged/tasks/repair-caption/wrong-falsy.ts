@@ -1,4 +1,4 @@
-function caption(entry: Entry): string {
-  if (entry.kind === "blocked" && entry.reason) return entry.reason;
-  return "Ready";
+function caption(door: Door): string {
+  if (door.kind === "locked" && door.reason) return door.reason;
+  return "Open";
 }

@@ -7,7 +7,7 @@
     "narrowing",
     "numeric-expression"
   ],
-  "prompt": "Write nextCount(count: number, edit: Edit): number. An add edit increases count by its amount. A set edit replaces count with its value. A keep edit returns count. Zero and negative counts, amounts and values are valid. Edit is supplied. Return the calculated number.",
+  "prompt": "Write `nextCount(count: number, edit: Edit): number`. An `\"add\"` edit adds its `amount` to `count`. A `\"set\"` edit replaces `count` with its `value`. A `\"keep\"` edit returns `count`. Zero and negative numbers are valid everywhere. `Edit` is supplied.",
   "hints": [
     "Describe the change each tag makes to the original count.",
     "The variant with amount adds. The variant with value replaces.",

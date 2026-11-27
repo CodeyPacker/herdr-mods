@@ -1,1 +1,1 @@
-type Update = { kind: "queued"; title: string } | { kind: "done"; minutes: number };
+type Workout = { kind: "planned"; title: string } | { kind: "done"; minutes: number };

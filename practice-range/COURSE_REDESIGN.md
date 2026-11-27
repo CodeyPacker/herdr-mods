@@ -244,7 +244,8 @@ Same rules as Phase C, new content version, 16 modules from the table.
     - Tasks now use `Profile`/`nicknameOf`, `orderLabel` and `deliveryText`. Added an optional chaining step and prediction (`chain`). The `string | number` and literal union tasks stay here, so D8 should go further than `typeof` and a three-value literal union.
 - [x] D8 unions · Union and literal types (new module: write `modules/unions/module.md` and 2 to 4 tasks with wrong answers, add `source` to its manifest entry)
     - Teaches widening (`const` vs `let`), narrowing with `Array.isArray`, and named literal unions. Tasks: `unions-join-tags`, `unions-sizes` (type checks and rejects), `unions-lights` (review after Tagged). Added `outcome/unions` to the manifest.
-- [ ] D9 tagged · Discriminated unions
+- [x] D9 tagged · Discriminated unions
+    - The example is now a coffee `Pickup` (example id `board` kept). `describe-update` uses `Workout`, `repair-caption` uses `Door`. The other three tasks only got clearer prompts. Unions is now a prerequisite of Tagged.
 - [ ] D10 collections · Transform arrays, maps and sets
 - [ ] D11 boundary · unknown and type guards
 - [ ] D12 modules · Modules
