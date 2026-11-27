@@ -1,2 +1,2 @@
-Console.WriteLine("Redy")
-Console.WriteLine("Open");
+Console.WriteLine("Helo")
+Console.WriteLine("Welcome back");

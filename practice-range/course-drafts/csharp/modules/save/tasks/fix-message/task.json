@@ -1,17 +1,17 @@
 {
   "id": "course:cs-foundations/task/save-fix-message",
   "role": "guided",
-  "title": "Repair the first message",
+  "title": "Repair the greeting",
   "concepts": [
     "save-run",
     "read-output",
     "compiler-error"
   ],
-  "prompt": "The program should print Ready on one line and Open on the next. The starter does not compile, and its first message has a spelling mistake. Read the compiler error, repair the line it names, then fix the text.",
+  "prompt": "The program should print `Hello` on one line and `Welcome back` on the next. The starter does not compile, and its first word is misspelled. Read the compiler error, repair the line it names, then fix the text.",
   "hints": [
     "The error names a line and says what the compiler expected there.",
     "Every statement ends with a semicolon. Add the missing one, then save again.",
-    "Once it compiles, compare the first printed line with the word Ready, letter by letter."
+    "Once it compiles, compare the first printed line with the word Hello, letter by letter."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -20,10 +20,10 @@
   "captureOutput": true,
   "rules": [],
   "checks": [
-    "__Output() == \"Ready\\nOpen\""
+    "__Output() == \"Hello\\nWelcome back\""
   ],
   "checkLabels": [
-    "The output must be Ready, then Open, on two lines."
+    "The output must be Hello, then Welcome back, on two lines."
   ],
   "fixtures": [
     {

@@ -1,1 +1,1 @@
-Console.WriteLine("Task board\nOpen: 3\nDone: 1");
+Console.WriteLine("Corner Cafe\nLatte: 4.50\nTotal: 4.50");

@@ -1,1 +1,1 @@
-Console.WriteLine("Card: Pack boxes\nStatus: waiting");
+Console.WriteLine("Name: Ada Lovelace\nRole: engineer");

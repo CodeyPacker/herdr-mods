@@ -1,16 +1,16 @@
 {
   "id": "course:cs-foundations/task/save-echo-card",
   "role": "review",
-  "title": "Print a task card",
+  "title": "Print a name badge",
   "concepts": [
     "save-run",
     "read-output"
   ],
-  "prompt": "Print two lines, exactly: Card: Pack boxes, then Status: waiting.",
+  "prompt": "Print two lines, exactly: `Name: Ada Lovelace`, then `Role: engineer`.",
   "hints": [
     "One statement prints one line.",
     "Put each line's text in double quotes inside Console.WriteLine( ).",
-    "Check the capital letters: Card, Pack and Status start with a capital. boxes and waiting do not."
+    "Check the capital letters: Name, Ada, Lovelace and Role start with a capital. engineer does not."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -19,10 +19,10 @@
   "captureOutput": true,
   "rules": [],
   "checks": [
-    "__Output() == \"Card: Pack boxes\\nStatus: waiting\""
+    "__Output() == \"Name: Ada Lovelace\\nRole: engineer\""
   ],
   "checkLabels": [
-    "The output must be Card: Pack boxes, then Status: waiting, on two lines."
+    "The output must be Name: Ada Lovelace, then Role: engineer, on two lines."
   ],
   "fixtures": [
     {
@@ -33,7 +33,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-swapped.cs",
-      "misconception": "Prints the status before the card.",
+      "misconception": "Prints the role before the name.",
       "witness": {
         "fixture": "cases",
         "kind": "result",

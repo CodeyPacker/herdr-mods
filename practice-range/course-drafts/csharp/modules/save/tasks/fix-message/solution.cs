@@ -1,2 +1,2 @@
-Console.WriteLine("Ready");
-Console.WriteLine("Open");
+Console.WriteLine("Hello");
+Console.WriteLine("Welcome back");

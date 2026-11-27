@@ -1,16 +1,16 @@
 {
   "id": "course:cs-foundations/task/save-board-sign",
   "role": "independent",
-  "title": "Print the board sign",
+  "title": "Print a receipt",
   "concepts": [
     "save-run",
     "read-output"
   ],
-  "prompt": "Print three lines, exactly: Task board, then Open: 3, then Done: 1. The starter prints the first line.",
+  "prompt": "Print three lines, exactly: `Corner Cafe`, then `Latte: 4.50`, then `Total: 4.50`. The starter prints the first line.",
   "hints": [
     "How many lines must print, and how many does the starter print?",
     "Each line needs its own Console.WriteLine statement with the text in double quotes.",
-    "Add a statement that prints Open: 3 and another that prints Done: 1. Keep the colon and the space."
+    "Add a statement that prints Latte: 4.50 and another that prints Total: 4.50. Keep the colon and the space."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -19,10 +19,10 @@
   "captureOutput": true,
   "rules": [],
   "checks": [
-    "__Output() == \"Task board\\nOpen: 3\\nDone: 1\""
+    "__Output() == \"Corner Cafe\\nLatte: 4.50\\nTotal: 4.50\""
   ],
   "checkLabels": [
-    "The output must be Task board, Open: 3 and Done: 1 on three lines."
+    "The output must be Corner Cafe, Latte: 4.50 and Total: 4.50 on three lines."
   ],
   "fixtures": [
     {

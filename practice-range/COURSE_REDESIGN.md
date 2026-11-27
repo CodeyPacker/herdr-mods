@@ -154,7 +154,7 @@ New content version `0.2.0-preview.1`, no compatibility with 0.1.0 (old enrollme
 - [x] C0 New `course-drafts/csharp/OUTLINE.md` and `manifest.json` for the 16 modules. Remove the project file and capstone modules from the manifest.
     - Kept the 0.1.0 module keys (save, values, decisions, ...) so task IDs and files stay put. Only titles and content change. Course title is now "Learn C#", content version 0.2.0-preview.1. `tracker`, `report` and `project/` are deleted. Do not run `build-course.mjs csharp` until C18: a rebuild with a new version archives 0.1.0, and the pack should only change once.
     - `node scripts/verify-course.mjs csharp <key>` checks one module in a few minutes. A full run also checks R1 to R4, which may fail until C17.
-- [ ] C1 Run a program, read errors
+- [x] C1 Run a program, read errors
 - [ ] C2 Types and values
 - [ ] C3 Control flow
 - [ ] C4 Methods

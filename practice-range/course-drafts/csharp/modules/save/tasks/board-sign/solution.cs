@@ -1,3 +1,3 @@
-Console.WriteLine("Task board");
-Console.WriteLine("Open: 3");
-Console.WriteLine("Done: 1");
+Console.WriteLine("Corner Cafe");
+Console.WriteLine("Latte: 4.50");
+Console.WriteLine("Total: 4.50");
