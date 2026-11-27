@@ -1,1 +1,1 @@
-type Task = { owner?: string | null };
+type Profile = { nickname?: string | null };

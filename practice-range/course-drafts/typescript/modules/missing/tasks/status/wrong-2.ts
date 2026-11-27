@@ -1,3 +1,3 @@
-function statusText(status: "open" | "done" | null): string {
-  return status === "open" ? "Active" : "Closed";
+function deliveryText(status: "shipped" | "delivered" | null): string {
+  return status === "shipped" ? "On the way" : "Arrived";
 }

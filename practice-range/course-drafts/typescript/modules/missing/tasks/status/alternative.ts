@@ -1,7 +1,7 @@
-function statusText(status: "open" | "done" | null): string {
+function deliveryText(status: "shipped" | "delivered" | null): string {
   switch (status) {
     case null: return "Unknown";
-    case "done": return "Closed";
-    case "open": return "Active";
+    case "delivered": return "Arrived";
+    case "shipped": return "On the way";
   }
 }

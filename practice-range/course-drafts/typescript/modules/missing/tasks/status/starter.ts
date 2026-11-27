@@ -1,3 +1,3 @@
-function statusText(status: "open" | "done" | null): string {
+function deliveryText(status: "shipped" | "delivered" | null): string {
   return "Unknown";
 }

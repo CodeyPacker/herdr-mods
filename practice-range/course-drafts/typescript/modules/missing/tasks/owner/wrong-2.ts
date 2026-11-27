@@ -1,4 +1,4 @@
-function ownerName(task: Task): string {
-  if (task.owner === null) return "Unassigned";
-  return String(task.owner);
+function nicknameOf(profile: Profile): string {
+  if (profile.nickname === null) return "No nickname";
+  return String(profile.nickname);
 }

@@ -1,18 +1,18 @@
 {
   "id": "course:ts-foundations/task/missing-status",
   "role": "review",
-  "title": "Describe a missing status",
+  "title": "Describe a missing delivery state",
   "concepts": [
     "optional",
     "nullish",
     "literal-union",
     "narrowing"
   ],
-  "prompt": "A status is \"open\", \"done\" or null. Return \"Unknown\" for null, \"Active\" for open, and \"Closed\" for done.",
+  "prompt": "A delivery state is `\"shipped\"`, `\"delivered\"` or `null`. Write `deliveryText`: return `\"Unknown\"` for `null`, `\"On the way\"` for `\"shipped\"` and `\"Arrived\"` for `\"delivered\"`.",
   "hints": [
-    "List all three allowed inputs.",
-    "Treat the missing case separately.",
-    "Match each remaining literal with its requested text."
+    "There are three possible inputs. List them.",
+    "Handle `null` on its own first.",
+    "Match each remaining text value to its result."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -20,9 +20,9 @@
   "mode": "script",
   "rules": [],
   "checks": [
-    "__same(statusText(null), \"Unknown\")",
-    "__same(statusText(\"done\"), \"Closed\")",
-    "__same(statusText(\"open\"), \"Active\")"
+    "__same(deliveryText(null), \"Unknown\")",
+    "__same(deliveryText(\"delivered\"), \"Arrived\")",
+    "__same(deliveryText(\"shipped\"), \"On the way\")"
   ],
   "typeChecks": [],
   "rejects": [],
@@ -35,7 +35,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Merges open and done.",
+      "misconception": "Gives `\"delivered\"` the same text as `\"shipped\"`.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -44,7 +44,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Merges missing and done.",
+      "misconception": "Gives `null` the same text as `\"delivered\"`.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -52,5 +52,5 @@
       }
     }
   ],
-  "feedback": "List all three allowed inputs."
+  "feedback": "There are three possible inputs. List them."
 }

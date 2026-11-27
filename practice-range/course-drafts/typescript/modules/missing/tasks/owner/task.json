@@ -1,18 +1,18 @@
 {
   "id": "course:ts-foundations/task/missing-owner",
   "role": "guided",
-  "title": "Keep empty owner text",
+  "title": "Keep an empty nickname",
   "concepts": [
     "optional",
     "nullish",
     "literal-union",
     "narrowing"
   ],
-  "prompt": "Return the supplied owner's text exactly if present, including empty text. Return Unassigned for a missing or null owner.",
+  "prompt": "Write `nicknameOf(profile: Profile): string`. Return `profile.nickname` exactly when it is a string, even an empty one. Return `\"No nickname\"` when it is missing or `null`.",
   "hints": [
-    "Try an empty owner first.",
+    "Try `{ nickname: \"\" }` first. Empty text is still a nickname.",
     "Which two values mean missing?",
-    "Use a nullish fallback or two explicit checks."
+    "`??` falls back only for `null` and `undefined`."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -20,10 +20,10 @@
   "mode": "script",
   "rules": [],
   "checks": [
-    "__same(ownerName({owner:\"\"}), \"\")",
-    "__same(ownerName({}), \"Unassigned\")",
-    "__same(ownerName({owner:null}), \"Unassigned\")",
-    "__same(ownerName({owner:\"Mo\"}), \"Mo\")"
+    "__same(nicknameOf({nickname:\"\"}), \"\")",
+    "__same(nicknameOf({}), \"No nickname\")",
+    "__same(nicknameOf({nickname:null}), \"No nickname\")",
+    "__same(nicknameOf({nickname:\"Sam\"}), \"Sam\")"
   ],
   "typeChecks": [],
   "rejects": [],
@@ -36,7 +36,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Drops empty text.",
+      "misconception": "Uses `||`, which also replaces empty text.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -45,7 +45,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Handles only null.",
+      "misconception": "Checks only for `null`, so a missing field prints \"undefined\".",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -53,5 +53,5 @@
       }
     }
   ],
-  "feedback": "Try an empty owner first."
+  "feedback": "Try `{ nickname: \"\" }` first. Empty text is still a nickname."
 }

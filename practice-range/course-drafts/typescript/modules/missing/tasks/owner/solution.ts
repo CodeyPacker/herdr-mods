@@ -1,3 +1,3 @@
-function ownerName(task: Task): string {
-  return task.owner ?? "Unassigned";
+function nicknameOf(profile: Profile): string {
+  return profile.nickname ?? "No nickname";
 }

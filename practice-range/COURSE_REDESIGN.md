@@ -240,7 +240,8 @@ Same rules as Phase C, new content version, 16 modules from the table.
     - Added a tuple explanation step, a tuple prediction (`tuple-slots`) and task `lists-min-max` (`[number, number]` return, checked with a type check and a reject). `longTasks` is now `atLeast`. A wrong answer caught by `rejects` or `typeChecks` uses witness kind `types`.
 - [x] D6 shapes · Object types and interfaces
     - Tasks now use `Book`/`retitle`, `Seat` and `Point`. Added an interface step and a structural typing prediction (`fits`).
-- [ ] D7 missing · null, undefined and optional
+- [x] D7 missing · null, undefined and optional
+    - Tasks now use `Profile`/`nicknameOf`, `orderLabel` and `deliveryText`. Added an optional chaining step and prediction (`chain`). The `string | number` and literal union tasks stay here, so D8 should go further than `typeof` and a three-value literal union.
 - [ ] D8 unions · Union and literal types (new module: write `modules/unions/module.md` and 2 to 4 tasks with wrong answers, add `source` to its manifest entry)
 - [ ] D9 tagged · Discriminated unions
 - [ ] D10 collections · Transform arrays, maps and sets

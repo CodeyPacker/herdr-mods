@@ -1,5 +1,5 @@
-function statusText(status: "open" | "done" | null): string {
+function deliveryText(status: "shipped" | "delivered" | null): string {
   if (status === null) return "Unknown";
-  if (status === "open") return "Active";
-  return "Closed";
+  if (status === "shipped") return "On the way";
+  return "Arrived";
 }
