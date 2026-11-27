@@ -1,0 +1,338 @@
+{
+  "schemaVersion": "1-draft",
+  "contentVersion": "0.1.0-draft.1",
+  "kind": "reading",
+  "id": "course:linux",
+  "title": "Linux and the shell",
+  "audience": [
+    "Has used a computer's terminal a little, or not at all",
+    "Wants to work confidently on Linux servers and in containers and pipelines"
+  ],
+  "prerequisiteConcepts": [],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:linux/module/shell",
+      "order": "listed"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/shell",
+      "description": "Read a command as a program with options and arguments, look up what it does, and use its exit status.",
+      "assessment": "course:linux/module/shell"
+    },
+    {
+      "id": "outcome/files",
+      "description": "Read absolute and relative paths, and create, copy, move and delete files without losing any.",
+      "assessment": "course:linux/module/files"
+    },
+    {
+      "id": "outcome/viewing",
+      "description": "Read long files, search inside them with patterns, and find files by name, size and age.",
+      "assessment": "course:linux/module/viewing"
+    },
+    {
+      "id": "outcome/pipes",
+      "description": "Redirect a command's output and errors, and join commands into a pipeline.",
+      "assessment": "course:linux/module/pipes"
+    },
+    {
+      "id": "outcome/text",
+      "description": "Sort, count, extract and replace text with small tools joined by pipes.",
+      "assessment": "course:linux/module/text"
+    },
+    {
+      "id": "outcome/permissions",
+      "description": "Read and change a file's owner and mode, and fix a permission error without making files world-writable.",
+      "assessment": "course:linux/module/permissions"
+    },
+    {
+      "id": "outcome/processes",
+      "description": "Find a process, stop it properly, and keep a task running after logout.",
+      "assessment": "course:linux/module/processes"
+    },
+    {
+      "id": "outcome/environment",
+      "description": "Set and export variables, explain how PATH finds a program, and quote values correctly.",
+      "assessment": "course:linux/module/environment"
+    },
+    {
+      "id": "outcome/scripts",
+      "description": "Write a script that checks its arguments, stops on errors and cleans up after itself.",
+      "assessment": "course:linux/module/scripts"
+    },
+    {
+      "id": "outcome/packages",
+      "description": "Install and update software with a package manager, and work out what is installed and from where.",
+      "assessment": "course:linux/module/packages"
+    },
+    {
+      "id": "outcome/services",
+      "description": "Control a service with systemd, read a unit file, and find the reason a service will not start.",
+      "assessment": "course:linux/module/services"
+    },
+    {
+      "id": "outcome/network",
+      "description": "Inspect a machine's network setup and test a connection step by step with the standard tools.",
+      "assessment": "course:linux/module/network"
+    },
+    {
+      "id": "outcome/ssh",
+      "description": "Use SSH with keys, a config file and a jump host, and say what must never leave your machine.",
+      "assessment": "course:linux/module/ssh"
+    },
+    {
+      "id": "outcome/disk",
+      "description": "Measure disk, inodes, memory and load, and read the numbers correctly.",
+      "assessment": "course:linux/module/disk"
+    },
+    {
+      "id": "outcome/review",
+      "description": "Diagnose a broken server from its output and review a faulty script, without help.",
+      "assessment": "course:linux/module/review"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:linux/module/shell",
+      "title": "The shell and commands",
+      "prerequisites": [],
+      "teaches": [
+        "command",
+        "exit-status"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/shell/module.md"
+      }
+    },
+    {
+      "id": "course:linux/module/files",
+      "title": "Files and directories",
+      "prerequisites": [
+        "course:linux/module/shell"
+      ],
+      "teaches": [
+        "path",
+        "glob"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/files/module.md"
+      }
+    },
+    {
+      "id": "course:linux/module/viewing",
+      "title": "Read and search files",
+      "prerequisites": [
+        "course:linux/module/files"
+      ],
+      "teaches": [
+        "grep",
+        "find"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/viewing/module.md"
+      }
+    },
+    {
+      "id": "course:linux/module/pipes",
+      "title": "Pipes and redirection",
+      "prerequisites": [
+        "course:linux/module/viewing"
+      ],
+      "teaches": [
+        "pipe",
+        "redirection"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/pipes/module.md"
+      }
+    },
+    {
+      "id": "course:linux/module/text",
+      "title": "Process text",
+      "prerequisites": [
+        "course:linux/module/pipes"
+      ],
+      "teaches": [
+        "text-processing"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/text/module.md"
+      }
+    },
+    {
+      "id": "course:linux/module/permissions",
+      "title": "Users and permissions",
+      "prerequisites": [
+        "course:linux/module/text"
+      ],
+      "teaches": [
+        "file-permissions",
+        "sudo"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/permissions/module.md"
+      }
+    },
+    {
+      "id": "course:linux/module/processes",
+      "title": "Processes and signals",
+      "prerequisites": [
+        "course:linux/module/permissions"
+      ],
+      "teaches": [
+        "process",
+        "signal"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/processes/module.md"
+      }
+    },
+    {
+      "id": "course:linux/module/environment",
+      "title": "Variables and the environment",
+      "prerequisites": [
+        "course:linux/module/processes"
+      ],
+      "teaches": [
+        "environment-variable",
+        "quoting"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/environment/module.md"
+      }
+    },
+    {
+      "id": "course:linux/module/scripts",
+      "title": "Shell scripts",
+      "prerequisites": [
+        "course:linux/module/environment"
+      ],
+      "teaches": [
+        "shell-script",
+        "strict-mode"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/scripts/module.md"
+      }
+    },
+    {
+      "id": "course:linux/module/packages",
+      "title": "Install and update software",
+      "prerequisites": [
+        "course:linux/module/scripts"
+      ],
+      "teaches": [
+        "package-manager",
+        "repository"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/packages/module.md"
+      }
+    },
+    {
+      "id": "course:linux/module/services",
+      "title": "Services and logs",
+      "prerequisites": [
+        "course:linux/module/packages"
+      ],
+      "teaches": [
+        "service",
+        "journal"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/services/module.md"
+      }
+    },
+    {
+      "id": "course:linux/module/network",
+      "title": "Network tools",
+      "prerequisites": [
+        "course:linux/module/services"
+      ],
+      "teaches": [
+        "network-tools"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/network/module.md"
+      }
+    },
+    {
+      "id": "course:linux/module/ssh",
+      "title": "Remote access with SSH",
+      "prerequisites": [
+        "course:linux/module/network"
+      ],
+      "teaches": [
+        "ssh",
+        "key-pair"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/ssh/module.md"
+      }
+    },
+    {
+      "id": "course:linux/module/disk",
+      "title": "Disks, memory and load",
+      "prerequisites": [
+        "course:linux/module/ssh"
+      ],
+      "teaches": [
+        "disk-usage",
+        "load"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/disk/module.md"
+      }
+    },
+    {
+      "id": "course:linux/module/review",
+      "title": "Diagnose a broken server",
+      "prerequisites": [
+        "course:linux/module/disk"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/review/module.md"
+      }
+    }
+  ],
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  },
+  "runtimeContentVersion": "0.1.0-preview.1"
+}

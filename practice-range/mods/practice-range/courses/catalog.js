@@ -13,4 +13,5 @@ export const bundledCourses = [
   { id: "course:system-design", file: "system-design.json" },
   { id: "course:databases", file: "databases.json" },
   { id: "course:security", file: "security.json" },
+  { id: "course:linux", file: "linux.json" },
 ];
