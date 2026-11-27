@@ -196,11 +196,12 @@ Owner feedback after C18 (2026-11-26), done:
 
 Mockup: "Screen 3, revised after first use" in the redesign doc.
 
-- [ ] A2.1 Lesson page in two panes: a step list on the left (Learn steps, then "Practice in your editor" for exercise steps; done, current and exercise marks; "N of M done" at the bottom) and the step on the right, in a column about 70 characters wide.
-- [ ] A2.2 Step content as numbered stages: 1 Read the code, 2 Pick your answer, 3 Run it to check (Run locked until answered; output shown beside the Run button with "matches").
-- [ ] A2.3 Bottom bar: Previous, "X / Y", and Continue as the only filled button. Shortcuts in one line below.
-- [ ] A2.4 Feedback and choices render inline code (feedback still shows raw backticks).
-- [ ] A2.5 Apply the same narrow column and bottom bar to the course page and the exercise page.
+- [x] A2.1 Lesson page in two panes: a step list on the left (Learn steps, then "Practice in your editor" for exercise steps; done, current and exercise marks; "N of M done" at the bottom) and the step on the right, in a column about 70 characters wide.
+- [x] A2.2 Step content as numbered stages: 1 Read the code, 2 Pick your answer, 3 Run it to check (Run locked until answered; output shown beside the Run button with "matches").
+- [x] A2.3 Bottom bar: Previous, "X / Y", and Continue as the only filled button. Shortcuts in one line below.
+- [x] A2.4 Feedback and choices render inline code (feedback still shows raw backticks).
+- [x] A2.5 Apply the same narrow column and bottom bar to the course page and the exercise page.
+    - Course and exercise pages use a 760-wide centred column; the lesson uses 1040 for the step list plus a 680-wide step. "Open in editor" is the filled button on exercises. GPUI elements take no children after they are added to a parent, so containers are attached last.
 
 ### Phase D: TypeScript course rewrite
 

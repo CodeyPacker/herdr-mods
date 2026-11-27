@@ -2,7 +2,7 @@ import { div } from "gpui-kit";
 import { v_flex, h_flex, TextView, InputState } from "gpui-base";
 import { watchFolder, window as appWindow } from "herdr";
 import { keyButton, spinner, textInput } from "../kit/controls.js";
-import { banner, card, paneBar, sectionLabel } from "../kit/pane.js";
+import { banner, card, inkOn, paneBar, sectionLabel } from "../kit/pane.js";
 import { courseCommand } from "./bridge.js";
 import { generateRepoLesson, generateExtraPractice } from "../bridge.js";
 import { tutorChat } from "../tutor/panel.js";
@@ -16,6 +16,21 @@ const markdown = (id, text) => TextView.markdown(id, text).selectable();
 /** A progress bar whose empty part shows on a raised card. @param {Theme} t @param {number} fraction */
 const progressBar = (t, fraction) => div().w_full().h(4).rounded(2).bg(t.border).overflow_hidden()
   .child(div().h_full().rounded(2).bg(t.accent).w(`${Math.round(Math.min(1, Math.max(0, fraction)) * 1000) / 10}%`));
+/**
+ * The screen's main action: filled in the accent when ready, outlined otherwise. Still clickable when not ready.
+ * @param {Theme} t @param {string} id @param {string} label @param {boolean} enabled @param {boolean} ready @param {(cx: Context) => void} click
+ */
+const primaryButton = (t, id, label, enabled, ready, click) => h_flex().id(id).flex_none().h(30).px(16).items_center().rounded(8).border_1()
+  .border_color(ready ? t.accent : t.border).bg(ready ? t.accent : t.raised).text_size(12).font_semibold()
+  .text_color(!enabled ? t.dim : ready ? inkOn(t.accent) : t.foreground)
+  .when(enabled, el => el.cursor_pointer().hover(s => s.border_color(t.accent)).on_click((_e, cx) => click(cx))).child(label);
+/** A numbered stage label: "1  Read the code". @param {Theme} t @param {number} n @param {string} label @param {boolean} active */
+const stage = (t, n, label, active) => h_flex().gap(8).items_center().pt(4)
+  .child(h_flex().w(20).h(20).flex_none().rounded(10).border_1().border_color(active ? t.accent : t.border).bg(active ? t.selected : t.raised)
+    .items_center().justify_center().text_size(11).font_semibold().child(String(n)))
+  .child(div().text_size(12).when(active, el => el.font_semibold()).text_color(active ? t.foreground : t.muted).child(label));
+/** The kicker over a step title. */
+const KIND = { explanation: "LEARN", walkthrough: "WALKTHROUGH", prediction: "PREDICT", modification: "EXERCISE", independent: "EXERCISE", debugging: "EXERCISE" };
 /** A course's short name: its language (TypeScript, C#, SQL), or its own title for a reading course. @param {{ languageId?: string, title?: string, id: string }} course */
 const courseName = course => (course.languageId && findLanguage(course.languageId)?.name) || course.title || course.id;
 /** @param {string} path */
@@ -290,6 +305,12 @@ export class CoursePanel {
     else if (this.page === "modules" && key === "enter") { const next = this.nextStep(); if (next) this.run("open", next, cx); }
     else if (this.page === "lesson" && ["n", "right"].includes(key)) this.advance(1, cx);
     else if (this.page === "lesson" && ["p", "left"].includes(key)) this.advance(-1, cx);
+    else if (this.page === "lesson" && key === "r") {
+      const lesson = this.lesson(), step = lesson?.steps[this.data?.enrollment.position?.step ?? -1];
+      const id = [...(step?.examples ?? []), ...(step?.example ? [step.example] : [])].find(id => !lesson?.examples[id].readOnly);
+      const answered = (step?.questions ?? []).every(q => this.data?.enrollment.modules[lesson?.id ?? ""]?.questions?.[q]);
+      if (lesson && id && answered) this.run("example", { moduleId: lesson.id, exampleId: id }, cx);
+    }
     else if (this.page === "task") {
       const taskId = this.data?.enrollment.activeTask;
       if (key === "o") this.host.openEditor(cx);
@@ -318,20 +339,22 @@ export class CoursePanel {
 
   /** @param {Theme} t */
   render(t) {
-    const body = v_flex().id("course-body").flex_1().min_h(0).overflow_y_scroll().p(16).gap(12);
-    if (this.busy) body.child(h_flex().gap(8).child(spinner(t)).child(div().child(this.busy)));
-    if (this.generatingRepoLesson || this.generatingExtras) body.child(keyButton(t,"cancel-repo-lesson","","Cancel generation",Boolean(this.host.tutorRequestId),cx=>this.host.cancelTutor(cx)));
-    if (this.error) body.child(banner(t, this.error, t.blocked));
-    if (this.page === "catalog") this.catalogView(body, t);
-    else if (this.page === "settings") this.settingsView(body, t);
+    const body = v_flex().id("course-body").flex_1().min_h(0).overflow_y_scroll().p(16);
+    // Content sits in a centred column instead of the full window. The lesson is wider because it has a step list.
+    const column = v_flex().w_full().max_w(this.page === "lesson" ? 1040 : 760).mx_auto().gap(12);
+    if (this.busy) column.child(h_flex().gap(8).child(spinner(t)).child(div().child(this.busy)));
+    if (this.generatingRepoLesson || this.generatingExtras) column.child(keyButton(t,"cancel-repo-lesson","","Cancel generation",Boolean(this.host.tutorRequestId),cx=>this.host.cancelTutor(cx)));
+    if (this.error) column.child(banner(t, this.error, t.blocked));
+    if (this.page === "catalog") this.catalogView(column, t);
+    else if (this.page === "settings") this.settingsView(column, t);
     else if (this.data) {
-      if (this.page === "modules") this.modules(body, t);
-      else if (this.page === "lesson") this.lessonView(body, t);
-      else if (this.page === "repo-lesson") this.repoLessonView(body, t);
-      else if (this.page === "source") this.sourceView(body, t);
-      else if (this.page === "task") this.taskView(body, t);
+      if (this.page === "modules") this.modules(column, t);
+      else if (this.page === "lesson") this.lessonView(column, t);
+      else if (this.page === "repo-lesson") this.repoLessonView(column, t);
+      else if (this.page === "source") this.sourceView(column, t);
+      else if (this.page === "task") this.taskView(column, t);
       // The AI box belongs to exercises. On reading steps it looked like the place to write code.
-      if (this.page === "task" && this.host.tutor.enabled) body.child(sectionLabel(t, "ASK THE AI TUTOR")).child(tutorChat(t, {
+      if (this.page === "task" && this.host.tutor.enabled) column.child(sectionLabel(t, "ASK THE AI TUTOR")).child(tutorChat(t, {
         messages: this.host.tutorThreads[this.helpKey()] ?? [], busy: this.host.tutorBusy, error: this.host.tutorError,
         input: this.host.tutorInput, typing: this.host.typing, send: cx => this.host.askTutor(cx),
       }));
@@ -340,13 +363,22 @@ export class CoursePanel {
       : this.page === "settings" ? "Back"
       : this.data?.enrollment.review ? "End review" : this.page === "task" && !this.isReadiness(this.data?.enrollment.activeTask) ? "Back to lesson"
       : this.page === "lesson" ? "Course page" : this.page === "modules" ? "Courses" : "Back";
+    body.child(column);
     sweepCode();
+    const footer = paneBar(t).items_center().child(keyButton(t, "course-back", "", backLabel, !this.busy, cx => this.back(cx))).child(div().flex_1());
+    const lesson = this.page === "lesson" ? this.lesson() : null, position = this.data?.enrollment.position;
+    if (lesson && position) {
+      // Previous, where you are, and Continue: the one filled button, bright once the step is done.
+      const step = lesson.steps[position.step], last = position.step + 1 === lesson.steps.length;
+      const done = (step.questions ?? []).every(id => this.data?.enrollment.modules[lesson.id]?.questions?.[id]?.correct);
+      footer.child(keyButton(t, "course-previous", "", "Previous", !this.busy && position.step > 0, cx => this.advance(-1, cx)))
+        .child(div().px(12).text_size(12).text_color(t.muted).child(`${position.step + 1} / ${lesson.steps.length}`))
+        .child(primaryButton(t, "course-next", last ? "Finish module" : "Continue \u2192", !this.busy, done, cx => this.advance(1, cx)));
+    }
     // One line of shortcuts for this screen, instead of a key on every button.
-    const keys = ["esc back", ...(this.page === "modules" ? ["enter continue"] : this.page === "lesson" ? ["n next", "p previous"] : this.page === "task" ? ["o open in editor", "c check", "h hint"] : [])];
-    return v_flex().flex_1().min_h(0).child(body).child(paneBar(t).items_center()
-      .child(keyButton(t, "course-back", "", backLabel, !this.busy, cx => this.back(cx)))
-      .child(div().flex_1())
-      .child(div().text_size(11).text_color(t.dim).child(keys.join("   \u00b7   "))));
+    const keys = ["esc back", ...(this.page === "modules" ? ["enter continue"] : this.page === "lesson" ? ["p previous", "n continue", "r run"] : this.page === "task" ? ["o open in editor", "c check", "h hint"] : [])];
+    return v_flex().flex_1().min_h(0).child(body).child(footer)
+      .child(h_flex().px(16).pb(6).justify_end().text_size(11).text_color(t.dim).child(keys.join("  \u00b7  ")));
   }
 
   /**
@@ -520,81 +552,106 @@ export class CoursePanel {
       .child(keyButton(t,"source-next","","Next lines",!this.busy && Boolean(source.next),cx=>this.run("source",{...this.sourceRequest,line:source.next},cx))));
   }
 
-  /** @param {import("gpui-kit").Element} body @param {Theme} t */
+  /** The lesson: every step of the module on the left, the current step on the right. @param {import("gpui-kit").Element} body @param {Theme} t */
   lessonView(body, t) {
     const lesson = this.lesson(), position = this.data.enrollment.position;
     if (!lesson || !position) return;
     const step = lesson.steps[position.step], last = position.step + 1 === lesson.steps.length;
-    body.child(this.header(t, courseName(this.data.course), `${this.moduleNumber(lesson.id)}. ${lesson.title}`,
-      div().text_size(12).text_color(t.muted).child(`Step ${position.step + 1} of ${lesson.steps.length}`)))
-      .child(progressBar(t, (position.step + 1) / lesson.steps.length));
-    if (!this.data.course.reading && this.data.attachment?.available && this.host.tutor.enabled) body.child(keyButton(t,"course-repo-module","","Explain this topic using my repo",!this.busy,cx=>this.generateRepoLesson(lesson.id,cx)));
-    if (position.step === 0) {
-      // Say up front how the module works, so a reading step is not mistaken for a broken exercise.
-      const exerciseSteps = lesson.steps.flatMap((item, index) => (item.task || item.tasks?.length) ? [index + 1] : []);
-      const plan = exerciseSteps.length
-        ? `${lesson.steps.length} steps. Read each step and answer its question, then press Continue. ${exerciseSteps.length === 1 ? `Step ${exerciseSteps[0]} is an exercise: it opens` : `Steps ${exerciseSteps.slice(0, -1).join(", ")} and ${exerciseSteps.at(-1)} are exercises: each opens`} a file in your editor and checks it when you save.`
-        : `${lesson.steps.length} steps to read. Answer each question, then press Continue.`;
-      body.child(banner(t, plan));
-      if (lesson.intro !== step.text) body.child(richText(t, "course-intro", lesson.intro, this.data.course.codeFence));
-    }
-    body.child(div().text_size(16).font_semibold().child(step.title)).child(richText(t, "course-step", step.text, this.data.course.codeFence));
-    const exampleIds = [...(step.examples ?? []), ...(step.example ? [step.example] : [])];
     const progress = this.data.enrollment.modules[lesson.id];
-    // Predict first: a step's question comes before its Run button, which appears once every question is answered.
-    const answered = (step.questions ?? []).every(id => progress?.questions?.[id]);
+    const seen = new Set(progress?.seen ?? []);
+    const exercise = (/** @type {any} */ item) => Boolean(item.task || item.tasks?.length);
+    body.child(this.header(t, courseName(this.data.course), `${this.moduleNumber(lesson.id)}. ${lesson.title}`,
+      div().text_size(12).text_color(t.muted).child(`Step ${position.step + 1} of ${lesson.steps.length}`)));
+    // Step list: reading steps under Learn, exercise steps under Practice. Any step can be opened.
+    const rail = v_flex().w(220).flex_none().gap(2).p(10).rounded(10).bg(t.raised);
+    const row = (/** @type {any} */ item, /** @type {number} */ index) => {
+      const current = index === position.step, read = seen.has(index);
+      const mark = read && !current ? "\u2713" : current ? "\u25cf" : exercise(item) ? "\u25a1" : "\u25cb";
+      return h_flex().id(`course-step-${index}`).gap(8).px(8).py(5).rounded(6).items_center()
+        .when(current, el => el.bg(t.selected))
+        .when(!this.busy && !current, el => el.cursor_pointer().hover(s => s.bg(t.background)).on_click((_e, cx) => this.run("open", { moduleId: lesson.id, step: index }, cx)))
+        .child(div().w(14).flex_none().text_size(12).text_color(read && !current ? t.done : current ? t.accent : t.dim).child(mark))
+        .child(div().text_size(12).text_color(current ? t.foreground : read ? t.muted : t.foreground).when(current, el => el.font_semibold()).child(item.title));
+    };
+    rail.child(div().px(8).pb(4).text_size(10).font_semibold().text_color(t.dim).child("LEARN"));
+    lesson.steps.forEach((item, index) => { if (!exercise(item)) rail.child(row(item, index)); });
+    if (lesson.steps.some(exercise)) {
+      rail.child(div().px(8).pt(10).pb(4).text_size(10).font_semibold().text_color(t.dim).child("PRACTICE IN YOUR EDITOR"));
+      lesson.steps.forEach((item, index) => { if (exercise(item)) rail.child(row(item, index)); });
+    }
+    rail.child(div().px(8).pt(12).text_size(11).text_color(t.dim).child(`${lesson.steps.filter((_item, index) => seen.has(index)).length} of ${lesson.steps.length} done`));
+    // The step, in a column about 70 characters wide.
+    const main = v_flex().flex_1().min_w(0).max_w(680).gap(12);
+    // An element takes no children once it has a parent, so the panes are attached after they are filled.
+    const attach = () => { body.child(h_flex().gap(24).items_start().child(rail).child(main)); };
+    if (!this.data.course.reading && this.data.attachment?.available && this.host.tutor.enabled) main.child(h_flex().child(keyButton(t,"course-repo-module","","Explain this topic using my repo",!this.busy,cx=>this.generateRepoLesson(lesson.id,cx))));
+    main.child(div().text_size(11).font_semibold().text_color(t.accent).child(`STEP ${position.step + 1} OF ${lesson.steps.length} \u00b7 ${KIND[step.kind] ?? "LEARN"}`))
+      .child(div().text_size(18).font_semibold().child(step.title));
+    if (position.step === 0) {
+      const exerciseSteps = lesson.steps.flatMap((item, index) => exercise(item) ? [index + 1] : []);
+      if (lesson.intro !== step.text) main.child(richText(t, "course-intro", lesson.intro, this.data.course.codeFence));
+      if (exerciseSteps.length) main.child(div().text_size(12).text_color(t.muted).child(`Read each step, then Continue. ${exerciseSteps.length === 1 ? `Step ${exerciseSteps[0]} opens` : `Steps ${exerciseSteps.slice(0, -1).join(", ")} and ${exerciseSteps.at(-1)} open`} a file in your editor and check it when you save.`));
+    }
+    if (step.text) main.child(richText(t, "course-step", step.text, this.data.course.codeFence));
+    const exampleIds = [...(step.examples ?? []), ...(step.example ? [step.example] : [])];
+    const questions = step.questions ?? [];
+    // Predict first: a step's question comes before its Run button, which unlocks once every question is answered.
+    const answered = questions.every(id => progress?.questions?.[id]);
+    const runnable = exampleIds.filter(id => !lesson.examples[id].readOnly);
+    const staged = questions.length > 0 && exampleIds.length > 0;
+    if (staged) main.child(stage(t, 1, "Read the code", false));
     for (const id of exampleIds) {
       const example = lesson.examples[id];
       // An example can name its own fence, such as http or json. Otherwise it is in the course's language.
-      body.child(codeBlock(t, `course-example-${id}`, example.code, example.fence ?? this.data.course.codeFence ?? "typescript"));
+      main.child(codeBlock(t, `course-example-${id}`, example.code, example.fence ?? this.data.course.codeFence ?? "typescript"));
     }
-    for (const id of step.questions ?? []) {
+    if (questions.length) main.child(stage(t, staged ? 2 : 1, questions.length > 1 ? "Pick your answers" : "Pick your answer", !answered));
+    for (const id of questions) {
       const question = lesson.questions.find(question => question.id === id);
       const result = progress?.questions?.[id];
-      const box = card(t, { id: `course-question-box-${id}` }).child(div().text_size(11).text_color(t.dim).child("QUESTION"))
-        .child(richText(t, `course-question-${id}`, question.prompt, this.data.course.codeFence));
+      main.child(richText(t, `course-question-${id}`, question.prompt, this.data.course.codeFence));
       question.choices.forEach((choice, index) => {
         const picked = result?.choice === index;
-        box.child(h_flex().id(`course-choice-${id}-${index}`).px(10).py(6).rounded(8).border_1()
+        main.child(h_flex().id(`course-choice-${id}-${index}`).px(12).py(8).rounded(8).border_1()
           .border_color(picked ? (result?.correct ? t.done : t.blocked) : t.border).bg(picked ? t.selected : t.raised)
           .when(!this.busy, el => el.cursor_pointer().hover(s => s.border_color(t.accent)).on_click((_e, cx) => this.run("question", { moduleId: lesson.id, questionId: id, choice: index }, cx)))
-          .child(markdown(`course-choice-text-${id}-${index}`, choice.text)));
+          .child(div().flex_1().child(markdown(`course-choice-text-${id}-${index}`, choice.text)))
+          .when(picked, el => el.child(div().text_color(result?.correct ? t.done : t.blocked).child(result?.correct ? "\u2713" : "\u2715"))));
       });
-      if (result) box.child(div().text_color(result.correct ? t.done : t.foreground).child(`${result.correct ? "Right. " : "Not quite. "}${question.choices[result.choice].feedback}`));
-      body.child(box);
+      if (result) main.child(richText(t, `course-feedback-${id}`, `**${result.correct ? "Right." : "Not quite."}** ${question.choices[result.choice].feedback}`));
     }
-    for (const id of exampleIds) {
-      const example = lesson.examples[id];
-      if (example.readOnly) continue;
-      if (!answered) { body.child(div().text_size(12).text_color(t.muted).child("Answer the question first, then run the example to check your prediction.")); break; }
-      body.child(h_flex().child(keyButton(t, `course-run-example-${id}`, "", "Run example", !this.busy, cx => this.run("example", { moduleId: lesson.id, exampleId: id }, cx))));
-      const result = progress?.examples?.[id];
-      if (result) {
-        body.child(banner(t, result.title));
-        for (const [index, detail] of result.details.entries()) body.child(markdown(`course-example-result-${id}-${index}`, `\`\`\`text\n${detail}\n\`\`\``));
+    if (runnable.length) {
+      if (questions.length) main.child(stage(t, staged ? 3 : 2, "Run it to check", answered));
+      for (const id of runnable) {
+        const result = progress?.examples?.[id];
+        const out = result ? result.details.join("\n") : "";
+        main.child(h_flex().gap(12).items_start()
+          .child(keyButton(t, `course-run-example-${id}`, "", "\u25b6 Run", !this.busy && answered, cx => this.run("example", { moduleId: lesson.id, exampleId: id }, cx)))
+          .child(v_flex().flex_1().min_w(0).gap(4)
+            .when(!answered, el => el.child(div().text_size(12).text_color(t.dim).child("Unlocks after you answer.")))
+            .when(Boolean(result), el => el.child(div().text_size(11).text_color(result?.passed ? t.done : t.foreground).child(result?.title ?? ""))
+              .child(markdown(`course-example-result-${id}`, `\`\`\`text\n${out}\n\`\`\``)))));
       }
     }
     for (const id of [...(step.tasks ?? []), ...(step.task ? [step.task] : [])]) {
       const task = lesson.tasks.find(task => task.id === id);
-      const progress = this.data.enrollment.tasks[id];
-      body.child(h_flex().gap(8).items_center()
-        .child(keyButton(t, `course-task-${id}`, "", `Exercise: ${task.title}`, !this.busy, cx => this.run("task", { taskId: id }, cx)))
-        .child(div().text_size(12).text_color(progress?.passes ? t.done : t.muted).child(progress?.passes ? "Passed" : progress?.attempts ? "Started" : "")));
+      const done = this.data.enrollment.tasks[id];
+      main.child(card(t, { id: `course-task-card-${id}`, click: this.busy ? undefined : cx => this.run("task", { taskId: id }, cx) })
+        .child(h_flex().gap(8).items_center()
+          .child(div().flex_1().font_semibold().child(task.title))
+          .child(div().text_size(12).text_color(done?.passes ? t.done : t.muted).child(done?.passes ? "Passed" : done?.attempts ? "Started" : "Open exercise \u2192"))));
     }
-    if ((step.questions ?? []).length && (step.questions ?? []).every(id => progress?.questions?.[id]?.correct)) body.child(div().text_size(12).text_color(t.done).child(`Press ${last ? "Finish module" : "Continue"} for the next step.`));
-    body.child(h_flex().pt(8).gap(8).flex_wrap()
-      .child(keyButton(t, "course-previous", "", "Previous", !this.busy && position.step > 0, cx => this.advance(-1, cx)))
-      .child(keyButton(t, "course-next", "", last ? "Finish module" : "Continue", !this.busy, cx => this.advance(1, cx))));
-    if (!last) return;
+    if (!last) { attach(); return; }
     const topics = [...new Set((lesson.drills ?? []).map(id => id.split("/")[0]))];
-    if (topics.length) body.child(sectionLabel(t, "Keep practicing")).child(h_flex().gap(8).flex_wrap().children(topics.map(topic =>
+    if (topics.length) main.child(sectionLabel(t, "KEEP PRACTICING")).child(h_flex().gap(8).flex_wrap().children(topics.map(topic =>
       keyButton(t, `course-drill-${topic}`, "", `Practice ${topic}`, !this.busy && !this.data.enrollment.review, cx => this.practiceTopic(topic, cx)))));
-    if (this.data.extrasError) body.child(banner(t, this.data.extrasError));
-    if ((lesson.extraTasks ?? []).length) body.child(sectionLabel(t, "Extra practice"));
-    for (const task of lesson.extraTasks ?? []) body.child(keyButton(t, `course-extra-${task.id}`, "", `${task.title} \u00b7 AI-generated`, !this.busy && !this.data.enrollment.review, cx => this.run("task", { taskId: task.id }, cx)));
-    if (this.data.course.reading || !this.host.tutor.enabled) return;
-    if ((lesson.extraTasks ?? []).length < 6) body.child(h_flex().child(keyButton(t, "course-write-extra", "", "Write extra practice", !this.busy && !this.data.enrollment.review && !this.data.extrasError, cx => this.generateExtraPractice(lesson.id, cx))))
+    if (this.data.extrasError) main.child(banner(t, this.data.extrasError));
+    if ((lesson.extraTasks ?? []).length) main.child(sectionLabel(t, "EXTRA PRACTICE"));
+    for (const task of lesson.extraTasks ?? []) main.child(keyButton(t, `course-extra-${task.id}`, "", `${task.title} \u00b7 AI-generated`, !this.busy && !this.data.enrollment.review, cx => this.run("task", { taskId: task.id }, cx)));
+    if (this.data.course.reading || !this.host.tutor.enabled) { attach(); return; }
+    if ((lesson.extraTasks ?? []).length < 6) main.child(h_flex().child(keyButton(t, "course-write-extra", "", "Write extra practice", !this.busy && !this.data.enrollment.review && !this.data.extrasError, cx => this.generateExtraPractice(lesson.id, cx))))
       .child(div().text_size(11).text_color(t.muted).child("Optional. Each exercise is saved only after its reference passes and its starter and known wrong answers fail. Extra practice does not count toward module status or course review."));
+    attach();
   }
 
   /** @param {import("gpui-kit").Element} body @param {Theme} t */
@@ -653,7 +710,7 @@ export class CoursePanel {
     if (review) body.child(banner(t, `Review ${review.index + 1} of ${review.ids.length}. Fresh files. Your saved practice answers are preserved.`));
     const editorReady = Boolean(this.host.editor) && !this.host.offerEditorDefault;
     body.child(h_flex().gap(8).flex_wrap().items_center()
-      .child(keyButton(t, "course-editor", "", "Open in editor", !this.busy && !this.host.busy && editorReady, cx => this.host.openEditor(cx)))
+      .child(primaryButton(t, "course-editor", "Open in editor", !this.busy && !this.host.busy && editorReady, editorReady, cx => this.host.openEditor(cx)))
       .child(keyButton(t, "course-check", "", "Check", !this.busy, cx => this.run("check", { taskId: task.id }, cx)))
       .child(keyButton(t, "course-hint", "", "Hint", !this.busy && task.hints.length < (task.hintTotal??3), cx => this.run("hint", { taskId: task.id }, cx)))
       .child(keyButton(t, "course-answer", "", "Show solution", !this.busy && !task.solution, cx => this.run("answer", { taskId: task.id }, cx)))
@@ -684,7 +741,7 @@ export class CoursePanel {
       body.child(h_flex().child(keyButton(t, "course-fixtures", "", `${this.showFixtures ? "Hide" : "Show"} test inputs (${fixtures.length})`, true, cx => { this.showFixtures = !this.showFixtures; cx.notify(); })));
       if (this.showFixtures) for (const fixture of fixtures) body.child(div().text_size(12).text_color(t.muted).child(`Case ${fixture.id}`)).child(codeBlock(t, `course-fixture-${fixture.id}`, fixture.declarations, fence));
     }
-    body.child(div().text_size(11).text_color(t.dim).child(`${progress.attempts} attempts \u00b7 ${progress.independentPasses} passes without help \u00b7 ${this.data.file ?? ""}`));
+    body.child(div().text_size(11).text_color(t.dim).child(`${progress.attempts} attempts \u00b7 ${progress.independentPasses} passes without help \u00b7 ${(this.data.file ?? "").split(/[\\/]/).pop()}`));
     if (review) { body.child(h_flex().child(keyButton(t, "course-review-next", "", review.index + 1 === review.ids.length ? "Finish review" : "Next review exercise", !this.busy, cx => this.run("review-next", {}, cx)))); return; }
     const next = place >= 0 ? siblings[place + 1] : null;
     if (next) body.child(h_flex().child(keyButton(t, "course-next-task", "", `Next exercise: ${next.title}`, !this.busy && Boolean(progress.passes), cx => { this.showFixtures = false; this.run("task", { taskId: next.id }, cx); })));
