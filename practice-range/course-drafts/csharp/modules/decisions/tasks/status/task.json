@@ -1,17 +1,17 @@
 {
   "id": "course:cs-foundations/task/decisions-status",
   "role": "guided",
-  "title": "Report the board status",
+  "title": "Report the parking status",
   "concepts": [
     "branch",
     "comparison",
     "variable"
   ],
-  "prompt": "open is the number of open tasks and limit is the most the board can hold. Both are supplied whole numbers. Set the string status to \"empty\" when open is 0, to \"full\" when open has reached the limit or passed it, and to \"room\" otherwise. The empty rule wins when both apply.",
+  "prompt": "`cars` is the number of parked cars and `spaces` is how many the garage holds. Both are supplied whole numbers. Set the string `status` to `\"empty\"` when cars is 0, to `\"full\"` when cars has reached spaces or passed it, and to `\"room\"` otherwise. The empty rule wins when both apply.",
   "hints": [
-    "Try the case where open equals limit by hand. Which status does the starter give?",
-    "Reaching the limit counts as full, so the comparison must include the equal case.",
-    "Test open == 0 first, then open >= limit, and leave \"room\" for everything else."
+    "Try the case where cars equals spaces by hand. Which status does the starter give?",
+    "Reaching the spaces counts as full, so the comparison must include the equal case.",
+    "Test cars == 0 first, then cars >= spaces, and leave \"room\" for everything else."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -19,10 +19,10 @@
   "mode": "statements",
   "rules": [],
   "checks": [
-    "status == (open == 0 ? \"empty\" : open >= limit ? \"full\" : \"room\")"
+    "status == (cars == 0 ? \"empty\" : cars >= spaces ? \"full\" : \"room\")"
   ],
   "checkLabels": [
-    "status must be \"empty\" for 0 open tasks, \"full\" at or past the limit, and \"room\" otherwise."
+    "status must be \"empty\" for 0 cars, \"full\" at or past the spaces, and \"room\" otherwise."
   ],
   "fixtures": [
     {
@@ -49,7 +49,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-strict.cs",
-      "misconception": "Treats exactly reaching the limit as still having room.",
+      "misconception": "Treats exactly reaching the number of spaces as still having room.",
       "witness": {
         "fixture": "exact",
         "kind": "result",
@@ -66,5 +66,5 @@
       }
     }
   ],
-  "feedback": "Work the failing case by hand, reading your conditions from the top. Check the case where open equals limit and the case where both are 0."
+  "feedback": "Work the failing case by hand, reading your conditions from the top. Check the case where cars equals spaces and the case where both are 0."
 }

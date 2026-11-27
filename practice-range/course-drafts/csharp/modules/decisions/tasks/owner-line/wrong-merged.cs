@@ -1,8 +1,8 @@
-if (owner == "")
+if (player == "")
 {
-    Console.WriteLine("Unassigned: none");
+    Console.WriteLine("Guest: none");
 }
 else
 {
-    Console.WriteLine($"{owner}: {count}");
+    Console.WriteLine($"{player}: {score}");
 }

@@ -1,13 +1,13 @@
 bool ready = true;
-if (!assigned)
+if (!paid)
 {
     ready = false;
 }
-if (blocked)
+if (closed)
 {
     ready = false;
 }
-if (minutes <= 0)
+if (riders <= 0)
 {
     ready = false;
 }

@@ -156,7 +156,7 @@ New content version `0.2.0-preview.1`, no compatibility with 0.1.0 (old enrollme
     - `node scripts/verify-course.mjs csharp <key>` checks one module in a few minutes. A full run also checks R1 to R4, which may fail until C17.
 - [x] C1 Run a program, read errors
 - [x] C2 Types and values
-- [ ] C3 Control flow
+- [x] C3 Control flow
 - [ ] C4 Methods
 - [ ] C5 Arrays and lists
 - [ ] C6 Classes and properties

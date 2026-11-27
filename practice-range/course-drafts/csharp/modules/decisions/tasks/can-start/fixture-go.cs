@@ -3,7 +3,7 @@ using static Given;
 
 public static class Given
 {
-    public static bool assigned = true;
-    public static bool blocked = false;
-    public static int minutes = 15;
+    public static bool paid = true;
+    public static bool closed = false;
+    public static int riders = 15;
 }

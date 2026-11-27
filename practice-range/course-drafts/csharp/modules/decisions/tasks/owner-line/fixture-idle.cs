@@ -3,6 +3,6 @@ using static Given;
 
 public static class Given
 {
-    public static string owner = "Ben";
-    public static int count = 0;
+    public static string player = "Ben";
+    public static int score = 0;
 }

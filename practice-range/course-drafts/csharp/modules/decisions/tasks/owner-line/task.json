@@ -1,18 +1,18 @@
 {
   "id": "course:cs-foundations/task/decisions-owner-line",
   "role": "review",
-  "title": "Print an owner line",
+  "title": "Print a scoreboard line",
   "concepts": [
     "branch",
     "comparison",
     "text",
     "interpolation"
   ],
-  "prompt": "owner is a supplied string and count is a supplied whole number. Print one line with the owner, a colon and a space, then the count, as in Ana: 2. When owner is the empty string, print Unassigned in its place. When count is 0, print the word none in its place. Both rules can apply to the same line: Unassigned: none.",
+  "prompt": "`player` is a supplied string and `score` is a supplied whole number. Print one line with the player, a colon and a space, then the score, as in `Ana: 2`. When player is the empty string, print `Guest` in its place. When score is 0, print the word `none` in its place. Both rules can apply to the same line.",
   "hints": [
     "The two rules are independent. Does your code handle each one whatever the other does?",
-    "Work out the name part and the count part separately, each with its own if, then print them together.",
-    "Use one string variable for the name and one for the count text. Change each only when its own rule applies."
+    "Work out the name part and the score part separately, each with its own if, then print them together.",
+    "Use one string variable for the name and one for the score text. Change each only when its own rule applies."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -21,10 +21,10 @@
   "captureOutput": true,
   "rules": [],
   "checks": [
-    "__Output() == (owner == \"\" ? \"Unassigned\" : owner) + \": \" + (count == 0 ? \"none\" : count.ToString())"
+    "__Output() == (player == \"\" ? \"Guest\" : player) + \": \" + (score == 0 ? \"none\" : score.ToString())"
   ],
   "checkLabels": [
-    "The line must show the owner or Unassigned, a colon and a space, then the count or none."
+    "The line must show the player or Guest, a colon and a space, then the score or none."
   ],
   "fixtures": [
     {
@@ -47,7 +47,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-merged.cs",
-      "misconception": "Treats the two rules as one: an empty owner always prints none.",
+      "misconception": "Treats the two rules as one: an empty player always prints none.",
       "witness": {
         "fixture": "nobody",
         "kind": "result",
@@ -56,7 +56,7 @@
     },
     {
       "source": "wrong-owner-only.cs",
-      "misconception": "Handles the empty owner but not the zero count.",
+      "misconception": "Handles the empty player but not the zero score.",
       "witness": {
         "fixture": "idle",
         "kind": "result",
@@ -64,5 +64,5 @@
       }
     }
   ],
-  "feedback": "Find the failing case and check each half of the line on its own. The owner rule and the count rule do not depend on each other."
+  "feedback": "Find the failing case and check each half of the line on its own. The player rule and the score rule do not depend on each other."
 }

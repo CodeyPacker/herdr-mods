@@ -1,16 +1,16 @@
-if (owner == "" && count == 0)
+if (player == "" && score == 0)
 {
-    Console.WriteLine("Unassigned: none");
+    Console.WriteLine("Guest: none");
 }
-else if (owner == "")
+else if (player == "")
 {
-    Console.WriteLine($"Unassigned: {count}");
+    Console.WriteLine($"Guest: {score}");
 }
-else if (count == 0)
+else if (score == 0)
 {
-    Console.WriteLine($"{owner}: none");
+    Console.WriteLine($"{player}: none");
 }
 else
 {
-    Console.WriteLine($"{owner}: {count}");
+    Console.WriteLine($"{player}: {score}");
 }

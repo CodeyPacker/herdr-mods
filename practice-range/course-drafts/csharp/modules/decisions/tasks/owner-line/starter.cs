@@ -1,1 +1,1 @@
-Console.WriteLine($"{owner}: {count}");
+Console.WriteLine($"{player}: {score}");

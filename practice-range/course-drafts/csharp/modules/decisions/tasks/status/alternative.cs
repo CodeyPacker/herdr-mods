@@ -1,9 +1,9 @@
 string status;
-if (open != 0 && open < limit)
+if (cars != 0 && cars < spaces)
 {
     status = "room";
 }
-else if (open != 0)
+else if (cars != 0)
 {
     status = "full";
 }

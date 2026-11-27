@@ -1,1 +1,1 @@
-bool ready = assigned || !blocked || minutes > 0;
+bool ready = paid || !closed || riders > 0;

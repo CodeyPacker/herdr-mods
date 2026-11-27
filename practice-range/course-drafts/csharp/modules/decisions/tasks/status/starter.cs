@@ -1,5 +1,5 @@
 string status = "room";
-if (open > limit)
+if (cars > spaces)
 {
     status = "full";
 }

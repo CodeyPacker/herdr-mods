@@ -14,7 +14,7 @@ Each module: an intro, 6 to 10 steps, at least one prediction question, 2 to 4 t
 | --- | --- | --- | --- | --- | --- |
 | 1 | save | Run a program, read errors | Save and run, read output, find the line a compiler error names | greeting, a receipt line | none |
 | 2 | values | Types and values | `int`, `double`, `string`, `bool`, `var`, arithmetic, `int` vs `double` division, interpolation, type errors | temperatures, a bill split, a name badge | R1 |
-| 3 | decisions | Control flow | `if`/`else`, comparisons, `&&`/`||`/`!`, edge values, `while` | ticket prices by age, a thermostat, a password rule | R1 |
+| 3 | decisions | Control flow | `if`/`else`, comparisons, `&&`/`||`/`!`, edge values | ticket prices by age, a thermostat, a password rule | R1 |
 | 4 | methods | Methods | parameters, return values, `void`, scope, expression bodies, static methods | unit conversion, a tip calculator | R1 |
 | 5 | collections | Arrays and lists | arrays, `List<T>`, `for`/`foreach`, running totals, index bounds | step counts, a playlist, test scores | R1 |
 | 6 | classes | Classes and properties | fields, properties, constructors, methods, two names for one object | a bank account, a book, a thermostat object | R2 |

@@ -1,6 +1,6 @@
-string name = owner;
-if (owner == "")
+string name = player;
+if (player == "")
 {
-    name = "Unassigned";
+    name = "Guest";
 }
-Console.WriteLine($"{name}: {count}");
+Console.WriteLine($"{name}: {score}");

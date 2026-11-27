@@ -1,17 +1,17 @@
 {
   "id": "course:cs-foundations/task/decisions-can-start",
   "role": "independent",
-  "title": "Decide whether work can start",
+  "title": "Decide whether the ride can start",
   "concepts": [
     "boolean-logic",
     "comparison",
     "variable"
   ],
-  "prompt": "assigned and blocked are supplied bools, and minutes is a supplied whole number. Declare a bool named ready. It is true only when the task is assigned, is not blocked, and has more than 0 minutes.",
+  "prompt": "`paid` and `closed` are supplied bools, and `riders` is a supplied whole number. Declare a bool named `ready`. It is true only when the tickets are paid, the ride is not closed, and there are more than 0 riders.",
   "hints": [
     "How many separate facts must all be true?",
-    "Join facts that must all hold with &&. Flip blocked with !.",
-    "Combine assigned, !blocked and minutes > 0 with && in one expression."
+    "Join facts that must all hold with &&. Flip closed with !.",
+    "Combine paid, !closed and riders > 0 with && in one expression."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -19,10 +19,10 @@
   "mode": "statements",
   "rules": [],
   "checks": [
-    "ready == (assigned && !blocked && minutes > 0)"
+    "ready == (paid && !closed && riders > 0)"
   ],
   "checkLabels": [
-    "ready must be true only for an assigned task that is not blocked and has more than 0 minutes."
+    "ready must be true only when the tickets are paid, the ride is not closed and there are more than 0 riders."
   ],
   "fixtures": [
     {
@@ -45,7 +45,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-no-minutes.cs",
-      "misconception": "Leaves out the minutes condition.",
+      "misconception": "Leaves out the riders condition.",
       "witness": {
         "fixture": "zero",
         "kind": "result",

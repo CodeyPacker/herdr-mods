@@ -1,1 +1,1 @@
-bool ready = assigned && !blocked;
+bool ready = paid && !closed;

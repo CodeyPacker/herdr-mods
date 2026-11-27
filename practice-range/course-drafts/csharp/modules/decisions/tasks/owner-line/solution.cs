@@ -1,10 +1,10 @@
-string name = owner;
-if (owner == "")
+string name = player;
+if (player == "")
 {
-    name = "Unassigned";
+    name = "Guest";
 }
-string amount = $"{count}";
-if (count == 0)
+string amount = $"{score}";
+if (score == 0)
 {
     amount = "none";
 }
