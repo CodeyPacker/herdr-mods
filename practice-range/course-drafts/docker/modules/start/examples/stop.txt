@@ -8,4 +8,4 @@
                    ... nothing happens ...
    10 s    SIGKILL --> everything  ended at once, work is lost    exit 137
 
-  Allow longer when the program needs it:   docker stop --time 30 web
+  Allow longer when the program needs it:   docker stop -t 30 web

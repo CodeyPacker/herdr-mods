@@ -2,7 +2,7 @@
 
 A reading course about packaging and running software with Docker. It has no code to write and nothing in it is run by the app. Each module explains a few ideas, shows them as commands, Dockerfiles, Compose files and plain-text diagrams, asks the reader to judge some situations, and ends with a short exercise followed by one possible answer.
 
-Status: all 16 modules are written, built and registered as `course:docker`, content version 0.1.0-preview.1. Nothing is committed yet. Nobody has read it through as a learner.
+Status: all 16 modules are written, built and registered as `course:docker`, content version 0.1.0-preview.1. Nobody has read it through as a learner.
 
 ## Who it is for
 
@@ -50,10 +50,21 @@ The step kinds are the same as in the API design course, described in `../api-de
 
 `tests/course-docker.test.mjs` checks the built pack and drives an enrollment. The Compose examples that are whole files were validated once with `docker compose config`, by hand, with Docker Compose v5.5.1. Two fragments (`compose/worker` and `health/depends`) name a service defined in the main file and are not valid alone.
 
+## Verified on 2026-11-27
+
+The course was checked against Docker 29.8.1 on Docker Desktop, with a small test application, and corrected where the result differed.
+
+- All seven complete Dockerfiles build. The image tags the course names exist in the registry.
+- Confirmed by running: exec form against shell form as PID 1 and how each responds to `docker stop`, the entrypoint wrapper with `exec`, the non-root user, `.dockerignore`, build arguments and the way a secret passed as one shows in `docker history`, layer caching after a source change, `--target`, build secrets, labels, volume persistence and the wrong mount path that loses data, bind mounts, published ports, names resolving on a user network and not on the default one, `localhost` inside a container, memory limits and exit code 137 with `OOMKilled`, and the debugging commands.
+- The Compose files were run as real stacks: the first two-service file, the health check with ordered start and a one-off migration, the hardened final file with a secret file, a read-only root and dropped capabilities, variable substitution, and `down -v` removing the volume.
+- Corrected: `docker image ls` prints different columns and larger sizes on this version, the default wait of `docker stop` was about 3 seconds and not 10, `--time` is now spelt `--timeout` (`-t` works on both), and published ports are also listed in IPv6 form.
+
 ## Not verified
 
-- No Dockerfile or command in the course was run. The Docker daemon was not running on the authoring machine, so nothing was built or started. Terminal output in the examples is written by hand to show the shape of real output.
-- Version numbers such as `node:24.11.1-slim`, `postgres:17.2` and `nginx:1.27.3` are examples of the form. They were not checked against a registry.
+- Pushing to a registry and multi-platform builds with `buildx --push`. No registry was used.
+- `docker compose watch` in use. Its configuration was validated only.
+- Sample terminal output is still written by hand to show the shape of real output. Sizes in particular depend on the Docker version, and the course now says so.
+- Older Docker versions and Docker on Linux without Docker Desktop.
 - Nobody has looked at the rendered lessons in the app.
 - The accuracy of the text was reviewed by its author only.
 

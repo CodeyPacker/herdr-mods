@@ -43,7 +43,7 @@
     {
       "kind": "debugging",
       "title": "Where did 1.4 GB come from?",
-      "text": "The layers of an image built with a single stage on the full base image.",
+      "text": "The layers of an image built with a single stage on the full base image.\n\nThe figures are examples. Docker versions measure image size differently, and a newer one reports the same base image as larger. What carries over is the proportion: the base image and the installed dependencies are nearly all of it.",
       "example": "big",
       "questions": [
         "big"

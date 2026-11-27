@@ -14,3 +14,5 @@
 $ docker ps
 IMAGE           STATUS         PORTS                    NAMES
 tracker:1.4.2   Up 2 minutes   0.0.0.0:8080->3000/tcp   web
+
+(newer versions also list the IPv6 form, [::]:8080->3000/tcp)

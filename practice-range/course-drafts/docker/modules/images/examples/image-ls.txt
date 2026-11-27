@@ -1,8 +1,11 @@
 $ docker pull postgres:17
 $ docker image ls
-REPOSITORY   TAG       IMAGE ID       CREATED       SIZE
-postgres     17        a1b2c3d4e5f6   2 weeks ago   438MB
-nginx        1.27      0f9e8d7c6b5a   3 weeks ago   192MB
-node         24-slim   6a5b4c3d2e1f   3 weeks ago   230MB
+IMAGE          ID             DISK USAGE   CONTENT SIZE
+postgres:17    a1b2c3d4e5f6        620MB          160MB
+nginx:1.27     0f9e8d7c6b5a        282MB         75.5MB
+node:24-slim   6a5b4c3d2e1f        326MB         81.7MB
+
+# Older versions print other columns for the same list:
+# REPOSITORY   TAG   IMAGE ID   CREATED   SIZE
 
 $ docker image rm nginx:1.27

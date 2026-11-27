@@ -34,7 +34,7 @@
     {
       "kind": "explanation",
       "title": "Stop, start and remove",
-      "text": "| Command | What it does |\n| --- | --- |\n| `docker stop web` | Asks the main process to end, waits up to 10 seconds, then forces it. |\n| `docker start web` | Starts a stopped container again, with the files it had. |\n| `docker restart web` | Stop, then start. |\n| `docker rm web` | Removes a stopped container and its private files. |\n| `docker rm -f web` | Forces a running container to end, then removes it. |\n\nRemoving is the step people forget. Every `docker run` creates a new container, so a machine collects stopped ones over time.\n\nFor a container you will not need again, add `--rm` to `docker run`. Docker then removes the container as soon as it stops."
+      "text": "| Command | What it does |\n| --- | --- |\n| `docker stop web` | Asks the main process to end, waits a set time (10 seconds by default), then forces it. |\n| `docker start web` | Starts a stopped container again, with the files it had. |\n| `docker restart web` | Stop, then start. |\n| `docker rm web` | Removes a stopped container and its private files. |\n| `docker rm -f web` | Forces a running container to end, then removes it. |\n\nRemoving is the step people forget. Every `docker run` creates a new container, so a machine collects stopped ones over time.\n\nFor a container you will not need again, add `--rm` to `docker run`. Docker then removes the container as soon as it stops."
     },
     {
       "kind": "explanation",

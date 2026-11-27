@@ -469,7 +469,7 @@
         {
           "kind": "explanation",
           "title": "Stop, start and remove",
-          "text": "| Command | What it does |\n| --- | --- |\n| `docker stop web` | Asks the main process to end, waits up to 10 seconds, then forces it. |\n| `docker start web` | Starts a stopped container again, with the files it had. |\n| `docker restart web` | Stop, then start. |\n| `docker rm web` | Removes a stopped container and its private files. |\n| `docker rm -f web` | Forces a running container to end, then removes it. |\n\nRemoving is the step people forget. Every `docker run` creates a new container, so a machine collects stopped ones over time.\n\nFor a container you will not need again, add `--rm` to `docker run`. Docker then removes the container as soon as it stops."
+          "text": "| Command | What it does |\n| --- | --- |\n| `docker stop web` | Asks the main process to end, waits a set time (10 seconds by default), then forces it. |\n| `docker start web` | Starts a stopped container again, with the files it had. |\n| `docker restart web` | Stop, then start. |\n| `docker rm web` | Removes a stopped container and its private files. |\n| `docker rm -f web` | Forces a running container to end, then removes it. |\n\nRemoving is the step people forget. Every `docker run` creates a new container, so a machine collects stopped ones over time.\n\nFor a container you will not need again, add `--rm` to `docker run`. Docker then removes the container as soon as it stops."
         },
         {
           "kind": "explanation",
@@ -619,7 +619,7 @@
         {
           "kind": "explanation",
           "title": "Where images come from",
-          "text": "Anyone can publish to a public registry. An image is software that you are about to run, so who published it matters as much as it does for any download.\n\n- **Official images** are maintained and reviewed for Docker Hub. Their names have no team part: `nginx`, `postgres`, `node`.\n- **Publisher images** come from the company that makes the software, under its own name.\n- **Everything else** is a stranger's build. Read how it was made before you depend on it, or build your own.\n\nImages are kept on your machine after the first pull. `docker pull` fetches one without running it, `docker image ls` lists what you have, and `docker image rm` deletes one.",
+          "text": "Anyone can publish to a public registry. An image is software that you are about to run, so who published it matters as much as it does for any download.\n\n- **Official images** are maintained and reviewed for Docker Hub. Their names have no team part: `nginx`, `postgres`, `node`.\n- **Publisher images** come from the company that makes the software, under its own name.\n- **Everything else** is a stranger's build. Read how it was made before you depend on it, or build your own.\n\nImages are kept on your machine after the first pull. `docker pull` fetches one without running it, `docker image ls` lists what you have, and `docker image rm` deletes one.\n\nThe columns and the sizes in that list depend on the Docker version. Newer versions show the space an image takes on disk and its compressed size, and older ones show a single smaller figure. Compare images with each other on one machine, and do not expect the numbers in this course to match yours exactly.",
           "example": "image-ls"
         },
         {
@@ -703,7 +703,7 @@
         "image-ls": {
           "readOnly": true,
           "fence": "text",
-          "code": "$ docker pull postgres:17\n$ docker image ls\nREPOSITORY   TAG       IMAGE ID       CREATED       SIZE\npostgres     17        a1b2c3d4e5f6   2 weeks ago   438MB\nnginx        1.27      0f9e8d7c6b5a   3 weeks ago   192MB\nnode         24-slim   6a5b4c3d2e1f   3 weeks ago   230MB\n\n$ docker image rm nginx:1.27\n"
+          "code": "$ docker pull postgres:17\n$ docker image ls\nIMAGE          ID             DISK USAGE   CONTENT SIZE\npostgres:17    a1b2c3d4e5f6        620MB          160MB\nnginx:1.27     0f9e8d7c6b5a        282MB         75.5MB\nnode:24-slim   6a5b4c3d2e1f        326MB         81.7MB\n\n# Older versions print other columns for the same list:\n# REPOSITORY   TAG   IMAGE ID   CREATED   SIZE\n\n$ docker image rm nginx:1.27\n"
         },
         "unpinned": {
           "readOnly": true,
@@ -1052,7 +1052,7 @@
         {
           "kind": "explanation",
           "title": "How a container is asked to stop",
-          "text": "`docker stop` does not pull the plug. It sends PID 1 a polite request to end, the signal named `SIGTERM`. A well behaved service responds by finishing the requests it is handling, closing its connections and exiting.\n\nDocker waits 10 seconds. If the process is still alive, Docker sends `SIGKILL`, which the process cannot catch. It ends at once, in the middle of whatever it was doing.\n\nNow recall the shell form. The request goes to PID 1, which is the shell. A shell does not pass the request on to its child. The service never hears it, keeps running, and is killed 10 seconds later.\n\nSome shells step aside when the line is one plain command, so you will not see this in every image. Do not depend on it. The exec form behaves the same way everywhere.",
+          "text": "`docker stop` does not pull the plug. It sends PID 1 a polite request to end, the signal named `SIGTERM`. A well behaved service responds by finishing the requests it is handling, closing its connections and exiting.\n\nDocker then waits. The wait is 10 seconds by default according to Docker's documentation, and it can differ between versions. On the version used to check this course it was about 3 seconds. `time docker stop web` shows what yours is. If the process is still alive at the end of the wait, Docker sends `SIGKILL`, which the process cannot catch. It ends at once, in the middle of whatever it was doing.\n\nNow recall the shell form. The request goes to PID 1, which is the shell. A shell does not pass the request on to its child. The service never hears it, keeps running, and is killed when the wait runs out.\n\nSome shells step aside when the line is one plain command, so you will not see this in every image. Do not depend on it. The exec form behaves the same way everywhere.",
           "example": "stop"
         },
         {
@@ -1141,7 +1141,7 @@
         "stop": {
           "readOnly": true,
           "fence": "text",
-          "code": "  docker stop web\n\n    0 s    SIGTERM --> PID 1      \"please finish and exit\"\n            |\n            +-- program handles it:  finishes requests, exits     exit 0\n            |\n            +-- program ignores it, or a shell is PID 1:\n                   ... nothing happens ...\n   10 s    SIGKILL --> everything  ended at once, work is lost    exit 137\n\n  Allow longer when the program needs it:   docker stop --time 30 web\n"
+          "code": "  docker stop web\n\n    0 s    SIGTERM --> PID 1      \"please finish and exit\"\n            |\n            +-- program handles it:  finishes requests, exits     exit 0\n            |\n            +-- program ignores it, or a shell is PID 1:\n                   ... nothing happens ...\n   10 s    SIGKILL --> everything  ended at once, work is lost    exit 137\n\n  Allow longer when the program needs it:   docker stop -t 30 web\n"
         },
         "slow-stop": {
           "readOnly": true,
@@ -1562,7 +1562,7 @@
         "publish": {
           "readOnly": true,
           "fence": "text",
-          "code": "  docker run -d --name web -p 8080:3000 tracker:1.4.2\n                              |    |\n                      host port    container port\n\n  HOST\n    browser --- localhost:8080 ---+\n                                  |  passed on by Docker\n                                  v\n                       +----------------------+\n                       | container web        |\n                       | listening on :3000   |\n                       +----------------------+\n\n$ docker ps\nIMAGE           STATUS         PORTS                    NAMES\ntracker:1.4.2   Up 2 minutes   0.0.0.0:8080->3000/tcp   web\n"
+          "code": "  docker run -d --name web -p 8080:3000 tracker:1.4.2\n                              |    |\n                      host port    container port\n\n  HOST\n    browser --- localhost:8080 ---+\n                                  |  passed on by Docker\n                                  v\n                       +----------------------+\n                       | container web        |\n                       | listening on :3000   |\n                       +----------------------+\n\n$ docker ps\nIMAGE           STATUS         PORTS                    NAMES\ntracker:1.4.2   Up 2 minutes   0.0.0.0:8080->3000/tcp   web\n\n(newer versions also list the IPv6 form, [::]:8080->3000/tcp)\n"
         },
         "net": {
           "readOnly": true,
@@ -1926,7 +1926,7 @@
         {
           "kind": "debugging",
           "title": "Where did 1.4 GB come from?",
-          "text": "The layers of an image built with a single stage on the full base image.",
+          "text": "The layers of an image built with a single stage on the full base image.\n\nThe figures are examples. Docker versions measure image size differently, and a newer one reports the same base image as larger. What carries over is the proportion: the base image and the installed dependencies are nearly all of it.",
           "example": "big",
           "questions": [
             "big"
@@ -2004,7 +2004,7 @@
         "big": {
           "readOnly": true,
           "fence": "text",
-          "code": "$ docker image ls tracker\nREPOSITORY   TAG      SIZE\ntracker      single   1.42GB\n\n$ docker history tracker:single\nCREATED BY                                   SIZE\nCMD [\"node\" \"dist/server.js\"]                0B\nRUN npm run build                            14MB\nCOPY . .                                     61MB\nRUN npm ci                                   212MB\nCOPY package.json package-lock.json ./       96kB\nWORKDIR /app                                 0B\n... base image node:24.11.1 ...              1.13GB\n"
+          "code": "$ docker image ls tracker\nIMAGE            DISK USAGE\ntracker:single       1.42GB\n\n$ docker history tracker:single\nCREATED BY                                   SIZE\nCMD [\"node\" \"dist/server.js\"]                0B\nRUN npm run build                            14MB\nCOPY . .                                     61MB\nRUN npm ci                                   212MB\nCOPY package.json package-lock.json ./       96kB\nWORKDIR /app                                 0B\n... base image node:24.11.1 ...              1.13GB\n"
         },
         "target": {
           "readOnly": true,

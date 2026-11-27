@@ -1,6 +1,6 @@
 $ docker image ls tracker
-REPOSITORY   TAG      SIZE
-tracker      single   1.42GB
+IMAGE            DISK USAGE
+tracker:single       1.42GB
 
 $ docker history tracker:single
 CREATED BY                                   SIZE
