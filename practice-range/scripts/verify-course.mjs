@@ -1,7 +1,8 @@
 // Authoring-only validation of a course draft. Run from any directory:
 //   node practice-range/scripts/verify-course.mjs <typescript|csharp|sql> [module keys...]
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { access, mkdtemp, readFile, rm } from "node:fs/promises";
+import { readModule } from "./course-markdown.mjs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -40,7 +41,7 @@ function expectFailure(result, witness) {
 
 async function checkExamples(module, dir) {
   for (const [id, example] of Object.entries(module.examples)) {
-    const code = await source(dir, example.source.path);
+    const code = example.code ?? await source(dir, example.source.path);
     const result = await runner.checkExample(tmp, { code, stdout: example.stdout, diagnostics: example.diagnostics });
     expectResult(result, true, id);
     if (example.diagnostics) counts.diagnostics++; else counts.examples++;
@@ -103,7 +104,9 @@ async function checkTask(dir, entry, concepts) {
 
 async function checkModule(entry, manifest) {
   const dir = dirname(join(root, entry.source.path));
-  const module = await json(root, entry.source.path);
+  // module.md wins over module.json in the same folder.
+  const markdown = join(dir, "module.md");
+  const module = await access(markdown).then(() => readModule(markdown, (folder, file) => readFile(join(folder, file), "utf8")), () => json(root, entry.source.path));
   assert.equal(module.id, entry.id);
   const earlier = new Set();
   const collect = id => {

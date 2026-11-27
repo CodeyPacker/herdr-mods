@@ -4,6 +4,8 @@ import { dirname, resolve, relative, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validatePack } from "../mods/practice-range/courses/loader.mjs";
 import { writeCoursePack } from "../mods/practice-range/courses/storage.mjs";
+import { readModule } from "./course-markdown.mjs";
+import { access } from "node:fs/promises";
 
 const base = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 // node practice-range/scripts/build-course.mjs [typescript|csharp|sql|api-design]
@@ -34,12 +36,11 @@ async function compileTask(folder, path) {
 const modules = [];
 for (const entry of manifest.modules.filter(entry => entry.source)) {
   const folder = dirname(resolve(draft, entry.source.path));
-  const module = await json(draft, entry.source.path);
-  const examples = {};
-  for (const [id, example] of Object.entries(module.examples)) {
-    examples[id] = { ...example, code: await source(folder, example.source.path) };
-    delete examples[id].source;
-  }
+  // module.md wins over module.json in the same folder. Either way examples come back with their code.
+  const markdown = resolve(folder, "module.md");
+  const path = await access(markdown).then(() => markdown, () => resolve(draft, entry.source.path));
+  const module = await readModule(path, (dir, file) => source(dir, file));
+  const examples = module.examples;
   const tasks = [];
   for (const entry of module.tasks) tasks.push(await compileTask(folder, entry.path));
   modules.push({ ...module, examples, tasks });
