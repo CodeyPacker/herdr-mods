@@ -157,7 +157,7 @@ New content version `0.2.0-preview.1`, no compatibility with 0.1.0 (old enrollme
 - [x] C1 Run a program, read errors
 - [x] C2 Types and values
 - [x] C3 Control flow
-- [ ] C4 Methods
+- [x] C4 Methods
 - [ ] C5 Arrays and lists
 - [ ] C6 Classes and properties
 - [ ] C7 Structs, records, copies

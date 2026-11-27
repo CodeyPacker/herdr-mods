@@ -1,17 +1,17 @@
 {
   "id": "course:cs-foundations/task/methods-summary",
   "role": "independent",
-  "title": "Summarize the board",
+  "title": "Count the fruit",
   "concepts": [
     "method",
     "parameter-return",
     "interpolation"
   ],
-  "prompt": "Write two methods. public static int Total(int open, int done) returns the two counts added together. public static string Summary(int open, int done) returns text in the form \"3 open, 1 done, 4 total\", and gets its total by calling Total. Both methods return their result. Neither prints.",
+  "prompt": "Write two methods. `public static int Total(int apples, int pears)` returns the two counts added together. `public static string Summary(int apples, int pears)` returns text in the form `\"apples: 3, pears: 1, total: 4\"`, and gets its total by calling `Total`. Both methods return their result. Neither prints.",
   "hints": [
     "What type does each method give back?",
-    "Summary can call Total(open, done) and use the result inside its text.",
-    "Return an interpolated string with open, done and Total(open, done) in braces."
+    "Summary can call Total(apples, pears) and use the result inside its text.",
+    "Return an interpolated string with apples, pears and Total(apples, pears) in braces."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -21,16 +21,16 @@
   "checks": [
     "Practice.Total(3, 1) == 4",
     "Practice.Total(0, 0) == 0",
-    "Practice.Summary(3, 1) == \"3 open, 1 done, 4 total\"",
-    "Practice.Summary(0, 0) == \"0 open, 0 done, 0 total\"",
-    "Practice.Summary(2, 9) == \"2 open, 9 done, 11 total\""
+    "Practice.Summary(3, 1) == \"apples: 3, pears: 1, total: 4\"",
+    "Practice.Summary(0, 0) == \"apples: 0, pears: 0, total: 0\"",
+    "Practice.Summary(2, 9) == \"apples: 2, pears: 9, total: 11\""
   ],
   "checkLabels": [
     "Total of 3 and 1 must be 4.",
     "Total of 0 and 0 must be 0.",
-    "Summary of 3 and 1 must be \"3 open, 1 done, 4 total\".",
-    "Summary of 0 and 0 must be \"0 open, 0 done, 0 total\".",
-    "Summary of 2 and 9 must be \"2 open, 9 done, 11 total\"."
+    "Summary of 3 and 1 must be \"apples: 3, pears: 1, total: 4\".",
+    "Summary of 0 and 0 must be \"apples: 0, pears: 0, total: 0\".",
+    "Summary of 2 and 9 must be \"apples: 2, pears: 9, total: 11\"."
   ],
   "fixtures": [
     {

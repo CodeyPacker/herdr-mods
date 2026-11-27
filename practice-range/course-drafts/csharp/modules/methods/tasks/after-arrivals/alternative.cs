@@ -1,1 +1,1 @@
-public static int AfterArrivals(int open, int arrivals) => arrivals + open;
+public static int TotalWithTip(int bill, int tip) => tip + bill;

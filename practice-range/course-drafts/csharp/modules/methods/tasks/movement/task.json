@@ -1,13 +1,13 @@
 {
   "id": "course:cs-foundations/task/methods-movement",
   "role": "review",
-  "title": "Measure a change",
+  "title": "Measure a temperature change",
   "concepts": [
     "method",
     "parameter-return",
     "number-types"
   ],
-  "prompt": "Write public static int Movement(int before, int after). Return how much the count changed from before to after. A rise is positive, a fall is negative, and no change is 0.",
+  "prompt": "Write `public static int Movement(int before, int after)`. Return how much the temperature changed from before to after. A rise is positive, a fall is negative, and no change is 0.",
   "hints": [
     "From 3 to 5 is a rise of 2. From 5 to 3 is a fall. What should the sign be?",
     "One subtraction gives both the size and the sign.",

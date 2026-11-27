@@ -1,5 +1,5 @@
-public static int AfterArrivals(int open, int arrivals)
+public static int TotalWithTip(int bill, int tip)
 {
-    int total = open + arrivals;
+    int total = bill + tip;
     return total;
 }

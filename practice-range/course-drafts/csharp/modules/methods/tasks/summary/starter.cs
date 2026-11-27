@@ -1,9 +1,9 @@
-public static int Total(int open, int done)
+public static int Total(int apples, int pears)
 {
     return 0;
 }
 
-public static string Summary(int open, int done)
+public static string Summary(int apples, int pears)
 {
     return "";
 }

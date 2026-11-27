@@ -1,9 +1,9 @@
-public static int Total(int open, int done)
+public static int Total(int apples, int pears)
 {
-    return open - done;
+    return apples - pears;
 }
 
-public static string Summary(int open, int done)
+public static string Summary(int apples, int pears)
 {
-    return $"{open} open, {done} done, {Total(open, done)} total";
+    return $"apples: {apples}, pears: {pears}, total: {Total(apples, pears)}";
 }

@@ -1,17 +1,17 @@
 {
   "id": "course:cs-foundations/task/methods-after-arrivals",
   "role": "guided",
-  "title": "Return the right count",
+  "title": "Return the right total",
   "concepts": [
     "method",
     "parameter-return",
     "scope"
   ],
-  "prompt": "AfterArrivals(int open, int arrivals) should return the number of open tasks after the arrivals are added. The starter works out the total but returns something else. Repair it.",
+  "prompt": "`TotalWithTip(int bill, int tip)` should return the bill with the tip added. The starter works out the total but returns something else. Repair it.",
   "hints": [
     "Which variable holds the answer by the time the method reaches return?",
     "return sends back the value of the expression after it.",
-    "Return total, or return open + arrivals directly."
+    "Return total, or return bill + tip directly."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -19,16 +19,16 @@
   "mode": "members",
   "rules": [],
   "checks": [
-    "Practice.AfterArrivals(3, 2) == 5",
-    "Practice.AfterArrivals(0, 0) == 0",
-    "Practice.AfterArrivals(0, 4) == 4",
-    "Practice.AfterArrivals(7, 0) == 7"
+    "Practice.TotalWithTip(3, 2) == 5",
+    "Practice.TotalWithTip(0, 0) == 0",
+    "Practice.TotalWithTip(0, 4) == 4",
+    "Practice.TotalWithTip(7, 0) == 7"
   ],
   "checkLabels": [
-    "3 open and 2 arrivals must give 5.",
-    "An empty board with no arrivals must give 0.",
-    "An empty board with 4 arrivals must give 4.",
-    "No arrivals must leave the count unchanged."
+    "A bill of 3 with a tip of 2 must give 5.",
+    "A bill of 0 with no tip must give 0.",
+    "A bill of 0 with a tip of 4 must give 4.",
+    "A bill of 7 with no tip must give 7."
   ],
   "fixtures": [
     {
@@ -39,7 +39,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-arrivals.cs",
-      "misconception": "Returns only the new arrivals.",
+      "misconception": "Returns only the tip.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -48,7 +48,7 @@
     },
     {
       "source": "wrong-subtract.cs",
-      "misconception": "Removes the arrivals instead of adding them.",
+      "misconception": "Takes the tip off instead of adding it.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
