@@ -74,7 +74,7 @@ What happens when you check this example?
 Check the example. The compiler reports:
 
 ```text
-Exercise.cs(1,34): error CS1002: ; expected
+Scratch.cs(1,34): error CS1002: ; expected
 ```
 
 - `(1,34)` is the line and the column where it noticed the problem.
