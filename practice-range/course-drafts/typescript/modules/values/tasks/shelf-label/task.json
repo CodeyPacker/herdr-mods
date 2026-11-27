@@ -1,12 +1,12 @@
 {
   "id": "course:ts-foundations/task/shelf-label",
   "role": "independent",
-  "title": "Label a task shelf",
+  "title": "Label a name tag",
   "concepts": [
     "text-expression",
     "binding"
   ],
-  "prompt": "Two supplied text values, area and owner, identify a shelf. Give the fixed label the name label using const. It must contain the area, a slash with one space on each side, and the owner, in that order. For area \"Desk\" and owner \"Jo\", produce \"Desk / Jo\". Keep empty text and all input spaces exactly as supplied.",
+  "prompt": "Two supplied text values, `area` and `name`, identify a desk. Give the fixed label the name `label` using `const`. It must contain the area, a slash with one space on each side, and the name, in that order. For area `\"Desk\"` and name `\"Jo\"`, produce `\"Desk / Jo\"`. Keep empty text and all input spaces exactly as supplied.",
   "hints": [
     "Write down the three pieces of text in their final order.",
     "The slash and its two spaces are themselves a text value.",
@@ -25,7 +25,7 @@
     }
   ],
   "checks": [
-    "label === area + \" / \" + owner"
+    "label === area + \" / \" + name"
   ],
   "typeChecks": [],
   "rejects": [],

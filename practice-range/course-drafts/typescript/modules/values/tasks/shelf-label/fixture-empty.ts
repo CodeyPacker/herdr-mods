@@ -1,2 +1,2 @@
 const area: string = "";
-const owner: string = "Li ";
+const name: string = "Li ";

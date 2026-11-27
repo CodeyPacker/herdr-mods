@@ -1,1 +1,1 @@
-const label = area + " / " + owner;
+const label = area + " / " + name;

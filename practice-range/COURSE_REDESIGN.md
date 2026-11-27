@@ -221,10 +221,12 @@ Same rules as Phase C, new content version, 16 modules from the table.
 
 - [x] D0 Outline and manifest. 18 modules, version 0.2.0-preview.1, compatible with 0.1.0-preview.1 and preview.2. `compose`, `tracker`, `report` and `project/` are deleted. Collections and Checks stay, because later modules and the skip-ahead tests depend on what they teach. The three new modules are `planned` entries in the manifest (no `source`) until written. R4 now covers Generics only. Do not rebuild the TypeScript pack until D18.
 
+    `scripts/course-rename.py <module folder> 'old=new' ...` renames words in task prose, checks and code files and in lesson prose, but never in ids, paths, fixture names, front matter, code fences or `@`/`:::` lines. Use it for identifier and word renames, then rewrite titles and prompts by hand. Example code inside fences is not renamed: edit it by hand if it needs to change.
+
     Retheme each existing module with the C recipe (convert to `module.md`, rename tracker words, verify with `node scripts/verify-course.mjs typescript <key>`, run `scripts/course-polish.py` if the prose needs code formatting; its keyword list is C#, so check the result). Never rename inside `"id"` fields: a word rename over the whole task.json once changed `save-echo-card` to `save-echo-word`. TypeScript tasks can also have `typeChecks`, `rejects`, `moduleSources` and two-file `workspace` folders: rename inside those too.
 
 - [x] D1 save · Run code, read a type error
-- [ ] D2 values · Types and inference
+- [x] D2 values · Types and inference
 - [ ] D3 decisions · Narrowing with control flow
 - [ ] D4 functions · Function types
 - [ ] D5 lists · Arrays and tuples (add a tuple step and task)

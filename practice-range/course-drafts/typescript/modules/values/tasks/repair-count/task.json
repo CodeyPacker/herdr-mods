@@ -7,7 +7,7 @@
     "numeric-expression",
     "diagnostic"
   ],
-  "prompt": "The supplied opening and change are numbers of tasks and new arrivals. The starter should keep a numeric variable called count and add the arrivals. Read its diagnostic, repair it, then save. The final value must be a number even when there are no arrivals.",
+  "prompt": "The supplied `opening` and `change` are the coins in a jar and the coins just added. The starter should keep a numeric variable called `count` and add the new coins. Read its diagnostic, repair it, then save. The final value must be a number even when no coins are added.",
   "hints": [
     "Read the line number first. Which line gave count its starting type?",
     "Quotation marks make text. The characters inside quotes do not read a variable.",
@@ -51,7 +51,7 @@
     },
     {
       "source": "wrong-zero.ts",
-      "misconception": "Discards the opening tasks.",
+      "misconception": "Discards the coins already in the jar.",
       "witness": {
         "fixture": "busy",
         "kind": "result",
