@@ -192,7 +192,19 @@ Owner feedback after C18 (2026-11-26), done:
 - Buttons no longer show their key. One line at the bottom right lists the screen's shortcuts.
 - 0.2.0 is compatible with 0.1.0: an existing enrollment sees "Update to 0.2.0-preview.1" on the course page.
 
+### Phase A2: Lesson layout v2 (owner, 2026-11-26)
+
+Mockup: "Screen 3, revised after first use" in the redesign doc.
+
+- [ ] A2.1 Lesson page in two panes: a step list on the left (Learn steps, then "Practice in your editor" for exercise steps; done, current and exercise marks; "N of M done" at the bottom) and the step on the right, in a column about 70 characters wide.
+- [ ] A2.2 Step content as numbered stages: 1 Read the code, 2 Pick your answer, 3 Run it to check (Run locked until answered; output shown beside the Run button with "matches").
+- [ ] A2.3 Bottom bar: Previous, "X / Y", and Continue as the only filled button. Shortcuts in one line below.
+- [ ] A2.4 Feedback and choices render inline code (feedback still shows raw backticks).
+- [ ] A2.5 Apply the same narrow column and bottom bar to the course page and the exercise page.
+
 ### Phase D: TypeScript course rewrite
+
+Owner decision (2026-11-26): write all three new modules (Union and literal types, Utility types, Mapped and conditional types).
 
 Same rules as Phase C, new content version, 16 modules from the table.
 
