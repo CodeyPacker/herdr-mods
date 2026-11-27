@@ -6,11 +6,11 @@
     "tests",
     "debugging"
   ],
-  "prompt": "Return true for at least limit tasks. Inputs are nonnegative numbers. The failing case has count equal to limit.",
+  "prompt": "Repair `isBusy(count: number, limit: number): boolean`. A café is busy when `count` is at least `limit`. Both inputs are 0 or more. The failing check is the one where `count` equals `limit`.",
   "hints": [
-    "Read the expected boolean at count 3.",
-    "Compare one below, exactly at and one above the limit.",
-    "Choose the comparison that includes the limit."
+    "What should `isBusy(3, 3)` return? What does the starter return?",
+    "Try one below, exactly at, and one above the limit.",
+    "\"At least\" includes the limit itself."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -34,7 +34,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Excludes equality.",
+      "misconception": "Uses `>`, so `count` equal to `limit` is not busy.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -43,7 +43,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Accepts only equality.",
+      "misconception": "Uses `===`, so counts above `limit` are not busy.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -51,5 +51,5 @@
       }
     }
   ],
-  "feedback": "Read the expected boolean at count 3."
+  "feedback": "What should `isBusy(3, 3)` return? What does the starter return?"
 }

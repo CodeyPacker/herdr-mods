@@ -252,7 +252,8 @@ Same rules as Phase C, new content version, 16 modules from the table.
     - `valid-task` now checks member records (`validMember`, `active`). Added a type guard (`value is T`) step and prediction (`guard`).
 - [x] D12 modules · Modules
     - `export-task` now builds a `Song` (`makeSong`). Added a "Ways to import" reading step. Every question needs a runnable example, and examples are one file, so import forms have no question.
-- [ ] D13 checks · Writing tests
+- [x] D13 checks · Writing tests
+    - Tasks had no tracker theme. Prompts rewritten. Added a test helper prediction (`helper`) where the test itself is wrong.
 - [ ] D14 errors · Errors and failure
 - [ ] D15 async · async and Promises
 - [ ] D16 generic · Generics

@@ -6,11 +6,11 @@
     "tests",
     "debugging"
   ],
-  "prompt": "Implement orderTest(candidate). A correct candidate joins two strings in argument order with a slash, and the faulty version joins them in reverse. Return true for correct behavior and false for the defect.",
+  "prompt": "Write `orderTest(candidate): boolean`. A correct `candidate` joins two strings with a slash in argument order: `(\"a\", \"b\")` gives `\"a/b\"`. A faulty one joins them in reverse. Return `true` for the correct version and `false` for the faulty one.",
   "hints": [
-    "Would two equal inputs distinguish the orders?",
-    "Choose different first and second strings.",
-    "Specify the expected text for that input."
+    "Would two equal strings tell the orders apart?",
+    "Use two different strings.",
+    "Write the exact text you expect for that input."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -32,7 +32,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Uses identical inputs.",
+      "misconception": "Uses two equal strings, so both orders give the same result.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -41,7 +41,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Expects the order to be reversed.",
+      "misconception": "Expects the reversed order.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -49,5 +49,5 @@
       }
     }
   ],
-  "feedback": "Would two equal inputs distinguish the orders?"
+  "feedback": "Would two equal strings tell the orders apart?"
 }

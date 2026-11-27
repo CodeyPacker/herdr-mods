@@ -1,16 +1,16 @@
 {
   "id": "course:ts-foundations/task/checks-choose-test",
   "role": "independent",
-  "title": "Test a faulty count",
+  "title": "Test a faulty sum",
   "concepts": [
     "tests",
     "debugging"
   ],
-  "prompt": "Write catchesMissingLast(candidate): boolean. A correct candidate sums a number array; the broken candidate sums every element except the last. Return true when your test sees the correct result and false when it detects the defect. Call the supplied candidate on a distinguishing input.",
+  "prompt": "Write `catchesMissingLast(candidate): boolean`. A correct `candidate` sums an array of numbers. A broken one sums every item except the last. Call `candidate` on an input of your choice and return `true` if the result is right, `false` if it is wrong. Your input must tell the two versions apart.",
   "hints": [
-    "Compare the two behaviors on an empty list.",
-    "Choose an input where the final entry affects the answer.",
-    "Compute the expected answer independently of the candidate."
+    "What do both versions return for `[]`?",
+    "Pick an input where the last item changes the sum.",
+    "Work out the expected sum yourself. Do not compute it with `candidate`."
   ],
   "starter": "starter.ts",
   "solution": "solution.ts",
@@ -33,7 +33,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-1.ts",
-      "misconception": "Always passes the candidate.",
+      "misconception": "Always returns `true`, so it never catches the broken version.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -42,7 +42,7 @@
     },
     {
       "source": "wrong-2.ts",
-      "misconception": "Uses an empty input.",
+      "misconception": "Tests an empty array, where both versions return 0.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -50,5 +50,5 @@
       }
     }
   ],
-  "feedback": "Compare the two behaviors on an empty list."
+  "feedback": "What do both versions return for `[]`?"
 }
