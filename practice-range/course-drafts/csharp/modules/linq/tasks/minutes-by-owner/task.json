@@ -1,18 +1,18 @@
 {
   "id": "course:cs-foundations/task/linq-minutes-by-owner",
   "role": "independent",
-  "title": "Total the minutes per owner",
+  "title": "Total the minutes per genre",
   "concepts": [
     "linq-query",
     "lambda",
     "dictionary",
     "record"
   ],
-  "prompt": "TaskItem and Sample are supplied. Write public static Dictionary<string, int> MinutesByOwner(List<TaskItem> tasks). For the tasks that are not done, return each owner with the total of their Minutes. An owner whose tasks are all done does not appear as a key.",
+  "prompt": "`Movie` and `Sample` are supplied. Write `public static Dictionary<string, int> MinutesByGenre(List<Movie> movies)`. For the movies that are not watched, return each genre with the total of their `Minutes`. A genre whose movies are all watched does not appear as a key.",
   "hints": [
-    "Which tasks count at all? Decide that before grouping.",
-    "Each owner needs one total, built from the Minutes of that owner's open tasks.",
-    "Filter with Where, group with GroupBy on Owner, then build the dictionary from each group's Key and its Sum of Minutes."
+    "Which movies count at all? Decide that before grouping.",
+    "Each genre needs one total, built from the Minutes of that genre's unwatched movies.",
+    "Filter with Where, group with GroupBy on Genre, then build the dictionary from each group's Key and its Sum of Minutes."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -20,17 +20,17 @@
   "mode": "members",
   "rules": [],
   "checks": [
-    "Practice.MinutesByOwner(Sample.Tasks())[\"Ana\"] == 30",
-    "Practice.MinutesByOwner(Sample.Tasks())[\"Ben\"] == 45",
-    "Practice.MinutesByOwner(Sample.Tasks()).ContainsKey(\"Cy\") == false",
-    "Practice.MinutesByOwner(Sample.Tasks()).Count == 2",
-    "Practice.MinutesByOwner(new List<TaskItem>()).Count == 0"
+    "Practice.MinutesByGenre(Sample.Movies())[\"Drama\"] == 30",
+    "Practice.MinutesByGenre(Sample.Movies())[\"Comedy\"] == 45",
+    "Practice.MinutesByGenre(Sample.Movies()).ContainsKey(\"Horror\") == false",
+    "Practice.MinutesByGenre(Sample.Movies()).Count == 2",
+    "Practice.MinutesByGenre(new List<Movie>()).Count == 0"
   ],
   "checkLabels": [
-    "Ana's open tasks are 10 and 20 minutes, so her total must be 30.",
-    "Ben's one open task is 45 minutes.",
-    "Cy's only task is done, so Cy must not be a key.",
-    "The sample tasks must give exactly two owners.",
+    "Drama's unwatched movies are 10 and 20 minutes, so her total must be 30.",
+    "Comedy's one unwatched movie is 45 minutes.",
+    "Horror's only movie is watched, so Horror must not be a key.",
+    "The sample movies must give exactly two genres.",
     "An empty list must give an empty dictionary."
   ],
   "fixtures": [
@@ -42,7 +42,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-all-tasks.cs",
-      "misconception": "Includes the tasks that are already done.",
+      "misconception": "Includes the movies that are already watched.",
       "witness": {
         "fixture": "tasks",
         "kind": "result",
@@ -51,7 +51,7 @@
     },
     {
       "source": "wrong-counts.cs",
-      "misconception": "Counts the tasks instead of adding their minutes.",
+      "misconception": "Counts the movies instead of adding their minutes.",
       "witness": {
         "fixture": "tasks",
         "kind": "result",
@@ -59,5 +59,5 @@
       }
     }
   ],
-  "feedback": "Work out Ana's total by hand from the sample tasks, using only the tasks that are not done, and compare it with your result."
+  "feedback": "Work out Drama's total by hand from the sample movies, using only the movies that are not watched, and compare it with your result."
 }

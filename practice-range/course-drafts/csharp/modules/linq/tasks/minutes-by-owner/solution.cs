@@ -1,7 +1,7 @@
-public static Dictionary<string, int> MinutesByOwner(List<TaskItem> tasks)
+public static Dictionary<string, int> MinutesByGenre(List<Movie> movies)
 {
-    return tasks
-        .Where(task => !task.Done)
-        .GroupBy(task => task.Owner)
-        .ToDictionary(group => group.Key, group => group.Sum(task => task.Minutes));
+    return movies
+        .Where(movie => !movie.Watched)
+        .GroupBy(movie => movie.Genre)
+        .ToDictionary(group => group.Key, group => group.Sum(movie => movie.Minutes));
 }

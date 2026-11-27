@@ -289,7 +289,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/linq/module.json"
+        "path": "modules/linq/module.md"
       }
     },
     {

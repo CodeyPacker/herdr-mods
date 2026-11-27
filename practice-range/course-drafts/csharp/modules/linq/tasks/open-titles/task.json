@@ -1,18 +1,18 @@
 {
   "id": "course:cs-foundations/task/linq-open-titles",
   "role": "guided",
-  "title": "List the open titles",
+  "title": "List the unwatched titles",
   "concepts": [
     "lambda",
     "linq-query",
     "list",
     "record"
   ],
-  "prompt": "TaskItem and Sample are supplied. OpenTitles(List<TaskItem> tasks) should return the titles of the tasks that are not done, in their original order. The starter returns the title of every task.",
+  "prompt": "`Movie` and `Sample` are supplied. `UnwatchedTitles(List<Movie> movies)` should return the titles of the movies that are not watched, in their original order. The starter returns the title of every movie.",
   "hints": [
-    "Which step decides whether a task is kept, and which step turns a task into a title?",
+    "Which step decides whether a movie is kept, and which step turns a movie into a title?",
     "Filter before you transform: Where comes before Select.",
-    "Add .Where(task => !task.Done) in front of the Select."
+    "Add .Where(movie => !movie.Watched) in front of the Select."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -20,14 +20,14 @@
   "mode": "members",
   "rules": [],
   "checks": [
-    "Practice.OpenTitles(Sample.Tasks()).SequenceEqual(new List<string> { \"Ship\", \"Label\", \"Count\" })",
-    "Practice.OpenTitles(new List<TaskItem>()).Count == 0",
-    "Practice.OpenTitles(new List<TaskItem> { new TaskItem(\"Pack\", \"Ana\", 30, true) }).Count == 0"
+    "Practice.UnwatchedTitles(Sample.Movies()).SequenceEqual(new List<string> { \"Jaws\", \"Heat\", \"Big\" })",
+    "Practice.UnwatchedTitles(new List<Movie>()).Count == 0",
+    "Practice.UnwatchedTitles(new List<Movie> { new Movie(\"Up\", \"Drama\", 30, true) }).Count == 0"
   ],
   "checkLabels": [
-    "From the sample tasks, the result must be Ship, Label, Count in that order.",
+    "From the sample movies, the result must be Jaws, Heat, Count in that order.",
     "An empty list must give an empty list.",
-    "A list with only done tasks must give an empty list."
+    "A list with only watched movies must give an empty list."
   ],
   "fixtures": [
     {
@@ -38,7 +38,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-done.cs",
-      "misconception": "Keeps the done tasks instead of the open ones.",
+      "misconception": "Keeps the watched movies instead of the unwatched ones.",
       "witness": {
         "fixture": "tasks",
         "kind": "result",
@@ -55,5 +55,5 @@
       }
     }
   ],
-  "feedback": "Compare your result with the sample tasks one by one. Check which tasks are kept and that their order is unchanged."
+  "feedback": "Compare your result with the sample movies one by one. Check which movies are kept and that their order is unchanged."
 }

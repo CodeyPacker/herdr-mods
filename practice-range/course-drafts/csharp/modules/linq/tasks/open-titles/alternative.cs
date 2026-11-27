@@ -1,11 +1,11 @@
-public static List<string> OpenTitles(List<TaskItem> tasks)
+public static List<string> UnwatchedTitles(List<Movie> movies)
 {
     List<string> titles = new List<string>();
-    foreach (TaskItem task in tasks)
+    foreach (Movie movie in movies)
     {
-        if (task.Done == false)
+        if (movie.Watched == false)
         {
-            titles.Add(task.Title);
+            titles.Add(movie.Title);
         }
     }
     return titles;

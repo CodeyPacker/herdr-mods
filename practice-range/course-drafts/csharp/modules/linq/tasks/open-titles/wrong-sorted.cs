@@ -1,4 +1,4 @@
-public static List<string> OpenTitles(List<TaskItem> tasks)
+public static List<string> UnwatchedTitles(List<Movie> movies)
 {
-    return tasks.Where(task => !task.Done).Select(task => task.Title).OrderBy(title => title).ToList();
+    return movies.Where(movie => !movie.Watched).Select(movie => movie.Title).OrderBy(title => title).ToList();
 }

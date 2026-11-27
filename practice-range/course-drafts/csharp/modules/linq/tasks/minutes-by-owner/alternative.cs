@@ -1,14 +1,14 @@
-public static Dictionary<string, int> MinutesByOwner(List<TaskItem> tasks)
+public static Dictionary<string, int> MinutesByGenre(List<Movie> movies)
 {
     Dictionary<string, int> totals = new Dictionary<string, int>();
-    foreach (TaskItem task in tasks)
+    foreach (Movie movie in movies)
     {
-        if (task.Done)
+        if (movie.Watched)
         {
             continue;
         }
-        totals.TryGetValue(task.Owner, out int current);
-        totals[task.Owner] = current + task.Minutes;
+        totals.TryGetValue(movie.Genre, out int current);
+        totals[movie.Genre] = current + movie.Minutes;
     }
     return totals;
 }

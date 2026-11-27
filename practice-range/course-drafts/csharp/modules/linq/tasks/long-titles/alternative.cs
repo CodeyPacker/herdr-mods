@@ -1,11 +1,11 @@
-public static IEnumerable<string> LongTitles(List<TaskItem> tasks, int limit)
+public static IEnumerable<string> LongTitles(List<Movie> movies, int limit)
 {
     List<string> titles = new List<string>();
-    foreach (TaskItem task in tasks)
+    foreach (Movie movie in movies)
     {
-        if (task.Minutes > limit)
+        if (movie.Minutes > limit)
         {
-            titles.Add(task.Title);
+            titles.Add(movie.Title);
         }
     }
     return titles;

@@ -1,4 +1,4 @@
-public static List<string> OpenTitles(List<TaskItem> tasks)
+public static List<string> UnwatchedTitles(List<Movie> movies)
 {
-    return tasks.Select(task => task.Title).ToList();
+    return movies.Select(movie => movie.Title).ToList();
 }

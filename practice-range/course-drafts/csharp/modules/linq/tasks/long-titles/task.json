@@ -1,14 +1,14 @@
 {
   "id": "course:cs-foundations/task/linq-long-titles",
   "role": "review",
-  "title": "Take a snapshot of long tasks",
+  "title": "Take a snapshot of long movies",
   "concepts": [
     "deferred",
     "linq-query",
     "lambda",
     "comparison"
   ],
-  "prompt": "TaskItem and Sample are supplied. Write public static IEnumerable<string> LongTitles(List<TaskItem> tasks, int limit). Return the titles of the tasks whose Minutes are greater than limit, in their original order. The result is a snapshot: it must not change when tasks are added to the list afterwards.",
+  "prompt": "`Movie` and `Sample` are supplied. Write `public static IEnumerable<string> LongTitles(List<Movie> movies, int limit)`. Return the titles of the movies whose `Minutes` are greater than `limit`, in their original order. The result is a snapshot: it must not change when movies are added to the list afterwards.",
   "hints": [
     "When does a Where and Select chain actually run?",
     "A query that has not run yet will see items that are added later.",
@@ -19,17 +19,17 @@
   "alternative": "alternative.cs",
   "mode": "members",
   "rules": [],
-  "support": "static int CountAfterAdding()\n{\n    var tasks = Sample.Tasks();\n    var result = Practice.LongTitles(tasks, 40);\n    tasks.Add(new TaskItem(\"Move\", \"Ben\", 90, false));\n    return result.Count();\n}\n",
+  "support": "static int CountAfterAdding()\n{\n    var movies = Sample.Movies();\n    var result = Practice.LongTitles(movies, 40);\n    movies.Add(new Movie(\"Move\", \"Comedy\", 90, false));\n    return result.Count();\n}\n",
   "checks": [
-    "Practice.LongTitles(Sample.Tasks(), 40).SequenceEqual(new List<string> { \"Ship\", \"Audit\" })",
-    "Practice.LongTitles(Sample.Tasks(), 60).Count() == 0",
+    "Practice.LongTitles(Sample.Movies(), 40).SequenceEqual(new List<string> { \"Jaws\", \"Alien\" })",
+    "Practice.LongTitles(Sample.Movies(), 60).Count() == 0",
     "CountAfterAdding() == 2",
-    "Practice.LongTitles(new List<TaskItem>(), 0).Count() == 0"
+    "Practice.LongTitles(new List<Movie>(), 0).Count() == 0"
   ],
   "checkLabels": [
-    "With a limit of 40, the sample tasks must give Ship then Audit.",
-    "A task of exactly 60 minutes is not over a limit of 60.",
-    "A task added to the list after the call must not appear in the result.",
+    "With a limit of 40, the sample movies must give Jaws then Alien.",
+    "A movie of exactly 60 minutes is not over a limit of 60.",
+    "A movie added to the list after the call must not appear in the result.",
     "An empty list must give an empty result."
   ],
   "fixtures": [
@@ -50,7 +50,7 @@
     },
     {
       "source": "wrong-inclusive.cs",
-      "misconception": "Includes a task whose minutes equal the limit.",
+      "misconception": "Includes a movie whose minutes equal the limit.",
       "witness": {
         "fixture": "tasks",
         "kind": "result",
