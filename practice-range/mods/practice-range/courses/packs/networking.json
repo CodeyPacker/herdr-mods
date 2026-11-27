@@ -1,0 +1,2245 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": "0.1.0-preview.1",
+  "kind": "reading",
+  "id": "course:networking",
+  "title": "Networking",
+  "audience": [
+    "Can use a terminal and has called a web page or an API",
+    "Wants to understand how a request crosses a network and why it fails"
+  ],
+  "prerequisiteConcepts": [],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:networking/module/model",
+      "order": "listed"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/model",
+      "description": "Describe how a request crosses a network in packets, hops and layers, and name the step that failed.",
+      "assessment": "course:networking/module/model"
+    },
+    {
+      "id": "outcome/addresses",
+      "description": "Read an IP address and a CIDR range, and tell a private address from a public one.",
+      "assessment": "course:networking/module/addresses"
+    },
+    {
+      "id": "outcome/ports",
+      "description": "Say what a port is, and explain why a running server cannot be reached from another machine.",
+      "assessment": "course:networking/module/ports"
+    },
+    {
+      "id": "outcome/dns",
+      "description": "Explain how a name is resolved, read the common records, and plan a change around the TTL.",
+      "assessment": "course:networking/module/dns"
+    },
+    {
+      "id": "outcome/tcp",
+      "description": "Describe a TCP connection from open to close, tell refused from timed out from reset, and say when UDP fits.",
+      "assessment": "course:networking/module/tcp"
+    },
+    {
+      "id": "outcome/http",
+      "description": "Read an HTTP request and response as sent, and say what HTTP/2 and HTTP/3 changed.",
+      "assessment": "course:networking/module/http"
+    },
+    {
+      "id": "outcome/tls",
+      "description": "Say what TLS guarantees, and name which certificate check failed from an error message.",
+      "assessment": "course:networking/module/tls"
+    },
+    {
+      "id": "outcome/routing",
+      "description": "Follow a packet through a route table and NAT, and explain why a reply can be lost.",
+      "assessment": "course:networking/module/routing"
+    },
+    {
+      "id": "outcome/firewalls",
+      "description": "Write narrow, stateful firewall rules and lay a network out in public and private subnets.",
+      "assessment": "course:networking/module/firewalls"
+    },
+    {
+      "id": "outcome/proxies",
+      "description": "Explain what a reverse proxy changes for a server, and read the errors a proxy produces.",
+      "assessment": "course:networking/module/proxies"
+    },
+    {
+      "id": "outcome/balancing",
+      "description": "Choose a load balancing method, design a health check, and take a server out without dropping requests.",
+      "assessment": "course:networking/module/balancing"
+    },
+    {
+      "id": "outcome/timeouts",
+      "description": "Set timeouts along a chain of calls, and retry only when it is safe, with backoff and jitter.",
+      "assessment": "course:networking/module/timeouts"
+    },
+    {
+      "id": "outcome/latency",
+      "description": "Estimate where a request's time goes by counting round trips, and choose a way to remove them.",
+      "assessment": "course:networking/module/latency"
+    },
+    {
+      "id": "outcome/debug",
+      "description": "Test a failing request stage by stage and name the first stage that fails.",
+      "assessment": "course:networking/module/debug"
+    },
+    {
+      "id": "outcome/review",
+      "description": "Trace a request end to end, review a flawed network layout, and plan one, without help.",
+      "assessment": "course:networking/module/review"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:networking/module/model",
+      "title": "How data crosses a network",
+      "prerequisites": [],
+      "teaches": [
+        "packet",
+        "layer"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:networking/module/addresses",
+      "title": "IP addresses and subnets",
+      "prerequisites": [
+        "course:networking/module/model"
+      ],
+      "teaches": [
+        "ip-address",
+        "subnet"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:networking/module/ports",
+      "title": "Ports and sockets",
+      "prerequisites": [
+        "course:networking/module/addresses"
+      ],
+      "teaches": [
+        "port",
+        "listening"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:networking/module/dns",
+      "title": "Names and DNS",
+      "prerequisites": [
+        "course:networking/module/ports"
+      ],
+      "teaches": [
+        "dns",
+        "ttl"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:networking/module/tcp",
+      "title": "TCP and UDP",
+      "prerequisites": [
+        "course:networking/module/dns"
+      ],
+      "teaches": [
+        "tcp",
+        "udp"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:networking/module/http",
+      "title": "HTTP on the wire",
+      "prerequisites": [
+        "course:networking/module/tcp"
+      ],
+      "teaches": [
+        "http-message",
+        "http-version"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:networking/module/tls",
+      "title": "TLS and certificates",
+      "prerequisites": [
+        "course:networking/module/http"
+      ],
+      "teaches": [
+        "tls",
+        "certificate"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:networking/module/routing",
+      "title": "Routing, gateways and NAT",
+      "prerequisites": [
+        "course:networking/module/tls"
+      ],
+      "teaches": [
+        "route",
+        "nat"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:networking/module/firewalls",
+      "title": "Firewalls and network rules",
+      "prerequisites": [
+        "course:networking/module/routing"
+      ],
+      "teaches": [
+        "firewall",
+        "network-zones"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:networking/module/proxies",
+      "title": "Proxies and reverse proxies",
+      "prerequisites": [
+        "course:networking/module/firewalls"
+      ],
+      "teaches": [
+        "reverse-proxy",
+        "forwarded-headers"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:networking/module/balancing",
+      "title": "Load balancers",
+      "prerequisites": [
+        "course:networking/module/proxies"
+      ],
+      "teaches": [
+        "load-balancer",
+        "health-check"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:networking/module/timeouts",
+      "title": "Timeouts, retries and backoff",
+      "prerequisites": [
+        "course:networking/module/balancing"
+      ],
+      "teaches": [
+        "timeout",
+        "retry"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:networking/module/latency",
+      "title": "Latency and where time goes",
+      "prerequisites": [
+        "course:networking/module/timeouts"
+      ],
+      "teaches": [
+        "latency",
+        "round-trip"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:networking/module/debug",
+      "title": "Find where a request fails",
+      "prerequisites": [
+        "course:networking/module/latency"
+      ],
+      "teaches": [
+        "network-debugging"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "course:networking/module/review",
+      "title": "Trace and review a request path",
+      "prerequisites": [
+        "course:networking/module/debug"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "available"
+    }
+  ],
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  },
+  "preview": true,
+  "readiness": [],
+  "lessons": [
+    {
+      "id": "course:networking/module/model",
+      "title": "How data crosses a network",
+      "requires": [],
+      "outcomes": [],
+      "intro": "Two programs on different machines talk by sending small pieces of data across a chain of devices. This module gives you the picture that the rest of the course fills in: packets, layers, and who starts a conversation.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Client and server",
+          "text": "A **server** is a program that waits for someone to contact it. A **client** is a program that starts the contact. The words describe roles in one conversation, not kinds of machine. Your laptop is a client when its browser loads a page, and a server when you run a development web server on it.\n\nEvery conversation in this course has the same outline:\n\n1. The client finds the server's address.\n2. The client opens a connection to that address.\n3. The client sends a request.\n4. The server sends a response.\n\nWhen something fails, the first useful question is which of these four steps failed.",
+          "example": "roles"
+        },
+        {
+          "kind": "explanation",
+          "title": "Packets",
+          "text": "A network does not carry a whole file or a whole web page in one piece. The sender cuts the data into **packets**, each a few hundred to about 1,500 bytes. Every packet carries the address it is going to and the address it came from, like an envelope.\n\nPackets travel separately. Two packets from the same message can take different routes, arrive out of order, or not arrive at all. The network itself makes one promise only: it will try to deliver each packet. Putting the pieces back in order, and asking again for a missing one, is the job of software at the two ends.",
+          "example": "packets"
+        },
+        {
+          "kind": "explanation",
+          "title": "Hops",
+          "text": "Between the client and the server sit **routers**. A router is a device that receives a packet, reads the destination address, and passes the packet to the next router that is closer to that address. Each pass from one device to the next is a **hop**.\n\nA request to a server in another country often crosses 10 to 20 hops. No single router knows the full path. Each one only knows which neighbour to hand the packet to next.",
+          "example": "hops"
+        },
+        {
+          "kind": "prediction",
+          "title": "One lost packet",
+          "text": "A client sends a message that is cut into 28 packets. Packet 9 is dropped by an overloaded router on the way.",
+          "questions": [
+            "lost-packet"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Layers",
+          "text": "Network software is built in **layers**. Each layer does one job and relies on the layer below it.\n\n| Layer | Its job | Example |\n| --- | --- | --- |\n| Application | What the two programs say to each other | HTTP, DNS |\n| Transport | Deliver a stream of data to the right program | TCP, UDP |\n| Network | Move one packet to the right machine | IP |\n| Link | Move a packet across one cable or radio link | Ethernet, Wi-Fi |\n\nThe layers wrap each other. An HTTP request is placed inside a TCP segment, which is placed inside an IP packet, which is placed inside a Wi-Fi frame. The receiving side unwraps them in the opposite order.\n\nYou will see other layer lists with seven numbered layers (the OSI model). People still use two of its numbers in daily speech: \"layer 4\" means transport and \"layer 7\" means application.",
+          "example": "layers"
+        },
+        {
+          "kind": "explanation",
+          "title": "Why layers help you debug",
+          "text": "Each layer can fail on its own, and each failure looks different. A cable that is unplugged is a link problem. A wrong address is a network problem. A program that is not running is a transport problem, because nothing accepts the connection. A page that returns an error is an application problem.\n\nWork from the bottom up. If a lower layer is broken, nothing above it can work, so testing the upper layer first tells you little."
+        },
+        {
+          "kind": "prediction",
+          "title": "Which layer",
+          "text": "A browser shows the message \"404 Not Found\" for one page on a site. Other pages on the same site load.",
+          "questions": [
+            "which-layer"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: name the step",
+          "text": "For each report, write which of the four steps from the first section failed: find the address, open a connection, send a request, or receive a response. Write one sentence of reasoning for each.\n\n1. \"The browser says the site's name could not be found.\"\n2. \"The page loads for 30 seconds and then says the connection timed out. The name is correct.\"\n3. \"The page loads at once and says 500 Internal Server Error.\"\n4. \"The download starts and stops halfway, every time.\""
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. **Find the address.** The name could not be turned into an address, so nothing was ever sent to the server.\n2. **Open a connection.** The address was found, and nothing answered at it. No request could be sent yet.\n3. **Receive a response.** The connection opened, the request arrived, and the server answered with an error of its own. The network did its job.\n4. **Receive a response.** The request arrived and the response began. Something interrupts the stream of packets partway, such as a timeout on a device in the middle.\n\nReports 3 and 4 fail in the same step for different reasons. The later modules give you the tools to tell them apart."
+        }
+      ],
+      "questions": [
+        {
+          "id": "lost-packet",
+          "prompt": "What does the network itself do about packet 9?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "It sends packet 9 again from the router that dropped it",
+              "feedback": "A router keeps no copy of a packet after it passes it on or drops it."
+            },
+            {
+              "text": "Nothing. Software at the two ends has to notice and send it again",
+              "feedback": "The network only tries to deliver. Noticing a gap and resending is done by the endpoints, usually by TCP."
+            },
+            {
+              "text": "It tells the sender to start the whole message again",
+              "feedback": "Nothing in the network tracks whole messages. Only single packets exist there."
+            }
+          ]
+        },
+        {
+          "id": "which-layer",
+          "prompt": "Which layer is the problem in?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "Link, because the page did not arrive",
+              "feedback": "A response did arrive. \"404\" is text the server sent back."
+            },
+            {
+              "text": "Transport, because the connection failed",
+              "feedback": "The connection worked. The server received the request and answered it."
+            },
+            {
+              "text": "Application, because the server answered and said the page does not exist",
+              "feedback": "Every lower layer did its job. The server's own program decided there is no such page."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "roles": {
+          "code": "   CLIENT                                         SERVER\n   (starts the contact)                           (waits for contact)\n\n   1. find the address     \"shop.example.com is 203.0.113.10\"\n   2. open a connection    ------------------------------------>\n   3. send a request       ---- \"GET /cart\" ------------------->\n   4. receive a response   <--- \"200 OK, here is the cart\" -----",
+          "fence": "text",
+          "readOnly": true
+        },
+        "packets": {
+          "code": "   message: \"the whole web page\"  (40,000 bytes)\n\n   sender cuts it up:\n\n   +------------------+ +------------------+ +------------------+\n   | to:   203.0.113.10| | to:   203.0.113.10| | to:   203.0.113.10|\n   | from: 198.51.100.7| | from: 198.51.100.7| | from: 198.51.100.7|\n   | part 1 of 28     | | part 2 of 28     | | part 3 of 28     | ...\n   +------------------+ +------------------+ +------------------+\n\n   Each packet travels on its own. The receiver puts them in order.",
+          "fence": "text",
+          "readOnly": true
+        },
+        "hops": {
+          "code": "   laptop -> home router -> provider -> ... -> data centre -> server\n            hop 1          hop 2        hops 3 to 11          hop 12\n\n   Each router reads the \"to\" address and picks the next neighbour.\n   None of them knows the whole path.",
+          "fence": "text",
+          "readOnly": true
+        },
+        "layers": {
+          "code": "   +-----------------------------------------------------------+\n   | Wi-Fi frame      (gets it across this one radio link)     |\n   |  +-----------------------------------------------------+  |\n   |  | IP packet     (to 203.0.113.10, from 198.51.100.7)  |  |\n   |  |  +-----------------------------------------------+  |  |\n   |  |  | TCP segment  (to port 443, part 3)            |  |  |\n   |  |  |  +-----------------------------------------+  |  |  |\n   |  |  |  | HTTP request  \"GET /cart\"               |  |  |  |\n   |  |  |  +-----------------------------------------+  |  |  |\n   |  |  +-----------------------------------------------+  |  |\n   |  +-----------------------------------------------------+  |\n   +-----------------------------------------------------------+",
+          "fence": "text",
+          "readOnly": true
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:networking/module/addresses",
+      "title": "IP addresses and subnets",
+      "requires": [],
+      "outcomes": [],
+      "intro": "Every packet names the machine it is going to with an IP address. This module covers how to read an address, which addresses are private, and how a range of addresses is written.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "An IPv4 address",
+          "text": "An **IPv4 address** is a 32-bit number. It is written as four numbers from 0 to 255 with dots between them, such as `203.0.113.10`. Each of the four numbers is one byte.\n\nThere are about 4.3 billion possible IPv4 addresses, which is fewer than the number of devices in use. Two things make up for that. Private addresses are reused inside every home and office, as this module shows. **IPv6** is a newer format with 128-bit addresses, written in hexadecimal groups such as `2001:db8::10`. Both are in use today, and the ideas in this course apply to both. The examples use IPv4 because it is shorter to read.",
+          "example": "address"
+        },
+        {
+          "kind": "explanation",
+          "title": "A machine can have several addresses",
+          "text": "An address belongs to a **network interface**, not to a machine. An interface is one connection to a network: a Wi-Fi card, a cable port, or a virtual one made by software. A laptop on Wi-Fi with a VPN running has at least three interfaces, each with its own address.\n\nOne interface exists on every machine. The **loopback** interface has the address `127.0.0.1` and the name `localhost`. A packet sent to it never leaves the machine. It is how a program talks to another program on the same machine.",
+          "example": "interfaces"
+        },
+        {
+          "kind": "explanation",
+          "title": "Private and public addresses",
+          "text": "Three ranges of IPv4 addresses are reserved as **private**. Anyone may use them inside their own network, and routers on the public internet refuse to carry packets addressed to them.\n\n| Range | Usual sight |\n| --- | --- |\n| `10.0.0.0` to `10.255.255.255` | Company and cloud networks |\n| `172.16.0.0` to `172.31.255.255` | Cloud networks, container networks |\n| `192.168.0.0` to `192.168.255.255` | Home routers |\n\nEvery other address is **public**: it is unique on the internet and reachable from anywhere, unless a firewall blocks it.\n\nSince private addresses are reused everywhere, `192.168.1.23` in your home and `192.168.1.23` in a neighbour's home are different machines. A private address means something only inside its own network."
+        },
+        {
+          "kind": "prediction",
+          "title": "Which one can be reached",
+          "text": "A colleague in another city sends you this: \"My test server is running, open `http://192.168.0.14:8080`.\"",
+          "questions": [
+            "private-reach"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Writing a range of addresses",
+          "text": "A **subnet** is a block of addresses that share their first bits. It is written in **CIDR notation**: an address, a slash, and the number of leading bits that are fixed.\n\n`10.0.1.0/24` means the first 24 bits are fixed and the last 8 are free. It covers `10.0.1.0` to `10.0.1.255`, which is 256 addresses.\n\nA smaller number after the slash means a larger block, because fewer bits are fixed. Each bit you free doubles the size.\n\n| CIDR | Fixed part | Addresses |\n| --- | --- | --- |\n| `10.0.0.0/8` | `10.` | 16,777,216 |\n| `10.0.0.0/16` | `10.0.` | 65,536 |\n| `10.0.1.0/24` | `10.0.1.` | 256 |\n| `10.0.1.16/28` | first 28 bits | 16 |\n| `10.0.1.5/32` | all of it | 1 |\n\nTwo special forms are worth knowing by sight. `/32` is exactly one address. `0.0.0.0/0` fixes no bits, so it means every address there is.",
+          "example": "cidr"
+        },
+        {
+          "kind": "prediction",
+          "title": "Is it in the range",
+          "text": "A firewall rule allows traffic from `10.0.4.0/22`. The fixed part is 22 bits, so the last 2 bits of the third number and all of the fourth are free. The third number can be 4, 5, 6 or 7.",
+          "questions": [
+            "in-range"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Where subnets are used",
+          "text": "You will write CIDR ranges in three places.\n\n- **Network layout.** A cloud network is given a large block such as `10.0.0.0/16` and cut into smaller subnets, for example one for web servers and one for databases.\n- **Firewall rules.** A rule says which source range may reach a port.\n- **Routing.** A route says which range is reached through which neighbour.\n\nTwo subnets that you connect must not overlap. If the office uses `10.0.0.0/16` and the cloud network also uses `10.0.0.0/16`, a machine cannot tell which side an address belongs to. Choose ranges with this in mind before the networks are joined, because changing them later means changing every machine's address."
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: plan the ranges",
+          "text": "A team has the block `10.20.0.0/16` for a new system. It needs three subnets:\n\n- web servers, up to 200 machines\n- databases, up to 10 machines\n- a management subnet for at most 5 machines\n\nWrite a CIDR range for each. Then answer: the company's office network is `10.20.0.0/16` as well. What will go wrong when the two are connected, and what would you change?"
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "| Subnet | Range | Size |\n| --- | --- | --- |\n| Web | `10.20.1.0/24` | 256 |\n| Databases | `10.20.2.0/28` | 16 |\n| Management | `10.20.3.0/28` | 16 |\n\nA `/24` holds 256 addresses, which covers 200 machines. A `/28` holds 16, which covers 10 and 5. Cloud providers reserve a few addresses in each subnet for their own use, so a `/29` with 8 addresses would be too tight for 5 machines. Many teams would use a `/24` for all three, because private addresses cost nothing and a subnet that is too small is painful to grow.\n\nThe overlap is the real problem. With the same `/16` on both sides, an office machine sending to `10.20.1.15` cannot know whether that is a neighbour in the office or a web server in the cloud. The fix is to give the new system a block the office does not use, such as `10.21.0.0/16`, before anything is built in it."
+        }
+      ],
+      "questions": [
+        {
+          "id": "private-reach",
+          "prompt": "What happens when you open it from your own home?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "It reaches the colleague's server, because the address is exact",
+              "feedback": "The address is exact only inside their network. Private ranges are reused in every network."
+            },
+            {
+              "text": "It goes to whatever has that address on your own network, or to nothing",
+              "feedback": "The address is private, so your router keeps the packet inside your own network."
+            },
+            {
+              "text": "The internet routes it to the nearest machine with that address",
+              "feedback": "Internet routers drop packets addressed to private ranges."
+            }
+          ]
+        },
+        {
+          "id": "in-range",
+          "prompt": "Which address does the rule allow?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "`10.0.3.200`",
+              "feedback": "The third number is 3, which is below the block. The block starts at 10.0.4.0."
+            },
+            {
+              "text": "`10.0.6.17`",
+              "feedback": "The third number 6 lies between 4 and 7, so the address is inside the block."
+            },
+            {
+              "text": "`10.0.8.1`",
+              "feedback": "The block ends at 10.0.7.255. The third number 8 is one past it."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "address": {
+          "code": "      203   .    0    .   113   .   10\n   11001011 . 00000000 . 01110001 . 00001010\n\n   four bytes, 32 bits in total",
+          "fence": "text",
+          "readOnly": true
+        },
+        "interfaces": {
+          "code": "   one laptop\n\n   +--------------+----------------+--------------------------------+\n   | interface    | address        | reaches                        |\n   +--------------+----------------+--------------------------------+\n   | loopback     | 127.0.0.1      | this machine only              |\n   | Wi-Fi        | 192.168.1.23   | the home network, then onward  |\n   | VPN          | 10.8.0.5       | the office network             |\n   +--------------+----------------+--------------------------------+",
+          "fence": "text",
+          "readOnly": true
+        },
+        "cidr": {
+          "code": "   10.0.1.0/24\n\n   10       . 0        . 1        . 0\n   00001010 . 00000000 . 00000001 . 00000000\n   |<------- 24 fixed bits ------>| |<- 8 ->|\n                                     free\n\n   covers 10.0.1.0 through 10.0.1.255   (2 to the power 8 = 256)",
+          "fence": "text",
+          "readOnly": true
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:networking/module/ports",
+      "title": "Ports and sockets",
+      "requires": [],
+      "outcomes": [],
+      "intro": "An IP address gets a packet to the right machine. A port gets it to the right program on that machine. This module covers what a port is, what \"listening\" means, and why a server can be running and still unreachable.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "What a port is",
+          "text": "A machine runs many programs that use the network at once. Each one is told apart by a **port**: a number from 0 to 65535 that the transport layer adds to every packet.\n\nAn address and a port together name one endpoint, written with a colon: `203.0.113.10:443`.\n\nSome port numbers have agreed uses, so that clients know where to look.\n\n| Port | Usual use |\n| --- | --- |\n| 22 | SSH (remote terminal) |\n| 53 | DNS |\n| 80 | HTTP |\n| 443 | HTTPS |\n| 5432 | PostgreSQL |\n| 6379 | Redis |\n\nThese are conventions. Nothing stops a web server from using port 8080, and development servers often do. Ports below 1024 are different in one way: on most systems a program needs administrator rights to use them.",
+          "example": "ports"
+        },
+        {
+          "kind": "explanation",
+          "title": "Listening",
+          "text": "A server program asks the operating system for a port and waits. This is called **listening**. From then on, the system hands every new connection for that port to that program.\n\nOnly one program can listen on a given address and port at a time. If a second one tries, the system refuses, and you see an error such as \"address already in use\". The usual cause is an older copy of the same program that is still running.\n\nWhen a packet arrives for a port that nobody listens on, the system answers with a refusal. The client sees \"connection refused\" almost at once. That quick refusal is useful: it proves the machine was reached and that the fault is the missing program, not the network."
+        },
+        {
+          "kind": "explanation",
+          "title": "Which interface it listens on",
+          "text": "A server listens on a port **and** on an address. The address decides which interface it accepts connections from.\n\n- `127.0.0.1` means loopback only. Only programs on the same machine can connect.\n- A specific address such as `10.0.1.5` means only connections that arrive at that interface.\n- `0.0.0.0` means every interface the machine has.\n\nThis is the most common reason a server \"works on my machine\" and nowhere else. Many development servers listen on `127.0.0.1` by default, which is a safe default. To let another machine reach the server, it has to listen on `0.0.0.0` or on the right interface.",
+          "example": "bind"
+        },
+        {
+          "kind": "prediction",
+          "title": "Works locally only",
+          "text": "A developer starts an API on their laptop. Its log says `Listening on http://127.0.0.1:3000`. A teammate on the same office network opens `http://192.168.1.23:3000`, where `192.168.1.23` is the laptop's Wi-Fi address.",
+          "questions": [
+            "local-only"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "The client's port",
+          "text": "The client needs a port too, so that the response can find its way back to the right program. The client does not choose it. The operating system picks a free one from a high range, usually above 32768, for each new connection. This is an **ephemeral port**: it is used for that one connection and then released.\n\nA connection is identified by four values together: the client address, the client port, the server address and the server port. That is why one browser can hold several connections to the same server at once. They differ in the client port.",
+          "example": "four"
+        },
+        {
+          "kind": "explanation",
+          "title": "See what is listening",
+          "text": "Every system has a command that lists the ports in use and the program that holds each one.\n\n\nRead two columns first: the local address and the port. `127.0.0.1:3000` is reachable only from the same machine. `0.0.0.0:3000` or `*:3000` is reachable from other machines, if a firewall allows it.",
+          "example": "listening"
+        },
+        {
+          "kind": "prediction",
+          "title": "Refused or timed out",
+          "text": "A client tries to connect to `10.0.2.8:5432`. After 30 seconds it reports a timeout. On the server, the database is running and listening on `0.0.0.0:5432`.",
+          "questions": [
+            "refused-timeout"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: read the listing",
+          "text": "A server gives this listing:\n\n```text\nLocal address      Program\n127.0.0.1:5432     postgres\n0.0.0.0:22         sshd\n0.0.0.0:8080       api\n10.0.1.5:9090      metrics\n```\n\nThe machine has two interfaces: `10.0.1.5` on a private network and `203.0.113.40` on the public internet. For each of the four programs, write who can connect: the same machine only, the private network, or anyone on the internet. Then say which line you would change first, and why."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "| Program | Reachable from |\n| --- | --- |\n| `postgres` | The same machine only. |\n| `sshd` | Both interfaces, so the private network and the internet. |\n| `api` | Both interfaces, so the private network and the internet. |\n| `metrics` | The private network only, since it listens on `10.0.1.5`. |\n\nThe database is set up well: only the API on the same machine can reach it.\n\nThe line to look at first is `sshd`. A remote terminal open to the whole internet is tried by automated scans all day. It is better limited by a firewall to a few source addresses, or bound to the private interface and reached through a VPN. Whether the API should be public depends on what it is for. If it is, it is normally placed behind a proxy on port 443, which a later module covers.\n\nThis paragraph is general guidance, not a statement of any organization's policy."
+        }
+      ],
+      "questions": [
+        {
+          "id": "local-only",
+          "prompt": "What does the teammate see?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "The API's response, because both machines are on the same network",
+              "feedback": "Being on one network gets the packet to the laptop. Nothing on the laptop listens at the Wi-Fi address."
+            },
+            {
+              "text": "Connection refused",
+              "feedback": "The laptop is reached, and no program listens on port 3000 at the Wi-Fi address, so the system refuses."
+            },
+            {
+              "text": "A timeout after about 30 seconds",
+              "feedback": "A timeout means no answer at all. Here the laptop answers at once with a refusal."
+            }
+          ]
+        },
+        {
+          "id": "refused-timeout",
+          "prompt": "What is the most likely cause?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "The database is listening on the wrong interface",
+              "feedback": "`0.0.0.0` accepts every interface, and a wrong interface would give a quick refusal, not a timeout."
+            },
+            {
+              "text": "Another program already uses port 5432",
+              "feedback": "Then the database would have failed to start with \"address already in use\"."
+            },
+            {
+              "text": "Something between the two machines drops the packets, such as a firewall",
+              "feedback": "No answer at all means the packets never reached the server, or the replies never came back."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "ports": {
+          "code": "   one machine, address 203.0.113.10\n\n   +----------------------------------------------+\n   |  :22    SSH server                           |\n   |  :443   web server                           |\n   |  :5432  database                             |\n   +----------------------------------------------+\n\n   A packet to 203.0.113.10:443 goes to the web server.\n   A packet to 203.0.113.10:5432 goes to the database.",
+          "fence": "text",
+          "readOnly": true
+        },
+        "bind": {
+          "code": "   server listening on 127.0.0.1:8080\n\n   same machine  ---> 127.0.0.1:8080      accepted\n   other machine ---> 192.168.1.23:8080   refused (nobody listens there)\n\n   server listening on 0.0.0.0:8080\n\n   same machine  ---> 127.0.0.1:8080      accepted\n   other machine ---> 192.168.1.23:8080   accepted",
+          "fence": "text",
+          "readOnly": true
+        },
+        "four": {
+          "code": "   client 198.51.100.7                       server 203.0.113.10\n\n   :51514  <------- connection 1 ------->  :443\n   :51515  <------- connection 2 ------->  :443\n   :51516  <------- connection 3 ------->  :443\n\n   Same server port every time. The client port tells them apart.",
+          "fence": "text",
+          "readOnly": true
+        },
+        "listening": {
+          "code": "# Linux\nss -ltnp\n\n# macOS\nlsof -iTCP -sTCP:LISTEN -n -P\n\n# Windows (PowerShell)\nGet-NetTCPConnection -State Listen",
+          "fence": "bash",
+          "readOnly": true
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:networking/module/dns",
+      "title": "Names and DNS",
+      "requires": [],
+      "outcomes": [],
+      "intro": "People use names and packets need addresses. DNS turns one into the other. This module covers how a lookup works, what the common records mean, and why a DNS change does not take effect everywhere at once.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "What DNS does",
+          "text": "**DNS** (the Domain Name System) is a worldwide lookup service. A client gives it a name such as `shop.example.com` and gets back an address such as `203.0.113.10`. This is called **resolving** the name.\n\nResolving happens before the connection opens. If it fails, nothing is ever sent to the server, and no server log will show the attempt.\n\nA name is read from right to left. `com` is the top-level domain. `example.com` is a domain that someone registered under it. `shop.example.com` is a name inside that domain, chosen by its owner."
+        },
+        {
+          "kind": "explanation",
+          "title": "How a lookup travels",
+          "text": "Your machine does not ask the whole internet. It asks one **resolver**, usually run by your internet provider, your company or a public service. The resolver does the walking.\n\n1. The resolver asks a **root server** where to find `com`.\n2. It asks a `com` server where to find `example.com`.\n3. It asks the **authoritative server** for `example.com`, which holds the real records, for `shop.example.com`.\n4. It returns the answer to your machine and keeps a copy.\n\nThe authoritative server is the one place where the domain's owner edits records. Everything else is a copy.",
+          "example": "lookup"
+        },
+        {
+          "kind": "explanation",
+          "title": "Records",
+          "text": "A domain's data is a list of **records**. Each has a name, a type and a value.\n\n| Type | Meaning | Example value |\n| --- | --- | --- |\n| `A` | The IPv4 address of a name | `203.0.113.10` |\n| `AAAA` | The IPv6 address of a name | `2001:db8::10` |\n| `CNAME` | This name is an alias of another name | `shop.hosting.example.net` |\n| `MX` | Where mail for the domain goes | `mail.example.com` |\n| `TXT` | Free text, often used to prove ownership | `verify=abc123` |\n| `NS` | Which servers are authoritative for the domain | `ns1.example.net` |\n\nA `CNAME` adds a step. The client looks up the alias, gets another name, and looks that one up. It is how a service hosted by someone else is given a name in your domain: you point your name at theirs, and they are free to change the address behind it.\n\nOne name can have several `A` records. The client gets all of them and normally tries the first, which spreads clients across several servers in a simple way.",
+          "example": "records"
+        },
+        {
+          "kind": "explanation",
+          "title": "Caching and TTL",
+          "text": "Every record carries a **TTL** (time to live): the number of seconds a copy may be kept. A resolver that has a copy answers from it until the TTL runs out, without asking the authoritative server again. Your operating system and your browser keep copies as well.\n\nCaching makes DNS fast. It also means a change is not seen everywhere at the same moment. After you change a record, each resolver keeps giving the old value until its own copy expires. For a TTL of 3600, some clients see the new address at once and others up to an hour later.\n\nPeople call this \"DNS propagation\". Nothing is being pushed out. Old copies are expiring at different times."
+        },
+        {
+          "kind": "prediction",
+          "title": "The change that did not arrive",
+          "text": "A record for `shop.example.com` has a TTL of 86400 (one day). At 09:00 the owner changes its address from the old server to a new one and switches the old server off at 09:05.",
+          "questions": [
+            "ttl-change"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Plan a change around the TTL",
+          "text": "The safe way to move a name is to plan for the cache.\n\n1. Days before, lower the TTL to something short, such as 60 seconds. Wait for the old TTL to pass, so every cached copy has the short one.\n2. Make the change. Within about a minute, nearly every client has the new address.\n3. Keep the old server running until its traffic has stopped.\n4. Raise the TTL again.\n\nA short TTL means more lookups and faster changes. A long TTL means fewer lookups and slow changes. Names that sit in front of things you may need to move quickly, such as a failover, are given short TTLs on purpose."
+        },
+        {
+          "kind": "explanation",
+          "title": "Look a name up",
+          "text": "Two commands ask DNS directly, which removes the browser and its cache from the picture.\n\n\nIn the answer, read the type, the value and the number before them, which is the TTL the resolver has left. Asking a second resolver is the quick way to see whether a change has reached some places and not others.\n\nTwo answers are easy to confuse. `NXDOMAIN` means the name does not exist. An empty answer with no error means the name exists and has no record of the type you asked for.",
+          "example": "dig"
+        },
+        {
+          "kind": "prediction",
+          "title": "Which failure",
+          "text": "A new service is given the name `reports.example.com`. From the office it resolves and loads. From a laptop at home, `dig reports.example.com` returns `NXDOMAIN`, while other names in `example.com` resolve.",
+          "questions": [
+            "split-view"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: move a site",
+          "text": "`www.example.com` has an `A` record with a TTL of 14400 (four hours) that points at an old server. You must move it to a new server on Thursday at 10:00 with as little failed traffic as possible. Write the steps with times. Say when the old server can be switched off, and how you would check your work before and after."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. **Wednesday, before 06:00.** Lower the TTL to 60. Copies taken before this moment last up to four hours, so by 10:00 on Wednesday every resolver holds a copy with the short TTL. Doing it a day early leaves room for error.\n2. **Thursday, before 10:00.** Check that the new server answers correctly by sending requests straight to its address, without using the name.\n3. **Thursday 10:00.** Change the `A` record to the new address. Check with `dig` against two different resolvers.\n4. **Thursday 10:05 onwards.** Watch the old server's traffic. It should fall to almost nothing within a few minutes. Some clients ignore TTLs and keep an address for longer, so leave the old server running for a day or two.\n5. **Later.** Switch the old server off, and raise the TTL back to a few hours.\n\nThe step people forget is the first. Lowering the TTL at the moment of the change does nothing for copies that are already cached with four hours left."
+        }
+      ],
+      "questions": [
+        {
+          "id": "ttl-change",
+          "prompt": "What do visitors see during the rest of that day?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "All of them reach the new server from 09:00",
+              "feedback": "Resolvers that looked the name up earlier still hold the old address."
+            },
+            {
+              "text": "Some reach the new server, and others fail until their resolver's copy expires",
+              "feedback": "Each cached copy lives for up to a day. Those clients are sent to a server that is now off."
+            },
+            {
+              "text": "All of them fail until the next day",
+              "feedback": "A resolver with no copy, or an expired one, asks again and gets the new address."
+            }
+          ]
+        },
+        {
+          "id": "split-view",
+          "prompt": "What is the most likely explanation?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "The home resolver's copy has not expired yet",
+              "feedback": "An old copy of an existing record would give an old address, not \"does not exist\". A cached NXDOMAIN is possible, and it clears within minutes."
+            },
+            {
+              "text": "The record exists only in a DNS server that the office uses",
+              "feedback": "Companies often run internal DNS for names that should resolve only inside their network. The public servers have no such record."
+            },
+            {
+              "text": "The service is down",
+              "feedback": "DNS does not check whether the server is running. A record resolves the same either way."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "lookup": {
+          "code": "   your machine                resolver\n       |  shop.example.com?       |\n       |------------------------->|   1. root:        \"ask the com servers\"\n       |                          |   2. com:         \"ask example.com's\n       |                          |                    servers\"\n       |                          |   3. example.com: \"203.0.113.10\"\n       |   203.0.113.10           |\n       |<-------------------------|   4. keeps a copy for next time",
+          "fence": "text",
+          "readOnly": true
+        },
+        "records": {
+          "code": "   name                    type    value                        TTL\n   example.com             A       203.0.113.10                 3600\n   www.example.com         CNAME   example.com                  3600\n   shop.example.com        CNAME   shop.hosting.example.net     300\n   example.com             MX      10 mail.example.com          3600\n   api.example.com         A       203.0.113.20                 60\n   api.example.com         A       203.0.113.21                 60",
+          "fence": "text",
+          "readOnly": true
+        },
+        "dig": {
+          "code": "# Ask the default resolver for the A records\ndig shop.example.com A\n\n# Ask one specific resolver\ndig @9.9.9.9 shop.example.com A\n\n# Short answer only\ndig +short shop.example.com\n\n# Windows\nnslookup shop.example.com",
+          "fence": "bash",
+          "readOnly": true
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:networking/module/tcp",
+      "title": "TCP and UDP",
+      "requires": [],
+      "outcomes": [],
+      "intro": "The network delivers single packets and may lose them. The transport layer turns that into something programs can use. This module covers the two transport protocols, what a TCP connection costs, and how one ends.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "What TCP adds",
+          "text": "**TCP** (Transmission Control Protocol) gives two programs a **connection**: a two-way stream of bytes that arrives complete and in order. To do that, it adds four things on top of plain packets.\n\n- **Numbering.** Every byte has a sequence number, so the receiver can put packets back in order.\n- **Acknowledgement.** The receiver reports which bytes arrived. The sender sends again whatever is not acknowledged in time.\n- **Flow control.** The receiver says how much it can take, so a fast sender cannot flood a slow receiver.\n- **Congestion control.** The sender slows down when packets are being lost, since loss usually means a router on the path is overloaded.\n\nThe program sees none of this. It writes bytes in at one end and reads the same bytes out at the other."
+        },
+        {
+          "kind": "explanation",
+          "title": "Opening a connection",
+          "text": "Before any data moves, the two sides exchange three small packets. This is the **three-way handshake**.\n\n1. The client sends `SYN`: \"I want to connect, and my numbering starts here.\"\n2. The server answers `SYN-ACK`: \"Accepted, and my numbering starts here.\"\n3. The client sends `ACK`: \"Received.\"\n\nThe cost is one **round trip**: the time for a packet to go to the server and for the answer to come back. On a path with 80 ms of round-trip time, every new connection waits 80 ms before the first byte of the request can be sent. This is one reason programs keep connections open and reuse them.",
+          "example": "handshake"
+        },
+        {
+          "kind": "explanation",
+          "title": "What the three failures look like",
+          "text": "The handshake fails in three different ways, and each tells you something different.\n\n| What the client sees | What happened | Likely cause |\n| --- | --- | --- |\n| Connection refused, at once | The machine answered with a reset (`RST`) | No program listens on that port |\n| Timeout, after many seconds | No answer to the `SYN` at all | A firewall drops the packets, or the address is wrong or the machine is off |\n| Connection reset, later | An open connection was cut with `RST` | The server program crashed, or a device in the middle closed an idle connection |\n\nA refusal is quick because something replied. A timeout is slow because the client keeps sending `SYN` again and waiting, for 20 seconds or more by default."
+        },
+        {
+          "kind": "prediction",
+          "title": "Loss inside a connection",
+          "text": "A client is downloading a file over TCP. One packet in the middle is lost. The packets after it arrive normally.",
+          "questions": [
+            "tcp-loss"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Closing a connection",
+          "text": "Each side closes its own direction by sending `FIN`, and the other side acknowledges it. A clean close therefore takes four packets, and one side can finish sending while it still receives.\n\nA `RST` is the unclean way. It ends the connection at once and throws away anything not yet delivered. A program that reads from a connection the other side has reset gets an error such as \"connection reset by peer\".\n\nConnections also end without either program choosing it. Firewalls, load balancers and home routers keep a table of open connections and drop entries that have been silent for too long, often after a few minutes. The two programs do not find out until one of them sends something. Long-lived connections avoid this by sending a small **keepalive** message at regular intervals.",
+          "example": "idle"
+        },
+        {
+          "kind": "explanation",
+          "title": "UDP",
+          "text": "**UDP** (User Datagram Protocol) adds almost nothing to plain packets. It adds ports, so a packet reaches the right program, and a checksum to detect damage. There is no handshake, no ordering, no resending and no connection.\n\nA program sends a UDP packet and it may arrive once, never, twice or out of order. That sounds worse in every way, and for some uses it is better.\n\n- **A lookup of one question and one answer.** DNS sends a query in one packet and gets the answer in one packet. A handshake would triple the work.\n- **Live audio and video.** A packet that arrives late is useless. It is better to skip it than to pause the call while it is sent again.\n- **Protocols that bring their own rules.** HTTP/3 runs on QUIC, which is built on UDP and does its own ordering and resending.\n\n| | TCP | UDP |\n| --- | --- | --- |\n| Setup | Handshake, one round trip | None |\n| Delivery | Complete and in order | Best effort |\n| Unit | A stream of bytes | Separate packets |\n| Typical use | HTTP, databases, SSH | DNS, calls, games, QUIC |"
+        },
+        {
+          "kind": "prediction",
+          "title": "Which protocol",
+          "text": "A team builds a voice chat feature. Sound is cut into packets of 20 ms each. About 1 packet in 100 is lost on a typical mobile connection.",
+          "questions": [
+            "voice"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Many short connections",
+          "text": "Since each new TCP connection costs a round trip, and a secure one costs more, a program that opens a connection for every request pays that price every time. Two habits remove most of it.\n\n- **Keep the connection open** and send the next request on it. HTTP does this by default.\n- **Use a connection pool.** A program that talks to a database keeps a small set of open connections and lends one to each piece of work.\n\nA pool has a limit. If every connection is lent out, the next piece of work waits. Under heavy load that wait can look like a network problem when no packet is being lost."
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: read the symptom",
+          "text": "For each report, say whether the client was refused, timed out, or was reset, and name one likely cause.\n\n1. A service reports \"connect: connection refused\" for `10.0.2.8:6379` the moment it starts.\n2. A nightly job that runs one query every 30 minutes fails on its second query with \"connection reset by peer\". The first always works.\n3. A new server in a different subnet cannot reach the database. Each attempt hangs for 30 seconds.\n\nThen answer: which of the three would you expect to be fixed by restarting the client, and why is that not a real fix?"
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. **Refused.** The machine at `10.0.2.8` answered, and nothing listens on port 6379. The cache server is not running, or it listens on `127.0.0.1` only.\n2. **Reset.** The job keeps one connection open and is silent for 30 minutes. A firewall or the database itself drops idle connections sooner than that. The second query is sent on a connection that no longer exists.\n3. **Timeout.** No answer to the `SYN`. A firewall rule does not allow the new subnet, or there is no route between the subnets.\n\nRestarting helps only with the second. A fresh client opens a fresh connection, so the first query works again, and the fault returns 30 minutes later. The real fixes are a keepalive, a pool that checks a connection before lending it, or opening a new connection for each run of the job."
+        }
+      ],
+      "questions": [
+        {
+          "id": "tcp-loss",
+          "prompt": "What does the receiving program see?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "The file with a gap where the lost packet was",
+              "feedback": "TCP never hands data to the program with a hole in it."
+            },
+            {
+              "text": "The later bytes first, and the missing ones when they arrive",
+              "feedback": "TCP delivers in order. Later bytes wait until the gap is filled."
+            },
+            {
+              "text": "A short pause, then all the bytes in order",
+              "feedback": "TCP holds the later packets, waits for the lost one to be sent again, and then delivers everything in order."
+            }
+          ]
+        },
+        {
+          "id": "voice",
+          "prompt": "Why is UDP the usual choice here?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "UDP loses fewer packets than TCP",
+              "feedback": "Both run over the same network and lose the same packets. They differ in what happens next."
+            },
+            {
+              "text": "Waiting for a lost packet would delay all the sound after it",
+              "feedback": "With TCP, 20 ms of lost sound would hold back everything behind it. Skipping 20 ms is barely heard."
+            },
+            {
+              "text": "UDP packets are encrypted by default",
+              "feedback": "Neither protocol encrypts anything on its own."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "handshake": {
+          "code": "   client                                   server (listening on :443)\n     |                                         |\n     |---- SYN ------------------------------->|\n     |<--- SYN-ACK ----------------------------|   one round trip\n     |---- ACK ------------------------------->|\n     |                                         |\n     |---- request bytes --------------------->|\n     |<--- response bytes ---------------------|",
+          "fence": "text",
+          "readOnly": true
+        },
+        "idle": {
+          "code": "   app                    firewall                   database\n    |  open connection       |                          |\n    |----------------------->|------------------------->|\n    |  ... 10 minutes of silence ...                    |\n    |                        |  entry removed           |\n    |  next query            |                          |\n    |----------------------->X  dropped: unknown        |\n    |                           connection              |\n    |  waits, then: \"connection reset\" or a timeout     |",
+          "fence": "text",
+          "readOnly": true
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:networking/module/http",
+      "title": "HTTP on the wire",
+      "requires": [],
+      "outcomes": [],
+      "intro": "HTTP is the application protocol behind websites and most APIs. This module looks at what is sent over the connection: the text of a request and a response, how connections are reused, and what the newer versions changed.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "A request",
+          "text": "An HTTP request is a message with three parts.\n\n1. A **request line**: the method, the path and the protocol version.\n2. **Headers**: one `Name: value` pair per line, with extra information.\n3. An optional **body**, after an empty line.\n\nIn HTTP/1.1 these are plain text lines sent over the TCP connection. The `Host` header is required. One address often serves many sites, and `Host` tells the server which one the request is for.",
+          "example": "request"
+        },
+        {
+          "kind": "explanation",
+          "title": "A response",
+          "text": "The response has the same shape. Its first line carries a **status code**, a three-digit number that says how the request went. The first digit gives the group.\n\n| Group | Meaning | Common examples |\n| --- | --- | --- |\n| `2xx` | It worked | `200 OK`, `201 Created`, `204 No Content` |\n| `3xx` | Look somewhere else | `301` moved for good, `304` not changed |\n| `4xx` | The request was wrong | `400`, `401`, `403`, `404`, `429` |\n| `5xx` | The server failed | `500`, `502`, `503`, `504` |\n\nThe split between `4xx` and `5xx` matters when you debug. A `4xx` says the client should change the request. A `5xx` says the request may have been fine and the fault is on the server side.",
+          "example": "response"
+        },
+        {
+          "kind": "explanation",
+          "title": "How the receiver knows where a message ends",
+          "text": "A TCP connection is a stream of bytes with no built-in message boundaries. HTTP has to say where each message stops, in one of two ways.\n\n- `Content-Length: 44` gives the body's size in bytes. The receiver reads exactly that many.\n- `Transfer-Encoding: chunked` sends the body in pieces, each with its own size in front, and a piece of size 0 at the end. It is used when the size is not known in advance, such as for a response that is produced as it is sent.\n\nA wrong `Content-Length` breaks the connection in confusing ways. If it is too large, the receiver waits for bytes that never come. If it is too small, the leftover bytes are read as the start of the next message."
+        },
+        {
+          "kind": "explanation",
+          "title": "Keeping the connection open",
+          "text": "HTTP/1.1 keeps the TCP connection open after a response, so the next request skips the handshake. This is called **keep-alive**, and it is the default.\n\nOne limit remains. On a single HTTP/1.1 connection, requests are answered one at a time and in order. A slow response holds up every request waiting behind it. Browsers work around this by opening about six connections to each site.",
+          "example": "keepalive"
+        },
+        {
+          "kind": "prediction",
+          "title": "The slow first request",
+          "text": "A page needs 12 small files from one server over HTTP/1.1. The browser opens 6 connections. The first file on each connection is slow to produce, about 2 seconds, and the rest take 10 ms each.",
+          "questions": [
+            "head-of-line"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "HTTP/2 and HTTP/3",
+          "text": "Both newer versions keep the same methods, paths, headers and status codes. What changed is how the messages are carried.\n\n**HTTP/2** sends many requests and responses over one connection at the same time. Each belongs to a numbered **stream**, and their pieces are mixed on the wire. A slow response no longer holds up the others at the HTTP level. Headers are sent in a compressed binary form, not as text.\n\nHTTP/2 still runs on TCP, and TCP delivers bytes in order. If one packet is lost, every stream waits until it is sent again, even streams whose data already arrived.\n\n**HTTP/3** removes that wait by replacing TCP with **QUIC**, a protocol built on UDP. QUIC tracks each stream separately, so a lost packet delays only the stream it belonged to. It also combines the connection setup with the encryption setup, which saves a round trip.\n\n| | HTTP/1.1 | HTTP/2 | HTTP/3 |\n| --- | --- | --- | --- |\n| Runs on | TCP | TCP | QUIC over UDP |\n| Format | Text | Binary | Binary |\n| Requests at once per connection | 1 | Many | Many |\n| A lost packet delays | That connection | Every stream | One stream |"
+        },
+        {
+          "kind": "explanation",
+          "title": "Headers that change how the network behaves",
+          "text": "Most headers are for the application. A few change what the network pieces in the middle do.\n\n- `Host` selects the site on a shared address.\n- `Connection: close` asks for the connection to be closed after this response.\n- `Cache-Control` says whether a copy may be stored and for how long, by the browser and by caches in between.\n- `Content-Encoding: gzip` says the body is compressed.\n- `Retry-After` says how long to wait before asking again, on a `429` or `503`."
+        },
+        {
+          "kind": "explanation",
+          "title": "Read a real exchange",
+          "text": "`curl` prints the request it sends and the response it gets. Lines that start with `>` were sent, and lines that start with `<` were received.",
+          "example": "curl"
+        },
+        {
+          "kind": "prediction",
+          "title": "Who is at fault",
+          "text": "A client sends a request and receives `502 Bad Gateway`. The site runs behind a proxy that passes requests on to an application server.",
+          "questions": [
+            "status-502"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: read the exchange",
+          "text": "A client sends this request and waits for 60 seconds before it gives up.\n\n```http\nPOST /upload HTTP/1.1\nHost: files.example.com\nContent-Type: text/plain\nContent-Length: 500\n\n(the client then sends 200 bytes and stops)\n```\n\nExplain why the server never answers. Then say what the client would see if the header had read `Content-Length: 100` and it had still sent 200 bytes on a connection that is kept open."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "The server was told to expect 500 bytes of body. It has read 200 and is waiting for the other 300 before it treats the request as complete. Nothing is wrong at the network level: the connection is open and idle. Each side is waiting for the other until a timeout ends it.\n\nWith `Content-Length: 100`, the server reads 100 bytes, treats the request as complete and answers it. The other 100 bytes stay in the stream. On a kept-open connection the server reads them as the start of a second request. They are not a valid request line, so the server answers `400 Bad Request` and usually closes the connection.\n\nIn both cases the fault is a length that does not match the body. The lesson for debugging is that a hang with no error is often one side waiting for bytes it was promised."
+        }
+      ],
+      "questions": [
+        {
+          "id": "head-of-line",
+          "prompt": "When do the fast files start to arrive?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "At once, because they are small",
+              "feedback": "Each connection answers one request at a time. A fast file queued behind a slow one has to wait."
+            },
+            {
+              "text": "After about 2 seconds, once the slow responses have finished",
+              "feedback": "All six connections are busy with a slow response. The other six requests wait behind them."
+            },
+            {
+              "text": "Never, because the connections are closed after one response",
+              "feedback": "Keep-alive leaves them open. The requests are delayed, not dropped."
+            }
+          ]
+        },
+        {
+          "id": "status-502",
+          "prompt": "What does the status say?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "The client sent a malformed request",
+              "feedback": "That would be a `4xx` code, such as `400`."
+            },
+            {
+              "text": "The application returned an error page of its own",
+              "feedback": "An error the application produced itself would normally be a `500`."
+            },
+            {
+              "text": "The proxy got no valid response from the server behind it",
+              "feedback": "`502` is written by the proxy. The application is down, crashed mid-response, or sent something the proxy could not read."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "request": {
+          "code": "POST /orders HTTP/1.1\nHost: shop.example.com\nContent-Type: application/json\nContent-Length: 31\nAccept: application/json\n\n{\"item\": \"kettle\", \"count\": 2}",
+          "fence": "http",
+          "readOnly": true
+        },
+        "response": {
+          "code": "HTTP/1.1 201 Created\nContent-Type: application/json\nContent-Length: 44\nLocation: /orders/8841\n\n{\"id\": 8841, \"item\": \"kettle\", \"count\": 2}",
+          "fence": "http",
+          "readOnly": true
+        },
+        "keepalive": {
+          "code": "   without reuse                       with keep-alive\n\n   handshake                           handshake\n   request 1 / response 1              request 1 / response 1\n   close                               request 2 / response 2\n   handshake                           request 3 / response 3\n   request 2 / response 2              ...\n   close                               (closed after an idle period)\n   handshake\n   request 3 / response 3\n   close",
+          "fence": "text",
+          "readOnly": true
+        },
+        "curl": {
+          "code": "curl -v https://shop.example.com/health\n\n# show only the response headers\ncurl -sI https://shop.example.com/health\n\n# send a body\ncurl -v -X POST https://shop.example.com/orders \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"item\": \"kettle\", \"count\": 2}'",
+          "fence": "bash",
+          "readOnly": true
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:networking/module/tls",
+      "title": "TLS and certificates",
+      "requires": [],
+      "outcomes": [],
+      "intro": "Packets cross devices owned by many parties, and any of them can read or change plain data. TLS protects a connection against that. This module covers what TLS guarantees, how a certificate proves who the server is, and the errors you will meet.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "What TLS gives you",
+          "text": "**TLS** (Transport Layer Security) runs between TCP and the application protocol. HTTPS is HTTP sent through TLS. It gives three guarantees.\n\n- **Privacy.** The data is encrypted, so devices on the path see only that two addresses are talking, and how much.\n- **Integrity.** If anything changes the data on the way, the receiver detects it and drops the connection.\n- **Identity.** The client can check that the server really is the owner of the name it asked for.\n\nThe third is easy to overlook and matters as much as the first. Encryption alone would protect your data perfectly on its way to an impostor.\n\nSome things stay visible. An observer still sees the server's address and port, the timing and size of the traffic, and normally the server's name, which the client sends unencrypted at the start so the server knows which site is wanted."
+        },
+        {
+          "kind": "explanation",
+          "title": "Two kinds of key",
+          "text": "TLS uses two kinds of encryption together.\n\n- **Symmetric** encryption uses one shared key to both lock and unlock. It is fast, and it protects the actual data.\n- **Asymmetric** encryption uses a pair: a **public key** that anyone may have and a **private key** that the owner never shares. What one of them does, only the other can check or undo.\n\nThe problem TLS solves at the start of every connection is this: the two sides have never met and must agree on a shared key while others may be listening. The key pair makes that possible. It is used briefly to prove identity and to agree on a fresh shared key. Everything after that uses the fast shared key."
+        },
+        {
+          "kind": "explanation",
+          "title": "Certificates",
+          "text": "A **certificate** is a signed document that says \"this public key belongs to this name\". It contains the names it is valid for, the public key, a start date and an end date, and the signature of whoever issued it.\n\nThe issuer is a **certificate authority** (CA): an organization that checks that the requester controls the name before it signs. Your operating system and browser ship with a list of CAs they trust, called **root certificates**.\n\nRoots rarely sign server certificates directly. A root signs an **intermediate** certificate, and the intermediate signs the server's. This is a **chain**. The client follows it link by link until it reaches a root it already trusts.",
+          "example": "chain"
+        },
+        {
+          "kind": "explanation",
+          "title": "The handshake",
+          "text": "After the TCP handshake, the TLS handshake runs. In TLS 1.3 it takes one round trip.\n\n1. The client says which name it wants and which methods it supports, and sends its half of a key exchange.\n2. The server answers with its half, its certificate chain, and a signature made with its private key.\n3. The client checks the chain, the name, the dates and the signature. Both sides now compute the same shared key.\n\nThe signature is the proof of identity. Only the holder of the private key that matches the certificate could have made it.",
+          "example": "tls-handshake"
+        },
+        {
+          "kind": "explanation",
+          "title": "What the client checks",
+          "text": "A certificate is accepted only if all four checks pass.\n\n| Check | Fails when |\n| --- | --- |\n| Chain | No path leads to a trusted root, or the server did not send the intermediate |\n| Name | The name the client asked for is not listed in the certificate |\n| Dates | Today is before the start date or after the end date |\n| Signature | The server cannot prove it holds the matching private key |\n\nThe name check uses the name in the URL, not the address. A certificate for `shop.example.com` does not cover `www.shop.example.com` or the bare address. A **wildcard** such as `*.example.com` covers one level: `shop.example.com` and not `a.shop.example.com`."
+        },
+        {
+          "kind": "prediction",
+          "title": "Connecting by address",
+          "text": "A site at `https://shop.example.com` has a valid certificate. To skip DNS while testing, an engineer opens `https://203.0.113.10` instead, which is the same server.",
+          "questions": [
+            "by-address"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Expiry",
+          "text": "Certificates expire on purpose. A short life limits the damage if a private key is stolen, and it forces the checks to be repeated. Public certificates last months, not years. The longest life that browsers accept has been shortened several times, and many certificates last 90 days or less.\n\nAn expired certificate is one of the most common causes of a sudden, complete failure. Every client refuses at the same second, and nothing in the application changed. Two habits prevent it: renew automatically, and alert well before the end date, for example at 21 days left, so a broken renewal is noticed in time."
+        },
+        {
+          "kind": "explanation",
+          "title": "Where TLS ends",
+          "text": "TLS protects one connection between two endpoints. In many systems the public connection ends at a load balancer or proxy, which decrypts the request and opens a second connection to the application. This is called **TLS termination**.\n\nThe second connection is a separate choice. It can be plain HTTP inside a private network, or TLS again. When someone says \"the site uses HTTPS\", it is worth asking which parts of the path that covers.",
+          "example": "termination"
+        },
+        {
+          "kind": "explanation",
+          "title": "Inspect a certificate",
+          "text": "Two tools show what a server presents. In the output, look for the names the certificate covers, its two dates, the list of certificates in the chain, and the line that reports the result of the checks.",
+          "example": "inspect"
+        },
+        {
+          "kind": "prediction",
+          "title": "Works in the browser, fails in the job",
+          "text": "A site loads in every browser. A script on a server that calls the same URL fails with \"unable to get local issuer certificate\".",
+          "questions": [
+            "missing-intermediate"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: three reports",
+          "text": "For each report, name which of the four checks failed and what you would do.\n\n1. \"At 02:00 every client started failing with a certificate error. Nothing was deployed.\"\n2. \"The new name `api.eu.example.com` gives a certificate error. The certificate is for `*.example.com`.\"\n3. \"A teammate fixed their script by turning certificate checking off.\""
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. **Dates.** The certificate expired at that moment. Renew it now. Then find out why the automatic renewal did not run, and add an alert that fires weeks before the end date.\n2. **Name.** A wildcard covers one level. `api.eu.example.com` is two levels below `example.com`. Issue a certificate that lists that name, or one for `*.eu.example.com`.\n3. **None was fixed.** Turning the check off removes the identity guarantee. The connection is still encrypted, to whoever answers. The script now accepts an impostor without complaint. Find the failing check and repair it. Most often the cause is a missing intermediate or a private CA that the machine does not have in its trusted list.\n\nThe third point is general guidance, not a statement of any organization's policy."
+        }
+      ],
+      "questions": [
+        {
+          "id": "by-address",
+          "prompt": "What does the client report?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Nothing. It is the same server, so the same certificate is valid",
+              "feedback": "The certificate proves a name. It is the same server, and the client has no way to know that."
+            },
+            {
+              "text": "A certificate name mismatch",
+              "feedback": "The client asked for `203.0.113.10`, and the certificate lists only `shop.example.com`."
+            },
+            {
+              "text": "An expired certificate",
+              "feedback": "The dates have nothing to do with how the server was addressed."
+            }
+          ]
+        },
+        {
+          "id": "missing-intermediate",
+          "prompt": "What is the most likely cause?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "The certificate has expired",
+              "feedback": "Browsers would refuse an expired certificate too."
+            },
+            {
+              "text": "The server does not send its intermediate certificate",
+              "feedback": "Browsers often have the intermediate cached or fetch it themselves. A plain client has only the roots and cannot complete the chain."
+            },
+            {
+              "text": "The script uses the wrong port",
+              "feedback": "A wrong port would fail to connect before any certificate was seen."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "chain": {
+          "code": "   +--------------------------+\n   | root CA                  |   already on your machine, trusted\n   +--------------------------+\n                | signs\n                v\n   +--------------------------+\n   | intermediate CA          |   sent by the server\n   +--------------------------+\n                | signs\n                v\n   +--------------------------+\n   | shop.example.com         |   sent by the server\n   | valid 1 Mar to 30 May    |\n   | public key: ...          |\n   +--------------------------+",
+          "fence": "text",
+          "readOnly": true
+        },
+        "tls-handshake": {
+          "code": "   client                                           server\n     |--- TCP handshake (1 round trip) ---------------->|\n     |                                                  |\n     |--- hello: name, methods, key share ------------->|\n     |<-- hello: key share, certificates, signature ----|   1 round trip\n     |                                                  |\n     |    client checks: chain, name, dates, signature  |\n     |                                                  |\n     |=== encrypted request ===========================>|\n     |<== encrypted response ===========================|",
+          "fence": "text",
+          "readOnly": true
+        },
+        "termination": {
+          "code": "   browser ===== TLS =====> load balancer ----- plain HTTP -----> app\n                            (certificate          (inside the private\n                             lives here)           network)\n\n   browser ===== TLS =====> load balancer ===== TLS =====> app\n                            (decrypts, then encrypts again)",
+          "fence": "text",
+          "readOnly": true
+        },
+        "inspect": {
+          "code": "# show the chain the server sends and the result of the checks\nopenssl s_client -connect shop.example.com:443 -servername shop.example.com\n\n# show the dates of the server's certificate\necho | openssl s_client -connect shop.example.com:443 \\\n  -servername shop.example.com 2>/dev/null | openssl x509 -noout -dates\n\n# curl prints the handshake and the certificate's names\ncurl -v https://shop.example.com/ -o /dev/null",
+          "fence": "bash",
+          "readOnly": true
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:networking/module/routing",
+      "title": "Routing, gateways and NAT",
+      "requires": [],
+      "outcomes": [],
+      "intro": "A machine has to decide where to send each packet, and so does every router after it. This module covers how that decision is made, how private machines reach the internet, and why the reverse direction needs extra work.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "The first decision",
+          "text": "When a machine sends a packet, it asks one question: is the destination in my own subnet?\n\n- **Yes.** The packet is sent straight to that machine over the local link.\n- **No.** The packet is sent to the **default gateway**, which is the router that connects this subnet to everything else.\n\nA machine with the address `10.0.1.5` in the subnet `10.0.1.0/24` reaches `10.0.1.9` directly. For `203.0.113.10` it hands the packet to its gateway, often the first address in the subnet, such as `10.0.1.1`.\n\nA machine with no gateway, or the wrong one, can talk to its neighbours and to nothing else. That exact symptom points here.",
+          "example": "gateway"
+        },
+        {
+          "kind": "explanation",
+          "title": "Route tables",
+          "text": "The rule above is a small **route table**: a list of destination ranges and where to send packets for each. Every machine and every router has one.\n\nWhen several entries match a destination, the most specific one wins, which is the one with the longest prefix. `0.0.0.0/0` matches everything and is the least specific, so it acts as the default.",
+          "example": "routes"
+        },
+        {
+          "kind": "prediction",
+          "title": "Which route",
+          "text": "Using the route table above, a machine sends a packet to `10.0.200.4`.",
+          "questions": [
+            "which-route"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Both directions need a route",
+          "text": "A connection needs packets to flow both ways. The request follows the routes on the way out, and the reply follows the routes of every device on the way back. Those are separate tables.\n\nA common fault is a route in one direction only. The request arrives, the server answers, and the answer is sent somewhere else or dropped. From the client it looks like a timeout, and the server's log shows that the request came in. That pair of facts points at the return path."
+        },
+        {
+          "kind": "explanation",
+          "title": "NAT: many machines behind one address",
+          "text": "Private addresses cannot be used on the internet. **NAT** (network address translation) is how a private machine still reaches a public server.\n\nThe gateway has one public address. When a private machine sends a packet out, the gateway rewrites the source to its own public address and a port it chooses, and writes the mapping in a table. When the reply comes back to that port, the gateway looks up the table, rewrites the destination to the private machine, and passes it on.\n\nThe server on the other side never sees the private address. It sees one public address, shared by every machine behind that gateway.",
+          "example": "nat"
+        },
+        {
+          "kind": "explanation",
+          "title": "What NAT means in practice",
+          "text": "- **Outbound just works.** A private machine can start connections to the internet.\n- **Inbound does not.** A packet from outside arrives at the gateway with no table entry, and the gateway has no idea which private machine it is for. It is dropped. To accept inbound connections, the gateway needs a fixed rule, called **port forwarding**, or the machine needs a public address or a load balancer in front of it.\n- **Everyone looks like one address.** A server sees all users behind one office as a single address. Limits and blocks that work per address affect all of them together.\n- **Table entries expire.** A silent connection loses its entry after a few minutes, which is the idle cut described in the TCP module.\n\nCloud networks use the same idea. A subnet whose machines have only private addresses sends outbound traffic through a NAT gateway, and receives inbound traffic through a load balancer."
+        },
+        {
+          "kind": "prediction",
+          "title": "Inbound through NAT",
+          "text": "A developer runs a web server on a laptop at home on port 8080. It listens on `0.0.0.0`. The home router's public address is `198.51.100.7`. A friend elsewhere opens `http://198.51.100.7:8080`.",
+          "questions": [
+            "inbound-nat"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "See the path",
+          "text": "`traceroute` (`tracert` on Windows) shows the routers a packet passes. It sends packets that are allowed only 1 hop, then 2, then 3, and each router that discards one reports itself.\n\n\nRead it with care. A row of `* * *` in the middle usually means that router does not reply to these probes, and it is still passing traffic. What matters is where the answers stop for good. If nothing answers after hop 2, look at what comes right after hop 2.",
+          "example": "trace"
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: one direction only",
+          "text": "A service in subnet A (`10.0.1.0/24`) calls a database in subnet B (`10.0.2.0/24`). Every call times out. You learn these facts:\n\n- From the service, `traceroute` to the database reaches it.\n- The database's log shows the incoming connection attempts.\n- Subnet B's route table has two entries: `10.0.2.0/24 direct` and `0.0.0.0/0` to an internet gateway.\n\nExplain what happens to the database's replies, and write the route that fixes it."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "The outward path works: subnet A has a route to subnet B, the packets arrive, and the database logs them.\n\nThe database then answers to `10.0.1.5`. Subnet B looks that address up in its own table. It is not in `10.0.2.0/24`, so the only match is the default, and the reply is sent to the internet gateway. Internet routers drop packets for private addresses, so the reply is lost. The service keeps waiting and reports a timeout.\n\nThe fix is a route in subnet B for subnet A:\n\n```text\n10.0.1.0/24    send to the router that joins the two subnets\n```\n\nThe method to remember is that a request seen in the server's log together with a timeout on the client means the return path is broken. Check the route table on the answering side."
+        }
+      ],
+      "questions": [
+        {
+          "id": "which-route",
+          "prompt": "Where is the packet sent?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Directly, because the address starts with `10.0.`",
+              "feedback": "Direct delivery needs a match on `10.0.1.0/24`. The third number here is 200."
+            },
+            {
+              "text": "To `10.0.1.254`",
+              "feedback": "The address is inside `10.0.0.0/16` and outside `10.0.1.0/24`. The `/16` entry is more specific than the default."
+            },
+            {
+              "text": "To `10.0.1.1`, the default gateway",
+              "feedback": "The default is used only when nothing more specific matches."
+            }
+          ]
+        },
+        {
+          "id": "inbound-nat",
+          "prompt": "What happens?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "The laptop answers, since the server listens on every interface",
+              "feedback": "Listening on every interface makes the laptop reachable inside the home network. The packet stops at the router first."
+            },
+            {
+              "text": "The router drops the packet, because no rule says which machine port 8080 belongs to",
+              "feedback": "NAT only knows about connections that were started from inside. An unexpected inbound packet matches nothing."
+            },
+            {
+              "text": "The friend reaches some other device in the home",
+              "feedback": "The router does not guess. Without a forwarding rule nothing receives the packet."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "gateway": {
+          "code": "   subnet 10.0.1.0/24\n\n   +-----------+        +-----------+        +-----------------+\n   | 10.0.1.5  |------->| 10.0.1.9  |        | gateway         |\n   | (sender)  | direct | neighbour |        | 10.0.1.1        |----> rest\n   +-----------+        +-----------+        +-----------------+     of the\n         |                                           ^               world\n         +---- anything outside 10.0.1.0/24 ---------+",
+          "fence": "text",
+          "readOnly": true
+        },
+        "routes": {
+          "code": "   destination       send to            meaning\n   10.0.1.0/24       direct             my own subnet\n   10.0.0.0/16       10.0.1.254         the rest of the private network\n   0.0.0.0/0         10.0.1.1           everything else (default)\n\n   packet to 10.0.1.9      -> matches all three, /24 wins -> direct\n   packet to 10.0.7.20     -> matches /16 and /0, /16 wins -> 10.0.1.254\n   packet to 203.0.113.10  -> matches only /0 -> 10.0.1.1",
+          "fence": "text",
+          "readOnly": true
+        },
+        "nat": {
+          "code": "   private network                gateway                    internet\n                               public 198.51.100.7\n\n   10.0.1.5:51514  ---->  rewrites source to      ---->  203.0.113.10:443\n                          198.51.100.7:40001\n\n                          table: 40001 = 10.0.1.5:51514\n\n   10.0.1.5:51514  <----  rewrites destination    <----  reply to\n                          back to 10.0.1.5:51514         198.51.100.7:40001",
+          "fence": "text",
+          "readOnly": true
+        },
+        "trace": {
+          "code": "traceroute shop.example.com\n\n#  1  10.0.1.1         1 ms     the default gateway\n#  2  198.51.100.1     8 ms     the provider\n#  3  * * *                     this router does not answer\n#  4  203.0.113.1     21 ms\n#  5  203.0.113.10    22 ms     the destination",
+          "fence": "bash",
+          "readOnly": true
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:networking/module/firewalls",
+      "title": "Firewalls and network rules",
+      "requires": [],
+      "outcomes": [],
+      "intro": "A route decides where a packet can go. A firewall decides whether it is allowed to. This module covers how rules are written, why replies do not need their own rule, and how to lay out a network so that a mistake exposes less.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "What a firewall checks",
+          "text": "A **firewall** looks at each packet and allows or drops it by comparing it with a list of rules. A basic rule uses facts from the packet's headers.\n\n- the direction: **inbound** (arriving) or **outbound** (leaving)\n- the protocol: TCP or UDP\n- the destination port\n- the source or destination address range\n\nFirewalls sit in several places: on the machine itself, on the router at the edge of a network, and in cloud platforms as rules attached to a machine or a subnet. Cloud platforms call these security groups or network security groups. A packet may pass several of them, and every one must allow it.",
+          "example": "rules"
+        },
+        {
+          "kind": "explanation",
+          "title": "Deny by default",
+          "text": "The last line in that table is the important one. A well-built firewall **denies by default**: anything that no rule allows is dropped. You then list what is needed and nothing more.\n\nThe opposite design, allowing everything and blocking known bad things, fails quietly. Every service that someone starts later is exposed until somebody remembers to block it.\n\nA rule should be as narrow as the need. \"TCP 5432 from the application subnet\" is a good rule. \"Any port from anywhere\" is the absence of a firewall."
+        },
+        {
+          "kind": "explanation",
+          "title": "Stateful rules",
+          "text": "A connection has packets in both directions. You do not have to write a rule for the replies, because nearly all firewalls are **stateful**: they remember each connection that was allowed, and let its replies back through.\n\nSo the rule \"allow inbound TCP 443\" is enough for a web server. The responses leave without an outbound rule. In the same way, a machine with no inbound rules at all can still call out to other services and receive their answers.\n\nDirection is always about who starts the connection, not about which way most of the data flows. A machine that downloads a large file from a server made an **outbound** connection.",
+          "example": "stateful"
+        },
+        {
+          "kind": "prediction",
+          "title": "Which rule is needed",
+          "text": "An application server must call a payment service on the internet at port 443 and receive its answers. The server's firewall currently denies everything in both directions.",
+          "questions": [
+            "direction"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Drop or reject",
+          "text": "A firewall can refuse a packet in two ways.\n\n- **Drop.** Discard it and say nothing. The client waits and eventually times out.\n- **Reject.** Discard it and send back a refusal. The client fails at once.\n\nMost firewalls facing the internet drop, so that a scan learns as little as possible. This is why a firewall problem usually shows up as a timeout, and a missing program as a quick refusal. It is the most useful single clue you have.\n\n| Client sees | Usually means |\n| --- | --- |\n| Connection refused, at once | Reached the machine, nothing listens on the port |\n| Timeout | A firewall dropped it, or there is no route |\n| Works from one place, times out from another | A rule limited by source address |"
+        },
+        {
+          "kind": "explanation",
+          "title": "Layout: public and private subnets",
+          "text": "Rules are easier to get right when the network is cut into zones.\n\n- A **public subnet** holds the few things the internet must reach, usually only load balancers.\n- A **private subnet** holds application servers. They have no public address. Only the load balancers may reach them.\n- A further private subnet holds the databases. Only the application servers may reach it.\n\nEach layer accepts traffic only from the layer in front of it. If one rule is wrong, there is still another layer behind it. This idea is called **defence in depth**.",
+          "example": "zones"
+        },
+        {
+          "kind": "explanation",
+          "title": "Rules by name, not by address",
+          "text": "Addresses change as machines are replaced. Most platforms let a rule refer to a group of machines by name: \"allow port 5432 from members of the `app` group\". A new application server joins the group and is allowed at once. A machine that leaves the group loses access.\n\nPrefer this to lists of addresses. A list of addresses is correct on the day it is written and slowly goes out of date, in both directions: new machines are blocked, and old addresses stay allowed after they are given to something else."
+        },
+        {
+          "kind": "prediction",
+          "title": "The rule that is too wide",
+          "text": "To fix a connection problem quickly during an incident, someone adds this inbound rule to the database: \"allow TCP 5432 from `0.0.0.0/0`\". The database has only a private address.",
+          "questions": [
+            "too-wide"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: write the rules",
+          "text": "A system has a load balancer, two application servers on port 8080, a database on port 5432, and an admin subnet `10.0.9.0/24` whose machines may open SSH (port 22) to the application servers. The application servers call an external email service on port 443.\n\nWrite the inbound rules for each of the three layers and the outbound rule the application servers need. Use group names for sources where you can. Everything else is denied."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "**Load balancer, inbound**\n\n| Protocol | Port | Source |\n| --- | --- | --- |\n| TCP | 443 | `0.0.0.0/0` |\n\n**Application servers, inbound**\n\n| Protocol | Port | Source |\n| --- | --- | --- |\n| TCP | 8080 | group `load-balancer` |\n| TCP | 22 | `10.0.9.0/24` |\n\n**Database, inbound**\n\n| Protocol | Port | Source |\n| --- | --- | --- |\n| TCP | 5432 | group `app` |\n\n**Application servers, outbound**\n\n| Protocol | Port | Destination |\n| --- | --- | --- |\n| TCP | 5432 | group `database` |\n| TCP | 443 | the email service, or `0.0.0.0/0` if its addresses are not fixed |\n\nNo rule is needed for replies, since the firewalls are stateful. Port 80 is left out on purpose. If the site should redirect plain HTTP to HTTPS, add TCP 80 from anywhere on the load balancer only.\n\nThese rules are an example for learning, and general guidance. They are not a statement of any organization's policy."
+        }
+      ],
+      "questions": [
+        {
+          "id": "direction",
+          "prompt": "Which single rule makes this work?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Allow inbound TCP 443",
+              "feedback": "That would let others start connections to the server. The server is the one starting the connection here."
+            },
+            {
+              "text": "Allow outbound TCP 443",
+              "feedback": "The server starts the connection, so it is outbound. The answers return on the remembered connection."
+            },
+            {
+              "text": "Allow inbound and outbound TCP 443",
+              "feedback": "The outbound rule alone is enough. The inbound rule would open the server to connections it does not need."
+            }
+          ]
+        },
+        {
+          "id": "too-wide",
+          "prompt": "What is the effect?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "None, because a private address cannot be reached from the internet",
+              "feedback": "That is true for the internet, and the rule also covers every machine inside the private network."
+            },
+            {
+              "text": "Every machine in the private network can now reach the database",
+              "feedback": "The private address keeps the internet out. Inside, one compromised or misconfigured machine anywhere can now connect."
+            },
+            {
+              "text": "The database is now reachable from the internet",
+              "feedback": "Not directly, since it has no public address. The harm is inside the network."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "rules": {
+          "code": "   inbound rules for the web servers\n\n   #   protocol   port   source            action\n   1   TCP        443    0.0.0.0/0         allow    anyone, HTTPS\n   2   TCP        22     10.0.9.0/24       allow    admins' subnet, SSH\n   -   any        any    any               deny     everything else",
+          "fence": "text",
+          "readOnly": true
+        },
+        "stateful": {
+          "code": "   rule: allow inbound TCP 443\n\n   client ----- SYN to :443 -------> [firewall] ----> server\n                                     allowed by the rule\n                                     remembers this connection\n\n   client <---- replies ------------ [firewall] <---- server\n                                     allowed, because they belong\n                                     to a remembered connection",
+          "fence": "text",
+          "readOnly": true
+        },
+        "zones": {
+          "code": "   internet\n      |\n      |  443 from anywhere\n      v\n   +------------------------+\n   | public subnet          |   load balancer\n   +------------------------+\n      |\n      |  8080 from the load balancer only\n      v\n   +------------------------+\n   | private subnet: apps   |   application servers, no public address\n   +------------------------+\n      |\n      |  5432 from the app subnet only\n      v\n   +------------------------+\n   | private subnet: data   |   databases\n   +------------------------+",
+          "fence": "text",
+          "readOnly": true
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:networking/module/proxies",
+      "title": "Proxies and reverse proxies",
+      "requires": [],
+      "outcomes": [],
+      "intro": "Few requests travel straight from a client to the program that answers them. Something in the middle receives the request and sends it on. This module covers the two kinds of proxy, what a reverse proxy does for a server, and what gets lost on the way.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Two kinds of proxy",
+          "text": "A **proxy** is a program that accepts a request and makes a request of its own to someone else on the sender's behalf. Which side it works for gives it its name.\n\n- A **forward proxy** works for clients. Machines inside a company send their outbound requests to it, and it fetches the pages for them. It can filter, log and cache what leaves the network. The server sees the proxy's address.\n- A **reverse proxy** works for servers. Clients connect to it believing it is the site. It passes each request to one of the real servers behind it. The client never learns their addresses.\n\nThe rest of this module is about reverse proxies, since nearly every production system has one.",
+          "example": "kinds"
+        },
+        {
+          "kind": "explanation",
+          "title": "Two connections, not one",
+          "text": "A reverse proxy does not pass packets through. It ends the client's connection and opens a separate connection to the server behind it. The program behind a proxy is called the **upstream** or the **backend**.\n\nThis has consequences that surprise people.\n\n- Each connection has its own timeouts, its own protocol version and its own TLS setup. The client may speak HTTP/2 to the proxy while the proxy speaks HTTP/1.1 to the backend.\n- The backend sees a connection from the proxy's address, not from the client's.\n- An error can be produced by either one. A `404` may come from the application. A `502` or `504` comes from the proxy.",
+          "example": "two-connections"
+        },
+        {
+          "kind": "explanation",
+          "title": "What a reverse proxy is used for",
+          "text": "| Job | What it means |\n| --- | --- |\n| TLS termination | The certificate lives on the proxy. Backends receive plain HTTP. |\n| Routing | `/api` goes to one group of servers and `/images` to another. One address serves many sites by `Host`. |\n| Load balancing | Requests are spread across several copies of a backend. |\n| Caching | A stored copy of a response is returned without asking the backend. |\n| Compression | Responses are compressed before they are sent. |\n| Protection | Oversized requests, floods and slow clients are stopped before they reach the application. |\n\nPutting these jobs in one place means the application does not need to do them, and they are done the same way for every service."
+        },
+        {
+          "kind": "explanation",
+          "title": "The lost client address",
+          "text": "Since the backend sees the proxy as its client, the real client's address is gone unless the proxy passes it on. Proxies add headers for this.\n\n- `X-Forwarded-For` holds the client's address. Each proxy on the path adds the address it received the request from, so the header can become a list.\n- `X-Forwarded-Proto` holds `https` or `http`: the scheme the client used with the proxy.\n- `X-Forwarded-Host` holds the original `Host`.",
+          "example": "forwarded"
+        },
+        {
+          "kind": "prediction",
+          "title": "Whose address is it",
+          "text": "An application limits each client address to 100 requests a minute. It reads the address from the TCP connection. It is then placed behind a reverse proxy with no other change.",
+          "questions": [
+            "proxy-address"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Trust only your own proxy",
+          "text": "`X-Forwarded-For` is an ordinary header, and a client can send any value it likes. An application that believes the header from anyone lets a client claim to be any address.\n\nThe safe rule has two parts.\n\n1. The outermost proxy that you control overwrites or appends to the header with the address it really saw.\n2. The application reads the header only when the connection came from that proxy, and takes the entry that your own proxy wrote, which is the last one it added, not the first in the list.\n\nThe same care applies to `X-Forwarded-Proto`. An application that builds links or decides whether a request was secure must take that fact from its own proxy.\n\nThis is general guidance, not a statement of any organization's policy."
+        },
+        {
+          "kind": "explanation",
+          "title": "The proxy's own errors",
+          "text": "When the backend does not behave, the proxy answers the client itself.\n\n| Status | The proxy is saying |\n| --- | --- |\n| `502 Bad Gateway` | I connected and got a broken answer, or the connection was refused or reset |\n| `503 Service Unavailable` | I have no healthy backend to send this to |\n| `504 Gateway Timeout` | I connected and waited, and no answer came before my time limit |\n\nThese codes are a gift when debugging. They say the client reached the proxy, so DNS, the public network and TLS all worked. The problem lies between the proxy and the backend, or in the backend.\n\nA `504` often comes from mismatched time limits. If the proxy waits 30 seconds and a report takes 45 seconds to produce, the client gets a `504` while the application finishes the work and finds nobody to send it to."
+        },
+        {
+          "kind": "prediction",
+          "title": "Which timeout",
+          "text": "A proxy has a 60 second limit for backend responses. The application has a 120 second limit for its own database queries. A slow query takes 90 seconds.",
+          "questions": [
+            "mismatch"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: put a proxy in front",
+          "text": "An application listens on `0.0.0.0:8080` with plain HTTP and is reached directly from the internet. It logs each client's address, redirects `http` to `https` by looking at the incoming request, and has a 5 minute limit for file uploads.\n\nYou place a reverse proxy in front that terminates TLS on port 443. List what breaks or changes in the application, and what you would set on the proxy and on the application for each point."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "1. **Logged addresses.** Every log line shows the proxy's address. Have the proxy set `X-Forwarded-For`, and have the application read it only for connections from the proxy.\n2. **The redirect.** The application now receives plain HTTP for every request, so it redirects every request to `https`, which arrives again as plain HTTP. That is an endless loop. Have the proxy set `X-Forwarded-Proto` and base the redirect on it, or move the redirect to the proxy.\n3. **Uploads.** The proxy has its own time limit and its own maximum body size, and both are usually far below 5 minutes and a large file. Raise them for the upload path, or uploads fail with `504` or `413`.\n4. **Direct access.** Port 8080 is still open to the internet, so the proxy can be bypassed, and with it the TLS and any protection. Listen on a private interface, and allow port 8080 from the proxy only.\n\nThe fourth point is the one most often missed. A proxy protects only the traffic that has to pass through it."
+        }
+      ],
+      "questions": [
+        {
+          "id": "proxy-address",
+          "prompt": "What happens to the limit?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Nothing changes, since the proxy forwards the requests unchanged",
+              "feedback": "The requests are forwarded on a new connection, and that connection comes from the proxy."
+            },
+            {
+              "text": "All clients share one limit and are blocked together",
+              "feedback": "Every request now arrives from the proxy's address, so the application counts all users as one client."
+            },
+            {
+              "text": "The limit stops working, and nobody is ever blocked",
+              "feedback": "The opposite. One address reaches the limit almost at once."
+            }
+          ]
+        },
+        {
+          "id": "mismatch",
+          "prompt": "What do the client and the application each see?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "Both see success after 90 seconds",
+              "feedback": "The proxy stops waiting at 60 seconds."
+            },
+            {
+              "text": "The client gets a 504 at 60 seconds, and the application completes the query at 90 seconds",
+              "feedback": "The proxy gave up first. The application was within its own limit and never learned that nobody was waiting."
+            },
+            {
+              "text": "Both see a failure at 60 seconds",
+              "feedback": "The proxy closes its side. The application's query keeps running unless it notices and cancels."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "kinds": {
+          "code": "   FORWARD PROXY  (works for the clients)\n\n   client --+\n   client --+--> forward proxy -----> any server on the internet\n   client --+\n\n   REVERSE PROXY  (works for the servers)\n\n                                       +--> app server 1\n   any client --> reverse proxy -------+--> app server 2\n                                       +--> app server 3",
+          "fence": "text",
+          "readOnly": true
+        },
+        "two-connections": {
+          "code": "   client                   reverse proxy                  backend\n   198.51.100.7             10.0.0.10                      10.0.1.5\n\n     |== connection 1 (TLS) ==>|                              |\n     |                         |-- connection 2 (plain) ----->|\n     |                         |                              |\n     |   \"from 198.51.100.7\"   |    \"from 10.0.0.10\"          |",
+          "fence": "text",
+          "readOnly": true
+        },
+        "forwarded": {
+          "code": "GET /orders HTTP/1.1\nHost: shop.example.com\nX-Forwarded-For: 198.51.100.7, 10.0.0.10\nX-Forwarded-Proto: https",
+          "fence": "http",
+          "readOnly": true
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:networking/module/balancing",
+      "title": "Load balancers",
+      "requires": [],
+      "outcomes": [],
+      "intro": "One server is a limit on how much work can be done and a single thing that can fail. A load balancer puts several servers behind one address. This module covers how it chooses a server, how it knows which servers work, and how to take one out without dropping requests.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "What a load balancer does",
+          "text": "A **load balancer** receives traffic at one address and spreads it across a group of servers that all do the same job. The group is often called a **pool**, and its members are **backends** or **targets**.\n\nIt gives you two things.\n\n- **Capacity.** Three servers handle about three times the traffic of one.\n- **Availability.** When one server fails, the others keep answering, and clients need not notice.\n\nBoth depend on the servers being interchangeable. If a request can be answered correctly by only one particular server, the load balancer cannot help with it. That is the subject of the section on sessions below.",
+          "example": "pool"
+        },
+        {
+          "kind": "explanation",
+          "title": "Layer 4 and layer 7",
+          "text": "Load balancers come in two kinds, named for the layer they work at.\n\nA **layer 4** load balancer works with TCP connections. It chooses a server when a connection opens and passes every byte of that connection to the same server. It does not read the content, so it is fast and works for any protocol, including databases.\n\nA **layer 7** load balancer understands HTTP. It reads each request and can choose a server per request, by path, by `Host` or by header. It can terminate TLS, add headers, retry a failed request and answer with its own error pages. It is a reverse proxy with a pool.\n\n| | Layer 4 | Layer 7 |\n| --- | --- | --- |\n| Unit it balances | Connections | Requests |\n| Reads the request | No | Yes |\n| Routes by path or host | No | Yes |\n| Terminates TLS | Usually not | Usually |\n| Works for non-HTTP traffic | Yes | No |\n\nThe difference matters with long-lived connections. One client that keeps a single connection open and sends a thousand requests on it puts all thousand on one server behind a layer 4 balancer."
+        },
+        {
+          "kind": "explanation",
+          "title": "How a server is chosen",
+          "text": "- **Round robin.** Each server in turn. Simple, and fair when requests cost about the same.\n- **Least connections.** The server with the fewest requests in progress. Better when some requests are much slower than others, since a server stuck with slow ones gets fewer new ones.\n- **Weighted.** A server with twice the weight gets twice the share. Used when machines differ in size, or to send a small share of traffic to a new version.\n- **Hash.** A value from the request, such as the client address or a user ID, decides the server, so the same value always lands on the same one."
+        },
+        {
+          "kind": "prediction",
+          "title": "Slow requests",
+          "text": "A pool of two servers uses round robin. One request in ten is a report that takes 30 seconds. The rest take 50 ms. By chance, several reports in a row land on server A.",
+          "questions": [
+            "algorithm"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Health checks",
+          "text": "A load balancer has to know which servers can take traffic. It asks each one at a fixed interval, for example every 10 seconds. This is a **health check**. A server that fails several checks in a row is taken out of the pool. When it passes several in a row, it is put back.\n\nFor HTTP, the check is a request to a path the application provides for this purpose, such as `/health`, and anything other than a `200` counts as a failure.\n\nWhat that path does is a design decision.\n\n- A check that only proves the process is running stays green while the application cannot reach its database.\n- A check that tests every dependency turns every server red at once when one shared dependency has a brief problem, and the load balancer then has nowhere to send anything.\n\nA good check answers one question: can **this** server do useful work now? It tests what is specific to this server, and it is cheap, because it runs many times a minute.",
+          "example": "health"
+        },
+        {
+          "kind": "explanation",
+          "title": "Sessions and sticky routing",
+          "text": "Suppose a server keeps a user's shopping cart in its own memory. The next request from that user may land on a different server, which has no cart. This is the main obstacle to load balancing.\n\nThere are two ways out.\n\n- **Sticky sessions.** The load balancer sends each user to the same server every time, using a cookie or a hash of the address. It works, with costs: load becomes uneven, and when a server fails or is replaced, its users lose their state.\n- **Stateless servers.** No server keeps anything between requests. The cart lives in a database or a shared cache that every server can reach. Any server can answer any request.\n\nStateless servers are the better design. Every later topic, from deploys to scaling, becomes easier when any server can be removed at any moment."
+        },
+        {
+          "kind": "explanation",
+          "title": "Taking a server out",
+          "text": "Removing a server while it is answering requests cuts those requests off. To avoid that, a load balancer **drains** it: it stops sending new requests and lets the ones in progress finish, up to a time limit. Only then is the server stopped.\n\nThe same applies when a server starts. It should receive traffic only after its health check passes, or the first users get errors from an application that is still loading.\n\nA deploy that replaces servers one at a time relies on both: drain the old one, start the new one, wait for healthy, move on.",
+          "example": "drain"
+        },
+        {
+          "kind": "explanation",
+          "title": "The balancer can fail too",
+          "text": "A single load balancer is itself a single point of failure. Managed cloud load balancers run as several copies across separate locations and hide that from you. If you run your own, you need at least two, with a way for one to take over the other's address.\n\nSeparate locations matter for the backends as well. Three servers in one data centre all stop when that data centre has a power failure. Spreading them across independent locations, which cloud providers call zones, means one such event removes a third of the capacity and not all of it."
+        },
+        {
+          "kind": "prediction",
+          "title": "Which design",
+          "text": "A team deploys by stopping the old servers and starting new ones, one at a time, behind a load balancer. During every deploy a few users see `502` errors.",
+          "questions": [
+            "drain"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: design the health check",
+          "text": "An API needs a database for every request, and it calls an external address-lookup service for about 5% of requests. Three copies run behind a layer 7 load balancer.\n\nDecide what `/health` should check. Say what happens with your design in each case: one server loses its database connections, the database itself is down, and the lookup service is down."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "`/health` checks that the process is running and that **this** server can reach the database, with a cheap query and a short time limit. It does not call the lookup service.\n\n| Case | Result |\n| --- | --- |\n| One server loses its database connections | Its check fails. It is taken out, the other two carry the traffic, and users see nothing. This is the case the check exists for. |\n| The database is down | All three fail. The load balancer returns `503`. That is honest, since no server could answer anyway. Some balancers keep sending traffic when every target fails, which gives the same outcome. |\n| The lookup service is down | The check stays green. 95% of requests work, and the 5% that need a lookup get a clear error from the application. |\n\nIncluding the lookup service in the check would turn a partial failure into a complete one: every server would be taken out, and the 95% of requests that never needed it would fail too.\n\nThe rule is to check what makes this one server unable to work, and to leave shared, optional dependencies out."
+        }
+      ],
+      "questions": [
+        {
+          "id": "algorithm",
+          "prompt": "What does round robin do next?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "It sends new requests to server B until A catches up",
+              "feedback": "Round robin does not look at how busy a server is."
+            },
+            {
+              "text": "It keeps sending every second request to server A",
+              "feedback": "The turn order is fixed. A becomes overloaded while B is idle half the time. Least connections would avoid this."
+            },
+            {
+              "text": "It removes server A from the pool",
+              "feedback": "Only a failed health check removes a server. A is slow and still healthy."
+            }
+          ]
+        },
+        {
+          "id": "drain",
+          "prompt": "What is the most likely missing piece?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "More servers in the pool",
+              "feedback": "More servers lower the share of affected requests. The requests on the stopped server are still cut off."
+            },
+            {
+              "text": "A longer health check interval",
+              "feedback": "A longer interval makes the load balancer slower to notice that a server has gone."
+            },
+            {
+              "text": "Draining before each server is stopped",
+              "feedback": "Without it, the server is stopped while requests are in progress and while the load balancer still sends it new ones."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "pool": {
+          "code": "                              +--> server A   healthy\n   clients --> load balancer -+--> server B   healthy\n               203.0.113.10   +--> server C   failed, no traffic sent",
+          "fence": "text",
+          "readOnly": true
+        },
+        "health": {
+          "code": "   every 10 s:  GET /health\n\n   server A   200  200  200  200     in the pool\n   server B   200  500  500  500     3 failures in a row: taken out\n   server C   200  200  200  200     in the pool\n\n   server B   500  200  200  200     3 passes in a row: put back",
+          "fence": "text",
+          "readOnly": true
+        },
+        "drain": {
+          "code": "   1. mark server B as draining       no new requests to B\n   2. wait for B's requests to end    up to the drain limit, e.g. 30 s\n   3. stop B, start the new B\n   4. health check passes             B gets traffic again\n   5. repeat for the next server",
+          "fence": "text",
+          "readOnly": true
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:networking/module/timeouts",
+      "title": "Timeouts, retries and backoff",
+      "requires": [],
+      "outcomes": [],
+      "intro": "A network call can fail in a way a local call cannot: it can give no answer at all. This module covers how long to wait, when asking again is safe, and how well-meant retries can take a system down.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Why a call needs a time limit",
+          "text": "When a remote call gets no reply, the caller cannot tell which of these happened.\n\n- The request never arrived.\n- The request arrived and the server is still working on it.\n- The server finished and the response was lost on the way back.\n\nAll three look the same from the caller's side: silence. The only tool against silence is a **timeout**: a limit after which the caller stops waiting and treats the call as failed.\n\nMany libraries have no timeout by default, or one measured in minutes. A caller without a limit waits for as long as the other side stays silent. Each waiting call holds a thread, a connection and memory. One slow dependency can use up all of them, and then the caller cannot serve requests that have nothing to do with it."
+        },
+        {
+          "kind": "explanation",
+          "title": "Two timeouts, not one",
+          "text": "Set two limits for every call.\n\n- A **connect timeout**: how long to wait for the connection to open. Inside one network a handshake takes a few milliseconds, so 1 to 3 seconds is generous. A longer wait rarely succeeds.\n- A **read timeout** (or request timeout): how long to wait for the response once the request is sent. This depends on the work. A lookup may deserve 2 seconds and a report 60.\n\nChoose the read timeout from measurements. If 99 out of 100 calls finish within 300 ms, a limit of 1 second lets normal calls through and cuts off the stuck ones. A limit of 30 seconds protects almost nothing.",
+          "example": "two-timeouts"
+        },
+        {
+          "kind": "explanation",
+          "title": "Timeouts along a chain",
+          "text": "A request often passes through several services. Each has its own limit, and they must fit inside each other. An outer limit shorter than an inner one produces wasted work: the outer caller gives up, and the inner services keep working on a result nobody will read.\n\nGive each layer less time than the layer in front of it. Better still, pass a **deadline** along with the request: the moment by which the whole request must be done. Each service checks how much time is left and stops when there is none.",
+          "example": "chain"
+        },
+        {
+          "kind": "prediction",
+          "title": "What the caller knows after a timeout",
+          "text": "A service sends \"charge the card 40.00\" to a payment provider. After 5 seconds with no response, it times out.",
+          "questions": [
+            "unknown"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "When a retry is safe",
+          "text": "Trying again fixes many failures, since most are brief. It is safe only if doing the operation twice has the same effect as doing it once. Such an operation is called **idempotent**.\n\n| Operation | Safe to repeat? |\n| --- | --- |\n| Read a record | Yes |\n| Set a value to 5 | Yes |\n| Delete record 12 | Yes, the second time it is already gone |\n| Add 5 to a value | No |\n| Create an order | No, unless the request carries a key |\n| Charge a card | No, unless the request carries a key |\n\nAn operation that is not idempotent can be made so with an **idempotency key**. The caller makes up a unique value for the operation and sends it with every attempt. The server remembers which keys it has completed and returns the stored result for a repeat without doing the work again.\n\nNot every failure should be retried either. Retry a timeout, a refused connection, a `502`, `503` or `504`, and a `429` after the wait it names. Do not retry a `400`, `401`, `403` or `404`. The same request will fail the same way."
+        },
+        {
+          "kind": "explanation",
+          "title": "How retries make an outage worse",
+          "text": "Imagine a service that is slow because it is overloaded. Its callers time out and retry. Each original request is now two or three requests. The overloaded service receives more traffic at the moment it can handle the least, and recovers more slowly or not at all. This is a **retry storm**.\n\nIt multiplies through layers. If three layers each retry three times, one request from a user can become 27 requests at the bottom.",
+          "example": "storm"
+        },
+        {
+          "kind": "explanation",
+          "title": "Backoff, jitter and a budget",
+          "text": "Three rules keep retries from doing harm.\n\n- **Exponential backoff.** Wait before each retry, and double the wait each time: 200 ms, 400 ms, 800 ms. A struggling service gets room to recover.\n- **Jitter.** Add a random amount to each wait. Without it, a thousand clients that failed at the same moment all retry at the same moment, again and again.\n- **A limit.** Retry a small number of times, such as two or three. Also retry at one layer only, usually the one closest to the failure. A **retry budget** caps retries at a share of all traffic, for example 10%, so retries can never multiply the load.",
+          "example": "backoff"
+        },
+        {
+          "kind": "explanation",
+          "title": "Stop calling what is down",
+          "text": "When a dependency fails again and again, waiting for a timeout on every call is a waste. A **circuit breaker** watches the recent results. After enough failures it \"opens\": calls fail at once without being sent. After a pause it lets a few test calls through, and closes again if they succeed.\n\nThe caller gets a fast error it can handle, for example by showing the page without the optional part. The failing service gets no traffic while it recovers."
+        },
+        {
+          "kind": "prediction",
+          "title": "The synchronized clients",
+          "text": "A cache server restarts. 5,000 clients lose their connections in the same second. Each retries after exactly 1 second, then 2, then 4.",
+          "questions": [
+            "jitter"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: set the limits",
+          "text": "A web page calls a `profile` service, which calls a `recommendations` service, which queries a database. Measured times for normal calls: database 40 ms, recommendations 120 ms, profile 200 ms. Today no call has a timeout, every layer retries three times at once, and last week a slow database took the whole site down.\n\nChoose a timeout for each layer, say which layer retries and how, and say what the page should do when recommendations are unavailable."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "| Call | Timeout | Reason |\n| --- | --- | --- |\n| recommendations to database | 300 ms | Several times the normal 40 ms |\n| profile to recommendations | 500 ms | Covers one database call plus the service's own work |\n| page to profile | 1 s | The outer limit, longer than everything inside it |\n\n**Retries.** Only one layer retries: recommendations retries its database read once, after a backoff of about 50 ms with jitter. That fits inside the 500 ms that its caller allows. The read is idempotent, so the retry is safe. The other layers do not retry. Before, one page view could become 27 database queries.\n\n**Degrading.** Recommendations are optional. When the call fails or times out, the profile service returns the profile with an empty recommendation list, and the page is shown without that section. A circuit breaker on that call means that during an outage the page does not wait 500 ms every time.\n\nLast week's outage needed all three faults: no time limits, retries at every layer, and an optional feature treated as required."
+        }
+      ],
+      "questions": [
+        {
+          "id": "unknown",
+          "prompt": "What does the service know?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "The charge did not happen",
+              "feedback": "The request may have arrived and been carried out, with only the response lost."
+            },
+            {
+              "text": "The charge happened",
+              "feedback": "The request may never have arrived."
+            },
+            {
+              "text": "Nothing about the charge. It may or may not have happened",
+              "feedback": "A timeout reports that no answer came in time. It says nothing about what the other side did."
+            }
+          ]
+        },
+        {
+          "id": "jitter",
+          "prompt": "What does the cache server see?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "A steady, light flow of reconnections",
+              "feedback": "The waits are identical for every client, so they stay in step."
+            },
+            {
+              "text": "Bursts of 5,000 connections at 1 s, 3 s and 7 s",
+              "feedback": "Backoff alone spaces the attempts out in time and keeps the clients synchronized. Jitter is what spreads them."
+            },
+            {
+              "text": "No connections until the backoff has finished",
+              "feedback": "Each client tries again after each wait."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "two-timeouts": {
+          "code": "   |<-- connect timeout -->|<---------- read timeout --------->|\n   |                       |                                   |\n   SYN ......... connected  request sent ......... response done\n\n   connect timeout: is anything there at all?        (short)\n   read timeout:    is it answering in useful time?  (depends on the work)",
+          "fence": "text",
+          "readOnly": true
+        },
+        "chain": {
+          "code": "   BAD:  inner limits are longer than the outer one\n\n   browser 10 s --> gateway 30 s --> orders 60 s --> database 120 s\n   The browser gives up at 10 s. Everything behind it keeps working.\n\n   GOOD: each layer has less time than the one in front\n\n   browser 10 s --> gateway 8 s --> orders 5 s --> database 3 s",
+          "fence": "text",
+          "readOnly": true
+        },
+        "storm": {
+          "code": "   normal:      100 requests/s  -->  service  (capacity 120/s)   fine\n\n   service slows down, callers time out and retry 3 times each:\n\n                100 + 100 + 100 = 300 requests/s  -->  service\n                                                       capacity 120/s\n                                                       cannot recover",
+          "fence": "text",
+          "readOnly": true
+        },
+        "backoff": {
+          "code": "   attempt 1   fails\n   wait 200 ms + random 0 to 200 ms\n   attempt 2   fails\n   wait 400 ms + random 0 to 400 ms\n   attempt 3   fails\n   give up and report the error",
+          "fence": "text",
+          "readOnly": true
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:networking/module/latency",
+      "title": "Latency and where time goes",
+      "requires": [],
+      "outcomes": [],
+      "intro": "A request can be slow while every part of the system works. This module covers what network delay is made of, why round trips matter more than connection speed for most requests, and the standard ways to remove them.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Latency and bandwidth",
+          "text": "Two numbers describe a connection, and they are often confused.\n\n- **Latency** is delay: how long one packet takes to arrive. It is measured in milliseconds. **Round-trip time** (RTT) is the time there and back.\n- **Bandwidth** is capacity: how much data can pass each second. It is measured in megabits per second.\n\nThink of what each one limits. A large download is limited by bandwidth. A small API call is limited by latency, because the data fits in a few packets and the time is spent waiting for them to travel.\n\nBuying a faster connection raises bandwidth. It does nothing for latency, which comes mostly from distance."
+        },
+        {
+          "kind": "explanation",
+          "title": "Where latency comes from",
+          "text": "A signal in a cable travels at about two thirds of the speed of light, roughly 200 km per millisecond. Distance therefore sets a floor that no hardware can beat.\n\n| Path | Typical round trip |\n| --- | --- |\n| Same data centre | under 1 ms |\n| Same city | 1 to 5 ms |\n| Across a continent | 40 to 80 ms |\n| Between continents | 100 to 300 ms |\n| Mobile network, added | 20 to 100 ms |\n\nRouters, queues and wireless links add to this. The numbers vary, and the ordering holds. A call to a server on the other side of the world costs a few hundred milliseconds before any work is done.",
+          "example": "distance"
+        },
+        {
+          "kind": "explanation",
+          "title": "Count the round trips",
+          "text": "For a small request, the total time is close to the number of round trips multiplied by the round-trip time. A first HTTPS request to a new server needs several.\n\n1. DNS lookup: one round trip to the resolver, if the name is not cached.\n2. TCP handshake: one round trip.\n3. TLS handshake: one round trip with TLS 1.3.\n4. The request and the response: one round trip, plus the server's work.\n\nThat is three round trips to the server before the first byte of the page arrives. At 100 ms each, the user waits over 300 ms when the server needs 5 ms to produce the answer.",
+          "example": "round-trips"
+        },
+        {
+          "kind": "prediction",
+          "title": "Which change helps",
+          "text": "An API call from a mobile app takes 400 ms. The server's own work takes 10 ms. The app opens a new HTTPS connection for every call. The round-trip time is 120 ms.",
+          "questions": [
+            "round-trip-fix"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Fewer round trips",
+          "text": "Since round trips dominate, the main techniques all remove some.\n\n- **Reuse connections.** Keep-alive and connection pools remove the handshakes from every call after the first.\n- **Batch.** One request that asks for 50 records beats 50 requests for one record each.\n- **Run calls in parallel.** Three independent calls of 100 ms take 100 ms side by side and 300 ms one after another.\n- **Avoid chatty designs.** A loop that makes one database query per item is the most common cause of a slow page. Ten items cost ten round trips. It is called the N+1 problem: one query for the list, then one more for each of its N items.",
+          "example": "chatty"
+        },
+        {
+          "kind": "explanation",
+          "title": "Move the data closer",
+          "text": "When the round trips cannot be removed, shorten them.\n\n- **A cache** keeps a copy of an answer near the place it is needed, so no trip is made at all. Browsers do this, and so do servers.\n- **A CDN** (content delivery network) is a set of caches in many cities. A user is sent to the nearest one, which holds copies of images, scripts and other files that are the same for everyone. The TCP and TLS handshakes also happen with the nearby cache, so even uncached requests gain a little.\n- **Regions.** Running the application in more than one part of the world puts the whole service nearer to users. It is the most work, since the data then has to be in several places as well."
+        },
+        {
+          "kind": "explanation",
+          "title": "Size still matters sometimes",
+          "text": "For large responses, bandwidth and size take over. Two points are worth knowing.\n\n- **Compression.** Text such as JSON, HTML and scripts shrinks to a fraction of its size with gzip or a similar method. It costs a little processing and saves transfer time.\n- **A new connection starts slowly.** TCP begins by sending only a few packets, about 14 KB, and raises the rate as acknowledgements arrive. A response that fits in that first group arrives in one round trip. A larger one needs more. This is called **slow start**, and it is one more reason reused connections are faster."
+        },
+        {
+          "kind": "explanation",
+          "title": "Averages hide the slow cases",
+          "text": "Latency is not one number. Most requests are fast and some are much slower, because of a lost packet, a busy server or a cold cache. An average hides those.\n\nUse **percentiles**. The 50th percentile (p50) is the time that half of all requests beat. The p99 is the time that 99 out of 100 beat. If p50 is 80 ms and p99 is 2 seconds, one request in a hundred is very slow, and a user who makes 100 requests in a visit will probably meet one."
+        },
+        {
+          "kind": "prediction",
+          "title": "The far-away database",
+          "text": "An application server is moved to a region close to its users. Its database stays in the old region, 80 ms away. A typical page runs 30 database queries, one after another.",
+          "questions": [
+            "far-database"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: find the time",
+          "text": "A dashboard page takes 3.2 seconds for users in Asia. The server is in Europe, with a round-trip time of 250 ms. The browser makes 8 API calls for the page, one after another, each on a new connection. Each call takes 15 ms of server work. Responses are about 4 KB each.\n\nEstimate where the 3.2 seconds go. Then list three changes in order of how much each saves, with a rough figure for each."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "Each call on a new connection costs a TCP handshake, a TLS handshake and the request: three round trips, or 750 ms, plus 15 ms of work. That would give 6 seconds for 8 calls, so the browser is already reusing some connections. With one new connection and 8 requests one after another, the estimate is 500 ms of handshakes plus 8 times 265 ms, which is about 2.6 seconds. Add DNS and the page itself, and 3.2 seconds is explained. Server work is 120 ms of it.\n\n1. **Run the 8 calls in parallel**, or replace them with one call that returns everything. The requests then cost one round trip together, not eight. Saves about 1.8 seconds.\n2. **Serve the API from a region in Asia**, or put a cache close to those users for the parts that are the same for everyone. Cuts each remaining round trip from 250 ms to perhaps 30 ms. Saves most of what is left.\n3. **Make sure connections are reused** and HTTP/2 is on, so no call pays for a handshake twice. Saves up to 500 ms on later visits.\n\nSpeeding up the server's own code is last on the list. It accounts for less than 4% of the time."
+        }
+      ],
+      "questions": [
+        {
+          "id": "round-trip-fix",
+          "prompt": "Which change saves the most time?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "Make the server's work twice as fast",
+              "feedback": "That saves 5 ms out of 400."
+            },
+            {
+              "text": "Double the bandwidth of the connection",
+              "feedback": "The request and response are small. They are waiting on distance, not on capacity."
+            },
+            {
+              "text": "Keep the connection open and reuse it for later calls",
+              "feedback": "Later calls skip the TCP and TLS handshakes, which saves about 240 ms each time."
+            }
+          ]
+        },
+        {
+          "id": "far-database",
+          "prompt": "What happens to page load time?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "It improves, since the server is now close to the users",
+              "feedback": "The user saves one round trip of distance. The server now pays for 30."
+            },
+            {
+              "text": "It stays about the same",
+              "feedback": "The queries used to cost under 1 ms each inside one data centre."
+            },
+            {
+              "text": "It gets much worse, by more than 2 seconds",
+              "feedback": "30 queries at 80 ms each add 2.4 seconds. An application and its database belong close together."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "distance": {
+          "code": "   client in Europe  -------------------------  server in Australia\n                       about 16,000 km of cable\n\n   one way:     16,000 km / 200 km per ms  =  80 ms at the very least\n   round trip:  at least 160 ms, in practice about 250 to 300 ms",
+          "fence": "text",
+          "readOnly": true
+        },
+        "round-trips": {
+          "code": "   round-trip time to the server: 100 ms      server work: 5 ms\n\n   new connection                       reused connection\n\n   DNS             20 ms                -\n   TCP handshake  100 ms                -\n   TLS handshake  100 ms                -\n   request        105 ms                request   105 ms\n   -----------------------              ----------------\n   total          325 ms                total     105 ms",
+          "fence": "text",
+          "readOnly": true
+        },
+        "chatty": {
+          "code": "   one query per item (N + 1)            one query for all\n\n   get order list        1 ms            get orders with their\n   get customer of #1    1 ms            customers             2 ms\n   get customer of #2    1 ms\n   ...\n   get customer of #200  1 ms\n   -------------------------             -----------------------\n   201 round trips     201 ms            1 round trip          2 ms",
+          "fence": "text",
+          "readOnly": true
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:networking/module/debug",
+      "title": "Find where a request fails",
+      "requires": [],
+      "outcomes": [],
+      "intro": "\"It can't connect\" describes a dozen different faults. This module gives you one order in which to test, the command for each step, and a table from error message to cause.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "Test in the order the request travels",
+          "text": "A request goes through the same stages every time, and each stage depends on the ones before it.\n\n1. **Name.** Does the name resolve, and to the address you expect?\n2. **Path.** Can packets reach that address?\n3. **Port.** Does something accept a connection on the port?\n4. **TLS.** Does the secure handshake complete, with a valid certificate?\n5. **HTTP.** Does the server answer, and with which status?\n6. **Application.** Is the answer the right one?\n\nTest them in this order and stop at the first that fails. Everything before it is proven to work, and everything after it cannot be judged yet. This turns a vague report into one narrow question.",
+          "example": "ladder"
+        },
+        {
+          "kind": "explanation",
+          "title": "Step 1: the name",
+          "text": "Check two things: that there is an answer, and that the address is the one you expect. An old address after a change points at a cached record. A private address where you expected a public one points at an internal DNS server giving a different answer inside the network.\n\nAlso check what the failing program uses. A container, a virtual machine and your laptop can each use a different resolver. Run the lookup from the place where the failure happens.",
+          "example": "step-name"
+        },
+        {
+          "kind": "explanation",
+          "title": "Steps 2 and 3: the path and the port",
+          "text": "One command tests both: try to open a TCP connection to the address and port.\n\n\nThere are three results, and each one means something different.\n\n| Result | Meaning |\n| --- | --- |\n| Connected | The path and the port are fine. Move up. |\n| Refused, at once | The machine was reached. Nothing listens on that port. |\n| Timeout | No answer. A firewall drops the packets, there is no route, or the machine is off. |\n\n`ping` tests the path alone, and it is less useful than it looks. Many networks block the packets that `ping` uses while they allow real traffic. A failed ping proves nothing. A successful TCP connection proves the path and the port.",
+          "example": "step-port"
+        },
+        {
+          "kind": "prediction",
+          "title": "Refused from one place only",
+          "text": "From an application server, `nc -vz 10.0.2.8 5432` times out. From a second machine in the same subnet as the database, the same command connects.",
+          "questions": [
+            "narrow"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "Steps 4 and 5: TLS and HTTP",
+          "text": "`curl -v` shows both in one run. Read its output from the top.\n\n\nWhere the output stops is where the failure is. If it stops before \"Connected\", go back to steps 1 to 3. If it stops with a certificate error, it is step 4. If a status line appears, the whole network path works, and the status code tells you who is unhappy.\n\nTwo options help you separate causes.\n\n\nThe first reaches one particular server behind a load balancer and still sends the right name, so TLS and `Host` work. The second prints running totals over two lines, so the gap between two numbers is the time one stage took.",
+          "examples": [
+            "step-curl",
+            "step-tricks"
+          ]
+        },
+        {
+          "kind": "explanation",
+          "title": "From message to cause",
+          "text": "| Message | Stage | Likely cause |\n| --- | --- | --- |\n| Could not resolve host, `NXDOMAIN` | Name | Typing error, missing record, wrong resolver |\n| Connection refused | Port | Program not running, or listening on another address or port |\n| Connection timed out | Path | Firewall, missing route, wrong address, machine off |\n| No route to host | Path | No route from this machine to that network |\n| Connection reset by peer | Port or later | Program crashed, or an idle connection was cut in the middle |\n| Certificate has expired, name mismatch, unknown issuer | TLS | See the TLS module's four checks |\n| `502`, `503`, `504` | HTTP | The proxy reached no working backend |\n| `401`, `403` | HTTP | The network is fine. The credentials or permissions are not. |\n| `404` | HTTP | The network is fine. Wrong path, or wrong site for this `Host`. |"
+        },
+        {
+          "kind": "explanation",
+          "title": "Compare two viewpoints",
+          "text": "The most useful question in network debugging is: from where does it work, and from where does it fail? Run the same test from two places and compare.\n\n- Works on the server itself, fails from another machine: the program listens on loopback, or a firewall on the machine blocks it.\n- Works inside the network, fails from outside: an edge firewall, NAT, or a record that exists only in internal DNS.\n- Works by address, fails by name: DNS.\n- Works for one backend, fails for another: test each one directly with `--resolve`.\n\nEach pair of results removes half of the system from suspicion."
+        },
+        {
+          "kind": "explanation",
+          "title": "Change one thing at a time",
+          "text": "When a test fails, change one thing and run the same test again. If you change a firewall rule, restart the service and edit DNS together, and it then works, you do not know which change mattered, and two of them may be wrong.\n\nWrite down what you tested and what you saw. In a long session it is easy to test the same thing twice, or to remember a result from before a change as if it were current."
+        },
+        {
+          "kind": "prediction",
+          "title": "Where the time goes",
+          "text": "The timing command prints: `dns 0.004  connect 0.030  tls 0.058  first byte 2.960  total 2.961`.",
+          "questions": [
+            "slow-stage"
+          ]
+        },
+        {
+          "kind": "independent",
+          "title": "Exercise: walk the ladder",
+          "text": "A colleague reports: \"The new reporting service can't reach the billing API. It worked in testing.\" You are given these results, all run from the reporting service's machine.\n\n```text\ndig +short billing.internal.example.com      ->  10.0.3.14\nnc -vz 10.0.3.14 443                         ->  succeeded\ncurl https://billing.internal.example.com/   ->  certificate verify failed:\n                                                 unable to get local issuer\ncurl -k https://billing.internal.example.com/invoices  ->  HTTP 403\n```\n\n(`-k` tells curl to skip the certificate check.)\n\nSay which stages are proven to work, where the first failure is, what probably causes it, and what the last line adds. Say what you would not do."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "One possible answer",
+          "text": "**Proven.** The name resolves to a private address, so internal DNS works. A TCP connection to port 443 succeeds, so routes and firewalls allow the traffic and something listens there.\n\n**First failure: TLS.** \"Unable to get local issuer\" is the chain check. The billing API's certificate is signed by a CA this machine does not trust. For an internal name, that is most likely the company's private CA, which was installed on the test machines and is missing from the new service's machine or container image. It could also be a missing intermediate.\n\n**The last line.** With the check skipped, the request reaches the application and gets `403`. So there is a second, separate problem waiting behind the first: the reporting service's credentials are not allowed to read invoices. That is an application matter, and it would have stayed hidden until TLS was fixed.\n\n**What not to do.** Do not leave `-k`, or its equivalent in code, in the service. Install the CA certificate so the check passes. Then fix the permission. They are two faults, to be fixed one at a time."
+        }
+      ],
+      "questions": [
+        {
+          "id": "narrow",
+          "prompt": "What does this pair of results tell you?",
+          "answer": 2,
+          "choices": [
+            {
+              "text": "The database is not running",
+              "feedback": "It accepted a connection from the second machine."
+            },
+            {
+              "text": "The database listens on loopback only",
+              "feedback": "Then the second machine would be refused too."
+            },
+            {
+              "text": "Something between the application server and the database blocks the traffic",
+              "feedback": "The database works. The difference between the two tests is the path, so look at firewall rules and routes for the application server's subnet."
+            }
+          ]
+        },
+        {
+          "id": "slow-stage",
+          "prompt": "Which stage is slow?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "The network path, since the total is almost 3 seconds",
+              "feedback": "The connection opened in 26 ms and TLS took 28 ms. The path is quick."
+            },
+            {
+              "text": "The server's work on the request",
+              "feedback": "From the end of TLS at 0.058 to the first byte at 2.960, the client was waiting for the server to produce a response."
+            },
+            {
+              "text": "The download of the response",
+              "feedback": "The first byte came at 2.960 and the last at 2.961. The transfer took 1 ms."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "ladder": {
+          "code": "   6  application   is the answer correct?\n   5  HTTP          which status code?\n   4  TLS           does the handshake complete?\n   3  port          does anything accept the connection?\n   2  path          do packets reach the address?\n   1  name          does the name resolve?\n\n   Start at 1. The first step that fails is where to look.",
+          "fence": "text",
+          "readOnly": true
+        },
+        "step-name": {
+          "code": "dig +short api.example.com\n# 203.0.113.20\n\n# nothing printed, or NXDOMAIN: the name does not resolve here",
+          "fence": "bash",
+          "readOnly": true
+        },
+        "step-port": {
+          "code": "# Linux and macOS\nnc -vz 203.0.113.20 443\n\n# Windows (PowerShell)\nTest-NetConnection 203.0.113.20 -Port 443",
+          "fence": "bash",
+          "readOnly": true
+        },
+        "step-curl": {
+          "code": "curl -v https://api.example.com/health\n\n# * Connected to api.example.com (203.0.113.20) port 443      steps 1 to 3\n# * SSL connection using TLSv1.3                              step 4\n# * subject: CN=api.example.com                               step 4\n# > GET /health HTTP/2                                        sent\n# < HTTP/2 200                                                step 5",
+          "fence": "bash",
+          "readOnly": true
+        },
+        "step-tricks": {
+          "code": "# Skip DNS: send the request for this name to a chosen address\ncurl -v --resolve api.example.com:443:203.0.113.21 \\\n  https://api.example.com/health\n\n# Show how long each stage took\ncurl -s -o /dev/null https://api.example.com/health -w \\\n  \"dns %{time_namelookup}  connect %{time_connect}  tls %{time_appconnect}\nfirst byte %{time_starttransfer}  total %{time_total}\\n\"",
+          "fence": "bash",
+          "readOnly": true
+        }
+      },
+      "tasks": [],
+      "drills": []
+    },
+    {
+      "id": "course:networking/module/review",
+      "title": "Trace and review a request path",
+      "requires": [],
+      "outcomes": [],
+      "intro": "This module has no new ideas. You trace one request from end to end, review a network layout with faults in it, and plan one of your own. Do each exercise on paper before you read its answer.",
+      "steps": [
+        {
+          "kind": "explanation",
+          "title": "How to use this module",
+          "text": "Each exercise has a step where you work alone and a step with one possible answer. The answers are not the only good ones. Compare your reasoning with them, and pay most attention to anything you did not think of at all.\n\nWhen you review a layout, ask the same questions each time.\n\n1. What can reach what, and should it?\n2. Where does a single failure stop everything?\n3. Where does a request wait, and for how long?\n4. What would you see from the client if each part failed?"
+        },
+        {
+          "kind": "independent",
+          "title": "Trace 1: one request, every step",
+          "text": "A user in another country opens `https://shop.example.com/cart` for the first time today. The site has a CDN for images, a layer 7 load balancer that terminates TLS, three application servers in a private subnet, and a database.\n\nWrite every network step that happens before the cart appears, in order. Include each lookup, each handshake and each connection. For each step, name the protocol and say what would be seen if it failed.",
+          "example": "trace-layout"
+        },
+        {
+          "kind": "prediction",
+          "title": "Count the round trips",
+          "text": "In trace 1 the user's round-trip time to the load balancer is 150 ms. Nothing is cached, and the browser uses TLS 1.3.",
+          "questions": [
+            "first-byte"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Trace 1: one possible answer",
+          "text": "| Step | Protocol | If it fails, the user sees |\n| --- | --- | --- |\n| 1. Resolve `shop.example.com` | DNS over UDP | \"Site can't be found\" |\n| 2. Route packets to `203.0.113.10` through the home router's NAT and many hops | IP | A timeout |\n| 3. TCP handshake with the load balancer on port 443 | TCP | Refused or a timeout |\n| 4. TLS handshake. The browser checks the chain, the name and the dates | TLS | A certificate warning |\n| 5. Send `GET /cart` with `Host` and the session cookie | HTTP | - |\n| 6. The load balancer picks a healthy server and sends the request to `10.0.1.6:8080` on a connection it keeps open, with `X-Forwarded-For` | HTTP over TCP | `502`, `503` or `504` |\n| 7. The application takes a pooled connection and queries `10.0.2.8:5432` | TCP | `500`, or `504` if slow |\n| 8. The response returns along the same two connections | HTTP | A partial page |\n| 9. The browser resolves the CDN's name and fetches images from a nearby cache | DNS, TCP, TLS, HTTP | Missing images |\n\nThree things are easy to leave out. NAT at the user's end is part of the path. Steps 6 and 7 use connections that are already open, which is why they are cheap. Step 9 is a second, separate journey to a different server."
+        },
+        {
+          "kind": "independent",
+          "title": "Review 1: a network layout",
+          "text": "Read this description of a system and list every problem you find. Rank them by how urgent they are.",
+          "example": "flawed"
+        },
+        {
+          "kind": "prediction",
+          "title": "The most urgent one",
+          "text": "Before you read the full list, choose from three of the faults.",
+          "questions": [
+            "most-urgent"
+          ]
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Review 1: what is wrong",
+          "text": "**Exposure**\n\n1. **The database is public.** It needs no public address at all. Put it in a private subnet and allow port 5432 from the web server only. A password is not a reason to skip the firewall.\n2. **SSH is open to everyone.** Limit port 22 to an admin range or a VPN.\n3. **Port 8080 is open.** It is probably the application behind a proxy on the same machine. If so, clients can bypass the proxy. Listen on loopback and close the port.\n4. **`X-Forwarded-For` is trusted from anyone.** No proxy of the team's own writes it, so any client can claim any address.\n\n**Availability**\n\n5. **One web server.** Any failure or deploy is an outage. Use at least two behind a load balancer, in separate zones.\n6. **A hand-renewed certificate.** One forgotten date takes the site down for every user at once. Renew automatically and alert weeks ahead.\n7. **A one-day TTL.** If the server must be replaced in a hurry, some users are sent to the old address for a day. Use a few minutes, or point the name at a load balancer whose address does not change.\n\n**Behaviour under failure**\n\n8. **No timeout on the payment call.** If the payment API hangs, every request that calls it hangs, and the server runs out of capacity.\n9. **Five immediate retries of a payment.** They multiply load on a struggling service, and a charge is not idempotent unless a key is sent. A customer could be charged several times.\n\nPoints 1 to 4 are general guidance on reducing exposure, not a statement of any organization's policy."
+        },
+        {
+          "kind": "independent",
+          "title": "Design: a small internal tool",
+          "text": "Plan the network for an internal expenses tool. About 300 employees use it from the office network (`10.50.0.0/16`) and through a VPN. It has a web application, a database, and it sends email through an external provider. It must survive the loss of one server, and it must not be reachable from the internet.\n\nWrite down: the subnets and their ranges, what listens where, the firewall rules, the DNS record, where TLS ends, the health check, and the timeouts for the outbound email call."
+        },
+        {
+          "kind": "walkthrough",
+          "title": "Design: one possible answer",
+          "text": "**Subnets**, in a block that does not overlap the office: `10.60.0.0/16`.\n\n| Subnet | Range | Holds |\n| --- | --- | --- |\n| Balancer | `10.60.1.0/24` | An internal load balancer, private address only |\n| Application | `10.60.2.0/24` | Two application servers in separate zones |\n| Data | `10.60.3.0/24` | The database, with a standby copy |\n\n**Firewall rules**, with everything else denied.\n\n| Target | Allow inbound |\n| --- | --- |\n| Load balancer | TCP 443 from `10.50.0.0/16` and the VPN range |\n| Application | TCP 8080 from the load balancer |\n| Database | TCP 5432 from the application group |\n\nOutbound from the application: 5432 to the database, and 443 to the email provider through a NAT gateway. Nothing has a public address, so nothing can be reached from the internet.\n\n**DNS.** `expenses.internal.example.com`, a record in internal DNS only, pointing at the load balancer, with a TTL of 300.\n\n**TLS.** It ends at the load balancer, with a certificate from the company's CA that employee machines already trust. Renewal is automatic.\n\n**Health check.** `GET /health` every 10 seconds. It checks the process and this server's database connection. It does not call the email provider.\n\n**Email call.** Connect timeout 2 seconds, read timeout 10 seconds, at most two retries with backoff and jitter. Better: place the email on a queue, so that a slow provider never delays a user's request.\n\nThe survival requirement is met for the application by two servers and for the data by the standby. The decision that prevents the most trouble later is the first one: a block that does not overlap the office's."
+        },
+        {
+          "kind": "explanation",
+          "title": "Where to go next",
+          "text": "You can now follow a request through names, addresses, ports, connections, encryption, proxies and load balancers, and test each stage on its own.\n\nThree habits are worth keeping.\n\n- **Ask which stage failed** before asking why.\n- **Compare two viewpoints.** Where it works and where it fails tells you more than either alone.\n- **Give every call a time limit**, and decide what happens when it is reached.\n\nThe system design course builds on this one. It uses these parts, together with caches, queues and databases, to design whole systems and to reason about what happens to them under load and failure."
+        }
+      ],
+      "questions": [
+        {
+          "id": "first-byte",
+          "prompt": "About how long is it before the first byte of the response can arrive, ignoring server work and the DNS lookup?",
+          "answer": 1,
+          "choices": [
+            {
+              "text": "150 ms",
+              "feedback": "That would be a single round trip. The TCP and TLS handshakes come first."
+            },
+            {
+              "text": "450 ms",
+              "feedback": "One round trip for the TCP handshake, one for TLS and one for the request and response."
+            },
+            {
+              "text": "900 ms",
+              "feedback": "That counts the connections behind the load balancer. Those are inside one data centre and cost about a millisecond each."
+            }
+          ]
+        },
+        {
+          "id": "most-urgent",
+          "prompt": "Which fault in review 1 would you fix first?",
+          "answer": 0,
+          "choices": [
+            {
+              "text": "The database is reachable from the whole internet",
+              "feedback": "Anyone can try passwords against it and attack flaws in the database software itself. A firewall rule that allows only the web server removes the exposure in minutes."
+            },
+            {
+              "text": "The one-day TTL on the DNS record",
+              "feedback": "It makes moving the site slow. It does not expose anything."
+            },
+            {
+              "text": "The missing load balancer",
+              "feedback": "It limits availability. It is a larger project and less urgent than an exposed database."
+            }
+          ]
+        }
+      ],
+      "examples": {
+        "trace-layout": {
+          "code": "   user's browser\n        |\n        v\n   DNS resolver ......... shop.example.com -> 203.0.113.10\n        |\n        v\n   load balancer   203.0.113.10:443      (public subnet, TLS ends here)\n        |\n        v\n   app servers     10.0.1.5, .6, .7 :8080   (private subnet)\n        |\n        v\n   database        10.0.2.8:5432            (private subnet)",
+          "fence": "text",
+          "readOnly": true
+        },
+        "flawed": {
+          "code": "   internet\n      |\n      +--> web server        203.0.113.30   ports open: 22, 80, 443, 8080\n      |    (public address)                 from 0.0.0.0/0\n      |\n      +--> database          203.0.113.31   port open: 5432\n           (public address)                 from 0.0.0.0/0\n                                            \"we use a strong password\"\n\n   - one web server, no load balancer\n   - shop.example.com   A   203.0.113.30   TTL 86400\n   - the certificate is renewed by hand when someone remembers\n   - the web server calls a payment API with no timeout\n     and retries 5 times, immediately\n   - the app reads the client address from X-Forwarded-For",
+          "fence": "text",
+          "readOnly": true
+        }
+      },
+      "tasks": [],
+      "drills": []
+    }
+  ]
+}

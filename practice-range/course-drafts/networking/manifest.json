@@ -1,0 +1,339 @@
+{
+  "schemaVersion": "1-draft",
+  "contentVersion": "0.1.0-draft.1",
+  "kind": "reading",
+  "id": "course:networking",
+  "title": "Networking",
+  "audience": [
+    "Can use a terminal and has called a web page or an API",
+    "Wants to understand how a request crosses a network and why it fails"
+  ],
+  "prerequisiteConcepts": [],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:networking/module/model",
+      "order": "listed"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/model",
+      "description": "Describe how a request crosses a network in packets, hops and layers, and name the step that failed.",
+      "assessment": "course:networking/module/model"
+    },
+    {
+      "id": "outcome/addresses",
+      "description": "Read an IP address and a CIDR range, and tell a private address from a public one.",
+      "assessment": "course:networking/module/addresses"
+    },
+    {
+      "id": "outcome/ports",
+      "description": "Say what a port is, and explain why a running server cannot be reached from another machine.",
+      "assessment": "course:networking/module/ports"
+    },
+    {
+      "id": "outcome/dns",
+      "description": "Explain how a name is resolved, read the common records, and plan a change around the TTL.",
+      "assessment": "course:networking/module/dns"
+    },
+    {
+      "id": "outcome/tcp",
+      "description": "Describe a TCP connection from open to close, tell refused from timed out from reset, and say when UDP fits.",
+      "assessment": "course:networking/module/tcp"
+    },
+    {
+      "id": "outcome/http",
+      "description": "Read an HTTP request and response as sent, and say what HTTP/2 and HTTP/3 changed.",
+      "assessment": "course:networking/module/http"
+    },
+    {
+      "id": "outcome/tls",
+      "description": "Say what TLS guarantees, and name which certificate check failed from an error message.",
+      "assessment": "course:networking/module/tls"
+    },
+    {
+      "id": "outcome/routing",
+      "description": "Follow a packet through a route table and NAT, and explain why a reply can be lost.",
+      "assessment": "course:networking/module/routing"
+    },
+    {
+      "id": "outcome/firewalls",
+      "description": "Write narrow, stateful firewall rules and lay a network out in public and private subnets.",
+      "assessment": "course:networking/module/firewalls"
+    },
+    {
+      "id": "outcome/proxies",
+      "description": "Explain what a reverse proxy changes for a server, and read the errors a proxy produces.",
+      "assessment": "course:networking/module/proxies"
+    },
+    {
+      "id": "outcome/balancing",
+      "description": "Choose a load balancing method, design a health check, and take a server out without dropping requests.",
+      "assessment": "course:networking/module/balancing"
+    },
+    {
+      "id": "outcome/timeouts",
+      "description": "Set timeouts along a chain of calls, and retry only when it is safe, with backoff and jitter.",
+      "assessment": "course:networking/module/timeouts"
+    },
+    {
+      "id": "outcome/latency",
+      "description": "Estimate where a request's time goes by counting round trips, and choose a way to remove them.",
+      "assessment": "course:networking/module/latency"
+    },
+    {
+      "id": "outcome/debug",
+      "description": "Test a failing request stage by stage and name the first stage that fails.",
+      "assessment": "course:networking/module/debug"
+    },
+    {
+      "id": "outcome/review",
+      "description": "Trace a request end to end, review a flawed network layout, and plan one, without help.",
+      "assessment": "course:networking/module/review"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:networking/module/model",
+      "title": "How data crosses a network",
+      "prerequisites": [],
+      "teaches": [
+        "packet",
+        "layer"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/model/module.md"
+      }
+    },
+    {
+      "id": "course:networking/module/addresses",
+      "title": "IP addresses and subnets",
+      "prerequisites": [
+        "course:networking/module/model"
+      ],
+      "teaches": [
+        "ip-address",
+        "subnet"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/addresses/module.md"
+      }
+    },
+    {
+      "id": "course:networking/module/ports",
+      "title": "Ports and sockets",
+      "prerequisites": [
+        "course:networking/module/addresses"
+      ],
+      "teaches": [
+        "port",
+        "listening"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/ports/module.md"
+      }
+    },
+    {
+      "id": "course:networking/module/dns",
+      "title": "Names and DNS",
+      "prerequisites": [
+        "course:networking/module/ports"
+      ],
+      "teaches": [
+        "dns",
+        "ttl"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/dns/module.md"
+      }
+    },
+    {
+      "id": "course:networking/module/tcp",
+      "title": "TCP and UDP",
+      "prerequisites": [
+        "course:networking/module/dns"
+      ],
+      "teaches": [
+        "tcp",
+        "udp"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/tcp/module.md"
+      }
+    },
+    {
+      "id": "course:networking/module/http",
+      "title": "HTTP on the wire",
+      "prerequisites": [
+        "course:networking/module/tcp"
+      ],
+      "teaches": [
+        "http-message",
+        "http-version"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/http/module.md"
+      }
+    },
+    {
+      "id": "course:networking/module/tls",
+      "title": "TLS and certificates",
+      "prerequisites": [
+        "course:networking/module/http"
+      ],
+      "teaches": [
+        "tls",
+        "certificate"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/tls/module.md"
+      }
+    },
+    {
+      "id": "course:networking/module/routing",
+      "title": "Routing, gateways and NAT",
+      "prerequisites": [
+        "course:networking/module/tls"
+      ],
+      "teaches": [
+        "route",
+        "nat"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/routing/module.md"
+      }
+    },
+    {
+      "id": "course:networking/module/firewalls",
+      "title": "Firewalls and network rules",
+      "prerequisites": [
+        "course:networking/module/routing"
+      ],
+      "teaches": [
+        "firewall",
+        "network-zones"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/firewalls/module.md"
+      }
+    },
+    {
+      "id": "course:networking/module/proxies",
+      "title": "Proxies and reverse proxies",
+      "prerequisites": [
+        "course:networking/module/firewalls"
+      ],
+      "teaches": [
+        "reverse-proxy",
+        "forwarded-headers"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/proxies/module.md"
+      }
+    },
+    {
+      "id": "course:networking/module/balancing",
+      "title": "Load balancers",
+      "prerequisites": [
+        "course:networking/module/proxies"
+      ],
+      "teaches": [
+        "load-balancer",
+        "health-check"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/balancing/module.md"
+      }
+    },
+    {
+      "id": "course:networking/module/timeouts",
+      "title": "Timeouts, retries and backoff",
+      "prerequisites": [
+        "course:networking/module/balancing"
+      ],
+      "teaches": [
+        "timeout",
+        "retry"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/timeouts/module.md"
+      }
+    },
+    {
+      "id": "course:networking/module/latency",
+      "title": "Latency and where time goes",
+      "prerequisites": [
+        "course:networking/module/timeouts"
+      ],
+      "teaches": [
+        "latency",
+        "round-trip"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/latency/module.md"
+      }
+    },
+    {
+      "id": "course:networking/module/debug",
+      "title": "Find where a request fails",
+      "prerequisites": [
+        "course:networking/module/latency"
+      ],
+      "teaches": [
+        "network-debugging"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/debug/module.md"
+      }
+    },
+    {
+      "id": "course:networking/module/review",
+      "title": "Trace and review a request path",
+      "prerequisites": [
+        "course:networking/module/debug"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/review/module.md"
+      }
+    }
+  ],
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  },
+  "runtimeContentVersion": "0.1.0-preview.1"
+}

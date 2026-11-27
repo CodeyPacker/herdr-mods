@@ -1,0 +1,359 @@
+{
+  "schemaVersion": "1-draft",
+  "contentVersion": "0.1.0-draft.1",
+  "kind": "reading",
+  "id": "course:system-design",
+  "title": "System design",
+  "audience": [
+    "Has built or worked on a web application or an API",
+    "Wants to design systems that hold up under load and failure"
+  ],
+  "prerequisiteConcepts": [],
+  "entryPaths": [
+    {
+      "id": "beginner",
+      "start": "course:system-design/module/approach",
+      "order": "listed"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome/approach",
+      "description": "Turn a vague request into requirements, and work from a simple design towards the first bottleneck.",
+      "assessment": "course:system-design/module/approach"
+    },
+    {
+      "id": "outcome/estimates",
+      "description": "Estimate requests per second, storage and bandwidth with rounded arithmetic.",
+      "assessment": "course:system-design/module/estimates"
+    },
+    {
+      "id": "outcome/scale",
+      "description": "Choose between scaling up and scaling out, and find the state that stops an application from running as many copies.",
+      "assessment": "course:system-design/module/scale"
+    },
+    {
+      "id": "outcome/storage",
+      "description": "Choose a data store from the questions the system asks of its data.",
+      "assessment": "course:system-design/module/storage"
+    },
+    {
+      "id": "outcome/caching",
+      "description": "Design a cache with keys, expiry and invalidation, and protect it against a stampede and a cold start.",
+      "assessment": "course:system-design/module/caching"
+    },
+    {
+      "id": "outcome/replication",
+      "description": "Set up leader and follower copies, handle replication lag, and say what failover and backups each protect against.",
+      "assessment": "course:system-design/module/replication"
+    },
+    {
+      "id": "outcome/partitioning",
+      "description": "Choose a partition key from the access patterns, and name what partitioning takes away.",
+      "assessment": "course:system-design/module/partitioning"
+    },
+    {
+      "id": "outcome/consistency",
+      "description": "Decide which data needs strong consistency and which can be eventual, and prevent conflicting writes.",
+      "assessment": "course:system-design/module/consistency"
+    },
+    {
+      "id": "outcome/queues",
+      "description": "Move work out of a request onto a queue, with workers that are safe to repeat.",
+      "assessment": "course:system-design/module/queues"
+    },
+    {
+      "id": "outcome/events",
+      "description": "Tell a command from an event, and publish events reliably with an outbox.",
+      "assessment": "course:system-design/module/events"
+    },
+    {
+      "id": "outcome/failure",
+      "description": "Find how a failure spreads through a design, and contain it with timeouts, breakers, bulkheads and fallbacks.",
+      "assessment": "course:system-design/module/failure"
+    },
+    {
+      "id": "outcome/availability",
+      "description": "Set availability and recovery targets as numbers, and choose redundancy that meets them.",
+      "assessment": "course:system-design/module/availability"
+    },
+    {
+      "id": "outcome/observe",
+      "description": "Choose metrics, logs and traces for a service, and alert on what users experience.",
+      "assessment": "course:system-design/module/observe"
+    },
+    {
+      "id": "outcome/overload",
+      "description": "Protect a system past its limit with rate limits, load shedding and backpressure.",
+      "assessment": "course:system-design/module/overload"
+    },
+    {
+      "id": "outcome/worked",
+      "description": "Follow a complete design from requirements to trade-offs, and revise it when a requirement changes.",
+      "assessment": "course:system-design/module/worked"
+    },
+    {
+      "id": "outcome/review",
+      "description": "Review a flawed design and produce one for a new problem, without help.",
+      "assessment": "course:system-design/module/review"
+    }
+  ],
+  "modules": [
+    {
+      "id": "course:system-design/module/approach",
+      "title": "How to approach a design",
+      "prerequisites": [],
+      "teaches": [
+        "requirements",
+        "trade-off"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/approach/module.md"
+      }
+    },
+    {
+      "id": "course:system-design/module/estimates",
+      "title": "Estimate load and size",
+      "prerequisites": [
+        "course:system-design/module/approach"
+      ],
+      "teaches": [
+        "estimation"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/estimates/module.md"
+      }
+    },
+    {
+      "id": "course:system-design/module/scale",
+      "title": "Scale up and scale out",
+      "prerequisites": [
+        "course:system-design/module/estimates"
+      ],
+      "teaches": [
+        "scaling",
+        "stateless"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/scale/module.md"
+      }
+    },
+    {
+      "id": "course:system-design/module/storage",
+      "title": "Choose a data store",
+      "prerequisites": [
+        "course:system-design/module/scale"
+      ],
+      "teaches": [
+        "data-store",
+        "index"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/storage/module.md"
+      }
+    },
+    {
+      "id": "course:system-design/module/caching",
+      "title": "Caches",
+      "prerequisites": [
+        "course:system-design/module/storage"
+      ],
+      "teaches": [
+        "cache",
+        "cache-invalidation"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/caching/module.md"
+      }
+    },
+    {
+      "id": "course:system-design/module/replication",
+      "title": "Replication",
+      "prerequisites": [
+        "course:system-design/module/caching"
+      ],
+      "teaches": [
+        "replication",
+        "failover"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/replication/module.md"
+      }
+    },
+    {
+      "id": "course:system-design/module/partitioning",
+      "title": "Partitioning",
+      "prerequisites": [
+        "course:system-design/module/replication"
+      ],
+      "teaches": [
+        "partitioning",
+        "partition-key"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/partitioning/module.md"
+      }
+    },
+    {
+      "id": "course:system-design/module/consistency",
+      "title": "Consistency and its trade-offs",
+      "prerequisites": [
+        "course:system-design/module/partitioning"
+      ],
+      "teaches": [
+        "consistency",
+        "transaction"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/consistency/module.md"
+      }
+    },
+    {
+      "id": "course:system-design/module/queues",
+      "title": "Queues and background work",
+      "prerequisites": [
+        "course:system-design/module/consistency"
+      ],
+      "teaches": [
+        "queue",
+        "idempotent-consumer"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/queues/module.md"
+      }
+    },
+    {
+      "id": "course:system-design/module/events",
+      "title": "Events and streams",
+      "prerequisites": [
+        "course:system-design/module/queues"
+      ],
+      "teaches": [
+        "event",
+        "event-log"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/events/module.md"
+      }
+    },
+    {
+      "id": "course:system-design/module/failure",
+      "title": "Design for failure",
+      "prerequisites": [
+        "course:system-design/module/events"
+      ],
+      "teaches": [
+        "cascading-failure",
+        "graceful-degradation"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/failure/module.md"
+      }
+    },
+    {
+      "id": "course:system-design/module/availability",
+      "title": "Availability and recovery",
+      "prerequisites": [
+        "course:system-design/module/failure"
+      ],
+      "teaches": [
+        "availability",
+        "disaster-recovery"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/availability/module.md"
+      }
+    },
+    {
+      "id": "course:system-design/module/observe",
+      "title": "See what the system is doing",
+      "prerequisites": [
+        "course:system-design/module/availability"
+      ],
+      "teaches": [
+        "observability",
+        "alerting"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/observe/module.md"
+      }
+    },
+    {
+      "id": "course:system-design/module/overload",
+      "title": "Protect the system from overload",
+      "prerequisites": [
+        "course:system-design/module/observe"
+      ],
+      "teaches": [
+        "rate-limit",
+        "load-shedding"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/overload/module.md"
+      }
+    },
+    {
+      "id": "course:system-design/module/worked",
+      "title": "Worked design: a link shortener",
+      "prerequisites": [
+        "course:system-design/module/overload"
+      ],
+      "teaches": [
+        "design-walkthrough"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/worked/module.md"
+      }
+    },
+    {
+      "id": "course:system-design/module/review",
+      "title": "Review a design and make one",
+      "prerequisites": [
+        "course:system-design/module/worked"
+      ],
+      "teaches": [
+        "transfer"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/review/module.md"
+      }
+    }
+  ],
+  "compatibility": {
+    "fromVersions": [],
+    "replacements": []
+  },
+  "runtimeContentVersion": "0.1.0-preview.1"
+}

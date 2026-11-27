@@ -8,9 +8,9 @@ import { readModule } from "./course-markdown.mjs";
 import { access } from "node:fs/promises";
 
 const base = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-// node practice-range/scripts/build-course.mjs [typescript|csharp|sql|api-design|docker|ci-cd|dsa]
+// node practice-range/scripts/build-course.mjs [typescript|csharp|sql|dsa|api-design|docker|ci-cd|networking|system-design]
 const language = process.argv[2] ?? "typescript";
-if (!["typescript", "csharp", "sql", "api-design", "docker", "ci-cd", "dsa"].includes(language)) throw new Error("Usage: build-course.mjs [typescript|csharp|sql|api-design|docker|ci-cd|dsa]");
+if (!["typescript", "csharp", "sql", "dsa", "api-design", "docker", "ci-cd", "networking", "system-design"].includes(language)) throw new Error("Usage: build-course.mjs [typescript|csharp|sql|dsa|api-design|docker|ci-cd|networking|system-design]");
 const draft = resolve(base, "course-drafts", language);
 async function source(folder, path) {
   const file = resolve(folder, path);

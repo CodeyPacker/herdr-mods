@@ -9,4 +9,6 @@ export const bundledCourses = [
   { id: "course:api-design", file: "api-design.json" },
   { id: "course:docker", file: "docker.json" },
   { id: "course:ci-cd", file: "ci-cd.json" },
+  { id: "course:networking", file: "networking.json" },
+  { id: "course:system-design", file: "system-design.json" },
 ];
