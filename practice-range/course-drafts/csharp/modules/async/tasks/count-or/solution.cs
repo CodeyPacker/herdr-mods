@@ -1,8 +1,8 @@
-public static async Task<int> CountOrAsync(string board, int fallback)
+public static async Task<int> CountOrAsync(string shop, int fallback)
 {
     try
     {
-        return await Source.CountAsync(board);
+        return await Source.CountAsync(shop);
     }
     catch (InvalidOperationException)
     {

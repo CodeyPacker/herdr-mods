@@ -1,14 +1,14 @@
 {
   "id": "course:cs-foundations/task/async-count-or",
   "role": "independent",
-  "title": "Fall back when a board is offline",
+  "title": "Fall back when a shop is offline",
   "concepts": [
     "await",
     "async-failure",
     "throw-catch",
     "task"
   ],
-  "prompt": "Source is supplied. Source.CountAsync throws InvalidOperationException for the board \"offline\". Write public static async Task<int> CountOrAsync(string board, int fallback). Return the board's count. When the source throws InvalidOperationException, return the fallback. A count of 0 is a real result and must be returned as 0.",
+  "prompt": "Source is supplied. Source.CountAsync throws InvalidOperationException for the shop \"offline\". Write public static async Task<int> CountOrAsync(string shop, int fallback). Return the shop's count. When the source throws InvalidOperationException, return the fallback. A count of 0 is a real result and must be returned as 0.",
   "hints": [
     "Where does the exception from a failed task appear in your code?",
     "Put the await inside a try block and catch the one exception type that means offline.",
@@ -20,15 +20,15 @@
   "mode": "members",
   "rules": [],
   "checks": [
-    "Practice.CountOrAsync(\"desk\", -1).GetAwaiter().GetResult() == 3",
+    "Practice.CountOrAsync(\"north\", -1).GetAwaiter().GetResult() == 3",
     "Practice.CountOrAsync(\"offline\", -1).GetAwaiter().GetResult() == -1",
     "Practice.CountOrAsync(\"empty\", -1).GetAwaiter().GetResult() == 0",
     "Practice.CountOrAsync(\"offline\", 9).GetAwaiter().GetResult() == 9"
   ],
   "checkLabels": [
-    "desk must give its count of 3.",
-    "An offline board must give the fallback.",
-    "A board with 0 tasks must give 0, not the fallback.",
+    "north must give its count of 3.",
+    "An offline shop must give the fallback.",
+    "A shop with 0 items must give 0, not the fallback.",
     "The fallback must be the value that was passed in."
   ],
   "fixtures": [
@@ -57,5 +57,5 @@
       }
     }
   ],
-  "feedback": "Compare the offline board with the empty board. Only a thrown exception means the read failed. A count of 0 is a successful read."
+  "feedback": "Compare the offline shop with the empty shop. Only a thrown exception means the read failed. A count of 0 is a successful read."
 }

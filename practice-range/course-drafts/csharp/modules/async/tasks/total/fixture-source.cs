@@ -1,18 +1,18 @@
 // Supplied local source. It uses no network and no clock.
 public static class Source
 {
-    public static async Task<int> CountAsync(string board)
+    public static async Task<int> CountAsync(string shop)
     {
         await Task.Yield();
-        if (board == "offline")
+        if (shop == "offline")
         {
-            throw new InvalidOperationException("Board is offline.");
+            throw new InvalidOperationException("Shop is offline.");
         }
-        if (board == "desk")
+        if (shop == "north")
         {
             return 3;
         }
-        if (board == "lab")
+        if (shop == "south")
         {
             return 5;
         }

@@ -176,7 +176,7 @@ New content version `0.2.0-preview.1`, no compatibility with 0.1.0 (old enrollme
 - [x] C12 Pattern matching
 - [x] C13 Exceptions
 - [x] C14 Generics
-- [ ] C15 async and await
+- [x] C15 async and await
 - [ ] C16 Writing unit tests
 - [ ] C16b Markdown polish: modules 7 to 16 were rethemed by renaming, so their prose has no backticks or lists yet (modules 1 to 6 do). Add `code` formatting and short lists to their step text. Content and ids stay.
 - [ ] C17 Rewrite readiness checks R1 to R4 as skip-ahead tests over the new modules.

@@ -7,7 +7,7 @@
     "await",
     "method"
   ],
-  "prompt": "Source is supplied. Source.CountAsync(board) returns a task with the number of open tasks on a board. TotalAsync(string first, string second) should read both boards, the first one first, and return the two counts added together. The starter reads only the first board.",
+  "prompt": "Source is supplied. Source.CountAsync(shop) returns a task with the number of items in stock at a shop. TotalAsync(string first, string second) should read both shops, the first one first, and return the two counts added together. The starter reads only the first shop.",
   "hints": [
     "How many reads does the method need, and how many does the starter make?",
     "Each read needs its own await before you can use its number.",
@@ -19,16 +19,16 @@
   "mode": "members",
   "rules": [],
   "checks": [
-    "Practice.TotalAsync(\"desk\", \"lab\").GetAwaiter().GetResult() == 8",
-    "Practice.TotalAsync(\"lab\", \"empty\").GetAwaiter().GetResult() == 5",
+    "Practice.TotalAsync(\"north\", \"south\").GetAwaiter().GetResult() == 8",
+    "Practice.TotalAsync(\"south\", \"empty\").GetAwaiter().GetResult() == 5",
     "Practice.TotalAsync(\"empty\", \"empty\").GetAwaiter().GetResult() == 0",
-    "Practice.TotalAsync(\"desk\", \"desk\").GetAwaiter().GetResult() == 6"
+    "Practice.TotalAsync(\"north\", \"north\").GetAwaiter().GetResult() == 6"
   ],
   "checkLabels": [
-    "desk has 3 and lab has 5, so the total must be 8.",
-    "A board with 0 tasks must add nothing.",
-    "Two empty boards must total 0.",
-    "The same board twice must count twice."
+    "north has 3 and south has 5, so the total must be 8.",
+    "A shop with 0 items must add nothing.",
+    "Two empty shops must total 0.",
+    "The same shop twice must count twice."
   ],
   "fixtures": [
     {
@@ -48,7 +48,7 @@
     },
     {
       "source": "wrong-first-twice.cs",
-      "misconception": "Reads the first board twice and never the second.",
+      "misconception": "Reads the first shop twice and never the second.",
       "witness": {
         "fixture": "source",
         "kind": "result",
@@ -56,5 +56,5 @@
       }
     }
   ],
-  "feedback": "Check that each board is read once, that each read is awaited, and that both numbers reach the return."
+  "feedback": "Check that each shop is read once, that each read is awaited, and that both numbers reach the return."
 }

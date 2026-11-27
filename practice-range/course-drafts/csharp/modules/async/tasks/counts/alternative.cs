@@ -1,12 +1,12 @@
-public static async Task<List<int>> CountsAsync(List<string> boards)
+public static async Task<List<int>> CountsAsync(List<string> shops)
 {
     var counts = new List<int>();
-    for (int i = 0; i < boards.Count; i++)
+    for (int i = 0; i < shops.Count; i++)
     {
         int count = -1;
         try
         {
-            count = await Source.CountAsync(boards[i]);
+            count = await Source.CountAsync(shops[i]);
         }
         catch (InvalidOperationException)
         {
