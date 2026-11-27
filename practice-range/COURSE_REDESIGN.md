@@ -95,7 +95,7 @@ Notes on Phase A:
 - [x] B2 Use that for every code block in lessons, tasks, hints and solutions.
 - [x] B3 Define the module Markdown format (below) and write `scripts/course-markdown.mjs` that turns `module.md` into the same module object `build-course.mjs` reads from `module.json` today. Add a test.
 - [x] B4 `build-course.mjs` reads `module.md` when present, else `module.json`.
-- [ ] B5 Convert one existing C# module to `module.md`, rebuild, verify, screenshot.
+- [x] B5 Convert one existing C# module to `module.md`, rebuild, verify, screenshot.
 
 #### Module Markdown format
 
@@ -151,7 +151,9 @@ What does `Average(new double[0])` return?
 
 New content version `0.2.0-preview.1`, no compatibility with 0.1.0 (old enrollments stay readable from Course settings). Each module: 6 to 10 steps, at least one prediction question, 2 to 4 tasks, examples from varied everyday data. No task tracker. Teach C# on its own terms (D9).
 
-- [ ] C0 New `course-drafts/csharp/OUTLINE.md` and `manifest.json` for the 16 modules. Remove the project file and capstone modules from the manifest.
+- [x] C0 New `course-drafts/csharp/OUTLINE.md` and `manifest.json` for the 16 modules. Remove the project file and capstone modules from the manifest.
+    - Kept the 0.1.0 module keys (save, values, decisions, ...) so task IDs and files stay put. Only titles and content change. Course title is now "Learn C#", content version 0.2.0-preview.1. `tracker`, `report` and `project/` are deleted. Do not run `build-course.mjs csharp` until C18: a rebuild with a new version archives 0.1.0, and the pack should only change once.
+    - `node scripts/verify-course.mjs csharp <key>` checks one module in a few minutes. A full run also checks R1 to R4, which may fail until C17.
 - [ ] C1 Run a program, read errors
 - [ ] C2 Types and values
 - [ ] C3 Control flow

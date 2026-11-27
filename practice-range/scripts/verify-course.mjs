@@ -155,6 +155,8 @@ function conceptsThrough(manifest, moduleId) {
 }
 
 async function checkProject(manifest) {
+  // Courses without a project (D11) have nothing to check here.
+  if (!manifest.project) return;
   const project = await json(root, manifest.project);
   const dir = dirname(join(root, manifest.project));
   for (const p of project.checkpoints) {

@@ -1,6 +1,6 @@
 {
   "id": "course:cs-foundations/module/save",
-  "title": "Save, run, read output",
+  "title": "Run a program, read errors",
   "requires": [],
   "outcomes": [
     {

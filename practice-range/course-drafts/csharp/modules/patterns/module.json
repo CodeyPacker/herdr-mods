@@ -1,6 +1,6 @@
 {
   "id": "course:cs-foundations/module/patterns",
-  "title": "Choose by type and shape",
+  "title": "Pattern matching",
   "requires": [
     "method",
     "parameter-return",

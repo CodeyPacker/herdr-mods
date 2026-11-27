@@ -1,6 +1,6 @@
 {
   "id": "course:cs-foundations/module/async",
-  "title": "Wait for local data",
+  "title": "async and await",
   "requires": [
     "method",
     "parameter-return",
@@ -211,7 +211,7 @@
   ],
   "review": {
     "task": "course:cs-foundations/task/async-counts",
-    "afterModule": "course:cs-foundations/module/tracker",
+    "afterModule": "course:cs-foundations/module/checks",
     "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
   },
   "drills": [

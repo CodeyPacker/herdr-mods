@@ -1,6 +1,6 @@
 {
   "id": "course:cs-foundations/module/nulls",
-  "title": "Handle a missing value",
+  "title": "Nullable types",
   "requires": [
     "method",
     "parameter-return",

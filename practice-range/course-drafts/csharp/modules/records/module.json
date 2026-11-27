@@ -1,6 +1,6 @@
 {
   "id": "course:cs-foundations/module/records",
-  "title": "Records, structs and copies",
+  "title": "Structs, records, copies",
   "requires": [
     "class",
     "property",

@@ -1,6 +1,6 @@
 {
   "id": "course:cs-foundations/module/exceptions",
-  "title": "Recover from errors",
+  "title": "Exceptions",
   "requires": [
     "method",
     "parameter-return",

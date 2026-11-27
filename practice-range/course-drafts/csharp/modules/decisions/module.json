@@ -1,6 +1,6 @@
 {
   "id": "course:cs-foundations/module/decisions",
-  "title": "Make a decision",
+  "title": "Control flow",
   "requires": [
     "variable",
     "number-types",

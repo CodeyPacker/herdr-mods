@@ -1,6 +1,6 @@
 {
   "id": "course:cs-foundations/module/lookups",
-  "title": "Look up and de-duplicate",
+  "title": "Dictionaries and sets",
   "requires": [
     "list",
     "loop",

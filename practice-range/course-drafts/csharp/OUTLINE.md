@@ -1,72 +1,43 @@
-# C# foundations
+# Learn C#
 
-The beginner follows all 18 modules in order. The experienced path starts with the same save/run check and offers the readiness checks below. A learner can open any module or practice drill directly. The manifest expands each module key below with `course:cs-foundations/module/`. Position is independent of identity.
+Status: 0.2.0-preview.1 in progress (COURSE_REDESIGN.md, Phase C). Replaces the 0.1.0 "Build a task tracker with C#" outline.
 
-Status: all 18 modules, four project checkpoints and four readiness checks are written and pass the verifier. `VALIDATION.md` records the run. The course teaches C# on its own terms and never compares it with another language.
+The course teaches C#, one concept per module. There is no project and no capstone (D11). Each module uses its own everyday examples, so no module depends on code from another (D12). It teaches C# on its own terms and never compares it with another language (D9).
 
-## Outcome-to-assessment map
+Module keys stay the same as 0.1.0, so files, task IDs and progress stay put. Only titles and content change.
 
-Task keys expand to `course:cs-foundations/task/<module>-<key>`. The last task listed for each module is its delayed review task.
+## Modules
 
-| Module | Prior modules | What the learner can do | Tasks | Experienced entry |
-| --- | --- | --- | --- | --- |
-| 1. **save** · Save, run, read output | None | Save a short program, read its output, and find the line a compiler error names. | fix-message, board-sign, echo-card | Setup for both |
-| 2. **values** · Values, types and text | save | Trace assignments, choose whole-number or fractional division, build text from values, and repair a type mismatch. | arrival-log, share-hours, shelf-label, repair-count, seat-snapshot | R1 |
-| 3. **decisions** · Make a decision | values | Choose a branch with `if`, comparisons and boolean operators, including the edge values. | status, can-start, owner-line | R1 |
-| 4. **methods** · Give a calculation a name | decisions | Write a static method with parameters and a return value. Explain why a name is out of scope. | after-arrivals, extra-hours, summary, movement | R1 |
-| 5. **collections** · Work through a list | methods | Build and walk an array and a `List<T>` with loops and a running total. | total-minutes, over, average | R1 |
-| 6. **classes** · Describe a task with a class | methods, collections | Write a class with properties, a constructor and methods. Predict what two names for one object share. | board, task-card, emphasize | R2 |
-| 7. **records** · Records, structs and copies | classes | Tell a copy from a shared reference, change a record with `with`, and predict `==` for records, structs and classes. | rename, slot, complete-all | R2 |
-| 8. **nulls** · Handle a missing value | classes, decisions | Mark a value that may be missing with `?`, check it before use, and supply a fallback with `??`, keeping zero and empty text. | owner-label, due-text, text-length | R2 |
-| 9. **lookups** · Look up and de-duplicate | collections, nulls | Count with a `Dictionary`, read a key that may be missing, and collect unique values with a `HashSet`. | count-by-owner, minutes-for, unique-owners | R2 |
-| 10. **linq** · Query a collection | collections, records, lookups | Filter, transform, count and group with LINQ. Predict when a query runs. | open-titles, minutes-by-owner, long-titles | R3 |
-| 11. **interfaces** · Share a contract | classes, records | Implement an interface, extend a base type, and call different types through one contract. | fixed-source, urgent-card, estimates | R3 |
-| 12. **patterns** · Choose by type and shape | interfaces, records | Pick a result by record type and property values with a switch expression, with the arms in a correct order. | describe-update, lane, apply-edit, repair-caption, sensor-display | R3 |
-| 13. **exceptions** · Recover from errors | patterns, nulls | Throw and catch a specific exception. Choose between a result value and an exception for an expected failure. | checked, parse-minutes, safe-load | R3 |
-| 14. **generics** · Keep a type relationship | interfaces, collections | Write a generic method and type that keep the caller's type, with a constraint where one is needed. | last-or, outcome, largest | R4 |
-| 15. **async** · Wait for local data | exceptions, methods | Return and await a `Task`, run reads in order, and handle a failed task. | total, count-or, counts | R4 |
-| 16. **checks** · Read and write checks | linq, exceptions | Read expected and actual values, find an off-by-one bug, and write a check that catches it. | at-limit, count-check, order-check | R4 |
-| 17. **tracker** · Assemble the tracker | async, generics, checks, patterns | Join task records, validation, edits and a local async reader into one working tracker. | valid-rows, apply-edit, open-titles | R4 |
-| 18. **report** · Deliver an unfamiliar report | tracker | Independently combine validation, counting, error handling, async reading and a regression check. | audit | All take |
+Each module: an intro, 6 to 10 steps, at least one prediction question, 2 to 4 tasks and a review task. The last task in each module is its review task. "Examples" lists the settings to use instead of the old task tracker. Pick one per step or task, and keep each one short.
 
-That is 57 lesson tasks. The four project checkpoints below join their modules when the pack is built, which gives 61. The four readiness checks sit outside the lessons.
+| # | Key | Title | Teaches | Examples | Skip-ahead test |
+| --- | --- | --- | --- | --- | --- |
+| 1 | save | Run a program, read errors | Save and run, read output, find the line a compiler error names | greeting, a receipt line | none |
+| 2 | values | Types and values | `int`, `double`, `string`, `bool`, `var`, arithmetic, `int` vs `double` division, interpolation, type errors | temperatures, a bill split, a name badge | R1 |
+| 3 | decisions | Control flow | `if`/`else`, comparisons, `&&`/`||`/`!`, edge values, `while` | ticket prices by age, a thermostat, a password rule | R1 |
+| 4 | methods | Methods | parameters, return values, `void`, scope, expression bodies, static methods | unit conversion, a tip calculator | R1 |
+| 5 | collections | Arrays and lists | arrays, `List<T>`, `for`/`foreach`, running totals, index bounds | step counts, a playlist, test scores | R1 |
+| 6 | classes | Classes and properties | fields, properties, constructors, methods, two names for one object | a bank account, a book, a thermostat object | R2 |
+| 7 | records | Structs, records, copies | value vs reference, `struct`, `record`, `with`, `==` on each | 2D points, a colour, an address | R2 |
+| 8 | nulls | Nullable types | `?`, null checks, `??`, `?.`, keeping 0 and "" | an optional middle name, a missing reading | R2 |
+| 9 | lookups | Dictionaries and sets | `Dictionary<K,V>`, `TryGetValue`, counting, `HashSet<T>` | word counts, a phone book, unique visitors | R2 |
+| 10 | linq | LINQ | `Where`, `Select`, `OrderBy`, `Count`, `Sum`, `GroupBy`, deferred execution | a shopping cart, movie ratings | R3 |
+| 11 | interfaces | Interfaces and inheritance | declaring and implementing an interface, base classes, `virtual`/`override` | shapes and areas, notifications | R3 |
+| 12 | patterns | Pattern matching | `switch` expressions, type and property patterns, arm order | shipping cost by parcel, payment types | R3 |
+| 13 | exceptions | Exceptions | `throw`, `try`/`catch`/`finally`, specific exceptions, `TryParse` vs exceptions | parsing user input, a withdrawal limit | R3 |
+| 14 | generics | Generics | generic methods and types, constraints | a pair, a cache, the largest item | R4 |
+| 15 | async | async and await | `Task`, `async`/`await`, order of awaits, a failed task | downloading (simulated), reading files (simulated) | R4 |
+| 16 | checks | Writing unit tests | expected vs actual, off-by-one bugs, a check that catches a bug | a discount rule, a word counter | R4 |
 
-## Changes from the brief's suggested outline
+Removed from 0.1.0: the `tracker` and `report` modules and the four project checkpoints in `project/`.
 
-- C1: Interfaces and inheritance (11) comes before pattern matching (12). Type patterns need a base type with several derived records, so inheritance has to be taught first.
-- C2: Module keys `nulls` and `lookups` replace "null" and "dictionaries and sets" as stable identifiers. The content is the same.
+## Skip-ahead tests
 
-## Concept map
+R1 to R4 each cover four modules (R4 covers generics, async and checks). Each is a new problem that uses only what its modules teach. Rewritten in C17.
 
-The manifest lists the concept IDs each module introduces and its direct prerequisites. Earlier concepts carry forward through those links.
+## Rules for every module
 
-- **Values and control.** save-run, read-output, compiler-error → variable, number-types, text, var-inference, interpolation → branch, comparison, boolean-logic → method, parameter-return, scope → array, list, loop.
-- **Data shapes.** class, property, constructor → record, struct, value-reference, equality → nullable, null-check, null-coalescing → dictionary, set.
-- **Working with data.** lambda, linq-query, deferred → interface, inheritance → switch-expression, type-pattern, property-pattern.
-- **Failure and reuse.** throw-catch, result-type → generic → task, await, async-failure → tests, debugging.
-- **Integration.** project → transfer.
-
-## Experienced entry
-
-Each readiness check is a fresh problem in `readiness/r1` to `readiness/r4`. A result suggests where to start. It does not mark any module passed.
-
-| Group | Task | What it shows |
-| --- | --- | --- |
-| R1 · values through collections | `FinalCount` adds the changes that are 0 or more to a starting number. `AverageChange` returns the average of all changes as a `double`. | Loops, branches, and a division that keeps its fraction. Empty lists and negative values. |
-| R2 · classes through lookups | `Renamed` returns a changed copy of a record. `CountByOwner` counts tasks per owner, with a null owner under "Unassigned" and an empty name kept as its own key. | Record copies, null against empty text, and dictionary updates. |
-| R3 · linq through exceptions | `Summaries` turns update records into lines by type, leaves out other types, and throws for a negative duration. | Type patterns, order, and rejecting bad data instead of hiding it. |
-| R4 · generics through tracker | `ReadOrAsync<T>` returns a reader's value or a fallback when it is offline. `LastOrCheck` is a check that tells a correct candidate from two faulty ones. | A generic async method, a failed task against a real zero, and choosing inputs that expose a bug. |
-
-## Project sequence
-
-The project is a small task tracker. Every checkpoint is a single-file task in `project/`.
-
-1. **P1 · Methods.** `RemainingAfter` computes the board count after arrivals and completions.
-2. **P2 · LINQ.** `CountByStatus` counts task records by status, including an empty list.
-3. **P3 · Checks.** `RenameCheck` tells a correct rename from one that resets `Done` and one that keeps the old title.
-4. **P4 · Tracker.** `LoadAsync` reads rows from a local async reader, validates them, and returns a result that separates a failed read from an empty success.
-5. **P5 · Report.** The module's `audit` task: summarize an import, read it exactly once through a reader that can fail, and write a regression check.
-
-## Scope
-
-The core ends at composing a small typed program, diagnosing failures, writing a regression check and applying those skills to an unfamiliar task. Outside this course: spans, iterators, delegates and events beyond lambdas and `Func`, operator overloading, reflection, ASP.NET, Entity Framework, file and network I/O, NuGet packages and project files.
+- Write it as `modules/<key>/module.md` (format: COURSE_REDESIGN.md). Run `node scripts/course-markdown.mjs modules/<key>/module.json` first to start from the current content, then delete `module.json` and the example `.cs` files, and point the manifest at `module.md`.
+- Replace every task tracker word (task, board, owner, open, done, tracker, arrivals) with the module's own examples.
+- Keep task folders, IDs and file names. Rewrite prompts, starters, solutions, alternatives, fixtures, wrong answers and checks to match.
+- Check with `node scripts/verify-course.mjs csharp <key>` before ticking the box.

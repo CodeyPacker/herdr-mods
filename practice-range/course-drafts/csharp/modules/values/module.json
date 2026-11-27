@@ -1,6 +1,6 @@
 {
   "id": "course:cs-foundations/module/values",
-  "title": "Values, types and text",
+  "title": "Types and values",
   "requires": [
     "save-run",
     "read-output",

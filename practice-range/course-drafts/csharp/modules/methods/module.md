@@ -1,6 +1,6 @@
 ---
 id: course:cs-foundations/module/methods
-title: Give a calculation a name
+title: Methods
 requires: ["variable","number-types","text","interpolation","branch","comparison"]
 outcomes: [{"id":"trace","can":"Trace separate calls and say which names are local to a method.","assessment":["outputs","scope","course:cs-foundations/task/methods-after-arrivals"]},{"id":"branching","can":"Write a method that returns different results on different paths.","assessment":["course:cs-foundations/task/methods-extra-hours"]},{"id":"compose","can":"Return a value and use one method from another.","assessment":["course:cs-foundations/task/methods-summary"]},{"id":"transfer","can":"Write a method from a description and keep the sign of its result.","assessment":["course:cs-foundations/task/methods-movement"]}]
 tasks: [{"id":"course:cs-foundations/task/methods-after-arrivals","path":"tasks/after-arrivals/task.json"},{"id":"course:cs-foundations/task/methods-extra-hours","path":"tasks/extra-hours/task.json"},{"id":"course:cs-foundations/task/methods-summary","path":"tasks/summary/task.json"},{"id":"course:cs-foundations/task/methods-movement","path":"tasks/movement/task.json"}]

@@ -1,6 +1,6 @@
 {
   "id": "course:cs-foundations/module/classes",
-  "title": "Describe a task with a class",
+  "title": "Classes and properties",
   "requires": [
     "method",
     "parameter-return",

@@ -10,7 +10,7 @@
       "minimumMajor": 8
     }
   },
-  "title": "Build a task tracker with C#",
+  "title": "Learn C#",
   "audience": [
     "New to programming",
     "Already programs, new to C#"
@@ -114,22 +114,12 @@
       "id": "outcome/checks",
       "description": "Read expected and actual values, find an off-by-one bug, and write a check that catches it.",
       "assessment": "course:cs-foundations/module/checks"
-    },
-    {
-      "id": "outcome/tracker",
-      "description": "Join task records, validation, queries and a local async reader into one working tracker.",
-      "assessment": "course:cs-foundations/module/tracker"
-    },
-    {
-      "id": "outcome/report",
-      "description": "Independently combine validation, reporting, error handling, async reading and a regression check on a new request.",
-      "assessment": "course:cs-foundations/module/report"
     }
   ],
   "modules": [
     {
       "id": "course:cs-foundations/module/save",
-      "title": "Save, run, read output",
+      "title": "Run a program, read errors",
       "prerequisites": [],
       "teaches": [
         "save-run",
@@ -144,7 +134,7 @@
     },
     {
       "id": "course:cs-foundations/module/values",
-      "title": "Values, types and text",
+      "title": "Types and values",
       "prerequisites": [
         "course:cs-foundations/module/save"
       ],
@@ -163,7 +153,7 @@
     },
     {
       "id": "course:cs-foundations/module/decisions",
-      "title": "Make a decision",
+      "title": "Control flow",
       "prerequisites": [
         "course:cs-foundations/module/values"
       ],
@@ -180,7 +170,7 @@
     },
     {
       "id": "course:cs-foundations/module/methods",
-      "title": "Give a calculation a name",
+      "title": "Methods",
       "prerequisites": [
         "course:cs-foundations/module/decisions"
       ],
@@ -197,7 +187,7 @@
     },
     {
       "id": "course:cs-foundations/module/collections",
-      "title": "Work through a list",
+      "title": "Arrays and lists",
       "prerequisites": [
         "course:cs-foundations/module/methods"
       ],
@@ -214,7 +204,7 @@
     },
     {
       "id": "course:cs-foundations/module/classes",
-      "title": "Describe a task with a class",
+      "title": "Classes and properties",
       "prerequisites": [
         "course:cs-foundations/module/methods",
         "course:cs-foundations/module/collections"
@@ -232,7 +222,7 @@
     },
     {
       "id": "course:cs-foundations/module/records",
-      "title": "Records, structs and copies",
+      "title": "Structs, records, copies",
       "prerequisites": [
         "course:cs-foundations/module/classes"
       ],
@@ -250,7 +240,7 @@
     },
     {
       "id": "course:cs-foundations/module/nulls",
-      "title": "Handle a missing value",
+      "title": "Nullable types",
       "prerequisites": [
         "course:cs-foundations/module/classes",
         "course:cs-foundations/module/decisions"
@@ -268,7 +258,7 @@
     },
     {
       "id": "course:cs-foundations/module/lookups",
-      "title": "Look up and de-duplicate",
+      "title": "Dictionaries and sets",
       "prerequisites": [
         "course:cs-foundations/module/collections",
         "course:cs-foundations/module/nulls"
@@ -285,7 +275,7 @@
     },
     {
       "id": "course:cs-foundations/module/linq",
-      "title": "Query a collection",
+      "title": "LINQ",
       "prerequisites": [
         "course:cs-foundations/module/collections",
         "course:cs-foundations/module/records",
@@ -304,7 +294,7 @@
     },
     {
       "id": "course:cs-foundations/module/interfaces",
-      "title": "Share a contract",
+      "title": "Interfaces and inheritance",
       "prerequisites": [
         "course:cs-foundations/module/classes",
         "course:cs-foundations/module/records"
@@ -321,7 +311,7 @@
     },
     {
       "id": "course:cs-foundations/module/patterns",
-      "title": "Choose by type and shape",
+      "title": "Pattern matching",
       "prerequisites": [
         "course:cs-foundations/module/interfaces",
         "course:cs-foundations/module/records"
@@ -339,7 +329,7 @@
     },
     {
       "id": "course:cs-foundations/module/exceptions",
-      "title": "Recover from errors",
+      "title": "Exceptions",
       "prerequisites": [
         "course:cs-foundations/module/patterns",
         "course:cs-foundations/module/nulls"
@@ -356,7 +346,7 @@
     },
     {
       "id": "course:cs-foundations/module/generics",
-      "title": "Keep a type relationship",
+      "title": "Generics",
       "prerequisites": [
         "course:cs-foundations/module/interfaces",
         "course:cs-foundations/module/collections"
@@ -372,7 +362,7 @@
     },
     {
       "id": "course:cs-foundations/module/async",
-      "title": "Wait for local data",
+      "title": "async and await",
       "prerequisites": [
         "course:cs-foundations/module/exceptions",
         "course:cs-foundations/module/methods"
@@ -390,7 +380,7 @@
     },
     {
       "id": "course:cs-foundations/module/checks",
-      "title": "Read and write checks",
+      "title": "Writing unit tests",
       "prerequisites": [
         "course:cs-foundations/module/linq",
         "course:cs-foundations/module/exceptions"
@@ -404,47 +394,13 @@
         "kind": "bundled",
         "path": "modules/checks/module.json"
       }
-    },
-    {
-      "id": "course:cs-foundations/module/tracker",
-      "title": "Assemble the tracker",
-      "prerequisites": [
-        "course:cs-foundations/module/async",
-        "course:cs-foundations/module/generics",
-        "course:cs-foundations/module/checks",
-        "course:cs-foundations/module/patterns"
-      ],
-      "teaches": [
-        "project"
-      ],
-      "status": "authored",
-      "source": {
-        "kind": "bundled",
-        "path": "modules/tracker/module.json"
-      }
-    },
-    {
-      "id": "course:cs-foundations/module/report",
-      "title": "Deliver an unfamiliar report",
-      "prerequisites": [
-        "course:cs-foundations/module/tracker"
-      ],
-      "teaches": [
-        "transfer"
-      ],
-      "status": "authored",
-      "source": {
-        "kind": "bundled",
-        "path": "modules/report/module.json"
-      }
     }
   ],
-  "project": "project/project.json",
   "compatibility": {
     "fromVersions": [],
     "replacements": []
   },
-  "runtimeContentVersion": "0.1.0-preview.1",
+  "runtimeContentVersion": "0.2.0-preview.1",
   "readiness": [
     {
       "id": "R1",
@@ -481,12 +437,11 @@
     },
     {
       "id": "R4",
-      "title": "Generics through tracker",
+      "title": "Generics, async and tests",
       "modules": [
         "course:cs-foundations/module/generics",
         "course:cs-foundations/module/async",
-        "course:cs-foundations/module/checks",
-        "course:cs-foundations/module/tracker"
+        "course:cs-foundations/module/checks"
       ],
       "task": "readiness/r4/task.json"
     }

@@ -1,6 +1,6 @@
 {
   "id": "course:cs-foundations/module/collections",
-  "title": "Work through a list",
+  "title": "Arrays and lists",
   "requires": [
     "method",
     "parameter-return",

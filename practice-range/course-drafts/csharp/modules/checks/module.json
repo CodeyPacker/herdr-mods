@@ -1,6 +1,6 @@
 {
   "id": "course:cs-foundations/module/checks",
-  "title": "Read and write checks",
+  "title": "Writing unit tests",
   "requires": [
     "method",
     "parameter-return",
@@ -173,8 +173,8 @@
   ],
   "review": {
     "task": "course:cs-foundations/task/checks-order-check",
-    "afterModule": "course:cs-foundations/module/tracker",
-    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."
+    "evidence": "Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted.",
+    "afterCompletion": true
   },
   "drills": [
     "delegates/func",

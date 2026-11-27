@@ -1,6 +1,6 @@
 {
   "id": "course:cs-foundations/module/generics",
-  "title": "Keep a type relationship",
+  "title": "Generics",
   "requires": [
     "list",
     "loop",

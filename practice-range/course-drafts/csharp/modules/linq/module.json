@@ -1,6 +1,6 @@
 {
   "id": "course:cs-foundations/module/linq",
-  "title": "Query a collection",
+  "title": "LINQ",
   "requires": [
     "list",
     "loop",
