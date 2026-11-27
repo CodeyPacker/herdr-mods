@@ -177,7 +177,7 @@
       "status": "reviewed",
       "source": {
         "kind": "bundled",
-        "path": "modules/functions/module.json"
+        "path": "modules/functions/module.md"
       }
     },
     {

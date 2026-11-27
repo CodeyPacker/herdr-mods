@@ -228,7 +228,7 @@ Same rules as Phase C, new content version, 16 modules from the table.
 - [x] D1 save · Run code, read a type error
 - [x] D2 values · Types and inference
 - [x] D3 decisions · Narrowing with control flow
-- [ ] D4 functions · Function types
+- [x] D4 functions · Function types
 - [ ] D5 lists · Arrays and tuples (add a tuple step and task)
 - [ ] D6 shapes · Object types and interfaces
 - [ ] D7 missing · null, undefined and optional

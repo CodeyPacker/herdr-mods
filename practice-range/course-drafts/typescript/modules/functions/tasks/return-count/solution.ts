@@ -1,4 +1,4 @@
-function remainingAfter(opening: number, arrivals: number, completed: number): number {
-  const remaining = opening + arrivals - completed;
+function stockAfter(opening: number, delivered: number, sold: number): number {
+  const remaining = opening + delivered - sold;
   return remaining;
 }

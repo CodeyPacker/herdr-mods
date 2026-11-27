@@ -1,3 +1,3 @@
-function remainingAfter(opening: number, arrivals: number, completed: number): number {
-  return opening - completed + arrivals;
+function stockAfter(opening: number, delivered: number, sold: number): number {
+  return opening - sold + delivered;
 }
