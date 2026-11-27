@@ -90,8 +90,9 @@ Notes on Phase A:
 
 ### Phase B: Markdown lessons and code colours
 
-- [ ] B1 Find how to colour code: test whether `TextView.markdown` colours ```` ```csharp ````, ```` ```typescript ```` and ```` ```sql ```` fences. If not, try a read-only `EditorState` with `language`. If neither covers all three, write a small colourer (keywords, strings, numbers, comments). Write the result here.
-- [ ] B2 Use that for every code block in lessons, tasks, hints and solutions.
+- [x] B1 Find how to colour code: test whether `TextView.markdown` colours ```` ```csharp ````, ```` ```typescript ```` and ```` ```sql ```` fences. If not, try a read-only `EditorState` with `language`. If neither covers all three, write a small colourer (keywords, strings, numbers, comments). Write the result here.
+    - Result: `TextView.markdown` never colours code. The read-only code editor colours `cs` (C#), `sql`, and `javascript` (used for TypeScript; type annotations stay plain). `csharp`, `typescript`, `ts` and `tsx` do not colour. Editor state cannot be made during render, so `courses/code.js` makes 16 editors per language when the panel starts and lends them to code blocks. Any other fence (text, http, json) stays a Markdown block.
+- [x] B2 Use that for every code block in lessons, tasks, hints and solutions.
 - [ ] B3 Define the module Markdown format (below) and write `scripts/course-markdown.mjs` that turns `module.md` into the same module object `build-course.mjs` reads from `module.json` today. Add a test.
 - [ ] B4 `build-course.mjs` reads `module.md` when present, else `module.json`.
 - [ ] B5 Convert one existing C# module to `module.md`, rebuild, verify, screenshot.

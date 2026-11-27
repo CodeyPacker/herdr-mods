@@ -7,6 +7,7 @@ import { courseCommand } from "./bridge.js";
 import { generateRepoLesson, generateExtraPractice } from "../bridge.js";
 import { tutorChat } from "../tutor/panel.js";
 import { findLanguage } from "../languages/index.js";
+import { codeBlock, initCode, richText, sweepCode } from "./code.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("../kit/theme.js").Theme} Theme */
@@ -22,6 +23,7 @@ export class CoursePanel {
   /** @param {import("../main.js").default} host */
   constructor(host) {
     this.host = host;
+    initCode();
     /** @type {import("./types.js").CourseSummary[]} */
     this.catalog = [];
     /** @type {import("./types.js").CourseSnapshot | null} */
@@ -335,6 +337,7 @@ export class CoursePanel {
       : this.page === "settings" ? "Back"
       : this.data?.enrollment.review ? "End review" : this.page === "task" && !this.isReadiness(this.data?.enrollment.activeTask) ? "Back to lesson"
       : this.page === "lesson" ? "Course page" : this.page === "modules" ? "Courses" : "Back";
+    sweepCode();
     return v_flex().flex_1().min_h(0).child(body).child(paneBar(t)
       .child(keyButton(t, "course-back", "esc", backLabel, !this.busy, cx => this.back(cx))));
   }
@@ -484,7 +487,7 @@ export class CoursePanel {
     for (const [index,section] of lesson.sections.entries()) {
       body.child(sectionLabel(t,section.title)).child(markdown(`repo-text-${lesson.id}-${index}`,section.text));
       for (const [refIndex,ref] of section.references.entries()) body.child(div().text_size(11).text_color(t.muted).child(`${ref.path}:${ref.start}-${ref.end}`))
-        .child(markdown(`repo-code-${lesson.id}-${index}-${refIndex}`,`\`\`\`${this.data.course.codeFence??"text"}\n${ref.code}\n\`\`\``))
+        .child(codeBlock(t,`repo-code-${lesson.id}-${index}-${refIndex}`,ref.code,this.data.course.codeFence??"text"))
         .child(keyButton(t,`repo-source-${index}-${refIndex}`,"","Read source file",!this.busy,cx=>this.run("source",{repoLessonId:lesson.id,sectionIndex:index,referenceIndex:refIndex},cx)));
     }
   }
@@ -519,12 +522,12 @@ export class CoursePanel {
       div().text_size(12).text_color(t.muted).child(`Step ${position.step + 1} of ${lesson.steps.length}`)))
       .child(progressBar(t, (position.step + 1) / lesson.steps.length));
     if (!this.data.course.reading && this.data.attachment?.available && this.host.tutor.enabled) body.child(keyButton(t,"course-repo-module","","Explain this topic using my repo",!this.busy,cx=>this.generateRepoLesson(lesson.id,cx)));
-    if (position.step === 0 && lesson.intro !== step.text) body.child(markdown("course-intro", lesson.intro));
-    body.child(div().text_size(16).font_semibold().child(step.title)).child(markdown("course-step", step.text));
+    if (position.step === 0 && lesson.intro !== step.text) body.child(richText(t, "course-intro", lesson.intro, this.data.course.codeFence));
+    body.child(div().text_size(16).font_semibold().child(step.title)).child(richText(t, "course-step", step.text, this.data.course.codeFence));
     for (const id of [...(step.examples ?? []), ...(step.example ? [step.example] : [])]) {
       const example = lesson.examples[id];
       // An example can name its own fence, such as http or json. Otherwise it is in the course's language.
-      body.child(markdown(`course-example-${id}`, `\`\`\`${example.fence ?? this.data.course.codeFence ?? "typescript"}\n${example.code}\n\`\`\``));
+      body.child(codeBlock(t, `course-example-${id}`, example.code, example.fence ?? this.data.course.codeFence ?? "typescript"));
       if(!example.readOnly) body.child(h_flex().child(keyButton(t, `course-run-example-${id}`, "", "Run example", !this.busy, cx => this.run("example", { moduleId: lesson.id, exampleId: id }, cx))));
       const result = this.data.enrollment.modules[lesson.id]?.examples?.[id];
       if (result) {
@@ -536,7 +539,7 @@ export class CoursePanel {
       const question = lesson.questions.find(question => question.id === id);
       const result = this.data.enrollment.modules[lesson.id]?.questions?.[id];
       const box = card(t, { id: `course-question-box-${id}` }).child(div().text_size(11).text_color(t.dim).child("QUESTION"))
-        .child(markdown(`course-question-${id}`, question.prompt));
+        .child(richText(t, `course-question-${id}`, question.prompt, this.data.course.codeFence));
       question.choices.forEach((choice, index) => {
         const picked = result?.choice === index;
         box.child(h_flex().id(`course-choice-${id}-${index}`).px(10).py(6).rounded(8).border_1()
@@ -635,26 +638,26 @@ export class CoursePanel {
     if (this.confirmReset) body.child(h_flex().gap(8).flex_wrap().child(div().child("Save editor changes first. The current file will be backed up. Reload it after resetting."))
       .child(keyButton(t, "course-reset-confirm", "", "Reset saved file", !this.busy, cx => { this.confirmReset = false; this.run("reset", { taskId: task.id }, cx); }))
       .child(keyButton(t, "course-reset-cancel", "", "Cancel", true, cx => { this.confirmReset = false; cx.notify(); })));
-    body.child(markdown("course-task-prompt", task.prompt));
+    body.child(richText(t, "course-task-prompt", task.prompt, fence));
     if (task.workspace) body.child(div().text_color(t.muted).child(`Edit these files in the same folder: ${task.workspace.editable.map(entry => entry.file).join(", ")}. Saving either checks the whole project.`));
     if (progress.result) {
       const passed = !this.data.stale && progress.result.passed;
       const box = card(t, { id: "course-result" })
         .child(div().font_semibold().text_color(passed ? t.done : t.foreground).child(`${this.data.stale ? "Saved code changed. " : ""}${progress.result.title}${progress.result.assisted ? " \u00b7 with help" : ""}`));
-      for (const [index, detail] of progress.result.details.entries()) box.child(markdown(`course-result-${index}`, detail));
-      if (!progress.result.passed && task.feedback) box.child(markdown("course-feedback", task.feedback));
+      for (const [index, detail] of progress.result.details.entries()) box.child(richText(t, `course-result-${index}`, detail));
+      if (!progress.result.passed && task.feedback) box.child(richText(t, "course-feedback", task.feedback, fence));
       body.child(box);
     }
-    for (const [index, hint] of task.hints.entries()) body.child(card(t, { id: `course-hint-box-${index}` }).child(div().text_size(11).text_color(t.dim).child(`HINT ${index + 1}`)).child(markdown(`course-hint-${index}`, hint)));
+    for (const [index, hint] of task.hints.entries()) body.child(card(t, { id: `course-hint-box-${index}` }).child(div().text_size(11).text_color(t.dim).child(`HINT ${index + 1}`)).child(richText(t, `course-hint-${index}`, hint, fence)));
     if (task.solution) {
       body.child(sectionLabel(t, "SOLUTION"));
-      if (task.workspace) for (const file of task.workspace.editable) body.child(markdown(`course-solution-${file.file}`, `${file.file}\n\n\`\`\`${fence}\n${file.solution}\n\`\`\``));
-      else body.child(markdown("course-solution", `\`\`\`${fence}\n${task.solution}\n\`\`\``));
+      if (task.workspace) for (const file of task.workspace.editable) body.child(div().text_size(12).text_color(t.muted).child(file.file)).child(codeBlock(t, `course-solution-${file.file}`, file.solution ?? "", fence));
+      else body.child(codeBlock(t, "course-solution", task.solution, fence));
     }
     const fixtures = task.fixtures.filter(fixture => fixture.declarations.trim());
     if (fixtures.length) {
       body.child(h_flex().child(keyButton(t, "course-fixtures", "", `${this.showFixtures ? "Hide" : "Show"} test inputs (${fixtures.length})`, true, cx => { this.showFixtures = !this.showFixtures; cx.notify(); })));
-      if (this.showFixtures) for (const fixture of fixtures) body.child(markdown(`course-fixture-${fixture.id}`, `Case ${fixture.id}\n\n\`\`\`${fence}\n${fixture.declarations}\n\`\`\``));
+      if (this.showFixtures) for (const fixture of fixtures) body.child(div().text_size(12).text_color(t.muted).child(`Case ${fixture.id}`)).child(codeBlock(t, `course-fixture-${fixture.id}`, fixture.declarations, fence));
     }
     body.child(div().text_size(11).text_color(t.dim).child(`${progress.attempts} attempts \u00b7 ${progress.independentPasses} passes without help \u00b7 ${this.data.file ?? ""}`));
     if (review) { body.child(h_flex().child(keyButton(t, "course-review-next", "", review.index + 1 === review.ids.length ? "Finish review" : "Next review exercise", !this.busy, cx => this.run("review-next", {}, cx)))); return; }
