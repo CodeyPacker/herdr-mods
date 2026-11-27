@@ -1,7 +1,7 @@
 {
   "id": "course:sql-foundations/task/readiness-r4",
   "role": "readiness",
-  "title": "Readiness 4 · Tables through assembling",
+  "title": "Readiness 4 · Tables through checks",
   "concepts": [
     "window",
     "partition",

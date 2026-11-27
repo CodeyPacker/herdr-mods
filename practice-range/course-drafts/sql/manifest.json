@@ -114,16 +114,6 @@
       "id": "outcome/checks",
       "description": "Test a query's result against a known count and repair a join that counts rows twice.",
       "assessment": "course:sql-foundations/module/checks"
-    },
-    {
-      "id": "outcome/assemble",
-      "description": "Combine joins, grouping, steps and labels into one report.",
-      "assessment": "course:sql-foundations/module/assemble"
-    },
-    {
-      "id": "outcome/report",
-      "description": "Independently answer a new reporting request and prove the answer with a check.",
-      "assessment": "course:sql-foundations/module/report"
     }
   ],
   "modules": [
@@ -139,7 +129,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/save/module.json"
+        "path": "modules/save/module.md"
       }
     },
     {
@@ -157,7 +147,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/select/module.json"
+        "path": "modules/select/module.md"
       }
     },
     {
@@ -174,7 +164,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/where/module.json"
+        "path": "modules/where/module.md"
       }
     },
     {
@@ -191,7 +181,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/nulls/module.json"
+        "path": "modules/nulls/module.md"
       }
     },
     {
@@ -208,7 +198,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/sorting/module.json"
+        "path": "modules/sorting/module.md"
       }
     },
     {
@@ -225,7 +215,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/aggregates/module.json"
+        "path": "modules/aggregates/module.md"
       }
     },
     {
@@ -242,7 +232,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/grouping/module.json"
+        "path": "modules/grouping/module.md"
       }
     },
     {
@@ -260,7 +250,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/joins/module.json"
+        "path": "modules/joins/module.md"
       }
     },
     {
@@ -277,7 +267,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/outer/module.json"
+        "path": "modules/outer/module.md"
       }
     },
     {
@@ -294,7 +284,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/subqueries/module.json"
+        "path": "modules/subqueries/module.md"
       }
     },
     {
@@ -310,7 +300,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/ctes/module.json"
+        "path": "modules/ctes/module.md"
       }
     },
     {
@@ -329,7 +319,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/expressions/module.json"
+        "path": "modules/expressions/module.md"
       }
     },
     {
@@ -347,7 +337,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/modify/module.json"
+        "path": "modules/modify/module.md"
       }
     },
     {
@@ -364,7 +354,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/tables/module.json"
+        "path": "modules/tables/module.md"
       }
     },
     {
@@ -381,7 +371,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/windows/module.json"
+        "path": "modules/windows/module.md"
       }
     },
     {
@@ -399,50 +389,17 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/checks/module.json"
-      }
-    },
-    {
-      "id": "course:sql-foundations/module/assemble",
-      "title": "Assemble a sales report",
-      "prerequisites": [
-        "course:sql-foundations/module/ctes",
-        "course:sql-foundations/module/expressions",
-        "course:sql-foundations/module/checks",
-        "course:sql-foundations/module/windows"
-      ],
-      "teaches": [
-        "project"
-      ],
-      "status": "authored",
-      "source": {
-        "kind": "bundled",
-        "path": "modules/assemble/module.json"
-      }
-    },
-    {
-      "id": "course:sql-foundations/module/report",
-      "title": "Deliver an unfamiliar report",
-      "prerequisites": [
-        "course:sql-foundations/module/assemble",
-        "course:sql-foundations/module/modify"
-      ],
-      "teaches": [
-        "transfer"
-      ],
-      "status": "authored",
-      "source": {
-        "kind": "bundled",
-        "path": "modules/report/module.json"
+        "path": "modules/checks/module.md"
       }
     }
   ],
-  "project": "project/project.json",
   "compatibility": {
-    "fromVersions": [],
+    "fromVersions": [
+      "0.1.0-preview.1"
+    ],
     "replacements": []
   },
-  "runtimeContentVersion": "0.1.0-preview.1",
+  "runtimeContentVersion": "0.2.0-preview.1",
   "readiness": [
     {
       "id": "R1",
@@ -479,12 +436,11 @@
     },
     {
       "id": "R4",
-      "title": "Tables through assembling",
+      "title": "Tables through checks",
       "modules": [
         "course:sql-foundations/module/tables",
         "course:sql-foundations/module/windows",
-        "course:sql-foundations/module/checks",
-        "course:sql-foundations/module/assemble"
+        "course:sql-foundations/module/checks"
       ],
       "task": "readiness/r4/task.json"
     }

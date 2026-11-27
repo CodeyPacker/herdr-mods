@@ -1,3 +1,0 @@
--- This case adds a product that has not been ordered yet.
-INSERT INTO products (id, name, category_id, price, stock, added_on)
-VALUES (25, 'Desk Lamp', 9, 35.00, 12, '2025-02-01');
