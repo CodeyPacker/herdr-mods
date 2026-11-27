@@ -1,9 +1,9 @@
-public static int UniqueOwners(List<string> owners)
+public static int UniqueVisitors(List<string> visitors)
 {
     HashSet<string> seen = new HashSet<string>();
-    foreach (string owner in owners)
+    foreach (string visitor in visitors)
     {
-        seen.Add(owner);
+        seen.Add(visitor);
     }
     return seen.Count;
 }

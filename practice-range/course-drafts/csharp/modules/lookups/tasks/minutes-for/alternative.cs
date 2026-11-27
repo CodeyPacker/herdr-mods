@@ -1,8 +1,8 @@
-public static int MinutesFor(Dictionary<string, int> minutes, string title)
+public static int StockFor(Dictionary<string, int> stock, string item)
 {
-    if (!minutes.ContainsKey(title))
+    if (!stock.ContainsKey(item))
     {
         return -1;
     }
-    return minutes[title];
+    return stock[item];
 }

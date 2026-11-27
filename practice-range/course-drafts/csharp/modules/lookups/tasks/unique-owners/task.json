@@ -1,14 +1,14 @@
 {
   "id": "course:cs-foundations/task/lookups-unique-owners",
   "role": "review",
-  "title": "Count the different owners",
+  "title": "Count unique visitors",
   "concepts": [
     "set",
     "list",
     "loop",
     "comparison"
   ],
-  "prompt": "Write public static int UniqueOwners(List<string> owners). The list has one owner name per task, and an empty string means the task has no owner. Return how many different owners there are. Do not count the empty string.",
+  "prompt": "Write `public static int UniqueVisitors(List<string> visitors)`. The list has one name per visit, and an empty string means the visitor gave no name. Return how many different named visitors there are. Do not count the empty string.",
   "hints": [
     "Which collection keeps each value only once?",
     "Decide what to do with an empty string before adding a name.",
@@ -20,18 +20,18 @@
   "mode": "members",
   "rules": [],
   "checks": [
-    "Practice.UniqueOwners(new List<string> { \"Ana\", \"Ben\", \"Ana\" }) == 2",
-    "Practice.UniqueOwners(new List<string> { \"Ana\", \"Ana\" }) == 1",
-    "Practice.UniqueOwners(new List<string>()) == 0",
-    "Practice.UniqueOwners(new List<string> { \"\", \"Ana\", \"\" }) == 1",
-    "Practice.UniqueOwners(new List<string> { \"\", \"\" }) == 0"
+    "Practice.UniqueVisitors(new List<string> { \"Ana\", \"Ben\", \"Ana\" }) == 2",
+    "Practice.UniqueVisitors(new List<string> { \"Ana\", \"Ana\" }) == 1",
+    "Practice.UniqueVisitors(new List<string>()) == 0",
+    "Practice.UniqueVisitors(new List<string> { \"\", \"Ana\", \"\" }) == 1",
+    "Practice.UniqueVisitors(new List<string> { \"\", \"\" }) == 0"
   ],
   "checkLabels": [
-    "Ana, Ben and Ana are 2 different owners.",
-    "The same owner twice counts once.",
-    "An empty list has 0 owners.",
-    "Tasks with no owner must not be counted.",
-    "A list of only unowned tasks has 0 owners."
+    "Ana, Ben and Ana are 2 different visitors.",
+    "The same visitor twice counts once.",
+    "An empty list has 0 visitors.",
+    "Visits with no name must not be counted.",
+    "A list of only unowned visit has 0 visitors."
   ],
   "fixtures": [
     {
@@ -42,7 +42,7 @@
   "wrongAnswers": [
     {
       "source": "wrong-count-all.cs",
-      "misconception": "Counts tasks instead of different owners.",
+      "misconception": "Counts visits instead of different visitors.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -51,7 +51,7 @@
     },
     {
       "source": "wrong-empty-owner.cs",
-      "misconception": "Counts the empty string as an owner.",
+      "misconception": "Counts the empty string as an visitor.",
       "witness": {
         "fixture": "cases",
         "kind": "result",
@@ -59,5 +59,5 @@
       }
     }
   ],
-  "feedback": "Check a list with a repeated name, then a list with an empty string in it. Repeats count once and the empty string is not an owner."
+  "feedback": "Check a list with a repeated name, then a list with an empty string in it. Repeats count once and the empty string is not an visitor."
 }

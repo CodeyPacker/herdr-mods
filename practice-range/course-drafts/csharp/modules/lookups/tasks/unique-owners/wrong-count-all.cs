@@ -1,9 +1,9 @@
-public static int UniqueOwners(List<string> owners)
+public static int UniqueVisitors(List<string> visitors)
 {
     int count = 0;
-    foreach (string owner in owners)
+    foreach (string visitor in visitors)
     {
-        if (owner != "")
+        if (visitor != "")
         {
             count = count + 1;
         }

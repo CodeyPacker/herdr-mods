@@ -1,13 +1,13 @@
-public static int UniqueOwners(List<string> owners)
+public static int UniqueVisitors(List<string> visitors)
 {
     List<string> seen = new List<string>();
-    foreach (string owner in owners)
+    foreach (string visitor in visitors)
     {
-        if (owner == "" || seen.Contains(owner))
+        if (visitor == "" || seen.Contains(visitor))
         {
             continue;
         }
-        seen.Add(owner);
+        seen.Add(visitor);
     }
     return seen.Count;
 }

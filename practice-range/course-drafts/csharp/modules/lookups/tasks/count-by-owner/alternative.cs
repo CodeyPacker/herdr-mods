@@ -1,10 +1,10 @@
-public static Dictionary<string, int> CountByOwner(List<string> owners)
+public static Dictionary<string, int> CountVotes(List<string> votes)
 {
     var counts = new Dictionary<string, int>();
-    foreach (string owner in owners)
+    foreach (string vote in votes)
     {
-        counts.TryGetValue(owner, out int current);
-        counts[owner] = current + 1;
+        counts.TryGetValue(vote, out int current);
+        counts[vote] = current + 1;
     }
     return counts;
 }

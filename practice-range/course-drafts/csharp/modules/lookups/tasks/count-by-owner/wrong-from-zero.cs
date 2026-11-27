@@ -1,15 +1,15 @@
-public static Dictionary<string, int> CountByOwner(List<string> owners)
+public static Dictionary<string, int> CountVotes(List<string> votes)
 {
     Dictionary<string, int> counts = new Dictionary<string, int>();
-    foreach (string owner in owners)
+    foreach (string vote in votes)
     {
-        if (counts.ContainsKey(owner))
+        if (counts.ContainsKey(vote))
         {
-            counts[owner] = counts[owner] + 1;
+            counts[vote] = counts[vote] + 1;
         }
         else
         {
-            counts[owner] = 0;
+            counts[vote] = 0;
         }
     }
     return counts;

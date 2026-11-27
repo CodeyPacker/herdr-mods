@@ -270,7 +270,7 @@
       "status": "authored",
       "source": {
         "kind": "bundled",
-        "path": "modules/lookups/module.json"
+        "path": "modules/lookups/module.md"
       }
     },
     {

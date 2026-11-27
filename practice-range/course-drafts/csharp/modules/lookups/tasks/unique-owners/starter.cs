@@ -1,4 +1,4 @@
-public static int UniqueOwners(List<string> owners)
+public static int UniqueVisitors(List<string> visitors)
 {
     return 0;
 }

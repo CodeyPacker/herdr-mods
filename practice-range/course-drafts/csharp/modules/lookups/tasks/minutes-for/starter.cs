@@ -1,4 +1,4 @@
-public static int MinutesFor(Dictionary<string, int> minutes, string title)
+public static int StockFor(Dictionary<string, int> stock, string item)
 {
     return -1;
 }

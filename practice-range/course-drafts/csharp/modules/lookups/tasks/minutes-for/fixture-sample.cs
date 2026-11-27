@@ -1,12 +1,12 @@
-// Supplied data. Sample.Minutes() returns a new dictionary each time.
+// Supplied data. Sample.Stock() returns a new dictionary each time.
 public static class Sample
 {
-    public static Dictionary<string, int> Minutes()
+    public static Dictionary<string, int> Stock()
     {
-        Dictionary<string, int> minutes = new Dictionary<string, int>();
-        minutes["Pack"] = 30;
-        minutes["Rest"] = 0;
-        minutes["Ship"] = 45;
-        return minutes;
+        Dictionary<string, int> stock = new Dictionary<string, int>();
+        stock["apples"] = 30;
+        stock["pears"] = 0;
+        stock["plums"] = 45;
+        return stock;
     }
 }

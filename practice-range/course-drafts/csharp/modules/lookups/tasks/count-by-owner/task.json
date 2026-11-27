@@ -1,18 +1,18 @@
 {
   "id": "course:cs-foundations/task/lookups-count-by-owner",
   "role": "guided",
-  "title": "Count tasks per owner",
+  "title": "Count the votes",
   "concepts": [
     "dictionary",
     "list",
     "loop",
     "branch"
   ],
-  "prompt": "CountByOwner(List<string> owners) receives one owner name per task. It should return a dictionary with each name as a key and the number of times it appears as the value. The starter stores 1 for every name, however often it appears.",
+  "prompt": "`CountVotes(List<string> votes)` receives one candidate name per vote. It should return a dictionary with each name as a key and the number of votes it got as the value. The starter stores 1 for every name, however often it appears.",
   "hints": [
     "What should happen the second time the loop meets the same name?",
     "A name that is already a key needs its old value plus 1. A new name starts at 1.",
-    "Use ContainsKey to choose between counts[owner] = counts[owner] + 1 and counts[owner] = 1."
+    "Use ContainsKey to choose between counts[vote] = counts[vote] + 1 and counts[vote] = 1."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -20,11 +20,11 @@
   "mode": "members",
   "rules": [],
   "checks": [
-    "Practice.CountByOwner(new List<string> { \"Ana\", \"Ben\", \"Ana\" })[\"Ana\"] == 2",
-    "Practice.CountByOwner(new List<string> { \"Ana\", \"Ben\", \"Ana\" })[\"Ben\"] == 1",
-    "Practice.CountByOwner(new List<string> { \"Ana\", \"Ben\", \"Ana\" }).Count == 2",
-    "Practice.CountByOwner(new List<string>()).Count == 0",
-    "Practice.CountByOwner(new List<string> { \"Cy\", \"Cy\", \"Cy\" })[\"Cy\"] == 3"
+    "Practice.CountVotes(new List<string> { \"Ana\", \"Ben\", \"Ana\" })[\"Ana\"] == 2",
+    "Practice.CountVotes(new List<string> { \"Ana\", \"Ben\", \"Ana\" })[\"Ben\"] == 1",
+    "Practice.CountVotes(new List<string> { \"Ana\", \"Ben\", \"Ana\" }).Count == 2",
+    "Practice.CountVotes(new List<string>()).Count == 0",
+    "Practice.CountVotes(new List<string> { \"Cy\", \"Cy\", \"Cy\" })[\"Cy\"] == 3"
   ],
   "checkLabels": [
     "Ana appears twice, so her count must be 2.",

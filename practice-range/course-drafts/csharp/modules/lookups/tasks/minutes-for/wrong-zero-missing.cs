@@ -1,6 +1,6 @@
-public static int MinutesFor(Dictionary<string, int> minutes, string title)
+public static int StockFor(Dictionary<string, int> stock, string item)
 {
-    minutes.TryGetValue(title, out int found);
+    stock.TryGetValue(item, out int found);
     if (found == 0)
     {
         return -1;

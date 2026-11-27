@@ -1,13 +1,13 @@
 {
   "id": "course:cs-foundations/task/lookups-minutes-for",
   "role": "independent",
-  "title": "Look up a task's minutes",
+  "title": "Look up the stock",
   "concepts": [
     "dictionary",
     "branch",
     "method"
   ],
-  "prompt": "Write public static int MinutesFor(Dictionary<string, int> minutes, string title). Return the value stored under title. When the dictionary has no such key, return -1. A stored value of 0 is a real value and must be returned as 0.",
+  "prompt": "Write `public static int StockFor(Dictionary<string, int> stock, string item)`. Return the count stored under `item`. When the dictionary has no such key, return -1. A stored count of 0 is a real value and must be returned as 0.",
   "hints": [
     "What happens when you read a key that is not in the dictionary?",
     "Find out whether the key exists before deciding what to return.",
@@ -19,17 +19,17 @@
   "mode": "members",
   "rules": [],
   "checks": [
-    "Practice.MinutesFor(Sample.Minutes(), \"Pack\") == 30",
-    "Practice.MinutesFor(Sample.Minutes(), \"Rest\") == 0",
-    "Practice.MinutesFor(Sample.Minutes(), \"Label\") == -1",
-    "Practice.MinutesFor(Sample.Minutes(), \"\") == -1",
-    "Practice.MinutesFor(new Dictionary<string, int>(), \"Pack\") == -1"
+    "Practice.StockFor(Sample.Stock(), \"apples\") == 30",
+    "Practice.StockFor(Sample.Stock(), \"pears\") == 0",
+    "Practice.StockFor(Sample.Stock(), \"Label\") == -1",
+    "Practice.StockFor(Sample.Stock(), \"\") == -1",
+    "Practice.StockFor(new Dictionary<string, int>(), \"apples\") == -1"
   ],
   "checkLabels": [
-    "Pack is stored with 30.",
-    "Rest is stored with 0, which is a real value.",
+    "apples is stored with 30.",
+    "pears is stored with 0, which is a real value.",
     "Label is not a key, so the result must be -1.",
-    "An empty title is not a key, so the result must be -1.",
+    "An empty item is not a key, so the result must be -1.",
     "An empty dictionary has no keys, so the result must be -1."
   ],
   "fixtures": [
