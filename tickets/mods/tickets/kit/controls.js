@@ -69,7 +69,15 @@ export function toolButton(t, b) {
  * @param {Theme} t @param {string} id @param {string} key @param {string} label
  * @param {boolean} enabled @param {(cx: Context) => void} click
  */
+/** Set from the "Show key hints" option on each render. When true, buttons and legends leave their keys out. */
+let keysHidden = false;
+/** @param {boolean} hidden */
+export function hideKeys(hidden) { keysHidden = hidden; }
+/** Whether key hints are hidden. */
+export function keysAreHidden() { return keysHidden; }
+
 export function keyButton(t, id, key, label, enabled, click) {
+  if (keysHidden) key = "";
   return h_flex().id(id).flex_none().h(28).px(10).gap(6).items_center().rounded(8).border_1()
     .border_color(t.border).bg(t.raised).text_size(12).text_color(enabled ? t.foreground : t.dim)
     .when(enabled, (el) => el.cursor_pointer().hover((s) => s.border_color(t.accent)).on_click((_e, cx) => click(cx)))
