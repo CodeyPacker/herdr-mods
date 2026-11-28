@@ -11,6 +11,7 @@ import { outputToast } from "./outputs.js";
 import { currentActivity } from "../messages.js";
 import { messageColors } from "../message-colors.js";
 import { markedText, markedMarkdown } from "../search.js";
+import { messageMarkdown } from "../markdown.js";
 
 /** @typedef {import("../kit/theme.js").Theme} Theme */
 /** @typedef {import("../messages.js").Message} Message */
@@ -106,6 +107,7 @@ export function imageViewer(v) {
   const w = Math.max(24, Math.round(w0 * k)), h = Math.max(24, Math.round(h0 * k));
   return h_flex().id("image-viewer").absolute().top(0).left(0).size_full().items_center().justify_center()
     .bg("#000000d9").cursor_pointer()
+    .on_scroll_wheel((_e, cx) => cx.stop_propagation())
     .on_click((_e, cx) => { v.viewing = null; cx.notify(); })
     .child(div().w(w).h(h).rounded(10).overflow_hidden().child(image(img.path).w(w).h(h)));
 }
@@ -330,9 +332,9 @@ export function messageRow(v, t, list, i, max, searchCurrent = false, palette = 
   else if (m.kind === "image") bubble = pictureBubble(v, t, m, bubble);
   else if (m.kind === "error") bubble = bubble.max_w(max).px(14).py(9).text_size(14).bg(t.raised).border_1().border_color(t.blocked)
     .text_color(t.foreground).child(searchText(v, `error-${m.id}`, m.text));
-  // A real agent's words are Markdown: bold, lists, code and links.
-  else if (!mine && chat.real) bubble = bubble.max_w(max).px(14).py(9).text_size(14.5).bg(background).text_color(foreground)
-    .child(TextView.markdown(`md-${m.id}`, markedMarkdown(m.text ?? "", v.chatSearchOpen ? v.chatSearchInput.value() : "")).text_color(foreground).selectable(true));
+  // In a real chat, both sides' words are Markdown: bold, lists, code and links.
+  else if (chat.real) bubble = bubble.max_w(max).px(14).py(9).text_size(14.5).bg(background).text_color(foreground)
+    .child(messageMarkdown(`md-${m.id}`, markedMarkdown(m.text ?? "", v.chatSearchOpen ? v.chatSearchInput.value() : ""), foreground));
   else bubble = bubble.max_w(max).px(14).py(9).text_size(14.5).line_height(1.42)
     .bg(background).text_color(foreground).child(searchText(v, `text-${m.id}`, m.text));
 

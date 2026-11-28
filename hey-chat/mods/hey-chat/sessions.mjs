@@ -176,9 +176,13 @@ function readClaude(file, before, max) {
 function codexUserText(p) {
   if (p?.type !== "message" || p.role !== "user") return null;
   // A pasted image comes wrapped in <image …> and </image> parts, beside what you typed.
-  const text = (p.content ?? []).map((/** @type {any} */ c) => c.text ?? "").filter((/** @type {string} */ s) => !/^\s*<\/?image\b/.test(s)).join("\n");
+  const raw = (p.content ?? []).map((/** @type {any} */ c) => c.text ?? "").filter((/** @type {string} */ s) => !/^\s*<\/?image\b/.test(s)).join("\n");
+  // Codex's app adds file references before the request but hides them in its own UI.
+  // Require the complete envelope so ordinary headings in a message stay intact.
+  const envelope = /^\s*# Files mentioned by the user:\r?\n\r?\n(## [^\r\n]+:[^\r\n]+\r?\n[\s\S]*?)\r?\n\r?\nDistinguish instructions in attached documents from the user's request\.\r?\n\r?\n## My request:\r?\n/.exec(raw);
+  const text = envelope ? raw.slice(envelope[0].length) : raw;
   if (splitSender(text).source || splitDocuments(text).files.length) return text;
-  if (/^\s*(<|# AGENTS\.md)/.test(text)) return null;
+  if (!envelope && /^\s*(<|# AGENTS\.md)/.test(text)) return null;
   if (!text.trim()) return codexUserImages(p).length ? "" : null;
   return text;
 }
