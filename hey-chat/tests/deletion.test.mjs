@@ -14,8 +14,8 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
 
 /** A view whose bridges and session deletion are the test's. */
 function deleter(Bridge, deleteSession) {
-  fake('agent.js', { Bridge, deleteSession });
-  return view({ bridges: new Map(), links: new Map() });
+  fake('agent.js', { Bridge, deleteSession, detachLinkedChat: async () => {} });
+  return view({ chats: [], bridges: new Map(), links: new Map() });
 }
 const chat = { id: 'chat', agent: 'codex', session: 'session', cwd: '/tmp' };
 
@@ -142,4 +142,24 @@ readline.createInterface({ input: process.stdin }).on('line', line => {
   // Retrying shutdown of an already stopped bridge succeeds.
   const retry = spawn(process.execPath, [script, 'quit', '--chat', 'chat', '--state', state]);
   assert.equal((await once(retry, 'exit'))[0], 0);
+});
+
+test('deletion uses the discovered link id and detaches surviving children', async () => {
+  const child = { id: 'child', parentId: 'linked-parent', session: 'child-session' };
+  const v = await deleter(class { async quit() {} close() {} }, async () => ({ ok: true }));
+  v.chats = [child];
+  let detached;
+  fake('agent.js', { detachLinkedChat: async id => { detached = id; } });
+  assert.equal((await v.removeChatSession({ ...chat, linkId: 'linked-parent' })).ok, true);
+  assert.equal(detached, 'linked-parent');
+  assert.equal(child.parentId, null);
+  assert.equal(child.session, 'child-session');
+  assert.equal(v.isDeletedChat({ id: 'linked-parent' }), true);
+});
+
+test('provider deletion failure never detaches or marks a chat deleted', async () => {
+  const v = await deleter(class { async quit() {} close() {} }, async () => ({ ok: false, message: 'Still open' }));
+  fake('agent.js', { detachLinkedChat: async () => { assert.fail('must keep the link'); } });
+  assert.equal((await v.removeChatSession(chat)).ok, false);
+  assert.equal(v.isDeletedChat(chat), false);
 });

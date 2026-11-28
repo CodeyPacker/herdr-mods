@@ -69,10 +69,12 @@ export const deleting = {
       await this.links.get(chat.id);
       await this.quitBridge(chat);
       const result = chat.session ? await deleteSession(chat.agent, chat.session, chat.file ?? null) : { ok: true };
-      if (result.ok && chat.linkId) {
-        await detachLinkedChat(chat.linkId);
-        this.rememberDeletedChats([{id:chat.linkId,agent:chat.agent,session:chat.session,deleted:true}]);
-        for (const child of this.chats) if (child.parentId === chat.linkId) child.parentId = null;
+      if (result.ok) {
+        // Every bridge registers its chat, even before this pane discovers the link id.
+        const id = chat.linkId ?? chat.id;
+        await detachLinkedChat(id);
+        this.rememberDeletedChats([{id,agent:chat.agent,session:chat.session,deleted:true}]);
+        for (const child of this.chats) if (child.parentId === id) child.parentId = null;
       }
       return result;
     } catch (e) {
