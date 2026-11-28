@@ -25,6 +25,12 @@ test('message colors accept exact hex values, persist independently, and reject 
   const reopened=await mod('message-colors.js?reopened');
   assert.deepEqual(reopened.messageColors(theme),{userBackground:'#123456',userText:'#ffffff',agentBackground:'#654321',agentText:'#abcdef80'});
   colors.saveMessageColor('agentText','');
+  // A custom background without its own text color gets text that suits it, whatever the theme.
+  assert.equal(colors.messageColors(theme).agentText,'#ffffff');
+  assert.equal(colors.messageColors({...theme,foreground:'#342d26'}).agentText,'#ffffff');
+  colors.saveMessageColor('agentBackground','#f4ebdd');
+  assert.equal(colors.messageColors(theme).agentText,'#16161a');
+  colors.saveMessageColor('agentBackground','');
   assert.equal(colors.messageColors(theme).agentText,theme.foreground);
   colors.resetMessageColors();
   assert.deepEqual(colors.loadMessageColors(),{});

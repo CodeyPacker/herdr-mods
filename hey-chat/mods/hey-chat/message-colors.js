@@ -4,7 +4,7 @@ import { seeThroughOpacity } from "./kit/theme.js";
 
 const KEY = "hey-chat.messageColors";
 export const COLOR_FIELDS = ["userBackground", "userText", "agentBackground", "agentText"];
-export const MESSAGE_PALETTE = ["#111827", "#334155", "#2563eb", "#7c3aed", "#059669", "#dc2626", "#ffffff", "#000000"];
+export const MESSAGE_PALETTE = ["#111827", "#334155", "#2563eb", "#7c3aed", "#059669", "#dc2626", "#e8dfd0", "#ffffff", "#000000"];
 
 /** Null means invalid. Empty text means use the current Herdr theme. */
 export function parseMessageColor(value) {
@@ -48,6 +48,16 @@ export function messageColors(t, translucent = true) {
     const alpha = color.length === 9 ? parseInt(color.slice(7), 16) : 255;
     return color.slice(0, 7) + Math.round(alpha * opacity).toString(16).padStart(2, "0");
   };
-  return { userBackground: background("userBackground", t.accent), userText: saved.userText ?? t.accent_foreground,
-    agentBackground: background("agentBackground", t.raised), agentText: saved.agentText ?? t.foreground };
+  // A custom background with no text color of its own gets light or dark text to suit it, so it
+  // stays readable when the Herdr theme changes between light and dark.
+  const text = (field, backgroundField, fallback) => saved[field] ?? (saved[backgroundField] ? readableOn(saved[backgroundField]) : fallback);
+  return { userBackground: background("userBackground", t.accent), userText: text("userText", "userBackground", t.accent_foreground),
+    agentBackground: background("agentBackground", t.raised), agentText: text("agentText", "agentBackground", t.foreground) };
+}
+
+/** Near-black on a light color, white on a dark one. @param {string} color "#rrggbb" or "#rrggbbaa" */
+export function readableOn(color) {
+  const [r, g, b] = [1, 3, 5].map(at => parseInt(color.slice(at, at + 2), 16) / 255);
+  // Perceived brightness (ITU-R BT.601 weights), as the kit's inkOn.
+  return 0.299 * r + 0.587 * g + 0.114 * b > 0.6 ? "#16161a" : "#ffffff";
 }
