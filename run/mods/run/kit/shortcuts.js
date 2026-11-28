@@ -352,6 +352,8 @@ export class Shortcuts {
     // A clear sheet over the whole mod, under the panel: a press beside the panel closes it, and
     // does nothing to what is under it.
     return div().id("kit-settings-around").absolute().inset_0()
+      // The wheel stops here too, so it never scrolls what is under the panel.
+      .on_scroll_wheel((_e, cx) => cx.stop_propagation())
       .on_mouse_down("left", (_e, cx) => { this.hide(); cx.stop_propagation(); cx.notify(); })
       .on_click((_e, cx) => cx.stop_propagation())
       .child(panel);

@@ -204,6 +204,7 @@ export function settingsDialog(v, t) {
     .child(divider(t))
     .child(tab === "shortcuts" ? shortcutsTab(v, t) : tab === "theme" ? themeTab(v, t) : tab === "permissions" ? permissionsTab(v, t) : generalTab(v, t));
   return h_flex().id("settings-around").absolute().top(0).left(0).size_full().items_center().justify_center().bg("#00000066")
+    .on_scroll_wheel((_e, cx) => cx.stop_propagation())
     .on_mouse_down("left", (_e, cx) => { v.closeSettings(); cx.notify(); })
     .child(card);
 }

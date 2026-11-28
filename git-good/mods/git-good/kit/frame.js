@@ -44,6 +44,8 @@ export function frame(t, o) {
     .rounded(SIZE.frameRadius).overflow_hidden().border_1().border_color(t.border)
     .text_size(13)
     .when(Boolean(o.fill), (el) => el.h_full())
+    // In a dialog, the wheel stops here, so it never scrolls what is behind the dialog.
+    .when(props()?.overlay !== undefined, (el) => el.on_scroll_wheel((_e, cx) => cx.stop_propagation()))
     .when(Boolean(o.onResize), (el) => el.on_size_change((size, cx) => o.onResize?.(size.width, cx)));
   return root.child(h_flex().flex_none().items_center().gap(10)
     .when(Boolean(o.icon), (el) => el.child(svg(o.icon ?? "").size(22).flex_none().text_color(o.iconColor ?? t.foreground)))

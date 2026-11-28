@@ -77,6 +77,7 @@ function card(t, title, text, buttons) {
   // pb pushes the card above the middle of the pane.
   return div().id("confirm-backdrop").absolute().inset_0().flex().items_center().justify_center().p(16).pb(160)
     .bg(dim).on_mouse_down("left", (_e, cx) => cx.stop_propagation())
+    .on_scroll_wheel((_e, cx) => cx.stop_propagation())
     .child(v_flex().id("confirm").w(440).max_w_full().p(SIZE.framePad).gap(10).rounded(SIZE.frameRadius)
       .border_1().border_color(t.accent).bg(t.popover) // the theme's color for floating surfaces
       .child(div().text_size(SIZE.title).font_semibold().child(title))

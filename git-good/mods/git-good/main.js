@@ -1128,6 +1128,7 @@ export default class GitGood extends View {
         .child(this.button(t, "gg-ask-no", `${q.no} (esc)`, "cancel").h(32).child("Cancel"))
         .child(this.button(t, "gg-ask-yes", `${q.yes} (enter)`, "yes").h(32).text_color(q.danger ? t.blocked : t.accent).child(q.yes)));
     return div().id("gg-ask-around").absolute().inset_0().flex().items_center().justify_center().rounded(SIZE.frameRadius).bg("#00000033")
+      .on_scroll_wheel((_e, cx) => cx.stop_propagation())
       .on_mouse_down("left", (_e, cx) => { this.command("cancel", cx); cx.stop_propagation(); cx.notify(); })
       .on_click((_e, cx) => cx.stop_propagation())
       .child(box);
@@ -1169,6 +1170,7 @@ export default class GitGood extends View {
     if (props()?.overlay === undefined || this.full) return panel;
     // The overlay covers the window. A click beside the dialog closes it, a click in it does not.
     return div().id("gg-around").size_full().flex().items_center().justify_center()
+      .on_scroll_wheel((_e, cx) => cx.stop_propagation())
       .on_click(() => this.close())
       .child(div().id("gg-box").w(DIALOG.width).max_w("100%").h(DIALOG.height).flex_none()
         .on_click((_e, cx) => cx.stop_propagation())

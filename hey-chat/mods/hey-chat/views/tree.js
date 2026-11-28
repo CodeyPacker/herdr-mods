@@ -167,6 +167,7 @@ function deleteCard(v, t) {
 /** The delete question, centered over a dimmed pane. A press beside it cancels. @param {any} v @param {Theme} t */
 export function deleteDialog(v, t) {
   return h_flex().id("delete-around").absolute().top(0).left(0).size_full().items_center().justify_center().bg("#00000066")
+    .on_scroll_wheel((_e, cx) => cx.stop_propagation())
     .on_mouse_down("left", (_e, cx) => { if (!v.deleting?.busy) { v.cancelDelete(); cx.notify(); } })
     .child(deleteCard(v, t));
 }

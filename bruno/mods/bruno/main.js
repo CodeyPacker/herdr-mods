@@ -766,6 +766,7 @@ export default class Bruno extends View {
       .child(divider(t))
       .child(legend(t, [["j/k", "move"], ["enter", "choose"], ["esc", "back"]]));
     return div().id("bruno-picker-around").absolute().inset_0()
+      .on_scroll_wheel((_e, cx) => cx.stop_propagation())
       .on_mouse_down("left", (_e, cx) => { this.picker = null; cx.stop_propagation(); cx.notify(); })
       .on_click((_e, cx) => cx.stop_propagation())
       .child(panel);
@@ -792,6 +793,7 @@ export default class Bruno extends View {
       .child(divider(t))
       .child(legend(t, [["tab", "next"], ["enter", "run"], ["esc", "back"]]));
     return div().id("bruno-vars-around").absolute().inset_0()
+      .on_scroll_wheel((_e, cx) => cx.stop_propagation())
       .on_mouse_down("left", (_e, cx) => { this.closeVars(); this.handle.focus(); cx.stop_propagation(); cx.notify(); })
       .on_click((_e, cx) => cx.stop_propagation())
       .child(panel);
@@ -835,6 +837,7 @@ export default class Bruno extends View {
     if (props()?.overlay === undefined || this.full) return panel;
     // The overlay covers the window. A click beside the dialog closes it, a click in it does not.
     return div().id("bruno-around").size_full().flex().items_center().justify_center()
+      .on_scroll_wheel((_e, cx) => cx.stop_propagation())
       .on_click(() => this.dismiss())
       .child(div().id("bruno-box").w(DIALOG.width).max_w("100%").h(DIALOG.height).flex_none()
         .on_click((_e, cx) => cx.stop_propagation())
