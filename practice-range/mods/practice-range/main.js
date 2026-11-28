@@ -15,6 +15,7 @@ import { defaultLanguage, findLanguage, languages } from "./languages/index.js";
 import { languagePanel, packAction } from "./language-panel.js";
 import { startPanel, START_CHOICES } from "./start-panel.js";
 import { tutorChat } from "./tutor/panel.js";
+import { settingsDialog } from "./setup/settings-dialog.js";
 import { SetupFlow } from "./setup/flow.js";
 import { setupHub, startBlocker } from "./setup/hub.js";
 import { editorPage } from "./setup/editor-page.js";
@@ -23,6 +24,7 @@ import { tutorPage } from "./setup/tutor-page.js";
 import { packBadge, packColor } from "./setup/parts.js";
 import { DEFAULT_LAYOUT, clampWidth } from "./layout-config.js";
 import { arrangeCommands } from "./split.js";
+import { outputText, neovimOutputCommands } from "./output.js";
 import { startTopic } from "./start-topic.js";
 import { CoursePanel } from "./courses/panel.js";
 import { Shortcuts } from "./kit/shortcuts.js";
@@ -40,7 +42,7 @@ import { closeTab, sharedStorage, openAsOption, onOpenAsChange } from "./kit/ope
  * @type {import("./kit/shortcuts.js").Shortcut[]}
  */
 const SHORTCUTS = [
-  { id: "languages", key: "l", what: "languages" }, { id: "setup", key: "?", what: "setup", fixed: true },
+  { id: "languages", key: "l", what: "languages" }, { id: "setup", key: "?", what: "settings", fixed: true },
   { id: "topics", key: "t", what: "topics" }, { id: "exercises", key: "e", what: "exercises" },
   { id: "scratch", key: "x", what: "scratch, and back" }, { id: "shuffle", key: "s", what: "shuffle, in the exercise list" },
   { id: "review", key: "v", what: "review, or end it" }, { id: "hint", key: "h", what: "hint" },
@@ -48,7 +50,7 @@ const SHORTCUTS = [
   { id: "compare", key: "d", what: "compare with reference" }, { id: "send-to-scratch", key: "s", what: "send to scratch" },
   { id: "repeat", key: "r", what: "repeat" }, { id: "next", key: "n", what: "next exercise" },
   { id: "open", key: "o", what: "open editor" }, { id: "tutor", key: "u", what: "ask tutor" },
-  { id: "focus-editor", key: "ctrl-l", what: "move to the editor (ctrl-h in Neovim comes back)" },
+  { id: "focus-editor", key: "ctrl-l", what: "focus right pane (ctrl-h focuses left)" },
 ];
 
 /** The header's detail for each setup page. */
@@ -176,12 +178,15 @@ export default class Syntax extends View {
     this.setupCompleted = false;
     /** Setup's page, the scans of this computer, and installs (setup/flow.js). */
     this.setup = new SetupFlow();
+    this.settingsOpen = false;
+    this.settingsTab = "general";
     /** @type {import("./types.js").Layout} how the panel sits beside Neovim, from practice-range.json */
     this.layout = { ...DEFAULT_LAYOUT };
     /** The panel's share of the tab's split right now, so a new width knows how far to move. */
     this.splitShare = DEFAULT_LAYOUT.width;
     /** Why the layout could not be read or saved. Practice still works. */
     this.layoutError = "";
+    this.outputDisplay = outputText(null);
     /** The panel's width in px, from its last layout. */
     this.panelWidth = 0;
     /** The width slider on the layout page, in percent. It saves when let go, not on every pixel. */
@@ -251,7 +256,8 @@ export default class Syntax extends View {
     this.shortcuts = new Shortcuts({
       mod: "practice-range", keys: SHORTCUTS, rebind: true, storage: sharedStorage("practice-range"),
       options: [openAsOption("practice-range")],
-      onOpen: () => this.handle.focus(),
+      onOpen: () => this.settingsOpened(cx),
+      onClose: () => { this.settingsOpen = false; this.typing = false; this.handle.focus(); },
       onChange: (id, on) => onOpenAsChange("practice-range", id, on, HOW),
     });
     this.handle.focus();
@@ -437,6 +443,7 @@ export default class Syntax extends View {
       } catch (error) {
         this.error = `Could not load setup: ${error instanceof Error ? error.message : String(error)}. If node cannot start, install Node.js 20 or newer and restart Herdr.`;
       } finally { this.busy = ""; cx.notify(); }
+      this.startAutomaticEditor(cx);
       if (this.startChoice && this.screen === "start" && !this.error && !start) this.chooseStart(this.startChoice, cx);
       this.startChoice = "";
       // Opened by another mod at a topic: switch to its language, then show the topic's exercises.
@@ -447,6 +454,7 @@ export default class Syntax extends View {
         if (spot && this.enabledLanguages.includes(spot.languageId)) { this.restoreSpot = spot; this.perform("language", spot.languageId, cx); }
       }
       if (!this.restoreSpot && this.restoring) { this.restoring = false; cx.notify(); }
+      if (this.screen === "setup") { this.screen = "start"; this.openSetup("hub", cx); }
 
     });
   }
@@ -456,14 +464,38 @@ export default class Syntax extends View {
    * @param {"hub" | "languages" | import("./setup/flow.js").SetupPage} page @param {Context} cx
    */
   openSetup(page, cx) {
-    if (page === "languages") { this.showLanguages(cx); return; }
-    this.rememberReturn();
-    this.screen = "setup";
-    this.setup.page = page;
-    this.pendingSaveCheck = null;
-    this.confirmRepeat = false;
-    this.error = "";
+    this.selectSettingsTab(page === "hub" ? "general" : page, cx);
+    this.shortcuts.show();
+    cx.notify();
+  }
+
+  /** @param {Context} cx */
+  settingsOpened(cx) {
+    this.settingsOpen = true;
+    this.typing = false;
+    this.handle.focus();
+    this.courses.settingsReturn = this.courses.page;
+    this.courses.syncReadingSliders();
     this.setup.scan(cx);
+    this.courses.refreshSettings(cx);
+  }
+
+  /** @param {string} tab @param {Context} cx */
+  selectSettingsTab(tab, cx) {
+    this.settingsTab = tab;
+    this.typing = false;
+    this.handle.focus();
+    if (["editor", "layout", "tutor", "general"].includes(tab)) this.setup.page = tab === "general" ? "hub" : /** @type {any} */ (tab);
+    this.shortcuts.capturing = null;
+    cx.notify();
+  }
+
+  /** @param {Context} cx */
+  closeSettings(cx) {
+    this.shortcuts.hide();
+    this.settingsOpen = false;
+    this.typing = false;
+    this.handle.focus();
     cx.notify();
   }
 
@@ -497,6 +529,7 @@ export default class Syntax extends View {
   /** Start from the hub: the current language when it's ready, else the first that is. @param {Context} cx */
   startPracticing(cx) {
     if (this.busy || startBlocker(this.setup, this.editor)) return;
+    if (this.settingsOpen) this.closeSettings(cx);
     const ready = this.setup.readyLanguages();
     this.openLanguage(ready.some(pack => pack.id === this.language.id) ? this.language.id : ready[0].id, cx);
   }
@@ -556,6 +589,7 @@ export default class Syntax extends View {
       try { await saveLayoutPreference(layout); }
       catch (error) { this.layoutError = `Could not save the layout: ${error instanceof Error ? error.message : String(error)}`; }
       if (layout.side !== previous.side || layout.width !== previous.width) await this.reshapeSplit(previous.side, cx);
+      await this.updateOutput();
       cx.notify();
     });
   }
@@ -644,6 +678,7 @@ export default class Syntax extends View {
           this.editorDefaultSet = Boolean(this.editor);
           this.editorSettingsLoaded = true;
         }
+        if (running) await this.updateOutput(true);
         const state = await practiceCommand(action, value);
         if (this.state && (this.state.languageId !== state.languageId || this.state.exerciseId !== state.exerciseId)) this.cancelTutor(cx);
         const reviewEnded = Boolean(this.state?.review) && !state.review && Boolean(state.lastReview);
@@ -691,7 +726,7 @@ export default class Syntax extends View {
         if (!this.watching) this.watchAnswers(cx);
         if (this.sync && !state.scratch && ["check", "check-saved"].includes(action)) this.pushSoon(cx);
       } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
-      finally { this.practicePending = false; this.busy = ""; cx.notify(); }
+      finally { this.practicePending = false; this.busy = ""; await this.updateOutput(); cx.notify(); }
       // Restoring ends with its last step, or at once when a step failed.
       if (this.restoring && (this.error || action === this.restoreEnd)) { this.restoring = false; cx.notify(); }
       if (diff) this.openEditor(cx, diff);
@@ -780,12 +815,12 @@ export default class Syntax extends View {
   /** @param {string} action @param {Context} cx */
   action(action, cx) {
     if (this.busy || this.practicePending || this.courses.busy) return;
-    if (action === "courses") { this.courses.show(cx); return; }
+    if (action === "courses") { if (this.settingsOpen) this.closeSettings(cx); this.courses.show(cx); return; }
+    if (action === "setup") { this.openSetup("hub", cx); return; }
     if (this.screen === "courses") {
       if (!["setup", "languages", "topics"].includes(action)) return;
       this.courses.pause();
     }
-    if (action === "setup") { this.openSetup("hub", cx); return; }
     if (action === "languages") { this.showLanguages(cx); return; }
     if (action.startsWith("choose-language-") && this.screen === "languages") { this.chooseLanguage(action.slice("choose-language-".length), cx); return; }
     if (this.screen === "languages") {
@@ -908,8 +943,13 @@ export default class Syntax extends View {
 
   /** @param {Context} cx */
   startAutomaticEditor(cx) {
-    if (this.setupCompleted && ["practice", "scratch"].includes(this.screen) && (this.laidOut || this.dialog) && this.state && !this.busy && !this.practicePending && !this.error && !this.offerEditorDefault && (props()?.practiceTab || this.dialog)
-        && !this.automaticEditorStarted && this.editor === "neovim") this.openEditor(cx);
+    if (this.settingsOpen) return;
+    const course = this.screen === "courses" && this.courses.page === "task";
+    const practice = this.setupCompleted && ["practice", "scratch"].includes(this.screen);
+    if ((course || practice) && (this.laidOut || this.dialog) && this.editorTarget()?.file
+        && !this.busy && !this.practicePending && !this.error && !(course && (this.courses.busy || this.courses.error))
+        && !this.offerEditorDefault && (props()?.practiceTab || this.dialog) && !this.automaticEditorStarted
+        && this.editor && (course || this.editor === "neovim")) this.openEditor(cx);
   }
 
   /** The split always belongs to this panel, even if focus changes during an async action. */
@@ -923,6 +963,46 @@ export default class Syntax extends View {
    */
   editorTarget() {
     return this.screen === "courses" && this.courses.page === "task" ? this.courses.data : this.state;
+  }
+
+  /** Hide the editor during course reading, keeping its process and unsaved buffers intact. @param {Context} cx */
+  syncCourseEditor(cx) {
+    if (checking() || this.dialog || this.editor !== "neovim" || this.editorVisibilityBusy || this.busy) return;
+    if (this.screen !== "courses" && !this.courseEditorHidden) return;
+    const panel = this.ownPane();
+    if (!panel || !this.editorPane(panel)) return;
+    const needed = this.screen === "courses" ? this.courses.page === "task" : ["practice", "scratch"].includes(this.screen);
+    if (needed ? !this.courseEditorHidden : this.courseEditorHidden || panel.zoomed) return;
+    this.editorVisibilityBusy = true;
+    cx.spawn(async cx => {
+      try {
+        if (needed ? panel.zoomed : !panel.zoomed) await appCommand("pane.zoom", { pane: panel.pane });
+        this.courseEditorHidden = !needed;
+      } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
+      finally { this.editorVisibilityBusy = false; cx.notify(); }
+    });
+  }
+
+  /** Mirror the existing checker result. This never runs the user's code a second time. */
+  async updateOutput(running = false) {
+    if (this.editor !== "neovim" || checking()) return;
+    const server = this.dialog ? liveEditor()?.server : this.server;
+    if (!server) return;
+    let result, stale = false;
+    const course = this.screen === "courses" && this.courses.page === "task";
+    const practice = ["practice", "scratch"].includes(this.screen);
+    if (course) {
+      const data = this.courses.data;
+      result = data?.enrollment?.tasks[data.enrollment.activeTask]?.result;
+      stale = Boolean(data?.stale);
+    } else if (practice) {
+      result = this.state?.scratch ? this.state.scratchResult : this.state?.result;
+      stale = Boolean(this.state?.stale);
+    }
+    const error = course ? this.courses.error : this.error;
+    if (running) this.outputDisplay = "Running saved code…\n";
+    else if (course || practice) this.outputDisplay = outputText(error ? { title: error } : stale ? { title: "Saved code changed. Waiting to run…" } : result);
+    await neovimCommands(server, neovimOutputCommands(this.layout.output, this.outputDisplay));
   }
 
   /** @param {Context} cx @param {{answerFile: string, referenceFile: string} | null} [diff] */
@@ -945,9 +1025,14 @@ export default class Syntax extends View {
       try {
         if (this.editor === "vscode") await (diff ? openVSCodeDiff(diff.answerFile, diff.referenceFile) : openVSCode(target.folder, file));
         else {
+          if (this.courseEditorHidden) {
+            if (panel.zoomed) await appCommand("pane.zoom", { pane: panel.pane });
+            this.courseEditorHidden = false;
+          }
           const existing = this.editorPane(panel);
           const reused = existing && this.server && await (diff ? neovimDiff(this.server, neovimDiffExpression(diff.answerFile, diff.referenceFile)) : reuseNeovim(this.server, file));
           if (reused) {
+            await neovimCommands(this.server, neovimPanelKeyCommands(this.layout.side));
             run("pane.focus", { pane: existing.pane });
           } else {
             // Loopback works on macOS, Linux, and Windows without socket path limits.
@@ -974,7 +1059,7 @@ export default class Syntax extends View {
           }
         }
       } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
-      finally { this.busy = ""; cx.notify(); }
+      finally { this.busy = ""; await this.updateOutput(); cx.notify(); }
     });
   }
 
@@ -1068,10 +1153,11 @@ export default class Syntax extends View {
         if (this.editor === "vscode") await (diff ? openVSCodeDiff(diff.answerFile, diff.referenceFile) : openVSCode(target.folder, file));
         else if (editor) {
           const shown = await (diff ? neovimDiff(editor.server, neovimDiffExpression(diff.answerFile, diff.referenceFile)) : reuseNeovim(editor.server, file));
+          if (shown) await neovimCommands(editor.server, neovimPanelKeyCommands(this.layout.side));
           if (!shown) this.error = "Neovim beside Practice Range did not answer. Close it (:qa) and press the toggle key twice to start a new one.";
         }
       } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
-      finally { this.busy = ""; cx.notify(); }
+      finally { this.busy = ""; await this.updateOutput(); cx.notify(); }
     });
   }
 
@@ -1080,10 +1166,30 @@ export default class Syntax extends View {
     // In the dialog, esc comes through escape() (its key context), so the app does not close it.
     // The settings panel takes esc from either path (see escape()).
     if (this.dialog && event.key === "escape" && !(/** @type {any} */ (event).fromAction)) {
-      if (this.shortcuts.open) { this.escape(cx); cx.stop_propagation(); }
+      if (this.shortcuts.open || this.settingsOpen) { this.escape(cx); cx.stop_propagation(); }
       return;
     }
-    // While the settings panel is open, every key is its own.
+    if (this.settingsOpen) {
+      if (event.key === "escape" && this.shortcuts.capturing === null) this.closeSettings(cx);
+      else if (event.keystroke === this.shortcuts.openKey && this.shortcuts.capturing === null && !this.typing) this.closeSettings(cx);
+      else if (this.settingsTab === "keyboard") this.shortcuts.key(event, cx);
+      else if (!this.typing && ["general", "editor", "layout", "tutor"].includes(this.settingsTab)) this.setupKey(event.key, cx);
+      else if (!this.typing && this.settingsTab === "languages") {
+        if (["j", "l", "down", "right", "k", "h", "up", "left"].includes(event.key)) {
+          this.selected = Math.max(0, Math.min(languages.length - 1, this.selected + (["j", "l", "down", "right"].includes(event.key) ? 1 : -1))); cx.notify();
+        } else if (event.key === "enter" && languages[this.selected]) {
+          if (packAction(languages[this.selected], this.setup) === "practice") this.closeSettings(cx);
+          this.chooseLanguage(languages[this.selected].id, cx);
+        }
+      }
+      cx.stop_propagation(); return;
+    }
+    if (["ctrl-h", "ctrl-l"].includes(event.keystroke)) {
+      run("pane.go", { direction: event.keystroke === "ctrl-h" ? "left" : "right" });
+      cx.stop_propagation();
+      return;
+    }
+    // While the settings panel is open, every remaining key is its own.
     if (this.shortcuts.open) { this.shortcuts.key(event, cx); return; }
     // ctrl-x in the Practice Range tab closes it and goes back to the tab you came from.
     if (event.keystroke === "ctrl-x" && props()?.practiceTab) { closeTab("practice-range"); cx.stop_propagation(); return; }
@@ -1091,8 +1197,12 @@ export default class Syntax extends View {
       if (event.key === "escape") { this.handle.focus(); cx.stop_propagation(); }
       return;
     }
+    if (event.key === "?" && !this.shortcuts.isOff("setup")) { this.openSetup("hub", cx); cx.stop_propagation(); return; }
+    if (this.screen === "courses" && this.courses.navigate(event, cx)) { cx.stop_propagation(); return; }
+    const menuNavigation = ["start", "languages"].includes(this.screen) && event.modifiers.control
+      && !event.modifiers.platform && !event.modifiers.alt && ["h", "j", "k", "l"].includes(event.key);
     // With ctrl, alt or cmd held, a press is ours only when the user put a shortcut on it.
-    const held = event.modifiers.control || event.modifiers.platform || event.modifiers.alt;
+    const held = !menuNavigation && (event.modifiers.control || event.modifiers.platform || event.modifiers.alt);
     if (held && !this.shortcutFor(event.keystroke)) return;
     if (this.shortcuts.key(event, cx)) return;
     if (this.screen === "courses") { this.courses.key(event.key, cx); cx.stop_propagation(); return; }
@@ -1372,13 +1482,14 @@ export default class Syntax extends View {
       case "tutor": return tutorPage(t, { flow: this.setup, tutor: this.tutor, busy: this.tutorSettingBusy, error: this.tutorSettingsError, compact,
         change: (provider, cx) => this.changeTutor(provider, cx) });
       default: return setupHub(t, { flow: this.setup, editor: this.editor, tutor: this.tutor, layout: this.layout, busy,
-        open: (page, cx) => this.openSetup(page, cx), start: cx => this.startPracticing(cx), rescan: cx => this.setup.scan(cx, { force: true }), learn: cx => this.courses.show(cx) });
+        open: (page, cx) => this.openSetup(page, cx), start: cx => this.startPracticing(cx), rescan: cx => this.setup.scan(cx, { force: true }), learn: cx => { this.closeSettings(cx); this.courses.show(cx); } });
     }
   }
 
   /** @param {Context} cx */
   render(cx) {
     if (this.toggleOnly) return div();
+    this.syncCourseEditor(cx);
     // Finding the way back: nothing until the screen it ends on.
     if (this.restoring) return v_flex().id("practice-range").size_full().bg(this.background(colors())).track_focus(this.handle);
     // Saved as it changes (only when it changed), so the next dialog opens here.
@@ -1400,12 +1511,12 @@ export default class Syntax extends View {
         .when(this.screen === "setup", el => el.child(paneDetail(t, SETUP_TITLES[this.setup.page])))
         .when(Boolean(this.returnScreen) && ["setup", "languages"].includes(this.screen), element => element
           .child(keyButton(t, "go-back", this.screen === "setup" && this.setup.page !== "hub" ? "" : "esc", this.returnLabel(), !this.busy, cx => this.goBack(cx))))
-        .child(keyButton(t, "open-setup", this.shown("setup", "?"), "Setup", !this.busy, cx => this.action("setup", cx)))
+        .child(keyButton(t, "open-setup", this.shown("setup", "?"), "Settings", !this.busy, cx => this.action("setup", cx)))
         .when(this.screen !== "courses" && this.screen !== "start", element => element
           .child(keyButton(t, "choose-topics", this.shown("topics", "t"), "Topics", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state), cx => this.action("topics", cx)))
           .child(keyButton(t, "choose-exercises", this.shown("exercises", "e"), "Exercises", !this.busy && !["setup", "languages", "courses"].includes(this.screen) && Boolean(this.state) && (Boolean(this.pickerTopicId) || this.screen === "practice"), cx => this.action("exercises", cx)))
           .child(keyButton(t, "toggle-scratch", this.shown("scratch", "x"), this.screen === "scratch" ? "Back to exercise" : "Scratch", !this.busy && !["setup", "languages", "courses"].includes(this.screen) && Boolean(this.state), cx => this.action("scratch", cx))))
-        .child(this.shortcuts.button(t)))
+        )
       .when(Boolean(this.error), element => element.child(v_flex().flex_none().px(SIZE.panePad).py(8).gap(8)
         .child(banner(t, this.error, t.blocked))
         .child(keyButton(t, "retry", "", "Retry", !this.busy, cx => this.action("retry", cx)))))
@@ -1439,6 +1550,6 @@ export default class Syntax extends View {
         .child(keyButton(t, "next", this.shown("next", "n"), this.nextLabel(), !this.busy && Boolean(this.state), cx => this.action("next", cx)))
         .when(Boolean(this.state?.review), element => element.child(keyButton(t, "end-review", this.shown("review", "v"), "End review", !this.busy, cx => this.action("review-end", cx))))))
       // Under the header, which is one line tall until it wraps.
-      .when(this.shortcuts.open, element => element.child(this.shortcuts.panel(t, { top: 52, right: SIZE.panePad, maxHeight: 360, note: this.courses.gearNote(t) })));
+      .when(this.settingsOpen, element => element.child(settingsDialog(this, t)));
   }
 }

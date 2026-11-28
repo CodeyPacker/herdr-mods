@@ -6,14 +6,17 @@ using System.Globalization;
 using System.Threading.Tasks;
 `;
 
-function scaffold(exercise) {
+function scaffold(exercise, { forwardOutput = false } = {}) {
   const declarations = exercise.declarations ? `\n${exercise.declarations}\n` : "";
   const setup = `${imports}${declarations}\n`;
   if (exercise.mode === "types") return { before: setup, after: "\n" };
   if (exercise.mode === "members") return { before: `${setup}public static class Practice\n{\n`, after: "\n}\n" };
   // Course tasks can check printed output. Checks read it with __Output().
-  const capture = exercise.captureOutput ? "        var __printed = new System.IO.StringWriter(); Console.SetOut(__printed);\n        string __Output() => __printed.ToString().ReplaceLineEndings(\"\\n\").TrimEnd();\n" : "";
-  return { before: `${setup}public static class Practice\n{\n    public static void Run()\n    {\n${capture}`, after: "\n    }\n}\n" };
+  const forward = exercise.captureOutput && forwardOutput;
+  const capture = exercise.captureOutput ? `${forward ? "        var __stdout = Console.Out;\n" : ""}        var __printed = new System.IO.StringWriter(); Console.SetOut(__printed);\n        string __Output() => __printed.ToString().ReplaceLineEndings("\\n").TrimEnd();\n` : "";
+  // Return captured output even when the answer or one of its checks throws.
+  const finish = forward ? "\n        } finally { Console.SetOut(__stdout); Console.Write(__printed.ToString()); }\n" : "";
+  return { before: `${setup}public static class Practice\n{\n    public static void Run()\n    {\n${capture}${forward ? "        try {\n" : ""}`, after: `${finish}\n    }\n}\n` };
 }
 
 /**
@@ -132,7 +135,7 @@ function assertion(check, index, report) {
 
 /** With `report`, failed checks also show the values the answer produced. */
 export function checkingSource(exercise, answer, { report = false } = {}) {
-  const { before, after } = scaffold(exercise);
+  const { before, after } = scaffold(exercise, { forwardOutput: true });
   const prefix = `${before}#line 1 "Exercise.cs"\n`;
   const start = prefix.length;
   const end = start + answer.length;

@@ -175,7 +175,11 @@ export async function checkAnswer(root, exercise, answer, checker, { timeout = 5
     const executed = await runDotnetProcess("dotnet", [output], { cwd: directory, timeout });
     if (executed.problem) return { passed: false, kind: "runtime", title: "The code could not finish", details: [executed.problem] };
     const printed = executed.stdout.trim() ? [`Your code printed:\n${executed.stdout.trim()}`] : [];
-    if (executed.code !== 0) return { passed: false, kind: "result", title: "The result needs a correction", details: [...exceptionDetails(executed.stderr || executed.stdout), ...printed] };
+    if (executed.code !== 0) {
+      const errors = exceptionDetails(executed.stderr || executed.stdout);
+      const outputReported = exercise.captureOutput && errors.join("\n").includes(`__Output() = "${executed.stdout.trimEnd()}"`);
+      return { passed: false, kind: "result", title: "The result needs a correction", details: [...errors, ...(outputReported ? [] : printed)] };
+    }
     return { passed: true, kind: "passed", title: "Correct. Stay here or try another exercise.", details: printed };
   } finally {
     await rm(directory, { recursive: true, force: true });

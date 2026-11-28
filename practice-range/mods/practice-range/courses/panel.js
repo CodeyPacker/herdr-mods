@@ -1,14 +1,17 @@
 import { div } from "gpui-kit";
 import { v_flex, h_flex, InputState, SliderState, Slider, SliderTrack, SliderIndicator, SliderThumb } from "gpui-base";
-import { fonts, shared, setShared, watchFolder, window as appWindow } from "herdr";
-import { keyButton, keysAreHidden, meter, spinner, textInput } from "../kit/controls.js";
-import { badge, banner, card, inkOn, paneBar, sectionLabel } from "../kit/pane.js";
-import { cardGrid, cardTitle, inGrid, packBadge, packColor, statusTag } from "../setup/parts.js";
+import { fonts, shared, setShared, watchFolder, checking, window as appWindow } from "herdr";
+import { keyButton, keysAreHidden, meter, spinner, textInput } from "./navigation-ui.js";
+import { banner, inkOn, paneBar, sectionLabel } from "../kit/pane.js";
+import { cardGrid, cardTitle, inGrid, packColor, statusTag } from "../setup/parts.js";
 import { courseCommand } from "./bridge.js";
 import { generateRepoLesson, generateExtraPractice } from "../bridge.js";
 import { tutorChat } from "../tutor/panel.js";
 import { findLanguage } from "../languages/index.js";
 import { codeBlock, initCode, useCode, richText, sweepCode, readingText } from "./code.js";
+import { OptionNavigation } from "../option-navigation.js";
+import { courseIcon } from "./icons.js";
+import { beginNavigation, option, optionSelected, card } from "./navigation-ui.js";
 import { READING_KEY, READING_DEFAULTS, readingPreferences, readingWidth } from "./reading-preferences.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
@@ -20,7 +23,8 @@ const markdown = readingText;
  * @param {Theme} t @param {string} id @param {string} label @param {boolean} enabled @param {boolean} ready @param {(cx: Context) => void} click
  */
 const primaryButton = (t, id, label, enabled, ready, click) => h_flex().id(id).flex_none().h(30).px(16).items_center().rounded(8).border_1()
-  .border_color(ready ? t.accent : t.border).bg(ready ? t.accent : t.raised).text_size(12).font_semibold()
+  .border_color(option(id, click, enabled) || ready ? t.accent : t.border).bg(ready ? t.accent : t.raised).text_size(12).font_semibold()
+  .when(optionSelected(id), el => el.border_2())
   .text_color(!enabled ? t.dim : ready ? inkOn(t.accent) : t.foreground)
   .when(enabled, el => el.cursor_pointer().hover(s => s.border_color(t.accent)).on_click((_e, cx) => click(cx))).child(label);
 /** A numbered stage label: "1  Read the code". @param {Theme} t @param {number} n @param {string} label @param {boolean} active */
@@ -30,9 +34,9 @@ const stage = (t, n, label, active) => h_flex().gap(8).items_center().pt(4)
   .child(div().text_size(12).when(active, el => el.font_semibold()).text_color(active ? t.foreground : t.muted).child(label));
 /** The kicker over a step title. */
 /** @type {Record<string, string>} */
-const KIND = { explanation: "LEARN", walkthrough: "WALKTHROUGH", prediction: "PREDICT", modification: "EXERCISE", independent: "EXERCISE", debugging: "EXERCISE" };
+const KIND = { explanation: "READING", walkthrough: "WALKTHROUGH", prediction: "PREDICT", modification: "EXERCISE", independent: "EXERCISE", debugging: "EXERCISE" };
 /** Use the course title, falling back to its language when no title is available. @param {{ languageId?: string, title?: string, id: string }} course */
-const courseName = course => course.title || (course.languageId && findLanguage(course.languageId)?.name) || course.id;
+const courseName = course => course.id === "course:sql-foundations" ? "SQL" : course.title || (course.languageId && findLanguage(course.languageId)?.name) || course.id;
 /** @param {string} path */
 const normalized = path => appWindow()?.platform === "windows" ? path.replaceAll("\\", "/").toLowerCase() : path.replaceAll("\\", "/");
 
@@ -40,6 +44,7 @@ export class CoursePanel {
   /** @param {import("../main.js").default} host */
   constructor(host) {
     this.host = host;
+    this.navigation = new OptionNavigation();
     /** @type {import("./code.js").Pool} */
     this.codePool = null;
     initCode(this);
@@ -113,6 +118,7 @@ export class CoursePanel {
   show(cx, languageId = "") {
     if (this.busy || this.host.busy) return;
     const resume = !languageId && ["practice", "topics", "exercises", "scratch"].includes(this.host.screen) && this.data;
+    if (resume) this.host.automaticEditorStarted = false;
     if (this.host.screen !== "courses") this.returnScreen = this.host.screen;
     this.languageFilter = languageId;
     this.host.cancelTutor(cx);
@@ -154,7 +160,10 @@ export class CoursePanel {
         if (this.host.tutorRequestId !== id) return;
         this.data = result;
         const lesson = this.data.repoLessons?.lessons.find(lesson => lesson.target === (moduleId ?? "architecture") && lesson.commit === this.data.attachment?.commit);
-        if (lesson) { this.repoLessonId = lesson.id; this.page = "repo-lesson"; }
+        if (lesson) {
+          this.repoLessonId = lesson.id; this.page = "repo-lesson";
+          if (this.host.settingsOpen) { this.host.closeSettings(cx); this.host.screen = "courses"; }
+        }
         if (this.host.sync) this.host.pushSoon(cx);
       } catch (error) {
         if (this.host.tutorRequestId === id) this.error = error instanceof Error ? error.message : String(error);
@@ -191,11 +200,13 @@ export class CoursePanel {
   /** @param {string} action @param {Record<string, unknown>} value @param {Context} cx */
   async dispatch(action, value, cx) {
     if (this.busy) return;
+    const previousFile = this.page === "task" ? this.data?.file : null;
     if (["profile-save", "list", "enroll", "open", "source", "task", "review-start", "review-next", "review-end", "attach-repo", "detach-repo"].includes(action)) this.host.cancelTutor(cx);
     this.busy = ["check", "check-saved"].includes(action) ? "Checking every case…" : "Loading course…";
     this.error = ""; cx.notify();
     try {
       const request = { ...(action === "enroll" || action === "list" ? {} : { courseId: this.data?.course.id, contentVersion: this.data?.course.contentVersion }), ...value };
+      if (["check", "check-saved"].includes(action)) await this.host.updateOutput(true);
       const result = await courseCommand(action, request);
       if (result.profile) {
         const untouched=this.knownInput.value()===this.profile.knownLanguages.join(", ");
@@ -218,17 +229,25 @@ export class CoursePanel {
         if (action === "enroll") this.page = "modules";
         if (action === "open") { this.page = "lesson"; this.pause(); }
         if (action === "task") { this.page = "task"; this.startWatch(cx); }
-        if (result.migrated) { this.data = await courseCommand("status", result.migrated); this.page = "modules"; this.pause(); }
+        if (result.migrated) {
+          this.data = await courseCommand("status", result.migrated);
+          this.catalog = (await courseCommand("list", {})).courses;
+          this.page = "modules";
+          this.pause();
+        }
         if (action === "status" && this.page === "task") { this.startWatch(cx); if (result.stale) this.queueSave(cx); }
         if (["review-start", "review-next", "review-end"].includes(action)) {
           this.page = result.enrollment.activeTask ? "task" : "modules";
           if (this.page === "task") this.startWatch(cx); else this.pause();
         }
         if (result.pendingSave) this.pendingSave = true;
+        if (this.page === "task" && (this.data.file !== previousFile || ["task", "review-start", "review-next"].includes(action))) this.host.automaticEditorStarted = false;
       }
       if (this.host.sync && !["list", "status", "source"].includes(action)) this.host.pushSoon(cx);
+      if (action === "enroll" && this.host.settingsOpen) { this.host.closeSettings(cx); this.host.screen = "courses"; }
     } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
-    finally { this.busy = ""; cx.notify(); }
+    finally { this.busy = ""; await this.host.updateOutput(); cx.notify(); }
+    if (!this.error && this.page === "task") this.host.startAutomaticEditor(cx);
     if (this.openAfterList) {
       const courseId = this.openAfterList;
       this.openAfterList = ""; this.languageFilter = "";
@@ -334,10 +353,26 @@ export class CoursePanel {
     });
   }
 
+  /** @param {import("gpui-kit").KeyEvent} event @param {Context} cx */
+  navigate(event, cx) {
+    if (this.busy || this.host.busy || this.host.typing || event.modifiers.platform || event.modifiers.alt) return false;
+    // Ctrl-h/l belong to pane focus. Plain h still asks for a hint in an exercise.
+    if (event.modifiers.control && ["h", "l"].includes(event.key)) return false;
+    if (!event.modifiers.control && this.page === "task" && event.key === "h") return false;
+    return this.navigation?.key(event.key, cx) ?? false;
+  }
+
   /** @param {string} key @param {Context} cx */
   key(key, cx) {
     if (this.busy || this.host.busy) return;
     if (key === "escape") this.back(cx);
+    else if (this.page === "catalog" && key === "u") {
+      const course = this.catalog.find(course => `course-card-${course.id}` === this.navigation.selected);
+      if (course && !course.error && course.enrolledVersion && course.contentVersion
+          && course.enrolledVersion !== course.contentVersion && !course.versions?.includes(course.contentVersion)) {
+        this.run("update-version", { courseId: course.id, contentVersion: course.enrolledVersion, to: course.contentVersion }, cx);
+      }
+    }
     else if (this.page === "modules" && key === "enter") { const next = this.nextStep(); if (next) this.run("open", next, cx); }
     else if (this.page === "lesson" && ["n", "right"].includes(key)) this.advance(1, cx);
     else if (this.page === "lesson" && ["p", "left"].includes(key)) this.advance(-1, cx);
@@ -375,11 +410,13 @@ export class CoursePanel {
 
   /** @param {Theme} t */
   render(t) {
+    beginNavigation(this.navigation, `${this.page}/${this.data?.course.id ?? ""}/${this.data?.enrollment.position?.step ?? ""}/${this.data?.enrollment.activeTask ?? ""}`,
+      this.page === "modules" ? "course-up-next-open" : this.page === "task" ? "course-editor" : "");
     useCode(this);
     const prefs = readingPreferences(shared(READING_KEY));
     const body = v_flex().id("course-body").flex_1().min_h(0).overflow_y_scroll().p(16);
     // Content sits in a centred column instead of the full window. The lesson is wider because it has a step list.
-    const width = this.page === "catalog" ? 1400 : this.page === "lesson" ? 1040 + readingWidth(680, prefs.margins) - 680
+    const width = this.page === "catalog" ? 1400 : this.page === "lesson" ? 220 + 24 + readingWidth(680, prefs.margins)
       : ["task", "repo-lesson"].includes(this.page) ? readingWidth(760, prefs.margins) : 760;
     const column = v_flex().w_full().max_w(width).mx_auto().gap(12);
     if (this.generatingRepoLesson || this.generatingExtras) column.child(keyButton(t,"cancel-repo-lesson","","Cancel generation",Boolean(this.host.tutorRequestId),cx=>this.host.cancelTutor(cx)));
@@ -430,7 +467,7 @@ export class CoursePanel {
       }
     }
     // One line of shortcuts for this screen, instead of a key on every button.
-    const keys = ["esc back", ...(this.page === "modules" ? ["enter continue"] : this.page === "lesson" ? ["p previous", "n continue", "r run"] : this.page === "task" ? ["o open in editor", "c check", "h hint"] : [])];
+    const keys = [this.page === "catalog" ? "hjkl cards · enter start/continue · u update" : "hjkl move · enter select", "ctrl-h/l focus pane", "esc back", ...(this.page === "modules" ? ["enter continue"] : this.page === "lesson" ? ["p previous", "n continue", "r run"] : this.page === "task" ? ["o open in editor", "c check", "h hint"] : [])];
     return v_flex().flex_1().min_h(0).child(body).child(footer)
       .when(!keysAreHidden(), el => el.child(h_flex().px(16).pb(6).justify_end().text_size(11).text_color(t.dim).child(keys.join("  \u00b7  "))));
   }
@@ -462,13 +499,19 @@ export class CoursePanel {
     cx.notify();
   }
 
-  /** Course settings open from the gear panel, while in Courses. Null elsewhere. @param {Theme} t */
-  gearNote(t) {
-    if (this.host.screen !== "courses" || this.page === "settings") return null;
-    return h_flex().flex_none().child(keyButton(t, "gear-course-settings", "", "Course settings: text, languages, repo", !this.busy, cx => {
-      this.host.shortcuts.hide();
-      this.syncReadingSliders(); this.settingsReturn = this.page; this.page = "settings"; cx.notify();
-    }));
+  /** Load settings without changing the current lesson. @param {Context} cx */
+  refreshSettings(cx) {
+    if (checking()) return;
+    const previous = this.knownInput.value();
+    cx.spawn(async cx => {
+      try {
+        const result = await courseCommand("list", {});
+        this.catalog = result.courses;
+        this.profile = result.profile;
+        if (this.knownInput.value() === previous) this.knownInput.set_value(this.profile.knownLanguages.join(", "));
+      } catch (error) { this.error = error instanceof Error ? error.message : String(error); }
+      cx.notify();
+    });
   }
 
   /** @param {import("gpui-kit").Element} body @param {Theme} t */
@@ -544,11 +587,10 @@ export class CoursePanel {
       const total = course.total ?? 0, done = course.done ?? 0, started = Boolean(course.enrolledVersion);
       const pack = course.languageId ? findLanguage(course.languageId) : undefined;
       const color = pack ? packColor(t, pack) : t.accent;
-      const mark = pack ? packBadge(t, pack, 36) : badge((course.title ?? course.id).slice(0, 3).toUpperCase(), t.accent, 36);
+      const mark = courseIcon(t, course.id, 36);
       const summary = course.error ?? `${total} ${course.reading ? "reading modules" : "modules"}${course.preview ? " \u00b7 Preview" : ""}`;
       const status = course.error ? statusTag(t, "Unavailable", "needed")
-        : total && done >= total ? statusTag(t, "Done", "ready")
-        : statusTag(t, started ? "In progress" : "Not started", "neutral");
+        : total && done >= total ? statusTag(t, "Completed", "ready") : null;
       const enabled = !this.busy && !course.error;
       // The newest version may already be started on its own. Then it's the one to continue, and there is nothing to update.
       const latestStarted = Boolean(course.contentVersion && course.versions?.includes(course.contentVersion));
@@ -557,13 +599,18 @@ export class CoursePanel {
       // The card opens the course too, so its buttons stop the click from reaching it.
       const press = (/** @type {(cx: Context) => void} */ act) => (/** @type {Context} */ cx) => { cx.stop_propagation(); act(cx); };
       grid.child(inGrid(card(t, { id: `course-card-${course.id}`, click: enabled ? open : undefined })
-        .child(cardTitle(t, mark, courseName(course), summary, status))
+        .child(h_flex().gap(10).items_start()
+          .child(mark)
+          .child(v_flex().flex_1().min_w(0).gap(1)
+            .child(div().font_semibold().child(courseName(course)))
+            .child(div().text_size(12).text_color(t.muted).child(summary)))
+          .when(Boolean(status), el => el.child(status)))
         .when(started, el => el.child(v_flex().gap(4)
-          .child(h_flex().text_size(11).text_color(t.dim).child(div().flex_1().child("Done")).child(`${done} / ${total}`))
+          .child(h_flex().text_size(11).text_color(t.dim).child(div().flex_1().child("Modules completed")).child(`${done} / ${total}`))
           .child(meter(t, total ? done / total : 0, color))))
         .child(div().flex_1())
         .child(h_flex().gap(8).flex_wrap()
-          .child(keyButton(t, `course-open-${course.id}`, "", started ? "Continue" : "Start", enabled, press(open)))
+          .child(primaryButton(t, `course-open-${course.id}`, started ? "Continue" : "Start", enabled, true, press(open)))
           // A newer version is offered here. Updating carries reading and answers over and opens the course.
           .when(behind && !latestStarted, el => el.child(
             keyButton(t, `course-update-${course.id}`, "", `Update to ${course.contentVersion}`, !this.busy, press(cx =>
@@ -576,8 +623,9 @@ export class CoursePanel {
   }
 
   /** Course settings: known languages, the repo, older versions. @param {import("gpui-kit").Element} body @param {Theme} t */
-  settingsView(body, t) {
-    body.child(this.header(t, this.settingsReturn === "catalog" ? "Courses" : "Back", this.data && this.settingsReturn !== "catalog" ? `${courseName(this.data.course)} settings` : "Course settings"));
+  settingsView(body, t, embedded = false) {
+    if (!embedded) body.child(this.header(t, this.settingsReturn === "catalog" ? "Courses" : "Back", this.data && this.settingsReturn !== "catalog" ? `${courseName(this.data.course)} settings` : "Course settings"));
+    else if (this.data && this.settingsReturn !== "catalog") body.child(div().font_semibold().child(`${courseName(this.data.course)} settings`));
     this.readingSettings(body, t);
     this.profileView(body, t);
     const summary = this.data && this.settingsReturn !== "catalog" ? this.catalog.find(course => course.id === this.data?.course.id) : null;
@@ -601,7 +649,11 @@ export class CoursePanel {
     body.child(keyButton(t,"course-repo-architecture","","Explain repo architecture",!this.busy && Boolean(repo?.available) && this.host.tutor.enabled,cx=>this.generateRepoLesson(null,cx)));
     if (!this.host.tutor.enabled) body.child(div().text_size(12).text_color(t.muted).child("Enable the AI tutor in Setup to generate repo lessons."));
     if (this.data.repoLessons?.error) body.child(banner(t,this.data.repoLessons.error));
-    for (const lesson of this.data.repoLessons?.lessons ?? []) body.child(keyButton(t,`repo-lesson-${lesson.id}`,"",`${lesson.title} \u00b7 ${lesson.commit.slice(0,10)}`,!this.busy,cx=>{this.repoLessonId=lesson.id;this.page="repo-lesson";cx.notify();}));
+    for (const lesson of this.data.repoLessons?.lessons ?? []) body.child(keyButton(t,`repo-lesson-${lesson.id}`,"",`${lesson.title} \u00b7 ${lesson.commit.slice(0,10)}`,!this.busy,cx=>{
+      this.repoLessonId=lesson.id;this.page="repo-lesson";
+      if (this.host.settingsOpen) { this.host.closeSettings(cx); this.host.screen="courses"; }
+      cx.notify();
+    }));
   }
 
   /** Where Continue goes: the saved position, else the first unfinished module. */
@@ -617,7 +669,7 @@ export class CoursePanel {
     const course = this.data.course;
     const pack = course.languageId ? findLanguage(course.languageId) : undefined;
     const color = pack ? packColor(t, pack) : t.accent;
-    const mark = pack ? packBadge(t, pack, 52) : badge((course.title ?? course.id).slice(0, 3).toUpperCase(), color, 52);
+    const mark = courseIcon(t, course.id, 52);
     const available = course.modules.filter(module => module.status === "available");
     const done = available.filter(module => this.moduleState(module.id) === "done").length;
     const share = available.length ? done / available.length : 0;
@@ -667,6 +719,7 @@ export class CoursePanel {
       const seen = Math.min(steps, new Set(this.data.enrollment.modules[module.id]?.seen ?? []).size);
       const detail = state === "done" ? "Done" : state === "started" ? `${seen} of ${steps} steps` : state === "planned" ? "Coming soon" : `${steps} steps`;
       const open = module.status === "available" && !this.busy;
+      const selected = option(`course-module-${module.id}`, cx => this.run("open", { moduleId: module.id, step: 0 }, cx), open);
       // The number sits in a circle: filled when done, ringed in the accent while started.
       const number = h_flex().size(30).flex_none().rounded(15).items_center().justify_center().text_size(12).font_semibold()
         .when(state === "done", el => el.bg(t.done).text_color(inkOn(t.done)).child("\u2713"))
@@ -674,7 +727,7 @@ export class CoursePanel {
         .when(state === "new", el => el.border_1().border_color(t.border).text_color(t.muted).child(String(index + 1)))
         .when(state === "planned", el => el.border_1().border_color(t.border).text_color(t.dim).child(String(index + 1)));
       list.child(h_flex().id(`course-module-${module.id}`).gap(14).items_center().px(14).py(12).rounded(10).border_1()
-        .border_color(state === "started" ? t.accent : t.border).bg(state === "started" ? t.selected : t.raised)
+        .border_color(selected || state === "started" ? t.accent : t.border).bg(selected || state === "started" ? t.selected : t.raised)
         .when(state === "planned", el => el.opacity(0.6))
         .when(open, el => el.cursor_pointer().hover(s => s.border_color(t.accent)).on_click((_e, cx) => this.run("open", { moduleId: module.id, step: 0 }, cx)))
         .child(number)
@@ -748,14 +801,15 @@ export class CoursePanel {
     const rail = v_flex().w(220).flex_none().gap(2).p(10).rounded(10).bg(t.raised);
     const row = (/** @type {any} */ item, /** @type {number} */ index) => {
       const current = index === position.step, read = seen.has(index);
+      const selected = option(`course-step-${index}`, cx => this.run("open", { moduleId: lesson.id, step: index }, cx), !this.busy && !current);
       const mark = read && !current ? "\u2713" : current ? "\u25cf" : exercise(item) ? "\u25a1" : "\u25cb";
       return h_flex().id(`course-step-${index}`).gap(8).px(8).py(5).rounded(6).items_center()
-        .when(current, el => el.bg(t.selected))
+        .when(current || selected, el => el.bg(t.selected))
         .when(!this.busy && !current, el => el.cursor_pointer().hover(s => s.bg(t.background)).on_click((_e, cx) => this.run("open", { moduleId: lesson.id, step: index }, cx)))
         .child(div().w(14).flex_none().text_size(12).text_color(read && !current ? t.done : current ? t.accent : t.dim).child(mark))
         .child(div().flex_1().min_w(0).whitespace_normal().text_size(12).text_color(current ? t.foreground : read ? t.muted : t.foreground).when(current, el => el.font_semibold()).child(item.title));
     };
-    rail.child(div().px(8).pb(4).text_size(10).font_semibold().text_color(t.dim).child("LEARN"));
+    rail.child(div().px(8).pb(4).text_size(10).font_semibold().text_color(t.dim).child("READING"));
     lesson.steps.forEach((item, index) => { if (!exercise(item)) rail.child(row(item, index)); });
     if (lesson.steps.some(exercise)) {
       rail.child(div().px(8).pt(10).pb(4).text_size(10).font_semibold().text_color(t.dim).child("PRACTICE IN YOUR EDITOR"));
@@ -764,11 +818,12 @@ export class CoursePanel {
     rail.child(div().px(8).pt(12).text_size(11).text_color(t.dim).child(`${lesson.steps.filter((_item, index) => seen.has(index)).length} of ${lesson.steps.length} done`));
     // The step, in a column about 70 characters wide.
     const prefs = readingPreferences(shared(READING_KEY));
-    const main = v_flex().flex_1().min_w(0).max_w(readingWidth(680, prefs.margins)).gap(12);
+    const main = v_flex().flex_1().min_w(0).max_w(readingWidth(680, prefs.margins)).gap(12)
+      .p(20).rounded(10).border_1().border_color(t.border).bg(t.popover);
     // An element takes no children once it has a parent, so the panes are attached after they are filled.
     const attach = () => { body.child(h_flex().gap(24).items_start().child(rail).child(main)); };
     if (!this.data.course.reading && this.data.attachment?.available && this.host.tutor.enabled) main.child(h_flex().child(keyButton(t,"course-repo-module","","Explain this topic using my repo",!this.busy,cx=>this.generateRepoLesson(lesson.id,cx))));
-    main.child(div().text_size(11).font_semibold().text_color(t.accent).child(`STEP ${position.step + 1} OF ${lesson.steps.length} \u00b7 ${KIND[step.kind] ?? "LEARN"}`))
+    main.child(div().text_size(11).font_semibold().text_color(t.accent).child(`STEP ${position.step + 1} OF ${lesson.steps.length} \u00b7 ${KIND[step.kind] ?? "READING"}`))
       .child(div().text_size(18).font_semibold().child(step.title));
     if (position.step === 0) {
       const exerciseSteps = lesson.steps.flatMap((item, index) => exercise(item) ? [index + 1] : []);
@@ -796,7 +851,8 @@ export class CoursePanel {
       question.choices.forEach((choice, index) => {
         const picked = result?.choice === index;
         const correct = picked && result.correct;
-        const color = picked ? (result.correct ? t.done : t.blocked) : t.border;
+        const selected = option(`course-choice-${id}-${index}`, cx => this.run("question", { moduleId: lesson.id, questionId: id, choice: index }, cx), !this.busy);
+        const color = selected ? t.accent : picked ? (result.correct ? t.done : t.blocked) : t.border;
         main.child(v_flex().id(`course-choice-${id}-${index}`).rounded(8).border_1()
           .border_color(color).bg(picked ? t.selected : t.raised)
           .child(h_flex().px(12).py(8).gap(10).items_start()

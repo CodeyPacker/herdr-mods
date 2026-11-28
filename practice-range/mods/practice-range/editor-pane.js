@@ -44,14 +44,15 @@ export function neovimCloseDiffsExpression() {
 }
 
 /**
- * Ex commands that make a key in this Neovim move the keyboard to the Practice Range panel:
- * ctrl-h when the panel is on its left, ctrl-l when it is on its right. They apply to the
+ * Ex commands that move keyboard focus left with ctrl-h and right with ctrl-l. They apply to the
  * Neovim Practice Range starts, not to other Neovims.
  * @param {"left" | "right"} [panel] the side the panel is on, seen from Neovim
  */
 export function neovimPanelKeyCommands(panel = "left") {
-  const key = panel === "left" ? "<C-h>" : "<C-l>";
-  return [`lua vim.keymap.set({ 'n', 'v' }, '${key}', function() vim.fn.jobstart({ 'herdr-app', 'do', 'pane.go', '--direction', '${panel}' }) end, { desc = 'Practice Range panel' })`];
+  return [panel, panel === "left" ? "right" : "left"].map(direction => {
+    const key = direction === "left" ? "<C-h>" : "<C-l>";
+    return `lua vim.keymap.set({ 'n', 'v', 'i', 't' }, '${key}', function() vim.fn.jobstart({ 'herdr-app', 'do', 'pane.go', '--direction', '${direction}' }) end, { desc = 'Focus ${direction} pane' })`;
+  });
 }
 
 /** Close earlier comparisons, then open this one, for `nvim --remote-expr`. @param {string} answer @param {string} reference */

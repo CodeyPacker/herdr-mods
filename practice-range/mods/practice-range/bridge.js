@@ -143,6 +143,7 @@ export async function neovimCommands(server, commands) {
 export async function reuseNeovim(server, file) {
   try {
     await exec("nvim", ["--server", server, "--remote-expr", neovimCloseDiffsExpression()]);
+    await neovimCommands(server, ["if get(b:, 'practice_range_output', 0) | wincmd p | endif"]);
     const result = await exec("nvim", ["--server", server, "--remote", file]);
     return result.code === 0;
   } catch { return false; }

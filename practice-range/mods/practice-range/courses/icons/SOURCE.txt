@@ -1,0 +1,4 @@
+Brand icons from https://github.com/devicons/devicon
+Commit: 32fe1d3b3f36ad11f90ab94f7db59738139c2bf6
+Original assets: icons/<name>/<name>-original.svg
+License: LICENSE-devicon

@@ -15,6 +15,7 @@ import { courseSource } from "./source.mjs";
 import { knownLanguages, readLearningProfile } from "./learning-profile.mjs";
 import { readExtras, withExtras, isExtraTask, saveExtras } from "./extras.mjs";
 import { canMigrate, migrateEnrollment, readMigration } from "./migrate.mjs";
+import { sortCourses } from "./catalog.js";
 
 const hash = source => createHash("sha256").update(typeof source === "string" ? source : JSON.stringify(source)).digest("hex");
 export const enrollmentDirectory = (root, pack) => join(root, "courses", courseFolderName(pack.id), pack.contentVersion);
@@ -161,7 +162,7 @@ export async function courseCommand(root, action, request = {}, options = {}) {
     await save(join(root,"learning.json"),{version:1,knownLanguages:names});
     return { profile:{configured:true,knownLanguages:names} };
   });
-  if (action === "list") return { profile: await readLearningProfile(root), courses: await Promise.all((await listCourses()).map(async course => {
+  if (action === "list") return { profile: await readLearningProfile(root), courses: sortCourses(await Promise.all((await listCourses()).map(async course => {
     const parent = join(root, "courses", courseFolderName(course.id));
     try {
       const selected = await readJson(join(parent, "current.json"));
@@ -175,7 +176,7 @@ export async function courseCommand(root, action, request = {}, options = {}) {
       }
       return { ...course, enrolledVersion: selected?.contentVersion, versions, done };
     } catch (error) { return error.code === "ENOENT" ? course : { ...course, error: error.message }; }
-  })) };
+  }))) };
   const latest = await loadCourse(request.courseId, request.contentVersion);
   const preferred = join(root, "courses", courseFolderName(latest.id), "current.json");
   const selected = await readJson(preferred);
@@ -195,7 +196,14 @@ export async function courseCommand(root, action, request = {}, options = {}) {
     if (action === "save-extras") return saveExtras(root, pack, directory, request, options);
     if (action === "update-version") {
       const target = await loadCourse(shipped.id, request.to);
-      await migrateEnrollment(directory, enrollmentDirectory(root, target), state, shipped, target, { selection: preferred });
+      const destination = enrollmentDirectory(root, target);
+      const migration = await readMigration(destination);
+      // A repeated update resumes the completed migration without copying over newer work.
+      const completed = migration?.from === shipped.contentVersion && migration?.to === target.contentVersion
+        ? await readJson(join(destination, "enrollment.json")) : null;
+      if (completed?.courseId === target.id && completed.contentVersion === target.contentVersion) {
+        await save(preferred, { courseId: target.id, contentVersion: target.contentVersion });
+      } else await migrateEnrollment(directory, destination, state, shipped, target, { selection: preferred });
       return { migrated: { courseId: target.id, contentVersion: target.contentVersion } };
     }
     if (action === "source") return { source: await courseSource(pack, directory, request) };

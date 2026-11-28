@@ -12,7 +12,7 @@ import { neovimPanelKeyCommands } from "../mods/practice-range/editor-pane.js";
 test("layout reads defaults, clamps the width, and reports wrong values", () => {
   assert.deepEqual(parseLayoutConfig(null), DEFAULT_LAYOUT);
   assert.deepEqual(parseLayoutConfig('{"editor":"neovim"}'), DEFAULT_LAYOUT);
-  assert.deepEqual(parseLayoutConfig('{"layout":{"side":"right"}}'), { side: "right", width: 0.5, compact: false });
+  assert.deepEqual(parseLayoutConfig('{"layout":{"side":"right"}}'), { side: "right", width: 0.5, compact: false, output: true });
   assert.equal(parseLayoutConfig('{"layout":{"width":0.95}}').width, 0.7);
   assert.equal(parseLayoutConfig('{"layout":{"width":0.1}}').width, 0.3);
   assert.equal(clampWidth(0.4249), 0.42);
@@ -24,11 +24,11 @@ test("layout reads defaults, clamps the width, and reports wrong values", () => 
 
 test("saving the layout keeps the other settings", async () => {
   let text = '{\n  "editor": "neovim",\n  "sync": true\n}\n';
-  await saveLayoutConfig({ side: "right", width: 0.42, compact: true }, {
+  await saveLayoutConfig({ side: "right", width: 0.42, compact: true, output: false }, {
     read: async () => text,
     write: async (next, expected) => { assert.equal(expected, text); text = next; },
   });
-  assert.deepEqual(JSON.parse(text), { editor: "neovim", sync: true, layout: { side: "right", width: 0.42, compact: true } });
+  assert.deepEqual(JSON.parse(text), { editor: "neovim", sync: true, layout: { side: "right", width: 0.42, compact: true, output: false } });
 });
 
 test("the split grows or shrinks the left pane, and swaps before resizing", () => {
@@ -85,4 +85,11 @@ test("install runs npm ci in the pack's own folder and reports npm's error", asy
 test("Neovim's key back to the panel points to the panel's side", () => {
   assert.match(neovimPanelKeyCommands()[0], /<C-h>.*'left'/);
   assert.match(neovimPanelKeyCommands("right")[0], /<C-l>.*'right'/);
+  for (const side of ["left", "right"]) {
+    const commands = neovimPanelKeyCommands(side);
+    assert.equal(commands.length, 2);
+    assert.ok(commands.some(command => /<C-h>.*'left'/.test(command)));
+    assert.ok(commands.some(command => /<C-l>.*'right'/.test(command)));
+    for (const command of commands) assert.match(command, /'n', 'v', 'i', 't'/);
+  }
 });

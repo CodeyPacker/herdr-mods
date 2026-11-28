@@ -25,7 +25,7 @@ function setting(t, name, controls) {
 export function layoutPage(t, { layout, width, editor, dialog, error, change, reset }) {
   const percent = Math.round(layout.width * 100);
   // Side and width only shape the Neovim split. VS Code opens in its own window.
-  const note = editor === "vscode" ? "Side and width shape the Neovim split. VS Code opens in its own window, so only compact applies."
+  const note = editor === "vscode" ? "Side and width shape the Neovim split. VS Code opens in its own window, so the output pane is available only in Neovim."
     : dialog ? "The dialog uses the new side and width the next time it opens."
     : "This tab's Neovim split follows as you change them.";
   return v_flex().flex_1().min_h(0)
@@ -44,6 +44,10 @@ export function layoutPage(t, { layout, width, editor, dialog, error, change, re
           .child(div().text_size(11).text_color(t.dim).child("30%"))
           .child(slider(t, width, 220))
           .child(div().text_size(11).text_color(t.dim).child("70%"))))
+        .child(setting(t, "Output below Neovim", h_flex().gap(6).items_center()
+          .child(chip(t, { id: "layout-output-show", label: "Show", on: layout.output, click: cx => change({ output: true }, cx) }))
+          .child(chip(t, { id: "layout-output-hide", label: "Hide", on: !layout.output, click: cx => change({ output: false }, cx) }))
+          .child(div().text_size(11).text_color(t.dim).child("Read-only results. Updates whenever you save."))))
         .child(setting(t, "Compact", h_flex().gap(6).items_center()
           .child(chip(t, { id: "layout-full", label: "Show help", on: !layout.compact, click: cx => change({ compact: false }, cx) }))
           .child(chip(t, { id: "layout-compact", label: "Hide help", on: layout.compact, click: cx => change({ compact: true }, cx) }))

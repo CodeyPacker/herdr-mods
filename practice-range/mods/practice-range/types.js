@@ -9,7 +9,7 @@
  *   editors: { neovim: Probe, vscode: Probe } }} ToolScan
  * @typedef {Probe & { ready: boolean, detail: string }} TutorProbe `ready`: new enough and signed in
  * @typedef {{ claude: TutorProbe, codex: TutorProbe }} TutorScan
- * @typedef {{ side: "left" | "right", width: number, compact: boolean }} Layout
+ * @typedef {{ side: "left" | "right", width: number, compact: boolean, output: boolean }} Layout
  *   `side`: where the panel sits beside Neovim. `width`: the panel's share of the tab, 0.3 to 0.7.
  *   `compact`: leave out the help sentences under each part of the panel.
  * @typedef {{ id: string, title: string, prompt: string, solution: string,

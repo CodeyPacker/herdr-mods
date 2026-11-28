@@ -6,7 +6,7 @@ export const WIDTH_MIN = 0.3;
 export const WIDTH_MAX = 0.7;
 
 /** @type {import("./types.js").Layout} */
-export const DEFAULT_LAYOUT = { side: "left", width: 0.5, compact: false };
+export const DEFAULT_LAYOUT = { side: "left", width: 0.5, compact: false, output: true };
 
 /** A width inside the allowed range, rounded to whole percent. @param {number} width */
 export function clampWidth(width) {
@@ -22,11 +22,12 @@ export function parseLayoutConfig(text) {
   const layout = parseConfig(text).layout;
   if (layout === undefined || layout === null) return { ...DEFAULT_LAYOUT };
   if (typeof layout !== "object" || Array.isArray(layout)) throw new Error("practice-range.json: layout must be an object.");
-  const { side = DEFAULT_LAYOUT.side, width = DEFAULT_LAYOUT.width, compact = DEFAULT_LAYOUT.compact } = /** @type {any} */ (layout);
+  const { side = DEFAULT_LAYOUT.side, width = DEFAULT_LAYOUT.width, compact = DEFAULT_LAYOUT.compact, output = DEFAULT_LAYOUT.output } = /** @type {any} */ (layout);
   if (side !== "left" && side !== "right") throw new Error('practice-range.json: layout.side must be "left" or "right".');
   if (typeof width !== "number" || !Number.isFinite(width)) throw new Error("practice-range.json: layout.width must be a number from 0.3 to 0.7.");
   if (typeof compact !== "boolean") throw new Error("practice-range.json: layout.compact must be true or false.");
-  return { side, width: clampWidth(width), compact };
+  if (typeof output !== "boolean") throw new Error("practice-range.json: layout.output must be true or false.");
+  return { side, width: clampWidth(width), compact, output };
 }
 
 /**
@@ -37,6 +38,6 @@ export function parseLayoutConfig(text) {
 export async function saveLayoutConfig(layout, io) {
   const previous = await io.read();
   const config = parseConfig(previous);
-  config.layout = { side: layout.side, width: clampWidth(layout.width), compact: layout.compact };
+  config.layout = { side: layout.side, width: clampWidth(layout.width), compact: layout.compact, output: layout.output };
   await io.write(JSON.stringify(config, null, 2) + "\n", previous);
 }

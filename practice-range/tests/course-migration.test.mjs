@@ -43,7 +43,11 @@ test("an enrollment on the previous version updates explicitly and keeps reading
   assert.equal(await readFile(next.file.replace("shelf-label", "remaining"), "utf8"), old.lessons.find(lesson => lesson.id === moduleId).tasks.find(task => task.id === taskId).solution);
   assert.equal(next.evidence[moduleId].independent, 1);
   assert.equal(JSON.parse(await readFile(join(enrollmentDirectory(root, latest), "migration.json"), "utf8")).from, oldVersion);
-  await assert.rejects(run("update-version", { to: latest.contentVersion }), /already started/);
+  await courseCommand(root, "seen", { courseId, contentVersion: latest.contentVersion, moduleId, step: 0 });
+  const targetFile = join(enrollmentDirectory(root, latest), "enrollment.json");
+  const updatedProgress = await readFile(targetFile, "utf8");
+  assert.deepEqual(await run("update-version", { to: latest.contentVersion }), result);
+  assert.equal(await readFile(targetFile, "utf8"), updatedProgress, "Repeating an update preserves work in the new version");
   assert.equal((await run("status")).update.started, true);
 });
 
@@ -87,4 +91,16 @@ test("readiness checks record their own result without moving the lesson or coun
   assert.equal(state.reviewReady, 0);
   // D11: no project and no capstone.
   assert.equal(pack.project, undefined);
+});
+
+test("an update still refuses to overwrite a separately started version", async t => {
+  const root = await mkdtemp(join(tmpdir(), "practice-course-update-existing-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const latest = await loadCourse(courseId);
+  await courseCommand(root, "enroll", { courseId, contentVersion: oldVersion });
+  await courseCommand(root, "enroll", { courseId, contentVersion: latest.contentVersion });
+  const file = join(enrollmentDirectory(root, latest), "enrollment.json");
+  const before = await readFile(file, "utf8");
+  await assert.rejects(courseCommand(root, "update-version", { courseId, contentVersion: oldVersion, to: latest.contentVersion }), /already started/);
+  assert.equal(await readFile(file, "utf8"), before);
 });

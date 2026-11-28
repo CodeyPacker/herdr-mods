@@ -11,6 +11,7 @@ const temporary = await mkdtemp(join(tmpdir(), "syntax-panels-"));
 const states = ["practice", "topics", "exercises", "feedback", "error", "repeat", "advanced", "advanced-patterns", "advanced-types", "topics-bottom", "exercises-bottom", "editor-picker", "editor-default-neovim", "editor-default-vscode", "editor-default-declined", "editor-default-error", "setup-hub-checking", "setup-hub-ready", "setup-hub-missing", "setup-editor", "setup-editor-missing", "setup-layout", "setup-layout-compact", "setup-tutor", "languages-ready", "languages-add", "languages-checking", "languages-installing", "languages-manual", "setup-return", "return-languages", "topic-navigation", "language-navigation", "language-add-navigation",
   "ts-practice", "ts-feedback", "ts-topics", "ts-exercises-advanced", "ts-module"];
 states.push("exercises-shuffle", "ts-exercises-shuffle");
+states.push("settings-general", "settings-languages", "settings-editor", "settings-layout", "settings-tutor", "settings-courses", "settings-keyboard");
 states.push("tutor-empty", "tutor-off", "tutor-chat", "tutor-thinking", "tutor-error", "tutor-setup");
 // TypeScript fixtures render the same panel with the TypeScript pack selected.
 const typescriptExercise = { "ts-exercises-advanced": "mappedTypes/getters", "ts-module": "modules/import-named" };
@@ -124,9 +125,9 @@ export default class Fixture extends Syntax {
     }
     if (${state === "setup-return" || state === "return-languages"}) {
       this.screen = "practice";
-      if (${state === "setup-return"}) { this.openSetup("hub", cx); this.openSetup("layout", cx); this.setupKey("escape", cx); this.setupKey("escape", cx); }
+      if (${state === "setup-return"}) { this.openSetup("hub", cx); this.openSetup("layout", cx); this.key({ key: "escape", keystroke: "escape", modifiers: {} }, cx); if (this.settingsOpen) throw new Error("Escape must close settings"); }
       else { this.action("languages", cx); this.key({ key: "escape", keystroke: "escape", modifiers: {} }, cx); }
-      if (this.screen !== "practice" || this.returnScreen || this.lastPerformed?.action !== "status") throw new Error("esc must go back to the exercise and check it for saves");
+      if (this.screen !== "practice" || this.returnScreen || ${state !== "setup-return"} && this.lastPerformed?.action !== "status") throw new Error("esc must go back to the exercise and check it for saves");
       this.action("languages", cx);
     }
     if (${state.startsWith("setup-") && state !== "setup-return"}) {
@@ -151,6 +152,12 @@ export default class Fixture extends Syntax {
         if (this.setup.page !== "hub") throw new Error("esc on a setup page goes back to the hub");
         this.setup.page = "editor";
       }
+    }
+    if (${state.startsWith("settings-")}) {
+      this.screen = "practice";
+      this.openSetup("hub", cx);
+      this.selectSettingsTab(${JSON.stringify(state.replace("settings-", ""))}, cx);
+      if (!this.settingsOpen || this.screen !== "practice") throw new Error("Settings must overlay the current page");
     }
   }
 }
