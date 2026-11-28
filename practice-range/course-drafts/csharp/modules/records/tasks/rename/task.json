@@ -7,7 +7,7 @@
     "method",
     "equality"
   ],
-  "prompt": "Song is supplied. Rename(Song song, string title) should return a copy of the song with the new title. Its Id and Liked must stay the same. The starter returns the song unchanged.",
+  "prompt": "`Song` is supplied. `Rename(Song song, string title)` should return a copy of the song with the new title. Its `Id` and `Liked` must stay the same. The starter returns the song unchanged.",
   "hints": [
     "Which of the three values changes, and which two must be carried over?",
     "with copies every value you do not mention.",

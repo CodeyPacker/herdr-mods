@@ -1,12 +1,11 @@
 {
   "id": "course:cs-foundations/task/readiness-r3",
   "role": "readiness",
-  "title": "LINQ through exceptions",
+  "title": "Pattern matching and exceptions",
   "concepts": [
     "switch-expression",
     "type-pattern",
     "throw-catch",
-    "linq-query",
     "inheritance",
     "list"
   ],

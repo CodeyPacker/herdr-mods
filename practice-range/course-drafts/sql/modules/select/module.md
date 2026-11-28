@@ -13,7 +13,16 @@ The SELECT list decides what each result row contains. It can hold columns, calc
 
 ## Columns can be computed
 
-Each item in the SELECT list produces one column of the result, worked out separately for every row. An item can be a column, or an expression such as budget / 12. +, -, * and / work on numbers. ROUND(value, 2) rounds to two decimal places. The || operator joins pieces of text, and text you type yourself goes in single quotes, as in first_name || ' ' || last_name. AS gives a result column a name: budget / 12 AS monthly_budget. A computed column without a name is shown as ?column?, which tells a reader nothing, so always name them. AS changes only the result. The table is not changed.
+Each item in the `SELECT` list produces one column of the result, worked out separately for every row. An item can be a column, or an expression such as `budget / 12`.
+
+- `+`, `-`, `*` and `/` work on numbers. `ROUND(value, 2)` rounds to two decimal places.
+- `||` joins pieces of text. Text you type yourself goes in single quotes: `first_name || ' ' || last_name`.
+- `AS` gives a result column a name: `budget / 12 AS monthly_budget`. A computed column without a name is shown as `?column?`, which tells a reader nothing, so always name them.
+- `AS` changes only the result. The table is not changed.
+
+## Predict the header {prediction}
+
+Read the SELECT list and predict the first line of the result.
 
 ```sql example monthly
 SELECT name AS department, ROUND(budget / 12, 2) AS monthly_budget
@@ -34,28 +43,16 @@ Your query returned:
 (6 rows)
 ```
 
-## Predict the header {prediction}
-
-Read the SELECT list and predict the first line of the result.
-
-@example monthly
-
 :::question header example=monthly
 What is the first line of the result?
-- [x] department | monthly_budget :: AS gave both columns new names, and the header shows them.
+- [x] department | monthly_budget :: `AS` gave both columns new names, and the header shows them. Each row is then worked out from its own values: for Sales, `budget` is 1100000.00, which divided by 12 and rounded to two places is 91666.67.
 - [ ] name | budget :: Both columns were renamed with AS, so the original names are not shown.
 - [ ] department | ?column? :: The computed column was given the name monthly_budget.
 :::
 
-## Follow one row {walkthrough}
+## Find the error {prediction}
 
-The header shows the new names: department and monthly_budget. For the Sales row, budget is 1100000.00. Divided by 12 and rounded to two places that is 91666.67. Every row is worked out the same way, from its own budget.
-
-@example monthly
-
-## Use a new name too early {prediction}
-
-The second item uses the name the first item was just given. Read the example before checking.
+This example does not run. Find the line PostgreSQL stops at, and why.
 
 ```sql example bad-alias diagnostics=[{"code":"42703","line":1}]
 SELECT budget / 12 AS monthly, monthly * 2
@@ -64,21 +61,23 @@ FROM departments;
 ```
 
 :::question bad-alias example=bad-alias
-What happens when you check this example?
-- [ ] It returns monthly and a second column twice as large. :: The second item cannot see the name monthly, so the statement fails.
-- [x] PostgreSQL reports an error on line 1. :: monthly is a name for a result column. Items in the same SELECT list cannot use it (42703).
-- [ ] It returns one column, because the second is ignored. :: A bad name is an error. Nothing is ignored, and nothing is returned.
+Which error does PostgreSQL report?
+- [x] Line 1, 42703: column `monthly` does not exist. :: A name given with `AS` belongs to the result, and the other items in the same `SELECT` list cannot see it. Repeat the expression instead: `budget / 12 * 2`.
+- [ ] Line 1: a new name after `AS` must be in double quotes. :: Double quotes are needed only for names with spaces or capitals. `AS monthly` is fine.
+- [ ] Line 2: `departments` has no column called `budget`. :: It does, and the first item uses it without trouble. The problem is the second item.
 :::
-
-## Read the error {walkthrough}
-
-Check the example. Error 42703 says column "monthly" does not exist. A name given with AS belongs to the result, and the other items in the same SELECT list cannot see it. Repeat the expression instead: budget / 12 * 2.
-
-@example bad-alias
 
 ## Each value once
 
-SELECT DISTINCT removes duplicate rows from the result. With one column, each value appears once. With several columns, DISTINCT looks at the whole row, so a row is dropped only when every column matches another row.
+`SELECT DISTINCT` removes duplicate rows from the result.
+
+- With one column, each value appears once.
+- With several columns, `DISTINCT` looks at the whole row, so a row is dropped only when every column matches another row.
+
+
+## Count the distinct values {prediction}
+
+Six departments share a few locations. Predict how many rows come back.
 
 ```sql example locations
 SELECT DISTINCT location
@@ -95,12 +94,6 @@ Your query returned:
  Denver
 (3 rows)
 ```
-
-## Count the distinct values {prediction}
-
-Six departments share a few locations. Predict how many rows come back.
-
-@example locations
 
 :::question distinct-count example=locations
 How many rows come back?

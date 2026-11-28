@@ -7,7 +7,7 @@
     "type-pattern",
     "property-pattern"
   ],
-  "prompt": "Entry and its record types are supplied. Caption should return \"Soup (15 min)\" for a Ready entry, \"Soup (no estimate)\" for a Ready entry with 0 minutes, \"Salad blocked: no lettuce\" for a Blocked entry, and only the title for any other entry. The starter does not compile, and it is missing one case. Read the compiler error, then repair the method.",
+  "prompt": "`Entry` and its record types are supplied. `Caption` should return `\"Soup (15 min)\"` for a `Ready` entry, `\"Soup (no estimate)\"` for a `Ready` entry with 0 minutes, `\"Salad blocked: no lettuce\"` for a `Blocked` entry, and only the title for any other entry. The starter does not compile, and it is missing one case. Read the compiler error, then repair the method.",
   "hints": [
     "The error names an arm that can never run. Which arm above it already matches everything?",
     "Move the _ arm to the bottom. Then decide where a Ready entry with 0 minutes must be handled.",

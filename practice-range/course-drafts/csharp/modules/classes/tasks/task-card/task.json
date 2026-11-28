@@ -9,7 +9,7 @@
     "interpolation",
     "branch"
   ],
-  "prompt": "Complete the class `Book`. The constructor takes a title and a number of pages and stores them in `Title` and `Pages`. `Finished` starts as false, and `MarkFinished()` sets it to true. `Describe()` returns `\"Dune (400 pages)\"` for a book that is not finished and `\"Dune (finished)\"` for one that is.",
+  "prompt": "Write `public class Book`. Give it public get-only properties `string Title` and `int Pages`, and a public `bool Finished` property that only the class can change. Its public constructor `Book(string title, int pages)` stores the title and pages. `Finished` starts false. `public void MarkFinished()` sets it true. `public string Describe()` returns `\"Dune (400 pages)\"` for an unfinished book with that title and length, and `\"Dune (finished)\"` once finished.",
   "hints": [
     "Which members does the constructor have to fill in, and from which parameters?",
     "Property names start with a capital letter and parameter names do not. Title = title; stores the parameter in the property.",
@@ -28,7 +28,10 @@
     "new Book(\"Dune\", 30).Describe() == \"Dune (30 pages)\"",
     "new Book(\"Emma\", 0).Describe() == \"Emma (0 pages)\"",
     "Completed(\"Dune\", 30).Finished",
-    "Completed(\"Dune\", 30).Describe() == \"Dune (finished)\""
+    "Completed(\"Dune\", 30).Describe() == \"Dune (finished)\"",
+    "typeof(Book).GetProperty(\"Title\").GetSetMethod(true) == null",
+    "typeof(Book).GetProperty(\"Pages\").GetSetMethod(true) == null",
+    "typeof(Book).GetProperty(\"Finished\").GetSetMethod(true)?.IsPrivate == true"
   ],
   "checkLabels": [
     "Title must hold the title passed to the constructor.",
@@ -37,7 +40,10 @@
     "A book that is not finished must describe itself as \"Dune (30 pages)\".",
     "A book with 0 pages must still show its pages.",
     "After MarkFinished(), Finished must be true.",
-    "A completed book must describe itself as \"Dune (finished)\"."
+    "A completed book must describe itself as \"Dune (finished)\".",
+    "Title must be get-only.",
+    "Pages must be get-only.",
+    "Finished must have a private setter so callers cannot change it."
   ],
   "fixtures": [
     {
@@ -62,6 +68,15 @@
         "fixture": "cases",
         "kind": "result",
         "detail": "Check 7 failed"
+      }
+    },
+    {
+      "source": "wrong-public-setters.cs",
+      "misconception": "Gets the output right but allows callers to change every property.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "result",
+        "detail": "Check 8 failed"
       }
     }
   ],

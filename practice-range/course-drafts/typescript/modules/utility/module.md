@@ -59,17 +59,9 @@ start.x = 5;
 :::question readonly example=readonly
 Which line is an error?
 - [ ] Line 3, the spread :: Making a new object is fine. Only changing an existing field is blocked.
-- [x] Line 4, `start.x = 5` :: `x` is `readonly`, so it cannot be reassigned.
+- [x] Line 4, `start.x = 5` :: `x` is `readonly`, so it cannot be reassigned (TS2540). `Readonly` does not stop you from making a changed copy, though: `{ ...start, x: 5 }` on line 3 builds a new object, so nothing is reassigned. Keep the original and return a new object, as with the copies in Object types.
 - [ ] Line 2, creating `start` :: Setting fields when you create the object is allowed.
 :::
-
-## Readonly and copies {walkthrough}
-
-`Readonly` blocks `start.x = 5`, but it does not stop you from making a changed copy. `{ ...start, x: 5 }` builds a new object, so nothing is reassigned.
-
-This is the same idea as the copies in Object types: keep the original, return a new object.
-
-@example readonly
 
 ## A type from a function {prediction}
 

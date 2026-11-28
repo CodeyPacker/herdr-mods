@@ -8,7 +8,7 @@
     "dictionary",
     "record"
   ],
-  "prompt": "`Movie` and `Sample` are supplied. Write `public static Dictionary<string, int> MinutesByGenre(List<Movie> movies)`. For the movies that are not watched, return each genre with the total of their `Minutes`. A genre whose movies are all watched does not appear as a key.",
+  "prompt": "`Movie` and `Sample` are supplied. Write `public static Dictionary<string, int> MinutesByGenre(List<Movie> movies)`. For the movies that are not watched, return each genre with the total of their `Minutes`. A genre whose movies are all watched does not appear as a key. Use LINQ GroupBy to form the genre groups.",
   "hints": [
     "Which movies count at all? Decide that before grouping.",
     "Each genre needs one total, built from the Minutes of that genre's unwatched movies.",
@@ -18,7 +18,13 @@
   "solution": "solution.cs",
   "alternative": "alternative.cs",
   "mode": "members",
-  "rules": [],
+  "rules": [
+    {
+      "kind": "InvocationExpression",
+      "token": "GroupBy",
+      "message": "Use LINQ GroupBy to group the movies by genre."
+    }
+  ],
   "checks": [
     "Practice.MinutesByGenre(Sample.Movies())[\"Drama\"] == 30",
     "Practice.MinutesByGenre(Sample.Movies())[\"Comedy\"] == 45",
@@ -27,7 +33,7 @@
     "Practice.MinutesByGenre(new List<Movie>()).Count == 0"
   ],
   "checkLabels": [
-    "Drama's unwatched movies are 10 and 20 minutes, so her total must be 30.",
+    "Drama's unwatched movies are 10 and 20 minutes, so the total must be 30.",
     "Comedy's one unwatched movie is 45 minutes.",
     "Horror's only movie is watched, so Horror must not be a key.",
     "The sample movies must give exactly two genres.",
@@ -56,6 +62,15 @@
         "fixture": "tasks",
         "kind": "result",
         "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-manual-loop.cs",
+      "misconception": "Repeats the dictionary exercise instead of using LINQ grouping.",
+      "witness": {
+        "fixture": "tasks",
+        "kind": "syntax",
+        "detail": "Use LINQ GroupBy to group the movies by genre."
       }
     }
   ],

@@ -46,12 +46,6 @@
       ]
     },
     {
-      "kind": "walkthrough",
-      "title": "The newest came out first",
-      "text": "Three letters went on: a, b, c. The two pops returned c and then b, the newest first. Then d was pushed on top of a, so the stack held a and d.\n\n`pop` on an empty array returns `undefined` and does not fail. Code that uses a stack usually has to decide what an empty stack means: in the bracket exercise below it means a closing bracket with nothing to match.",
-      "example": "stack"
-    },
-    {
       "kind": "explanation",
       "title": "First in, first out",
       "text": "A **queue** gives back the item that has waited longest, like a line of people. The operations are **enqueue**, which adds at the back, and **dequeue**, which removes from the front.\n\nAn array can add at the back in one step with `push`. Removing from the front with `shift` is the trap: as the module on arrays showed, `shift` moves every remaining element, so it costs O(n). A queue that is emptied with `shift` costs O(n²) in total.\n\nThe fix is not to remove anything. Keep an index, `head`, that marks where the front of the queue is, and move the index forward. Reading the front and moving the index are both one step."
@@ -64,12 +58,6 @@
       "questions": [
         "queue-order"
       ]
-    },
-    {
-      "kind": "walkthrough",
-      "title": "The oldest came out first",
-      "text": "Reading `queue[head++]` twice returned a and then b, the oldest first, and moved `head` to 2. After d was added, the items still waiting were c and d.\n\nThe array itself still holds a and b. They are simply behind the head and never looked at again. The number of items waiting is the array's length minus `head`. The later module on graphs uses exactly this queue.",
-      "example": "queue"
     },
     {
       "kind": "modification",
@@ -107,7 +95,7 @@
         },
         {
           "text": "c b",
-          "feedback": "pop returns the newest item each time: c, then b."
+          "feedback": "`pop` returns the newest item each time: c, then b. Then d goes on top of a. `pop` on an empty array returns `undefined` and does not fail, so code that uses a stack has to decide what an empty stack means. In the bracket exercise it means a closing bracket with nothing to match."
         }
       ]
     },
@@ -119,7 +107,7 @@
       "choices": [
         {
           "text": "cd 2",
-          "feedback": "a and b have been taken from the front. c and d are waiting, which is two items."
+          "feedback": "Reading `queue[head++]` twice returns a and then b, the oldest first, and moves `head` to 2. The array still holds a and b, simply behind the head, never looked at again. The number waiting is the length minus `head`. The later module on graphs uses exactly this queue."
         },
         {
           "text": "abcd 4",

@@ -13,7 +13,16 @@ Some questions need an answer before they can be asked: which products cost more
 
 ## A query inside a query
 
-A subquery is a SELECT in brackets, used where a value is expected. PostgreSQL runs it and uses its result. A subquery that returns one row with one column acts as a single value, so price > (SELECT avg(price) FROM products) compares each price with the average. This is the way to use an aggregate in a filter, which WHERE alone cannot do.
+A **subquery** is a `SELECT` in brackets, used where a value is expected. PostgreSQL runs it and uses its result.
+
+- A subquery that returns one row with one column acts as a single value, so `price > (SELECT avg(price) FROM products)` compares each price with the average.
+- This is how to use an aggregate in a filter, which `WHERE` alone cannot do.
+- The subquery is worked out on every run, so the filter stays right when prices change, which a number typed into the query would not.
+
+
+## Compare with the average {prediction}
+
+The average product price is 269.67. The Office Chair costs 289.00 and the Soundbar 249.00. Predict the last row.
 
 ```sql example above
 SELECT name, price
@@ -37,28 +46,26 @@ Your query returned:
 (7 rows)
 ```
 
-## Compare with the average {prediction}
-
-The average product price is 269.67. The Office Chair costs 289.00 and the Soundbar 249.00. Predict the last row.
-
-@example above
-
 :::question above example=above
 What is the last row?
 - [ ] Soundbar, 249.00 :: 249.00 is below the average of 269.67, so it is not kept.
-- [x] Office Chair, 289.00 :: It is the lowest price above the average, and the rows are sorted from the highest price down.
+- [x] Office Chair, 289.00 :: The subquery runs first and gives one number, about 269.67. The outer query keeps the seven products priced above it, sorted from the highest down, so the cheapest of them, the Office Chair, is last.
 - [ ] Forge 16 Laptop, 1649.00 :: That is the first row. The sort is from the highest price down.
 :::
 
-## Two steps in one statement {walkthrough}
-
-The subquery runs first and gives one number, about 269.67. The outer query then keeps the products whose price is above it. Seven pass, and the cheapest of them, the Office Chair, is the last row. If prices change, the average is recomputed on every run, which a number typed into the query would not be.
-
-@example above
-
 ## Lists and existence
 
-A subquery can also return a column of values for IN: id IN (SELECT customer_id FROM orders). EXISTS asks a different question. It is true when its subquery returns at least one row, whatever that row holds. The subquery usually refers to the outer row, as in WHERE o.customer_id = c.id, and is then checked once for each outer row. That is called a correlated subquery. Unlike a join, EXISTS never repeats the outer row: a customer with three cancelled orders still appears once.
+A subquery can also return a column of values for `IN`: `id IN (SELECT customer_id FROM orders)`.
+
+`EXISTS` asks a different question. It is true when its subquery returns at least one row, whatever that row holds.
+
+- The subquery usually refers to the outer row, as in `WHERE o.customer_id = c.id`, and is then checked once for each outer row. That is called a **correlated subquery**.
+- Unlike a join, `EXISTS` never repeats the outer row: a customer with three cancelled orders still appears once.
+
+
+## Customers with a cancelled order {prediction}
+
+Ten orders were cancelled, and Ava cancelled three of them. Predict how many times Ava appears.
 
 ```sql example exists
 SELECT c.first_name
@@ -86,12 +93,6 @@ Your query returned:
 (7 rows)
 ```
 
-## Customers with a cancelled order {prediction}
-
-Ten orders were cancelled, and Ava cancelled three of them. Predict how many times Ava appears.
-
-@example exists
-
 :::question exists example=exists
 How many times does Ava appear?
 - [x] Once :: EXISTS is true or false for each customer. It never repeats the outer row.
@@ -101,7 +102,16 @@ How many times does Ava appear?
 
 ## NOT IN and NULL
 
-NOT IN has a trap. If the list contains a NULL, the test is never true for any row. The reason is the one from the NULL module: id NOT IN (2, NULL) asks whether id differs from every item, and comparing with NULL is unknown. referred_by is NULL for many customers, so a NOT IN over that column returns nothing. NOT EXISTS does not have this problem, and is the safer way to ask for rows with no related row.
+`NOT IN` has a trap. If the list contains a `NULL`, the test is never true for any row.
+
+- The reason is the one from the NULL module: `id NOT IN (2, NULL)` asks whether `id` differs from every item, and comparing with `NULL` is unknown.
+- `referred_by` is `NULL` for many customers, so a `NOT IN` over that column returns nothing.
+- `NOT EXISTS` does not have this problem, and is the safer way to ask for rows with no related row.
+
+
+## Count with NOT IN {prediction}
+
+Ten customers have referred somebody. Predict how many of the twenty customers this query counts.
 
 ```sql example not-in
 SELECT count(*) AS referred_nobody
@@ -117,12 +127,6 @@ Your query returned:
  0
 (1 row)
 ```
-
-## Count with NOT IN {prediction}
-
-Ten customers have referred somebody. Predict how many of the twenty customers this query counts.
-
-@example not-in
 
 :::question not-in example=not-in
 What count comes back?

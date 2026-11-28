@@ -1,1 +1,1 @@
-bool ready = false;
+// Write the declarations and code described in the prompt.

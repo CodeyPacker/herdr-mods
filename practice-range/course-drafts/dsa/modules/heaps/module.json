@@ -47,12 +47,6 @@
       ]
     },
     {
-      "kind": "walkthrough",
-      "title": "Every parent is smaller",
-      "text": "3 and 2 are the children of the root, 1. Then 7 and 4 are the children of 3, and 5 is the left child of 2. In every line the parent is the smaller number, which is the heap rule.\n\nNotice that the array is not sorted: 3 comes before 2. A heap keeps just enough order to know where the smallest is.",
-      "example": "shape"
-    },
-    {
       "kind": "explanation",
       "title": "Sift up and sift down",
       "text": "**To add a value**, put it at the end of the array, which is the next free place in the bottom level. It may now be smaller than its parent. While it is, swap the two and continue from the parent's position. This is called **sifting up**.\n\n**To remove the smallest**, take the root. To fill the hole, move the last element of the array to the root. It is probably too large for that place. While it is larger than its smaller child, swap it with that child and continue from there. This is **sifting down**.\n\nAlways swap with the **smaller** child when sifting down. The smaller child is about to become the parent of the other one, so it has to be the smaller of the two."
@@ -65,12 +59,6 @@
       "questions": [
         "sift-up"
       ]
-    },
-    {
-      "kind": "walkthrough",
-      "title": "Two swaps to the root",
-      "text": "0 went in at index 6. Its parent, at index 2, held 2, so they swapped. Then its parent at index 0 held 1, so they swapped again. At index 0 there is no parent, and the loop ended.\n\nSeven elements needed at most two swaps. A heap of a million elements needs at most twenty. Only the nodes on one path from a leaf to the root were touched.",
-      "example": "sift"
     },
     {
       "kind": "modification",
@@ -104,7 +92,7 @@
         },
         {
           "text": "5 has parent 2",
-          "feedback": "5 is at index 5, and Math.floor((5 - 1) / 2) is 2. Index 2 holds 2."
+          "feedback": "5 is at index 5, and `Math.floor((5 - 1) / 2)` is 2, which holds 2. In every line the parent is the smaller number, which is the heap rule. The array is not sorted, though: 3 comes before 2. A heap keeps just enough order to know where the smallest is."
         },
         {
           "text": "5 has parent 4",
@@ -120,7 +108,7 @@
       "choices": [
         {
           "text": "1 3 0 7 4 5 2",
-          "feedback": "0 starts at index 6 and swaps with its parent at index 2, which held 2."
+          "feedback": "0 starts at index 6, and its parent at index 2 holds 2, so they swap. Its next parent, at index 0, holds 1, so they swap again, and at the root the loop ends. Only one path from a leaf to the root is touched: seven elements need at most two swaps, and a million need at most twenty."
         },
         {
           "text": "0 3 1 7 4 5 2",

@@ -7,7 +7,7 @@
     "switch-expression",
     "comparison"
   ],
-  "prompt": "Order is supplied. Write public static string Lane(Order order). A order with 0 minutes goes to \"skip\", even when it is urgent. Any other urgent order goes to \"now\". A order under 30 minutes goes to \"quick\". Everything else goes to \"plan\".",
+  "prompt": "`Order` is supplied. Write `public static string Lane(Order order)`. An order with 0 minutes goes to `\"skip\"`, even when it is urgent. Any other urgent order goes to `\"now\"`. An order under 30 minutes goes to `\"quick\"`. Everything else goes to `\"plan\"`.",
   "hints": [
     "Two rules can apply to the same order. Which rule should win for an urgent order with 0 minutes?",
     "The first matching arm wins, so write the arms in the same order as the rules in the prompt.",

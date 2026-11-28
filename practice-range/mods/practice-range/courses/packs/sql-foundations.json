@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "0.2.0-preview.1",
+  "contentVersion": "0.3.0-preview.1",
   "id": "course:sql-foundations",
   "languageId": "sql",
   "runner": {
@@ -331,7 +331,8 @@
   ],
   "compatibility": {
     "fromVersions": [
-      "0.1.0-preview.1"
+      "0.1.0-preview.1",
+      "0.2.0-preview.1"
     ],
     "replacements": []
   },
@@ -538,8 +539,7 @@
         {
           "kind": "explanation",
           "title": "Tables, rows and columns",
-          "text": "A table holds one kind of thing. The departments table has one row for each department and one column for each fact about it: id, name, location and budget. A query asks for data. SELECT name, location FROM departments; says which columns you want and which table they come from. The semicolon ends the statement. SQL keywords such as SELECT and FROM can be written in any case. This course writes them in capitals so they stand out from table and column names. When you save an exercise, your SQL runs on a fresh copy of the practice database, so nothing you do is kept between checks. The file schema.sql beside your answer lists every table and every row. This course uses PostgreSQL.",
-          "example": "departments"
+          "text": "A **table** holds one kind of thing. The `departments` table has one **row** for each department and one **column** for each fact about it: `id`, `name`, `location` and `budget`.\n\nA **query** asks for data:\n\n```sql\nSELECT name, location FROM departments;\n```\n\n- `SELECT` says which columns you want, and `FROM` says which table they come from. The semicolon ends the statement.\n- Keywords such as `SELECT` and `FROM` can be written in any case. This course writes them in capitals so they stand out from table and column names.\n- When you save an exercise, your SQL runs on a fresh copy of the practice database, so nothing you do is kept between checks. The file `schema.sql` beside your answer lists every table and every row.\n\nThis course uses PostgreSQL."
         },
         {
           "kind": "prediction",
@@ -551,30 +551,18 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Read the result table",
-          "text": "The first line of a result names the columns, in the order the query listed them. Each line after that is one row. The last line counts the rows. The query asked for two of the four columns, and the table has six departments, so the result is two columns wide and six rows long. The rows came back in the order they were stored. A query that does not ask for an order is not promised one, which a later module deals with.",
-          "example": "departments"
-        },
-        {
           "kind": "prediction",
           "title": "Predict an error",
-          "text": "One column name in this query is misspelled. Read it before checking.",
+          "text": "One column name in this query is misspelled. Predict what happens when you check it.",
           "example": "typo",
           "questions": [
             "typo"
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Read the error",
-          "text": "Check the example. PostgreSQL reports error 42703: column \"locaton\" does not exist. The numbers after the file name are the line and the character where it found the problem. Nothing is returned when a statement has an error. The message often includes a hint with the name it thinks you meant. Start reading at the line it names.",
-          "example": "typo"
-        },
-        {
           "kind": "modification",
           "title": "Repair a query",
-          "text": "Save the starter as it is and read the error. Fix what it names and save again. There is more than one mistake.",
+          "text": "Save the starter as it is and read the error. An error looks like this:\n\n```text\nExercise.sql:1:14 - error 42703: column \"locaton\" does not exist\nHint from PostgreSQL: Perhaps you meant to reference the column \"departments.location\".\n```\n\n- `1:14` is the line and the character where PostgreSQL noticed the problem, and `42703` is the error code.\n- A hint, when there is one, often names what you meant.\n\nFix what the error names and save again. There is more than one mistake.",
           "task": "course:sql-foundations/task/save-fix-query"
         },
         {
@@ -597,7 +585,7 @@
             },
             {
               "text": "2 columns and 6 rows",
-              "feedback": "Two columns were asked for, and the table has one row per department."
+              "feedback": "The first line of a result names the columns, in the order the query listed them. Each line after that is one row, and the last line counts them. Two of the four columns were asked for, and the table has six departments. The rows came back in the order they were stored: a query that does not ask for an order is not promised one."
             },
             {
               "text": "2 columns and 1 row",
@@ -621,7 +609,7 @@
             },
             {
               "text": "PostgreSQL reports an error on line 1 and returns nothing.",
-              "feedback": "The misspelled column is on line 1, and the error names it (42703)."
+              "feedback": "One bad name stops the whole statement, so nothing is returned. The error, 42703, names the misspelled column and the line it is on."
             }
           ]
         }
@@ -789,8 +777,7 @@
         {
           "kind": "explanation",
           "title": "Columns can be computed",
-          "text": "Each item in the SELECT list produces one column of the result, worked out separately for every row. An item can be a column, or an expression such as budget / 12. +, -, * and / work on numbers. ROUND(value, 2) rounds to two decimal places. The || operator joins pieces of text, and text you type yourself goes in single quotes, as in first_name || ' ' || last_name. AS gives a result column a name: budget / 12 AS monthly_budget. A computed column without a name is shown as ?column?, which tells a reader nothing, so always name them. AS changes only the result. The table is not changed.",
-          "example": "monthly"
+          "text": "Each item in the `SELECT` list produces one column of the result, worked out separately for every row. An item can be a column, or an expression such as `budget / 12`.\n\n- `+`, `-`, `*` and `/` work on numbers. `ROUND(value, 2)` rounds to two decimal places.\n- `||` joins pieces of text. Text you type yourself goes in single quotes: `first_name || ' ' || last_name`.\n- `AS` gives a result column a name: `budget / 12 AS monthly_budget`. A computed column without a name is shown as `?column?`, which tells a reader nothing, so always name them.\n- `AS` changes only the result. The table is not changed."
         },
         {
           "kind": "prediction",
@@ -802,31 +789,18 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Follow one row",
-          "text": "The header shows the new names: department and monthly_budget. For the Sales row, budget is 1100000.00. Divided by 12 and rounded to two places that is 91666.67. Every row is worked out the same way, from its own budget.",
-          "example": "monthly"
-        },
-        {
           "kind": "prediction",
-          "title": "Use a new name too early",
-          "text": "The second item uses the name the first item was just given. Read the example before checking.",
+          "title": "Find the error",
+          "text": "This example does not run. Find the line PostgreSQL stops at, and why.",
           "example": "bad-alias",
           "questions": [
             "bad-alias"
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Read the error",
-          "text": "Check the example. Error 42703 says column \"monthly\" does not exist. A name given with AS belongs to the result, and the other items in the same SELECT list cannot see it. Repeat the expression instead: budget / 12 * 2.",
-          "example": "bad-alias"
-        },
-        {
           "kind": "explanation",
           "title": "Each value once",
-          "text": "SELECT DISTINCT removes duplicate rows from the result. With one column, each value appears once. With several columns, DISTINCT looks at the whole row, so a row is dropped only when every column matches another row.",
-          "example": "locations"
+          "text": "`SELECT DISTINCT` removes duplicate rows from the result.\n\n- With one column, each value appears once.\n- With several columns, `DISTINCT` looks at the whole row, so a row is dropped only when every column matches another row."
         },
         {
           "kind": "prediction",
@@ -859,7 +833,7 @@
           "choices": [
             {
               "text": "department | monthly_budget",
-              "feedback": "AS gave both columns new names, and the header shows them."
+              "feedback": "`AS` gave both columns new names, and the header shows them. Each row is then worked out from its own values: for Sales, `budget` is 1100000.00, which divided by 12 and rounded to two places is 91666.67."
             },
             {
               "text": "name | budget",
@@ -874,20 +848,20 @@
         {
           "id": "bad-alias",
           "example": "bad-alias",
-          "prompt": "What happens when you check this example?",
-          "answer": 1,
+          "prompt": "Which error does PostgreSQL report?",
+          "answer": 0,
           "choices": [
             {
-              "text": "It returns monthly and a second column twice as large.",
-              "feedback": "The second item cannot see the name monthly, so the statement fails."
+              "text": "Line 1, 42703: column `monthly` does not exist.",
+              "feedback": "A name given with `AS` belongs to the result, and the other items in the same `SELECT` list cannot see it. Repeat the expression instead: `budget / 12 * 2`."
             },
             {
-              "text": "PostgreSQL reports an error on line 1.",
-              "feedback": "monthly is a name for a result column. Items in the same SELECT list cannot use it (42703)."
+              "text": "Line 1: a new name after `AS` must be in double quotes.",
+              "feedback": "Double quotes are needed only for names with spaces or capitals. `AS monthly` is fine."
             },
             {
-              "text": "It returns one column, because the second is ignored.",
-              "feedback": "A bad name is an error. Nothing is ignored, and nothing is returned."
+              "text": "Line 2: `departments` has no column called `budget`.",
+              "feedback": "It does, and the first item uses it without trouble. The problem is the second item."
             }
           ]
         },
@@ -1092,8 +1066,7 @@
         {
           "kind": "explanation",
           "title": "Keep the rows that pass a test",
-          "text": "WHERE comes after FROM and holds a condition. A row is kept only when the condition is true for it. The comparison operators are = (equal), <> (not equal), <, <=, > and >=. Text values go in single quotes: country = 'USA'. Double quotes mean something else in SQL. They mark a name, such as a column, so \"USA\" would be read as a column called USA.",
-          "example": "sales"
+          "text": "`WHERE` comes after `FROM` and holds a condition. A row is kept only when the condition is true for it.\n\n- The comparison operators are `=` (equal), `<>` (not equal), `<`, `<=`, `>` and `>=`.\n- Text values go in single quotes: `country = 'USA'`.\n- Double quotes mean something else in SQL. They mark a name, such as a column, so `\"USA\"` would be read as a column called USA."
         },
         {
           "kind": "prediction",
@@ -1105,16 +1078,9 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Follow the filter",
-          "text": "The employees table has 24 rows. The condition department_id = 3 is tested on each one, and four pass: Priya, Hannah, Ravi and Julia. The SELECT list then decides which of their columns are shown. A column used in WHERE does not have to be in the SELECT list.",
-          "example": "sales"
-        },
-        {
           "kind": "explanation",
           "title": "Combine tests",
-          "text": "AND keeps a row only when both sides are true. OR keeps it when at least one side is true. NOT flips a test. When a condition mixes them, AND is applied before OR, the way multiplication comes before addition. Use brackets to say what you mean. Three shorter forms are common. department_id IN (4, 5) is true when the value is any one in the list. price BETWEEN 50 AND 100 includes both ends. LIKE matches text against a pattern, where % stands for any run of characters, including none: last_name LIKE 'S%' matches names that start with S, and title LIKE '%Engineer%' matches titles that contain Engineer.",
-          "example": "precedence"
+          "text": "`AND` keeps a row only when both sides are true. `OR` keeps it when at least one side is true. `NOT` flips a test.\n\nWhen a condition mixes them, `AND` is applied before `OR`, the way multiplication comes before addition. Use brackets to say what you mean.\n\nThree shorter forms are common:\n\n| Form | True when |\n| --- | --- |\n| `department_id IN (4, 5)` | the value is any one in the list |\n| `price BETWEEN 50 AND 100` | the value is in the range, both ends included |\n| `last_name LIKE 'S%'` | the text matches the pattern. `%` stands for any run of characters, including none, so `title LIKE '%Engineer%'` matches titles that contain Engineer |"
         },
         {
           "kind": "prediction",
@@ -1126,25 +1092,13 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Follow AND before OR",
-          "text": "AND binds first, so the condition reads as: department 5, or (department 4 and salary above 90000). Everyone in department 5 is kept whatever they earn. From department 4, only Tom and Laura pass the salary test. Kofi, on 88000, is left out. With brackets around the OR, the salary test would apply to both departments.",
-          "example": "precedence"
-        },
-        {
           "kind": "prediction",
-          "title": "Double quotes around text",
-          "text": "The city is written in double quotes. Read the example before checking.",
+          "title": "Find the error",
+          "text": "This example does not run. Find the line PostgreSQL stops at, and why.",
           "example": "quotes",
           "questions": [
             "quotes"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Read the error",
-          "text": "Check the example. Error 42703 says column \"Denver\" does not exist. Double quotes mark a name, so PostgreSQL looked for a column called Denver. Write the text value in single quotes: city = 'Denver'.",
-          "example": "quotes"
         },
         {
           "kind": "modification",
@@ -1172,7 +1126,7 @@
             },
             {
               "text": "4",
-              "feedback": "Four employees are in department 3."
+              "feedback": "The condition `department_id = 3` is tested on each of the 24 rows, and four pass: Priya, Hannah, Ravi and Julia. The `SELECT` list then decides which of their columns are shown. A column used in `WHERE` does not have to be in the `SELECT` list."
             },
             {
               "text": "1",
@@ -1188,7 +1142,7 @@
           "choices": [
             {
               "text": "Tom and Laura",
-              "feedback": "AND is applied first, so the salary test belongs to department 4 only, and Kofi earns less than 90000."
+              "feedback": "`AND` binds first, so the condition reads as: department 5, or (department 4 and salary above 90000). Everyone in department 5 is kept whatever they earn. From department 4, Kofi, on 88000, is left out. With brackets around the `OR`, the salary test would apply to both departments."
             },
             {
               "text": "Tom, Kofi and Laura",
@@ -1203,20 +1157,20 @@
         {
           "id": "quotes",
           "example": "quotes",
-          "prompt": "What happens when you check this example?",
-          "answer": 2,
+          "prompt": "Which error does PostgreSQL report?",
+          "answer": 1,
           "choices": [
             {
-              "text": "It returns the customers who live in Denver.",
-              "feedback": "Double quotes do not make a text value. They make a name."
+              "text": "Line 1: `first_name` must be in quotes.",
+              "feedback": "Column names need no quotes. Line 1 is fine."
             },
             {
-              "text": "It returns no rows.",
-              "feedback": "The statement does not run at all. It has an error."
+              "text": "Line 3, 42703: column `Denver` does not exist.",
+              "feedback": "Double quotes mark a name, so PostgreSQL looked for a column called Denver. Write the text value in single quotes: `city = 'Denver'`."
             },
             {
-              "text": "PostgreSQL reports an error on line 3.",
-              "feedback": "\"Denver\" is read as a column name, and there is no such column (42703)."
+              "text": "Line 3: `=` cannot compare text.",
+              "feedback": "`=` compares text as well as numbers. The problem is what is on its right."
             }
           ]
         }
@@ -1415,8 +1369,7 @@
         {
           "kind": "explanation",
           "title": "NULL means unknown",
-          "text": "NULL marks a value that is missing or unknown. It is not zero and it is not empty text. Because the value is unknown, a comparison with it is unknown too: email = NULL is never true, not even for a row whose email is NULL. WHERE keeps a row only when its condition is true, so such a row is dropped. To test for a missing value use IS NULL, and IS NOT NULL for the opposite.",
-          "example": "equals-null"
+          "text": "`NULL` marks a value that is missing or unknown. It is not zero, and it is not empty text.\n\n- Because the value is unknown, a comparison with it is unknown too: `email = NULL` is never true, not even for a row whose `email` is `NULL`.\n- `WHERE` keeps a row only when its condition is true, so such a row is dropped.\n- To test for a missing value use `IS NULL`, and `IS NOT NULL` for the opposite."
         },
         {
           "kind": "prediction",
@@ -1428,31 +1381,18 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Why nothing came back",
-          "text": "The result has 0 rows. For every row, email = NULL is unknown, and unknown is not true. The fix is WHERE email IS NULL, which returns the three customers. The same trap works in the other direction: a test such as email <> 'noah.kim@example.com' also drops the three rows with no email, because the comparison is unknown for them.",
-          "example": "equals-null"
-        },
-        {
           "kind": "explanation",
           "title": "NULL spreads through calculations",
-          "text": "Arithmetic with NULL gives NULL: an unknown bonus percentage makes an unknown bonus. COALESCE(a, b) returns a when it is not NULL and b when it is. COALESCE(bonus_pct, 0) reads as: the bonus percentage, or 0 when there is none. Use it when a missing value should count as something. A real 0 and real empty text are values, and COALESCE leaves them alone.",
-          "example": "bonus"
+          "text": "Arithmetic with `NULL` gives `NULL`: an unknown bonus percentage makes an unknown bonus.\n\n- `COALESCE(a, b)` returns `a` when it is not `NULL`, and `b` when it is. `COALESCE(bonus_pct, 0)` reads as: the bonus percentage, or 0 when there is none.\n- Use it when a missing value should count as something.\n- A real 0 and real empty text are values, and `COALESCE` leaves them alone."
         },
         {
           "kind": "prediction",
           "title": "Calculate with a missing value",
-          "text": "Mei has no bonus_pct. Predict what the bonus and pct columns show for her.",
+          "text": "Mei has no `bonus_pct`. Predict what the `bonus` and `pct` columns show for her.",
           "example": "bonus",
           "questions": [
             "null-math"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Follow the two columns",
-          "text": "Pete has a bonus_pct of 6.00, so his bonus is 5160. For Mei the percentage is NULL, so the multiplication is NULL and so is the rounded result. The pct column uses COALESCE, so it shows 0 where the percentage is missing and the real value where there is one.",
-          "example": "bonus"
         },
         {
           "kind": "prediction",
@@ -1485,7 +1425,7 @@
           "choices": [
             {
               "text": "0",
-              "feedback": "A comparison with NULL is unknown, never true, so no row passes."
+              "feedback": "For every row, `email = NULL` is unknown, and unknown is not true. The fix is `WHERE email IS NULL`, which returns the three customers."
             },
             {
               "text": "3",
@@ -1513,7 +1453,7 @@
             },
             {
               "text": "NULL and 0",
-              "feedback": "Arithmetic with NULL gives NULL, and COALESCE supplies 0 for the missing percentage."
+              "feedback": "For Mei the percentage is `NULL`, so the multiplication is `NULL` and so is the rounded result. Pete, with 6.00, gets 5160. The `pct` column uses `COALESCE`, so it shows 0 where the percentage is missing and the real value where there is one."
             }
           ]
         },
@@ -1529,7 +1469,7 @@
             },
             {
               "text": "16",
-              "feedback": "One customer has that email, and three have none. Neither group passes the test."
+              "feedback": "One customer has that email, so the test is false for them. For the three with no email, `<>` is unknown, and unknown is not true, so they are dropped too. To keep them, add `OR email IS NULL`."
             },
             {
               "text": "20",
@@ -1711,29 +1651,21 @@
         {
           "kind": "explanation",
           "title": "Ask for an order",
-          "text": "ORDER BY comes after WHERE and names the column to sort by. The default direction is ascending: smallest first, A before Z, earliest date first. DESC reverses it. LIMIT 3 keeps only the first three rows, and it is applied after sorting, so ORDER BY price DESC LIMIT 3 means the three most expensive. Without ORDER BY the rows can come back in any order, and LIMIT then keeps an arbitrary three.",
-          "example": "top"
+          "text": "`ORDER BY` comes after `WHERE` and names the column to sort by.\n\n- The default direction is ascending: smallest first, A before Z, earliest date first. `DESC` reverses it.\n- `LIMIT 3` keeps only the first three rows, and it is applied after sorting, so `ORDER BY price DESC LIMIT 3` means the three most expensive.\n- Without `ORDER BY` the rows can come back in any order, and `LIMIT` then keeps an arbitrary three."
         },
         {
           "kind": "prediction",
           "title": "Predict the first row",
-          "text": "Read the ORDER BY and LIMIT, then predict the first row.",
+          "text": "Read the `ORDER BY` and `LIMIT`, then predict the first row.",
           "example": "top",
           "questions": [
             "top-row"
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Sort, then cut",
-          "text": "All 24 products are sorted by price, highest first, and then the first three are kept. The Forge 16 Laptop at 1649.00 is the most expensive, so it comes first.",
-          "example": "top"
-        },
-        {
           "kind": "explanation",
           "title": "More than one sort key",
-          "text": "ORDER BY can list several columns. Rows are sorted by the first one, and rows that tie on it are sorted by the next. Each column has its own direction: ORDER BY country, signup_date DESC sorts countries A to Z and, inside each country, newest signup first. When rows can tie, add another column to the ORDER BY so the order is fully decided.",
-          "example": "two-keys"
+          "text": "`ORDER BY` can list several columns. Rows are sorted by the first one, and rows that tie on it are sorted by the next.\n\n- Each column has its own direction: `ORDER BY country, signup_date DESC` sorts countries A to Z and, inside each country, newest signup first.\n- When rows can tie, add another column so the order is fully decided."
         },
         {
           "kind": "prediction",
@@ -1747,13 +1679,12 @@
         {
           "kind": "explanation",
           "title": "Where NULL lands",
-          "text": "PostgreSQL sorts NULL as if it were larger than every value. In ascending order NULLs come last. In descending order they come first, which is often a surprise. Say what you want with NULLS LAST or NULLS FIRST after the column, or filter the NULL rows out.",
-          "example": "nulls"
+          "text": "PostgreSQL sorts `NULL` as if it were larger than every value.\n\n- In ascending order `NULL`s come last. In descending order they come first, which is often a surprise.\n- Say what you want with `NULLS LAST` or `NULLS FIRST` after the column, or filter the `NULL` rows out."
         },
         {
           "kind": "prediction",
           "title": "Sort a column with a gap",
-          "text": "Kofi has no bonus_pct. Predict the first row.",
+          "text": "Kofi has no `bonus_pct`. Predict the first row.",
           "example": "nulls",
           "questions": [
             "nulls-first"
@@ -1781,7 +1712,7 @@
           "choices": [
             {
               "text": "Forge 16 Laptop, 1649.00",
-              "feedback": "DESC puts the highest price first, and LIMIT keeps the top three."
+              "feedback": "All 24 products are sorted by price, highest first, and then the first three are kept. The Forge 16 Laptop is the most expensive, so it comes first."
             },
             {
               "text": "Quiet Harbor, 14.50",
@@ -2031,8 +1962,7 @@
         {
           "kind": "explanation",
           "title": "Many rows, one value",
-          "text": "An aggregate function takes a whole column of values and returns one. count(*) counts rows. sum(stock) adds values up. avg(price) is the average, min and max are the smallest and largest. A query whose SELECT list holds only aggregates returns exactly one row. WHERE is applied first, so the aggregates see only the rows that passed it. count has three forms. count(*) counts rows. count(column) counts the rows where that column is not NULL. count(DISTINCT column) counts the different values.",
-          "example": "counts"
+          "text": "An **aggregate function** takes a whole column of values and returns one.\n\n| Function | Returns |\n| --- | --- |\n| `count(*)` | the number of rows |\n| `count(column)` | the number of rows where that column is not `NULL` |\n| `count(DISTINCT column)` | the number of different values |\n| `sum(stock)`, `avg(price)` | the total and the average |\n| `min(price)`, `max(price)` | the smallest and the largest |\n\n- A query whose `SELECT` list holds only aggregates returns exactly one row.\n- `WHERE` is applied first, so the aggregates see only the rows that passed it."
         },
         {
           "kind": "prediction",
@@ -2044,31 +1974,18 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Rows against values",
-          "text": "There are 24 product rows, so count(*) is 24. count(category_id) skips the one row where category_id is NULL and gives 23. min and max look at every price and return 14.50 and 1649.00. All four answers sit in a single result row.",
-          "example": "counts"
-        },
-        {
           "kind": "explanation",
           "title": "Aggregates skip NULL",
-          "text": "sum, avg, min and max ignore NULL values. For avg that changes the answer, because a skipped row does not count toward the number it divides by. avg(bonus_pct) is the average among employees who have a bonus. To count the others as 0, give them a value first: avg(COALESCE(bonus_pct, 0)).",
-          "example": "averages"
+          "text": "`sum`, `avg`, `min` and `max` ignore `NULL` values.\n\n- For `avg` that changes the answer, because a skipped row does not count toward the number it divides by. `avg(bonus_pct)` is the average among employees who have a bonus.\n- To count the others as 0, give them a value first: `avg(COALESCE(bonus_pct, 0))`."
         },
         {
           "kind": "prediction",
           "title": "Two averages",
-          "text": "15 of the 24 employees have a bonus_pct. Predict which average is larger.",
+          "text": "15 of the 24 employees have a `bonus_pct`. Predict which average is larger.",
           "example": "averages",
           "questions": [
             "two-averages"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "What each average divides by",
-          "text": "avg_bonus is 12.33: the 15 known percentages added up and divided by 15. avg_all is 7.71: the same total divided by 24, because COALESCE turned the nine missing values into 0. Neither is wrong. They answer different questions, so decide which one the request means.",
-          "example": "averages"
         },
         {
           "kind": "prediction",
@@ -2080,25 +1997,13 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Zero rows still give one row",
-          "text": "The result still has one row. count(*) of nothing is 0. sum of nothing is NULL, not 0, because there were no values to add. The same holds for avg, min and max. Wrap the sum in COALESCE when a report needs 0.",
-          "example": "empty"
-        },
-        {
           "kind": "prediction",
-          "title": "A column beside an aggregate",
-          "text": "This query asks for a product name next to the highest price. Read it before checking.",
+          "title": "Find the error",
+          "text": "This example does not run. Find the line PostgreSQL stops at, and why.",
           "example": "mix",
           "questions": [
             "mix"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Read the error",
-          "text": "Check the example. Error 42803 says the column must appear in the GROUP BY clause or be used in an aggregate function. max(price) produces one value for the whole table, but name has 24 values, and SQL will not guess which one you want. The next module introduces GROUP BY, and a later one shows how to get the row that holds the maximum.",
-          "example": "mix"
         },
         {
           "kind": "modification",
@@ -2126,7 +2031,7 @@
             },
             {
               "text": "24 and 23",
-              "feedback": "count(*) counts every row. count(category_id) counts only the rows that have a category."
+              "feedback": "There are 24 product rows, so `count(*)` is 24. `count(category_id)` skips the one row where `category_id` is `NULL` and gives 23. `min` and `max` look at every price, and all four answers sit in a single result row."
             },
             {
               "text": "23 and 23",
@@ -2142,7 +2047,7 @@
           "choices": [
             {
               "text": "avg_bonus",
-              "feedback": "It divides the total by the 15 employees who have a bonus. avg_all divides the same total by all 24."
+              "feedback": "`avg_bonus` is 12.33: the 15 known percentages added up and divided by 15. `avg_all` is 7.71: the same total divided by 24, because `COALESCE` turned the nine missing values into 0. Neither is wrong. They answer different questions, so decide which one the request means."
             },
             {
               "text": "avg_all",
@@ -2170,27 +2075,27 @@
             },
             {
               "text": "0 and NULL",
-              "feedback": "count of nothing is 0. sum of nothing is NULL."
+              "feedback": "A query with only aggregates still returns one row. `count(*)` of nothing is 0. `sum` of nothing is `NULL`, not 0, because there were no values to add, and the same holds for `avg`, `min` and `max`. Wrap the sum in `COALESCE` when a report needs 0."
             }
           ]
         },
         {
           "id": "mix",
           "example": "mix",
-          "prompt": "What happens when you check this example?",
-          "answer": 1,
+          "prompt": "Which error does PostgreSQL report?",
+          "answer": 0,
           "choices": [
             {
-              "text": "It returns the most expensive product and its price.",
-              "feedback": "max(price) says nothing about which row's name to show."
+              "text": "Line 1, 42803: `name` must be grouped or used in an aggregate.",
+              "feedback": "`max(price)` produces one value for the whole table, but `name` has 24 values, and SQL will not guess which one you want. The next module introduces `GROUP BY`, and a later one shows how to get the row that holds the maximum."
             },
             {
-              "text": "PostgreSQL reports an error on line 1.",
-              "feedback": "name has many values and max(price) has one, so the two cannot share a row (42803)."
+              "text": "Line 1: `max` works only on whole numbers.",
+              "feedback": "`max` works on any values that can be compared, including prices with a fraction."
             },
             {
-              "text": "It returns 24 rows, each with the highest price.",
-              "feedback": "An aggregate collapses the table to one row. A plain column beside it is an error."
+              "text": "Line 2: `products` must be grouped before `max` can read it.",
+              "feedback": "An aggregate can read a whole table without `GROUP BY`. The problem is the plain column beside it."
             }
           ]
         }
@@ -2386,8 +2291,7 @@
         {
           "kind": "explanation",
           "title": "One row per group",
-          "text": "GROUP BY country sorts the rows into groups that share a country, then returns one row for each group. The SELECT list of a grouped query can hold two kinds of thing: the columns you grouped by, and aggregates. Each aggregate is worked out separately for every group. A plain column that is not in the GROUP BY is an error, for the same reason as in the last module: a group has many values of it.",
-          "example": "countries"
+          "text": "`GROUP BY country` sorts the rows into groups that share a country, then returns one row for each group.\n\n- The `SELECT` list of a grouped query can hold two kinds of thing: the columns you grouped by, and aggregates. Each aggregate is worked out separately for every group.\n- A plain column that is not in the `GROUP BY` is an error, for the same reason as in the last module: a group has many values of it.\n- `ORDER BY` runs last, and it can sort by an aggregate or by its alias."
         },
         {
           "kind": "prediction",
@@ -2399,46 +2303,27 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Follow the groups",
-          "text": "There is one row per country, so nine rows. count(*) is counted inside each group: 7 customers in the USA, 3 in Canada, and so on. ORDER BY runs last and can sort by an aggregate or by its alias. Here it puts the largest group first and breaks ties by country name.",
-          "example": "countries"
-        },
-        {
           "kind": "explanation",
           "title": "WHERE before, HAVING after",
-          "text": "A grouped query can filter at two points. WHERE filters rows before they are grouped, so it cannot use aggregates. HAVING filters the groups after the aggregates are worked out, so it can. The clauses are written in this order: SELECT, FROM, WHERE, GROUP BY, HAVING, ORDER BY.",
-          "example": "having"
+          "text": "A grouped query can filter at two points.\n\n- `WHERE` filters rows before they are grouped, so it cannot use aggregates.\n- `HAVING` filters the groups after the aggregates are worked out, so it can.\n\nThe clauses are written in this order: `SELECT`, `FROM`, `WHERE`, `GROUP BY`, `HAVING`, `ORDER BY`."
         },
         {
           "kind": "prediction",
           "title": "Keep the large groups",
-          "text": "Departments have 1, 11, 4, 3 and 4 employees, and one employee has no department. Predict which department_id values appear.",
+          "text": "Departments have 1, 11, 4, 3 and 4 employees, and one employee has no department. Predict which `department_id` values appear.",
           "example": "having",
           "questions": [
             "having"
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Follow the HAVING",
-          "text": "The rows are grouped by department_id, and count(*) and the average salary are worked out for each group. HAVING then keeps the groups with at least four rows: departments 2, 3 and 5. The group of one employee with a NULL department_id exists too, and is dropped with the other small groups.",
-          "example": "having"
-        },
-        {
           "kind": "prediction",
-          "title": "An aggregate in WHERE",
-          "text": "This query tries to keep the large groups with WHERE. Read it before checking.",
+          "title": "Find the error",
+          "text": "This example does not run. Find the line PostgreSQL stops at, and why.",
           "example": "bad-where",
           "questions": [
             "bad-where"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Read the error",
-          "text": "Check the example. Error 42803 says aggregate functions are not allowed in WHERE. WHERE runs before the groups exist, so there is nothing to count yet. Move the test to HAVING, after GROUP BY.",
-          "example": "bad-where"
         },
         {
           "kind": "modification",
@@ -2466,7 +2351,7 @@
             },
             {
               "text": "9",
-              "feedback": "There is one row for each country."
+              "feedback": "There is one row per country. `count(*)` is counted inside each group: 7 customers in the USA, 3 in Canada, and so on. Here `ORDER BY` puts the largest group first and breaks ties by country name."
             },
             {
               "text": "1",
@@ -2482,7 +2367,7 @@
           "choices": [
             {
               "text": "2, 3 and 5",
-              "feedback": "Those departments have 11, 4 and 4 employees. HAVING keeps groups of four or more."
+              "feedback": "The rows are grouped by `department_id`, and `count(*)` is worked out for each group. `HAVING` then keeps the groups with at least four rows. The group of one employee with a `NULL` `department_id` exists too, and is dropped with the other small groups."
             },
             {
               "text": "2 only",
@@ -2497,20 +2382,20 @@
         {
           "id": "bad-where",
           "example": "bad-where",
-          "prompt": "What happens when you check this example?",
-          "answer": 2,
+          "prompt": "Which error does PostgreSQL report?",
+          "answer": 1,
           "choices": [
             {
-              "text": "It returns the countries with more than two customers.",
-              "feedback": "WHERE cannot use count(*). The statement fails."
+              "text": "Line 1: `count(*)` cannot appear beside a grouped column.",
+              "feedback": "In a grouped query, the `SELECT` list can hold the grouped column and aggregates. Line 1 is fine."
             },
             {
-              "text": "It returns every country.",
-              "feedback": "The statement does not run. An aggregate in WHERE is an error."
+              "text": "Line 3, 42803: aggregate functions are not allowed in `WHERE`.",
+              "feedback": "`WHERE` runs before the groups exist, so there is nothing to count yet. Move the test to `HAVING`, after `GROUP BY`."
             },
             {
-              "text": "PostgreSQL reports an error on line 3.",
-              "feedback": "WHERE runs before grouping, so it cannot use an aggregate (42803). The test belongs in HAVING."
+              "text": "Line 4: `GROUP BY` must come before `WHERE`.",
+              "feedback": "`WHERE` comes before `GROUP BY`. The order is right, but the test inside `WHERE` is not allowed there."
             }
           ]
         }
@@ -2710,8 +2595,7 @@
         {
           "kind": "explanation",
           "title": "Keys link tables",
-          "text": "Every department has an id, its primary key. An employee row stores the id of its department in department_id, a foreign key. JOIN departments ON departments.id = employees.department_id pairs each employee row with the department row whose id matches. The result has the columns of both tables. Because both tables have a column called id and one called name, write the table in front: departments.name. An alias keeps that short. employees AS e lets you write e.first_name.",
-          "example": "chicago"
+          "text": "Every department has an `id`, its **primary key**. An employee row stores the id of its department in `department_id`, a **foreign key**.\n\n```sql\nJOIN departments ON departments.id = employees.department_id\n```\n\n- This pairs each employee row with the department row whose `id` matches. The result has the columns of both tables, and `WHERE` can test a column from either.\n- Both tables have a column called `id` and one called `name`, so write the table in front: `departments.name`.\n- An alias keeps that short: `employees AS e` lets you write `e.first_name`."
         },
         {
           "kind": "prediction",
@@ -2723,45 +2607,27 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Follow one pair",
-          "text": "Hannah's row has department_id 3. The join finds the department with id 3, Sales, and puts the two rows together. WHERE can then test a column from either table, here the department's location. Seven employees work in a Chicago department. The department's name came from one table and the first name from the other.",
-          "example": "chicago"
-        },
-        {
           "kind": "prediction",
           "title": "A row with no match",
-          "text": "There are 24 employees. One of them, Alex, has no department_id. Predict the count.",
+          "text": "There are 24 employees. One of them, Alex, has no `department_id`. Predict the count.",
           "example": "matched",
           "questions": [
             "matched"
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "An inner join keeps matches only",
-          "text": "The count is 23. A plain JOIN is an inner join: a row appears only when the ON condition is true for some row of the other table. Alex's department_id is NULL, which matches nothing, so Alex is left out without any warning. The next module shows how to keep such rows.",
-          "example": "matched"
-        },
-        {
           "kind": "prediction",
-          "title": "A shared column name",
-          "text": "Both tables have an id and a name. Read the example before checking.",
+          "title": "Find the error",
+          "text": "This example does not run. Find the line PostgreSQL stops at, and why.",
           "example": "ambiguous",
           "questions": [
             "ambiguous"
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Read the error",
-          "text": "Check the example. Error 42702 says the column reference \"id\" is ambiguous. After the join there are two columns called id, and PostgreSQL will not pick one for you. Put the table name or its alias in front.",
-          "example": "ambiguous"
-        },
-        {
           "kind": "explanation",
           "title": "More than two tables",
-          "text": "Joins chain. Each JOIN adds one table and has its own ON condition linking it to a table that is already there. An assignment row holds an employee_id and a project_id, so joining assignments to employees and then to projects turns two ids into a name and a project title."
+          "text": "Joins chain. Each `JOIN` adds one table and has its own `ON` condition linking it to a table that is already there.\n\nAn assignment row holds an `employee_id` and a `project_id`, so joining `assignments` to `employees` and then to `projects` turns two ids into a name and a project title."
         },
         {
           "kind": "modification",
@@ -2793,7 +2659,7 @@
             },
             {
               "text": "7",
-              "feedback": "Four people work in Sales and three in Marketing, and both are in Chicago."
+              "feedback": "Hannah's row has `department_id` 3, so the join pairs it with Sales, the department with id 3. `WHERE` then tests the department's location. Seven employees work in a Chicago department, and each row takes its first name from one table and the department name from the other."
             }
           ]
         },
@@ -2805,7 +2671,7 @@
           "choices": [
             {
               "text": "23",
-              "feedback": "Alex has no department_id, so no department row matches, and an inner join drops the row."
+              "feedback": "A plain `JOIN` is an **inner join**: a row appears only when the `ON` condition is true for some row of the other table. Alex's `department_id` is `NULL`, which matches nothing, so Alex is left out without any warning. The next module shows how to keep such rows."
             },
             {
               "text": "24",
@@ -2820,20 +2686,20 @@
         {
           "id": "ambiguous",
           "example": "ambiguous",
-          "prompt": "What happens when you check this example?",
-          "answer": 1,
+          "prompt": "Which error does PostgreSQL report?",
+          "answer": 0,
           "choices": [
             {
-              "text": "It returns the employee ids and department names.",
-              "feedback": "PostgreSQL does not guess which table a shared name belongs to."
+              "text": "Line 1, 42702: the column reference `id` is ambiguous.",
+              "feedback": "After the join there are two columns called `id`, and PostgreSQL will not pick one for you. Put the table name or its alias in front: `employees.id`."
             },
             {
-              "text": "PostgreSQL reports an error on line 1.",
-              "feedback": "Both tables have an id column, so the bare name is ambiguous (42702)."
+              "text": "Line 2: `employees` needs an alias before it can be joined.",
+              "feedback": "An alias is a convenience, never required. Line 2 is fine."
             },
             {
-              "text": "It returns both id columns and both name columns.",
-              "feedback": "A bare name must point at exactly one column. With two candidates it is an error."
+              "text": "Line 3: the `ON` condition compares two different tables.",
+              "feedback": "That is exactly what `ON` is for. The condition is right."
             }
           ]
         }
@@ -3021,29 +2887,21 @@
         {
           "kind": "explanation",
           "title": "Keep every row of the left table",
-          "text": "FROM employees AS e LEFT JOIN departments AS d keeps every employee. The table written before LEFT JOIN is the left table, and all its rows survive. When an employee has a matching department, the row looks like an inner join's row. When there is no match, the row still appears, and every column from the right table is NULL.",
-          "example": "left"
+          "text": "`FROM employees AS e LEFT JOIN departments AS d` keeps every employee. The table written before `LEFT JOIN` is the **left table**, and all its rows survive.\n\n- When an employee has a matching department, the row looks like an inner join's row.\n- When there is no match, the row still appears, and every column from the right table is `NULL`. That `NULL` was not stored anywhere: it is how a `LEFT JOIN` marks that nothing matched."
         },
         {
           "kind": "prediction",
           "title": "A row with no match",
-          "text": "Alex has no department_id. Predict what the department column shows for Alex.",
+          "text": "Alex has no `department_id`. Predict what the department column shows for Alex.",
           "example": "left",
           "questions": [
             "left-null"
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Read the NULL",
-          "text": "Yusuf and Mila are paired with Engineering. Alex has no match, so the row is kept and d.name is NULL. That NULL does not come from a stored value. It is how a LEFT JOIN marks that nothing matched. COALESCE can turn it into readable text.",
-          "example": "left"
-        },
-        {
           "kind": "explanation",
           "title": "Find the rows with no match",
-          "text": "The same NULL lets you search for unmatched rows. Join with LEFT JOIN, then keep the rows where a column from the right table IS NULL. Use a column that is never NULL in a real row, such as the primary key. Customers LEFT JOIN orders, where the order's id IS NULL, gives the customers who have no orders.",
-          "example": "unmatched"
+          "text": "The same `NULL` lets you search for unmatched rows. Join with `LEFT JOIN`, then keep the rows where a column from the right table `IS NULL`.\n\n- Use a column that is never `NULL` in a real row, such as the primary key.\n- `customers LEFT JOIN orders`, keeping the rows where the order's `id IS NULL`, gives the customers who have no orders."
         },
         {
           "kind": "prediction",
@@ -3057,23 +2915,17 @@
         {
           "kind": "explanation",
           "title": "ON or WHERE?",
-          "text": "With a LEFT JOIN it matters where a test on the right table is written. A test in the ON clause decides what counts as a match, and left rows with no match are still kept. A test in WHERE runs after the join, on the finished rows. An unmatched row has NULL in the right table's columns, so the test is not true for it and the row is removed. A WHERE test on the right table quietly turns a LEFT JOIN back into an inner join.",
+          "text": "With a `LEFT JOIN` it matters where a test on the right table is written.\n\n- A test in the `ON` clause decides what counts as a match, and left rows with no match are still kept.\n- A test in `WHERE` runs after the join, on the finished rows. An unmatched row has `NULL` in the right table's columns, so the test is not true for it and the row is removed.\n\nA `WHERE` test on the right table quietly turns a `LEFT JOIN` back into an inner join.",
           "example": "on"
         },
         {
           "kind": "prediction",
           "title": "The same test in two places",
-          "text": "The first example puts salary > 200000 in ON and returns 6 rows, one per department. Predict how many rows the second returns, with the test in WHERE.",
+          "text": "The first example puts `salary > 200000` in `ON` and returns 6 rows, one per department. Predict how many rows the second returns, with the test in `WHERE`.",
           "example": "where",
           "questions": [
             "on-or-where"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Compare the two results",
-          "text": "With the test in ON, every department appears. Three have an employee above 200000, and the other three show NULL. With the test in WHERE, the three NULL rows fail e.salary > 200000 and disappear, leaving 3 rows. Choose the form that matches the question: all departments with their top earners, or only the top earners.",
-          "example": "where"
         },
         {
           "kind": "modification",
@@ -3097,7 +2949,7 @@
           "choices": [
             {
               "text": "NULL",
-              "feedback": "No department matched, so the columns from departments are NULL."
+              "feedback": "No department matched, so Alex's row is kept and every column from `departments` is `NULL`. `COALESCE` can turn it into readable text, such as `COALESCE(d.name, 'No department')`."
             },
             {
               "text": "Alex does not appear",
@@ -3145,7 +2997,7 @@
             },
             {
               "text": "3",
-              "feedback": "Only the rows with a real employee above 200000 pass the WHERE."
+              "feedback": "With the test in `ON`, every department appears: three with an employee above 200000, and three showing `NULL`. With the test in `WHERE`, those three `NULL` rows fail `e.salary > 200000` and disappear. Choose the form that matches the question: all departments with their top earners, or only the top earners."
             }
           ]
         }
@@ -3348,8 +3200,7 @@
         {
           "kind": "explanation",
           "title": "A query inside a query",
-          "text": "A subquery is a SELECT in brackets, used where a value is expected. PostgreSQL runs it and uses its result. A subquery that returns one row with one column acts as a single value, so price > (SELECT avg(price) FROM products) compares each price with the average. This is the way to use an aggregate in a filter, which WHERE alone cannot do.",
-          "example": "above"
+          "text": "A **subquery** is a `SELECT` in brackets, used where a value is expected. PostgreSQL runs it and uses its result.\n\n- A subquery that returns one row with one column acts as a single value, so `price > (SELECT avg(price) FROM products)` compares each price with the average.\n- This is how to use an aggregate in a filter, which `WHERE` alone cannot do.\n- The subquery is worked out on every run, so the filter stays right when prices change, which a number typed into the query would not."
         },
         {
           "kind": "prediction",
@@ -3361,16 +3212,9 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Two steps in one statement",
-          "text": "The subquery runs first and gives one number, about 269.67. The outer query then keeps the products whose price is above it. Seven pass, and the cheapest of them, the Office Chair, is the last row. If prices change, the average is recomputed on every run, which a number typed into the query would not be.",
-          "example": "above"
-        },
-        {
           "kind": "explanation",
           "title": "Lists and existence",
-          "text": "A subquery can also return a column of values for IN: id IN (SELECT customer_id FROM orders). EXISTS asks a different question. It is true when its subquery returns at least one row, whatever that row holds. The subquery usually refers to the outer row, as in WHERE o.customer_id = c.id, and is then checked once for each outer row. That is called a correlated subquery. Unlike a join, EXISTS never repeats the outer row: a customer with three cancelled orders still appears once.",
-          "example": "exists"
+          "text": "A subquery can also return a column of values for `IN`: `id IN (SELECT customer_id FROM orders)`.\n\n`EXISTS` asks a different question. It is true when its subquery returns at least one row, whatever that row holds.\n\n- The subquery usually refers to the outer row, as in `WHERE o.customer_id = c.id`, and is then checked once for each outer row. That is called a **correlated subquery**.\n- Unlike a join, `EXISTS` never repeats the outer row: a customer with three cancelled orders still appears once."
         },
         {
           "kind": "prediction",
@@ -3384,8 +3228,7 @@
         {
           "kind": "explanation",
           "title": "NOT IN and NULL",
-          "text": "NOT IN has a trap. If the list contains a NULL, the test is never true for any row. The reason is the one from the NULL module: id NOT IN (2, NULL) asks whether id differs from every item, and comparing with NULL is unknown. referred_by is NULL for many customers, so a NOT IN over that column returns nothing. NOT EXISTS does not have this problem, and is the safer way to ask for rows with no related row.",
-          "example": "not-in"
+          "text": "`NOT IN` has a trap. If the list contains a `NULL`, the test is never true for any row.\n\n- The reason is the one from the NULL module: `id NOT IN (2, NULL)` asks whether `id` differs from every item, and comparing with `NULL` is unknown.\n- `referred_by` is `NULL` for many customers, so a `NOT IN` over that column returns nothing.\n- `NOT EXISTS` does not have this problem, and is the safer way to ask for rows with no related row."
         },
         {
           "kind": "prediction",
@@ -3422,7 +3265,7 @@
             },
             {
               "text": "Office Chair, 289.00",
-              "feedback": "It is the lowest price above the average, and the rows are sorted from the highest price down."
+              "feedback": "The subquery runs first and gives one number, about 269.67. The outer query keeps the seven products priced above it, sorted from the highest down, so the cheapest of them, the Office Chair, is last."
             },
             {
               "text": "Forge 16 Laptop, 1649.00",
@@ -3669,8 +3512,7 @@
         {
           "kind": "explanation",
           "title": "Give a query a name",
-          "text": "WITH order_totals AS ( ... ) runs the query in the brackets and calls its result order_totals. The main query after it reads from order_totals as if it were a table. Such a named query is called a common table expression, or CTE. It does nothing a subquery could not do, but it lets you write the steps in the order you think of them: first work out a total for each order, then pick the large ones. The value of an order is the sum of quantity * unit_price over its items.",
-          "example": "totals"
+          "text": "`WITH order_totals AS ( ... )` runs the query in the brackets and calls its result `order_totals`. The main query after it reads from `order_totals` as if it were a table.\n\n- Such a named query is called a **common table expression**, or CTE.\n- It does nothing a subquery could not do, but it lets you write the steps in the order you think of them: first work out a total for each order, then pick the large ones.\n- Inside the main query, a step's column is an ordinary column, so a test on a total is a plain `WHERE`, not a `HAVING`.\n\nThe value of an order is the sum of `quantity * unit_price` over its items."
         },
         {
           "kind": "prediction",
@@ -3682,46 +3524,27 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Two steps, top to bottom",
-          "text": "The first step groups the 152 item rows into 60 orders and gives each a total. The main query filters and sorts that small result. The test total > 5000 is an ordinary WHERE here, because inside the main query total is just a column. Without the step, the same test would have to be a HAVING.",
-          "example": "totals"
-        },
-        {
           "kind": "explanation",
           "title": "Steps can build on steps",
-          "text": "A WITH clause can define several steps, separated by commas. A later step can read from an earlier one. The main query can use any of them and can join them to real tables. Give each step a name that says what one of its rows is.",
-          "example": "spenders"
+          "text": "A `WITH` clause can define several steps, separated by commas.\n\n- A later step can read from an earlier one.\n- The main query can use any of them and can join them to real tables.\n- Give each step a name that says what one of its rows is."
         },
         {
           "kind": "prediction",
           "title": "Follow a chain",
-          "text": "The second step adds up each customer's order totals, leaving out cancelled orders. Predict what one row of customer_totals stands for.",
+          "text": "The second step adds up each customer's order totals, leaving out cancelled orders. Predict what one row of `customer_totals` stands for.",
           "example": "spenders",
           "questions": [
             "spenders"
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "What each step holds",
-          "text": "order_totals has one row per order. customer_totals joins those to orders to find each order's customer, drops the cancelled ones, and groups by customer, so it has one row per customer. The main query joins that to customers for the name and keeps the top three.",
-          "example": "spenders"
-        },
-        {
           "kind": "prediction",
-          "title": "Use a step in a second statement",
-          "text": "The file holds two statements. Both read from big. Read it before checking.",
+          "title": "Find the error",
+          "text": "This example does not run. Find the line PostgreSQL stops at, and why.",
           "example": "scope",
           "questions": [
             "scope"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Read the error",
-          "text": "Check the example. Error 42P01 says relation \"big\" does not exist, on line 6. A WITH step belongs to the one statement it is written in and is gone when that statement ends. The first statement ran. The second has no WITH of its own, so big means nothing there.",
-          "example": "scope"
         },
         {
           "kind": "modification",
@@ -3745,7 +3568,7 @@
           "choices": [
             {
               "text": "Order 42 with 5929.10",
-              "feedback": "It has the largest total, and the result is sorted from the largest down."
+              "feedback": "The step groups the 152 item rows into 60 orders and gives each a total. The main query keeps the totals above 5000 and sorts them from the largest down, so order 42 comes first."
             },
             {
               "text": "Order 1 with 37.98",
@@ -3769,7 +3592,7 @@
             },
             {
               "text": "One customer",
-              "feedback": "The step groups by customer_id, so each customer has one row with the total they spent."
+              "feedback": "`order_totals` has one row per order. `customer_totals` joins those to `orders` to find each order's customer, drops the cancelled ones and groups by customer, so it has one row per customer with what they spent. The main query joins that to `customers` for the name and keeps the top three."
             },
             {
               "text": "One order item",
@@ -3780,20 +3603,20 @@
         {
           "id": "scope",
           "example": "scope",
-          "prompt": "What happens when you check this example?",
+          "prompt": "Which error does PostgreSQL report?",
           "answer": 2,
           "choices": [
             {
-              "text": "Both statements return the same count.",
-              "feedback": "The second statement cannot see a step defined in the first."
+              "text": "Line 2: a `WITH` step cannot hold a `WHERE`.",
+              "feedback": "A step is an ordinary query, so it can filter. The first statement runs."
             },
             {
-              "text": "The first statement fails.",
-              "feedback": "The first statement defines big and uses it correctly."
+              "text": "Line 4: `count(*)` cannot read from a step.",
+              "feedback": "The first statement counts from `big` without trouble."
             },
             {
-              "text": "PostgreSQL reports an error on line 6.",
-              "feedback": "A WITH step lasts for one statement. The second statement has no big (42P01)."
+              "text": "Line 6, 42P01: relation `big` does not exist.",
+              "feedback": "A `WITH` step belongs to the one statement it is written in, and it is gone when that statement ends. The second statement has no `WITH` of its own, so `big` means nothing there."
             }
           ]
         }
@@ -3987,8 +3810,7 @@
         {
           "kind": "explanation",
           "title": "Choose a value with CASE",
-          "text": "CASE picks one value out of several. It is written CASE WHEN test THEN value WHEN test THEN value ELSE value END. The tests are tried from the top, and the first one that is true decides the result. Later tests are not looked at, so order matters: put the most specific test first. ELSE covers everything that matched no test. Without ELSE, such rows get NULL. A CASE is an expression, so it can sit in the SELECT list and be given a name with AS.",
-          "example": "bands"
+          "text": "`CASE` picks one value out of several:\n\n```sql\nCASE WHEN price >= 500 THEN 'premium'\n     WHEN price >= 100 THEN 'mid'\n     ELSE 'budget'\nEND AS band\n```\n\n- The tests are tried from the top, and the first one that is true decides the result. Later tests are not looked at, so put the most specific test first.\n- `ELSE` covers everything that matched no test. Without `ELSE`, such rows get `NULL`.\n- A `CASE` is an expression, so it can sit in the `SELECT` list and be given a name with `AS`."
         },
         {
           "kind": "prediction",
@@ -4000,16 +3822,9 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "The first true test wins",
-          "text": "549.00 is at least 500, so the first test is true and the band is premium. The second test, at least 100, is also true for it, but it is never reached. The Office Chair at 289.00 fails the first test and passes the second, so it is mid. If the two tests were written the other way round, everything from 100 up would be mid.",
-          "example": "bands"
-        },
-        {
           "kind": "explanation",
           "title": "Types and division",
-          "text": "Every value has a type, and the type decides what an operation does. Dividing one integer by another gives an integer, and the fraction is dropped: 7 / 2 is 3. If either side has a decimal point, the result keeps its fraction: 7 / 2.0 is 3.5. CAST(value AS type) converts a value, for example CAST(stock AS numeric) or CAST('42' AS integer). A conversion that makes no sense is an error.",
-          "example": "division"
+          "text": "Every value has a **type**, and the type decides what an operation does.\n\n- Dividing one integer by another gives an integer, and the fraction is dropped: `7 / 2` is 3.\n- If either side has a decimal point, the result keeps its fraction: `7 / 2.0` is 3.5.\n- `CAST(value AS type)` converts a value, for example `CAST(stock AS numeric)` or `CAST('42' AS integer)`. A conversion that makes no sense is an error."
         },
         {
           "kind": "prediction",
@@ -4023,13 +3838,12 @@
         {
           "kind": "explanation",
           "title": "Dates",
-          "text": "A timestamp such as 2025-01-02 17:16:00 holds a date and a time. CAST(ordered_at AS date) keeps the date and drops the time. EXTRACT(MONTH FROM ordered_at) returns one part of it as a number, and YEAR and DAY work the same way. Subtracting one date from another gives a whole number of days. Subtracting two timestamps gives an interval instead, such as 3 days 18:29:00, so cast to date first when you want days.",
-          "example": "dates"
+          "text": "A timestamp such as `2025-01-02 17:16:00` holds a date and a time.\n\n- `CAST(ordered_at AS date)` keeps the date and drops the time.\n- `EXTRACT(MONTH FROM ordered_at)` returns one part as a number, and `YEAR` and `DAY` work the same way.\n- Subtracting one date from another gives a whole number of days. Subtracting two timestamps gives an interval instead, such as `3 days 18:29:00`, so cast to `date` first when you want days."
         },
         {
           "kind": "prediction",
           "title": "Count the days",
-          "text": "Order 1 was placed on 2 January at 17:16 and shipped on 6 January at 11:45. Predict days_to_ship.",
+          "text": "Order 1 was placed on 2 January at 17:16 and shipped on 6 January at 11:45. Predict `days_to_ship`.",
           "example": "dates",
           "questions": [
             "days"
@@ -4037,18 +3851,12 @@
         },
         {
           "kind": "prediction",
-          "title": "Compare a number with a word",
-          "text": "price is a number. Read the example before checking.",
+          "title": "Find the error",
+          "text": "This example does not run. Find the line PostgreSQL stops at, and why.",
           "example": "bad-number",
           "questions": [
             "bad-number"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Read the error",
-          "text": "Check the example. To compare, PostgreSQL has to turn 'cheap' into a number, and it cannot. Error 22P02 says invalid input syntax for type numeric: \"cheap\". The same error appears when a CAST is given text that is not a number.",
-          "example": "bad-number"
         },
         {
           "kind": "modification",
@@ -4072,7 +3880,7 @@
           "choices": [
             {
               "text": "premium",
-              "feedback": "The first test, price >= 500, is true for 549.00, and the first true test decides."
+              "feedback": "549.00 is at least 500, so the first test is true and the band is premium. The second test is also true for it, but it is never reached. The Office Chair at 289.00 fails the first test and passes the second, so it is mid. With the two tests the other way round, everything from 100 up would be mid."
             },
             {
               "text": "mid",
@@ -4127,20 +3935,20 @@
         {
           "id": "bad-number",
           "example": "bad-number",
-          "prompt": "What happens when you check this example?",
+          "prompt": "Which error does PostgreSQL report?",
           "answer": 1,
           "choices": [
             {
-              "text": "It returns no rows.",
-              "feedback": "The comparison cannot be made at all, so the statement fails."
+              "text": "Line 1: `name` cannot be selected while `price` is tested.",
+              "feedback": "`WHERE` can test any column, whether or not it is selected. Line 1 is fine."
             },
             {
-              "text": "PostgreSQL reports an error on line 3.",
-              "feedback": "'cheap' cannot be turned into a number to compare with price (22P02)."
+              "text": "Line 3, 22P02: `'cheap'` is not valid input for a number.",
+              "feedback": "To compare, PostgreSQL has to turn `'cheap'` into a number, and it cannot. The same error appears when a `CAST` is given text that is not a number. Compare with a number instead, such as `price < 50`."
             },
             {
-              "text": "It returns every product.",
-              "feedback": "A failed conversion is an error. It does not count as true."
+              "text": "Line 3: text must be compared with `LIKE`, not `>`.",
+              "feedback": "`>` can compare text with text. The trouble is that `price` is a number and `'cheap'` is not."
             }
           ]
         }
@@ -4338,8 +4146,7 @@
         {
           "kind": "explanation",
           "title": "Add a row",
-          "text": "INSERT INTO departments (id, name, location, budget) VALUES (7, 'Research', 'Austin', 250000.00); adds one row. The first list names the columns and the second gives a value for each, in the same order. A column you leave out gets its default value, or NULL when it has none. A statement that changes data returns no rows. The result tells you how many rows it changed. Run a SELECT afterwards to see the new state.",
-          "example": "insert"
+          "text": "```sql\nINSERT INTO departments (id, name, location, budget)\nVALUES (7, 'Research', 'Austin', 250000.00);\n```\n\n- This adds one row. The first list names the columns, and the second gives a value for each, in the same order.\n- A column you leave out gets its default value, or `NULL` when it has none.\n- A statement that changes data returns no rows. The result tells you how many rows it changed, so run a `SELECT` afterwards to see the new state."
         },
         {
           "kind": "prediction",
@@ -4353,38 +4160,25 @@
         {
           "kind": "prediction",
           "title": "Insert a key that exists",
-          "text": "A department with id 3 already exists. Read the example before checking.",
+          "text": "A department with id 3 already exists. Predict what happens when you check this example.",
           "example": "bad-key",
           "questions": [
             "bad-key"
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Read the error",
-          "text": "Check the example. Error 23505 says a duplicate key value violates a unique constraint, and the next line names the key: (id)=(3) already exists. The id is the table's primary key, so no two rows may share one. The table is unchanged. This kind of error comes from the data, not from the wording of the statement, so it has no line number.",
-          "example": "bad-key"
-        },
-        {
           "kind": "explanation",
           "title": "Change and remove rows",
-          "text": "UPDATE products SET price = price * 0.9 WHERE category_id = 12; changes the rows that pass the WHERE. SET can use the row's old values, as it does here. DELETE FROM reviews WHERE rating = 1; removes the rows that pass. In both, the WHERE is optional, and leaving it out applies the statement to every row of the table. Before running an UPDATE or DELETE, run a SELECT with the same WHERE and check that it returns exactly the rows you mean. Adding RETURNING and a column list to any of the three statements makes it return the rows it touched.",
-          "example": "no-where"
+          "text": "```sql\nUPDATE products SET price = price * 0.9 WHERE category_id = 12;\nDELETE FROM reviews WHERE rating = 1;\n```\n\n- `UPDATE` changes the rows that pass the `WHERE`, and `SET` can use the row's old values. `DELETE` removes the rows that pass.\n- In both, the `WHERE` is optional, and leaving it out applies the statement to every row of the table. Nothing warns you, because the statement is valid.\n- Before running an `UPDATE` or `DELETE`, run a `SELECT` with the same `WHERE` and check that it returns exactly the rows you mean.\n- Adding `RETURNING` and a column list to any of the three statements makes it return the rows it touched."
         },
         {
           "kind": "prediction",
           "title": "An UPDATE with no WHERE",
-          "text": "Three of the 24 products are discontinued. This UPDATE has no WHERE. Predict the count afterwards.",
+          "text": "Three of the 24 products are discontinued. This `UPDATE` has no `WHERE`. Predict the count afterwards.",
           "example": "no-where",
           "questions": [
             "no-where"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Every row was changed",
-          "text": "The UPDATE reports that it changed 24 rows, and the count confirms that every product is now discontinued. Nothing warned about the missing WHERE, because the statement is valid. In this course the next check starts from a fresh copy. In a real database those rows would stay changed.",
-          "example": "no-where"
         },
         {
           "kind": "modification",
@@ -4428,7 +4222,7 @@
           "choices": [
             {
               "text": "PostgreSQL reports an error, and the table is unchanged.",
-              "feedback": "id is the primary key, and a row with id 3 exists (23505)."
+              "feedback": "`id` is the primary key, so no two rows may share one. Error 23505 says a duplicate key value violates a unique constraint, and names the key: `(id)=(3) already exists`. The table is unchanged. This kind of error comes from the data, not the wording of the statement, so it has no line number."
             },
             {
               "text": "The Sales department is replaced by Research.",
@@ -4456,7 +4250,7 @@
             },
             {
               "text": "24",
-              "feedback": "Without a WHERE, UPDATE changes every row in the table."
+              "feedback": "The `UPDATE` reports that it changed 24 rows, and the count confirms that every product is now discontinued. In this course the next check starts from a fresh copy. In a real database those rows would stay changed."
             }
           ]
         }
@@ -4634,8 +4428,7 @@
         {
           "kind": "explanation",
           "title": "Columns, types and a key",
-          "text": "CREATE TABLE names a table and lists its columns. Each column has a name and a type: integer for whole numbers, numeric(8, 2) for exact decimals with two places, text, boolean, date. After the type come the column's rules. PRIMARY KEY marks the column that identifies a row. Its values must be unique and cannot be NULL. NOT NULL means the column must always have a value. DEFAULT gives the value to use when an INSERT leaves the column out. UNIQUE forbids two rows with the same value.",
-          "example": "create"
+          "text": "`CREATE TABLE` names a table and lists its columns. Each column has a name and a type:\n\n| Type | Holds |\n| --- | --- |\n| `integer` | whole numbers |\n| `numeric(8, 2)` | exact decimals with two places |\n| `text`, `boolean`, `date` | text, true or false, a date |\n\nAfter the type come the column's rules:\n\n- `PRIMARY KEY` marks the column that identifies a row. Its values must be unique and cannot be `NULL`.\n- `NOT NULL` means the column must always have a value.\n- `DEFAULT` gives the value to use when an `INSERT` leaves the column out.\n- `UNIQUE` forbids two rows with the same value."
         },
         {
           "kind": "prediction",
@@ -4647,42 +4440,28 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Read the stored row",
-          "text": "The row was stored with country USA, the column's default. The rating was given as 4. A column with no default and no value would hold NULL, which is allowed only when the column is not NOT NULL.",
-          "example": "create"
-        },
-        {
           "kind": "explanation",
           "title": "Rules about values",
-          "text": "CHECK attaches a test to the table. A row is accepted only when the test is not false. CHECK (rating BETWEEN 1 AND 5) rejects a rating of 9. A check that involves a NULL value is unknown, not false, so the row is accepted. Add NOT NULL when the column must be filled in.",
-          "example": "check"
+          "text": "`CHECK` attaches a test to the table. A row is accepted only when the test is not false.\n\n- `CHECK (rating BETWEEN 1 AND 5)` rejects a rating of 9.\n- A check that involves a `NULL` value is unknown, not false, so the row is accepted. Add `NOT NULL` when the column must be filled in."
         },
         {
           "kind": "prediction",
           "title": "Break a CHECK",
-          "text": "The table allows ratings from 1 to 5. Read the example before checking.",
+          "text": "The table allows ratings from 1 to 5. Predict what happens when you check this example.",
           "example": "check",
           "questions": [
             "check"
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Read the error",
-          "text": "Check the example. Error 23514 says the new row violates a check constraint. The row is not stored. A constraint is a guarantee: every row that is in the table has passed it.",
-          "example": "check"
-        },
-        {
           "kind": "explanation",
           "title": "Rules about other tables",
-          "text": "REFERENCES links a column to the key of another table. order_id integer REFERENCES orders (id) is a foreign key. It accepts only values that exist as an id in orders. It also protects the other side: an order cannot be deleted while a row still points at it.",
-          "example": "foreign"
+          "text": "`REFERENCES` links a column to the key of another table. `order_id integer REFERENCES orders (id)` is a **foreign key**.\n\n- It accepts only values that exist as an `id` in `orders`.\n- It also protects the other side: an order cannot be deleted while a row still points at it."
         },
         {
           "kind": "prediction",
           "title": "Point at a missing row",
-          "text": "No product has id 999. Read the example before checking.",
+          "text": "No product has id 999. Predict what happens when you check this example.",
           "example": "foreign",
           "questions": [
             "foreign"
@@ -4710,7 +4489,7 @@
           "choices": [
             {
               "text": "USA",
-              "feedback": "The INSERT left country out, so its default was used."
+              "feedback": "The `INSERT` left `country` out, so the row was stored with its default, USA. A column with no default and no value would hold `NULL`, which is allowed only when the column is not `NOT NULL`."
             },
             {
               "text": "NULL",
@@ -4738,7 +4517,7 @@
             },
             {
               "text": "PostgreSQL reports an error and stores nothing.",
-              "feedback": "The rating fails the CHECK, so the row is rejected (23514)."
+              "feedback": "Error 23514 says the new row violates a check constraint, so the row is not stored. A constraint is a guarantee: every row in the table has passed it."
             }
           ]
         },
@@ -4951,29 +4730,21 @@
         {
           "kind": "explanation",
           "title": "A function with a window",
-          "text": "A window function is a function followed by OVER ( ... ). The brackets describe the rows it looks at, called its window. RANK() OVER (ORDER BY salary DESC) gives each row its position when all rows are sorted by salary, highest first. Rows that tie share a rank, and the next rank is skipped. ROW_NUMBER() numbers the rows 1, 2, 3 with no ties. Adding PARTITION BY department_id splits the rows into one group per department and starts the ranking again inside each. Unlike GROUP BY, nothing is collapsed: every row stays and gains a column.",
-          "example": "ranks"
+          "text": "A **window function** is a function followed by `OVER ( ... )`. The brackets describe the rows it looks at, called its **window**.\n\n- `RANK() OVER (ORDER BY salary DESC)` gives each row its position when all rows are sorted by salary, highest first. Rows that tie share a rank, and the next rank is skipped.\n- `ROW_NUMBER()` numbers the rows 1, 2, 3 with no ties.\n- Adding `PARTITION BY department_id` splits the rows into one group per department and starts the ranking again inside each.\n- The `ORDER BY` inside `OVER` decides only the ranking. The query's own `ORDER BY` still sorts the result.\n\nUnlike `GROUP BY`, nothing is collapsed: every row stays and gains a column."
         },
         {
           "kind": "prediction",
           "title": "Two ranks for one row",
-          "text": "Tom earns 175000 in department 4. Priya, in department 3, earns 210000. Predict Tom's overall and in_department.",
+          "text": "Tom earns 175000 in department 4. Priya, in department 3, earns 210000. Predict Tom's `overall` and `in_department`.",
           "example": "ranks",
           "questions": [
             "two-ranks"
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Read both columns",
-          "text": "Across the seven rows shown, only Priya earns more than Tom, so his overall rank is 2. Inside department 4 he earns the most, so in_department is 1. The two columns use the same function with different windows. The final ORDER BY sorts the result. It is separate from the ORDER BY inside OVER, which only decides the ranking.",
-          "example": "ranks"
-        },
-        {
           "kind": "explanation",
           "title": "Aggregates as windows",
-          "text": "The aggregate functions work as window functions too. avg(salary) OVER (PARTITION BY department_id) puts the department's average on every row of that department. That makes it possible to compare a row with its group in one query: the salary minus the department average.",
-          "example": "compare"
+          "text": "The aggregate functions work as window functions too. `avg(salary) OVER (PARTITION BY department_id)` puts the department's average on every row of that department.\n\nThat lets you compare a row with its group in one query: the salary minus the department average."
         },
         {
           "kind": "prediction",
@@ -4985,25 +4756,13 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Every row keeps its place",
-          "text": "Four rows come back, one per employee. A GROUP BY would have returned one row for the department. Each row carries the same department_avg, 64375, and its own difference from it.",
-          "example": "compare"
-        },
-        {
           "kind": "prediction",
-          "title": "Filter on a rank",
-          "text": "The query ranks the products and tries to keep the top three with WHERE. Read it before checking.",
+          "title": "Find the error",
+          "text": "This example does not run. Find the line PostgreSQL stops at, and why.",
           "example": "bad-where",
           "questions": [
             "window-where"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Read the error",
-          "text": "Check the example. Error 42703 says column \"position\" does not exist. Window functions are worked out after WHERE has run, so WHERE cannot see their results, and it cannot use a SELECT alias in any case. Put the window function in a WITH step. In the main query its result is an ordinary column, and WHERE position <= 3 works.",
-          "example": "bad-where"
         },
         {
           "kind": "modification",
@@ -5031,7 +4790,7 @@
             },
             {
               "text": "2 and 1",
-              "feedback": "Only Priya earns more overall, and nobody in department 4 earns more than Tom."
+              "feedback": "Across the seven rows shown, only Priya earns more than Tom, so `overall` is 2. Inside department 4 nobody earns more, so `in_department` is 1. The two columns use the same function with different windows."
             },
             {
               "text": "2 and 2",
@@ -5055,27 +4814,27 @@
             },
             {
               "text": "4",
-              "feedback": "One row per employee, each with the department's average beside it."
+              "feedback": "One row per employee comes back, where `GROUP BY` would have returned one row for the department. Each row carries the same `department_avg`, 64375, and its own difference from it."
             }
           ]
         },
         {
           "id": "window-where",
           "example": "bad-where",
-          "prompt": "What happens when you check this example?",
-          "answer": 0,
+          "prompt": "Which error does PostgreSQL report?",
+          "answer": 1,
           "choices": [
             {
-              "text": "PostgreSQL reports an error on line 3.",
-              "feedback": "WHERE runs before window functions and cannot use their alias (42703)."
+              "text": "Line 1: `RANK()` needs a `PARTITION BY`.",
+              "feedback": "`PARTITION BY` is optional. Without it, all rows form one window."
             },
             {
-              "text": "It returns the three most expensive products.",
-              "feedback": "WHERE cannot see position. The ranking has to happen in an earlier step."
+              "text": "Line 3, 42703: column `position` does not exist.",
+              "feedback": "Window functions are worked out after `WHERE` has run, so `WHERE` cannot see their results, and it cannot use a `SELECT` alias in any case. Put the window function in a `WITH` step. In the main query its result is an ordinary column, and `WHERE position <= 3` works."
             },
             {
-              "text": "It returns every product with its rank.",
-              "feedback": "The statement has an error, so nothing is returned."
+              "text": "Line 3: `<=` cannot compare a rank.",
+              "feedback": "A rank is a number, and `<=` compares numbers. The trouble is the name `position`."
             }
           ]
         }
@@ -5270,13 +5029,12 @@
         {
           "kind": "explanation",
           "title": "Know what one row stands for",
-          "text": "Before trusting a number, say what each row of the joined result stands for. After customers LEFT JOIN orders, a row is one order of one customer, or one customer with no order at all. count(*) counts those rows, so a customer with no orders counts as 1. count(o.id) counts order ids, and skips the NULL of the unmatched row, so that customer correctly gets 0.",
-          "example": "zero"
+          "text": "Before trusting a number, say what each row of the joined result stands for.\n\nAfter `customers LEFT JOIN orders`, a row is one order of one customer, or one customer with no order at all.\n\n- `count(*)` counts those rows, so a customer with no orders counts as 1.\n- `count(o.id)` counts order ids and skips the `NULL` of the unmatched row, so that customer correctly gets 0."
         },
         {
           "kind": "prediction",
           "title": "Count orders for a customer with none",
-          "text": "Felix has never ordered. Predict what his orders and joined_rows columns show.",
+          "text": "Felix has never ordered. Predict what his `orders` and `joined_rows` columns show.",
           "example": "zero",
           "questions": [
             "zero-count"
@@ -5285,29 +5043,21 @@
         {
           "kind": "explanation",
           "title": "Joins can multiply rows",
-          "text": "Joining one department to its eleven employees gives eleven rows. Joining those to the department's four projects gives 44 rows, one for every pair of an employee and a project. This is called fan-out. Any count or sum over the joined rows is then too large. count(DISTINCT e.id) repairs a count by counting each employee once. A sum cannot be repaired that way, so add things up in separate steps first and join the totals.",
-          "example": "fan-out"
+          "text": "Joining one department to its eleven employees gives eleven rows. Joining those to the department's four projects gives 44 rows, one for every pair of an employee and a project. This is called **fan-out**.\n\n- Any count or sum over the joined rows is then too large. A count far above what you expect is the sign of fan-out.\n- `count(DISTINCT e.id)` repairs a count by counting each employee once.\n- A sum cannot be repaired that way, so add things up in separate steps first and join the totals."
         },
         {
           "kind": "prediction",
           "title": "Count through two joins",
-          "text": "Engineering has 11 employees and 4 projects. Predict its joined_rows.",
+          "text": "Engineering has 11 employees and 4 projects. Predict its `joined_rows`.",
           "example": "fan-out",
           "questions": [
             "fan-out"
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Read the three columns",
-          "text": "Engineering's joined_rows is 44, which is 11 times 4. staff and projects are right because each uses DISTINCT. Legal has no employees and no projects and still shows 1 joined row, the department itself with nothing matched. A count far above what you expect is the sign of fan-out.",
-          "example": "fan-out"
-        },
-        {
           "kind": "explanation",
           "title": "Test against something simpler",
-          "text": "The surest test is a second query that answers part of the question in the plainest way, such as a count of one table with one filter. If the two disagree, the complicated query is the suspect. Totals are the easiest thing to check this way: a total over more joins should never be larger than the same total over fewer.",
-          "example": "doubled"
+          "text": "The surest test is a second query that answers part of the question in the plainest way, such as a count of one table with one filter. If the two disagree, the complicated query is the suspect.\n\nTotals are the easiest thing to check this way: a total over more joins should never be larger than the same total over fewer."
         },
         {
           "kind": "prediction",
@@ -5317,12 +5067,6 @@
           "questions": [
             "doubled"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Why the second total is wrong",
-          "text": "The first statement joins each item to its order and adds up 52608.83. The second joins the reviews of the order's customer as well. A customer with three reviews now has every item three times, so the items are added up again and again, and customers with no reviews vanish. The total more than doubles. The reviews had no part in the question and should not have been joined.",
-          "example": "doubled"
         },
         {
           "kind": "modification",
@@ -5374,7 +5118,7 @@
             },
             {
               "text": "44",
-              "feedback": "11 employees times 4 projects gives 44 joined rows."
+              "feedback": "Each employee is paired with every project: 11 times 4. The `staff` and `projects` columns are right because each uses `DISTINCT`. Legal has no employees and no projects and still shows 1 joined row: the department itself, with nothing matched."
             }
           ]
         },
@@ -5390,7 +5134,7 @@
             },
             {
               "text": "The first, 52608.83",
-              "feedback": "It adds each item of each delivered order exactly once."
+              "feedback": "The first statement joins each item to its order and adds it once. The second also joins the reviews of the order's customer, so a customer with three reviews has every item three times, and customers with no reviews vanish. The total more than doubles. The reviews had no part in the question and should not have been joined."
             },
             {
               "text": "Neither",

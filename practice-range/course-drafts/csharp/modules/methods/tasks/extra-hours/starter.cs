@@ -1,4 +1,1 @@
-public static double ExtraHours(double hours, double included)
-{
-    return 0;
-}
+// Write the declarations and code described in the prompt.

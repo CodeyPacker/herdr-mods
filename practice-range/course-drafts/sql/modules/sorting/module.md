@@ -13,7 +13,16 @@ A table has no built-in order. If the order of a result matters, the query has t
 
 ## Ask for an order
 
-ORDER BY comes after WHERE and names the column to sort by. The default direction is ascending: smallest first, A before Z, earliest date first. DESC reverses it. LIMIT 3 keeps only the first three rows, and it is applied after sorting, so ORDER BY price DESC LIMIT 3 means the three most expensive. Without ORDER BY the rows can come back in any order, and LIMIT then keeps an arbitrary three.
+`ORDER BY` comes after `WHERE` and names the column to sort by.
+
+- The default direction is ascending: smallest first, A before Z, earliest date first. `DESC` reverses it.
+- `LIMIT 3` keeps only the first three rows, and it is applied after sorting, so `ORDER BY price DESC LIMIT 3` means the three most expensive.
+- Without `ORDER BY` the rows can come back in any order, and `LIMIT` then keeps an arbitrary three.
+
+
+## Predict the first row {prediction}
+
+Read the `ORDER BY` and `LIMIT`, then predict the first row.
 
 ```sql example top
 SELECT name, price
@@ -33,28 +42,24 @@ Your query returned:
 (3 rows)
 ```
 
-## Predict the first row {prediction}
-
-Read the ORDER BY and LIMIT, then predict the first row.
-
-@example top
-
 :::question top-row example=top
 What is the first row?
-- [x] Forge 16 Laptop, 1649.00 :: DESC puts the highest price first, and LIMIT keeps the top three.
+- [x] Forge 16 Laptop, 1649.00 :: All 24 products are sorted by price, highest first, and then the first three are kept. The Forge 16 Laptop is the most expensive, so it comes first.
 - [ ] Quiet Harbor, 14.50 :: That is the cheapest product. DESC sorts from the highest price down.
 - [ ] Aero 13 Laptop, 1199.00 :: That is the second most expensive. The Forge 16 costs more.
 :::
 
-## Sort, then cut {walkthrough}
-
-All 24 products are sorted by price, highest first, and then the first three are kept. The Forge 16 Laptop at 1649.00 is the most expensive, so it comes first.
-
-@example top
-
 ## More than one sort key
 
-ORDER BY can list several columns. Rows are sorted by the first one, and rows that tie on it are sorted by the next. Each column has its own direction: ORDER BY country, signup_date DESC sorts countries A to Z and, inside each country, newest signup first. When rows can tie, add another column to the ORDER BY so the order is fully decided.
+`ORDER BY` can list several columns. Rows are sorted by the first one, and rows that tie on it are sorted by the next.
+
+- Each column has its own direction: `ORDER BY country, signup_date DESC` sorts countries A to Z and, inside each country, newest signup first.
+- When rows can tie, add another column so the order is fully decided.
+
+
+## Sort by city, then name {prediction}
+
+Seven customers live in the USA. Predict the first row.
 
 ```sql example two-keys
 SELECT first_name, city
@@ -78,12 +83,6 @@ Your query returned:
 (7 rows)
 ```
 
-## Sort by city, then name {prediction}
-
-Seven customers live in the USA. Predict the first row.
-
-@example two-keys
-
 :::question two-keys example=two-keys
 What is the first row?
 - [ ] Ava, Denver :: City is the first sort key, and Austin comes before Denver.
@@ -93,7 +92,15 @@ What is the first row?
 
 ## Where NULL lands
 
-PostgreSQL sorts NULL as if it were larger than every value. In ascending order NULLs come last. In descending order they come first, which is often a surprise. Say what you want with NULLS LAST or NULLS FIRST after the column, or filter the NULL rows out.
+PostgreSQL sorts `NULL` as if it were larger than every value.
+
+- In ascending order `NULL`s come last. In descending order they come first, which is often a surprise.
+- Say what you want with `NULLS LAST` or `NULLS FIRST` after the column, or filter the `NULL` rows out.
+
+
+## Sort a column with a gap {prediction}
+
+Kofi has no `bonus_pct`. Predict the first row.
 
 ```sql example nulls
 SELECT first_name, bonus_pct
@@ -112,12 +119,6 @@ Your query returned:
  Laura      | 5.00
 (3 rows)
 ```
-
-## Sort a column with a gap {prediction}
-
-Kofi has no bonus_pct. Predict the first row.
-
-@example nulls
 
 :::question nulls-first example=nulls
 What is the first row?

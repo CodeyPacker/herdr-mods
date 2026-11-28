@@ -21,9 +21,9 @@ An array holds any number of values of one type, in order.
 - A variable declared before the loop can collect a result across visits. This is an accumulator.
 - To build a new array, start from `[]` and call `push(value)` to add to the end.
 
-## Predict before running {prediction}
+## Trace a running total {prediction}
 
-Read the example and predict what it prints before you run it.
+Read the example and predict what it prints.
 
 ```typescript example trace
 const minutes = [2, 0, 3];
@@ -41,30 +41,20 @@ console.log(total);
 
 :::question predict example=trace
 What prints after the last visit?
-- [x] 5 :: All three values are added to `total`.
+- [x] 5 :: `total` is 0 before the loop, then 2, 2 and 5 after each visit. The 0 entry is still visited: it just adds nothing. If `let total = 0` moved inside the loop, every visit would start over and earlier values would be lost.
 - [ ] 3 :: 3 is only the last value. Each visit adds to `total` instead of replacing it.
 :::
 
-## Trace the example {walkthrough}
+## Loop over an empty array {prediction}
 
-Track `total` before the loop and after each visit: `0`, `2`, `2`, `5`.
-
-- The `0` entry is still visited. It just adds nothing.
-- On an empty array the loop body never runs, so `total` stays at its starting value.
-- If `let total = 0` moved inside the loop, every visit would start over and earlier values would be lost.
-
-@example trace
-
-## Check your explanation {prediction}
-
-Read the example again and choose the explanation that fits.
+Suppose `minutes` were an empty array.
 
 @example trace
 
 :::question explain example=trace
 If `minutes` were empty, what would print?
 - [ ] The program would fail. :: Looping over an empty array is fine. The body runs zero times.
-- [x] 0 :: No visits change the starting `total`.
+- [x] 0 :: On an empty array the loop body runs zero times, so `total` keeps its starting value.
 :::
 
 ## Fixed slots with tuples

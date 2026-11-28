@@ -1,4 +1,1 @@
-public static string DueText(int? days)
-{
-    return "no due date";
-}
+// Write the declarations and code described in the prompt.

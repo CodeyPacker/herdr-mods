@@ -26,6 +26,11 @@ An `if` statement runs its block only when the condition in the brackets is true
 
 Two strings are equal with `==` when they hold the same characters, and `""` is a real string with no characters in it.
 
+
+## Which branch runs? {prediction}
+
+Read the `if` chain and predict the first line of output.
+
 ```csharp example gate
 int cars = 3;
 int spaces = 3;
@@ -54,30 +59,12 @@ True
 True
 ```
 
-## Which branch runs? {prediction}
-
-Read the `if` chain and predict the first line of output.
-
-@example gate
-
 :::question predict-branch example=gate
 What is the first line of output?
 - [ ] over :: 3 is not greater than 3, so the first condition is false.
-- [x] full :: The first test is false and the second is true, so its block runs.
+- [x] full :: `cars > spaces` is false, so that block is skipped. `cars == spaces` is true, so `full` prints and the `else` is skipped. The chain stops at the first true condition, so the order of the tests matters.
 - [ ] room :: `else` runs only when every condition above it was false.
 :::
-
-## Follow the chain {walkthrough}
-
-`cars` is 3 and `spaces` is 3.
-
-1. `cars > spaces` is false, so the first block is skipped.
-2. `cars == spaces` is true, so `full` prints.
-3. The `else` block is skipped.
-
-The order of the tests matters: the chain stops at the first true condition.
-
-@example gate
 
 ## Combine conditions {prediction}
 
@@ -85,29 +72,22 @@ The order of the tests matters: the chain stops at the first true condition.
 - `||` means **or**: true when at least one side is true.
 - `!` means **not**: it flips true and false.
 
+`&&` skips its right side when the left is false. `||` skips it when the left is true. This is **short-circuit evaluation**. `count != 0 && total / count > 2` avoids dividing by zero. Use parentheses to make mixed conditions clear.
+
 Predict the last two lines.
 
 @example gate
 
 :::question predict-logic example=gate
 What are the last two lines of output?
-- [x] True, True :: `sunny` is true and `windy` is false. In the second line one true side is enough for `||`.
+- [x] True, True :: `!windy` flips false to true, so `sunny && !windy` has two true sides. `cars >= 5` is false, but `sunny` is true, and one true side is enough for `||`. Work out each side first, then combine them.
 - [ ] True, False :: `cars >= 5` is false, but `||` needs only one true side, and `sunny` is true.
 - [ ] False, True :: `!windy` flips false to true, so both sides of the `&&` are true.
 :::
 
-## Work out each side {walkthrough}
+## Find the error {prediction}
 
-- `sunny` is true and `windy` is false, so `!windy` is true and `sunny && !windy` is true.
-- `cars >= 5` is false, but `sunny` is true, so the `||` is true.
-
-Work out each side first, then combine them.
-
-@example gate
-
-## Predict a comparison error {prediction}
-
-One character is missing from this condition. Read it before checking.
+This example does not compile. Find the line the compiler stops at, and why.
 
 ```csharp example bad-assign diagnostics=[{"code":29,"line":2}]
 int cars = 3;
@@ -118,17 +98,11 @@ if (cars = 3)
 ```
 
 :::question predict-assign example=bad-assign
-What happens when you check this example?
-- [ ] It prints three. :: `cars = 3` is an assignment, not a comparison, and the compiler rejects it as a condition.
-- [ ] It prints nothing, because the condition is false. :: The file never runs. The condition is not a `bool` at all.
-- [x] The compiler reports an error on line 2. :: A single `=` assigns and produces an `int`. An `if` needs a `bool`, so this is CS0029.
+Which error does the compiler report?
+- [ ] Line 1: `cars` was never given a type. :: `int cars = 3;` declares an `int` and gives it 3. Line 1 is fine.
+- [x] Line 2, CS0029: the condition is an `int`, and an `if` needs a `bool`. :: A single `=` assigns: `cars = 3` stores 3 and produces that `int`. To compare, write `==`, which produces a `bool`.
+- [ ] Line 4: text cannot be printed inside an `if`. :: A block can hold any statements. The compiler stops at the condition on line 2.
 :::
-
-## Read the compiler error {walkthrough}
-
-Check the example. A single `=` assigns. `cars = 3` stores 3 and produces an `int`, and an `if` needs a `bool`, so the compiler reports **CS0029**. To compare, write `==`.
-
-@example bad-assign
 
 ## Report the parking status {modification}
 

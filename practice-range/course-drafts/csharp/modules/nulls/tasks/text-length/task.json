@@ -9,7 +9,7 @@
     "class",
     "property"
   ],
-  "prompt": "Note is supplied. Its Text may be null. Write public static int TextLength(Note? note). Return the number of characters in the note's text. Return 0 when note is null, and 0 when its Text is null.",
+  "prompt": "`Note` is supplied. Its `Text` may be `null`. Write `public static int TextLength(Note? note)`. Return the number of UTF-16 code units in the note's text, as counted by `string.Length`. Return 0 when `note` is `null`, and 0 when its `Text` is `null`.",
   "hints": [
     "How many different things can be missing here?",
     "Both the note and its Text need a check before Length is read.",

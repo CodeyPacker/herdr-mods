@@ -1,0 +1,74 @@
+{
+  "id": "course:cs-foundations/task/transfer-import",
+  "role": "independent",
+  "title": "Import valid counts",
+  "concepts": [
+    "text-processing",
+    "string-comparison",
+    "dictionary",
+    "loop"
+  ],
+  "prompt": "`ImportReport` is supplied. Write `public static ImportReport Import(List<string> lines)`. Each row must have exactly one comma. Trim both fields. A valid name is nonempty, and its count must parse with `int.TryParse`, `NumberStyles.Integer` and `CultureInfo.InvariantCulture`; reject negative counts. Count every invalid row once in `Rejected`, including malformed rows and overflow. Add a valid zero count as a key. Combine names using an `OrdinalIgnoreCase` dictionary. Return an empty report for an empty list, and do not change the input list. Assume the list and its items are nonnull and sums fit in `int`.",
+  "hints": [
+    "Split each row first. If it does not produce exactly two fields, count one rejection and continue.",
+    "Trim the name and count text. Use TryParse with Integer style and invariant culture, then reject an empty name or a negative count.",
+    "Create the dictionary with StringComparer.OrdinalIgnoreCase. For each valid row, add its count even when it is zero, and increment Rejected exactly once for each invalid row."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.Import(new List<string> { \"Ada,1\", \" ,2\", \"B,word\", \"C,-1\", \"D,999999999999999999999\", \"E,1,extra\" }).Rejected == 5",
+    "Practice.Import(new List<string> { \" Ada , +2 \", \"ada,3\", \"Bob,0\" }).Totals.Count == 2",
+    "Practice.Import(new List<string> { \" Ada , +2 \", \"ada,3\", \"Bob,0\" }).Totals.TryGetValue(\"ADA\", out int ada) && ada == 5",
+    "Practice.Import(new List<string> { \" Ada , +2 \", \"ada,3\", \"Bob,0\" }).Totals.TryGetValue(\"bOb\", out int zero) && zero == 0",
+    "Practice.Import(new List<string>()).Totals.Count == 0 && Practice.Import(new List<string>()).Rejected == 0",
+    "FixtureInput.IsUnchanged()"
+  ],
+  "checkLabels": [
+    "Each malformed, empty-name, nonnumeric, negative, overflow and extra-field row must add exactly one rejection.",
+    "The valid names Ada and Bob must be the only keys, including the valid zero count.",
+    "Trim both fields, accept +2, and combine Ada with ada into a total of 5.",
+    "A zero count must create a key that can be looked up with different letter casing.",
+    "An empty input must return no totals and zero rejections.",
+    "Import must leave the caller's list and its rows unchanged."
+  ],
+  "fixtures": [
+    {
+      "id": "report",
+      "declarations": "fixture-report.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-case-sensitive.cs",
+      "misconception": "Uses the dictionary's default case-sensitive comparer.",
+      "witness": {
+        "fixture": "report",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-drop-zero.cs",
+      "misconception": "Skips a valid row when its count is zero.",
+      "witness": {
+        "fixture": "report",
+        "kind": "result",
+        "detail": "Check 2 failed"
+      }
+    },
+    {
+      "source": "wrong-ignore-rejected.cs",
+      "misconception": "Returns zero instead of counting rejected rows.",
+      "witness": {
+        "fixture": "report",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    }
+  ],
+  "feedback": "Check each row before adding it. A valid zero still creates a name, while each invalid row increments Rejected once.",
+  "alternative": "alternative.cs"
+}

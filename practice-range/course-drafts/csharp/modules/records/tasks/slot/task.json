@@ -8,7 +8,7 @@
     "value-reference",
     "method"
   ],
-  "prompt": "Declare Slot so that it holds a string Day and an int Hour, and so that two slots with the same day and hour are equal with ==. Then complete the static class Slots. Clash(Slot a, Slot b) returns true when the two slots are the same day and hour. NextHour(Slot slot) returns a slot on the same day, one hour later, and leaves the slot it was given unchanged.",
+  "prompt": "Declare `Slot` so that it holds a `string Day` and an `int Hour`, and so that two slots with the same day and hour are equal with `==`. Give Slot a public constructor accepting day then hour. Write `public static class Slots` with public static methods `bool Clash(Slot a, Slot b)` and `Slot NextHour(Slot slot)`. `Clash(Slot a, Slot b)` returns true when the two slots are the same day and hour. `NextHour(Slot slot)` returns a slot on the same day, one hour later, and leaves the slot it was given unchanged.",
   "hints": [
     "Which kind of type compares its values with ==, and which compares references?",
     "A record gives you the constructor, the properties and value equality in one line.",

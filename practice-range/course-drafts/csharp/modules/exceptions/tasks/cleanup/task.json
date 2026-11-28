@@ -1,0 +1,60 @@
+{
+  "id": "course:cs-foundations/task/exceptions-cleanup",
+  "role": "independent",
+  "title": "Close a reader even when reading fails",
+  "concepts": [
+    "disposal",
+    "throw-catch",
+    "method",
+    "interface"
+  ],
+  "prompt": "`LocalReader` is supplied and implements IDisposable. `LocalReader.Open(key)` creates a reader. Its Read() returns text, including an empty string for \"blank\", and throws FormatException for \"broken\". Write `public static string ReadText(string key)`. Open one reader, return its text, and dispose it exactly once before the method returns or lets a failure reach its caller. Preserve the original exception when reading fails.",
+  "hints": [
+    "What happens to cleanup placed after a return or after a call that throws?",
+    "A using declaration disposes its value when the enclosing scope exits, including on return or failure.",
+    "Use using var reader = LocalReader.Open(key); then return reader.Read(). A try/finally is another correct approach."
+  ],
+  "support": "static bool ReadAndClosed(string key, string expected)\n{\n    LocalReader.Reset();\n    return Practice.ReadText(key) == expected && LocalReader.Opened == 1 && LocalReader.Closed == 1;\n}\nstatic bool FailedAndClosed()\n{\n    LocalReader.Reset();\n    try { Practice.ReadText(\"broken\"); return false; }\n    catch (FormatException error) { return error.Message == \"Unreadable text.\" && LocalReader.Opened == 1 && LocalReader.Closed == 1; }\n}",
+  "checks": [
+    "ReadAndClosed(\"a\", \"value of a\")",
+    "ReadAndClosed(\"blank\", \"\")",
+    "FailedAndClosed()"
+  ],
+  "checkLabels": [
+    "A normal read must return its text and dispose exactly one reader.",
+    "An empty result must still dispose the reader.",
+    "A failed read must keep its FormatException and dispose the reader."
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-success-only.cs",
+      "misconception": "Disposes only after a successful read, so failure skips cleanup.",
+      "witness": {
+        "fixture": "local",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    },
+    {
+      "source": "wrong-hides.cs",
+      "misconception": "Closes the reader but hides the failure by returning empty text.",
+      "witness": {
+        "fixture": "local",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    }
+  ],
+  "feedback": "Check successful return and failure separately. Both paths must dispose the reader, and the failure must still reach the caller.",
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "local",
+      "declarations": "fixture-local.cs"
+    }
+  ]
+}

@@ -1,14 +1,10 @@
 public static Dictionary<string, int> MinutesByGenre(List<Movie> movies)
 {
-    Dictionary<string, int> totals = new Dictionary<string, int>();
-    foreach (Movie movie in movies)
+    var groups = movies.Where(movie => !movie.Watched).GroupBy(movie => movie.Genre);
+    var result = new Dictionary<string, int>();
+    foreach (var group in groups)
     {
-        if (movie.Watched)
-        {
-            continue;
-        }
-        totals.TryGetValue(movie.Genre, out int current);
-        totals[movie.Genre] = current + movie.Minutes;
+        result.Add(group.Key, group.Sum(movie => movie.Minutes));
     }
-    return totals;
+    return result;
 }

@@ -1,6 +1,6 @@
 import { div } from "gpui-kit";
-import { v_flex, h_flex, TextView, InputState } from "gpui-base";
-import { watchFolder, window as appWindow } from "herdr";
+import { v_flex, h_flex, InputState, SliderState, Slider, SliderTrack, SliderIndicator, SliderThumb } from "gpui-base";
+import { fonts, shared, setShared, watchFolder, window as appWindow } from "herdr";
 import { keyButton, keysAreHidden, meter, spinner, textInput } from "../kit/controls.js";
 import { badge, banner, card, inkOn, paneBar, sectionLabel } from "../kit/pane.js";
 import { cardGrid, cardTitle, inGrid, packBadge, packColor, statusTag } from "../setup/parts.js";
@@ -8,12 +8,13 @@ import { courseCommand } from "./bridge.js";
 import { generateRepoLesson, generateExtraPractice } from "../bridge.js";
 import { tutorChat } from "../tutor/panel.js";
 import { findLanguage } from "../languages/index.js";
-import { codeBlock, initCode, richText, sweepCode } from "./code.js";
+import { codeBlock, initCode, useCode, richText, sweepCode, readingText } from "./code.js";
+import { READING_KEY, READING_DEFAULTS, readingPreferences, readingWidth } from "./reading-preferences.js";
 
 /** @typedef {import("gpui-kit").Context} Context */
 /** @typedef {import("../kit/theme.js").Theme} Theme */
 /** @param {string} id @param {string} text */
-const markdown = (id, text) => TextView.markdown(id, text).selectable();
+const markdown = readingText;
 /**
  * The screen's main action: filled in the accent when ready, outlined otherwise. Still clickable when not ready.
  * @param {Theme} t @param {string} id @param {string} label @param {boolean} enabled @param {boolean} ready @param {(cx: Context) => void} click
@@ -28,9 +29,10 @@ const stage = (t, n, label, active) => h_flex().gap(8).items_center().pt(4)
     .items_center().justify_center().text_size(11).font_semibold().child(String(n)))
   .child(div().text_size(12).when(active, el => el.font_semibold()).text_color(active ? t.foreground : t.muted).child(label));
 /** The kicker over a step title. */
+/** @type {Record<string, string>} */
 const KIND = { explanation: "LEARN", walkthrough: "WALKTHROUGH", prediction: "PREDICT", modification: "EXERCISE", independent: "EXERCISE", debugging: "EXERCISE" };
-/** A course's short name: its language (TypeScript, C#, SQL), or its own title for a reading course. @param {{ languageId?: string, title?: string, id: string }} course */
-const courseName = course => (course.languageId && findLanguage(course.languageId)?.name) || course.title || course.id;
+/** Use the course title, falling back to its language when no title is available. @param {{ languageId?: string, title?: string, id: string }} course */
+const courseName = course => course.title || (course.languageId && findLanguage(course.languageId)?.name) || course.id;
 /** @param {string} path */
 const normalized = path => appWindow()?.platform === "windows" ? path.replaceAll("\\", "/").toLowerCase() : path.replaceAll("\\", "/");
 
@@ -38,7 +40,9 @@ export class CoursePanel {
   /** @param {import("../main.js").default} host */
   constructor(host) {
     this.host = host;
-    initCode();
+    /** @type {import("./code.js").Pool} */
+    this.codePool = null;
+    initCode(this);
     /** @type {import("./types.js").CourseSummary[]} */
     this.catalog = [];
     /** @type {import("./types.js").CourseSnapshot | null} */
@@ -68,6 +72,31 @@ export class CoursePanel {
     this.settingsReturn = "catalog";
     this.showReadiness = false;
     this.showFixtures = false;
+    this.fontPicker = false;
+    this.readingFonts = [...new Set(fonts())].sort((a, b) => a.localeCompare(b));
+    this.fontSearch = InputState.new({ placeholder: "Search installed fonts" });
+    this.fontSearch.on("focus", () => { this.host.typing = true; });
+    this.fontSearch.on("blur", () => { this.host.typing = false; });
+    this.fontSearch.on("change", (_event, cx) => cx.notify());
+    this.readingDraft = null;
+    this.syncingReading = false;
+    const savedReading = readingPreferences(shared(READING_KEY));
+    /** @type {Record<string, import("gpui-base").SliderState>} */
+    this.readingSliders = {};
+    /** @type {Array<["size" | "lineHeight" | "margins", number, number, number]>} */
+    const sliderOptions = [["size", 10, 24, 1], ["lineHeight", 1.2, 2.8, 0.05], ["margins", -10, 20, 1]];
+    for (const [key, min, max, step] of sliderOptions) {
+      const state = SliderState.new({ min, max, step, value: savedReading[key] });
+      state.on("change", (value, cx) => {
+        if (this.syncingReading) return;
+        this.readingDraft = readingPreferences({ ...readingPreferences(shared(READING_KEY)), ...this.readingDraft, [key]: Number(value) });
+        cx.notify();
+      });
+      state.on("release", (_value, cx) => {
+        if (this.readingDraft) this.changeReading(this.readingDraft, cx);
+      });
+      this.readingSliders[key] = state;
+    }
     this.knownInput=InputState.new({placeholder:"Python, JavaScript…"});
     this.knownInput.on("focus",()=>{this.host.typing=true;});
     this.knownInput.on("blur",()=>{this.host.typing=false;});
@@ -346,9 +375,13 @@ export class CoursePanel {
 
   /** @param {Theme} t */
   render(t) {
+    useCode(this);
+    const prefs = readingPreferences(shared(READING_KEY));
     const body = v_flex().id("course-body").flex_1().min_h(0).overflow_y_scroll().p(16);
     // Content sits in a centred column instead of the full window. The lesson is wider because it has a step list.
-    const column = v_flex().w_full().max_w(this.page === "catalog" ? 1400 : this.page === "lesson" ? 1040 : 760).mx_auto().gap(12);
+    const width = this.page === "catalog" ? 1400 : this.page === "lesson" ? 1040 + readingWidth(680, prefs.margins) - 680
+      : ["task", "repo-lesson"].includes(this.page) ? readingWidth(760, prefs.margins) : 760;
+    const column = v_flex().w_full().max_w(width).mx_auto().gap(12);
     if (this.generatingRepoLesson || this.generatingExtras) column.child(keyButton(t,"cancel-repo-lesson","","Cancel generation",Boolean(this.host.tutorRequestId),cx=>this.host.cancelTutor(cx)));
     if (this.error) column.child(banner(t, this.error, t.blocked));
     if (this.page === "catalog") this.catalogView(column, t);
@@ -365,7 +398,7 @@ export class CoursePanel {
         input: this.host.tutorInput, typing: this.host.typing, send: cx => this.host.askTutor(cx),
       }));
     }
-    const backLabel = this.page === "catalog" ? `Back to ${this.returnScreen === "setup" ? "setup" : this.returnScreen === "languages" ? "languages" : "practice"}`
+    const backLabel = this.page === "catalog" ? `Back to ${this.returnScreen === "setup" ? "setup" : this.returnScreen === "languages" ? "languages" : this.returnScreen === "start" ? "start" : "practice"}`
       : this.page === "settings" ? "Back"
       : this.data?.enrollment.review ? "End review" : this.page === "task" && !this.isReadiness(this.data?.enrollment.activeTask) ? "Back to lesson"
       : this.page === "lesson" ? "Course page" : this.page === "modules" ? "Courses" : "Back";
@@ -376,12 +409,25 @@ export class CoursePanel {
       .child(h_flex().flex_1().gap(8).items_center().px(12).when(Boolean(this.busy), el => el.child(spinner(t)).child(div().text_size(12).text_color(t.muted).child(this.busy))));
     const lesson = this.page === "lesson" ? this.lesson() : null, position = this.data?.enrollment.position;
     if (lesson && position) {
-      // Previous, where you are, and Continue: the one filled button, bright once the step is done.
-      const step = lesson.steps[position.step], last = position.step + 1 === lesson.steps.length;
-      const done = (step.questions ?? []).every(id => this.data?.enrollment.modules[lesson.id]?.questions?.[id]?.correct);
+      // Continue keeps the same appearance on reading and question steps.
+      const last = position.step + 1 === lesson.steps.length;
       footer.child(keyButton(t, "course-previous", "", "Previous", !this.busy && position.step > 0, cx => this.advance(-1, cx)))
         .child(div().px(12).text_size(12).text_color(t.muted).child(`${position.step + 1} / ${lesson.steps.length}`))
-        .child(primaryButton(t, "course-next", last ? "Finish module" : "Continue \u2192", !this.busy, done, cx => this.advance(1, cx)));
+        .child(primaryButton(t, "course-next", last ? "Finish module" : "Continue \u2192", !this.busy, !this.busy, cx => this.advance(1, cx)));
+    }
+    if (this.page === "task" && this.data && !this.data.enrollment.review) {
+      const task = this.task(), progress = task && this.data.enrollment.tasks[task.id];
+      const passed = !this.data.stale && Boolean(progress?.result?.passed);
+      if (task && passed) {
+        const module = this.data.course.lessons.find(lesson => lesson.tasks.some(item => item.id === task.id));
+        const tasks = module?.tasks.filter(item => item.role !== "review") ?? [];
+        const place = tasks.findIndex(item => item.id === task.id), next = place >= 0 ? tasks[place + 1] : null;
+        footer.child(primaryButton(t, "course-task-next", next ? "Next exercise \u2192" : this.isReadiness(task.id) ? "Course page \u2192" : "Back to lesson \u2192", !this.busy, true, cx => {
+          this.showFixtures = false;
+          if (next) this.run("task", { taskId: next.id }, cx);
+          else this.back(cx);
+        }));
+      }
     }
     // One line of shortcuts for this screen, instead of a key on every button.
     const keys = ["esc back", ...(this.page === "modules" ? ["enter continue"] : this.page === "lesson" ? ["p previous", "n continue", "r run"] : this.page === "task" ? ["o open in editor", "c check", "h hint"] : [])];
@@ -401,9 +447,79 @@ export class CoursePanel {
       .when(Boolean(right), el => el.child(right));
   }
 
-  /** @param {Theme} t @param {string} id */
-  settingsButton(t, id) {
-    return keyButton(t, id, "", "Settings", !this.busy, cx => { this.settingsReturn = this.page; this.page = "settings"; cx.notify(); });
+  syncReadingSliders() {
+    const prefs = readingPreferences(shared(READING_KEY));
+    this.readingDraft = null;
+    this.syncingReading = true;
+    try { for (const [key, state] of Object.entries(this.readingSliders)) state.set_value(prefs[/** @type {"size" | "lineHeight" | "margins"} */ (key)]); }
+    finally { this.syncingReading = false; }
+  }
+
+  /** Save locally for every Practice Range tab and dialog. @param {object} patch @param {Context} cx */
+  changeReading(patch, cx) {
+    setShared(READING_KEY, readingPreferences({ ...readingPreferences(shared(READING_KEY)), ...patch }));
+    this.syncReadingSliders();
+    cx.notify();
+  }
+
+  /** Course settings open from the gear panel, while in Courses. Null elsewhere. @param {Theme} t */
+  gearNote(t) {
+    if (this.host.screen !== "courses" || this.page === "settings") return null;
+    return h_flex().flex_none().child(keyButton(t, "gear-course-settings", "", "Course settings: text, languages, repo", !this.busy, cx => {
+      this.host.shortcuts.hide();
+      this.syncReadingSliders(); this.settingsReturn = this.page; this.page = "settings"; cx.notify();
+    }));
+  }
+
+  /** @param {import("gpui-kit").Element} body @param {Theme} t */
+  readingSettings(body, t) {
+    const prefs = this.readingDraft ?? readingPreferences(shared(READING_KEY));
+    body.child(sectionLabel(t, "Reading appearance"));
+    /** @param {string} font @param {Context} cx */
+    const chooseFont = (font, cx) => {
+      this.changeReading({ font }, cx);
+      this.fontPicker = false; this.fontSearch.blur(); this.host.typing = false; this.host.handle.focus();
+    };
+    body.child(h_flex().gap(12).items_center().flex_wrap()
+      .child(div().flex_1().font_semibold().child("Font"))
+      .child(keyButton(t, "reading-font", "", prefs.font && this.readingFonts.includes(prefs.font) ? prefs.font : "App default", true, cx => {
+        this.fontPicker = !this.fontPicker;
+        if (this.fontPicker) { this.fontSearch.set_value(""); this.fontSearch.focus(); }
+        else { this.fontSearch.blur(); this.host.handle.focus(); }
+        cx.notify();
+      })));
+    if (this.fontPicker) {
+      const query = this.fontSearch.value().trim().toLowerCase();
+      const matches = this.readingFonts.filter(font => font.toLowerCase().includes(query));
+      body.child(textInput(t, this.fontSearch, this.host.typing));
+      const list = v_flex().id("reading-font-list").max_h(200).overflow_y_scroll().gap(4)
+        .child(keyButton(t, "reading-font-default", "", "App default", true, cx => chooseFont("", cx)));
+      for (const font of matches) list.child(keyButton(t, `reading-font-${font}`, "", font, true, cx => chooseFont(font, cx)));
+      if (!matches.length) list.child(div().text_size(12).text_color(t.muted).child("No installed fonts match."));
+      body.child(list);
+    }
+    /** @param {string} label @param {string} key @param {string} value */
+    const adjustment = (label, key, value) => {
+      const state = this.readingSliders[key];
+      return v_flex().gap(6)
+        .child(h_flex().gap(12).items_center().child(div().flex_1().font_semibold().child(label)).child(div().child(value)))
+        .child(Slider.new(state).w_full().child(
+          SliderTrack.new(state).w_full().h(24).flex().items_center().cursor_pointer().child(
+            SliderIndicator.new(state).relative().w_full().h(4).rounded(2).bg(t.raised)
+              .range_style(fill => fill.rounded(2).bg(t.accent))
+              .child(SliderThumb.new(state).size(14).rounded(7).bg(t.accent).ml(-7).mt(-5)))));
+    };
+    body.child(adjustment("Text size", "size", `${prefs.size} px`))
+      .child(adjustment("Line spacing", "lineHeight", prefs.lineHeight.toFixed(2)))
+      .child(adjustment("Margins", "margins", `${prefs.margins}%`))
+      .child(div().text_size(12).text_color(t.muted).child("Negative margins widen the reading area."))
+      .child(card(t, { id: "reading-preview" })
+        .child(div().text_size(11).text_color(t.dim).child("PREVIEW"))
+        .child(v_flex().w_full().max_w(readingWidth(580, prefs.margins)).mx_auto()
+          .child(readingText("reading-preview-text", "Make yourself comfortable.\n\nRead one idea, try an example, and practice at your own pace.", prefs, t.foreground))))
+      .child(h_flex().child(keyButton(t, "reading-reset", "", "Reset reading appearance", true, cx => {
+        this.changeReading(READING_DEFAULTS, cx);
+      })));
   }
 
   /** The 1-based place of a module in its course. @param {string} moduleId */
@@ -420,8 +536,7 @@ export class CoursePanel {
   /** @param {import("gpui-kit").Element} body @param {Theme} t */
   catalogView(body, t) {
     body.child(h_flex().gap(12).items_center()
-      .child(div().flex_1().font_semibold().child(this.languageFilter ? `${findLanguage(this.languageFilter).name} courses` : "Courses"))
-      .child(this.settingsButton(t, "course-catalog-settings")));
+      .child(div().flex_1().font_semibold().child(this.languageFilter ? `${findLanguage(this.languageFilter).name} courses` : "Courses")));
     if (this.languageFilter) body.child(keyButton(t,"course-all-languages","","All courses",!this.busy,cx=>{this.languageFilter="";cx.notify();}));
     // Laid out like the language cards: badge, name and status on top, progress, then buttons at the bottom.
     const grid = cardGrid();
@@ -435,7 +550,10 @@ export class CoursePanel {
         : total && done >= total ? statusTag(t, "Done", "ready")
         : statusTag(t, started ? "In progress" : "Not started", "neutral");
       const enabled = !this.busy && !course.error;
-      const open = (/** @type {Context} */ cx) => this.run("enroll", { courseId: course.id, entryPath: "beginner" }, cx);
+      // The newest version may already be started on its own. Then it's the one to continue, and there is nothing to update.
+      const latestStarted = Boolean(course.contentVersion && course.versions?.includes(course.contentVersion));
+      const behind = Boolean(started && course.contentVersion && course.enrolledVersion !== course.contentVersion);
+      const open = (/** @type {Context} */ cx) => this.run("enroll", { courseId: course.id, entryPath: "beginner", ...(behind && latestStarted ? { contentVersion: course.contentVersion } : {}) }, cx);
       // The card opens the course too, so its buttons stop the click from reaching it.
       const press = (/** @type {(cx: Context) => void} */ act) => (/** @type {Context} */ cx) => { cx.stop_propagation(); act(cx); };
       grid.child(inGrid(card(t, { id: `course-card-${course.id}`, click: enabled ? open : undefined })
@@ -447,16 +565,20 @@ export class CoursePanel {
         .child(h_flex().gap(8).flex_wrap()
           .child(keyButton(t, `course-open-${course.id}`, "", started ? "Continue" : "Start", enabled, press(open)))
           // A newer version is offered here. Updating carries reading and answers over and opens the course.
-          .when(Boolean(started && course.contentVersion && course.enrolledVersion !== course.contentVersion), el => el.child(
+          .when(behind && !latestStarted, el => el.child(
             keyButton(t, `course-update-${course.id}`, "", `Update to ${course.contentVersion}`, !this.busy, press(cx =>
               this.run("update-version", { courseId: course.id, contentVersion: course.enrolledVersion, to: course.contentVersion }, cx))))))));
     }
+    // Cards grow to fill their row, so a short last row would stretch. Empty, flat slots fill it,
+    // keeping every card the same width. Up to five are needed for a six-column row.
+    for (let i = 0; i < 5; i++) grid.child(inGrid(div().h(0)));
     body.child(grid);
   }
 
   /** Course settings: known languages, the repo, older versions. @param {import("gpui-kit").Element} body @param {Theme} t */
   settingsView(body, t) {
     body.child(this.header(t, this.settingsReturn === "catalog" ? "Courses" : "Back", this.data && this.settingsReturn !== "catalog" ? `${courseName(this.data.course)} settings` : "Course settings"));
+    this.readingSettings(body, t);
     this.profileView(body, t);
     const summary = this.data && this.settingsReturn !== "catalog" ? this.catalog.find(course => course.id === this.data?.course.id) : null;
     if (summary) {
@@ -490,46 +612,79 @@ export class CoursePanel {
     return module ? { moduleId: module.id, step: 0 } : null;
   }
 
-  /** The course page: one Continue box, then the numbered modules. @param {import("gpui-kit").Element} body @param {Theme} t */
+  /** The course page: the course and its progress, the next step, then the modules as cards. @param {import("gpui-kit").Element} body @param {Theme} t */
   modules(body, t) {
     const course = this.data.course;
+    const pack = course.languageId ? findLanguage(course.languageId) : undefined;
+    const color = pack ? packColor(t, pack) : t.accent;
+    const mark = pack ? packBadge(t, pack, 52) : badge((course.title ?? course.id).slice(0, 3).toUpperCase(), color, 52);
+    const available = course.modules.filter(module => module.status === "available");
+    const done = available.filter(module => this.moduleState(module.id) === "done").length;
+    const share = available.length ? done / available.length : 0;
     // Drills are optional, so they are one quiet button, never a reminder.
-    const tools = h_flex().gap(8).when(!course.reading, el => el.child(keyButton(t, "course-practice-review", "", "Practice drills", !this.busy, cx => this.practiceReview(cx))))
-      .child(this.settingsButton(t, "course-settings"));
-    body.child(this.header(t, "Courses", courseName(course), tools));
+    const tools = h_flex().gap(8).when(!course.reading, el => el.child(keyButton(t, "course-practice-review", "", "Drills", !this.busy, cx => this.practiceReview(cx))));
+    body.child(this.header(t, "Courses", "", tools));
+    // The course: its badge, name and how far along it is.
+    body.child(v_flex().id("course-hero").gap(14).p(20).rounded(14).border_1().border_color(t.border).bg(t.raised)
+      .child(h_flex().gap(16).items_center()
+        .child(mark)
+        .child(v_flex().flex_1().min_w(0).gap(4)
+          .child(div().text_size(22).font_semibold().child(courseName(course)))
+          .child(div().text_size(12).text_color(t.muted).child(`${available.length} ${course.reading ? "reading modules" : "modules"} \u00b7 ${done} done${course.preview ? " \u00b7 Preview" : ""}`)))
+        .child(v_flex().flex_none().items_end()
+          .child(div().text_size(24).font_semibold().text_color(color).child(`${Math.round(share * 100)}%`))
+          .child(div().text_size(11).text_color(t.dim).child("complete"))))
+      .child(div().w_full().h(6).rounded(3).bg(t.selected).overflow_hidden()
+        .child(div().h_full().rounded(3).bg(color).w(`${Math.round(share * 1000) / 10}%`))));
     this.updateView(body, t);
     if (this.data.drillError) body.child(banner(t, this.data.drillError));
     const next = this.nextStep();
     const nextLesson = next && course.lessons.find(lesson => lesson.id === next.moduleId);
     if (next && nextLesson) {
       const step = nextLesson.steps[next.step];
-      body.child(card(t, { id: "course-up-next", on: true, click: this.busy ? undefined : cx => this.run("open", next, cx) })
-        .child(div().text_size(11).text_color(t.dim).child("Up next"))
-        .child(h_flex().gap(12).items_center()
-          .child(v_flex().flex_1().gap(2)
-            .child(div().font_semibold().child(`${this.moduleNumber(nextLesson.id)}. ${nextLesson.title}${step ? ` \u00b7 ${step.title}` : ""}`))
-            .child(div().text_size(12).text_color(t.muted).child(`Step ${next.step + 1} of ${nextLesson.steps.length}`)))
-          .child(div().flex_none().text_size(12).text_color(t.accent).child("Continue \u2192"))));
+      const open = (/** @type {Context} */ cx) => this.run("open", next, cx);
+      body.child(h_flex().id("course-up-next").gap(16).items_center().p(18).rounded(14).border_1().border_color(t.accent).bg(t.selected)
+        .when(!this.busy, el => el.cursor_pointer().on_click((_e, cx) => open(cx)))
+        .child(div().w(4).h(52).flex_none().rounded(2).bg(t.accent))
+        .child(v_flex().flex_1().min_w(0).gap(4)
+          .child(div().text_size(11).font_semibold().text_color(t.accent).child(next.step ? "CONTINUE WHERE YOU LEFT OFF" : "UP NEXT"))
+          .child(div().text_size(17).font_semibold().child(`${this.moduleNumber(nextLesson.id)}. ${nextLesson.title}`))
+          .child(div().text_size(12).text_color(t.muted).child(`Step ${next.step + 1} of ${nextLesson.steps.length}${step ? ` \u00b7 ${step.title}` : ""}`)))
+        .child(primaryButton(t, "course-up-next-open", next.step ? "Continue \u2192" : "Start \u2192", !this.busy, true, cx => { cx.stop_propagation(); open(cx); })));
     } else body.child(banner(t, "You have read every module. Open any module below to revisit it.", t.done));
     const reviewing = Boolean(this.data.enrollment.review);
     if (reviewing || this.data.reviewReady > 0) body.child(h_flex().gap(8).items_center()
       .child(keyButton(t, "course-review", "", reviewing ? "Resume review" : `Review \u00b7 ${this.data.reviewReady} ready`, !this.busy, cx => this.run("review-start", {}, cx)))
       .child(div().text_size(12).text_color(t.muted).child("Exercises you passed, back for another try.")));
-    body.child(sectionLabel(t, "MODULES"));
+    body.child(h_flex().items_center().pt(6)
+      .child(div().flex_1().child(sectionLabel(t, "MODULES")))
+      .child(div().text_size(11).text_color(t.dim).child(`${done} of ${available.length} done`)));
+    const list = v_flex().gap(8);
     for (const [index, module] of course.modules.entries()) {
       const state = module.status === "planned" ? "planned" : this.moduleState(module.id);
       const lesson = course.lessons.find(lesson => lesson.id === module.id);
-      const seen = new Set(this.data.enrollment.modules[module.id]?.seen ?? []).size;
-      const status = state === "done" ? "Done" : state === "started" && lesson ? `${seen} of ${lesson.steps.length} steps` : state === "planned" ? "Planned" : "";
-      const mark = state === "done" ? "\u2713" : state === "started" ? "\u25cf" : "\u25cb";
+      const steps = lesson?.steps.length ?? 0;
+      const seen = Math.min(steps, new Set(this.data.enrollment.modules[module.id]?.seen ?? []).size);
+      const detail = state === "done" ? "Done" : state === "started" ? `${seen} of ${steps} steps` : state === "planned" ? "Coming soon" : `${steps} steps`;
       const open = module.status === "available" && !this.busy;
-      body.child(h_flex().id(`course-module-${module.id}`).gap(10).items_center().px(8).py(6).rounded(8)
-        .when(state === "started", el => el.bg(t.selected))
-        .when(open, el => el.cursor_pointer().hover(s => s.bg(t.raised)).on_click((_e, cx) => this.run("open", { moduleId: module.id, step: 0 }, cx)))
-        .child(div().w(16).flex_none().text_color(state === "new" || state === "planned" ? t.dim : t.accent).child(mark))
-        .child(div().flex_1().when(state === "started", el => el.font_semibold()).child(`${index + 1}. ${module.title}`))
-        .child(div().flex_none().text_size(12).text_color(t.muted).child(status)));
+      // The number sits in a circle: filled when done, ringed in the accent while started.
+      const number = h_flex().size(30).flex_none().rounded(15).items_center().justify_center().text_size(12).font_semibold()
+        .when(state === "done", el => el.bg(t.done).text_color(inkOn(t.done)).child("\u2713"))
+        .when(state === "started", el => el.border_2().border_color(t.accent).text_color(t.accent).child(String(index + 1)))
+        .when(state === "new", el => el.border_1().border_color(t.border).text_color(t.muted).child(String(index + 1)))
+        .when(state === "planned", el => el.border_1().border_color(t.border).text_color(t.dim).child(String(index + 1)));
+      list.child(h_flex().id(`course-module-${module.id}`).gap(14).items_center().px(14).py(12).rounded(10).border_1()
+        .border_color(state === "started" ? t.accent : t.border).bg(state === "started" ? t.selected : t.raised)
+        .when(state === "planned", el => el.opacity(0.6))
+        .when(open, el => el.cursor_pointer().hover(s => s.border_color(t.accent)).on_click((_e, cx) => this.run("open", { moduleId: module.id, step: 0 }, cx)))
+        .child(number)
+        .child(v_flex().flex_1().min_w(0).gap(2)
+          .child(div().truncate().font_semibold().text_color(state === "planned" ? t.dim : t.foreground).child(module.title))
+          .child(div().text_size(11).text_color(state === "done" ? t.done : t.muted).child(detail)))
+        .when(state === "started" && steps > 0, el => el.child(div().w(90).flex_none().child(meter(t, seen / steps, t.accent))))
+        .when(open, el => el.child(div().flex_none().text_color(t.dim).child("\u203a"))));
     }
+    body.child(list);
     this.readinessView(body, t);
   }
 
@@ -587,7 +742,8 @@ export class CoursePanel {
     const seen = new Set(progress?.seen ?? []);
     const exercise = (/** @type {any} */ item) => Boolean(item.task || item.tasks?.length);
     body.child(this.header(t, courseName(this.data.course), `${this.moduleNumber(lesson.id)}. ${lesson.title}`,
-      div().text_size(12).text_color(t.muted).child(`Step ${position.step + 1} of ${lesson.steps.length}`)));
+      h_flex().gap(12).items_center()
+        .child(div().text_size(12).text_color(t.muted).child(`Step ${position.step + 1} of ${lesson.steps.length}`))));
     // Step list: reading steps under Learn, exercise steps under Practice. Any step can be opened.
     const rail = v_flex().w(220).flex_none().gap(2).p(10).rounded(10).bg(t.raised);
     const row = (/** @type {any} */ item, /** @type {number} */ index) => {
@@ -597,7 +753,7 @@ export class CoursePanel {
         .when(current, el => el.bg(t.selected))
         .when(!this.busy && !current, el => el.cursor_pointer().hover(s => s.bg(t.background)).on_click((_e, cx) => this.run("open", { moduleId: lesson.id, step: index }, cx)))
         .child(div().w(14).flex_none().text_size(12).text_color(read && !current ? t.done : current ? t.accent : t.dim).child(mark))
-        .child(div().text_size(12).text_color(current ? t.foreground : read ? t.muted : t.foreground).when(current, el => el.font_semibold()).child(item.title));
+        .child(div().flex_1().min_w(0).whitespace_normal().text_size(12).text_color(current ? t.foreground : read ? t.muted : t.foreground).when(current, el => el.font_semibold()).child(item.title));
     };
     rail.child(div().px(8).pb(4).text_size(10).font_semibold().text_color(t.dim).child("LEARN"));
     lesson.steps.forEach((item, index) => { if (!exercise(item)) rail.child(row(item, index)); });
@@ -607,7 +763,8 @@ export class CoursePanel {
     }
     rail.child(div().px(8).pt(12).text_size(11).text_color(t.dim).child(`${lesson.steps.filter((_item, index) => seen.has(index)).length} of ${lesson.steps.length} done`));
     // The step, in a column about 70 characters wide.
-    const main = v_flex().flex_1().min_w(0).max_w(680).gap(12);
+    const prefs = readingPreferences(shared(READING_KEY));
+    const main = v_flex().flex_1().min_w(0).max_w(readingWidth(680, prefs.margins)).gap(12);
     // An element takes no children once it has a parent, so the panes are attached after they are filled.
     const attach = () => { body.child(h_flex().gap(24).items_start().child(rail).child(main)); };
     if (!this.data.course.reading && this.data.attachment?.available && this.host.tutor.enabled) main.child(h_flex().child(keyButton(t,"course-repo-module","","Explain this topic using my repo",!this.busy,cx=>this.generateRepoLesson(lesson.id,cx))));
@@ -638,22 +795,33 @@ export class CoursePanel {
       main.child(richText(t, `course-question-${id}`, question.prompt, this.data.course.codeFence));
       question.choices.forEach((choice, index) => {
         const picked = result?.choice === index;
-        main.child(h_flex().id(`course-choice-${id}-${index}`).px(12).py(8).rounded(8).border_1()
-          .border_color(picked ? (result?.correct ? t.done : t.blocked) : t.border).bg(picked ? t.selected : t.raised)
-          .when(!this.busy, el => el.cursor_pointer().hover(s => s.border_color(t.accent)).on_click((_e, cx) => this.run("question", { moduleId: lesson.id, questionId: id, choice: index }, cx)))
-          .child(div().flex_1().child(markdown(`course-choice-text-${id}-${index}`, choice.text)))
-          .when(picked, el => el.child(div().text_color(result?.correct ? t.done : t.blocked).child(result?.correct ? "\u2713" : "\u2715"))));
+        const correct = picked && result.correct;
+        const color = picked ? (result.correct ? t.done : t.blocked) : t.border;
+        main.child(v_flex().id(`course-choice-${id}-${index}`).rounded(8).border_1()
+          .border_color(color).bg(picked ? t.selected : t.raised)
+          .child(h_flex().px(12).py(8).gap(10).items_start()
+            .when(!this.busy, el => el.cursor_pointer().hover(s => s.bg(t.selected)).on_click((_e, cx) => this.run("question", { moduleId: lesson.id, questionId: id, choice: index }, cx)))
+            .child(h_flex().w(16).h(16).mt(2).flex_none().rounded(8).border_1().border_color(picked ? color : t.muted).items_center().justify_center()
+              .when(picked, el => el.child(div().w(8).h(8).rounded(4).bg(color))))
+            .child(div().flex_1().min_w(0).child(markdown(`course-choice-text-${id}-${index}`, choice.text, undefined, t.foreground)))
+            .child(div().relative().w(18).h(18).flex_none()
+              // Keep the checkmark mounted so only a new correct answer triggers the motion.
+              .child(div().id(`course-correct-${id}-${index}`).absolute().left(0).top(correct ? 0 : 4).opacity(correct ? 1 : 0).text_color(t.done)
+                .transition("opacity", { duration: 180, easing: "ease-out" })
+                .transition("top", { duration: 220, easing: "ease-out" }).child("\u2713"))
+              .when(picked && !result.correct, el => el.child(div().text_color(t.blocked).child("\u2715")))))
+          .when(picked, el => el.child(v_flex().px(12).pb(8)
+            .child(richText(t, `course-feedback-${id}`, `**${result.correct ? "Right." : "Not quite."}** ${choice.feedback}`)))));
       });
-      if (result) main.child(richText(t, `course-feedback-${id}`, `**${result.correct ? "Right." : "Not quite."}** ${question.choices[result.choice].feedback}`));
     }
     if (runnable.length) {
       if (questions.length) main.child(stage(t, staged ? 3 : 2, "Run it to check", answered));
       for (const id of runnable) {
         const result = progress?.examples?.[id];
         const out = result ? result.details.join("\n") : "";
-        main.child(h_flex().gap(12).items_start()
+        main.child(v_flex().gap(8).items_start()
           .child(keyButton(t, `course-run-example-${id}`, "", "\u25b6 Run", !this.busy && answered, cx => this.run("example", { moduleId: lesson.id, exampleId: id }, cx)))
-          .child(v_flex().flex_1().min_w(0).gap(4)
+          .child(v_flex().w_full().min_w(0).gap(4)
             .when(!answered, el => el.child(div().text_size(12).text_color(t.dim).child("Unlocks after you answer.")))
             .when(Boolean(result), el => el.child(div().text_size(11).text_color(result?.passed ? t.done : t.foreground).child(result?.title ?? ""))
               .child(markdown(`course-example-result-${id}`, `\`\`\`text\n${out}\n\`\`\``)))));
@@ -676,7 +844,7 @@ export class CoursePanel {
     for (const task of lesson.extraTasks ?? []) main.child(keyButton(t, `course-extra-${task.id}`, "", `${task.title} \u00b7 AI-generated`, !this.busy && !this.data.enrollment.review, cx => this.run("task", { taskId: task.id }, cx)));
     if (this.data.course.reading || !this.host.tutor.enabled) { attach(); return; }
     if ((lesson.extraTasks ?? []).length < 6) main.child(h_flex().child(keyButton(t, "course-write-extra", "", "Write extra practice", !this.busy && !this.data.enrollment.review && !this.data.extrasError, cx => this.generateExtraPractice(lesson.id, cx))))
-      .child(div().text_size(11).text_color(t.muted).child("Optional. Each exercise is saved only after its reference passes and its starter and known wrong answers fail. Extra practice does not count toward module status or course review."));
+      .child(div().text_size(11).text_color(t.muted).child("Optional practice. Does not count toward course progress or review."));
     attach();
   }
 
@@ -730,9 +898,9 @@ export class CoursePanel {
     body.child(this.header(t, readiness ? courseName(this.data.course) : lesson ? `${this.moduleNumber(lesson.id)}. ${lesson.title}` : "Lesson",
       readiness ? `Skip-ahead test: ${task.title}` : `Exercise: ${task.title}`,
       place >= 0 ? div().text_size(12).text_color(t.muted).child(`${place + 1} of ${siblings.length}`) : null));
-    if(task.generated) body.child(banner(t,`AI-generated exercise. Its reference passed and known wrong answers failed before saving. It checks printed output only.${this.isExtra(task.id) ? " Extra practice does not count toward module status or course review." : ""}`));
+    if(task.generated) body.child(banner(t,`AI-generated. Checks printed output only.${this.isExtra(task.id) ? " Does not count toward course progress or review." : ""}`));
     const review = this.data.enrollment.review;
-    if (review) body.child(banner(t, `Review ${review.index + 1} of ${review.ids.length}. Fresh files. Your saved practice answers are preserved.`));
+    if (review) body.child(banner(t, `Review ${review.index + 1} of ${review.ids.length}. Your saved answers are kept.`));
     const editorReady = Boolean(this.host.editor) && !this.host.offerEditorDefault;
     body.child(h_flex().gap(8).flex_wrap().items_center()
       .child(primaryButton(t, "course-editor", "Open in editor", !this.busy && !this.host.busy && editorReady, editorReady, cx => this.host.openEditor(cx)))
@@ -741,12 +909,12 @@ export class CoursePanel {
       .child(keyButton(t, "course-answer", "", "Show solution", !this.busy && !task.solution, cx => this.run("answer", { taskId: task.id }, cx)))
       .child(keyButton(t, "course-reset", "", "Start fresh", !this.busy, cx => { this.confirmReset = true; cx.notify(); }))
       .child(div().flex_1().text_size(11).text_color(t.dim).child("Checked when you save")));
-    if (!editorReady) body.child(banner(t, "Choose and confirm your editor in Setup before opening this file."));
+    if (!editorReady) body.child(banner(t, "Choose an editor in Setup to open this file."));
     if (this.confirmReset) body.child(h_flex().gap(8).flex_wrap().child(div().child("Save editor changes first. The current file will be backed up. Reload it after resetting."))
       .child(keyButton(t, "course-reset-confirm", "", "Reset saved file", !this.busy, cx => { this.confirmReset = false; this.run("reset", { taskId: task.id }, cx); }))
       .child(keyButton(t, "course-reset-cancel", "", "Cancel", true, cx => { this.confirmReset = false; cx.notify(); })));
     body.child(richText(t, "course-task-prompt", task.prompt, fence));
-    if (task.workspace) body.child(div().text_color(t.muted).child(`Edit these files in the same folder: ${task.workspace.editable.map(entry => entry.file).join(", ")}. Saving either checks the whole project.`));
+    if (task.workspace) body.child(div().text_color(t.muted).child(`Files: ${task.workspace.editable.map(entry => entry.file).join(", ")}. Saving any file checks the project.`));
     if (progress.result) {
       const passed = !this.data.stale && progress.result.passed;
       const box = card(t, { id: "course-result" })
@@ -768,7 +936,5 @@ export class CoursePanel {
     }
     body.child(div().text_size(11).text_color(t.dim).child(`${progress.attempts} attempts \u00b7 ${progress.independentPasses} passes without help \u00b7 ${(this.data.file ?? "").split(/[\\/]/).pop()}`));
     if (review) { body.child(h_flex().child(keyButton(t, "course-review-next", "", review.index + 1 === review.ids.length ? "Finish review" : "Next review exercise", !this.busy, cx => this.run("review-next", {}, cx)))); return; }
-    const next = place >= 0 ? siblings[place + 1] : null;
-    if (next) body.child(h_flex().child(keyButton(t, "course-next-task", "", `Next exercise: ${next.title}`, !this.busy && Boolean(progress.passes), cx => { this.showFixtures = false; this.run("task", { taskId: next.id }, cx); })));
   }
 }

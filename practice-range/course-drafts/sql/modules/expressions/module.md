@@ -13,7 +13,23 @@ A result often needs values that are not stored anywhere: a label for a price ra
 
 ## Choose a value with CASE
 
-CASE picks one value out of several. It is written CASE WHEN test THEN value WHEN test THEN value ELSE value END. The tests are tried from the top, and the first one that is true decides the result. Later tests are not looked at, so order matters: put the most specific test first. ELSE covers everything that matched no test. Without ELSE, such rows get NULL. A CASE is an expression, so it can sit in the SELECT list and be given a name with AS.
+`CASE` picks one value out of several:
+
+```sql
+CASE WHEN price >= 500 THEN 'premium'
+     WHEN price >= 100 THEN 'mid'
+     ELSE 'budget'
+END AS band
+```
+
+- The tests are tried from the top, and the first one that is true decides the result. Later tests are not looked at, so put the most specific test first.
+- `ELSE` covers everything that matched no test. Without `ELSE`, such rows get `NULL`.
+- A `CASE` is an expression, so it can sit in the `SELECT` list and be given a name with `AS`.
+
+
+## Follow the tests in order {prediction}
+
+The Standing Desk costs 549.00 and passes both tests. Predict its band.
 
 ```sql example bands
 SELECT name, price,
@@ -40,28 +56,25 @@ Your query returned:
 (6 rows)
 ```
 
-## Follow the tests in order {prediction}
-
-The Standing Desk costs 549.00 and passes both tests. Predict its band.
-
-@example bands
-
 :::question band example=bands
 Which band does the Standing Desk get?
-- [x] premium :: The first test, price >= 500, is true for 549.00, and the first true test decides.
+- [x] premium :: 549.00 is at least 500, so the first test is true and the band is premium. The second test is also true for it, but it is never reached. The Office Chair at 289.00 fails the first test and passes the second, so it is mid. With the two tests the other way round, everything from 100 up would be mid.
 - [ ] mid :: The first test is already true, so the second is never reached.
 - [ ] budget :: ELSE is used only when no test is true.
 :::
 
-## The first true test wins {walkthrough}
-
-549.00 is at least 500, so the first test is true and the band is premium. The second test, at least 100, is also true for it, but it is never reached. The Office Chair at 289.00 fails the first test and passes the second, so it is mid. If the two tests were written the other way round, everything from 100 up would be mid.
-
-@example bands
-
 ## Types and division
 
-Every value has a type, and the type decides what an operation does. Dividing one integer by another gives an integer, and the fraction is dropped: 7 / 2 is 3. If either side has a decimal point, the result keeps its fraction: 7 / 2.0 is 3.5. CAST(value AS type) converts a value, for example CAST(stock AS numeric) or CAST('42' AS integer). A conversion that makes no sense is an error.
+Every value has a **type**, and the type decides what an operation does.
+
+- Dividing one integer by another gives an integer, and the fraction is dropped: `7 / 2` is 3.
+- If either side has a decimal point, the result keeps its fraction: `7 / 2.0` is 3.5.
+- `CAST(value AS type)` converts a value, for example `CAST(stock AS numeric)` or `CAST('42' AS integer)`. A conversion that makes no sense is an error.
+
+
+## Divide two integers {prediction}
+
+Predict the first two columns.
 
 ```sql example division
 SELECT 7 / 2 AS whole,
@@ -78,12 +91,6 @@ Your query returned:
 (1 row)
 ```
 
-## Divide two integers {prediction}
-
-Predict the first two columns.
-
-@example division
-
 :::question division example=division
 What are whole and exact?
 - [ ] 3.5 and 3.5 :: 7 / 2 divides two integers, so the fraction is dropped.
@@ -93,7 +100,16 @@ What are whole and exact?
 
 ## Dates
 
-A timestamp such as 2025-01-02 17:16:00 holds a date and a time. CAST(ordered_at AS date) keeps the date and drops the time. EXTRACT(MONTH FROM ordered_at) returns one part of it as a number, and YEAR and DAY work the same way. Subtracting one date from another gives a whole number of days. Subtracting two timestamps gives an interval instead, such as 3 days 18:29:00, so cast to date first when you want days.
+A timestamp such as `2025-01-02 17:16:00` holds a date and a time.
+
+- `CAST(ordered_at AS date)` keeps the date and drops the time.
+- `EXTRACT(MONTH FROM ordered_at)` returns one part as a number, and `YEAR` and `DAY` work the same way.
+- Subtracting one date from another gives a whole number of days. Subtracting two timestamps gives an interval instead, such as `3 days 18:29:00`, so cast to `date` first when you want days.
+
+
+## Count the days {prediction}
+
+Order 1 was placed on 2 January at 17:16 and shipped on 6 January at 11:45. Predict `days_to_ship`.
 
 ```sql example dates
 SELECT id, ordered_at,
@@ -114,12 +130,6 @@ Your query returned:
 (3 rows)
 ```
 
-## Count the days {prediction}
-
-Order 1 was placed on 2 January at 17:16 and shipped on 6 January at 11:45. Predict days_to_ship.
-
-@example dates
-
 :::question days example=dates
 What is days_to_ship for order 1?
 - [ ] 3 :: Both values are cast to date first, so the times of day play no part.
@@ -127,9 +137,9 @@ What is days_to_ship for order 1?
 - [x] 4 :: 6 January minus 2 January is 4 days.
 :::
 
-## Compare a number with a word {prediction}
+## Find the error {prediction}
 
-price is a number. Read the example before checking.
+This example does not run. Find the line PostgreSQL stops at, and why.
 
 ```sql example bad-number diagnostics=[{"code":"22P02","line":3}]
 SELECT name
@@ -139,17 +149,11 @@ WHERE price > 'cheap';
 ```
 
 :::question bad-number example=bad-number
-What happens when you check this example?
-- [ ] It returns no rows. :: The comparison cannot be made at all, so the statement fails.
-- [x] PostgreSQL reports an error on line 3. :: 'cheap' cannot be turned into a number to compare with price (22P02).
-- [ ] It returns every product. :: A failed conversion is an error. It does not count as true.
+Which error does PostgreSQL report?
+- [ ] Line 1: `name` cannot be selected while `price` is tested. :: `WHERE` can test any column, whether or not it is selected. Line 1 is fine.
+- [x] Line 3, 22P02: `'cheap'` is not valid input for a number. :: To compare, PostgreSQL has to turn `'cheap'` into a number, and it cannot. The same error appears when a `CAST` is given text that is not a number. Compare with a number instead, such as `price < 50`.
+- [ ] Line 3: text must be compared with `LIKE`, not `>`. :: `>` can compare text with text. The trouble is that `price` is a number and `'cheap'` is not.
 :::
-
-## Read the error {walkthrough}
-
-Check the example. To compare, PostgreSQL has to turn 'cheap' into a number, and it cannot. Error 22P02 says invalid input syntax for type numeric: "cheap". The same error appears when a CAST is given text that is not a number.
-
-@example bad-number
 
 ## Label the stock level {modification}
 

@@ -13,16 +13,16 @@ Some work finishes later, such as reading a file or calling a server. A promise 
 
 ## Wait for a result
 
-- A promise ends in one of two ways. It resolves with a value, or it rejects with a reason (like a throw).
+- A promise ends in one of two ways. It **resolves** with a value, or it **rejects** with a reason (like a throw).
 - `Promise<string>` is a promise that resolves with a string.
 - An `async` function always returns a promise, even when it returns a plain value.
-- Inside an `async` function, `await promise` pauses until the promise settles. It gives the value, or throws the rejection at that line.
+- Inside an `async` function, `await promise` pauses until the promise settles. It gives the value, or throws the rejection at that line, so a `try` and `catch` around the `await` handles a rejection.
 
 The examples and tasks here use local data, with no network or timers.
 
-## Predict before running {prediction}
+## Await a name {prediction}
 
-Read the example and predict what it prints before you run it.
+Read the example and predict what it prints.
 
 ```typescript example trace
 async function readName(): Promise<string> {
@@ -39,21 +39,13 @@ Hello Jo
 
 :::question predict example=trace
 What does it print?
-- [x] Hello Jo :: `await` turns the promise into the string `"Jo"`.
+- [x] Hello Jo :: `readName()` returns a `Promise<string>`, not a string. `await` waits for it and gives `"Jo"`, and only then is `"Hello " + name` built.
 - [ ] Hello [object Promise] :: That would happen without `await`. Here the promise is awaited first.
 :::
 
-## Trace the example {walkthrough}
+## Handle a rejection {prediction}
 
-`readName()` returns a `Promise<string>`, not a string. `await` waits for it and gives `"Jo"`. Only then is `"Hello " + name` built.
-
-To handle a rejection, put the `await` inside `try`. A rejection at `await` acts like a `throw`, so `catch` receives it.
-
-@example trace
-
-## Check your explanation {prediction}
-
-Read the example again and choose the explanation that fits.
+Suppose `readName` rejected instead of resolving.
 
 @example trace
 

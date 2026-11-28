@@ -1,0 +1,10 @@
+{
+  "id":"course:cs-foundations/task/delegates-visit","role":"independent","title":"Visit each item","concepts":["delegate","lambda","list","loop"],
+  "prompt":"Implement `public static void Visit(List<string> items, Action<string> emit)`. Call `emit` once per item in order. An empty list makes no calls.",
+  "hints":["Action has no return value. What should happen to each item?","Use one loop and pass each item to emit.","Call `emit(item)` exactly once inside the loop. Do not call it after or before the loop."],
+  "starter":"starter.cs","solution":"solution.cs","alternative":"alternative.cs","mode":"members","rules":[],
+  "checks":["Given.VisitOrder(Practice.Visit)","Given.VisitEmpty(Practice.Visit)"],"checkLabels":["The action must receive every item once in order.","An empty list must make no calls."],
+  "fixtures":[{"id":"cases","declarations":"fixture-cases.cs"}],
+  "wrongAnswers":[{"source":"wrong-reversed.cs","misconception":"Visits items from last to first.","witness":{"fixture":"cases","kind":"result","detail":"Check 1 failed"}},{"source":"wrong-skips-first.cs","misconception":"Starts at index one and misses the first item.","witness":{"fixture":"cases","kind":"result","detail":"Check 1 failed"}}],
+  "feedback":"Use a loop that starts at the first item and call the action exactly once in each loop run."
+}

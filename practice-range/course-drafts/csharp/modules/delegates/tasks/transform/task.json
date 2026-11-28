@@ -1,0 +1,10 @@
+{
+  "id":"course:cs-foundations/task/delegates-transform","role":"modification","title":"Transform each item","concepts":["delegate","lambda","list","loop"],
+  "prompt":"Implement `public static List<int> Transform(List<int> items, Func<int, int> convert)`. Call `convert` exactly once for each input item, in order, and return a new list of results. Do not modify the input. If the input is empty, return an empty list without calling `convert`.",
+  "hints":["Should the result reuse the input list or be a new list?","Loop through the input once, call convert on each item, and add each result to a new list.","Create a result list. In one ordered loop, add `convert(item)` for each item, then return the result."],
+  "starter":"starter.cs","solution":"solution.cs","alternative":"alternative.cs","mode":"members","rules":[],
+  "checks":["Given.TransformValues(Practice.Transform)","Given.TransformCalls(Practice.Transform)","Given.TransformOwnList(Practice.Transform)","Given.TransformEmpty(Practice.Transform)"],"checkLabels":["The returned values must match a callback that adds ten.","The callback must run once per item, in input order.","The result must be a new list and the input must stay unchanged.","An empty input must return an empty list without calling the callback."],
+  "fixtures":[{"id":"cases","declarations":"fixture-cases.cs"}],
+  "wrongAnswers":[{"source":"wrong-calls-first.cs","misconception":"Calls the callback once, then repeats its first result.","witness":{"fixture":"cases","kind":"result","detail":"Check 1 failed"}},{"source":"wrong-mutates.cs","misconception":"Replaces each input item with the transformed value.","witness":{"fixture":"cases","kind":"result","detail":"Check 3 failed"}}],
+  "feedback":"Record what the callback receives as well as what it returns. The input list must stay unchanged."
+}

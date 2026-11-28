@@ -9,7 +9,7 @@
     "list",
     "loop"
   ],
-  "prompt": "Source is supplied. Write public static async Task<List<int>> CountsAsync(List<string> shops). Read each shop in order and return the counts in the same order. When a shop is offline, put -1 in its place and carry on with the next shop.",
+  "prompt": "`Source` is supplied. Write `public static async Task<List<int>> CountsAsync(List<string> shops)`. Read each shop in order and return the counts in the same order. When a shop is offline, put -1 in its place and carry on with the next shop.",
   "hints": [
     "If the second of three shops fails, how many numbers must the result have?",
     "Each read needs its own try and catch, so one failure does not end the loop.",
@@ -21,16 +21,16 @@
   "mode": "members",
   "rules": [],
   "checks": [
-    "Practice.CountsAsync(new List<string> { \"north\", \"south\" }).GetAwaiter().GetResult().SequenceEqual(new List<int> { 3, 5 })",
-    "Practice.CountsAsync(new List<string> { \"north\", \"offline\", \"south\" }).GetAwaiter().GetResult().SequenceEqual(new List<int> { 3, -1, 5 })",
-    "Practice.CountsAsync(new List<string>()).GetAwaiter().GetResult().Count == 0",
-    "Practice.CountsAsync(new List<string> { \"offline\" }).GetAwaiter().GetResult().SequenceEqual(new List<int> { -1 })"
+    "CheckCounts(new List<string> { \"north\", \"south\" }, new List<int> { 3, 5 })",
+    "CheckCounts(new List<string> { \"north\", \"offline\", \"south\" }, new List<int> { 3, -1, 5 })",
+    "CheckCounts(new List<string>(), new List<int>())",
+    "CheckCounts(new List<string> { \"offline\" }, new List<int> { -1 })"
   ],
   "checkLabels": [
-    "north then south must give 3 then 5.",
-    "An offline shop in the middle must give -1 there, and the shops after it must still be read.",
-    "No shops must give an empty list.",
-    "A single offline shop must give a list with -1."
+    "north then south must give 3 then 5 after one read of each shop in input order.",
+    "An offline shop in the middle must give -1 there, and each shop must be read once in input order.",
+    "No shops must give an empty list and make no calls.",
+    "A single offline shop must give -1 after one call."
   ],
   "fixtures": [
     {
@@ -56,7 +56,17 @@
         "kind": "result",
         "detail": "Check 2 failed"
       }
+    },
+    {
+      "source": "wrong-reverse-reads.cs",
+      "misconception": "Reads shops in reverse order, then reverses the result to hide it.",
+      "witness": {
+        "fixture": "source",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
     }
   ],
-  "feedback": "Count the numbers in your result for three shops where the middle one is offline. There must be three, with -1 in the middle."
+  "feedback": "Count the numbers in your result for three shops where the middle one is offline. There must be three, with -1 in the middle.",
+  "support": "static bool CheckCounts(List<string> shops, List<int> expected)\n{\n    List<string> requested = new List<string>(shops);\n    Source.Calls.Clear();\n    List<int> actual = Practice.CountsAsync(shops).GetAwaiter().GetResult();\n    return actual.SequenceEqual(expected) && Source.Calls.SequenceEqual(requested);\n}\n"
 }

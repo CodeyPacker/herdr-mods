@@ -1,7 +1,7 @@
 {
   "id": "course:cs-foundations/task/readiness-r2",
   "role": "readiness",
-  "title": "Classes through lookups",
+  "title": "Records, nullable values and dictionaries",
   "concepts": [
     "record",
     "equality",

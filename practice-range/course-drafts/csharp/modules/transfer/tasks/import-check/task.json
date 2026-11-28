@@ -1,0 +1,72 @@
+{
+  "id": "course:cs-foundations/task/transfer-import-check",
+  "role": "review",
+  "title": "Check an import function",
+  "concepts": [
+    "delegate",
+    "tests",
+    "dictionary",
+    "text-processing"
+  ],
+  "prompt": "`ImportCandidates` is supplied. Write `public static bool CheckImport(Func<List<string>, ImportReport> candidate)`. Return true for both correct import functions. Return false for the candidates that group names case-sensitively, ignore rejected-row counts, or drop valid zero-count keys. Use inputs that expose all three mistakes. Also make sure a candidate leaves its input list unchanged and handles an empty list. Test the candidate's behavior only. Do not inspect source text or use reflection.",
+  "hints": [
+    "Use fresh input lists for the candidate calls. Include names whose spelling differs only by case and include a valid zero count.",
+    "Add malformed, empty-name, negative, overflow and extra-field rows. Check the exact rejected count and make sure invalid rows do not become keys.",
+    "Check the exact totals through differently cased lookups, verify the zero key exists, compare the input with a copy, and call the candidate with an empty list."
+  ],
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "mode": "members",
+  "rules": [],
+  "checks": [
+    "Practice.CheckImport(ImportCandidates.CorrectLoop) == true",
+    "Practice.CheckImport(ImportCandidates.CorrectContainsKey) == true",
+    "Practice.CheckImport(ImportCandidates.CaseSensitive) == false",
+    "Practice.CheckImport(ImportCandidates.IgnoreRejected) == false",
+    "Practice.CheckImport(ImportCandidates.DropZero) == false"
+  ],
+  "checkLabels": [
+    "Your check must accept a correct loop-based import function.",
+    "Your check must also accept a different correct import function.",
+    "Your check must reject case-sensitive grouping of Ada and ada.",
+    "Your check must reject a function that does not report invalid rows.",
+    "Your check must reject a function that drops a valid zero-count key."
+  ],
+  "fixtures": [
+    {
+      "id": "candidates",
+      "declarations": "fixture-candidates.cs"
+    }
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-always-true.cs",
+      "misconception": "Accepts every candidate without testing it.",
+      "witness": {
+        "fixture": "candidates",
+        "kind": "result",
+        "detail": "Check 3 failed"
+      }
+    },
+    {
+      "source": "wrong-always-false.cs",
+      "misconception": "Rejects correct candidates along with faulty ones.",
+      "witness": {
+        "fixture": "candidates",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-check-only-count.cs",
+      "misconception": "Checks one sample total but never checks invalid rows or zero counts.",
+      "witness": {
+        "fixture": "candidates",
+        "kind": "result",
+        "detail": "Check 4 failed"
+      }
+    }
+  ],
+  "feedback": "Make your check distinguish behavior that looks similar in a small happy-path sample. Cover casing, invalid-row counts, zero keys, and empty input.",
+  "alternative": "alternative.cs"
+}

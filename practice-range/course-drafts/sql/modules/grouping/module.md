@@ -13,7 +13,16 @@ One total for the whole table is rarely enough. Reports want a total for each co
 
 ## One row per group
 
-GROUP BY country sorts the rows into groups that share a country, then returns one row for each group. The SELECT list of a grouped query can hold two kinds of thing: the columns you grouped by, and aggregates. Each aggregate is worked out separately for every group. A plain column that is not in the GROUP BY is an error, for the same reason as in the last module: a group has many values of it.
+`GROUP BY country` sorts the rows into groups that share a country, then returns one row for each group.
+
+- The `SELECT` list of a grouped query can hold two kinds of thing: the columns you grouped by, and aggregates. Each aggregate is worked out separately for every group.
+- A plain column that is not in the `GROUP BY` is an error, for the same reason as in the last module: a group has many values of it.
+- `ORDER BY` runs last, and it can sort by an aggregate or by its alias.
+
+
+## Count the groups {prediction}
+
+Twenty customers live in nine countries. Predict how many rows come back.
 
 ```sql example countries
 SELECT country, count(*) AS customers
@@ -39,28 +48,26 @@ Your query returned:
 (9 rows)
 ```
 
-## Count the groups {prediction}
-
-Twenty customers live in nine countries. Predict how many rows come back.
-
-@example countries
-
 :::question group-count example=countries
 How many rows come back?
 - [ ] 20 :: GROUP BY returns one row per group, not one per customer.
-- [x] 9 :: There is one row for each country.
+- [x] 9 :: There is one row per country. `count(*)` is counted inside each group: 7 customers in the USA, 3 in Canada, and so on. Here `ORDER BY` puts the largest group first and breaks ties by country name.
 - [ ] 1 :: Without GROUP BY the count would be one row. With it, each country gets its own.
 :::
 
-## Follow the groups {walkthrough}
-
-There is one row per country, so nine rows. count(*) is counted inside each group: 7 customers in the USA, 3 in Canada, and so on. ORDER BY runs last and can sort by an aggregate or by its alias. Here it puts the largest group first and breaks ties by country name.
-
-@example countries
-
 ## WHERE before, HAVING after
 
-A grouped query can filter at two points. WHERE filters rows before they are grouped, so it cannot use aggregates. HAVING filters the groups after the aggregates are worked out, so it can. The clauses are written in this order: SELECT, FROM, WHERE, GROUP BY, HAVING, ORDER BY.
+A grouped query can filter at two points.
+
+- `WHERE` filters rows before they are grouped, so it cannot use aggregates.
+- `HAVING` filters the groups after the aggregates are worked out, so it can.
+
+The clauses are written in this order: `SELECT`, `FROM`, `WHERE`, `GROUP BY`, `HAVING`, `ORDER BY`.
+
+
+## Keep the large groups {prediction}
+
+Departments have 1, 11, 4, 3 and 4 employees, and one employee has no department. Predict which `department_id` values appear.
 
 ```sql example having
 SELECT department_id, count(*) AS staff, ROUND(avg(salary)) AS avg_salary
@@ -81,28 +88,16 @@ Your query returned:
 (3 rows)
 ```
 
-## Keep the large groups {prediction}
-
-Departments have 1, 11, 4, 3 and 4 employees, and one employee has no department. Predict which department_id values appear.
-
-@example having
-
 :::question having example=having
 Which department_id values appear?
-- [x] 2, 3 and 5 :: Those departments have 11, 4 and 4 employees. HAVING keeps groups of four or more.
+- [x] 2, 3 and 5 :: The rows are grouped by `department_id`, and `count(*)` is worked out for each group. `HAVING` then keeps the groups with at least four rows. The group of one employee with a `NULL` `department_id` exists too, and is dropped with the other small groups.
 - [ ] 2 only :: The test is count(*) >= 4, and two departments have exactly 4.
 - [ ] 1, 2, 3, 4 and 5 :: HAVING removes the groups with fewer than four employees.
 :::
 
-## Follow the HAVING {walkthrough}
+## Find the error {prediction}
 
-The rows are grouped by department_id, and count(*) and the average salary are worked out for each group. HAVING then keeps the groups with at least four rows: departments 2, 3 and 5. The group of one employee with a NULL department_id exists too, and is dropped with the other small groups.
-
-@example having
-
-## An aggregate in WHERE {prediction}
-
-This query tries to keep the large groups with WHERE. Read it before checking.
+This example does not run. Find the line PostgreSQL stops at, and why.
 
 ```sql example bad-where diagnostics=[{"code":"42803","line":3}]
 SELECT country, count(*)
@@ -113,17 +108,11 @@ GROUP BY country;
 ```
 
 :::question bad-where example=bad-where
-What happens when you check this example?
-- [ ] It returns the countries with more than two customers. :: WHERE cannot use count(*). The statement fails.
-- [ ] It returns every country. :: The statement does not run. An aggregate in WHERE is an error.
-- [x] PostgreSQL reports an error on line 3. :: WHERE runs before grouping, so it cannot use an aggregate (42803). The test belongs in HAVING.
+Which error does PostgreSQL report?
+- [ ] Line 1: `count(*)` cannot appear beside a grouped column. :: In a grouped query, the `SELECT` list can hold the grouped column and aggregates. Line 1 is fine.
+- [x] Line 3, 42803: aggregate functions are not allowed in `WHERE`. :: `WHERE` runs before the groups exist, so there is nothing to count yet. Move the test to `HAVING`, after `GROUP BY`.
+- [ ] Line 4: `GROUP BY` must come before `WHERE`. :: `WHERE` comes before `GROUP BY`. The order is right, but the test inside `WHERE` is not allowed there.
 :::
-
-## Read the error {walkthrough}
-
-Check the example. Error 42803 says aggregate functions are not allowed in WHERE. WHERE runs before the groups exist, so there is nothing to count yet. Move the test to HAVING, after GROUP BY.
-
-@example bad-where
 
 ## Count customers per country {modification}
 

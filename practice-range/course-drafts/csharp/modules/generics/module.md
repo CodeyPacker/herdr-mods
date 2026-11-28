@@ -13,7 +13,17 @@ A method that returns the first item of a list should work for a list of anythin
 
 ## A type that the caller chooses
 
-T `FirstOr<T>`(`List<T>` items, T fallback) is a generic method. T is a type parameter: a placeholder that each call fills in. Called with a `List<int>`, T is `int`, so the fallback must be an `int` and the result is an `int`. Called with a `List<string>`, the same code returns a string. The compiler works T out from the arguments, so you rarely write it yourself. A type can be generic too. record `Pair<T>`(T First, T Second) holds two values of one type, whichever type the code that uses it picks. `List<T>` and `Dictionary<TKey, TValue>` are generic types you have used already.
+`T FirstOr<T>(List<T> items, T fallback)` is a **generic method**. `T` is a **type parameter**: a placeholder that each call fills in.
+
+- Called with a `List<int>`, `T` is `int`, so the fallback must be an `int` and the result is an `int`. Called with a `List<string>`, the same code returns a `string`.
+- The compiler works `T` out from the arguments, so you rarely write it yourself. One call has one `T`.
+- A type can be generic too. `record Pair<T>(T First, T Second);` holds two values of one type, whichever type the code that uses it picks.
+- `List<T>` and `Dictionary<TKey, TValue>` are generic types you have used already.
+
+
+## Predict the types {prediction}
+
+`FirstOr` is called once with ints and once with strings. Predict the three lines of output.
 
 ```csharp example first
 T FirstOr<T>(List<T> items, T fallback)
@@ -43,28 +53,16 @@ record Pair<T>(T First, T Second);
 right
 ```
 
-## Predict the types {prediction}
-
-FirstOr is called once with ints and once with strings. Predict the three lines of output.
-
-@example first
-
 :::question predict-types example=first
 What are the three lines of output?
-- [ ] 4, 4, right :: The first line prints number + 1, and number is 4.
-- [x] 5, 4, right :: number is 4, so 5 prints. title is `"none"`, which has 4 characters. Second is `"right"`.
-- [ ] 5, 0, right :: The second list is empty, so title is the fallback `"none"`, and its Length is 4.
+- [ ] 4, 4, right :: The first line prints `number + 1`, and `number` is 4.
+- [x] 5, 4, right :: The first call returns 4, the first item, as an `int`, so `number + 1` is 5. The second list is empty, so the fallback `"none"` comes back as a `string` with 4 characters. No conversion was needed: the result has the caller's type. `pair` is a `Pair<string>`, so `Second` is a `string`.
+- [ ] 5, 0, right :: The second list is empty, so `title` is the fallback `"none"`, and its `Length` is 4.
 :::
 
-## Follow each call {walkthrough}
+## Find the error {prediction}
 
-The first call returns 4, the first item, as an `int`, so number + 1 is 5. The second list is empty, so the fallback `"none"` comes back as a string, and its Length is 4. No conversion was needed in either case: the result has the caller's type. pair is a `Pair<string>`, so Second is a string.
-
-@example first
-
-## Mix two types in one call {prediction}
-
-This call passes a list of ints and a string fallback. Read the example before checking.
+This example does not compile. Find the line the compiler stops at, and why.
 
 ```csharp example bad-mix diagnostics=[{"code":411,"line":10}]
 T FirstOr<T>(List<T> items, T fallback)
@@ -82,21 +80,22 @@ Console.WriteLine(number);
 ```
 
 :::question predict-mix example=bad-mix
-What happens when you check this example?
-- [ ] It prints 4. :: The call does not compile, because T cannot be both `int` and string.
-- [ ] It prints none. :: The list is not empty, and the call does not compile in any case.
-- [x] The compiler reports an error on line 10. :: One call needs one T. A `List<int>` with a string fallback gives CS0411.
+Which error does the compiler report?
+- [ ] Line 1: a method cannot return its type parameter. :: Returning `T` is what makes `FirstOr` useful for any type. Line 1 is fine.
+- [ ] Line 5: `fallback` cannot be returned as a `T`. :: `fallback` is declared as a `T`, so returning it is fine.
+- [x] Line 10, CS0411: `T` cannot be both `int` and `string` in one call. :: The list says `int` and the fallback says `string`, so the compiler cannot choose `T`. The relationship between the parameters is checked before anything runs. Pass `0` as the fallback, or a list of strings.
 :::
-
-## Read the compiler error {walkthrough}
-
-Check the example. T has to be one type for the whole call. The list says `int` and the fallback says string, so the compiler cannot choose and reports CS0411: the type arguments cannot be inferred from the usage. The relationship between the parameters is checked before anything runs.
-
-@example bad-mix
 
 ## Ask for an ability
 
-Inside a generic method you know nothing about T, so you cannot compare two T values with > or call methods on them. A constraint states what T must be able to do. where T : `IComparable<T>` accepts only types that can be compared with themselves, which includes `int` and string. Then `a.CompareTo(b)` is allowed. It returns a number above 0 when a comes after b, 0 when they are equal, and a number below 0 when a comes before b.
+Only members available on `object` are guaranteed for an unconstrained `T`. Additional operations, such as ordering through `CompareTo`, need a **constraint** that states what `T` must be able to do.
+
+```csharp
+T Larger<T>(T a, T b) where T : IComparable<T> => a.CompareTo(b) >= 0 ? a : b;
+```
+
+- `where T : IComparable<T>` accepts only types that can be compared with themselves, which includes `int` and `string`.
+- Then `a.CompareTo(b)` is allowed. It returns a number above 0 when `a` comes after `b`, 0 when they are equal, and a number below 0 when `a` comes before `b`.
 
 ## Return the last item {modification}
 
@@ -106,6 +105,6 @@ The starter always returns the fallback. Make it work for a list of any type.
 
 ## Carry a result of any type {independent}
 
-Work from the prompt. The same three methods are checked with numbers and with text.
+Work from the prompt. Declare the generic record, static class and methods from the prompt. The same methods are checked with numbers and with text.
 
 @task generics-outcome

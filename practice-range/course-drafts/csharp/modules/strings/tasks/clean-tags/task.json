@@ -1,0 +1,11 @@
+{
+  "id":"course:cs-foundations/task/strings-clean-tags","role":"modification","title":"Clean tag fields","concepts":["text-processing","list","loop","branch"],
+  "prompt":"Implement `public static List<string> CleanTags(string input)`. Split on commas, trim each field, discard fields that are empty after trimming, and preserve the order and duplicates. Return a new list. Assume input is nonnull.",
+  "hints":["What does Trim return, and what happens to a field containing only spaces?","Create a new result list and inspect every field returned by Split.","Trim each field into a variable, add it only when its Length is greater than zero, and return the new list."],
+  "starter":"starter.cs","solution":"solution.cs","alternative":"alternative.cs","mode":"members","rules":[],
+  "checks":["Given.MatchesCleanTags(Practice.CleanTags, \" red, blue \", \"red\", \"blue\")","Given.MatchesCleanTags(Practice.CleanTags, \" , , oak,, \", \"oak\")","Given.MatchesCleanTags(Practice.CleanTags, \"fir, fir,ash\", \"fir\", \"fir\", \"ash\")","Given.MatchesCleanTags(Practice.CleanTags, \"\")","Given.MatchesCleanTags(Practice.CleanTags, \",,,\")","Given.MatchesCleanTags(Practice.CleanTags, \"\\t\t,\\n, cedar \", \"cedar\")","Given.MatchesCleanTags(Practice.CleanTags, \"one\", \"one\")"],
+  "checkLabels":["Trimmed nonempty fields must be returned in order.","Fields that become empty after trimming must be dropped.","Repeated fields must remain in order.","Empty input must return an empty list.","An input containing only delimiters must return an empty list.","Whitespace around a field must be trimmed.","An input with one field and no comma must return that field."],
+  "fixtures":[{"id":"cases","declarations":"fixture-cases.cs"}],
+  "wrongAnswers":[{"source":"wrong-ignored-trim.cs","misconception":"Calls Trim but ignores the returned string.","witness":{"fixture":"cases","kind":"result","detail":"Check 1 failed"}},{"source":"wrong-keeps-blank.cs","misconception":"Keeps whitespace-only fields after trimming them.","witness":{"fixture":"cases","kind":"result","detail":"Check 2 failed"}}],
+  "feedback":"Trim returns a new string. Check its length after trimming before adding it to the result."
+}

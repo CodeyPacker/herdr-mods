@@ -7,7 +7,7 @@
     "await",
     "method"
   ],
-  "prompt": "Source is supplied. Source.CountAsync(shop) returns a task with the number of items in stock at a shop. TotalAsync(string first, string second) should read both shops, the first one first, and return the two counts added together. The starter reads only the first shop.",
+  "prompt": "`Source` is supplied. `Source.CountAsync(shop)` returns a task with the number of items in stock at a shop. `TotalAsync(string first, string second)` should read both shops, the first one first, and return the two counts added together. The starter reads only the first shop.",
   "hints": [
     "How many reads does the method need, and how many does the starter make?",
     "Each read needs its own await before you can use its number.",
@@ -19,16 +19,16 @@
   "mode": "members",
   "rules": [],
   "checks": [
-    "Practice.TotalAsync(\"north\", \"south\").GetAwaiter().GetResult() == 8",
-    "Practice.TotalAsync(\"south\", \"empty\").GetAwaiter().GetResult() == 5",
-    "Practice.TotalAsync(\"empty\", \"empty\").GetAwaiter().GetResult() == 0",
-    "Practice.TotalAsync(\"north\", \"north\").GetAwaiter().GetResult() == 6"
+    "CheckTotal(\"north\", \"south\", 8)",
+    "CheckTotal(\"south\", \"empty\", 5)",
+    "CheckTotal(\"empty\", \"empty\", 0)",
+    "CheckTotal(\"north\", \"north\", 6)"
   ],
   "checkLabels": [
-    "north has 3 and south has 5, so the total must be 8.",
-    "A shop with 0 items must add nothing.",
-    "Two empty shops must total 0.",
-    "The same shop twice must count twice."
+    "north then south must produce 8 after exactly one read of north followed by one read of south.",
+    "south then empty must produce 5 after exactly one read of each shop in the requested order.",
+    "Two empty shops must total 0 after one read of each in order.",
+    "Reading north twice must still make two calls, one for each requested position."
   ],
   "fixtures": [
     {
@@ -54,7 +54,17 @@
         "kind": "result",
         "detail": "Check 1 failed"
       }
+    },
+    {
+      "source": "wrong-reversed.cs",
+      "misconception": "Reads the second shop before the first.",
+      "witness": {
+        "fixture": "source",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
     }
   ],
-  "feedback": "Check that each shop is read once, that each read is awaited, and that both numbers reach the return."
+  "feedback": "Check that each shop is read once, that each read is awaited, and that both numbers reach the return.",
+  "support": "static bool CheckTotal(string first, string second, int expected)\n{\n    Source.Calls.Clear();\n    int actual = Practice.TotalAsync(first, second).GetAwaiter().GetResult();\n    return actual == expected && Source.Calls.SequenceEqual(new[] { first, second });\n}\n"
 }

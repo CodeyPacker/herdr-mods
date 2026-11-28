@@ -7,7 +7,7 @@
     "switch-expression",
     "interpolation"
   ],
-  "prompt": "Reading is supplied. Write public static string Display(Reading reading). An offline reading returns \"offline\", whatever its degrees. An online reading below 0 returns \"freezing\". Any other online reading returns its degrees in the form \"21 degrees\". Zero is a real temperature, so it returns \"0 degrees\".",
+  "prompt": "`Reading` is supplied. Write `public static string Display(Reading reading)`. An offline reading returns `\"offline\"`, whatever its degrees. An online reading below 0 returns `\"freezing\"`. Any other online reading returns its degrees in the form `\"21 degrees\"`. Zero is a real temperature, so it returns `\"0 degrees\"`.",
   "hints": [
     "Which rule ignores the temperature completely? Where must its arm go?",
     "Test Online first, then the freezing range, then fall through to the general text.",

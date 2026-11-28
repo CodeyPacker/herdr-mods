@@ -18,9 +18,9 @@ Some failures are normal results, such as a search that finds nothing. Others ar
 - `try { ... } catch (problem) { ... }` runs the `try` block and goes to `catch` only if something was thrown.
 - In TypeScript the caught value is `unknown`. JavaScript lets code throw anything, including a plain string, so check it before reading `.message`.
 
-## Predict before running {prediction}
+## Return or throw? {prediction}
 
-Read the example and predict what it prints before you run it.
+Read the example and predict what it prints.
 
 ```typescript example trace
 function read(source: () => string): string {
@@ -43,23 +43,13 @@ No file
 
 :::question predict example=trace
 What prints on the first line?
-- [x] true :: Returning `""` is a normal, successful return.
+- [x] true :: The first source returns `""`. Nothing is thrown, so `try` returns it and `catch` never runs. The second source throws an `Error`: `catch` receives it, `instanceof Error` narrows it, and `.message` is `"No file"`.
 - [ ] Unknown :: Only a thrown value goes to `catch`. An empty string is returned, not thrown.
 :::
 
-## Trace the example {walkthrough}
+## Throw a plain string {prediction}
 
-Follow each call.
-
-1. The first source returns `""`. Nothing is thrown, so `try` returns it and `catch` never runs.
-2. The second source throws an `Error`. `catch` receives it, `instanceof Error` narrows it, and `.message` is `"No file"`.
-3. Anything else thrown, such as a number, reaches `return "Unknown"`.
-
-@example trace
-
-## Check your explanation {prediction}
-
-Read the example again and choose the explanation that fits.
+Suppose the source threw the plain string `"No file"` instead of an `Error`.
 
 @example trace
 

@@ -8,7 +8,7 @@
     "loop",
     "comparison"
   ],
-  "prompt": "Write the body of Largest<T>(List<T> items, T fallback), where T is limited to types that implement IComparable<T>. Return the largest item in the list, or the fallback when the list is empty. The fallback is used only for an empty list. It never competes with the items.",
+  "prompt": "Write the body of `Largest<T>(List<T> items, T fallback)`, where `T` is limited to types that implement `IComparable<T>`. Return the largest item in the list, or `fallback` when the list is empty. The fallback is used only for an empty list. It never competes with the items.",
   "hints": [
     "With the items -5 and -2 and a fallback of 0, what must the result be?",
     "Start from the first item, not from the fallback, and compare the rest against the best so far.",

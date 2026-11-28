@@ -17,9 +17,9 @@ Each file is a module. A module shares names with `export`, and other files brin
 - `import { double } from "./numbers.js"` brings it into another file. The name must match the export.
 - The path is relative and ends in `.js`, even though you write `.ts`. The compiler turns each `.ts` file into a `.js` file, and the import points at that output.
 
-## Predict before running {prediction}
+## Call an exported function {prediction}
 
-Read the example and predict what it prints before you run it.
+Read the example and predict what it prints.
 
 ```typescript example trace
 export function double(n: number): number {
@@ -39,18 +39,16 @@ What does the call print?
 - [ ] Nothing, because the function is exported. :: The local call still runs.
 :::
 
-## Compiler settings {walkthrough}
+## Compiler settings
 
 `tsconfig.json` holds the compiler's settings. Two settings are easy to mix up:
 
 - `strict` turns on a group of stricter checks. One of them, `strictNullChecks`, reports code that might read a field of `null` or `undefined`.
 - `target` picks which JavaScript version the compiler outputs, such as `"ES2022"`. It does not change what gets checked.
 
-@example trace
+## Which setting catches it? {prediction}
 
-## Check your explanation {prediction}
-
-Read the example again and choose the explanation that fits.
+Suppose some code might read a field of `null`.
 
 @example trace
 

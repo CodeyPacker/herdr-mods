@@ -1,8 +1,11 @@
 // Supplied local source. It uses no network and no clock.
 public static class Source
 {
+    public static List<string> Calls { get; } = new List<string>();
+
     public static async Task<int> CountAsync(string shop)
     {
+        Calls.Add(shop);
         await Task.Yield();
         if (shop == "offline")
         {

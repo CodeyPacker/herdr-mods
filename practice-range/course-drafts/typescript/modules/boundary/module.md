@@ -21,9 +21,9 @@ Three ways to hold a value you know nothing about:
 
 Annotations and assertions are erased when the code runs. Only runtime checks such as `typeof`, `Array.isArray` and `in` look at the actual data.
 
-## Predict before running {prediction}
+## Check an unknown value {prediction}
 
-Read the example and predict what it prints before you run it.
+Read the example and predict what it prints.
 
 ```typescript example trace
 function hasTitle(value: unknown): boolean {
@@ -42,23 +42,13 @@ false
 
 :::question predict example=trace
 Which results print?
-- [x] true then false :: `""` is still a string. `7` is a number.
+- [x] true then false :: The checks run left to right, each narrowing `value` further. `typeof value === "object"` is also true for `null` and for arrays, so those are ruled out next. `"title" in value` checks that the field exists, and `typeof value.title === "string"` checks its type. An empty string is still a string.
 - [ ] false then true :: The check looks at the type, not at whether the value is truthy.
 :::
 
-## Trace the example {walkthrough}
+## Assert a type with as {prediction}
 
-The checks run left to right, and each one narrows `value` further.
-
-1. `typeof value === "object"` is also true for `null` and for arrays, so both are ruled out next.
-2. `"title" in value` checks that the field exists.
-3. `typeof value.title === "string"` checks its type. After this, TypeScript treats `value.title` as a `string`.
-
-@example trace
-
-## Check your explanation {prediction}
-
-Read the example again and choose the explanation that fits.
+A type assertion such as `value as { title: string }` looks like a shortcut past these checks.
 
 @example trace
 

@@ -1,1 +1,1 @@
-double share = 0;
+// Write the declarations and code described in the prompt.

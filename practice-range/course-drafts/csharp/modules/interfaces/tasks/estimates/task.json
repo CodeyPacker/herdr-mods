@@ -9,7 +9,7 @@
     "list",
     "loop"
   ],
-  "prompt": "IEstimate is supplied. Finish two classes that implement it. FlatEstimate takes a number of minutes and returns it from Minutes(). ItemEstimate takes a number of items and the minutes for each, and Minutes() returns the two multiplied. Then finish Estimates.Total so it returns the Minutes() of every estimate added together, and 0 for an empty list.",
+  "prompt": "`IEstimate` is supplied. Finish two classes that implement it. `FlatEstimate` takes a number of minutes and returns it from `Minutes()`. `ItemEstimate` takes a number of items and the minutes for each, and its `Minutes()` returns the two multiplied. Then finish `Estimates.Total` so it returns the `Minutes()` of every estimate added together, and 0 for an empty list.",
   "hints": [
     "What does each class need to remember between its constructor and its Minutes() call?",
     "Total does not need to know which class it has. It only needs Minutes().",

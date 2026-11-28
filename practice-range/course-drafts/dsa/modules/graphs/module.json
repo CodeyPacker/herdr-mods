@@ -49,12 +49,6 @@
       ]
     },
     {
-      "kind": "walkthrough",
-      "title": "Each road is listed twice",
-      "text": "There are 5 places. Adding up the lengths of all the neighbour lists gives 10, and every two-way road was counted from both of its ends, so there are 5 roads.\n\nAny algorithm that looks at every node and every neighbour list once costs O(n + e), for n nodes and e edges. That is the cost of every graph algorithm in this course.",
-      "example": "edges"
-    },
-    {
       "kind": "explanation",
       "title": "Breadth-first search",
       "text": "**Breadth-first search** explores a graph in rings. First the starting node, then all its neighbours, then all of their neighbours that are new, and so on.\n\nIt needs two things. A **queue** holds the nodes that have been found and not yet explored, oldest first. A **set of seen nodes** makes sure each node is added to the queue only once.\n\nThe seen set is not optional. A graph can have cycles, and without the set the search would walk round a cycle for ever. Mark a node as seen at the moment it is **added** to the queue, not when it is taken out, or it can be added several times.\n\nBecause nodes are explored in order of distance, the first time breadth-first search reaches a node is by a route with the fewest edges."
@@ -67,12 +61,6 @@
       "questions": [
         "order"
       ]
-    },
-    {
-      "kind": "walkthrough",
-      "title": "Ring by ring",
-      "text": "From home the search found shop and park, one step away. From shop it found school, two steps away. Park's neighbours were already seen. From school it found library, three steps away.\n\nThe queue is the array itself, read with a `head` index as in the module on queues. Nothing is ever removed, so at the end the array holds every reached node in the order it was found.",
-      "example": "bfs"
     },
     {
       "kind": "modification",
@@ -102,7 +90,7 @@
       "choices": [
         {
           "text": "5 5",
-          "feedback": "There are five places. The neighbour lists hold ten names in total, and each road appears in two lists."
+          "feedback": "There are five places. The neighbour lists hold ten names in total, and every two-way road is counted from both of its ends, so there are five roads. Any algorithm that looks at every node and every neighbour list once costs O(n + e), for n nodes and e edges, and that is the cost of every graph algorithm in this course."
         },
         {
           "text": "5 10",
@@ -126,7 +114,7 @@
         },
         {
           "text": "home shop park school library",
-          "feedback": "Both neighbours of home come first, then school, which is two steps away, then library."
+          "feedback": "From home the search finds shop and park, one step away. From shop it finds school, two steps away, and park's neighbours were already seen. From school it finds library, three steps away. The queue is the array itself, read with a `head` index as in the module on queues, so at the end it holds every reached node in the order it was found."
         },
         {
           "text": "home shop park school school library",

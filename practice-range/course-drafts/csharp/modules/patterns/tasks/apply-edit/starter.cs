@@ -1,1 +1,1 @@
-public static int Next(int count, Edit edit) => count;
+// Write the declarations and code described in the prompt.

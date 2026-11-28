@@ -1,4 +1,4 @@
-public static bool AtLimit(int count, int limit)
+public static bool InWindow(int value, int start, int end)
 {
-    return count >= limit - 1;
+    return value > start && value < end;
 }

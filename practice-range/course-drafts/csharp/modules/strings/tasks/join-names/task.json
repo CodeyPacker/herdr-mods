@@ -1,0 +1,11 @@
+{
+  "id":"course:cs-foundations/task/strings-join-names","role":"review","title":"Join clean names","concepts":["string-comparison","list","loop"],
+  "prompt":"Implement `public static string JoinNames(List<string> names)`. Trim each name, omit names that are whitespace-only, then join the remaining names with comma and space. Preserve order and duplicates. Do not modify the input list. The list and its items are nonnull.",
+  "hints":["What should happen to a name containing only spaces after Trim?","Build a separate list of cleaned names, adding only names whose trimmed text is nonempty.","Use a loop to collect trimmed nonempty names, then return `String.Join(\", \", cleaned)` without changing the input."],
+  "starter":"starter.cs","solution":"solution.cs","alternative":"alternative.cs","mode":"members","rules":[],
+  "checks":["Practice.JoinNames(new List<string> { \" Ada \", \"Lin\" }) == \"Ada, Lin\"","Practice.JoinNames(new List<string> { \"  \", \"Bo\", \"\" }) == \"Bo\"","Practice.JoinNames(new List<string> { \" Kai \", \"Kai\" }) == \"Kai, Kai\"","Practice.JoinNames(new List<string>()) == \"\"","Practice.JoinNames(new List<string> { \" \", \"\\t\", \"\\n\" }) == \"\"","Given.InputWasPreserved(Practice.JoinNames)"],
+  "checkLabels":["Names must be trimmed and joined with comma and space.","Whitespace-only names must be omitted.","Duplicate names and their order must be preserved.","An empty list must produce an empty string.","A list containing only whitespace must produce an empty string.","The method must leave the input list unchanged."],
+  "fixtures":[{"id":"cases","declarations":"fixture-cases.cs"}],
+  "wrongAnswers":[{"source":"wrong-keeps-blanks.cs","misconception":"Includes blank values in the joined result.","witness":{"fixture":"cases","kind":"result","detail":"Check 2 failed"}},{"source":"wrong-mutates-input.cs","misconception":"Cleans the supplied list in place.","witness":{"fixture":"cases","kind":"result","detail":"Check 6 failed"}}],
+  "feedback":"Build a separate list. Handle null before calling Trim, and skip a trimmed value with length zero."
+}

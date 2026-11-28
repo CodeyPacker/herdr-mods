@@ -46,12 +46,6 @@
       ]
     },
     {
-      "kind": "walkthrough",
-      "title": "One hop for each node",
-      "text": "The loop started at the head, printed its value, and followed `next` until it reached `null`. It printed 10, 20 and 30, and took three hops.\n\nThis loop is the basic shape of nearly all list code: `for (let node = head; node !== null; node = node.next)`. The variable has the type `ListNode | null`, and the condition is what tells TypeScript that `node` is a real node inside the loop.",
-      "example": "walk"
-    },
-    {
       "kind": "explanation",
       "title": "Change links in the right order",
       "text": "To insert a node b between a and c, two links change: b must point to c, and a must point to b.\n\nThe order matters. `a.next` is the only way to reach c. If you set `a.next = b` first, the link to c is gone, and everything after it is lost. So first copy the old link into the new node, and only then redirect the old node.\n\nThe rule in general: **before you overwrite a link, make sure something else still points to what it pointed to.**"
@@ -64,12 +58,6 @@
       "questions": [
         "insert-order"
       ]
-    },
-    {
-      "kind": "walkthrough",
-      "title": "Nothing was lost",
-      "text": "The new node b was created with its `next` already set to `a.next`, which was c. Then `a.next` was pointed at b. The chain is now a, b, c, and c is still the last node, so its `next` is `null`.\n\nRemoving is the reverse. To remove the node after a, set `a.next = a.next.next`. The removed node is no longer reachable from the list.",
-      "example": "insert"
     },
     {
       "kind": "modification",
@@ -103,7 +91,7 @@
         },
         {
           "text": "3",
-          "feedback": "The loop body runs once for each of the three nodes before node becomes null."
+          "feedback": "The loop starts at the head, prints its value and follows `next` until it reaches `null`: three nodes, three hops. This is the basic shape of nearly all list code: `for (let node = head; node !== null; node = node.next)`. The variable's type is `ListNode | null`, and the condition is what tells TypeScript that `node` is a real node inside the loop."
         },
         {
           "text": "4",
@@ -119,7 +107,7 @@
       "choices": [
         {
           "text": "2 3 null",
-          "feedback": "a now points to b, b points to c, and c is still last."
+          "feedback": "`b` is created with its `next` already set to `a.next`, which is c, and only then is `a.next` pointed at b. The chain is a, b, c, and c is still last. Removing is the reverse: to remove the node after `a`, set `a.next = a.next.next`. The removed node is no longer reachable from the list."
         },
         {
           "text": "2 null null",

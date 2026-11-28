@@ -17,7 +17,13 @@
   "solution": "solution.cs",
   "alternative": "alternative.cs",
   "mode": "members",
-  "rules": [],
+  "rules": [
+    {
+      "kind": "InvocationExpression",
+      "token": "Total",
+      "message": "Call Total from Summary instead of repeating the arithmetic."
+    }
+  ],
   "checks": [
     "Practice.Total(3, 1) == 4",
     "Practice.Total(0, 0) == 0",
@@ -55,6 +61,15 @@
         "fixture": "cases",
         "kind": "result",
         "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-duplicates.cs",
+      "misconception": "Repeats the arithmetic instead of composing the two methods.",
+      "witness": {
+        "fixture": "cases",
+        "kind": "syntax",
+        "detail": "Call Total from Summary instead of repeating the arithmetic."
       }
     }
   ],

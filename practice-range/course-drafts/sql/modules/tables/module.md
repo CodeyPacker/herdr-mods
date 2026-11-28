@@ -13,7 +13,25 @@ A table's definition decides what data it will accept. Types, keys and constrain
 
 ## Columns, types and a key
 
-CREATE TABLE names a table and lists its columns. Each column has a name and a type: integer for whole numbers, numeric(8, 2) for exact decimals with two places, text, boolean, date. After the type come the column's rules. PRIMARY KEY marks the column that identifies a row. Its values must be unique and cannot be NULL. NOT NULL means the column must always have a value. DEFAULT gives the value to use when an INSERT leaves the column out. UNIQUE forbids two rows with the same value.
+`CREATE TABLE` names a table and lists its columns. Each column has a name and a type:
+
+| Type | Holds |
+| --- | --- |
+| `integer` | whole numbers |
+| `numeric(8, 2)` | exact decimals with two places |
+| `text`, `boolean`, `date` | text, true or false, a date |
+
+After the type come the column's rules:
+
+- `PRIMARY KEY` marks the column that identifies a row. Its values must be unique and cannot be `NULL`.
+- `NOT NULL` means the column must always have a value.
+- `DEFAULT` gives the value to use when an `INSERT` leaves the column out.
+- `UNIQUE` forbids two rows with the same value.
+
+
+## Leave a column out {prediction}
+
+The INSERT gives no country. Predict what the row holds for it.
 
 ```sql example create
 CREATE TABLE suppliers (
@@ -39,28 +57,24 @@ Statement 3 returned:
 (1 row)
 ```
 
-## Leave a column out {prediction}
-
-The INSERT gives no country. Predict what the row holds for it.
-
-@example create
-
 :::question default example=create
 What does the stored row hold for country?
-- [x] USA :: The INSERT left country out, so its default was used.
+- [x] USA :: The `INSERT` left `country` out, so the row was stored with its default, USA. A column with no default and no value would hold `NULL`, which is allowed only when the column is not `NOT NULL`.
 - [ ] NULL :: The column has a default, so a missing value becomes USA.
 - [ ] The INSERT fails :: A NOT NULL column with a default accepts an INSERT that leaves it out.
 :::
 
-## Read the stored row {walkthrough}
-
-The row was stored with country USA, the column's default. The rating was given as 4. A column with no default and no value would hold NULL, which is allowed only when the column is not NOT NULL.
-
-@example create
-
 ## Rules about values
 
-CHECK attaches a test to the table. A row is accepted only when the test is not false. CHECK (rating BETWEEN 1 AND 5) rejects a rating of 9. A check that involves a NULL value is unknown, not false, so the row is accepted. Add NOT NULL when the column must be filled in.
+`CHECK` attaches a test to the table. A row is accepted only when the test is not false.
+
+- `CHECK (rating BETWEEN 1 AND 5)` rejects a rating of 9.
+- A check that involves a `NULL` value is unknown, not false, so the row is accepted. Add `NOT NULL` when the column must be filled in.
+
+
+## Break a CHECK {prediction}
+
+The table allows ratings from 1 to 5. Predict what happens when you check this example.
 
 ```sql example check diagnostics=[{"code":"23514"}]
 CREATE TABLE suppliers (
@@ -75,40 +89,30 @@ VALUES (2, 'Bolt', 9);
 
 ```
 
-## Break a CHECK {prediction}
-
-The table allows ratings from 1 to 5. Read the example before checking.
-
-@example check
-
 :::question check example=check
 What happens when you check this example?
 - [ ] The row is stored with a rating of 5. :: A constraint never changes a value. It accepts the row or rejects it.
 - [ ] The row is stored with a rating of 9. :: 9 is outside 1 to 5, so the CHECK rejects the row.
-- [x] PostgreSQL reports an error and stores nothing. :: The rating fails the CHECK, so the row is rejected (23514).
+- [x] PostgreSQL reports an error and stores nothing. :: Error 23514 says the new row violates a check constraint, so the row is not stored. A constraint is a guarantee: every row in the table has passed it.
 :::
-
-## Read the error {walkthrough}
-
-Check the example. Error 23514 says the new row violates a check constraint. The row is not stored. A constraint is a guarantee: every row that is in the table has passed it.
-
-@example check
 
 ## Rules about other tables
 
-REFERENCES links a column to the key of another table. order_id integer REFERENCES orders (id) is a foreign key. It accepts only values that exist as an id in orders. It also protects the other side: an order cannot be deleted while a row still points at it.
+`REFERENCES` links a column to the key of another table. `order_id integer REFERENCES orders (id)` is a **foreign key**.
+
+- It accepts only values that exist as an `id` in `orders`.
+- It also protects the other side: an order cannot be deleted while a row still points at it.
+
+
+## Point at a missing row {prediction}
+
+No product has id 999. Predict what happens when you check this example.
 
 ```sql example foreign diagnostics=[{"code":"23503"}]
 INSERT INTO order_items (order_id, product_id, quantity, unit_price)
 VALUES (1, 999, 1, 5.00);
 
 ```
-
-## Point at a missing row {prediction}
-
-No product has id 999. Read the example before checking.
-
-@example foreign
 
 :::question foreign example=foreign
 What happens when you check this example?

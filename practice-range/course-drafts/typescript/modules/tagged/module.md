@@ -15,9 +15,17 @@ Some values come in a few shapes, and each shape has different fields. A coffee 
 
 `Pickup` below is a union of two object types.
 
-- Each shape has a `kind` field whose type is one exact string. This field is the tag (discriminant).
+- Each shape has a `kind` field whose type is one exact string. This field is the **tag** (discriminant).
 - A waiting pickup has a `place`. A ready pickup has a `counter`.
-- A union of shapes that share a tag like this is a discriminated union.
+- A union of shapes that share a tag like this is a **discriminated union**.
+- Types disappear when the code runs, but the `kind` field is still on each object, so a check on it works at runtime.
+
+Why not one shape with two optional fields? `{ kind: string; place?: number; counter?: string }` would allow a waiting pickup with no place. The union requires the right field for each tag.
+
+
+## Follow one pickup {prediction}
+
+Read the function and both calls before running it. Choose the two output lines in order.
 
 ```typescript example board
 type Pickup = { kind: "waiting"; place: number } | { kind: "ready"; counter: string };
@@ -37,30 +45,12 @@ Place 0
 Counter B
 ```
 
-## Follow one pickup {prediction}
-
-Read the function and both calls before running it. Choose the two output lines in order.
-
-@example board
-
 :::question predict-output example=board
 What does the example print?
 - [ ] waiting then ready :: The function returns field values, not the tags.
-- [x] Place 0 then Counter B :: The tag picks the waiting branch even when `place` is 0. The ready branch returns `counter`.
+- [x] Place 0 then Counter B :: Inside `if (p.kind === "waiting")`, TypeScript narrows `p` to the waiting shape, so `p.place` is allowed, and a place of 0 is just a number. `return` ends the call, so any pickup that reaches the last line must be ready, and `p.counter` is allowed there.
 - [ ] Counter B then Place 0 :: The calls run in the order they are written.
 :::
-
-## Follow the return {walkthrough}
-
-`p.kind === "waiting"` compares a normal field at runtime.
-
-- Inside that `if`, TypeScript narrows `p` to the waiting shape, so `p.place` is allowed.
-- `return` ends the call. Any pickup that reaches the last line must be ready, so `p.counter` is allowed there.
-- Types disappear when the code runs. The `kind` field is still on each object, which is why the check works at runtime.
-
-Why not one shape with two optional fields? `{ kind: string; place?: number; counter?: string }` would allow a waiting pickup with no place. The union requires the right field for each tag.
-
-@example board
 
 ## Read a field too soon {prediction}
 
@@ -79,18 +69,8 @@ function placeOf(p: Pickup): number {
 What happens when this code is checked?
 - [ ] It compiles because one shape has `place`. :: At this line `p` could still be either shape.
 - [ ] It fails on the type alias because the shapes have different fields. :: A union can combine shapes with different fields.
-- [x] It fails on the return line because ready pickups have no `place`. :: Before a tag check, a field read must work for every shape.
+- [x] It fails on the return line because ready pickups have no `place`. :: This is TS2339: property `place` does not exist on the ready shape. Before a tag check, a field read must work for every shape. Check `p.kind` first and read `place` inside that branch. A truthiness check such as `if (p.place)` would be wrong too: it treats a valid place of 0 as missing.
 :::
-
-## Check the tag first {walkthrough}
-
-The error is TS2339: property `place` does not exist on the ready shape.
-
-- Both shapes have `kind`. Only the waiting shape has `place`.
-- Check `p.kind` first, then read `place` inside that branch.
-- A truthiness check such as `if (p.place)` would be wrong too. It treats a valid place of 0 as missing.
-
-@example bad-field
 
 ## Finish the second branch {modification}
 

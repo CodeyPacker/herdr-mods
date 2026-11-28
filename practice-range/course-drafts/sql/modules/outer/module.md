@@ -13,7 +13,15 @@ An inner join drops every row that has no match. Often those rows are the ones y
 
 ## Keep every row of the left table
 
-FROM employees AS e LEFT JOIN departments AS d keeps every employee. The table written before LEFT JOIN is the left table, and all its rows survive. When an employee has a matching department, the row looks like an inner join's row. When there is no match, the row still appears, and every column from the right table is NULL.
+`FROM employees AS e LEFT JOIN departments AS d` keeps every employee. The table written before `LEFT JOIN` is the **left table**, and all its rows survive.
+
+- When an employee has a matching department, the row looks like an inner join's row.
+- When there is no match, the row still appears, and every column from the right table is `NULL`. That `NULL` was not stored anywhere: it is how a `LEFT JOIN` marks that nothing matched.
+
+
+## A row with no match {prediction}
+
+Alex has no `department_id`. Predict what the department column shows for Alex.
 
 ```sql example left
 SELECT e.first_name, d.name AS department
@@ -34,28 +42,24 @@ Your query returned:
 (3 rows)
 ```
 
-## A row with no match {prediction}
-
-Alex has no department_id. Predict what the department column shows for Alex.
-
-@example left
-
 :::question left-null example=left
 What does the department column show for Alex?
-- [x] NULL :: No department matched, so the columns from departments are NULL.
+- [x] NULL :: No department matched, so Alex's row is kept and every column from `departments` is `NULL`. `COALESCE` can turn it into readable text, such as `COALESCE(d.name, 'No department')`.
 - [ ] Alex does not appear :: A LEFT JOIN keeps every row of the left table, matched or not.
 - [ ] An empty text :: A missing match is marked with NULL, not with empty text.
 :::
 
-## Read the NULL {walkthrough}
-
-Yusuf and Mila are paired with Engineering. Alex has no match, so the row is kept and d.name is NULL. That NULL does not come from a stored value. It is how a LEFT JOIN marks that nothing matched. COALESCE can turn it into readable text.
-
-@example left
-
 ## Find the rows with no match
 
-The same NULL lets you search for unmatched rows. Join with LEFT JOIN, then keep the rows where a column from the right table IS NULL. Use a column that is never NULL in a real row, such as the primary key. Customers LEFT JOIN orders, where the order's id IS NULL, gives the customers who have no orders.
+The same `NULL` lets you search for unmatched rows. Join with `LEFT JOIN`, then keep the rows where a column from the right table `IS NULL`.
+
+- Use a column that is never `NULL` in a real row, such as the primary key.
+- `customers LEFT JOIN orders`, keeping the rows where the order's `id IS NULL`, gives the customers who have no orders.
+
+
+## Customers without orders {prediction}
+
+Twenty customers exist, and seventeen of them have placed orders. Predict how many rows come back.
 
 ```sql example unmatched
 SELECT c.first_name
@@ -76,12 +80,6 @@ Your query returned:
 (3 rows)
 ```
 
-## Customers without orders {prediction}
-
-Twenty customers exist, and seventeen of them have placed orders. Predict how many rows come back.
-
-@example unmatched
-
 :::question unmatched example=unmatched
 How many rows come back?
 - [ ] 17 :: Those are the customers who have orders. The WHERE keeps the ones without.
@@ -91,7 +89,12 @@ How many rows come back?
 
 ## ON or WHERE?
 
-With a LEFT JOIN it matters where a test on the right table is written. A test in the ON clause decides what counts as a match, and left rows with no match are still kept. A test in WHERE runs after the join, on the finished rows. An unmatched row has NULL in the right table's columns, so the test is not true for it and the row is removed. A WHERE test on the right table quietly turns a LEFT JOIN back into an inner join.
+With a `LEFT JOIN` it matters where a test on the right table is written.
+
+- A test in the `ON` clause decides what counts as a match, and left rows with no match are still kept.
+- A test in `WHERE` runs after the join, on the finished rows. An unmatched row has `NULL` in the right table's columns, so the test is not true for it and the row is removed.
+
+A `WHERE` test on the right table quietly turns a `LEFT JOIN` back into an inner join.
 
 ```sql example on
 SELECT d.name, e.first_name
@@ -116,7 +119,7 @@ Your query returned:
 
 ## The same test in two places {prediction}
 
-The first example puts salary > 200000 in ON and returns 6 rows, one per department. Predict how many rows the second returns, with the test in WHERE.
+The first example puts `salary > 200000` in `ON` and returns 6 rows, one per department. Predict how many rows the second returns, with the test in `WHERE`.
 
 ```sql example where
 SELECT d.name, e.first_name
@@ -141,14 +144,8 @@ Your query returned:
 How many rows does the WHERE version return?
 - [ ] 6 :: The three departments with no such employee have NULL salaries, and the WHERE test is not true for them.
 - [ ] 0 :: Three employees earn more than 200000, and their rows pass the test.
-- [x] 3 :: Only the rows with a real employee above 200000 pass the WHERE.
+- [x] 3 :: With the test in `ON`, every department appears: three with an employee above 200000, and three showing `NULL`. With the test in `WHERE`, those three `NULL` rows fail `e.salary > 200000` and disappear. Choose the form that matches the question: all departments with their top earners, or only the top earners.
 :::
-
-## Compare the two results {walkthrough}
-
-With the test in ON, every department appears. Three have an employee above 200000, and the other three show NULL. With the test in WHERE, the three NULL rows fail e.salary > 200000 and disappear, leaving 3 rows. Choose the form that matches the question: all departments with their top earners, or only the top earners.
-
-@example where
 
 ## List every employee with a department {modification}
 

@@ -1,0 +1,11 @@
+{
+  "id":"course:cs-foundations/task/delegates-counter","role":"review","title":"Return an independent counter","concepts":["delegate","lambda","variable"],
+  "prompt":"Implement `public static Func<int> Counter(int start)`. Each call to the returned function must increment its own count and then return it. Separate calls to Counter must create independent counters. Do not use static state.",
+  "hints":["Does the first call return start, or the value after adding one?","Create a local count for each Counter call, then return a function that changes and reads that local.","Return a lambda that runs `count++; return count;`. The lambda keeps its captured local after Counter returns."],
+  "starter":"starter.cs","solution":"solution.cs","alternative":"alternative.cs","mode":"members","rules":[],
+  "checks":["Given.CounterStarts(Practice.Counter)","Given.CountersAreIndependent(Practice.Counter)","Given.NegativeStart(Practice.Counter)"],
+  "checkLabels":["Each call must increment before returning, starting from the provided value.","Counters made by separate calls must keep independent state when interleaved.","A negative starting value must also increment before returning."],
+  "fixtures":[{"id":"cases","declarations":"fixture-cases.cs"}],
+  "wrongAnswers":[{"source":"wrong-no-increment.cs","misconception":"Returns the current count without incrementing it.","witness":{"fixture":"cases","kind":"result","detail":"Check 1 failed"}},{"source":"wrong-shared-state.cs","misconception":"Stores all counters in one static value.","witness":{"fixture":"cases","kind":"result","detail":"Check 2 failed"}}],
+  "feedback":"Capture one local variable per call to Counter. Increment that variable inside the returned function before returning it."
+}

@@ -1,1 +1,1 @@
-Console.WriteLine("Corner Cafe");
+// Write the declarations and code described in the prompt.

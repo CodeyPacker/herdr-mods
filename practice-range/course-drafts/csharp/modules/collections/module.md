@@ -2,7 +2,7 @@
 id: course:cs-foundations/module/collections
 title: Arrays and lists
 requires: ["method","parameter-return","variable","number-types","branch","comparison"]
-outcomes: [{"id":"trace","can":"Trace a loop that builds a running total.","assessment":["predict-total","course:cs-foundations/task/collections-total-minutes"]},{"id":"build","can":"Build a new list from the items that pass a test, keeping their order.","assessment":["predict-loop","course:cs-foundations/task/collections-over"]},{"id":"transfer","can":"Combine a loop with a division that keeps its fraction, and handle an empty list.","assessment":["course:cs-foundations/task/collections-average"]}]
+outcomes: [{"id":"trace","can":"Trace a loop that builds a running total.","assessment":["predict-total","course:cs-foundations/task/collections-total-minutes"]},{"id":"build","can":"Build a new list from the items that pass a test, keeping their order.","assessment":["predict-loop","course:cs-foundations/task/collections-over"]},{"id":"transfer","can":"Combine a loop with a division that keeps its fraction, and handle an empty list.","assessment":["course:cs-foundations/task/collections-average"]},{"id":"stop","can":"Trace while, break and continue without an infinite loop.","assessment":["predict-stop"]}]
 tasks: [{"id":"course:cs-foundations/task/collections-total-minutes","path":"tasks/total-minutes/task.json"},{"id":"course:cs-foundations/task/collections-over","path":"tasks/over/task.json"},{"id":"course:cs-foundations/task/collections-average","path":"tasks/average/task.json"}]
 review: {"task":"course:cs-foundations/task/collections-average","afterModule":"course:cs-foundations/module/records","evidence":"Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."}
 drills: ["arrays/initializer","arrays/read","arrays/length","collections/new-list","collections/add","loops/foreach","loops/for"]
@@ -25,6 +25,11 @@ int[] minutes = { 30, 15, 45 };
 
 A `foreach` loop runs its block once for each item, in order. A variable declared before the loop can collect a result across the runs.
 
+
+## Trace a running total {prediction}
+
+Follow `total` through each run of the loop, then predict the three lines.
+
 ```csharp example totals
 int[] minutes = { 30, 15, 45 };
 int total = 0;
@@ -43,26 +48,12 @@ Console.WriteLine(minutes[0]);
 30
 ```
 
-## Trace a running total {prediction}
-
-Follow `total` through each run of the loop, then predict the three lines.
-
-@example totals
-
 :::question predict-total example=totals
 What are the three output lines?
 - [ ] 45, 3, 30 :: The loop adds all three items: 30, then 15, then 45.
-- [x] 90, 3, 30 :: The total of all three items is 90, the array has 3 items, and position 0 holds 30.
+- [x] 90, 3, 30 :: `total` starts at 0 before the loop, then becomes 30, 45 and 90. Declared inside the loop, it would start again on every run. `Length` is 3, and position 0 holds the first item, 30.
 - [ ] 90, 3, 15 :: Positions start at 0, so `minutes[0]` is the first item, 30.
 :::
-
-## Follow the loop {walkthrough}
-
-`total` starts at 0, before the loop. The loop runs three times: `total` becomes 30, then 45, then 90.
-
-If `total` were declared inside the loop it would start again on every run. `Length` is 3, and position 0 holds the first item.
-
-@example totals
 
 ## Lists that grow
 
@@ -78,6 +69,11 @@ for (int i = 0; i < songs.Count; i++) { ... }
 ```
 
 It runs with `i` equal to 0, 1 and so on, and stops when `i` reaches `Count`. `i++` adds 1 to `i`. Use `for` when you need the position, and `foreach` when you only need the item.
+
+
+## Predict a counted loop {prediction}
+
+Read the loop condition carefully, then predict the last line.
 
 ```csharp example grow
 List<string> songs = new List<string>();
@@ -96,26 +92,42 @@ for (int i = 0; i < songs.Count; i++)
 1: Finale
 ```
 
-## Predict a counted loop {prediction}
-
-Read the loop condition carefully, then predict the last line.
-
-@example grow
-
 :::question predict-loop example=grow
 What is the last line of output?
-- [x] 1: Finale :: `i` stops before `Count`, so the last run has `i` equal to 1.
+- [x] 1: Finale :: After two `Add` calls, `Count` is 2. The loop runs with `i` as 0, then 1. At 2, `i < songs.Count` is false and the loop ends. Writing `<=` would read position 2, which does not exist, and stop the program.
 - [ ] 2: Finale :: Positions start at 0. The second item is at position 1.
 - [ ] The program stops with an error :: The condition is `i < songs.Count`, so position 2 is never read.
 :::
 
-## Follow the counter {walkthrough}
+## Repeat until a condition changes {prediction}
 
-After two `Add` calls, `Count` is 2. The loop runs with `i` as 0 and then 1. When `i` reaches 2 the condition `i < songs.Count` is false and the loop ends, so position 2, which does not exist, is never read.
+Use `while` when the number of repetitions is not known in advance. It tests its condition before each run. `break` exits the nearest loop immediately. `continue` skips the rest of the current run and moves to the next condition test. Make sure a while loop changes something its condition uses, or it can run forever.
 
-Writing `<=` there would read one position too far and stop the program.
+```csharp example stop
+int[] readings = { 2, -1, 5, 0, 9 };
+int i = 0;
+int total = 0;
+while (i < readings.Length)
+{
+    int value = readings[i];
+    i++;
+    if (value == 0) break;
+    if (value < 0) continue;
+    total += value;
+}
+Console.WriteLine(total);
+```
 
-@example grow
+```output
+7
+```
+
+:::question predict-stop example=stop
+Why does the total stop at 7?
+- [x] The loop skips -1 and exits at 0, before reading 9. :: continue skips adding the negative value. break exits the loop. i is advanced before either branch, so continue cannot leave the loop stuck on -1. += adds to the existing total.
+- [ ] continue exits the loop at -1. :: continue starts the next run. break is the statement that exits.
+- [ ] 0 is added and the loop continues to 9. :: The break runs before the addition and prevents another run.
+:::
 
 ## Total the workout minutes {modification}
 

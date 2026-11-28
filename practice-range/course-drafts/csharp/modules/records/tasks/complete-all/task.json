@@ -8,7 +8,7 @@
     "list",
     "loop"
   ],
-  "prompt": "Song is supplied. Write public static List<Song> LikeAll(List<Song> songs). Return a new list holding a liked copy of every song, in the same order. The list passed in must not change: it keeps the same items, and they are still not liked.",
+  "prompt": "`Song` is supplied. Write `public static List<Song> LikeAll(List<Song> songs)`. Return a new list holding a liked copy of every song, in the same order. The list passed in must not change: it keeps the same items, and each keeps its original `Liked` value.",
   "hints": [
     "A List is a class. If you change the list you were given, who else sees the change?",
     "Create a new list for the result, and add a changed copy of each song to it.",
@@ -19,7 +19,7 @@
   "alternative": "alternative.cs",
   "mode": "members",
   "rules": [],
-  "support": "static bool InputUnchanged()\n{\n    var songs = new List<Song> { new Song(1, \"Intro\", false) };\n    Practice.LikeAll(songs);\n    return songs.Count == 1 && songs[0] == new Song(1, \"Intro\", false);\n}\n",
+  "support": "static bool InputUnchanged()\n{\n    var songs = new List<Song> { new Song(1, \"Intro\", false), new Song(2, \"Finale\", true) };\n    Song first = songs[0];\n    Song second = songs[1];\n    var result = Practice.LikeAll(songs);\n    return ReferenceEquals(songs[0], first) && ReferenceEquals(songs[1], second)\n        && !songs[0].Liked && songs[1].Liked && !ReferenceEquals(result, songs);\n}\n",
   "checks": [
     "Practice.LikeAll(new List<Song> { new Song(1, \"Intro\", false), new Song(2, \"Finale\", true) }).SequenceEqual(new List<Song> { new Song(1, \"Intro\", true), new Song(2, \"Finale\", true) })",
     "Practice.LikeAll(new List<Song>()).Count == 0",
@@ -28,7 +28,7 @@
   "checkLabels": [
     "Every song in the result must be liked, in the original order.",
     "An empty list must give an empty list.",
-    "The list passed in must keep its original, not-liked song."
+    "The input list must retain its original song objects and Liked values, and the result must use a new list."
   ],
   "fixtures": [
     {

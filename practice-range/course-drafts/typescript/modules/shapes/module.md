@@ -20,9 +20,9 @@ An object type names each field and its type.
 - `book.title` reads a field.
 - `{ ...book, title: "Emma" }` makes a new object: it copies every field of `book`, then sets `title` on the copy.
 
-## Predict before running {prediction}
+## Copy with a change {prediction}
 
-Read the example and predict what it prints before you run it.
+Read the example and predict what it prints.
 
 ```typescript example trace
 type Book = { id: number; title: string };
@@ -40,30 +40,20 @@ Emma
 
 :::question predict example=trace
 Which titles print?
-- [x] Dune then Emma :: The new title is set on the copy, not on `original`.
+- [x] Dune then Emma :: The spread copies `id` and `title` from `original` into a new object, and then `title: "Emma"` replaces the copied title. `original` is never changed. This is a **shallow copy**: it copies each field's value, which for numbers and strings is all you need.
 - [ ] Emma then Emma :: Nothing assigns to `original.title`. The spread makes a separate object.
 :::
 
-## Trace the example {walkthrough}
+## Leave out a required field {prediction}
 
-The spread copies `id` and `title` from `original` into a new object. Then `title: "Emma"` replaces the copied title.
-
-- `original` is never changed, so it still says `Dune`.
-- This is a shallow copy: it copies each field's value. For numbers and strings that is all you need.
-- If a required field were missing, the type checker would report it before the code runs.
-
-@example trace
-
-## Check your explanation {prediction}
-
-Read the example again and choose the explanation that fits.
+Every field of `Book` is required.
 
 @example trace
 
 :::question explain example=trace
 Would `{ title: "Emma" }` on its own fit `Book`?
 - [ ] Yes. It has a title. :: One matching field is not enough.
-- [x] No. `id` is required too. :: Every field in the type must be present.
+- [x] No. `id` is required too. :: Every field in the type must be present, so `id` is missing. The type checker reports that before the code runs.
 :::
 
 ## Type alias or interface

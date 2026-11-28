@@ -9,11 +9,11 @@
     "list",
     "loop"
   ],
-  "prompt": "Notice is supplied. Finish UrgentNotice, which is a Notice with a number of Hours. Its Label() returns the title and the hours in the form \"Storm (within 4 h)\", and that version must also run when the notice is held in a Notice variable. Then finish Notices.Labels so it returns the Label() of every notice, in order.",
+  "prompt": "`Notice` is supplied. Write `public class UrgentNotice : Notice` with a public get-only `int Hours` property and a public constructor `UrgentNotice(string title, int hours)` that stores both values. Its `public override string Label()` returns the title and hours, as in `\"Storm (within 4 h)\"`. It must also run through a `Notice` variable. Write `public static class Notices` with `public static List<string> Labels(List<Notice> notices)` returning every notice's `Label()` in order.",
   "hints": [
-    "What does the constructor still have to store, and what does : base(title) already take care of?",
-    "Notice marks Label as virtual. Which word replaces a virtual method in a derived class?",
-    "Add public override string Label() to UrgentNotice. In Labels, call Label() on each notice, not Title."
+    "Which constructor initializes the inherited Title, and which property belongs to UrgentNotice?",
+    "Pass title to the base constructor. Override Label rather than hiding it.",
+    "Use : base(title), assign Hours, and override Label. In Notices.Labels, loop over notices and call each Label()."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",

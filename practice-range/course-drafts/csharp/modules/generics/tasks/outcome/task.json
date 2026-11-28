@@ -7,7 +7,7 @@
     "record",
     "branch"
   ],
-  "prompt": "Outcome<T> describes work that can fail. Ok says whether it worked, Value holds the result, and Error holds a message. Finish the three methods in Outcomes. Success(value) returns an outcome with Ok true, that value and an empty Error. Failure(fallback, error) returns Ok false, the fallback as its Value, and the error text. ValueOr(outcome, fallback) returns the outcome's Value when Ok is true, and the fallback otherwise.",
+  "prompt": "Declare `public record Outcome<T>(bool Ok, T Value, string Error)`. Write `public static class Outcomes` with three public static generic methods: `Outcome<T> Success<T>(T value)`, `Outcome<T> Failure<T>(T fallback, string error)`, and `T ValueOr<T>(Outcome<T> outcome, T fallback)`. Success returns Ok true, the value and an empty Error. Failure returns Ok false, the fallback as Value and the error. ValueOr returns Value when Ok is true and the fallback otherwise.",
   "hints": [
     "Write down the three values each method puts into the record, in order.",
     "ValueOr should decide by Ok. A successful outcome can hold 0 or empty text as a real value.",

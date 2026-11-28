@@ -13,11 +13,23 @@ A function packages instructions so callers can use them with different values. 
 
 ## Give a calculation a name
 
-A function packages instructions so callers can use them with different values. Its parameters are names for those inputs. In hours + extra the two names refer to this call's numbers. A colon followed by number says what kind of input or output the compiler expects. return sends a value back to the caller and ends this call.
+A **function** packages instructions so callers can use them with different values.
 
-## Predict before running {prediction}
+```typescript
+function addHours(hours: number, extra: number): number {
+  const total = hours + extra;
+  return total;
+}
+```
 
-Read the example and predict what happens before checking your answer.
+- `hours` and `extra` are **parameters**: names for the inputs of this call.
+- `: number` after a parameter, or after the brackets, says what type of input or output the compiler expects.
+- `return` sends a value back to the caller and ends the call. A function can return a result without printing it.
+- `total` belongs inside the braces, its **scope**. Each call gets its own parameters and local variables.
+
+## Predict two calls {prediction}
+
+Read the example and predict what it prints.
 
 ```typescript example calls
 function addHours(hours: number, extra: number): number {
@@ -36,26 +48,20 @@ console.log(addHours(1, 0));
 
 :::question outputs example=calls
 Which two values print?
-- [x] 5 then 1 :: The second call receives its own inputs.
+- [x] 5 then 1 :: Each call creates its own parameters and its own `total`, so the second call starts fresh with 1 and 0.
 - [ ] 5 then 6 :: The local total does not accumulate across calls.
 :::
 
-## Trace the example {walkthrough}
+## Read a name outside its function {prediction}
 
-Read the inputs from left to right. Each call creates its own parameters and local variables. The name total belongs inside the braces (its scope). Another function cannot read it directly. Return it and use the returned value in the caller. A function can return a result without printing it.
-
-@example calls
-
-## Check your explanation {prediction}
-
-Read the indicated code and choose the explanation that accounts for its behavior.
+The example declares `total` inside `addHours`.
 
 @example calls
 
 :::question scope example=calls
 Can a later console.log(total) outside the function read total?
 - [ ] Yes, after calling addHours once. :: Calling the function does not create a global total.
-- [x] No. total belongs to the function body. :: Use the value returned by a call.
+- [x] No. total belongs to the function body. :: `total` exists only inside the function's braces, and calling the function does not change that. Return it and use the returned value in the caller instead.
 :::
 
 ## Return a local count {modification}

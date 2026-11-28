@@ -395,11 +395,12 @@
   ],
   "compatibility": {
     "fromVersions": [
-      "0.1.0-preview.1"
+      "0.1.0-preview.1",
+      "0.2.0-preview.1"
     ],
     "replacements": []
   },
-  "runtimeContentVersion": "0.2.0-preview.1",
+  "runtimeContentVersion": "0.3.0-preview.1",
   "readiness": [
     {
       "id": "R1",

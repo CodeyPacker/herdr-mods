@@ -48,12 +48,6 @@
       ]
     },
     {
-      "kind": "walkthrough",
-      "title": "Entered early, left late",
-      "text": "The search entered a, then b, then d. Node d has no neighbours, so it was left at once. Then b was left. Back at a, the search entered c. From c the neighbour d was already seen, so c was left, and last of all a.\n\nLook at the leave order: d, b, c, a. A node is left only after everything reachable from it has been left. That one fact is the basis of both ideas in the rest of this module.",
-      "example": "dfs"
-    },
-    {
       "kind": "explanation",
       "title": "Cycles and order",
       "text": "**Finding a cycle.** In a directed graph, a cycle exists when the search, while exploring from some node, arrives back at a node that is **still being explored**: one that has been entered and not yet left. Such a node is on the current path, so there is a route from it back to itself.\n\nArriving at a node that was entered **and left** earlier is not a cycle. It only means two routes lead to the same place. So one seen set is not enough. Track three states for each node: not visited, being visited, and done.\n\n**Ordering by need.** Suppose an edge from x to y means \"x needs y first\". Then the leave order is a valid order to do things in: a node is left only after everything it needs has been left. An order in which every item comes after what it needs is called a **topological order**. It exists only when the graph has no cycle."
@@ -66,12 +60,6 @@
       "questions": [
         "finish-order"
       ]
-    },
-    {
-      "kind": "walkthrough",
-      "title": "Reverse of the leave order",
-      "text": "The leave order was d, b, c, a. In this graph an edge means \"comes before\", so the node left last must come first, and the list is reversed: a, c, b, d.\n\nCheck it: a comes before b and c, and both come before d. The direction of the edges decides whether to reverse. When an edge means \"needs\", as in the last exercise, the leave order is already the answer.",
-      "example": "order"
     },
     {
       "kind": "modification",
@@ -109,7 +97,7 @@
         },
         {
           "text": "leave d",
-          "feedback": "The first three lines enter a, b and d. d has no neighbours, so it is left straight away."
+          "feedback": "The first three lines enter a, b and d. d has no neighbours, so it is left straight away, then b. Back at a, the search enters c, finds d already seen and leaves c, and last of all a. The leave order is d, b, c, a: a node is left only after everything reachable from it has been left. That one fact is the basis of the rest of this module."
         }
       ]
     },
@@ -121,7 +109,7 @@
       "choices": [
         {
           "text": "a c b d",
-          "feedback": "The nodes are left in the order d, b, c, a, and the list is reversed."
+          "feedback": "The nodes are left in the order d, b, c, a. Here an edge means \"comes before\", so the node left last must come first, and the list is reversed: a comes before b and c, and both come before d. When an edge means \"needs\", as in the last exercise, the leave order is already the answer."
         },
         {
           "text": "d b c a",

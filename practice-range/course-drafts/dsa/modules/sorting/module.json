@@ -48,12 +48,6 @@
       ]
     },
     {
-      "kind": "walkthrough",
-      "title": "One element at a time",
-      "text": "First 2 slid in front of 5. Then 4 slid in front of 5 and stopped behind 2. Last, 1 slid past all three.\n\nThe inner loop shifts larger elements one place to the right to make a gap, and the saved element is written into the gap. Its condition has two parts, and both matter: `j >= 0` stops at the front of the array, and `values[j] > current` stops at the first element that is not larger.",
-      "example": "insertion"
-    },
-    {
       "kind": "explanation",
       "title": "A fast sort",
       "text": "**Merge sort** is recursive. Split the array into two halves, sort each half with the same function, and then **merge** the two sorted halves. Merging is the two-pointer pass from the module on arrays, and it takes n steps.\n\nThe base case is an array of one element or none, which is already sorted.\n\nCount the work by levels. The array is halved until the pieces have one element, which takes log n levels. At every level, all the merging together handles n elements. So the total is n times log n, written **O(n log n)**. For a million elements that is about 20 million steps, where insertion sort needs about 500 billion.\n\nMerge sort uses O(n) extra memory for the merged halves."
@@ -68,10 +62,9 @@
       ]
     },
     {
-      "kind": "walkthrough",
+      "kind": "explanation",
       "title": "Comparators and stability",
-      "text": "With no argument, `sort` compares elements **as text**. As text, \"10\" comes before \"9\", because \"1\" comes before \"9\". That gave 1, 10, 100, 9.\n\nA **comparator** fixes it. It is a function of two elements that returns a negative number when the first should come first, a positive number when the second should, and 0 when they are equal in order. `(a, b) => a - b` sorts numbers from smallest to largest.\n\nThe first line shows **stability**. Two tasks with the same priority kept the order they had before: call before mail, and write before plan. The built-in sort is stable, and so is a merge sort that takes from the left half on a tie. Stability is what lets you sort by one field and then by another.\n\nNote also that `sort` changes the array it is called on. Copy first, with `[...values]`, when the caller's array must stay as it was.",
-      "example": "stable"
+      "text": "A **comparator** fixes the text sort. It is a function of two elements that returns a negative number when the first should come first, a positive number when the second should, and 0 when they are equal in order. `(a, b) => a - b` sorts numbers from smallest to largest.\n\nThe example's first line shows **stability**. Two tasks with the same priority kept the order they had before: call before mail, and write before plan. The built-in sort is stable, and so is a merge sort that takes from the left half on a tie. Stability is what lets you sort by one field and then by another.\n\n`sort` also changes the array it is called on. Copy first, with `[...values]`, when the caller's array must stay as it was."
     },
     {
       "kind": "modification",
@@ -101,7 +94,7 @@
       "choices": [
         {
           "text": "2 4 5 1",
-          "feedback": "4 slides in front of 5 and stops behind 2. The 1 has not been reached yet."
+          "feedback": "First 2 slides in front of 5. Then 4 slides in front of 5 and stops behind 2, and last of all 1 slides past all three. The inner loop shifts larger elements one place right to make a gap, and the saved element is written into it. Both parts of its condition matter: `j >= 0` stops at the front of the array, and `values[j] > current` stops at the first element that is not larger."
         },
         {
           "text": "2 5 4 1",
@@ -129,7 +122,7 @@
         },
         {
           "text": "1 10 100 9",
-          "feedback": "With no comparator the numbers are compared as text, and \"10\" and \"100\" come before \"9\"."
+          "feedback": "With no argument, `sort` compares elements **as text**. As text, \"10\" comes before \"9\", because \"1\" comes before \"9\"."
         }
       ]
     }

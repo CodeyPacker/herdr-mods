@@ -1,4 +1,1 @@
-public static int StockFor(Dictionary<string, int> stock, string item)
-{
-    return -1;
-}
+// Write the declarations and code described in the prompt.

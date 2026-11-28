@@ -48,12 +48,6 @@
       ]
     },
     {
-      "kind": "walkthrough",
-      "title": "The same answer, 500 times cheaper",
-      "text": "The nested loops compared every pair: a million steps. The second version spent 1,000 steps building a Set from b and 1,000 lookups, 2,000 in all.\n\nNothing about the problem changed. The repeated operation was \"is this value in b?\", and a Set answers that in one step where an array needs a scan. Most speed-ups in everyday code are this one.",
-      "example": "choices"
-    },
-    {
       "kind": "explanation",
       "title": "Sort first",
       "text": "A second move is worth as much as the first: **put the data in order before working on it**. Sorting costs O(n log n), and it often turns the rest of the problem into one pass.\n\n- After sorting, equal items are next to each other, so duplicates and groups are found by comparing neighbours.\n- After sorting by start time, things that overlap are next to each other.\n- After sorting, binary search and two pointers both become available.\n\nWhen a problem seems to need every pair compared, ask whether an order exists in which only neighbours matter."
@@ -66,12 +60,6 @@
       "questions": [
         "overlaps"
       ]
-    },
-    {
-      "kind": "walkthrough",
-      "title": "Only neighbours were compared",
-      "text": "After sorting, the meetings read 9 to 10, 9 to 11, 13 to 15 and 14 to 16. The loop found that the second starts before the first ends, and that the fourth starts before the third ends: two overlaps.\n\nUnsorted, finding those would mean comparing every meeting with every other. Sorted, three comparisons were enough. The first exercise extends this to merging the overlapping ranges.",
-      "example": "sweep"
     },
     {
       "kind": "independent",
@@ -105,7 +93,7 @@
         },
         {
           "text": "1000000 2000",
-          "feedback": "Every pair is compared, which is a million steps. The Set version builds the Set in 1,000 steps and makes 1,000 lookups."
+          "feedback": "The nested loops compare every pair: a million steps. The Set version spends 1,000 steps building a Set from `b` and 1,000 lookups. The repeated question was \"is this value in b?\", and a Set answers it in one step where an array needs a scan. Most speed-ups in everyday code are this one."
         },
         {
           "text": "1000000 1000000",
@@ -121,7 +109,7 @@
       "choices": [
         {
           "text": "2",
-          "feedback": "9 to 11 starts before 9 to 10 ends, and 14 to 16 starts before 13 to 15 ends."
+          "feedback": "After sorting, the meetings read 9 to 10, 9 to 11, 13 to 15 and 14 to 16. 9 to 11 starts before 9 to 10 ends, and 14 to 16 starts before 13 to 15 ends. Sorted, three neighbour comparisons were enough, where unsorted data would need every meeting compared with every other. The first exercise extends this to merging the overlapping ranges."
         },
         {
           "text": "1",

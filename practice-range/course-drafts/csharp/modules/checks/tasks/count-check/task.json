@@ -8,7 +8,7 @@
     "list",
     "boolean-logic"
   ],
-  "prompt": "A candidate method takes a List<int> and should return how many of its items are greater than 0. Write public static bool CountCheck(Func<List<int>, int> candidate). Return true when the candidate behaves correctly on the inputs you choose, and false when it does not. Your check must return false for a faulty candidate that also counts zeros, and for one that counts every item.",
+  "prompt": "A candidate method takes a `List<int>` and should return how many of its items are greater than 0. Write `public static bool CountCheck(Func<List<int>, int> candidate)`. Return true when the candidate behaves correctly on the inputs you choose, and false when it does not. Your check must return false for a faulty candidate that also counts zeros, and for one that counts every item.",
   "hints": [
     "Which items would a faulty candidate count that a correct one does not?",
     "A list with only positive numbers gives the same answer for all three candidates. Include a 0 and a negative number.",

@@ -49,10 +49,9 @@
       ]
     },
     {
-      "kind": "walkthrough",
-      "title": "Going in and coming back",
-      "text": "The calls went in: `countdown(2)` printed 2 and called `countdown(1)`, which printed 1 and called `countdown(0)`, which printed done and returned.\n\nThen they came back out in reverse. `countdown(1)` continued after its call and printed back 1. Then `countdown(2)` continued and printed back 2.\n\nWhile a call waits for the call inside it, the computer keeps its variables on the **call stack**. That is a stack in the sense of the earlier module: the most recent call finishes first. A recursion n calls deep uses O(n) memory for that stack, even when the code creates nothing else.",
-      "example": "countdown"
+      "kind": "explanation",
+      "title": "The call stack",
+      "text": "While a call waits for the call inside it, the computer keeps its variables on the **call stack**. That is a stack in the sense of the earlier module: the most recent call finishes first.\n\nA recursion n calls deep uses O(n) memory for that stack, even when the code creates nothing else."
     },
     {
       "kind": "explanation",
@@ -67,12 +66,6 @@
       "questions": [
         "calls"
       ]
-    },
-    {
-      "kind": "walkthrough",
-      "title": "Ten more, a hundred times the work",
-      "text": "For 10 the function was called 177 times. For 20 it was called 21,891 times. Adding 10 to the input multiplied the work by more than a hundred.\n\nThe reason is repeated work. `fib(20)` calls `fib(19)` and `fib(18)`. But `fib(19)` also calls `fib(18)`, which is worked out all over again, and so on all the way down. The module on dynamic programming removes that repetition.",
-      "example": "calls"
     },
     {
       "kind": "modification",
@@ -106,7 +99,7 @@
         },
         {
           "text": "back 1, then back 2",
-          "feedback": "The calls return in the reverse of the order they were made: the call for 1 finishes before the call for 2."
+          "feedback": "The calls go in: `countdown(2)` prints 2 and calls `countdown(1)`, which prints 1 and calls `countdown(0)`, which prints done and returns. Then they come back out in reverse: `countdown(1)` continues and prints back 1, then `countdown(2)` prints back 2."
         },
         {
           "text": "done, then back 2",
@@ -130,7 +123,7 @@
         },
         {
           "text": "6765 21891",
-          "feedback": "The calls roughly double with each level, so 20 takes over a hundred times as many as 10."
+          "feedback": "For 10 the function is called 177 times, and for 20 it is called 21,891 times. The reason is repeated work: `fib(20)` calls `fib(19)` and `fib(18)`, but `fib(19)` also calls `fib(18)`, which is worked out all over again, and so on all the way down. The module on dynamic programming removes that repetition."
         }
       ]
     }

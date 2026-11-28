@@ -44,16 +44,8 @@ M XL
 :::question widen example=widen
 TypeScript infers a type for each variable. What type does `changing` get?
 - [ ] "M" :: A `let` can be reassigned, so TypeScript widens it to `string`.
-- [x] string :: A `let` can change later, so TypeScript picks the wider `string`. `fixed` is a `const`, so it keeps the literal type `"M"`.
+- [x] string :: A `const` can never change, so `fixed` keeps the literal type `"M"`. A `let` might change, so TypeScript widens `changing` to `string`, which is why `changing = "XL"` is allowed. To keep a `let` limited to certain values, write the union yourself: `let size: Size = "M"`. Then `size = "XL"` is a type error.
 :::
-
-## Widening {walkthrough}
-
-A `const` can never change, so TypeScript gives `fixed` the literal type `"M"`. A `let` might change, so TypeScript widens `changing` to `string`. That is why `changing = "XL"` is allowed.
-
-To keep a `let` limited to certain values, write the union yourself: `let size: Size = "M"`. Then `size = "XL"` is a type error.
-
-@example widen
 
 ## Narrow before you use it {prediction}
 
@@ -80,9 +72,9 @@ What does `count("abc")` print?
 - [x] 1 :: A single string counts as one item.
 :::
 
-## Check your explanation {prediction}
+## Why the length read is allowed {prediction}
 
-Read the example again and choose the explanation that fits.
+`count` reads `items.length` only inside the `if`.
 
 @example narrow
 

@@ -13,7 +13,19 @@ GROUP BY summarizes rows by collapsing them. Sometimes you need the summary and 
 
 ## A function with a window
 
-A window function is a function followed by OVER ( ... ). The brackets describe the rows it looks at, called its window. RANK() OVER (ORDER BY salary DESC) gives each row its position when all rows are sorted by salary, highest first. Rows that tie share a rank, and the next rank is skipped. ROW_NUMBER() numbers the rows 1, 2, 3 with no ties. Adding PARTITION BY department_id splits the rows into one group per department and starts the ranking again inside each. Unlike GROUP BY, nothing is collapsed: every row stays and gains a column.
+A **window function** is a function followed by `OVER ( ... )`. The brackets describe the rows it looks at, called its **window**.
+
+- `RANK() OVER (ORDER BY salary DESC)` gives each row its position when all rows are sorted by salary, highest first. Rows that tie share a rank, and the next rank is skipped.
+- `ROW_NUMBER()` numbers the rows 1, 2, 3 with no ties.
+- Adding `PARTITION BY department_id` splits the rows into one group per department and starts the ranking again inside each.
+- The `ORDER BY` inside `OVER` decides only the ranking. The query's own `ORDER BY` still sorts the result.
+
+Unlike `GROUP BY`, nothing is collapsed: every row stays and gains a column.
+
+
+## Two ranks for one row {prediction}
+
+Tom earns 175000 in department 4. Priya, in department 3, earns 210000. Predict Tom's `overall` and `in_department`.
 
 ```sql example ranks
 SELECT first_name, department_id, salary,
@@ -39,28 +51,23 @@ Your query returned:
 (7 rows)
 ```
 
-## Two ranks for one row {prediction}
-
-Tom earns 175000 in department 4. Priya, in department 3, earns 210000. Predict Tom's overall and in_department.
-
-@example ranks
-
 :::question two-ranks example=ranks
 What are Tom's overall and in_department?
 - [ ] 1 and 1 :: Priya earns more than Tom, so across all the rows he is second.
-- [x] 2 and 1 :: Only Priya earns more overall, and nobody in department 4 earns more than Tom.
+- [x] 2 and 1 :: Across the seven rows shown, only Priya earns more than Tom, so `overall` is 2. Inside department 4 nobody earns more, so `in_department` is 1. The two columns use the same function with different windows.
 - [ ] 2 and 2 :: PARTITION BY restarts the ranking for each department, and Tom is the top earner in his.
 :::
 
-## Read both columns {walkthrough}
-
-Across the seven rows shown, only Priya earns more than Tom, so his overall rank is 2. Inside department 4 he earns the most, so in_department is 1. The two columns use the same function with different windows. The final ORDER BY sorts the result. It is separate from the ORDER BY inside OVER, which only decides the ranking.
-
-@example ranks
-
 ## Aggregates as windows
 
-The aggregate functions work as window functions too. avg(salary) OVER (PARTITION BY department_id) puts the department's average on every row of that department. That makes it possible to compare a row with its group in one query: the salary minus the department average.
+The aggregate functions work as window functions too. `avg(salary) OVER (PARTITION BY department_id)` puts the department's average on every row of that department.
+
+That lets you compare a row with its group in one query: the salary minus the department average.
+
+
+## Rows that stay {prediction}
+
+Department 5 has four employees. Predict how many rows this query returns.
 
 ```sql example compare
 SELECT first_name, salary,
@@ -83,28 +90,16 @@ Your query returned:
 (4 rows)
 ```
 
-## Rows that stay {prediction}
-
-Department 5 has four employees. Predict how many rows this query returns.
-
-@example compare
-
 :::question kept-rows example=compare
 How many rows come back?
 - [ ] 1 :: A window function does not collapse rows. Only GROUP BY does.
 - [ ] 24 :: WHERE keeps the four employees of department 5.
-- [x] 4 :: One row per employee, each with the department's average beside it.
+- [x] 4 :: One row per employee comes back, where `GROUP BY` would have returned one row for the department. Each row carries the same `department_avg`, 64375, and its own difference from it.
 :::
 
-## Every row keeps its place {walkthrough}
+## Find the error {prediction}
 
-Four rows come back, one per employee. A GROUP BY would have returned one row for the department. Each row carries the same department_avg, 64375, and its own difference from it.
-
-@example compare
-
-## Filter on a rank {prediction}
-
-The query ranks the products and tries to keep the top three with WHERE. Read it before checking.
+This example does not run. Find the line PostgreSQL stops at, and why.
 
 ```sql example bad-where diagnostics=[{"code":"42703","line":3}]
 SELECT name, RANK() OVER (ORDER BY price DESC) AS position
@@ -114,17 +109,11 @@ WHERE position <= 3;
 ```
 
 :::question window-where example=bad-where
-What happens when you check this example?
-- [x] PostgreSQL reports an error on line 3. :: WHERE runs before window functions and cannot use their alias (42703).
-- [ ] It returns the three most expensive products. :: WHERE cannot see position. The ranking has to happen in an earlier step.
-- [ ] It returns every product with its rank. :: The statement has an error, so nothing is returned.
+Which error does PostgreSQL report?
+- [ ] Line 1: `RANK()` needs a `PARTITION BY`. :: `PARTITION BY` is optional. Without it, all rows form one window.
+- [x] Line 3, 42703: column `position` does not exist. :: Window functions are worked out after `WHERE` has run, so `WHERE` cannot see their results, and it cannot use a `SELECT` alias in any case. Put the window function in a `WITH` step. In the main query its result is an ordinary column, and `WHERE position <= 3` works.
+- [ ] Line 3: `<=` cannot compare a rank. :: A rank is a number, and `<=` compares numbers. The trouble is the name `position`.
 :::
-
-## Read the error {walkthrough}
-
-Check the example. Error 42703 says column "position" does not exist. Window functions are worked out after WHERE has run, so WHERE cannot see their results, and it cannot use a SELECT alias in any case. Put the window function in a WITH step. In the main query its result is an ordinary column, and WHERE position <= 3 works.
-
-@example bad-where
 
 ## Rank salaries inside each department {modification}
 

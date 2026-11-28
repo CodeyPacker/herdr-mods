@@ -7,7 +7,7 @@
     "branch",
     "method"
   ],
-  "prompt": "Checked(int minutes) should return minutes unchanged when it is 0 or more, and throw an ArgumentException when it is negative. The starter returns every input.",
+  "prompt": "`Checked(int minutes)` should return `minutes` unchanged when it is 0 or more, and throw an `ArgumentException` when it is negative. The starter returns every input.",
   "hints": [
     "Which inputs are acceptable? Is 0 one of them?",
     "Test for the bad input first, and throw before the return.",

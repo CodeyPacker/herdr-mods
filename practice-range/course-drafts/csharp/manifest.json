@@ -97,7 +97,7 @@
     },
     {
       "id": "outcome/exceptions",
-      "description": "Throw and catch a specific exception, and choose between a result value and an exception for an expected failure.",
+      "description": "Throw and catch specific exceptions, represent expected failures, and release a disposable resource on success and failure.",
       "assessment": "course:cs-foundations/module/exceptions"
     },
     {
@@ -107,13 +107,28 @@
     },
     {
       "id": "outcome/async",
-      "description": "Return and await a Task, run two reads in order, and handle a failed task.",
+      "description": "Await tasks, choose sequential or concurrent reads, and preserve failure and caller cancellation.",
       "assessment": "course:cs-foundations/module/async"
     },
     {
       "id": "outcome/checks",
       "description": "Read expected and actual values, find an off-by-one bug, and write a check that catches it.",
       "assessment": "course:cs-foundations/module/checks"
+    },
+    {
+      "id": "outcome/strings",
+      "description": "Normalize text for display and choose exact comparison when a name or label must match.",
+      "assessment": "course:cs-foundations/module/strings"
+    },
+    {
+      "id": "outcome/delegates",
+      "description": "Pass typed callbacks and predict how each callback uses its own captured state.",
+      "assessment": "course:cs-foundations/module/delegates"
+    },
+    {
+      "id": "outcome/transfer",
+      "description": "Validate and aggregate an import, then write regression tests for the report behavior.",
+      "assessment": "course:cs-foundations/module/transfer"
     }
   ],
   "modules": [
@@ -203,6 +218,22 @@
       }
     },
     {
+      "id": "course:cs-foundations/module/strings",
+      "title": "Working with text",
+      "prerequisites": [
+        "course:cs-foundations/module/collections"
+      ],
+      "teaches": [
+        "text-processing",
+        "string-comparison"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/strings/module.md"
+      }
+    },
+    {
       "id": "course:cs-foundations/module/classes",
       "title": "Classes and properties",
       "prerequisites": [
@@ -274,15 +305,32 @@
       }
     },
     {
+      "id": "course:cs-foundations/module/delegates",
+      "title": "Delegates and callbacks",
+      "prerequisites": [
+        "course:cs-foundations/module/lookups"
+      ],
+      "teaches": [
+        "delegate",
+        "lambda",
+        "capture"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/delegates/module.md"
+      }
+    },
+    {
       "id": "course:cs-foundations/module/linq",
       "title": "LINQ",
       "prerequisites": [
         "course:cs-foundations/module/collections",
         "course:cs-foundations/module/records",
-        "course:cs-foundations/module/lookups"
+        "course:cs-foundations/module/lookups",
+        "course:cs-foundations/module/delegates"
       ],
       "teaches": [
-        "lambda",
         "linq-query",
         "deferred"
       ],
@@ -336,7 +384,8 @@
       ],
       "teaches": [
         "throw-catch",
-        "result-type"
+        "result-type",
+        "disposal"
       ],
       "status": "authored",
       "source": {
@@ -365,12 +414,15 @@
       "title": "async and await",
       "prerequisites": [
         "course:cs-foundations/module/exceptions",
-        "course:cs-foundations/module/methods"
+        "course:cs-foundations/module/methods",
+        "course:cs-foundations/module/delegates"
       ],
       "teaches": [
         "task",
         "await",
-        "async-failure"
+        "async-failure",
+        "concurrent-await",
+        "cancellation"
       ],
       "status": "authored",
       "source": {
@@ -394,16 +446,78 @@
         "kind": "bundled",
         "path": "modules/checks/module.md"
       }
+    },
+    {
+      "id": "course:cs-foundations/module/transfer",
+      "title": "Build and test an import report",
+      "prerequisites": [
+        "course:cs-foundations/module/checks",
+        "course:cs-foundations/module/async",
+        "course:cs-foundations/module/generics",
+        "course:cs-foundations/module/strings"
+      ],
+      "teaches": [
+        "integration"
+      ],
+      "status": "authored",
+      "source": {
+        "kind": "bundled",
+        "path": "modules/transfer/module.md"
+      }
     }
   ],
   "compatibility": {
     "fromVersions": [
       "0.1.0-preview.1",
-      "0.2.0-preview.1"
+      "0.2.0-preview.1",
+      "0.2.0-preview.2",
+      "0.3.0-preview.1",
+      "0.4.0-preview.1"
     ],
-    "replacements": []
+    "replacements": [
+      {
+        "from": "course:cs-foundations/task/methods-summary",
+        "to": "course:cs-foundations/task/methods-summary",
+        "keepCompletion": false
+      },
+      {
+        "from": "course:cs-foundations/task/checks-at-limit",
+        "to": "course:cs-foundations/task/checks-at-limit",
+        "keepCompletion": false
+      },
+      {
+        "from": "course:cs-foundations/task/exceptions-parse-minutes",
+        "to": "course:cs-foundations/task/exceptions-parse-minutes",
+        "keepCompletion": false
+      },
+      {
+        "from": "course:cs-foundations/task/linq-minutes-by-owner",
+        "to": "course:cs-foundations/task/linq-minutes-by-owner",
+        "keepCompletion": false
+      },
+      {
+        "from": "course:cs-foundations/task/classes-task-card",
+        "to": "course:cs-foundations/task/classes-task-card",
+        "keepCompletion": false
+      },
+      {
+        "from": "course:cs-foundations/task/records-complete-all",
+        "to": "course:cs-foundations/task/records-complete-all",
+        "keepCompletion": false
+      },
+      {
+        "from": "course:cs-foundations/task/async-total",
+        "to": "course:cs-foundations/task/async-total",
+        "keepCompletion": false
+      },
+      {
+        "from": "course:cs-foundations/task/async-counts",
+        "to": "course:cs-foundations/task/async-counts",
+        "keepCompletion": false
+      }
+    ]
   },
-  "runtimeContentVersion": "0.2.0-preview.2",
+  "runtimeContentVersion": "0.5.0-preview.1",
   "readiness": [
     {
       "id": "R1",
@@ -418,9 +532,8 @@
     },
     {
       "id": "R2",
-      "title": "Classes through lookups",
+      "title": "Records, nullable values and dictionaries",
       "modules": [
-        "course:cs-foundations/module/classes",
         "course:cs-foundations/module/records",
         "course:cs-foundations/module/nulls",
         "course:cs-foundations/module/lookups"
@@ -429,10 +542,8 @@
     },
     {
       "id": "R3",
-      "title": "LINQ through exceptions",
+      "title": "Pattern matching and exceptions",
       "modules": [
-        "course:cs-foundations/module/linq",
-        "course:cs-foundations/module/interfaces",
         "course:cs-foundations/module/patterns",
         "course:cs-foundations/module/exceptions"
       ],

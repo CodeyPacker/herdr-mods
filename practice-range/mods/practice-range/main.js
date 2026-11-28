@@ -13,6 +13,7 @@ import { practiceCommand, appCommand, appCommands, openVSCode, openVSCodeDiff, n
 import { findPracticePane, neovimDiffCommands, neovimDiffExpression, neovimPanelKeyCommands } from "./editor-pane.js";
 import { defaultLanguage, findLanguage, languages } from "./languages/index.js";
 import { languagePanel, packAction } from "./language-panel.js";
+import { startPanel, START_CHOICES } from "./start-panel.js";
 import { tutorChat } from "./tutor/panel.js";
 import { SetupFlow } from "./setup/flow.js";
 import { setupHub, startBlocker } from "./setup/hub.js";
@@ -166,7 +167,10 @@ export default class Syntax extends View {
     this.syncPushTurn = 0;
     /** True while a push after a check runs, so two never use git at once. */
     this.syncPushing = false;
-    this.screen = "setup";
+    // The start cards show at once. Setup and progress load behind them.
+    this.screen = "start";
+    /** @type {"" | "languages" | "courses"} a start card chosen while loading, opened once it's done */
+    this.startChoice = "";
     /** @type {"" | "practice" | "scratch" | "topics" | "exercises"} where Setup or Languages was opened from, to go back to */
     this.returnScreen = "";
     this.setupCompleted = false;
@@ -427,11 +431,14 @@ export default class Syntax extends View {
         this.setupCompleted = status.completed;
         this.enabledLanguages = status.enabled;
         this.useLanguage(findLanguage(status.languageId));
-        this.screen = this.setupCompleted ? "languages" : "setup";
+        // Courses work without setup. Drills need it, so an unfinished setup shows instead.
+        if (!this.setupCompleted && this.screen === "start" && this.startChoice !== "courses") { this.screen = "setup"; this.startChoice = ""; }
         this.setup.scan(cx);
       } catch (error) {
         this.error = `Could not load setup: ${error instanceof Error ? error.message : String(error)}. If node cannot start, install Node.js 20 or newer and restart Herdr.`;
       } finally { this.busy = ""; cx.notify(); }
+      if (this.startChoice && this.screen === "start" && !this.error && !start) this.chooseStart(this.startChoice, cx);
+      this.startChoice = "";
       // Opened by another mod at a topic: switch to its language, then show the topic's exercises.
       if (start && !this.error) { this.pendingTopic = start.topicId; this.perform("language", start.languageId, cx); }
       else if (this.dialog && !this.error && this.setupCompleted) {
@@ -764,6 +771,12 @@ export default class Syntax extends View {
     });
   }
 
+  /** Open a start card, or remember it while setup is still loading. @param {"languages" | "courses"} id @param {Context} cx */
+  chooseStart(id, cx) {
+    if (this.busy) { this.startChoice = id; this.selected = START_CHOICES.findIndex(choice => choice.id === id); cx.notify(); return; }
+    this.action(id, cx);
+  }
+
   /** @param {string} action @param {Context} cx */
   action(action, cx) {
     if (this.busy || this.practicePending || this.courses.busy) return;
@@ -1014,7 +1027,7 @@ export default class Syntax extends View {
 
   /** Remembers the language and screen, so the next dialog opens here. Setup is not kept. */
   saveSpot() {
-    if (!this.setupCompleted || this.restoreSpot || ["setup", "languages", "courses"].includes(this.screen)) return;
+    if (!this.setupCompleted || this.restoreSpot || ["setup", "languages", "courses", "start"].includes(this.screen)) return;
     const spot = JSON.stringify({ languageId: this.language.id, screen: this.screen, pickerTopicId: this.pickerTopicId });
     if (spot === this.lastSpot) return;
     this.lastSpot = spot;
@@ -1090,6 +1103,13 @@ export default class Syntax extends View {
     }
     if (key === "?" && !this.shortcuts.isOff("setup")) { this.action("setup", cx); cx.stop_propagation(); return; }
     if (this.screen === "setup") { this.setupKey(key, cx); cx.stop_propagation(); return; }
+    if (this.screen === "start") {
+      const move = { j: 1, down: 1, l: 1, right: 1, k: -1, up: -1, h: -1, left: -1 }[key];
+      if (move) { this.selected = Math.max(0, Math.min(START_CHOICES.length - 1, this.selected + move)); cx.notify(); }
+      else if (key === "enter" && START_CHOICES[this.selected]) this.chooseStart(START_CHOICES[this.selected].id, cx);
+      else if (START_CHOICES[Number(key) - 1]) this.chooseStart(START_CHOICES[Number(key) - 1].id, cx);
+      cx.stop_propagation(); return;
+    }
     if (this.screen === "languages") {
       const move = { j: 1, down: 1, l: 1, right: 1, k: -1, up: -1, h: -1, left: -1 }[key];
       if (move) this.moveSelection(move, cx);
@@ -1281,20 +1301,19 @@ export default class Syntax extends View {
         .child(div().text_size(12).text_color(t.muted).child(topic.title))
         .when(!this.state.review, element => element.child(div().text_size(11).text_color(t.dim).child(`${index + 1} of ${items.length}`))))
       .when(this.showReviewSummary && Boolean(this.state.lastReview), element => element.child(banner(t, `Review finished: ${reviewSummary(this.state.lastReview)}. Back where you left off.`)))
-      .when(Boolean(this.state.review), element => element.child(div().text_size(12).text_color(t.muted).child("Review: write it from memory in a blank file. Your earlier answer is hidden and kept as it was.")))
+      .when(Boolean(this.state.review), element => element.child(div().text_size(12).text_color(t.muted).child("Write from memory. Your saved answer is kept.")))
       .child(div().text_size(20).font_semibold().child(exercise.title))
       .child(v_flex().p(12).rounded(8).bg(t.raised)
         .child(this.markdown(`prompt-${exercise.id}`, exercise.prompt)))
       .when(!this.editorDefaultSet, element => element.child(v_flex().p(12).gap(8).rounded(8).bg(t.raised)
         .child(div().text_size(12).font_semibold().child("Write in your editor"))
-        .child(div().text_size(11).text_color(t.muted).child("Write your answer in the file. You can replace everything. Save to check automatically."))
+        .child(div().text_size(11).text_color(t.muted).child("Replace the file contents with your answer. Save to check."))
         .child(this.markdown("exercise-path", `\`${this.state.file}\``))
         .child(this.editorControls(t))))
       .when(Boolean(exercise.declarations), element => element.child(this.markdown(`setup-${exercise.id}`, `${this.language.suppliedLabel ?? "Supplied types"}:\n\n\`\`\`${this.language.codeFence}\n${exercise.declarations}\n\`\`\``)))
       .child(h_flex().items_center().flex_wrap().gap(8)
         .child(keyButton(t, "more-hint", this.shown("hint", "h"), "Hint", !this.busy && hints.length < exercise.hints.length, cx => this.action("hint", cx)))
         .child(div().text_size(12).text_color(t.muted).child(`${hints.length}/${exercise.hints.length}`)))
-      .when(hints.length === 0 && !this.layout.compact, element => element.child(div().text_size(12).text_color(t.dim).child("Each press reveals a little more. The answer stays separate.")))
       .children(hints.map((hint, index) => v_flex().gap(6).p(10).rounded(8).bg(t.raised)
         .child(div().text_size(11).text_color(t.accent).child(`Hint ${index + 1}`))
         .child(this.markdown(`hint-${exercise.id}-${index}`, hint))))
@@ -1374,7 +1393,7 @@ export default class Syntax extends View {
         .child(paneTitle(t, "Practice Range"))
         // The two ways to learn, always one click apart: practice drills by language, or a course.
         .child(tabStrip(t, [
-          { id: "practice", label: "Practice", on: this.screen !== "courses" && this.screen !== "setup", click: cx => { if (!this.busy) this.action("languages", cx); } },
+          { id: "practice", label: "Drills", on: !["courses", "setup", "start"].includes(this.screen), click: cx => { if (!this.busy) this.action("languages", cx); } },
           { id: "courses", label: "Courses", on: this.screen === "courses", click: cx => { if (!this.busy && !this.courses.busy) this.action("courses", cx); } },
         ]))
         .when(["practice", "scratch", "topics", "exercises"].includes(this.screen), el => el.child(paneDetail(t, this.screen === "scratch" ? `${this.language.name} scratch` : this.language.name)))
@@ -1382,18 +1401,21 @@ export default class Syntax extends View {
         .when(Boolean(this.returnScreen) && ["setup", "languages"].includes(this.screen), element => element
           .child(keyButton(t, "go-back", this.screen === "setup" && this.setup.page !== "hub" ? "" : "esc", this.returnLabel(), !this.busy, cx => this.goBack(cx))))
         .child(keyButton(t, "open-setup", this.shown("setup", "?"), "Setup", !this.busy, cx => this.action("setup", cx)))
-        .child(keyButton(t, "choose-topics", this.shown("topics", "t"), "Topics", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state), cx => this.action("topics", cx)))
-        .child(keyButton(t, "choose-exercises", this.shown("exercises", "e"), "Exercises", !this.busy && !["setup", "languages", "courses"].includes(this.screen) && Boolean(this.state) && (Boolean(this.pickerTopicId) || this.screen === "practice"), cx => this.action("exercises", cx)))
-        .child(keyButton(t, "toggle-scratch", this.shown("scratch", "x"), this.screen === "scratch" ? "Back to exercise" : "Scratch", !this.busy && !["setup", "languages", "courses"].includes(this.screen) && Boolean(this.state), cx => this.action("scratch", cx)))
+        .when(this.screen !== "courses" && this.screen !== "start", element => element
+          .child(keyButton(t, "choose-topics", this.shown("topics", "t"), "Topics", !this.busy && !["setup", "languages"].includes(this.screen) && Boolean(this.state), cx => this.action("topics", cx)))
+          .child(keyButton(t, "choose-exercises", this.shown("exercises", "e"), "Exercises", !this.busy && !["setup", "languages", "courses"].includes(this.screen) && Boolean(this.state) && (Boolean(this.pickerTopicId) || this.screen === "practice"), cx => this.action("exercises", cx)))
+          .child(keyButton(t, "toggle-scratch", this.shown("scratch", "x"), this.screen === "scratch" ? "Back to exercise" : "Scratch", !this.busy && !["setup", "languages", "courses"].includes(this.screen) && Boolean(this.state), cx => this.action("scratch", cx))))
         .child(this.shortcuts.button(t)))
       .when(Boolean(this.error), element => element.child(v_flex().flex_none().px(SIZE.panePad).py(8).gap(8)
         .child(banner(t, this.error, t.blocked))
         .child(keyButton(t, "retry", "", "Retry", !this.busy, cx => this.action("retry", cx)))))
       .when(Boolean(this.syncError), element => element.child(v_flex().flex_none().px(SIZE.panePad).py(8)
         .child(banner(t, this.syncError, t.blocked))))
-      .when(Boolean(this.busy), element => element.child(h_flex().flex_none().px(SIZE.panePad).py(8).gap(8).items_center()
+      .when(Boolean(this.busy) && (this.screen !== "start" || Boolean(this.startChoice)), element => element.child(h_flex().flex_none().px(SIZE.panePad).py(8).gap(8).items_center()
         .child(spinner(t)).child(div().text_color(t.muted).child(this.busy))))
       .child(this.screen === "courses" ? this.courses.render(t) : this.screen === "setup" ? this.setupScreen(t)
+        : this.screen === "start" ? startPanel(t, { selected: this.selected, choose: (id, cx) => this.chooseStart(id, cx),
+          select: (index, cx) => { this.selected = index; cx.notify(); } })
         : this.screen === "languages" ? languagePanel(t, { flow: this.setup, selected: this.selected, busy: Boolean(this.busy), compact: this.layout.compact,
           learn: (id,cx) => this.courses.show(cx,id),
           act: (id, cx) => this.chooseLanguage(id, cx), select: (id, cx) => { this.selected = languages.indexOf(findLanguage(id)); cx.notify(); },
@@ -1417,6 +1439,6 @@ export default class Syntax extends View {
         .child(keyButton(t, "next", this.shown("next", "n"), this.nextLabel(), !this.busy && Boolean(this.state), cx => this.action("next", cx)))
         .when(Boolean(this.state?.review), element => element.child(keyButton(t, "end-review", this.shown("review", "v"), "End review", !this.busy, cx => this.action("review-end", cx))))))
       // Under the header, which is one line tall until it wraps.
-      .when(this.shortcuts.open, element => element.child(this.shortcuts.panel(t, { top: 52, right: SIZE.panePad, maxHeight: 360 })));
+      .when(this.shortcuts.open, element => element.child(this.shortcuts.panel(t, { top: 52, right: SIZE.panePad, maxHeight: 360, note: this.courses.gearNote(t) })));
   }
 }

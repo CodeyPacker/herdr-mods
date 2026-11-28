@@ -1,0 +1,76 @@
+{
+  "id": "course:cs-foundations/task/async-parallel",
+  "role": "independent",
+  "title": "Start independent reads and preserve cancellation",
+  "concepts": [
+    "task",
+    "await",
+    "concurrent-await",
+    "cancellation",
+    "method"
+  ],
+  "prompt": "`PairSource` is supplied. Its ReadAsync(string shop, System.Threading.CancellationToken cancellationToken) returns a Task<int>. Write `public static async Task<int> TotalTogetherAsync(string first, string second, System.Threading.CancellationToken cancellationToken)`. Start both reads before awaiting either result. Pass the same cancellation token to both, await both with Task.WhenAll, and return their sum. Let cancellation and other failures reach the caller. The reads are independent. The checks complete them locally, without clocks or network calls.",
+  "hints": [
+    "If you await the first call immediately, when can the second call begin?",
+    "Store both tasks first. Task.WhenAll returns a task whose result is the array of their results in input order.",
+    "Call PairSource.ReadAsync twice with the token, then await Task.WhenAll(firstTask, secondTask). Add the two returned numbers. Do not catch cancellation as a successful fallback."
+  ],
+  "support": "static bool PairCase(string first, string second, int a, int b, bool cancel = false, bool fail = false, bool cancelDuring = false)\n{\n    using var stop = new System.Threading.CancellationTokenSource();\n    if (cancel) stop.Cancel();\n    PairSource.Reset(stop.Token);\n    var pending = Practice.TotalTogetherAsync(first, second, stop.Token);\n    if (PairSource.Shops.Count != 2 || PairSource.Shops[0] != first || PairSource.Shops[1] != second || !PairSource.TokensMatch) return false;\n    // Both reads must have started before the checks provide either result.\n    if (cancelDuring) stop.Cancel();\n    else if (!cancel) PairSource.Complete(a, b, fail);\n    try { return pending.GetAwaiter().GetResult() == a + b && !cancel && !cancelDuring && !fail; }\n    catch (OperationCanceledException) { return (cancel || cancelDuring) && pending.IsCanceled; }\n    catch (InvalidOperationException error) { return fail && error.Message == \"Source is offline.\"; }\n}",
+  "checks": [
+    "PairCase(\"north\", \"south\", 3, 5)",
+    "PairCase(\"empty\", \"north\", 0, 3)",
+    "PairCase(\"same\", \"same\", 2, 2)",
+    "PairCase(\"north\", \"south\", 0, 0, cancel: true)",
+    "PairCase(\"north\", \"south\", 0, 0, fail: true)",
+    "PairCase(\"north\", \"south\", 0, 0, cancelDuring: true)"
+  ],
+  "checkLabels": [
+    "Both different shops must start before either result is awaited and total 8.",
+    "A successful zero must be included in the total.",
+    "The same shop twice still requires two reads.",
+    "Both reads must receive the cancellation token and the returned task must stay canceled.",
+    "A read failure must reach the caller without becoming a successful total.",
+    "A cancellation requested while reads are pending must reach both reads and cancel the returned task."
+  ],
+  "wrongAnswers": [
+    {
+      "source": "wrong-sequential.cs",
+      "misconception": "Awaits the first read before starting the second.",
+      "witness": {
+        "fixture": "local",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-token.cs",
+      "misconception": "Starts both reads but discards the caller cancellation token.",
+      "witness": {
+        "fixture": "local",
+        "kind": "result",
+        "detail": "Check 1 failed"
+      }
+    },
+    {
+      "source": "wrong-catches-cancel.cs",
+      "misconception": "Turns cancellation into a successful zero.",
+      "witness": {
+        "fixture": "local",
+        "kind": "result",
+        "detail": "Check 4 failed"
+      }
+    }
+  ],
+  "feedback": "Check when each read starts, which token it receives, and whether the returned task keeps cancellation and failure.",
+  "starter": "starter.cs",
+  "solution": "solution.cs",
+  "alternative": "alternative.cs",
+  "mode": "members",
+  "rules": [],
+  "fixtures": [
+    {
+      "id": "local",
+      "declarations": "fixture-local.cs"
+    }
+  ]
+}

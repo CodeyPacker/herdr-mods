@@ -9,11 +9,29 @@ drills: ["classes/interface","classes/inherit","classes/override","constructors/
 drillGap: These drills practise one declaration each. They do not call a method through a base-type variable.
 ---
 
-Different types can often be used the same way: several places to read items from, several kinds of notice. This module covers interfaces, which state what a type can do, and inheritance, where one type builds on another.
+Different types can often be used the same way: several places to read items from, several kinds of notice. Prefer an interface when types need interchangeable behavior. Use inheritance when one type is genuinely a kind of another, not only to reuse code. A contained helper object is composition. This module covers interfaces and inheritance.
 
 ## An interface is a contract
 
-An interface lists members without bodies. interface ISource says that any source has a Name and a Count method. A class takes on the contract by naming the interface after a colon, as in class FixedSource : ISource, and must then provide every member. Having matching members is not enough: the class has to name the interface. A variable of type ISource can hold any object whose class implements it. Code written against ISource works with all of them, including classes written later.
+An **interface** declares required members here. Modern C# also supports default implementations in interfaces, but this course does not use them. `interface ISource` says that any source has a `Name` and a `Count` method.
+
+- A class takes on the contract by naming the interface after a colon, as in `class FixedSource : ISource`, and must then provide every member. Having matching members is not enough: the class has to name the interface.
+- A variable of type `ISource` can hold any object whose class implements it. Code written against `ISource` works with all of them, including classes written later. A loop over a `List<ISource>` calls each object's own `Name` and `Count` without knowing its class.
+
+
+## A class can build on another
+
+`class UrgentNotice : Notice` makes `UrgentNotice` a kind of `Notice`. It gets `Title` and `Text` from `Notice` (**inheritance**).
+
+- `: base(title)` after the constructor passes the title on to `Notice`'s constructor.
+- A method marked `virtual` in the base class may be replaced, and the derived class replaces it with `override`.
+- Without `override`, a method with the same name only hides the base one, and a call through a `Notice` variable runs the base version.
+- Records can inherit the same way: `record Arrived(int Count) : Update;`
+- A type marked `abstract` cannot be created itself. It exists only to be inherited from.
+
+## Which Text runs? {prediction}
+
+`notice` is declared as a `Notice` but holds an `UrgentNotice`. Predict the last line of output.
 
 ```csharp example sources
 List<ISource> sources = new List<ISource> { new FixedSource(3), new EmptySource() };
@@ -79,34 +97,16 @@ empty: 0
 Storm!
 ```
 
-## A class can build on another
-
-class UrgentNotice : Notice makes UrgentNotice a kind of Notice. It gets Title and Text from Notice (inheritance). : `base(title)` passes the title on to Notice's constructor. A method marked `virtual` in the base class may be replaced, and the derived class replaces it with `override`. Records can inherit the same way, for example record `Arrived(int Count)` : Update. A type marked `abstract` cannot be created itself. It exists only to be inherited from.
-
-@example sources
-
-## Which Text runs? {prediction}
-
-notice is declared as a Notice but holds an UrgentNotice. Predict the last line of output.
-
-@example sources
-
 :::question predict-dispatch example=sources
 What is the last line of output?
-- [ ] Storm :: Text is `virtual` and UrgentNotice overrides it, so the object's own version runs.
-- [x] Storm! :: The object is an UrgentNotice. With `virtual` and `override`, its version runs whatever the variable's type is.
-- [ ] The compiler reports an error :: An UrgentNotice is a Notice, so the assignment is allowed.
+- [ ] Storm :: `Text` is `virtual` and `UrgentNotice` overrides it, so the object's own version runs.
+- [x] Storm! :: The variable's type is `Notice`, but the object is an `UrgentNotice`. With `virtual` and `override`, the object's own version runs, whatever the variable's type. The loop above works the same way through `ISource`.
+- [ ] The compiler reports an error :: An `UrgentNotice` is a `Notice`, so the assignment is allowed.
 :::
 
-## Follow the calls {walkthrough}
+## Find the error {prediction}
 
-The loop calls Name and Count through ISource and never needs to know the class. Each object answers with its own version. The same holds for `notice.Text()`. The variable's type is Notice, but the object is an UrgentNotice, and with `virtual` and `override` the object's own version runs, so the line is `"Storm!"`. Without `override`, the derived method would only hide the base one, and a call through a Notice variable would run the base version.
-
-@example sources
-
-## Leave out a member {prediction}
-
-EmptySource names ISource but has no Count method. Read the example before checking.
+This example does not compile. Find the line the compiler stops at, and why.
 
 ```csharp example missing-member diagnostics=[{"code":535,"line":10}]
 ISource source = new EmptySource();
@@ -126,17 +126,11 @@ class EmptySource : ISource
 ```
 
 :::question predict-missing example=missing-member
-What happens when you check this example?
-- [ ] It prints empty. :: The class promised ISource but has no Count. The compiler rejects that before running.
-- [ ] It runs until Count is called, then stops. :: A missing interface member is found at compile time, not while running.
-- [x] The compiler reports an error on line 10. :: Line 10 names ISource, and the class does not provide Count (CS0535).
+Which error does the compiler report?
+- [ ] Line 1: a variable of an interface type cannot hold an object. :: That is exactly what an interface variable is for. Line 1 is fine.
+- [ ] Line 2: `Name` cannot be read through an `ISource` variable. :: `ISource` declares `Name`, so any `ISource` variable can read it.
+- [x] Line 10, CS0535: `EmptySource` names `ISource` but has no `Count`. :: The error is on the line that names the interface, because that is where the promise was made. It is found at compile time, so nothing runs, even though line 2 never calls `Count`.
 :::
-
-## Read the compiler error {walkthrough}
-
-Check the example. CS0535 says EmptySource does not implement the interface member `ISource.Count()`. The error is on the line that names the interface, because that is where the promise was made.
-
-@example missing-member
 
 ## Finish a song source {modification}
 

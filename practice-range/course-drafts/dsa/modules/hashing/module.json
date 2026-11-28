@@ -48,12 +48,6 @@
       ]
     },
     {
-      "kind": "walkthrough",
-      "title": "Count with a Map",
-      "text": "For each word, the loop read the count so far, used 0 when there was none, and stored one more. `counts.get(\"pink\")` gave `undefined`, because that key was never set. The `??` operator supplies the 0 in that case.\n\nThe second line shows that a Map remembers the order in which keys were first added. The whole count took one pass over the words, with one lookup and one write for each.",
-      "example": "counts"
-    },
-    {
       "kind": "explanation",
       "title": "Replace a search with a lookup",
       "text": "Here is the pattern to recognize. A loop goes over the items, and for each item the code searches the rest of the list for something: a duplicate, a partner, a match. That inner search makes the whole thing O(n²).\n\nKeep a Set or a Map of what has been seen so far. The inner search becomes one lookup, and the whole thing becomes O(n).\n\nKeys are compared the way `===` compares them. Numbers and strings work as you expect. Two different arrays or objects are different keys even when their contents are equal, so build a string key when you need to look up by contents."
@@ -66,12 +60,6 @@
       "questions": [
         "first-repeat"
       ]
-    },
-    {
-      "kind": "walkthrough",
-      "title": "Remember what was seen",
-      "text": "The loop looked at 4, 9 and 2, adding each to the set. The fourth value, 9, was already there, so the function returned at once after four lookups. It never reached the second 4.\n\nWith an array in place of the set, each check would have searched everything seen so far. For a long list with no repeats, that is the difference between n lookups and about n²/2 comparisons.",
-      "example": "seen"
     },
     {
       "kind": "modification",
@@ -101,7 +89,7 @@
       "choices": [
         {
           "text": "3 1 undefined",
-          "feedback": "red was counted three times and green once. pink was never set, so get returns undefined."
+          "feedback": "For each word the loop reads the count so far, uses 0 when there is none, and stores one more. `pink` was never set, so `get` returns `undefined`, and `??` supplies the 0 in that case. The whole count takes one pass, with one lookup and one write per word. The second line shows that a Map remembers the order keys were first added."
         },
         {
           "text": "3 1 0",
@@ -125,7 +113,7 @@
         },
         {
           "text": "9 4",
-          "feedback": "The fourth value is 9, which is already in the set. The function returns it after four lookups."
+          "feedback": "The loop adds 4, 9 and 2 to the set. The fourth value, 9, is already there, so the function returns after four lookups, before reaching the second 4. With an array in place of the set, each check would search everything seen so far: for a long list with no repeats, that is the difference between n lookups and about n²/2 comparisons."
         },
         {
           "text": "9 2",

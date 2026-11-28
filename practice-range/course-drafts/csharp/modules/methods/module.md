@@ -25,9 +25,16 @@ int AddHours(int hours, int extra)
 - `hours` and `extra` are **parameters**: names for the values a caller passes in.
 - `return` sends a value back to the caller and ends the call.
 - A method that gives nothing back has the return type `void`.
+- A conditional expression chooses one of two values: `condition ? whenTrue : whenFalse`. For example, `hours > included ? hours - included : 0` can be returned directly.
 - When the body is a single expression you can write it with `=>`: `int Twice(int n) => n * 2;`
+- A name declared inside a method's braces, such as `total`, exists only there. That region is the name's **scope**. Each call gets its own fresh parameters and local variables.
 
 In exercises your methods go inside a class the checker supplies, so each one starts with `public static`. `public` lets other code call it. `static` means it is called by name, without an object. The Classes module explains both.
+
+
+## Predict two calls {prediction}
+
+Read the method and both calls before running.
 
 ```csharp example calls
 int AddHours(int hours, int extra)
@@ -45,31 +52,16 @@ Console.WriteLine(AddHours(1, 0));
 1
 ```
 
-## Predict two calls {prediction}
-
-Read the method and both calls before running.
-
-@example calls
-
 :::question outputs example=calls
 Which two values print?
-- [x] 5 then 1 :: Each call works out its own total from its own inputs.
+- [x] 5 then 1 :: The first call gets `hours` 2 and `extra` 3, so `total` is 5. The second call starts fresh with 1 and 0. The method returns its result without printing it: the caller decides what to do with it, and here it prints.
 - [ ] 5 then 6 :: `total` is local to one call. It does not carry over to the next.
 - [ ] 2 then 1 :: The method returns the sum of both parameters, not the first one.
 :::
 
-## Trace the calls {walkthrough}
+## Find the error {prediction}
 
-1. The first call passes 2 and 3, so `hours` is 2, `extra` is 3 and `total` is 5.
-2. The second call starts fresh with 1 and 0.
-
-`total` does not carry over: each call gets its own parameters and its own local variables. The method returns a value without printing it. The caller decides what to do with the result.
-
-@example calls
-
-## Use a name outside its method {prediction}
-
-The last line reads a name that was declared inside the method. Read the example before checking.
+This example does not compile. Find the line the compiler stops at, and why.
 
 ```csharp example bad-scope diagnostics=[{"code":103,"line":8}]
 int AddHours(int hours, int extra)
@@ -83,17 +75,11 @@ Console.WriteLine(total);
 ```
 
 :::question scope example=bad-scope
-What happens when you check this example?
-- [ ] It prints 5 twice. :: `total` exists only inside `AddHours`. The last line cannot read it.
-- [x] The compiler reports an error on line 8. :: `total` is local to the method body, so line 8 uses a name that does not exist there (CS0103).
-- [ ] It prints 5, then 0. :: A missing name is a compile error, not a default value. Nothing runs.
+Which error does the compiler report?
+- [ ] Line 3: `total` is used before it has a value. :: Line 3 declares `total` and gives it `hours + extra` in one statement. That is fine.
+- [ ] Line 7: a method's result must be stored before it is printed. :: A call can go straight into `Console.WriteLine`. Line 7 compiles.
+- [x] Line 8, CS0103: the name `total` does not exist there. :: `total` is declared inside `AddHours`, so its scope ends at the method's closing brace, even after a call. Use the value the method returns instead: `int sum = AddHours(2, 3);`
 :::
-
-## Read the compiler error {walkthrough}
-
-Check the example. **CS0103** says the name `total` does not exist in the current context. `total` belongs to the body of `AddHours`, which is its **scope**. Code outside those braces cannot see it, even after a call. Use the value the method returns instead.
-
-@example bad-scope
 
 ## Return the right total {modification}
 

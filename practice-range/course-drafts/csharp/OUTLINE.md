@@ -1,43 +1,44 @@
 # Learn C#
 
-Status: 0.2.0-preview.1 in progress (COURSE_REDESIGN.md, Phase C). Replaces the 0.1.0 "Build a task tracker with C#" outline.
+This preview course teaches C# through independent exercises. It has no shared-state tracker project or capstone. The final transfer module combines earlier skills in an import report. Every module keeps its own examples and review task.
 
-The course teaches C#, one concept per module. There is no project and no capstone (D11). Each module uses its own everyday examples, so no module depends on code from another (D12). It teaches C# on its own terms and never compares it with another language (D9).
-
-Module keys stay the same as 0.1.0, so files, task IDs and progress stay put. Only titles and content change.
+The experienced path offers readiness groups R1 to R4. Each group covers only the modules listed below. These checks do not cover every module. The strings, delegates, LINQ, interfaces, and final transfer modules remain in the course sequence for learners who want them.
 
 ## Modules
 
-Each module: an intro, 6 to 10 steps, at least one prediction question, 2 to 4 tasks and a review task. The last task in each module is its review task. "Examples" lists the settings to use instead of the old task tracker. Pick one per step or task, and keep each one short.
+| # | Key | Title | Teaching goal |
+| --- | --- | --- | --- |
+| 1 | save | Run a program, read errors | Save and run a file, read output, and find the line named by a compiler error. |
+| 2 | values | Types and values | Trace assignments, choose numeric types and division, build text from values, and fix a type mismatch. |
+| 3 | decisions | Control flow | Choose branches with comparisons and boolean operators, including edge values. |
+| 4 | methods | Methods | Write static methods with parameters and return values, and understand scope. |
+| 5 | collections | Arrays and lists | Build and walk arrays and lists with loops and running totals. |
+| 6 | strings | Working with text | Normalize text for display and choose exact comparison when a name or label must match. |
+| 7 | classes | Classes and properties | Write classes with properties, constructors and methods, and reason about shared object references. |
+| 8 | records | Structs, records, copies | Compare value and reference behavior, use `with`, and predict equality. |
+| 9 | nulls | Nullable types | Mark values that may be missing, check them, and provide fallbacks without losing zero or empty text. |
+| 10 | lookups | Dictionaries and sets | Count and group values, handle missing dictionary keys, and collect unique values. |
+| 11 | delegates | Delegates and callbacks | Pass typed callbacks and reason about lambdas and independently captured state. |
+| 12 | linq | LINQ | Filter, transform, count and group sequences, and predict deferred execution. |
+| 13 | interfaces | Interfaces and inheritance | Implement interfaces, extend base types, and call different types through one contract. |
+| 14 | patterns | Pattern matching | Select results with type and property patterns in a correctly ordered switch expression. |
+| 15 | exceptions | Exceptions | Throw and catch specific exceptions, represent expected failures, and dispose resources on success and failure. |
+| 16 | generics | Generics | Write generic methods and types that retain the caller's type, using constraints when needed. |
+| 17 | async | async and await | Await tasks, choose sequential or concurrent reads, and preserve failures and cancellation. |
+| 18 | checks | Writing unit tests | Compare expected and actual values, find an off-by-one bug, and write a check that catches it. |
+| 19 | transfer | Build and test an import report | Validate and aggregate imported data, then write regression tests for the report behavior. |
 
-| # | Key | Title | Teaches | Examples | Skip-ahead test |
-| --- | --- | --- | --- | --- | --- |
-| 1 | save | Run a program, read errors | Save and run, read output, find the line a compiler error names | greeting, a receipt line | none |
-| 2 | values | Types and values | `int`, `double`, `string`, `bool`, `var`, arithmetic, `int` vs `double` division, interpolation, type errors | temperatures, a bill split, a name badge | R1 |
-| 3 | decisions | Control flow | `if`/`else`, comparisons, `&&`/`||`/`!`, edge values | ticket prices by age, a thermostat, a password rule | R1 |
-| 4 | methods | Methods | parameters, return values, `void`, scope, expression bodies, static methods | unit conversion, a tip calculator | R1 |
-| 5 | collections | Arrays and lists | arrays, `List<T>`, `for`/`foreach`, running totals, index bounds | step counts, a playlist, test scores | R1 |
-| 6 | classes | Classes and properties | fields, properties, constructors, methods, two names for one object | a bank account, a book, a thermostat object | R2 |
-| 7 | records | Structs, records, copies | value vs reference, `struct`, `record`, `with`, `==` on each | 2D points, a colour, an address | R2 |
-| 8 | nulls | Nullable types | `?`, null checks, `??`, `?.`, keeping 0 and "" | an optional middle name, a missing reading | R2 |
-| 9 | lookups | Dictionaries and sets | `Dictionary<K,V>`, `TryGetValue`, counting, `HashSet<T>` | word counts, a phone book, unique visitors | R2 |
-| 10 | linq | LINQ | `Where`, `Select`, `OrderBy`, `Count`, `Sum`, `GroupBy`, deferred execution | a shopping cart, movie ratings | R3 |
-| 11 | interfaces | Interfaces and inheritance | declaring and implementing an interface, base classes, `virtual`/`override` | shapes and areas, notifications | R3 |
-| 12 | patterns | Pattern matching | `switch` expressions, type and property patterns, arm order | shipping cost by parcel, payment types | R3 |
-| 13 | exceptions | Exceptions | `throw`, `try`/`catch`/`finally`, specific exceptions, `TryParse` vs exceptions | parsing user input, a withdrawal limit | R3 |
-| 14 | generics | Generics | generic methods and types, constraints | a pair, a cache, the largest item | R4 |
-| 15 | async | async and await | `Task`, `async`/`await`, order of awaits, a failed task | downloading (simulated), reading files (simulated) | R4 |
-| 16 | checks | Writing unit tests | expected vs actual, off-by-one bugs, a check that catches a bug | a discount rule, a word counter | R4 |
+## Readiness groups
 
-Removed from 0.1.0: the `tracker` and `report` modules and the four project checkpoints in `project/`.
+| Group | Modules covered |
+| --- | --- |
+| R1 | Values, control flow, methods, collections |
+| R2 | Records, nullable types, dictionaries and sets |
+| R3 | Pattern matching, exceptions |
+| R4 | Generics, async and await, writing unit tests |
 
-## Skip-ahead tests
+The course has 63 lesson tasks and 4 readiness tasks, for 67 coding exercises total. Each readiness task is separate. A skip records navigation only. All modules remain available in the listed course sequence.
 
-R1 to R4 each cover four modules (R4 covers generics, async and checks). Each is a new problem that uses only what its modules teach. Rewritten in C17.
+## Review evidence and versions
 
-## Rules for every module
-
-- Write it as `modules/<key>/module.md` (format: COURSE_REDESIGN.md). Run `node scripts/course-markdown.mjs modules/<key>/module.json` first to start from the current content, then delete `module.json` and the example `.cs` files, and point the manifest at `module.md`.
-- Replace every task tracker word (task, board, owner, open, done, tracker, arrivals) with the module's own examples.
-- Keep task folders, IDs and file names. Rewrite prompts, starters, solutions, alternatives, fixtures, wrong answers and checks to match.
-- Check with `node scripts/verify-course.mjs csharp <key>` before ticking the box.
+Each module's review task stays attached to its module. A later unaided pass on a fresh starter records independent evidence. A pass with hints stays recorded as assisted. The content version is recorded with learner progress, and archived packs keep earlier lesson content available for migration.

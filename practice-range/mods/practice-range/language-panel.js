@@ -29,7 +29,7 @@ export function packAction(pack, flow) {
 function actionLabel(action, pack) {
   if (action === "install") return `Install ${pack.install.what}`;
   if (action === "download") return "Open download page";
-  return "Practice";
+  return "Drills";
 }
 
 /**
@@ -74,7 +74,7 @@ export function languagePanel(t, { flow, selected, busy, compact, act, select, l
   const manual = chosen && flow.tools && !flow.languageReady(chosen.id) && chosen.install.kind === "manual";
   return v_flex().id("syntax-languages").flex_1().min_h(0)
     .child(pageBody("languages-body")
-      .child(pageTop(t, { label: "LANGUAGES", title: "What do you want to practice?", intro: "Each language keeps its own answers and progress. Installs run here, with nothing to type in a terminal.", compact }))
+      .child(pageTop(t, { label: "LANGUAGES", title: "Choose a language to practice", intro: "Short coding drills, checked when you save.", compact }))
       .when(Boolean(flow.scanError), element => element.child(banner(t, `Could not check this computer: ${flow.scanError}`, t.blocked)))
       .child(cardGrid().children(languages.map((pack, index) => packCard(t, pack, flow, { on: index === selected, busy, act, select, learn }))))
       .when(Boolean(manual), element => element.child(card(t, { id: "language-manual" })

@@ -14,11 +14,12 @@ A test runs code with an input you chose and compares the result with the answer
 ## Write a check that finds a defect
 
 - A test has three parts: an input, the expected result, and the actual result from the code.
-- A boundary case is an input right where a rule changes, such as exactly at a limit. Bugs often live there.
+- A **boundary case** is an input right where a rule changes, such as exactly at a limit. Bugs often live there.
 - When a test fails, start from the first failing check and trace that input.
-- A regression test is a test you keep after fixing a bug, so the bug cannot come back unnoticed.
+- To check a test itself, run it on both the broken and the fixed version: it should fail on one and pass on the other. Passing the function under test as a parameter lets one test check several versions.
+- A **regression test** is a test you keep after fixing a bug, so the bug cannot come back unnoticed.
 
-## Predict before running {prediction}
+## Find the failing check {prediction}
 
 The rule is "busy at 3 or more". Read the example and predict what it prints.
 
@@ -38,32 +39,20 @@ true
 
 :::question predict example=trace
 Which check fails?
-- [x] The first comparison :: `3 > 3` is false, but the rule says 3 is busy.
+- [x] The first comparison :: At 3 the expected result is `true`, but `3 > 3` is `false`, so this check catches the bug. The bug only shows at the boundary.
 - [ ] The second comparison :: `4 > 3` is true, so this check passes.
 :::
 
-## Trace the example {walkthrough}
+## Test away from the boundary {prediction}
 
-The bug only shows at the boundary.
-
-- At 3, the expected result is `true` but the code returns `false`. This test catches the bug.
-- At 4, both the buggy `n > 3` and the fixed `n >= 3` return `true`. This test cannot tell them apart.
-- To check a test, run it on both the broken and the fixed version. It should fail on one and pass on the other.
-
-Passing the function under test as a parameter lets one test check several versions.
-
-@example trace
-
-## Check your explanation {prediction}
-
-Read the example again and choose the explanation that fits.
+Suppose the test checked only the input 4.
 
 @example trace
 
 :::question explain example=trace
 Would testing only 4 detect the bug?
 - [ ] Yes, 4 is above the limit. :: The bug only shows at the limit.
-- [x] No, both versions return `true` for 4. :: An input that gives the same result for both versions cannot tell them apart.
+- [x] No, both versions return `true` for 4. :: At 4, both the buggy `n > 3` and the fixed `n >= 3` return `true`, so a test with only 4 passes for both and cannot tell them apart.
 :::
 
 ## A small test helper {prediction}

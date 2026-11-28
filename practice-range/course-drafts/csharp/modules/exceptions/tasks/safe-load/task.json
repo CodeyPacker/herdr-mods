@@ -7,7 +7,7 @@
     "method",
     "text"
   ],
-  "prompt": "Store is supplied. Store.Load(key) returns the stored text, which may be an empty string. It throws InvalidOperationException when the store is offline, and ArgumentException when the key is empty. Write public static string SafeLoad(string key). Return what Load returns, including an empty string. When the store is offline, return \"unavailable\". An ArgumentException is a bug in the caller, so let it pass through uncaught.",
+  "prompt": "`Store` is supplied. `Store.Load(key)` returns the stored text, which may be an empty string. It throws `InvalidOperationException` when the store is offline, and `ArgumentException` when the key is empty. Write `public static string SafeLoad(string key)`. Return what `Load` returns, including an empty string. When the store is offline, return `\"unavailable\"`. An `ArgumentException` is a bug in the caller, so let it pass through uncaught.",
   "hints": [
     "Which of the two exception types is an expected failure here, and which is a bug?",
     "A catch block handles only the type it names. Name the one you can handle.",

@@ -8,7 +8,7 @@
     "throw-catch",
     "task"
   ],
-  "prompt": "Source is supplied. Source.CountAsync throws InvalidOperationException for the shop \"offline\". Write public static async Task<int> CountOrAsync(string shop, int fallback). Return the shop's count. When the source throws InvalidOperationException, return the fallback. A count of 0 is a real result and must be returned as 0.",
+  "prompt": "`Source` is supplied. `Source.CountAsync` throws `InvalidOperationException` for the shop `\"offline\"`. Write `public static async Task<int> CountOrAsync(string shop, int fallback)`. Return the shop's count. When the source throws `InvalidOperationException`, return `fallback`. A count of 0 is a real result and must be returned as 0.",
   "hints": [
     "Where does the exception from a failed task appear in your code?",
     "Put the await inside a try block and catch the one exception type that means offline.",

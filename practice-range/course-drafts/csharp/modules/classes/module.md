@@ -16,10 +16,21 @@ A **class** groups data with the methods that work on it. This module covers pro
 A class describes one kind of thing. `new Book("Dune", 400)` creates an **object** from it.
 
 - A **property** is a named value on each object. `public string Title { get; private set; }` can be read by any code and changed only inside the class.
-- `public int Pages { get; }` can be set only in the constructor.
+- `public int Pages { get; }` is a get-only auto-property. It can be initialized at its declaration or in the constructor, then read but not reassigned.
 - A property can work out its value each time it is read: `public bool Long => Pages > 500;`
 - The **constructor** has the same name as the class. It runs once, when the object is created, and gives the properties their first values.
 - A method without `static` belongs to one object and uses that object's own properties.
+
+
+## Fields, access and static
+
+A **field** stores data directly, as in `private int visits;`. A property exposes reads or writes through `get` and `set`, and can validate or compute a value. `private` limits access to the containing type. `public` allows access from other code. `protected` also allows derived classes to access a member.
+
+An instance member uses one object's data, such as `book.Title`. A `static` member belongs to the type, such as `Math.Max(3, 5)`. A static method has no current object, so it needs an object passed in before it can read that object's instance members. `this` refers to the current object inside an instance member.
+
+## Two names, one object {prediction}
+
+`same` is assigned from `book`, then the book is renamed through `same`. Predict the first line of output.
 
 ```csharp example card
 Book book = new Book("Dune", 400);
@@ -56,32 +67,16 @@ Dune Messiah
 Dune Messiah (400 pages)
 ```
 
-## Two names, one object {prediction}
-
-`same` is assigned from `book`, then the book is renamed through `same`. Predict the first line of output.
-
-@example card
-
 :::question predict-shared example=card
 What is the first line of output?
 - [ ] Dune :: `same` and `book` refer to the same object, so the rename is visible through `book`.
-- [x] Dune Messiah :: Assigning a class variable copies the reference, not the object. Both names see the rename.
+- [x] Dune Messiah :: A class variable holds a **reference** to an object. `Book same = book;` copies that reference, not the object, so both names refer to one book and see the rename. An `int` is different: assigning it copies the number itself.
 - [ ] Dune Messiah (400 pages) :: The first print shows only the `Title`. `Describe` is called on the next line.
 :::
 
-## Follow the reference {walkthrough}
+## Find the error {prediction}
 
-`Book same = book;` does not copy the object. A class variable holds a **reference** to an object, and the assignment copies that reference.
-
-- `book` and `same` now refer to one object, so a change made through `same` is visible through `book`.
-- This differs from `int`, where assignment copies the number itself.
-- `Describe` then reads the current `Title` and `Pages` of that one object.
-
-@example card
-
-## Change a get-only property {prediction}
-
-Line 2 assigns to a property that has only `get`. Read the example before checking.
+This example does not compile. Find the line the compiler stops at, and why.
 
 ```csharp example bad-set diagnostics=[{"code":200,"line":2}]
 Book book = new Book("Dune", 400);
@@ -102,19 +97,11 @@ class Book
 ```
 
 :::question predict-readonly example=bad-set
-What happens when you check this example?
-- [x] The compiler reports an error on line 2. :: `Pages` has only `get`, so code outside the constructor cannot assign to it (CS0200).
-- [ ] It prints 450. :: `Pages` has no `set`. The compiler rejects the assignment.
-- [ ] It prints 400, because the assignment is ignored. :: An assignment that is not allowed is a compile error. It is never silently skipped.
+Which error does the compiler report?
+- [ ] Line 1: the constructor needs the property names, as in `Title: "Dune"`. :: The constructor takes its values in order, so `new Book("Dune", 400)` is fine.
+- [x] Line 2, CS0200: `Pages` has only `get`, so it cannot be assigned there. :: A get-only auto-property can be initialized at its declaration or in its constructor, but not by this caller. That is deliberate: the class decides which changes are allowed, and other code goes through its methods, the way `Rename` changes `Title`.
+- [ ] Line 3: a property cannot be printed directly. :: `book.Pages` is an `int` and prints like any other. The compiler stops at line 2.
 :::
-
-## Read the compiler error {walkthrough}
-
-Check the example. **CS0200** says the property cannot be assigned because it is read only. `Pages` has no `set`, so only the constructor can give it a value.
-
-This is deliberate: the class decides which changes are allowed, and other code has to go through its methods.
-
-@example bad-set
 
 ## Finish the bus class {modification}
 
@@ -124,6 +111,6 @@ The starter has the properties and the constructor. Fill in the two empty method
 
 ## Write a book class {independent}
 
-Work from the prompt. The starter has the member names, and the bodies are yours.
+Work from the prompt. Declare the class and its members yourself. The prompt gives the contract, and the checks call your public members.
 
 @task classes-task-card

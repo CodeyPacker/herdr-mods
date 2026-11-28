@@ -45,12 +45,6 @@
       ]
     },
     {
-      "kind": "walkthrough",
-      "title": "Read the counts",
-      "text": "With 10 items the single loop took 10 steps and the pair loop 45. With 100 items they took 100 and 4,950.\n\nTen times the input made the single loop ten times the work. It made the pair loop about a hundred times the work. That difference is the whole subject of this course. At a million items the single loop takes a million steps, and the pair loop takes about five hundred billion.",
-      "example": "count"
-    },
-    {
       "kind": "explanation",
       "title": "Name the growth",
       "text": "Growth is written with a capital O, which is read as \"order of\". Keep only the part that grows fastest and drop constant factors, because they do not change the shape.\n\n| Name | Written | Steps for n = 1,000 | Typical code |\n| --- | --- | --- | --- |\n| Constant | O(1) | 1 | Read one array element |\n| Logarithmic | O(log n) | about 10 | Halve the range each time |\n| Linear | O(n) | 1,000 | One loop |\n| Linearithmic | O(n log n) | about 10,000 | A good sort |\n| Quadratic | O(n²) | 1,000,000 | A loop inside a loop |\n\nThe pair loop took n(n - 1)/2 steps. Its fastest-growing part is n², so it is O(n²). The same measure applies to memory: an algorithm that builds a second array of the same length uses O(n) extra space."
@@ -65,10 +59,9 @@
       ]
     },
     {
-      "kind": "walkthrough",
-      "title": "Why halving is so cheap",
-      "text": "A million was cut to 1 in 19 steps. Doubling the input adds only one more step. That is logarithmic growth, and it is why searching sorted data, a later module, is so fast.\n\nWhen you read code from now on, ask two questions. How many times does each loop run, in terms of n? And are the loops one after another, which adds their counts, or one inside another, which multiplies them?",
-      "example": "halve"
+      "kind": "explanation",
+      "title": "Read the loops",
+      "text": "When you read code from now on, ask two questions:\n\n1. How many times does each loop run, in terms of n?\n2. Are the loops one after another, which adds their counts, or one inside another, which multiplies them?"
     },
     {
       "kind": "modification",
@@ -102,7 +95,7 @@
         },
         {
           "text": "100 4950",
-          "feedback": "The single loop takes 100 steps. The pair loop takes 100 times 99 divided by 2, which is 4,950."
+          "feedback": "The single loop takes 100 steps, and the pair loop takes 100 times 99 divided by 2, which is 4,950. Ten times the input made the single loop ten times the work, and the pair loop about a hundred times. At a million items the pair loop would take about five hundred billion steps. That difference is the whole subject of this course."
         },
         {
           "text": "100 10000",
@@ -118,7 +111,7 @@
       "choices": [
         {
           "text": "19",
-          "feedback": "A million is a little under 2 to the power 20, so 19 halvings bring it down to 1."
+          "feedback": "A million is a little under 2 to the power 20, so 19 halvings bring it down to 1. Doubling the input adds only one more step. That is **logarithmic** growth, and it is why searching sorted data, a later module, is so fast."
         },
         {
           "text": "500000",

@@ -13,11 +13,21 @@ A thermometer starts the day at one temperature. When it warms up, the reading c
 
 ## Give a value a name
 
-A value is a piece of data. 4 is a number. "Desk" is text (a string). true and false are the two boolean values. A variable is a name for a value. const opening = 4 gives a fixed name its first value. let open = opening gives a second name the same number and allows us to assign it a new value later. Read = as “gets.” A semicolon ends a statement. The program runs these statements from top to bottom.
+A **value** is a piece of data. `4` is a number. `"Desk"` is text (a **string**). `true` and `false` are the two **boolean** values.
+
+A **variable** is a name for a value:
+
+```typescript
+const opening = 4;
+let open = opening;
+```
+
+- `const` gives a fixed name its value. `let` gives a name that can be assigned a new value later.
+- Read `=` as "gets". A semicolon ends a statement, and statements run from top to bottom.
 
 ## Trace the count {prediction}
 
-Read the example before running it. console.log(value) prints the current value on its own line. The + between two numbers adds them. On a line such as open = open + 1, calculate the right side first.
+Read the example before running it. `console.log(value)` prints the current value on its own line, and `+` between two numbers adds them. On a line such as `open = open + 1`, work out the right side first.
 
 ```typescript example board
 const opening = 4;
@@ -35,16 +45,14 @@ console.log(open);
 
 :::question predict-count example=board
 What are the two output lines, in order?
-- [x] 4 then 5 :: The first print runs before the assignment, the second after it.
+- [x] 4 then 5 :: The first print runs before the assignment, so it sees 4. The next print sees the updated `open`. Assigning `open` a new value leaves `opening` at 4.
 - [ ] 5 then 5 :: The later assignment cannot change a line that has already printed.
 - [ ] 4 then 4 :: open is a separate variable and receives the new number.
 :::
 
-## Run it {walkthrough}
+## Join text
 
-Run the example and compare each printed line with your prediction. The first line of output shows the opening count. The next print sees the updated open count. Assigning open a new value leaves opening at 4. For numbers, subtraction uses -. For text, + joins the pieces in order. In the second example the spaces inside the quotes become part of the label.
-
-@example board
+For numbers, `-` subtracts. For text, `+` joins the pieces in order, and the spaces inside the quotes become part of the result.
 
 ```typescript example label
 const area = "Desk";
@@ -57,9 +65,11 @@ console.log(label);
 Desk shelf
 ```
 
-## Predict a type error {prediction}
+## Find the error {prediction}
 
-TypeScript uses the initial value to work out a type (inference). In let count = 4, count can hold another number. Writing : number after the name would state the type explicitly (an annotation). Quoted digits are text. Look at the marked error example before you check it.
+TypeScript uses the first value to work out a type (**inference**). In `let count = 4`, `count` can only ever hold a number. Writing `: number` after the name would state the type yourself (an **annotation**).
+
+This example does not compile. Find the line the compiler stops at, and why.
 
 ```typescript example bad-count diagnostics=[{"code":2322,"line":2}]
 let count = 4;
@@ -68,21 +78,15 @@ count = "5";
 ```
 
 :::question predict-error example=bad-count
-What happens when the Practice Range checker checks this file?
-- [ ] It prints 5. :: The checker checks types before running the file, and there is no print call.
-- [ ] It converts the text to a number. :: Assignment does not parse text.
-- [x] It reports an error on the assignment. :: count was inferred as number. The quotes make the new value a string.
+Which error does the compiler report?
+- [ ] Line 1: `let` needs a type annotation. :: An annotation is optional. TypeScript infers `number` from the 4, so line 1 is fine.
+- [x] Line 2, TS2322: type `string` is not assignable to type `number`. :: `count` was inferred as `number`, and the quotes make `"5"` a string. The checker stops before running anything, and an annotation would not convert quoted digits into a number either.
+- [ ] Line 2: a `let` cannot be assigned again. :: Reassigning is what `let` allows. The problem is the type of the new value.
 :::
-
-## Read the diagnostic {walkthrough}
-
-Check the marked file. TS2322 is the compiler’s way of saying the value on the right has a type the name on the left cannot hold. The checker stops before running this answer. At runtime JavaScript uses the values themselves. In the label example it joins strings. A type annotation would not convert quoted digits into a number.
-
-@example bad-count
 
 ## Update a delivery {modification}
 
-Read the supplied opening and change values above the editor. Each check can supply different values. An input declaration such as const opening: number = 6 supplies a number you can read. Edit the starter, save, and compare both prints.
+Read the supplied `opening` and `change` values above the editor. Each check can supply different values. An input declaration such as `const opening: number = 6` supplies a number you can read. Edit the starter, save, and compare both prints.
 
 @task arrival-log
 

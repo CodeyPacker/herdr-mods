@@ -7,7 +7,7 @@
     "list",
     "branch"
   ],
-  "prompt": "LastOr<T>(List<T> items, T fallback) should return the last item of the list, or the fallback when the list is empty. It must work for a list of any type. The starter always returns the fallback.",
+  "prompt": "`LastOr<T>(List<T> items, T fallback)` should return the last item of the list, or `fallback` when the list is empty. It must work for a list of any type. The starter always returns the fallback.",
   "hints": [
     "At which position is the last item of a list with Count items?",
     "Positions start at 0, so the last one is Count - 1. An empty list has no last item.",

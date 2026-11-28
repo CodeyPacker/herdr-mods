@@ -2,18 +2,28 @@
 id: course:cs-foundations/module/records
 title: Structs, records, copies
 requires: ["class","property","constructor","method","list","loop","comparison"]
-outcomes: [{"id":"copy","can":"Make a changed copy of a record and predict what the original holds.","assessment":["predict-with","course:cs-foundations/task/records-rename"]},{"id":"equality","can":"Predict == for records, structs and classes.","assessment":["predict-equal","course:cs-foundations/task/records-slot"]},{"id":"immutable","can":"Read the error from assigning to a record's property.","assessment":["predict-init"]},{"id":"transfer","can":"Return a new list of changed records and leave the input list unchanged.","assessment":["course:cs-foundations/task/records-complete-all"]}]
+outcomes: [{"id":"copy","can":"Make a changed copy of a record and predict what the original holds.","assessment":["predict-with","course:cs-foundations/task/records-rename"]},{"id":"equality","can":"Predict == for records, structs and classes.","assessment":["predict-equal","course:cs-foundations/task/records-slot"]},{"id":"immutable","can":"Read the error from assigning to a record's property.","assessment":["predict-init"]},{"id":"transfer","can":"Return a new list of changed records and leave the input list unchanged.","assessment":["course:cs-foundations/task/records-complete-all"]},{"id":"shallow","can":"Predict shared nested data and member equality after a record copy.","assessment":["predict-shallow"]}]
 tasks: [{"id":"course:cs-foundations/task/records-rename","path":"tasks/rename/task.json"},{"id":"course:cs-foundations/task/records-slot","path":"tasks/slot/task.json"},{"id":"course:cs-foundations/task/records-complete-all","path":"tasks/complete-all/task.json"}]
 review: {"task":"course:cs-foundations/task/records-complete-all","afterModule":"course:cs-foundations/module/linq","evidence":"Open a fresh starter on a later visit, with the earlier answer closed. A first unaided pass on every case is later evidence of the skill. A hinted pass stays recorded as assisted."}
 drills: ["classes/record","classes/struct","constructors/with","operators/equal"]
 drillGap: These drills practise one declaration each. They do not compare the behavior of records, structs and classes.
 ---
 
-Some types exist to carry data. This module covers records, which compare by value and are copied with with, and structs, which are copied on every assignment. It also shows how both differ from a class.
+Some types exist to carry data. This module compares ordinary classes, structs and record classes, including what assignment and `with` copy, and how equality works.
 
 ## A record carries data
 
-record `Movie(string Title, int Minutes)`; declares a record in one line. It has a constructor with those two parameters and a property for each. The properties can be set only when the record is created. To change something you make a copy: first with { Minutes = 45 } is a new Movie with the same Title and a different Minutes. Two records are equal with == when all their values are equal. Printing a record shows its type name and values.
+`record Movie(string Title, int Minutes);` declares a record in one line. It gets a constructor with those two parameters and a property for each.
+
+- This positional record class gets **init-only** properties: their values can be assigned during initialization, but not afterwards. A record can also declare properties with `set`, so records are not always immutable.
+- To change something, make a copy with `with`: `first with { Minutes = 45 }` is a new `Movie` with the same `Title` and a different `Minutes`.
+- Two records compare equal with `==` when their runtime types and stored members compare equal. A list member compares by reference, not by its contents.
+- Printing a record shows its type name and its values.
+
+
+## Copy with a change {prediction}
+
+`second` is made from `first` with one value changed. Predict the first line of output.
 
 ```csharp example copies
 Movie first = new Movie("Dune", 30);
@@ -54,30 +64,24 @@ True
 False
 ```
 
-## Copy with a change {prediction}
-
-second is made from first with one value changed. Predict the first line of output.
-
-@example copies
-
 :::question predict-with example=copies
 What is the first line of output?
-- [x] 30 :: with makes a new record. first keeps its own Minutes.
-- [ ] 45 :: The change went into the copy, second. first was not touched.
-- [ ] The program stops with an error :: with is allowed on records. It never changes the original.
+- [x] 30 :: This `with` expression changes only the new `Movie`; members holding mutable objects can still be shared, covered below.
+- [ ] 45 :: This `with` expression changes only the new `Movie`; members holding mutable objects can still be shared, covered below.
+- [ ] The program stops with an error :: `with` is allowed on records. It never changes the original.
 :::
-
-## Follow the copy {walkthrough}
-
-with created a second Movie and left first alone, so `first.Minutes` is still 30. The second line shows the copy: the same Title and the new Minutes. Nothing can change a Movie after it is created, so code that holds one can rely on it.
-
-@example copies
 
 ## Value or reference
 
-A `struct` is a value type, like `int`. Assigning it copies the whole value, so Size b = a; gives b its own Width. A class is a reference type: assignment copies the reference and both names refer to one object. For == the rule also depends on the type. Records compare their values. Classes compare references, so two separate objects are not equal even when they hold the same data.
+C# has value types and reference types. The table shows their default behavior. Classes can overload `==`, as `string` does, so the declared type matters.
 
-@example copies
+| Kind | Assignment copies | `==` compares |
+| --- | --- | --- |
+| user-defined `struct` (a **value type**) | the whole value | usually has no built-in `==`; built-in numeric value types such as `int` supply equality |
+| `class` (a **reference type**) | the reference: both names refer to one object | the references: two separate objects are not equal, even with the same data |
+| `record` (a record class) | the reference | the stored members |
+
+So `Size b = a;` gives `b` its own copy when `Size` is a `struct`, and two `new Box()` objects are not equal when `Box` is a class.
 
 ## Predict three comparisons {prediction}
 
@@ -87,20 +91,42 @@ Predict the last three lines of output.
 
 :::question predict-equal example=copies
 What are the last three lines of output?
-- [ ] True, 9, False :: Size is a `struct`, so b is a separate copy. Changing b leaves `a.Width` at 2.
-- [ ] False, 2, False :: Records compare by value, and both have Dune and 30.
-- [x] True, 2, False :: Records compare values, the `struct` was copied, and the two Box objects are different objects.
+- [ ] True, 9, False :: `Size` is a `struct`, so `b` is a separate copy. Changing `b` leaves `a.Width` at 2.
+- [ ] False, 2, False :: Records compare by value, and both hold Dune and 30.
+- [x] True, 2, False :: The two `Movie` records hold the same values, so `==` is True. `b` was a copy of the `struct`, so setting `b.Width` left `a.Width` at 2. `boxA` and `boxB` are two different objects, and a class compares references, so False.
 :::
 
-## Check each type {walkthrough}
+## A copy can still share data {prediction}
 
-first == new `Movie("Dune", 30)` is True because records compare values. `a.Width` is 2 because b is a separate copy, so setting `b.Width` to 9 changed only b. boxA == boxB is False because they are two different objects, and a class compares references.
+`with` makes a **shallow copy**: it copies each member. A member holding a reference still points at the same object. A struct with a list member has this same issue on assignment. `record struct` is a value type with generated record equality, unlike the record classes above.
 
-@example copies
+```csharp example shallow
+var first = new Playlist("Morning", new List<string> { "Intro" });
+var second = first with { Name = "Evening" };
+second.Songs.Add("Finale");
+Console.WriteLine(first.Name);
+Console.WriteLine(first.Songs.Count);
+Console.WriteLine(first == new Playlist("Morning", new List<string> { "Intro", "Finale" }));
 
-## Assign to a record's property {prediction}
+record Playlist(string Name, List<string> Songs);
+```
 
-Line 2 tries to change a record after it was created. Read the example before checking.
+```output
+Morning
+2
+False
+```
+
+:::question predict-shallow example=shallow
+Why does first have two songs, but compare unequal to the last playlist?
+- [x] The copy shares first's list, while the last playlist has a different list. :: with copies the list reference. Changing the shared list is visible through either record. Record equality compares the list members by reference, not by their elements.
+- [ ] with changes the original name and copies every song. :: first keeps its own Name, but both records refer to one Songs list.
+- [ ] Records compare lists by their contents. :: List does not define equality by its contents. These two separate lists compare unequal.
+:::
+
+## Find the error {prediction}
+
+This example does not compile. Find the line the compiler stops at, and why.
 
 ```csharp example bad-init diagnostics=[{"code":8852,"line":2}]
 Movie first = new Movie("Dune", 30);
@@ -112,17 +138,11 @@ record Movie(string Title, int Minutes);
 ```
 
 :::question predict-init example=bad-init
-What happens when you check this example?
-- [ ] It prints 45. :: A record's properties cannot be assigned after it is created.
-- [x] The compiler reports an error on line 2. :: Minutes is init-only, so it can be set only during creation (CS8852).
-- [ ] It prints 30, because the assignment is ignored. :: The assignment is a compile error, so nothing runs.
+Which error does the compiler report?
+- [ ] Line 1: a record must be created with `with`. :: `with` copies an existing record. A new one is created with `new`, so line 1 is fine.
+- [x] Line 2, CS8852: `Minutes` can be set only while the record is being created. :: This positional record class's generated properties are init-only. To change one, make a copy: `Movie longer = first with { Minutes = 45 };`
+- [ ] Line 5: a record needs a body in braces. :: The one-line form with a semicolon declares a full record. The compiler stops at line 2.
 :::
-
-## Read the compiler error {walkthrough}
-
-Check the example. CS8852 says an init-only property can be assigned only while the object is being created. Write first with { Minutes = 45 } and use the copy it produces.
-
-@example bad-init
 
 ## Rename a song {modification}
 
@@ -132,6 +152,6 @@ The case box supplies the record type. The starter returns the song unchanged.
 
 ## Model a time slot {independent}
 
-Work from the prompt. Whether two slots count as equal depends on what kind of type Slot is.
+Declare the types and methods from the prompt. Whether two slots count as equal depends on what kind of type Slot is.
 
 @task records-slot

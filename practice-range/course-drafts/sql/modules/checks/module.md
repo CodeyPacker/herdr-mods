@@ -13,7 +13,17 @@ A query can run without any error and still give a wrong answer. Nothing in the 
 
 ## Know what one row stands for
 
-Before trusting a number, say what each row of the joined result stands for. After customers LEFT JOIN orders, a row is one order of one customer, or one customer with no order at all. count(*) counts those rows, so a customer with no orders counts as 1. count(o.id) counts order ids, and skips the NULL of the unmatched row, so that customer correctly gets 0.
+Before trusting a number, say what each row of the joined result stands for.
+
+After `customers LEFT JOIN orders`, a row is one order of one customer, or one customer with no order at all.
+
+- `count(*)` counts those rows, so a customer with no orders counts as 1.
+- `count(o.id)` counts order ids and skips the `NULL` of the unmatched row, so that customer correctly gets 0.
+
+
+## Count orders for a customer with none {prediction}
+
+Felix has never ordered. Predict what his `orders` and `joined_rows` columns show.
 
 ```sql example zero
 SELECT c.first_name, count(o.id) AS orders, count(*) AS joined_rows
@@ -37,12 +47,6 @@ Your query returned:
 (5 rows)
 ```
 
-## Count orders for a customer with none {prediction}
-
-Felix has never ordered. Predict what his orders and joined_rows columns show.
-
-@example zero
-
 :::question zero-count example=zero
 What do orders and joined_rows show for Felix?
 - [x] 0 and 1 :: The join keeps Felix as one row with no order. count(o.id) skips its NULL, and count(*) counts the row.
@@ -52,7 +56,16 @@ What do orders and joined_rows show for Felix?
 
 ## Joins can multiply rows
 
-Joining one department to its eleven employees gives eleven rows. Joining those to the department's four projects gives 44 rows, one for every pair of an employee and a project. This is called fan-out. Any count or sum over the joined rows is then too large. count(DISTINCT e.id) repairs a count by counting each employee once. A sum cannot be repaired that way, so add things up in separate steps first and join the totals.
+Joining one department to its eleven employees gives eleven rows. Joining those to the department's four projects gives 44 rows, one for every pair of an employee and a project. This is called **fan-out**.
+
+- Any count or sum over the joined rows is then too large. A count far above what you expect is the sign of fan-out.
+- `count(DISTINCT e.id)` repairs a count by counting each employee once.
+- A sum cannot be repaired that way, so add things up in separate steps first and join the totals.
+
+
+## Count through two joins {prediction}
+
+Engineering has 11 employees and 4 projects. Predict its `joined_rows`.
 
 ```sql example fan-out
 SELECT d.name,
@@ -80,28 +93,23 @@ Your query returned:
 (6 rows)
 ```
 
-## Count through two joins {prediction}
-
-Engineering has 11 employees and 4 projects. Predict its joined_rows.
-
-@example fan-out
-
 :::question fan-out example=fan-out
 What is joined_rows for Engineering?
 - [ ] 11 :: Each employee is paired with every project, so there are more rows than employees.
 - [ ] 15 :: The joins pair employees with projects. They multiply, not add.
-- [x] 44 :: 11 employees times 4 projects gives 44 joined rows.
+- [x] 44 :: Each employee is paired with every project: 11 times 4. The `staff` and `projects` columns are right because each uses `DISTINCT`. Legal has no employees and no projects and still shows 1 joined row: the department itself, with nothing matched.
 :::
-
-## Read the three columns {walkthrough}
-
-Engineering's joined_rows is 44, which is 11 times 4. staff and projects are right because each uses DISTINCT. Legal has no employees and no projects and still shows 1 joined row, the department itself with nothing matched. A count far above what you expect is the sign of fan-out.
-
-@example fan-out
 
 ## Test against something simpler
 
-The surest test is a second query that answers part of the question in the plainest way, such as a count of one table with one filter. If the two disagree, the complicated query is the suspect. Totals are the easiest thing to check this way: a total over more joins should never be larger than the same total over fewer.
+The surest test is a second query that answers part of the question in the plainest way, such as a count of one table with one filter. If the two disagree, the complicated query is the suspect.
+
+Totals are the easiest thing to check this way: a total over more joins should never be larger than the same total over fewer.
+
+
+## Two totals for the same thing {prediction}
+
+Both statements claim to give the revenue of delivered orders. The second also joins the customers' reviews. Predict which total is right.
 
 ```sql example doubled
 SELECT sum(i.quantity * i.unit_price) AS revenue
@@ -130,24 +138,12 @@ Statement 2 returned:
 (1 row)
 ```
 
-## Two totals for the same thing {prediction}
-
-Both statements claim to give the revenue of delivered orders. The second also joins the customers' reviews. Predict which total is right.
-
-@example doubled
-
 :::question doubled example=doubled
 Which total is the revenue of delivered orders?
 - [ ] The second, 110169.60 :: Joining the reviews repeats items, so that total counts the same sales several times.
-- [x] The first, 52608.83 :: It adds each item of each delivered order exactly once.
+- [x] The first, 52608.83 :: The first statement joins each item to its order and adds it once. The second also joins the reviews of the order's customer, so a customer with three reviews has every item three times, and customers with no reviews vanish. The total more than doubles. The reviews had no part in the question and should not have been joined.
 - [ ] Neither :: The first statement joins only what the question needs, and each item appears once.
 :::
-
-## Why the second total is wrong {walkthrough}
-
-The first statement joins each item to its order and adds up 52608.83. The second joins the reviews of the order's customer as well. A customer with three reviews now has every item three times, so the items are added up again and again, and customers with no reviews vanish. The total more than doubles. The reviews had no part in the question and should not have been joined.
-
-@example doubled
 
 ## Count staff and projects {modification}
 

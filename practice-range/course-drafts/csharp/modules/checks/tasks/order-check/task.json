@@ -7,7 +7,7 @@
     "lambda",
     "text"
   ],
-  "prompt": "A candidate method takes two strings and should join them with a slash, the first argument first: \"west\" and \"east\" give \"west/east\". Write public static bool OrderCheck(Func<string, string, string> candidate). Return true for a correct candidate. Return false for a faulty one that joins them in reverse order, and for one that leaves out the slash.",
+  "prompt": "A candidate method takes two strings and should join them with a slash, the first argument first: `\"west\"` and `\"east\"` give `\"west/east\"`. Write `public static bool OrderCheck(Func<string, string, string> candidate)`. Return true for a correct candidate. Return false for a faulty one that joins them in reverse order, and for one that leaves out the slash.",
   "hints": [
     "Would two equal inputs tell the two orders apart?",
     "Choose two different strings, so that swapping them changes the result.",

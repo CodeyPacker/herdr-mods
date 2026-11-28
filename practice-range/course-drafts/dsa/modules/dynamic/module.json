@@ -49,12 +49,6 @@
       ]
     },
     {
-      "kind": "walkthrough",
-      "title": "From 21,891 calls to 39",
-      "text": "The answer is the same, 6765, and it took 39 calls. Each value from 2 to 20 was worked out once. Its second request was answered from the Map.\n\nThe second line asks for the fiftieth number. Without the memo that would take tens of billions of calls. With it, the answer appears at once. The cost went from about 2ⁿ to about n, in exchange for O(n) memory.",
-      "example": "memo"
-    },
-    {
       "kind": "explanation",
       "title": "Fill a table from the bottom",
       "text": "Memoization starts at the big problem and works down. The other way is to start at the smallest problems and work **up**, storing each answer in an array. This is called **tabulation**, and it needs no recursion at all.\n\nTo design either kind, answer three questions.\n\n1. **What does one entry mean?** For example: entry i is the number of ways to climb i steps.\n2. **How does an entry follow from earlier ones?** For example: the last move was one step or two, so entry i is entry i - 1 plus entry i - 2.\n3. **Which entries are known at the start?** For example: there is one way to climb 0 steps, and one way to climb 1.\n\nOnce those are written down, the code is a loop. Most of the difficulty in dynamic programming is in the first question."
@@ -67,12 +61,6 @@
       "questions": [
         "table-last"
       ]
-    },
-    {
-      "kind": "walkthrough",
-      "title": "Each entry from the two before",
-      "text": "The table started with 1 and 1. Each later entry is the sum of the two entries before it: 2, 3, 5, 8, 13. So there are 13 ways to climb six steps.\n\nOnly the last two entries are ever read. When that is true, the table can be replaced by two variables, and the memory drops from O(n) to O(1).",
-      "example": "table"
     },
     {
       "kind": "modification",
@@ -102,7 +90,7 @@
       "choices": [
         {
           "text": "6765 39",
-          "feedback": "Each value from 2 to 20 is worked out once and looked up once, which comes to 39 calls."
+          "feedback": "Each value from 2 to 20 is worked out once, and its second request is answered from the Map: 39 calls instead of 21,891. The second line asks for the fiftieth number, which without the memo would take tens of billions of calls. The cost went from about 2ⁿ to about n, in exchange for O(n) memory."
         },
         {
           "text": "6765 21891",
@@ -130,7 +118,7 @@
         },
         {
           "text": "13",
-          "feedback": "The entries are 1, 1, 2, 3, 5, 8 and 13. Each is the sum of the two before it."
+          "feedback": "The table starts with 1 and 1, and each later entry is the sum of the two before it: 2, 3, 5, 8, 13 ways to climb six steps. Only the last two entries are ever read, so the table could be replaced by two variables, and the memory would drop from O(n) to O(1)."
         }
       ]
     }

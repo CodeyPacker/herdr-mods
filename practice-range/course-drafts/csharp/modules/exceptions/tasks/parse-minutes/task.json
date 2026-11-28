@@ -8,11 +8,11 @@
     "record",
     "branch"
   ],
-  "prompt": "Parsed is supplied. Write public static Parsed ParseMinutes(string text). When text is a whole number of 0 or more, return Parsed with Ok true, that number, and an empty Error. When text is not a number, return Ok false, 0 and the Error \"not a number\". When it is a negative number, return Ok false, 0 and the Error \"negative\". The method must not throw for any of these.",
+  "prompt": "`Parsed` is supplied. Write `public static Parsed ParseMinutes(string text)`. When `text` is a whole number of 0 or more, return `Parsed` with `Ok` true, that number, and an empty `Error`. When `text` is not a number representable by int, return `Ok` false, 0 and the `Error` `\"not a number\"`. When it is a negative number, return `Ok` false, 0 and the `Error` `\"negative\"`. The method must not throw for any of these.",
   "hints": [
-    "There are three outcomes. Which one does int.Parse report by throwing?",
-    "Handle text that is not a number first, then look at the number you got.",
-    "Catch FormatException around int.Parse, or use int.TryParse, and return the matching Parsed in each case."
+    "Bad text and out-of-range numbers are both unsuccessful parses. Which API reports those without throwing?",
+    "Use int.TryParse before testing whether the parsed number is negative.",
+    "If TryParse returns false, return Parsed(false, 0, \"not a number\"). Otherwise reject negative minutes, keeping zero as a valid result."
   ],
   "starter": "starter.cs",
   "solution": "solution.cs",
@@ -24,14 +24,16 @@
     "Practice.ParseMinutes(\"0\") == new Parsed(true, 0, \"\")",
     "Practice.ParseMinutes(\"soon\") == new Parsed(false, 0, \"not a number\")",
     "Practice.ParseMinutes(\"\") == new Parsed(false, 0, \"not a number\")",
-    "Practice.ParseMinutes(\"-5\") == new Parsed(false, 0, \"negative\")"
+    "Practice.ParseMinutes(\"-5\") == new Parsed(false, 0, \"negative\")",
+    "Practice.ParseMinutes(\"2147483648\") == new Parsed(false, 0, \"not a number\")"
   ],
   "checkLabels": [
     "\"30\" must give Ok true with 30.",
     "\"0\" is a valid number and must give Ok true with 0.",
     "\"soon\" must give Ok false with the error \"not a number\".",
     "Empty text must give Ok false with the error \"not a number\".",
-    "\"-5\" must give Ok false with the error \"negative\"."
+    "\"-5\" must give Ok false with the error \"negative\".",
+    "Text outside the int range must return not a number without throwing."
   ],
   "fixtures": [
     {

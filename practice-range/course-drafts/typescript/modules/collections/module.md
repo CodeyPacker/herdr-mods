@@ -20,9 +20,9 @@ A function passed to another function is a callback. `p => p.inStock` is a short
 - `new Set(values)` keeps each distinct value once.
 - A `Map` holds one value per key: `set(key, value)` writes, `get(key)` reads, and `get` gives `undefined` for a missing key.
 
-## Predict before running {prediction}
+## Filter, then map {prediction}
 
-Read the example and predict what it prints before you run it.
+Read the example and predict what it prints.
 
 ```typescript example trace
 const products = [{ name: "Tea", inStock: true }, { name: "Jam", inStock: false }, { name: "Tea", inStock: true }];
@@ -37,23 +37,13 @@ Tea, Tea
 
 :::question predict example=trace
 Which names print?
-- [x] Tea, Tea :: Both in-stock products are kept, in order.
+- [x] Tea, Tea :: Read the chain left to right. `filter` keeps the first and third products, in order. `map` turns each kept product into its `name`. Two products are called Tea, and `filter` and `map` never remove duplicates.
 - [ ] Tea, Jam :: Jam is out of stock, so `filter` drops it.
 :::
 
-## Trace the example {walkthrough}
+## Put the names in a Set {prediction}
 
-Read the chain left to right.
-
-1. `filter` keeps the first and third products. Order stays the same.
-2. `map` turns each kept product into its `name`.
-3. `"Tea"` appears twice because two products have that name. `filter` and `map` never remove duplicates.
-
-@example trace
-
-## Check your explanation {prediction}
-
-Read the example again and choose the explanation that fits.
+Suppose the names went into a `Set`: `new Set(names)`.
 
 @example trace
 

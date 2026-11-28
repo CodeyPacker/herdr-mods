@@ -18,9 +18,9 @@ A generic function works with many types and keeps track of which type it was gi
 - `function choose(value: unknown): unknown` would accept anything too, but the caller would get back `unknown` and lose the type.
 - Type parameters are removed when the code runs, like all types.
 
-## Predict before running {prediction}
+## Return the same type {prediction}
 
-Read the example and predict what it prints before you run it.
+Read the example and predict what it prints.
 
 ```typescript example trace
 function choose<T>(value: T): T {
@@ -38,11 +38,11 @@ Tea
 
 :::question predict example=trace
 What prints?
-- [x] 0 then Tea :: The function returns the value it was given.
+- [x] 0 then Tea :: `choose` returns the value it was given, and `T` becomes `number` for the first call and `string` for the second.
 - [ ] A type name then Tea :: `T` is removed when the code runs. Only values remain.
 :::
 
-## Types built from other types {walkthrough}
+## Types built from other types
 
 TypeScript has generic types too. Three common ones build a new object type from an existing one:
 
@@ -52,11 +52,9 @@ TypeScript has generic types too. Three common ones build a new object type from
 
 They can be combined: `Partial<Omit<Article, "id">>` is "any of the fields except `id`". These only describe types. They never add or remove fields from a real object.
 
-@example trace
+## Does Pick change objects? {prediction}
 
-## Check your explanation {prediction}
-
-Read the example again and choose the explanation that fits.
+`Pick` builds a type with fewer fields.
 
 @example trace
 

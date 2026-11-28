@@ -1,4 +1,1 @@
-public static bool CountCheck(Func<List<int>, int> candidate)
-{
-    return true;
-}
+// Write the declarations and code described in the prompt.

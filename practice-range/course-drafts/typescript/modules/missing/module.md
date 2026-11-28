@@ -19,12 +19,13 @@ TypeScript has two "missing" values.
 - `null` means "deliberately empty". You write it yourself.
 - `nickname?: string` marks a field as optional. Its type becomes `string | undefined`.
 - `number | null` (a union) allows either a number or `null`.
+- `a ?? b` gives `b` only when `a` is `null` or `undefined` (**nullish**). Otherwise it gives `a`.
 
 Missing is not the same as empty. `0` and `""` are real values, and your code should keep them.
 
-## Predict before running {prediction}
+## Predict a fallback {prediction}
 
-Read the example and predict what it prints before you run it.
+Read the example and predict what it prints.
 
 ```typescript example trace
 function due(days: number | null): number {
@@ -42,30 +43,20 @@ console.log(due(null));
 
 :::question predict example=trace
 What prints for the two calls?
-- [x] 0 then 7 :: `0` is a real value. Only `null` is missing.
+- [x] 0 then 7 :: `due(0)`: 0 is not nullish, so `??` keeps it. `due(null)`: `null` is nullish, so the fallback 7 is used.
 - [ ] 7 then 7 :: `??` only replaces `null` and `undefined`, not `0`.
 :::
 
-## Trace the example {walkthrough}
+## Swap ?? for || {prediction}
 
-`a ?? b` gives `b` only when `a` is `null` or `undefined` (nullish). Otherwise it gives `a`.
-
-- `due(0)`: `0` is not nullish, so it returns `0`.
-- `due(null)`: `null` is nullish, so it returns `7`.
-- `a || b` is different. It gives `b` for any falsy `a`, which includes `0` and `""`.
-
-@example trace
-
-## Check your explanation {prediction}
-
-Read the example again and choose the explanation that fits.
+`a || b` looks similar to `a ?? b`, but it gives `b` for any falsy `a`.
 
 @example trace
 
 :::question explain example=trace
 What would change if `??` were replaced by `||`?
 - [ ] `null` would stay `null`. :: Both operators use the fallback for `null`.
-- [x] `0` would also become 7. :: `0` is falsy, so `||` replaces it.
+- [x] `0` would also become 7. :: Falsy values include `0` and `""`, so `||` would replace a real 0 with the fallback. Use `??` when 0 or empty text are real values.
 :::
 
 ## Reach into optional fields

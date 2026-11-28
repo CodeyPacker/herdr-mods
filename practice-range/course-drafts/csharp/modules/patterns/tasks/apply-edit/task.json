@@ -7,7 +7,7 @@
     "switch-expression",
     "record"
   ],
-  "prompt": "Edit and its record types are supplied. Write public static int Next(int count, Edit edit). An Add edit returns count plus its Amount. A Set edit returns its Value. A Keep edit returns count unchanged. Zero and negative numbers are valid everywhere.",
+  "prompt": "`Edit` and its record types are supplied. Write `public static int Next(int count, Edit edit)`. An `Add` edit returns `count` plus its `Amount`. A `Set` edit returns its `Value`. A `Keep` edit returns `count` unchanged. Zero and negative numbers are valid everywhere.",
   "hints": [
     "Say in words what each edit type does to the count.",
     "Add needs the old count and its Amount. Set needs only its Value.",

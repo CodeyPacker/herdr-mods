@@ -8,7 +8,7 @@
     "branch",
     "number-types"
   ],
-  "prompt": "Write public static double ExtraHours(double hours, double included). Both inputs are zero or more. Return the hours beyond the included amount, or 0 when the booking covers everything.",
+  "prompt": "Write `public static double ExtraHours(double hours, double included)`. Both inputs are zero or more. Return the hours beyond the included amount, or 0 when the booking covers everything.",
   "hints": [
     "Think about a booking that is larger than the time used.",
     "Decide what to return when all the time is covered.",

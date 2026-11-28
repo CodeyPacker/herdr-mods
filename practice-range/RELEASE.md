@@ -4,7 +4,7 @@ Status: not ready to release. The TypeScript course still needs the P7 learner p
 
 ## Release scope
 
-Ship the TypeScript course preview (content version 0.2.0-preview.1), the C# course preview (0.2.0-preview.2) and the SQL course preview (0.2.0-preview.1), with existing C#, TypeScript and SQL direct practice unchanged. Tutor is a separate mod and is not affected.
+Ship the TypeScript course preview (content version 0.3.0-preview.1), the C# course preview (0.5.0-preview.1), the SQL course preview (0.3.0-preview.1) and the data structures preview (0.2.0-preview.1), with existing C#, TypeScript and SQL direct practice unchanged. Tutor is a separate mod and is not affected.
 
 ## Requirements
 
@@ -30,7 +30,7 @@ Ship the TypeScript course preview (content version 0.2.0-preview.1), the C# cou
 
 The C# course was written and verified on a second machine: Windows 11, Node.js 26.13.0 and .NET SDK 10.0.404. The TypeScript results below are from the macOS machine.
 
-Not tested: Linux, the TypeScript course on Windows, the C# course on macOS, Node.js 20 to 24 (the Homebrew `node@20` and `node@22` links on the test machine point to Node 25, so no older runtime was available without a download), .NET 8 or 9, and a live Claude or Codex request. Provider behavior is tested with controlled responses. Neither editor has been used by a learner through a whole course.
+Not tested: Linux, the TypeScript course on Windows, Node.js 20 to 24 (the Homebrew `node@20` and `node@22` links on the test machine point to Node 25, so no older runtime was available without a download), .NET 8 or 9, and a live Claude or Codex request. Provider behavior is tested with controlled responses. Neither editor has been used by a learner through a whole course.
 
 ## Checks
 
@@ -39,11 +39,11 @@ Run from the repository root. The results column is the last recorded run.
 | Code | Check | Command | Last result |
 | --- | --- | --- | --- |
 | V1, V2 | TypeScript course pack and every TypeScript example, reference, starter and wrong answer | `node practice-range/scripts/verify-course.mjs typescript` (about 20 minutes) | Passed on macOS, 2026-11-27. 63 course tasks (59 in lessons, 4 readiness checks) and 3 pilot tasks, 32 examples, 3 diagnostics, 84 references, 84 alternatives, 132 wrong-answer witnesses. |
-| V1, V2 | C# course pack and every C# example, reference, starter and wrong answer | `node practice-range/scripts/verify-course.mjs csharp` (about 5 minutes on macOS) | Passed on macOS with .NET SDK 10.0.301, 2026-11-27. 57 tasks (53 in lessons, 4 readiness checks), 22 examples, 11 diagnostics, 77 references, 77 alternatives, 116 wrong-answer witnesses. |
+| V1, V2 | C# course pack and every C# example, reference, starter and wrong answer | `node practice-range/scripts/verify-course.mjs csharp` (about 5 minutes on macOS) | Passed on macOS with .NET SDK 10.0.301, 2026-11-27, for 0.5.0-preview.1. 67 tasks (63 in lessons, 4 readiness checks), 32 examples, 11 diagnostics, 87 references, 87 alternatives, 145 wrong-answer witnesses. |
 | V1, V2 | SQL course pack and every SQL example, reference, starter and wrong answer | `node practice-range/scripts/verify-course.mjs sql` (about 5 minutes) | Passed on macOS, 2026-11-27. 52 tasks (48 in lessons, 4 readiness checks), 38 examples, 12 expected errors, 61 references, 61 alternatives, 104 wrong-answer witnesses. |
 | V1 | Rebuild is unchanged | `node practice-range/scripts/build-course.mjs` then `git status` | Passed. Earlier versions are archived under `courses/packs/archive/`. Ship those archives. |
 | V2 | Examples, references, starters, wrong answers | Same as the course verifier | Passed. |
-| V3–V7 | All Practice Range tests, including editors, catalogs, sessions, courses, version updates, sync and AI flows | `env TMPDIR=/private/tmp node --test --test-concurrency=3 practice-range/tests/*.test.mjs` | macOS, 2026-11-27, after the course redesign: passed 141 of 141. |
+| V3–V7 | All Practice Range tests, including editors, catalogs, sessions, courses, version updates, sync and AI flows | `env TMPDIR=/private/tmp node --test --test-concurrency=3 practice-range/tests/*.test.mjs` | macOS, 2026-11-27: all 164 tests passed. Two Neovim socket tests were rerun outside the sandbox. |
 | V5 | Version update rehearsal: real preview.1 enrollment to preview.2 | Included above in `tests/course-migration.test.mjs` | Passed. |
 | V6 | Sync includes portable course data and excludes local paths and builds | Included above in `tests/sync.test.mjs` | Passed. |
 | V7 | Native course panels | `node practice-range/tests/check-courses.mjs` | macOS, 2026-11-27: all 49 passed. A full run can stop with "interrupted" while loading the SQL catalog. Rerun the fixtures it did not reach by name. |
@@ -68,12 +68,12 @@ Tutor stays a separate mod and is unchanged. Practice Range does not import Tuto
 ## Release notes draft
 
 - **Courses.** Courses teach one concept at a time, with no project theme. The header has two tabs, Practice and Courses. A course page has one Up next box and a numbered module list. Lessons are Markdown with coloured code, shown one step at a time beside a step list. Course settings hold known languages, the attached repo and older versions.
-- **TypeScript course.** A preview with 18 modules, 59 lesson tasks and four skip-ahead tests, including unions, utility types, and mapped and conditional types.
-- **C# course.** A preview with 16 modules, 53 lesson tasks and four skip-ahead tests. It teaches C# on its own terms and needs a .NET SDK 8 or newer for coding checks.
-- **SQL course.** A preview with 16 modules, 48 lesson tasks and four skip-ahead tests. It runs on the practice database and needs the pinned PGlite engine for checks.
+- **TypeScript course.** A preview with 18 modules, 59 lesson tasks and four skip-ahead tests, including unions, utility types, and mapped and conditional types. Version 0.3.0-preview.1 removes walkthroughs that repeated a question's answer (134 steps down to 118), turns the ones that taught something new into explanations, and replaces the generic "Check your explanation" titles with ones that name the question.
+- **C# course.** A preview with 19 modules, 63 lesson tasks and four skip-ahead tests. Version 0.5.0-preview.1 adds text processing, delegates and callbacks, and a final import-and-test task. Independent exercises start from written contracts. Checks cover method composition, LINQ grouping, property access, input preservation, and async read order. The lessons cover shallow copies, resource cleanup, concurrent reads and cancellation. Skip-ahead recommendations match the topics assessed. Earlier content remains available, and eight changed assessments require a fresh pass when updating. Coding checks need a .NET SDK 8 or newer.
+- **SQL course.** A preview with 16 modules, 48 lesson tasks and four skip-ahead tests. It runs on the practice database and needs the pinned PGlite engine for checks. Version 0.3.0-preview.1 removes walkthroughs that repeated a question's answer (155 steps down to 118), asks which line fails and why on each error question, and restores the code formatting the prose had lost.
 - **API design course.** A reading course preview with 15 modules on designing APIs: resources, methods, status codes, bodies, errors, lists, safe writes, versioning, access, limits, slow work, styles and review. It has diagrams, questions and design exercises, no code to write, and needs no compiler, repo or AI.
 - **Linux, Docker, CI/CD, Networking, System design, Databases and Security courses.** Seven more reading course previews, with 15, 16, 16, 15, 16, 15 and 15 modules. The Security course marks its advice as general guidance and has not been reviewed by a security specialist. Each module has explanations, plain-text diagrams, two questions, and an exercise on paper with one possible answer. No command, workflow or SQL statement in them is run by the app, and none was run while writing them.
-- **Data structures and algorithms course.** A second TypeScript course preview with 14 modules, 42 lesson tasks and three skip-ahead tests. Where speed is the point of a task, a check counts array reads or comparisons, so a correct but slow answer fails. It uses the TypeScript pack's pinned compiler.
+- **Data structures and algorithms course.** A second TypeScript course preview with 14 modules, 42 lesson tasks and three skip-ahead tests. Where speed is the point of a task, a check counts array reads or comparisons, so a correct but slow answer fails. It uses the TypeScript pack's pinned compiler. Version 0.2.0-preview.1 folds each walkthrough into the answer it explained (126 steps down to 102), and gives the call stack, comparators and stability, and tree walking orders their own steps.
 - **Setup.** Setup and every language card offer that language's course, as a Course button beside Practice. Reading works before the compiler is installed.
 - **Updates.** A newer compatible course version is offered on its catalog card. Progress moves only when you choose Update. The earlier version stays available.
 - **Optional AI.** With AI help on, lessons can add checked extra practice, repo examples and architecture reading.

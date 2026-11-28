@@ -6,7 +6,7 @@
     "save-run",
     "read-output"
   ],
-  "prompt": "Print three lines, exactly: `Corner Cafe`, then `Latte: 4.50`, then `Total: 4.50`. The starter prints the first line.",
+  "prompt": "Print three lines, exactly: `Corner Cafe`, then `Latte: 4.50`, then `Total: 4.50`.",
   "hints": [
     "How many lines must print, and how many does the starter print?",
     "Each line needs its own Console.WriteLine statement with the text in double quotes.",

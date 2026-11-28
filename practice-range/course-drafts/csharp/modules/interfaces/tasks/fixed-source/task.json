@@ -8,7 +8,7 @@
     "property",
     "constructor"
   ],
-  "prompt": "ISongSource and Sources are supplied. Finish FixedSource so that Name is \"fixed\" and Titles() returns the titles passed to the constructor, in the same order. The class must keep naming ISongSource so it can be used wherever a song source is expected.",
+  "prompt": "`ISongSource` and `Sources` are supplied. Finish `FixedSource` so that `Name` is `\"fixed\"` and `Titles()` returns the titles passed to the constructor, in the same order. The class must keep naming `ISongSource`, so it can be used wherever a song source is expected.",
   "hints": [
     "The constructor receives the titles. Where are they kept so Titles() can return them later?",
     "Add a property for the list, store the parameter in it in the constructor, and return it from Titles().",

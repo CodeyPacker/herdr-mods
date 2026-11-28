@@ -13,7 +13,15 @@ Most questions are about some of the rows, not all of them. WHERE keeps the rows
 
 ## Keep the rows that pass a test
 
-WHERE comes after FROM and holds a condition. A row is kept only when the condition is true for it. The comparison operators are = (equal), <> (not equal), <, <=, > and >=. Text values go in single quotes: country = 'USA'. Double quotes mean something else in SQL. They mark a name, such as a column, so "USA" would be read as a column called USA.
+`WHERE` comes after `FROM` and holds a condition. A row is kept only when the condition is true for it.
+
+- The comparison operators are `=` (equal), `<>` (not equal), `<`, `<=`, `>` and `>=`.
+- Text values go in single quotes: `country = 'USA'`.
+- Double quotes mean something else in SQL. They mark a name, such as a column, so `"USA"` would be read as a column called USA.
+
+## Count the rows kept {prediction}
+
+Department 3 is Sales. Predict how many rows come back.
 
 ```sql example sales
 SELECT first_name, title, salary
@@ -33,28 +41,31 @@ Your query returned:
 (4 rows)
 ```
 
-## Count the rows kept {prediction}
-
-Department 3 is Sales. Predict how many rows come back.
-
-@example sales
-
 :::question count-sales example=sales
 How many rows come back?
 - [ ] 24 :: WHERE keeps only the rows whose department_id is 3.
-- [x] 4 :: Four employees are in department 3.
+- [x] 4 :: The condition `department_id = 3` is tested on each of the 24 rows, and four pass: Priya, Hannah, Ravi and Julia. The `SELECT` list then decides which of their columns are shown. A column used in `WHERE` does not have to be in the `SELECT` list.
 - [ ] 1 :: The test is applied to every row, and every row that passes is kept.
 :::
 
-## Follow the filter {walkthrough}
-
-The employees table has 24 rows. The condition department_id = 3 is tested on each one, and four pass: Priya, Hannah, Ravi and Julia. The SELECT list then decides which of their columns are shown. A column used in WHERE does not have to be in the SELECT list.
-
-@example sales
-
 ## Combine tests
 
-AND keeps a row only when both sides are true. OR keeps it when at least one side is true. NOT flips a test. When a condition mixes them, AND is applied before OR, the way multiplication comes before addition. Use brackets to say what you mean. Three shorter forms are common. department_id IN (4, 5) is true when the value is any one in the list. price BETWEEN 50 AND 100 includes both ends. LIKE matches text against a pattern, where % stands for any run of characters, including none: last_name LIKE 'S%' matches names that start with S, and title LIKE '%Engineer%' matches titles that contain Engineer.
+`AND` keeps a row only when both sides are true. `OR` keeps it when at least one side is true. `NOT` flips a test.
+
+When a condition mixes them, `AND` is applied before `OR`, the way multiplication comes before addition. Use brackets to say what you mean.
+
+Three shorter forms are common:
+
+| Form | True when |
+| --- | --- |
+| `department_id IN (4, 5)` | the value is any one in the list |
+| `price BETWEEN 50 AND 100` | the value is in the range, both ends included |
+| `last_name LIKE 'S%'` | the text matches the pattern. `%` stands for any run of characters, including none, so `title LIKE '%Engineer%'` matches titles that contain Engineer |
+
+
+## Which test is applied first? {prediction}
+
+The condition mixes OR and AND with no brackets. Predict which Marketing employees (department 4) appear.
 
 ```sql example precedence
 SELECT first_name, department_id, salary
@@ -76,28 +87,16 @@ Your query returned:
 (6 rows)
 ```
 
-## Which test is applied first? {prediction}
-
-The condition mixes OR and AND with no brackets. Predict which Marketing employees (department 4) appear.
-
-@example precedence
-
 :::question precedence example=precedence
 Which employees from department 4 appear?
-- [x] Tom and Laura :: AND is applied first, so the salary test belongs to department 4 only, and Kofi earns less than 90000.
+- [x] Tom and Laura :: `AND` binds first, so the condition reads as: department 5, or (department 4 and salary above 90000). Everyone in department 5 is kept whatever they earn. From department 4, Kofi, on 88000, is left out. With brackets around the `OR`, the salary test would apply to both departments.
 - [ ] Tom, Kofi and Laura :: The salary test applies to department 4, and Kofi's 88000 does not pass it.
 - [ ] None of them :: The row is kept when either side of the OR is true, and two Marketing employees pass the right side.
 :::
 
-## Follow AND before OR {walkthrough}
+## Find the error {prediction}
 
-AND binds first, so the condition reads as: department 5, or (department 4 and salary above 90000). Everyone in department 5 is kept whatever they earn. From department 4, only Tom and Laura pass the salary test. Kofi, on 88000, is left out. With brackets around the OR, the salary test would apply to both departments.
-
-@example precedence
-
-## Double quotes around text {prediction}
-
-The city is written in double quotes. Read the example before checking.
+This example does not run. Find the line PostgreSQL stops at, and why.
 
 ```sql example quotes diagnostics=[{"code":"42703","line":3}]
 SELECT first_name
@@ -107,17 +106,11 @@ WHERE city = "Denver";
 ```
 
 :::question quotes example=quotes
-What happens when you check this example?
-- [ ] It returns the customers who live in Denver. :: Double quotes do not make a text value. They make a name.
-- [ ] It returns no rows. :: The statement does not run at all. It has an error.
-- [x] PostgreSQL reports an error on line 3. :: "Denver" is read as a column name, and there is no such column (42703).
+Which error does PostgreSQL report?
+- [ ] Line 1: `first_name` must be in quotes. :: Column names need no quotes. Line 1 is fine.
+- [x] Line 3, 42703: column `Denver` does not exist. :: Double quotes mark a name, so PostgreSQL looked for a column called Denver. Write the text value in single quotes: `city = 'Denver'`.
+- [ ] Line 3: `=` cannot compare text. :: `=` compares text as well as numbers. The problem is what is on its right.
 :::
-
-## Read the error {walkthrough}
-
-Check the example. Error 42703 says column "Denver" does not exist. Double quotes mark a name, so PostgreSQL looked for a column called Denver. Write the text value in single quotes: city = 'Denver'.
-
-@example quotes
 
 ## List what can be sold {modification}
 

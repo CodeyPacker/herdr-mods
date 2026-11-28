@@ -48,12 +48,6 @@
       ]
     },
     {
-      "kind": "walkthrough",
-      "title": "Every element moved",
-      "text": "Inserting in front of 3 elements took 3 moves. In front of 1,000 it took 1,000. The built-in `unshift` does the same work out of sight.\n\nThis matters inside a loop. Calling `unshift` or `shift` n times costs about n² moves in total. Whenever you see one of them in a loop over a large array, look for a way to work at the end instead.",
-      "example": "shift"
-    },
-    {
       "kind": "explanation",
       "title": "Two pointers",
       "text": "Many array problems look as if they need a loop inside a loop, and can be done in one pass with two indexes. The indexes are called pointers.\n\n- **Opposite ends.** One pointer starts at the front and one at the back, and they move towards each other. Use it to reverse, or to compare a sequence with its mirror image.\n- **Side by side.** Both start at the front and move at their own pace, often one in each of two arrays. Use it to combine two sorted arrays.\n\nEach pointer only ever moves forward, or only backward, so together they take at most n steps."
@@ -66,12 +60,6 @@
       "questions": [
         "meet"
       ]
-    },
-    {
-      "kind": "walkthrough",
-      "title": "They met in the middle",
-      "text": "Each pass through the loop swapped one pair and moved both pointers inward. After two swaps both pointers were at index 2, the middle element, which needs no swap. The condition `left < right` stopped the loop there.\n\nThe array was changed **in place**: no second array was made, so the extra memory used is O(1). The condition matters. With `left <= right` the middle element would be swapped with itself, which is harmless. Looping over the whole length would swap every pair twice and undo the work.",
-      "example": "pointers"
     },
     {
       "kind": "modification",
@@ -109,7 +97,7 @@
         },
         {
           "text": "1000",
-          "feedback": "Each of the thousand existing elements moves one place along before the new one is written."
+          "feedback": "Each of the thousand existing elements moves one place along before the new one is written. The built-in `unshift` does the same work out of sight, so calling `unshift` or `shift` n times costs about n² moves in total. When you see one of them in a loop over a large array, look for a way to work at the end instead."
         }
       ]
     },
@@ -121,7 +109,7 @@
       "choices": [
         {
           "text": "2 2",
-          "feedback": "After two swaps both pointers are on the middle element, and left < right is false."
+          "feedback": "Each pass swapped one pair and moved both pointers inward. After two swaps both are at index 2, the middle element, which needs no swap, and `left < right` stops the loop. The array was changed **in place**: no second array was made, so the extra memory is O(1). With `left <= right` the middle would be swapped with itself, which is harmless. Looping over the whole length would swap every pair twice and undo the work."
         },
         {
           "text": "0 4",

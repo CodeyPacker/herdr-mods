@@ -13,11 +13,15 @@ A comparison such as count >= 3 produces true or false (a boolean). An if statem
 
 ## Decide which books need a reminder
 
-A comparison such as count >= 3 produces true or false (a boolean). An if statement runs its first block when the condition is true. An else block runs otherwise. Braces group the lines in each block. === compares values for equality. && requires both tests to be true, and || requires at least one.
+A comparison such as `count >= 3` produces `true` or `false` (a **boolean**).
 
-## Predict before running {prediction}
+- An `if` statement runs its first block when the condition is true. An `else` block runs otherwise. Braces group the lines in each block.
+- `===` compares values for equality.
+- `&&` requires both tests to be true, and `||` requires at least one.
 
-Read the example and predict what happens before checking your answer.
+## Predict the boundary {prediction}
+
+Read the example and predict what it prints.
 
 ```typescript example limit
 const count = 3;
@@ -36,18 +40,18 @@ Busy
 :::question edge example=limit
 What prints for the example as written?
 - [ ] Room :: The equal sign in >= includes three.
-- [x] Busy :: Three meets its own threshold.
+- [x] Busy :: At exactly 3, `>=` includes the boundary, so the condition is true and `Busy` prints.
 :::
 
-## Trace the example {walkthrough}
+## Numbers as conditions
 
-At exactly 3, >= includes the boundary and prints Busy. A number used directly as an if condition uses truthiness: 0 is false and other ordinary nonzero numbers are true. The empty string is false too. To ask whether a value is zero, compare it to zero explicitly.
+A number used directly as an `if` condition is tested for **truthiness**: 0 is false, and other ordinary numbers, negative ones included, are true. The empty string `""` is false too.
 
-@example limit
+To ask whether a value is zero, compare it to zero explicitly: `if (count === 0)`.
 
-## Check your explanation {prediction}
+## Use a number as a condition {prediction}
 
-Read the indicated code and choose the explanation that accounts for its behavior.
+Suppose the condition in the example were simply `if (count)`.
 
 @example limit
 

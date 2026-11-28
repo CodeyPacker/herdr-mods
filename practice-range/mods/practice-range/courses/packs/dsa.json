@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "0.1.0-preview.1",
+  "contentVersion": "0.2.0-preview.1",
   "id": "course:dsa",
   "languageId": "typescript",
   "runner": {
@@ -439,7 +439,9 @@
     }
   ],
   "compatibility": {
-    "fromVersions": [],
+    "fromVersions": [
+      "0.1.0-preview.1"
+    ],
     "replacements": []
   },
   "preview": true,
@@ -491,12 +493,6 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Read the counts",
-          "text": "With 10 items the single loop took 10 steps and the pair loop 45. With 100 items they took 100 and 4,950.\n\nTen times the input made the single loop ten times the work. It made the pair loop about a hundred times the work. That difference is the whole subject of this course. At a million items the single loop takes a million steps, and the pair loop takes about five hundred billion.",
-          "example": "count"
-        },
-        {
           "kind": "explanation",
           "title": "Name the growth",
           "text": "Growth is written with a capital O, which is read as \"order of\". Keep only the part that grows fastest and drop constant factors, because they do not change the shape.\n\n| Name | Written | Steps for n = 1,000 | Typical code |\n| --- | --- | --- | --- |\n| Constant | O(1) | 1 | Read one array element |\n| Logarithmic | O(log n) | about 10 | Halve the range each time |\n| Linear | O(n) | 1,000 | One loop |\n| Linearithmic | O(n log n) | about 10,000 | A good sort |\n| Quadratic | O(n²) | 1,000,000 | A loop inside a loop |\n\nThe pair loop took n(n - 1)/2 steps. Its fastest-growing part is n², so it is O(n²). The same measure applies to memory: an algorithm that builds a second array of the same length uses O(n) extra space."
@@ -511,10 +507,9 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Why halving is so cheap",
-          "text": "A million was cut to 1 in 19 steps. Doubling the input adds only one more step. That is logarithmic growth, and it is why searching sorted data, a later module, is so fast.\n\nWhen you read code from now on, ask two questions. How many times does each loop run, in terms of n? And are the loops one after another, which adds their counts, or one inside another, which multiplies them?",
-          "example": "halve"
+          "kind": "explanation",
+          "title": "Read the loops",
+          "text": "When you read code from now on, ask two questions:\n\n1. How many times does each loop run, in terms of n?\n2. Are the loops one after another, which adds their counts, or one inside another, which multiplies them?"
         },
         {
           "kind": "modification",
@@ -548,7 +543,7 @@
             },
             {
               "text": "100 4950",
-              "feedback": "The single loop takes 100 steps. The pair loop takes 100 times 99 divided by 2, which is 4,950."
+              "feedback": "The single loop takes 100 steps, and the pair loop takes 100 times 99 divided by 2, which is 4,950. Ten times the input made the single loop ten times the work, and the pair loop about a hundred times. At a million items the pair loop would take about five hundred billion steps. That difference is the whole subject of this course."
             },
             {
               "text": "100 10000",
@@ -564,7 +559,7 @@
           "choices": [
             {
               "text": "19",
-              "feedback": "A million is a little under 2 to the power 20, so 19 halvings bring it down to 1."
+              "feedback": "A million is a little under 2 to the power 20, so 19 halvings bring it down to 1. Doubling the input adds only one more step. That is **logarithmic** growth, and it is why searching sorted data, a later module, is so fast."
             },
             {
               "text": "500000",
@@ -785,12 +780,6 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Every element moved",
-          "text": "Inserting in front of 3 elements took 3 moves. In front of 1,000 it took 1,000. The built-in `unshift` does the same work out of sight.\n\nThis matters inside a loop. Calling `unshift` or `shift` n times costs about n² moves in total. Whenever you see one of them in a loop over a large array, look for a way to work at the end instead.",
-          "example": "shift"
-        },
-        {
           "kind": "explanation",
           "title": "Two pointers",
           "text": "Many array problems look as if they need a loop inside a loop, and can be done in one pass with two indexes. The indexes are called pointers.\n\n- **Opposite ends.** One pointer starts at the front and one at the back, and they move towards each other. Use it to reverse, or to compare a sequence with its mirror image.\n- **Side by side.** Both start at the front and move at their own pace, often one in each of two arrays. Use it to combine two sorted arrays.\n\nEach pointer only ever moves forward, or only backward, so together they take at most n steps."
@@ -803,12 +792,6 @@
           "questions": [
             "meet"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "They met in the middle",
-          "text": "Each pass through the loop swapped one pair and moved both pointers inward. After two swaps both pointers were at index 2, the middle element, which needs no swap. The condition `left < right` stopped the loop there.\n\nThe array was changed **in place**: no second array was made, so the extra memory used is O(1). The condition matters. With `left <= right` the middle element would be swapped with itself, which is harmless. Looping over the whole length would swap every pair twice and undo the work.",
-          "example": "pointers"
         },
         {
           "kind": "modification",
@@ -846,7 +829,7 @@
             },
             {
               "text": "1000",
-              "feedback": "Each of the thousand existing elements moves one place along before the new one is written."
+              "feedback": "Each of the thousand existing elements moves one place along before the new one is written. The built-in `unshift` does the same work out of sight, so calling `unshift` or `shift` n times costs about n² moves in total. When you see one of them in a loop over a large array, look for a way to work at the end instead."
             }
           ]
         },
@@ -858,7 +841,7 @@
           "choices": [
             {
               "text": "2 2",
-              "feedback": "After two swaps both pointers are on the middle element, and left < right is false."
+              "feedback": "Each pass swapped one pair and moved both pointers inward. After two swaps both are at index 2, the middle element, which needs no swap, and `left < right` stops the loop. The array was changed **in place**: no second array was made, so the extra memory is O(1). With `left <= right` the middle would be swapped with itself, which is harmless. Looping over the whole length would swap every pair twice and undo the work."
             },
             {
               "text": "0 4",
@@ -1084,12 +1067,6 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Three looks among ten",
-          "text": "The search looked at 16, then 56, then 23. Each look removed half of what was left: first indexes 0 to 4, then indexes 7 to 9.\n\nNotice `low = middle + 1` and `high = middle - 1`. The middle element has just been checked, so it is left out of the new range. Keeping it in, with `low = middle`, is the classic mistake: when the range is two elements wide the middle is `low` itself, nothing changes, and the loop never ends.",
-          "example": "binary"
-        },
-        {
           "kind": "explanation",
           "title": "The parts that go wrong",
           "text": "Binary search is short and famously easy to get wrong. Three decisions must agree with each other.\n\n- **What the range means.** Here `low` and `high` are both positions that could still hold the target.\n- **When to stop.** With that meaning, a range of one element is still worth checking, so the loop runs while `low <= high`.\n- **How to shrink.** Always leave out the middle that was just checked.\n\nTest any binary search on four cases: the first element, the last element, a value that is missing, and an empty array. Most broken versions fail one of them."
@@ -1102,12 +1079,6 @@
           "questions": [
             "not-found"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "The range became empty",
-          "text": "The search looked at 16, 5 and 2. After the third look `low` was 1 and `high` was 0. A range whose low end is past its high end is empty, so the loop ended and the function returned -1.\n\nThe value of `low` at that moment is useful: it is the position where the target would have to be inserted to keep the array sorted. The second exercise is built on that.",
-          "example": "absent"
         },
         {
           "kind": "modification",
@@ -1141,7 +1112,7 @@
             },
             {
               "text": "16, 56, 23",
-              "feedback": "The middle of 0 to 9 is index 4, which holds 16. Then the middle of 5 to 9 holds 56, and the middle of 5 to 6 holds 23."
+              "feedback": "The middle of 0 to 9 is index 4, which holds 16. Then the middle of 5 to 9 holds 56, and the middle of 5 to 6 holds 23. Each look removes half of what is left. Notice `low = middle + 1` and `high = middle - 1`: the middle has just been checked, so it is left out. Keeping it in, with `low = middle`, is the classic mistake. When the range is two wide the middle is `low` itself, nothing changes, and the loop never ends."
             },
             {
               "text": "16, 38, 23",
@@ -1165,7 +1136,7 @@
             },
             {
               "text": "-1 3",
-              "feedback": "It looks at 16, 5 and 2. Then the range is empty and it returns -1."
+              "feedback": "After looking at 16, 5 and 2, `low` is 1 and `high` is 0. A range whose low end is past its high end is empty, so the function returns -1. The value of `low` at that moment is useful: it is where the target would have to be inserted to keep the array sorted. The second exercise is built on that."
             }
           ]
         }
@@ -1391,12 +1362,6 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Count with a Map",
-          "text": "For each word, the loop read the count so far, used 0 when there was none, and stored one more. `counts.get(\"pink\")` gave `undefined`, because that key was never set. The `??` operator supplies the 0 in that case.\n\nThe second line shows that a Map remembers the order in which keys were first added. The whole count took one pass over the words, with one lookup and one write for each.",
-          "example": "counts"
-        },
-        {
           "kind": "explanation",
           "title": "Replace a search with a lookup",
           "text": "Here is the pattern to recognize. A loop goes over the items, and for each item the code searches the rest of the list for something: a duplicate, a partner, a match. That inner search makes the whole thing O(n²).\n\nKeep a Set or a Map of what has been seen so far. The inner search becomes one lookup, and the whole thing becomes O(n).\n\nKeys are compared the way `===` compares them. Numbers and strings work as you expect. Two different arrays or objects are different keys even when their contents are equal, so build a string key when you need to look up by contents."
@@ -1409,12 +1374,6 @@
           "questions": [
             "first-repeat"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Remember what was seen",
-          "text": "The loop looked at 4, 9 and 2, adding each to the set. The fourth value, 9, was already there, so the function returned at once after four lookups. It never reached the second 4.\n\nWith an array in place of the set, each check would have searched everything seen so far. For a long list with no repeats, that is the difference between n lookups and about n²/2 comparisons.",
-          "example": "seen"
         },
         {
           "kind": "modification",
@@ -1444,7 +1403,7 @@
           "choices": [
             {
               "text": "3 1 undefined",
-              "feedback": "red was counted three times and green once. pink was never set, so get returns undefined."
+              "feedback": "For each word the loop reads the count so far, uses 0 when there is none, and stores one more. `pink` was never set, so `get` returns `undefined`, and `??` supplies the 0 in that case. The whole count takes one pass, with one lookup and one write per word. The second line shows that a Map remembers the order keys were first added."
             },
             {
               "text": "3 1 0",
@@ -1468,7 +1427,7 @@
             },
             {
               "text": "9 4",
-              "feedback": "The fourth value is 9, which is already in the set. The function returns it after four lookups."
+              "feedback": "The loop adds 4, 9 and 2 to the set. The fourth value, 9, is already there, so the function returns after four lookups, before reaching the second 4. With an array in place of the set, each check would search everything seen so far: for a long list with no repeats, that is the difference between n lookups and about n²/2 comparisons."
             },
             {
               "text": "9 2",
@@ -1676,12 +1635,6 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "The newest came out first",
-          "text": "Three letters went on: a, b, c. The two pops returned c and then b, the newest first. Then d was pushed on top of a, so the stack held a and d.\n\n`pop` on an empty array returns `undefined` and does not fail. Code that uses a stack usually has to decide what an empty stack means: in the bracket exercise below it means a closing bracket with nothing to match.",
-          "example": "stack"
-        },
-        {
           "kind": "explanation",
           "title": "First in, first out",
           "text": "A **queue** gives back the item that has waited longest, like a line of people. The operations are **enqueue**, which adds at the back, and **dequeue**, which removes from the front.\n\nAn array can add at the back in one step with `push`. Removing from the front with `shift` is the trap: as the module on arrays showed, `shift` moves every remaining element, so it costs O(n). A queue that is emptied with `shift` costs O(n²) in total.\n\nThe fix is not to remove anything. Keep an index, `head`, that marks where the front of the queue is, and move the index forward. Reading the front and moving the index are both one step."
@@ -1694,12 +1647,6 @@
           "questions": [
             "queue-order"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "The oldest came out first",
-          "text": "Reading `queue[head++]` twice returned a and then b, the oldest first, and moved `head` to 2. After d was added, the items still waiting were c and d.\n\nThe array itself still holds a and b. They are simply behind the head and never looked at again. The number of items waiting is the array's length minus `head`. The later module on graphs uses exactly this queue.",
-          "example": "queue"
         },
         {
           "kind": "modification",
@@ -1737,7 +1684,7 @@
             },
             {
               "text": "c b",
-              "feedback": "pop returns the newest item each time: c, then b."
+              "feedback": "`pop` returns the newest item each time: c, then b. Then d goes on top of a. `pop` on an empty array returns `undefined` and does not fail, so code that uses a stack has to decide what an empty stack means. In the bracket exercise it means a closing bracket with nothing to match."
             }
           ]
         },
@@ -1749,7 +1696,7 @@
           "choices": [
             {
               "text": "cd 2",
-              "feedback": "a and b have been taken from the front. c and d are waiting, which is two items."
+              "feedback": "Reading `queue[head++]` twice returns a and then b, the oldest first, and moves `head` to 2. The array still holds a and b, simply behind the head, never looked at again. The number waiting is the length minus `head`. The later module on graphs uses exactly this queue."
             },
             {
               "text": "abcd 4",
@@ -1969,12 +1916,6 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "One hop for each node",
-          "text": "The loop started at the head, printed its value, and followed `next` until it reached `null`. It printed 10, 20 and 30, and took three hops.\n\nThis loop is the basic shape of nearly all list code: `for (let node = head; node !== null; node = node.next)`. The variable has the type `ListNode | null`, and the condition is what tells TypeScript that `node` is a real node inside the loop.",
-          "example": "walk"
-        },
-        {
           "kind": "explanation",
           "title": "Change links in the right order",
           "text": "To insert a node b between a and c, two links change: b must point to c, and a must point to b.\n\nThe order matters. `a.next` is the only way to reach c. If you set `a.next = b` first, the link to c is gone, and everything after it is lost. So first copy the old link into the new node, and only then redirect the old node.\n\nThe rule in general: **before you overwrite a link, make sure something else still points to what it pointed to.**"
@@ -1987,12 +1928,6 @@
           "questions": [
             "insert-order"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Nothing was lost",
-          "text": "The new node b was created with its `next` already set to `a.next`, which was c. Then `a.next` was pointed at b. The chain is now a, b, c, and c is still the last node, so its `next` is `null`.\n\nRemoving is the reverse. To remove the node after a, set `a.next = a.next.next`. The removed node is no longer reachable from the list.",
-          "example": "insert"
         },
         {
           "kind": "modification",
@@ -2026,7 +1961,7 @@
             },
             {
               "text": "3",
-              "feedback": "The loop body runs once for each of the three nodes before node becomes null."
+              "feedback": "The loop starts at the head, prints its value and follows `next` until it reaches `null`: three nodes, three hops. This is the basic shape of nearly all list code: `for (let node = head; node !== null; node = node.next)`. The variable's type is `ListNode | null`, and the condition is what tells TypeScript that `node` is a real node inside the loop."
             },
             {
               "text": "4",
@@ -2042,7 +1977,7 @@
           "choices": [
             {
               "text": "2 3 null",
-              "feedback": "a now points to b, b points to c, and c is still last."
+              "feedback": "`b` is created with its `next` already set to `a.next`, which is c, and only then is `a.next` pointed at b. The chain is a, b, c, and c is still last. Removing is the reverse: to remove the node after `a`, set `a.next = a.next.next`. The removed node is no longer reachable from the list."
             },
             {
               "text": "2 null null",
@@ -2252,10 +2187,9 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Going in and coming back",
-          "text": "The calls went in: `countdown(2)` printed 2 and called `countdown(1)`, which printed 1 and called `countdown(0)`, which printed done and returned.\n\nThen they came back out in reverse. `countdown(1)` continued after its call and printed back 1. Then `countdown(2)` continued and printed back 2.\n\nWhile a call waits for the call inside it, the computer keeps its variables on the **call stack**. That is a stack in the sense of the earlier module: the most recent call finishes first. A recursion n calls deep uses O(n) memory for that stack, even when the code creates nothing else.",
-          "example": "countdown"
+          "kind": "explanation",
+          "title": "The call stack",
+          "text": "While a call waits for the call inside it, the computer keeps its variables on the **call stack**. That is a stack in the sense of the earlier module: the most recent call finishes first.\n\nA recursion n calls deep uses O(n) memory for that stack, even when the code creates nothing else."
         },
         {
           "kind": "explanation",
@@ -2270,12 +2204,6 @@
           "questions": [
             "calls"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Ten more, a hundred times the work",
-          "text": "For 10 the function was called 177 times. For 20 it was called 21,891 times. Adding 10 to the input multiplied the work by more than a hundred.\n\nThe reason is repeated work. `fib(20)` calls `fib(19)` and `fib(18)`. But `fib(19)` also calls `fib(18)`, which is worked out all over again, and so on all the way down. The module on dynamic programming removes that repetition.",
-          "example": "calls"
         },
         {
           "kind": "modification",
@@ -2309,7 +2237,7 @@
             },
             {
               "text": "back 1, then back 2",
-              "feedback": "The calls return in the reverse of the order they were made: the call for 1 finishes before the call for 2."
+              "feedback": "The calls go in: `countdown(2)` prints 2 and calls `countdown(1)`, which prints 1 and calls `countdown(0)`, which prints done and returns. Then they come back out in reverse: `countdown(1)` continues and prints back 1, then `countdown(2)` prints back 2."
             },
             {
               "text": "done, then back 2",
@@ -2333,7 +2261,7 @@
             },
             {
               "text": "6765 21891",
-              "feedback": "The calls roughly double with each level, so 20 takes over a hundred times as many as 10."
+              "feedback": "For 10 the function is called 177 times, and for 20 it is called 21,891 times. The reason is repeated work: `fib(20)` calls `fib(19)` and `fib(18)`, but `fib(19)` also calls `fib(18)`, which is worked out all over again, and so on all the way down. The module on dynamic programming removes that repetition."
             }
           ]
         }
@@ -2562,12 +2490,6 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "One element at a time",
-          "text": "First 2 slid in front of 5. Then 4 slid in front of 5 and stopped behind 2. Last, 1 slid past all three.\n\nThe inner loop shifts larger elements one place to the right to make a gap, and the saved element is written into the gap. Its condition has two parts, and both matter: `j >= 0` stops at the front of the array, and `values[j] > current` stops at the first element that is not larger.",
-          "example": "insertion"
-        },
-        {
           "kind": "explanation",
           "title": "A fast sort",
           "text": "**Merge sort** is recursive. Split the array into two halves, sort each half with the same function, and then **merge** the two sorted halves. Merging is the two-pointer pass from the module on arrays, and it takes n steps.\n\nThe base case is an array of one element or none, which is already sorted.\n\nCount the work by levels. The array is halved until the pieces have one element, which takes log n levels. At every level, all the merging together handles n elements. So the total is n times log n, written **O(n log n)**. For a million elements that is about 20 million steps, where insertion sort needs about 500 billion.\n\nMerge sort uses O(n) extra memory for the merged halves."
@@ -2582,10 +2504,9 @@
           ]
         },
         {
-          "kind": "walkthrough",
+          "kind": "explanation",
           "title": "Comparators and stability",
-          "text": "With no argument, `sort` compares elements **as text**. As text, \"10\" comes before \"9\", because \"1\" comes before \"9\". That gave 1, 10, 100, 9.\n\nA **comparator** fixes it. It is a function of two elements that returns a negative number when the first should come first, a positive number when the second should, and 0 when they are equal in order. `(a, b) => a - b` sorts numbers from smallest to largest.\n\nThe first line shows **stability**. Two tasks with the same priority kept the order they had before: call before mail, and write before plan. The built-in sort is stable, and so is a merge sort that takes from the left half on a tie. Stability is what lets you sort by one field and then by another.\n\nNote also that `sort` changes the array it is called on. Copy first, with `[...values]`, when the caller's array must stay as it was.",
-          "example": "stable"
+          "text": "A **comparator** fixes the text sort. It is a function of two elements that returns a negative number when the first should come first, a positive number when the second should, and 0 when they are equal in order. `(a, b) => a - b` sorts numbers from smallest to largest.\n\nThe example's first line shows **stability**. Two tasks with the same priority kept the order they had before: call before mail, and write before plan. The built-in sort is stable, and so is a merge sort that takes from the left half on a tie. Stability is what lets you sort by one field and then by another.\n\n`sort` also changes the array it is called on. Copy first, with `[...values]`, when the caller's array must stay as it was."
         },
         {
           "kind": "modification",
@@ -2615,7 +2536,7 @@
           "choices": [
             {
               "text": "2 4 5 1",
-              "feedback": "4 slides in front of 5 and stops behind 2. The 1 has not been reached yet."
+              "feedback": "First 2 slides in front of 5. Then 4 slides in front of 5 and stops behind 2, and last of all 1 slides past all three. The inner loop shifts larger elements one place right to make a gap, and the saved element is written into it. Both parts of its condition matter: `j >= 0` stops at the front of the array, and `values[j] > current` stops at the first element that is not larger."
             },
             {
               "text": "2 5 4 1",
@@ -2643,7 +2564,7 @@
             },
             {
               "text": "1 10 100 9",
-              "feedback": "With no comparator the numbers are compared as text, and \"10\" and \"100\" come before \"9\"."
+              "feedback": "With no argument, `sort` compares elements **as text**. As text, \"10\" comes before \"9\", because \"1\" comes before \"9\"."
             }
           ]
         }
@@ -2867,10 +2788,9 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Left, node, right",
-          "text": "The walk went as far left as it could before printing anything, so 1 came first. It printed 3 only after everything to the left of 3, and 8 only after the whole left subtree.\n\nThis order is called **in-order**. There are two others, which differ only in where the node itself is handled: **pre-order** handles the node before its subtrees, and **post-order** after both. Whichever order is used, every node is visited once, so a full walk costs O(n).",
-          "example": "shape"
+          "kind": "explanation",
+          "title": "Three walking orders",
+          "text": "The order in the example is called **in-order**: left subtree, node, right subtree. There are two others, which differ only in where the node itself is handled:\n\n- **Pre-order** handles the node before its subtrees.\n- **Post-order** handles it after both.\n\nWhichever order is used, every node is visited once, so a full walk costs O(n)."
         },
         {
           "kind": "explanation",
@@ -2885,12 +2805,6 @@
           "questions": [
             "path"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "One path down",
-          "text": "To find 6, the search looked at 8, went left to 3, and went right to 6. It never looked at 1 or 10.\n\nTo look for 9, it looked at 8, went right to 10, and then went left, where there was nothing. Reaching `null` means the value is not in the tree. Two looks were enough to rule out all five values.",
-          "example": "path"
         },
         {
           "kind": "modification",
@@ -2928,7 +2842,7 @@
             },
             {
               "text": "1 2",
-              "feedback": "The walk goes left from 8 to 3 to 1. 1 has no left child, so it is printed first, at depth 2."
+              "feedback": "The walk goes left from 8 to 3 to 1. 1 has no left child, so it is printed first, at depth 2. Then 3 prints, after everything to its left, and 8 only after the whole left subtree."
             }
           ]
         },
@@ -2940,7 +2854,7 @@
           "choices": [
             {
               "text": "8 10",
-              "feedback": "9 is larger than 8, so the search goes right to 10. 9 is smaller than 10, and there is nothing to the left of 10."
+              "feedback": "9 is larger than 8, so the search goes right to 10. 9 is smaller than 10, and there is nothing to the left of 10. Reaching `null` means the value is not in the tree: two looks ruled out all five values, and 1, 3 and 6 were never looked at."
             },
             {
               "text": "8 3 6 10",
@@ -3157,12 +3071,6 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Every parent is smaller",
-          "text": "3 and 2 are the children of the root, 1. Then 7 and 4 are the children of 3, and 5 is the left child of 2. In every line the parent is the smaller number, which is the heap rule.\n\nNotice that the array is not sorted: 3 comes before 2. A heap keeps just enough order to know where the smallest is.",
-          "example": "shape"
-        },
-        {
           "kind": "explanation",
           "title": "Sift up and sift down",
           "text": "**To add a value**, put it at the end of the array, which is the next free place in the bottom level. It may now be smaller than its parent. While it is, swap the two and continue from the parent's position. This is called **sifting up**.\n\n**To remove the smallest**, take the root. To fill the hole, move the last element of the array to the root. It is probably too large for that place. While it is larger than its smaller child, swap it with that child and continue from there. This is **sifting down**.\n\nAlways swap with the **smaller** child when sifting down. The smaller child is about to become the parent of the other one, so it has to be the smaller of the two."
@@ -3175,12 +3083,6 @@
           "questions": [
             "sift-up"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Two swaps to the root",
-          "text": "0 went in at index 6. Its parent, at index 2, held 2, so they swapped. Then its parent at index 0 held 1, so they swapped again. At index 0 there is no parent, and the loop ended.\n\nSeven elements needed at most two swaps. A heap of a million elements needs at most twenty. Only the nodes on one path from a leaf to the root were touched.",
-          "example": "sift"
         },
         {
           "kind": "modification",
@@ -3214,7 +3116,7 @@
             },
             {
               "text": "5 has parent 2",
-              "feedback": "5 is at index 5, and Math.floor((5 - 1) / 2) is 2. Index 2 holds 2."
+              "feedback": "5 is at index 5, and `Math.floor((5 - 1) / 2)` is 2, which holds 2. In every line the parent is the smaller number, which is the heap rule. The array is not sorted, though: 3 comes before 2. A heap keeps just enough order to know where the smallest is."
             },
             {
               "text": "5 has parent 4",
@@ -3230,7 +3132,7 @@
           "choices": [
             {
               "text": "1 3 0 7 4 5 2",
-              "feedback": "0 starts at index 6 and swaps with its parent at index 2, which held 2."
+              "feedback": "0 starts at index 6, and its parent at index 2 holds 2, so they swap. Its next parent, at index 0, holds 1, so they swap again, and at the root the loop ends. Only one path from a leaf to the root is touched: seven elements need at most two swaps, and a million need at most twenty."
             },
             {
               "text": "0 3 1 7 4 5 2",
@@ -3461,12 +3363,6 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Each road is listed twice",
-          "text": "There are 5 places. Adding up the lengths of all the neighbour lists gives 10, and every two-way road was counted from both of its ends, so there are 5 roads.\n\nAny algorithm that looks at every node and every neighbour list once costs O(n + e), for n nodes and e edges. That is the cost of every graph algorithm in this course.",
-          "example": "edges"
-        },
-        {
           "kind": "explanation",
           "title": "Breadth-first search",
           "text": "**Breadth-first search** explores a graph in rings. First the starting node, then all its neighbours, then all of their neighbours that are new, and so on.\n\nIt needs two things. A **queue** holds the nodes that have been found and not yet explored, oldest first. A **set of seen nodes** makes sure each node is added to the queue only once.\n\nThe seen set is not optional. A graph can have cycles, and without the set the search would walk round a cycle for ever. Mark a node as seen at the moment it is **added** to the queue, not when it is taken out, or it can be added several times.\n\nBecause nodes are explored in order of distance, the first time breadth-first search reaches a node is by a route with the fewest edges."
@@ -3479,12 +3375,6 @@
           "questions": [
             "order"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Ring by ring",
-          "text": "From home the search found shop and park, one step away. From shop it found school, two steps away. Park's neighbours were already seen. From school it found library, three steps away.\n\nThe queue is the array itself, read with a `head` index as in the module on queues. Nothing is ever removed, so at the end the array holds every reached node in the order it was found.",
-          "example": "bfs"
         },
         {
           "kind": "modification",
@@ -3514,7 +3404,7 @@
           "choices": [
             {
               "text": "5 5",
-              "feedback": "There are five places. The neighbour lists hold ten names in total, and each road appears in two lists."
+              "feedback": "There are five places. The neighbour lists hold ten names in total, and every two-way road is counted from both of its ends, so there are five roads. Any algorithm that looks at every node and every neighbour list once costs O(n + e), for n nodes and e edges, and that is the cost of every graph algorithm in this course."
             },
             {
               "text": "5 10",
@@ -3538,7 +3428,7 @@
             },
             {
               "text": "home shop park school library",
-              "feedback": "Both neighbours of home come first, then school, which is two steps away, then library."
+              "feedback": "From home the search finds shop and park, one step away. From shop it finds school, two steps away, and park's neighbours were already seen. From school it finds library, three steps away. The queue is the array itself, read with a `head` index as in the module on queues, so at the end it holds every reached node in the order it was found."
             },
             {
               "text": "home shop park school school library",
@@ -3745,12 +3635,6 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "Entered early, left late",
-          "text": "The search entered a, then b, then d. Node d has no neighbours, so it was left at once. Then b was left. Back at a, the search entered c. From c the neighbour d was already seen, so c was left, and last of all a.\n\nLook at the leave order: d, b, c, a. A node is left only after everything reachable from it has been left. That one fact is the basis of both ideas in the rest of this module.",
-          "example": "dfs"
-        },
-        {
           "kind": "explanation",
           "title": "Cycles and order",
           "text": "**Finding a cycle.** In a directed graph, a cycle exists when the search, while exploring from some node, arrives back at a node that is **still being explored**: one that has been entered and not yet left. Such a node is on the current path, so there is a route from it back to itself.\n\nArriving at a node that was entered **and left** earlier is not a cycle. It only means two routes lead to the same place. So one seen set is not enough. Track three states for each node: not visited, being visited, and done.\n\n**Ordering by need.** Suppose an edge from x to y means \"x needs y first\". Then the leave order is a valid order to do things in: a node is left only after everything it needs has been left. An order in which every item comes after what it needs is called a **topological order**. It exists only when the graph has no cycle."
@@ -3763,12 +3647,6 @@
           "questions": [
             "finish-order"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Reverse of the leave order",
-          "text": "The leave order was d, b, c, a. In this graph an edge means \"comes before\", so the node left last must come first, and the list is reversed: a, c, b, d.\n\nCheck it: a comes before b and c, and both come before d. The direction of the edges decides whether to reverse. When an edge means \"needs\", as in the last exercise, the leave order is already the answer.",
-          "example": "order"
         },
         {
           "kind": "modification",
@@ -3806,7 +3684,7 @@
             },
             {
               "text": "leave d",
-              "feedback": "The first three lines enter a, b and d. d has no neighbours, so it is left straight away."
+              "feedback": "The first three lines enter a, b and d. d has no neighbours, so it is left straight away, then b. Back at a, the search enters c, finds d already seen and leaves c, and last of all a. The leave order is d, b, c, a: a node is left only after everything reachable from it has been left. That one fact is the basis of the rest of this module."
             }
           ]
         },
@@ -3818,7 +3696,7 @@
           "choices": [
             {
               "text": "a c b d",
-              "feedback": "The nodes are left in the order d, b, c, a, and the list is reversed."
+              "feedback": "The nodes are left in the order d, b, c, a. Here an edge means \"comes before\", so the node left last must come first, and the list is reversed: a comes before b and c, and both come before d. When an edge means \"needs\", as in the last exercise, the leave order is already the answer."
             },
             {
               "text": "d b c a",
@@ -4040,12 +3918,6 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "From 21,891 calls to 39",
-          "text": "The answer is the same, 6765, and it took 39 calls. Each value from 2 to 20 was worked out once. Its second request was answered from the Map.\n\nThe second line asks for the fiftieth number. Without the memo that would take tens of billions of calls. With it, the answer appears at once. The cost went from about 2ⁿ to about n, in exchange for O(n) memory.",
-          "example": "memo"
-        },
-        {
           "kind": "explanation",
           "title": "Fill a table from the bottom",
           "text": "Memoization starts at the big problem and works down. The other way is to start at the smallest problems and work **up**, storing each answer in an array. This is called **tabulation**, and it needs no recursion at all.\n\nTo design either kind, answer three questions.\n\n1. **What does one entry mean?** For example: entry i is the number of ways to climb i steps.\n2. **How does an entry follow from earlier ones?** For example: the last move was one step or two, so entry i is entry i - 1 plus entry i - 2.\n3. **Which entries are known at the start?** For example: there is one way to climb 0 steps, and one way to climb 1.\n\nOnce those are written down, the code is a loop. Most of the difficulty in dynamic programming is in the first question."
@@ -4058,12 +3930,6 @@
           "questions": [
             "table-last"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Each entry from the two before",
-          "text": "The table started with 1 and 1. Each later entry is the sum of the two entries before it: 2, 3, 5, 8, 13. So there are 13 ways to climb six steps.\n\nOnly the last two entries are ever read. When that is true, the table can be replaced by two variables, and the memory drops from O(n) to O(1).",
-          "example": "table"
         },
         {
           "kind": "modification",
@@ -4093,7 +3959,7 @@
           "choices": [
             {
               "text": "6765 39",
-              "feedback": "Each value from 2 to 20 is worked out once and looked up once, which comes to 39 calls."
+              "feedback": "Each value from 2 to 20 is worked out once, and its second request is answered from the Map: 39 calls instead of 21,891. The second line asks for the fiftieth number, which without the memo would take tens of billions of calls. The cost went from about 2ⁿ to about n, in exchange for O(n) memory."
             },
             {
               "text": "6765 21891",
@@ -4121,7 +3987,7 @@
             },
             {
               "text": "13",
-              "feedback": "The entries are 1, 1, 2, 3, 5, 8 and 13. Each is the sum of the two before it."
+              "feedback": "The table starts with 1 and 1, and each later entry is the sum of the two before it: 2, 3, 5, 8, 13 ways to climb six steps. Only the last two entries are ever read, so the table could be replaced by two variables, and the memory would drop from O(n) to O(1)."
             }
           ]
         }
@@ -4332,12 +4198,6 @@
           ]
         },
         {
-          "kind": "walkthrough",
-          "title": "The same answer, 500 times cheaper",
-          "text": "The nested loops compared every pair: a million steps. The second version spent 1,000 steps building a Set from b and 1,000 lookups, 2,000 in all.\n\nNothing about the problem changed. The repeated operation was \"is this value in b?\", and a Set answers that in one step where an array needs a scan. Most speed-ups in everyday code are this one.",
-          "example": "choices"
-        },
-        {
           "kind": "explanation",
           "title": "Sort first",
           "text": "A second move is worth as much as the first: **put the data in order before working on it**. Sorting costs O(n log n), and it often turns the rest of the problem into one pass.\n\n- After sorting, equal items are next to each other, so duplicates and groups are found by comparing neighbours.\n- After sorting by start time, things that overlap are next to each other.\n- After sorting, binary search and two pointers both become available.\n\nWhen a problem seems to need every pair compared, ask whether an order exists in which only neighbours matter."
@@ -4350,12 +4210,6 @@
           "questions": [
             "overlaps"
           ]
-        },
-        {
-          "kind": "walkthrough",
-          "title": "Only neighbours were compared",
-          "text": "After sorting, the meetings read 9 to 10, 9 to 11, 13 to 15 and 14 to 16. The loop found that the second starts before the first ends, and that the fourth starts before the third ends: two overlaps.\n\nUnsorted, finding those would mean comparing every meeting with every other. Sorted, three comparisons were enough. The first exercise extends this to merging the overlapping ranges.",
-          "example": "sweep"
         },
         {
           "kind": "independent",
@@ -4389,7 +4243,7 @@
             },
             {
               "text": "1000000 2000",
-              "feedback": "Every pair is compared, which is a million steps. The Set version builds the Set in 1,000 steps and makes 1,000 lookups."
+              "feedback": "The nested loops compare every pair: a million steps. The Set version spends 1,000 steps building a Set from `b` and 1,000 lookups. The repeated question was \"is this value in b?\", and a Set answers it in one step where an array needs a scan. Most speed-ups in everyday code are this one."
             },
             {
               "text": "1000000 1000000",
@@ -4405,7 +4259,7 @@
           "choices": [
             {
               "text": "2",
-              "feedback": "9 to 11 starts before 9 to 10 ends, and 14 to 16 starts before 13 to 15 ends."
+              "feedback": "After sorting, the meetings read 9 to 10, 9 to 11, 13 to 15 and 14 to 16. 9 to 11 starts before 9 to 10 ends, and 14 to 16 starts before 13 to 15 ends. Sorted, three neighbour comparisons were enough, where unsorted data would need every meeting compared with every other. The first exercise extends this to merging the overlapping ranges."
             },
             {
               "text": "1",
