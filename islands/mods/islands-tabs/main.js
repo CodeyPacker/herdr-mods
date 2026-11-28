@@ -130,7 +130,10 @@ export default class Tabs extends View {
     const info = (c) => {
       const tabPanes = allPanes.filter(p => p.tab === c.id);
       const chat = tabPanes.length > 0 && tabPanes.every(p => p.mod === "hey-chat");
+      // A tab that only holds Practice Range gets crosshairs, as a chat tab gets its bubble.
+      const practice = tabPanes.length > 0 && tabPanes.every(p => p.mod === "practice-range");
       const program = chat ? { icon: "mods/islands-tabs/chat.svg", tint: true }
+        : practice ? { icon: "mods/islands-tabs/crosshairs.svg", tint: true }
         : tabPanes.find(p => p.program?.agent)?.program ?? tabPanes[0]?.program;
       const name = chat ? c.name.replace(/^Chat · /, "") : /^tb\d+$/.test(c.name) ? program?.name ?? "Terminal" : c.name;
       return { program, name: c.zoomed ? `${name} Z` : name };
